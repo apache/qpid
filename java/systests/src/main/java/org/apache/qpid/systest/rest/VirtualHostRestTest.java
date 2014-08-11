@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.systest.rest;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,18 +32,18 @@ import javax.jms.Session;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHostImpl;
-import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNode;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.queue.LastValueQueue;
 import org.apache.qpid.server.queue.PriorityQueue;
 import org.apache.qpid.server.queue.SortedQueue;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 
-import org.apache.qpid.util.FileUtils;
+import org.apache.qpid.server.virtualhost.derby.DerbyVirtualHostImpl;
+import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNodeImpl;
+import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class VirtualHostRestTest extends QpidRestTestCase
 {
@@ -52,7 +51,18 @@ public class VirtualHostRestTest extends QpidRestTestCase
     public static final String VIRTUALHOST_QUEUES_ATTRIBUTE = "queues";
     public static final String VIRTUALHOST_CONNECTIONS_ATTRIBUTE = "connections";
 
+    public static final String EMPTY_VIRTUALHOSTNODE_NAME = "emptyVHN";
+
     private AMQConnection _connection;
+
+    @Override
+    protected void customizeConfiguration() throws IOException
+    {
+        super.customizeConfiguration();
+
+        TestBrokerConfiguration config = getBrokerConfiguration();
+        createTestVirtualHostNode(0, EMPTY_VIRTUALHOSTNODE_NAME, false);
+    }
 
     public void testGet() throws Exception
     {
@@ -106,27 +116,30 @@ public class VirtualHostRestTest extends QpidRestTestCase
         Asserts.assertConnection(connections.get(0), _connection);
     }
 
-    public void testPutCreateVirtualHostUsingProfileNodeType() throws Exception
+    public void testPutCreateProvidedVirtualHost() throws Exception
     {
         String hostName = getTestName();
-        String virtualhostNodeType = getTestProfileVirtualHostNodeType();
-        String storeLocation = createVirtualHostNodeAndVirtualHost(hostName, virtualhostNodeType);
-        try
-        {
-            // make sure that the host is saved in the broker store
-            restartBroker();
-            Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("virtualhost/" + hostName);
-            Asserts.assertVirtualHost(hostName, hostDetails);
+        createVirtualHost(hostName, ProvidedStoreVirtualHostImpl.VIRTUAL_HOST_TYPE);
 
-            assertNewVirtualHost(hostDetails);
-        }
-        finally
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("virtualhost/" + EMPTY_VIRTUALHOSTNODE_NAME + "/" + hostName);
+        Asserts.assertVirtualHost(hostName, hostDetails);
+
+        assertNewVirtualHost(hostDetails);
+    }
+
+    public void testPutCreateVirtualHost() throws Exception
+    {
+        String hostName = getTestName();
+        String vhnType = getTestProfileVirtualHostNodeType();
+        if (JsonVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE.equals(vhnType))
         {
-            if (storeLocation != null)
-            {
-                FileUtils.delete(new File(storeLocation), true);
-            }
+            vhnType = DerbyVirtualHostImpl.VIRTUAL_HOST_TYPE;
         }
+        createVirtualHost(hostName, vhnType);
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("virtualhost/" + EMPTY_VIRTUALHOSTNODE_NAME + "/" + hostName);
+        Asserts.assertVirtualHost(hostName, hostDetails);
+
+        assertNewVirtualHost(hostDetails);
     }
 
     public void testDeleteHost() throws Exception
@@ -562,34 +575,17 @@ public class VirtualHostRestTest extends QpidRestTestCase
         return getRestTestHelper().submitRequest("queue/test/test/" + queueName, "PUT", queueData);
     }
 
-    private String createVirtualHostNodeAndVirtualHost(String virtualHostName,
-                                                       String virtualHostNodeType) throws Exception
+    private void createVirtualHost(final String virtualHostName,
+                                   final String virtualHostType) throws IOException
     {
-        String storePath = getStoreLocation(virtualHostName);
-
-        Map<String, Object> nodeData = new HashMap<>();
-        nodeData.put(VirtualHostNode.NAME, virtualHostName);
-        nodeData.put(VirtualHostNode.TYPE, virtualHostNodeType);
-        nodeData.put(JsonVirtualHostNode.STORE_PATH, storePath);
-
-        getRestTestHelper().submitRequest("virtualhostnode/" + virtualHostName, "PUT", nodeData, HttpServletResponse.SC_CREATED);
-
         Map<String, Object> virtualhostData = new HashMap<>();
         virtualhostData.put(VirtualHost.NAME, virtualHostName);
-        virtualhostData.put(VirtualHost.TYPE, ProvidedStoreVirtualHostImpl.VIRTUAL_HOST_TYPE);
+        virtualhostData.put(VirtualHost.TYPE, virtualHostType);
 
-        getRestTestHelper().submitRequest("virtualhost/" + virtualHostName + "/" + virtualHostName,
+        getRestTestHelper().submitRequest("virtualhost/" + EMPTY_VIRTUALHOSTNODE_NAME + "/" + virtualHostName,
                                           "PUT",
                                           virtualhostData,
                                           HttpServletResponse.SC_CREATED);
-
-
-        return storePath;
-    }
-
-    private String getStoreLocation(String hostName)
-    {
-        return new File(TMP_FOLDER, "store-" + hostName + "-" + System.currentTimeMillis()).getAbsolutePath();
     }
 
     private void assertNewVirtualHost(Map<String, Object> hostDetails)

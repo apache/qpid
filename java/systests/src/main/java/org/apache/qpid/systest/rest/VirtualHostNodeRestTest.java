@@ -55,12 +55,31 @@ public class VirtualHostNodeRestTest  extends QpidRestTestCase
 
     public void testCreateAndDeleteVirtualHostNode() throws Exception
     {
-        String storeType = getTestProfileVirtualHostNodeType();
+        String virtualhostNodeType = getTestProfileVirtualHostNodeType();
         String nodeName = "virtualhostnode-" + getTestName();
         File storePathAsFile = new File(getStoreLocation(nodeName));
 
-        createAndDeleteVirtualHostNode(storeType, nodeName, storePathAsFile);
+        createAndDeleteVirtualHostNode(virtualhostNodeType, nodeName, storePathAsFile);
         assertFalse("Store should not exist after deletion", storePathAsFile.exists());
+    }
+
+    public void testCreateVirtualHostNodeWithDefaultStorePath() throws Exception
+    {
+        String virtualhostNodeType = getTestProfileVirtualHostNodeType();
+        String nodeName = "virtualhostnode-" + getTestName();
+
+        createVirtualHostNode(nodeName, virtualhostNodeType);
+
+        String restUrl = "virtualhostnode/" + nodeName;
+        Map<String, Object> virtualhostNode = getRestTestHelper().getJsonAsSingletonList(restUrl);
+        Asserts.assertVirtualHostNode(nodeName, virtualhostNode);
+        assertNull("Virtualhostnode should not automatically get a virtualhost child",
+                   virtualhostNode.get("virtualhosts"));
+
+        getRestTestHelper().submitRequest(restUrl, "DELETE", HttpServletResponse.SC_OK);
+
+        List<Map<String, Object>> virtualHostNodes = getRestTestHelper().getJsonAsList(restUrl);
+        assertEquals("Host should be deleted", 0, virtualHostNodes.size());
     }
 
     public void testRecoverVirtualHostNodeWithDesiredStateStopped() throws Exception
@@ -149,12 +168,20 @@ public class VirtualHostNodeRestTest  extends QpidRestTestCase
         Map<String, Object> nodeData = new HashMap<String, Object>();
         nodeData.put(VirtualHostNode.NAME, nodeName);
         nodeData.put(VirtualHostNode.TYPE, storeType);
-        nodeData.put(JsonVirtualHostNode.STORE_PATH, configStorePath);
+        if (configStorePath != null)
+        {
+            nodeData.put(JsonVirtualHostNode.STORE_PATH, configStorePath);
+        }
 
         getRestTestHelper().submitRequest("virtualhostnode/" + nodeName,
                                           "PUT",
                                           nodeData,
                                           HttpServletResponse.SC_CREATED);
+    }
+
+    private void createVirtualHostNode(String nodeName, final String storeType) throws Exception
+    {
+        createVirtualHostNode(nodeName, null, storeType);
     }
 
     private String getStoreLocation(String hostName)
