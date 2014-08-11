@@ -201,7 +201,7 @@ bool MessageStoreImpl::init(const std::string& storeDir_,
     else
         init();
 
-    QLS_LOG(notice, "Store module initialized; store-dir=" << storeDir_);
+    QLS_LOG(info, "Store module initialized; store-dir=" << storeDir_);
     QLS_LOG(info,   "> Default EFP partition: " << defaultEfpPartitionNumber);
     QLS_LOG(info,   "> Default EFP file size: " << defaultEfpFileSize_kib << " (KiB)");
     QLS_LOG(info,   "> Default write cache page size: " << wCachePageSizeKib_ << " (KiB)");
@@ -337,7 +337,7 @@ void MessageStoreImpl::truncateInit()
     qpid::linearstore::journal::jdir::delete_dir(getBdbBaseDir());
     qpid::linearstore::journal::jdir::delete_dir(getJrnlBaseDir());
     qpid::linearstore::journal::jdir::delete_dir(getTplBaseDir());
-    QLS_LOG(notice, "Store directory " << getStoreTopLevelDir() << " was truncated.");
+    QLS_LOG(info, "Store directory " << getStoreTopLevelDir() << " was truncated.");
     init();
 }
 
