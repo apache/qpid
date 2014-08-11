@@ -76,7 +76,7 @@
         <!--version specified in qpid-parent pluginManagement -->
         <configuration>
           <descriptors>
-            <descriptor>src/main/assembly/qpid-qmf-tools-bin.xml</descriptor>
+            <descriptor>src/main/assembly/qpid-qmf2-tools-bin.xml</descriptor>
           </descriptors>
         </configuration>
         <executions>
