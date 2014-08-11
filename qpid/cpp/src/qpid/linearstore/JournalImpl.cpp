@@ -78,7 +78,7 @@ JournalImpl::JournalImpl(::qpid::sys::Timer& timer_,
 
     initManagement(a);
 
-    QLS_LOG2(notice, _jid, "Created");
+    QLS_LOG2(info, _jid, "Created");
     std::ostringstream oss;
     oss << "Journal directory = \"" << journalDirectory << "\"";
     QLS_LOG2(debug, _jid, oss.str());
@@ -99,7 +99,7 @@ JournalImpl::~JournalImpl()
 	_mgmtObject.reset();
     }
 
-    QLS_LOG2(notice, _jid, "Destroyed");
+    QLS_LOG2(info, _jid, "Destroyed");
 }
 
 void
@@ -136,7 +136,7 @@ JournalImpl::initialize(::qpid::linearstore::journal::EmptyFilePool* efpp_,
                         ::qpid::linearstore::journal::aio_callback* const cbp)
 {
 //    efpp->createJournal(_jdir);
-//    QLS_LOG2(notice, _jid, "Initialized");
+//    QLS_LOG2(info, _jid, "Initialized");
 //    std::ostringstream oss;
 ////    oss << "Initialize; num_jfiles=" << num_jfiles << " jfsize_sblks=" << jfsize_sblks;
 //    oss << "Initialize; efpPartitionNumber=" << efpp_->getPartitionNumber();

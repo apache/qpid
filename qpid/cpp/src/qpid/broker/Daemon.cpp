@@ -91,8 +91,7 @@ void Daemon::fork()
             child();
         }
         catch (const exception& e) {
-            QPID_LOG(critical, "Unexpected error: " << e.what());
-            uint16_t port = 0;
+             uint16_t port = 0;
             if (write(pipeFds[1], &port, sizeof(uint16_t))) {};
 
             std::string pipeFailureMessage = e.what();
@@ -115,7 +114,7 @@ Daemon::~Daemon() {
 
 uint16_t Daemon::wait(int timeout) {            // parent waits for child.
     try {
-        errno = 0;                  
+        errno = 0;
         struct timeval tv;
         tv.tv_sec = timeout;
         tv.tv_usec = 0;

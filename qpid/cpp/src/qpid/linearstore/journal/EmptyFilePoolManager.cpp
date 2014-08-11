@@ -91,7 +91,7 @@ void EmptyFilePoolManager::findEfpPartitions() {
         }
     }
 
-    journalLogRef_.log(JournalLog::LOG_NOTICE, "EFP Manager initialization complete");
+    journalLogRef_.log(JournalLog::LOG_INFO, "EFP Manager initialization complete");
     std::vector<qpid::linearstore::journal::EmptyFilePoolPartition*> partitionList;
     std::vector<qpid::linearstore::journal::EmptyFilePool*> filePoolList;
     getEfpPartitions(partitionList);

@@ -123,6 +123,15 @@ class Broker : public sys::Runnable, public Plugin::Target,
                                             const Connection* context);
     Manageable::status_t queueRedirect(const std::string& srcQueue, const std::string& tgtQueue, const Connection* context);
     void queueRedirectDestroy(boost::shared_ptr<Queue> srcQ, boost::shared_ptr<Queue> tgtQ, bool moveMsgs);
+
+    // This must be the first member of Broker. It logs a start-up message
+    // at the start of Broker construction and a shut-down message at the
+    // end of destruction.
+    struct LogPrefix : public std::string {
+        LogPrefix();
+        ~LogPrefix();
+    } logPrefix;
+
     boost::shared_ptr<sys::Poller> poller;
     std::auto_ptr<sys::Timer> timer;
     const BrokerOptions& config;
@@ -160,7 +169,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
     mutable sys::Mutex linkClientPropertiesLock;
     framing::FieldTable linkClientProperties;
     bool timestampRcvMsgs;
-    std::string logPrefix;
 
   public:
     QPID_BROKER_EXTERN virtual ~Broker();
