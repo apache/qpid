@@ -47,7 +47,6 @@ import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.systest.rest.Asserts;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
-import org.apache.qpid.util.FileUtils;
 
 public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
 {
@@ -60,7 +59,6 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
     private int _node3HaPort;
 
     private String _hostName;
-    private File _storeBaseDir;
     private String _baseNodeRestUrl;
 
     @Override
@@ -72,29 +70,11 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         _hostName = getTestName();
         _baseNodeRestUrl = "virtualhostnode/";
 
-        _storeBaseDir = new File(TMP_FOLDER, "store-" + _hostName + "-" + System.currentTimeMillis());
-
         _node1HaPort = findFreePort();
         _node2HaPort = getNextAvailable(_node1HaPort + 1);
         _node3HaPort = getNextAvailable(_node2HaPort + 1);
 
 
-    }
-
-    @Override
-    public void tearDown() throws Exception
-    {
-        try
-        {
-            super.tearDown();
-        }
-        finally
-        {
-            if (_storeBaseDir != null)
-            {
-                FileUtils.delete(_storeBaseDir, true);
-            }
-        }
     }
 
     @Override
@@ -311,7 +291,6 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         Map<String, Object> nodeData = new HashMap<String, Object>();
         nodeData.put(BDBHAVirtualHostNode.NAME, nodeName);
         nodeData.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
-        nodeData.put(BDBHAVirtualHostNode.STORE_PATH, _storeBaseDir.getPath() + File.separator + nodeName);
         nodeData.put(BDBHAVirtualHostNode.GROUP_NAME, _hostName);
         nodeData.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + nodePort);
         nodeData.put(BDBHAVirtualHostNode.HELPER_ADDRESS, "localhost:" + helperPort);
@@ -332,7 +311,6 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         Map<String, Object> nodeData = getRestTestHelper().getJsonAsSingletonList(_baseNodeRestUrl + nodeName + "?depth=0");
         assertEquals("Unexpected name", nodeName, nodeData.get(BDBHAVirtualHostNode.NAME));
         assertEquals("Unexpected type", "BDB_HA", nodeData.get(BDBHAVirtualHostNode.TYPE));
-        assertEquals("Unexpected path", new File(_storeBaseDir, nodeName).getPath(), nodeData.get(BDBHAVirtualHostNode.STORE_PATH));
         assertEquals("Unexpected address", "localhost:" + nodePort, nodeData.get(BDBHAVirtualHostNode.ADDRESS));
         assertEquals("Unexpected helper address", "localhost:" + nodeHelperPort, nodeData.get(BDBHAVirtualHostNode.HELPER_ADDRESS));
         assertEquals("Unexpected group name", _hostName, nodeData.get(BDBHAVirtualHostNode.GROUP_NAME));

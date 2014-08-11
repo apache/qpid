@@ -26,6 +26,6 @@ public interface JsonVirtualHostNode<X extends JsonVirtualHostNode<X>> extends o
 
     String STORE_PATH = "storePath";
 
-    @ManagedAttribute(mandatory = true)
+    @ManagedAttribute(mandatory = true, defaultValue = "${qpid.work_dir}${file.separator}${this:name}${file.separator}config")
     String getStorePath();
 }
