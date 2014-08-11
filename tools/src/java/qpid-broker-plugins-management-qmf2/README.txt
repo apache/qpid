@@ -43,8 +43,8 @@ You can then configure the extracted broker as described below.
 
 *********************************************** Installing *************************************************
 
-To install a release of the plugin, extract the release assembly and copy all of the files from the lib/ dir
-into either the lib/ or lib/plugins/ directory of your extracted broker installation.
+To install a release of the plugin, extract the release assembly and copy all of the files from the contained
+lib/ directory into the corresponding lib/ directory of your extracted broker installation.
 
 You can then configure the broker as described below.
 
@@ -73,7 +73,7 @@ HTTP port to something other than 8080, or the brokers list of "ports" in $QPID_
 {
     "id" :   <UUID>,
     "name" : "HTTP",
-    "port" : "${qpid.jmx_port}"
+    "port" : "${qpid.http_port}"
     "protocols" : [ "HTTP" ]
   }
 
