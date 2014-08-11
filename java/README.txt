@@ -1,3 +1,10 @@
+Documentation for the Qpid components can be accessed on our website at:
+
+http://qpid.apache.org/documentation.html
+
+Some initial helper info can be found below.
+
+
 ==== Building the code and running the tests ====
 
 Here are some example Maven build commands that you may find usefull.
@@ -22,6 +29,7 @@ Execute the unit tests and then produce the code coverage report
 
 For more details on how to build see:
 https://cwiki.apache.org/confluence/display/qpid/Qpid+Java+Build+How+To
+
 
 ==== Running client examples =====
 

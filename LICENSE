@@ -1,5 +1,8 @@
-Please see the individual LICENSE files for each language
+Please see the individual LICENSE[.txt] files in each main directory, e.g:
+
 cpp/LICENSE
-gentools/lib/LICENSE
-java/resources/LICENSE
+java/LICENSE
 python/LICENSE.txt
+tools/LICENSE.txt
+tools/src/java/LICENSE
+wcf/LICENSE.txt
