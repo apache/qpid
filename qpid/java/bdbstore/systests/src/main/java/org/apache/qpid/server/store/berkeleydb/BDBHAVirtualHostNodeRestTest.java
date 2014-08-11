@@ -302,6 +302,8 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
 
         int responseCode = getRestTestHelper().submitRequest(_baseNodeRestUrl + nodeName, "PUT", nodeData);
         assertEquals("Unexpected response code for virtual host node " + nodeName + " creation request", 201, responseCode);
+        String hostExpectedState = nodePort == helperPort ? State.ACTIVE.name(): State.UNAVAILABLE.name();
+        waitForAttributeChanged("virtualhost/" + nodeName + "/" + _hostName, BDBHAVirtualHost.STATE, hostExpectedState);
     }
 
     private Map<String, Object> createNodeAttributeMap(String nodeName, int nodePort, int helperPort) throws Exception

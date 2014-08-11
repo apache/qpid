@@ -656,7 +656,8 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         permittedNodes.add("localhost:" + getNextAvailable(TEST_NODE_PORT + 1));
         firstNode.setPermittedNodes(permittedNodes);
 
-        NodeState nodeState = firstNode.getRemoteNodeState(new ReplicatedEnvironmentFacade.ReplicationNodeImpl(TEST_NODE_NAME, TEST_NODE_HOST_PORT));
+        ReplicatedEnvironmentFacade.ReplicationNodeImpl replicationNode = new ReplicatedEnvironmentFacade.ReplicationNodeImpl(TEST_NODE_NAME, TEST_NODE_HOST_PORT);
+        NodeState nodeState = ReplicatedEnvironmentFacade.getRemoteNodeState(TEST_GROUP_NAME, replicationNode);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -708,10 +709,52 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         firstNode.setPermittedNodes(permittedNodes);
 
         String nodeName = TEST_NODE_NAME + "_1";
+        createIntruder(nodeName, node1NodeHostPort);
+        assertTrue("Intruder node was not detected", intruderLatch.await(10, TimeUnit.SECONDS));
+    }
+
+    public void testIntruderNodeDetectionOnMasterAndReplicaNodes() throws Exception
+    {
+        final CountDownLatch intruderLatch = new CountDownLatch(2);
+        ReplicationGroupListener listener = new NoopReplicationGroupListener()
+        {
+            @Override
+            public void onIntruderNode(ReplicationNode node)
+            {
+                intruderLatch.countDown();
+            }
+        };
+
+        ReplicatedEnvironmentFacade firstNode = createMaster(listener);
+        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        String node2NodeHostPort = "localhost:" + replica1Port;
+        String nodeName2 = TEST_NODE_NAME + "_1";
+        ReplicatedEnvironmentFacade secondNode = createReplica(nodeName2, node2NodeHostPort, listener);
+
+        Set<String> permittedNodes = new HashSet<String>();
+        permittedNodes.add("localhost:" + TEST_NODE_PORT);
+        permittedNodes.add(nodeName2);
+        firstNode.setPermittedNodes(permittedNodes);
+
+        int counter = 0;
+        while(secondNode.getPermittedNodes().isEmpty() && counter < 100)
+        {
+            counter++;
+            Thread.sleep(50);
+        }
+        assertEquals("Permitted nodes are not set on a replica", permittedNodes, secondNode.getPermittedNodes());
+
+        int intruderPort = getNextAvailable(replica1Port+ 1);
+        createIntruder("intruder", "localhost:" + intruderPort);
+        assertTrue("Intruder node was not detected", intruderLatch.await(10, TimeUnit.SECONDS));
+    }
+
+    private void createIntruder(String nodeName, String node1NodeHostPort)
+    {
         File environmentPathFile = new File(_storePath, nodeName);
         environmentPathFile.mkdirs();
 
-        ReplicationConfig replicationConfig = new ReplicationConfig(TEST_GROUP_NAME, TEST_NODE_NAME + "_1", node1NodeHostPort);
+        ReplicationConfig replicationConfig = new ReplicationConfig(TEST_GROUP_NAME, nodeName, node1NodeHostPort);
         replicationConfig.setHelperHosts(TEST_NODE_HOST_PORT);
 
         EnvironmentConfig envConfig = new EnvironmentConfig();
@@ -730,7 +773,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
                 intruder.close();
             }
         }
-        assertTrue("Intruder node was not detected", intruderLatch.await(10, TimeUnit.SECONDS));
     }
 
     private ReplicatedEnvironmentFacade createMaster() throws Exception

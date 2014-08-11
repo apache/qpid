@@ -1094,15 +1094,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return environment;
     }
 
-    NodeState getRemoteNodeState(ReplicationNode repNode) throws IOException, ServiceConnectFailedException
-    {
-        if (repNode == null)
-        {
-            throw new IllegalArgumentException("Node cannot be null");
-        }
-        return new DbPing(repNode, (String)_configuration.getGroupName(), DB_PING_SOCKET_TIMEOUT).getNodeState();
-    }
-
     public int getNumberOfElectableGroupMembers()
     {
         if (_state.get() != State.OPEN)
@@ -1176,6 +1167,105 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 if (!isNodePermitted(node))
                 {
                     onIntruder(listener, node);
+                }
+            }
+        }
+    }
+
+    Set<String> getPermittedNodes()
+    {
+        return Collections.unmodifiableSet(_permittedNodes);
+    }
+
+    public static NodeState getRemoteNodeState(String groupName, ReplicationNode repNode) throws IOException, ServiceConnectFailedException
+    {
+        if (repNode == null)
+        {
+            throw new IllegalArgumentException("Node cannot be null");
+        }
+        return new DbPing(repNode, groupName, DB_PING_SOCKET_TIMEOUT).getNodeState();
+    }
+
+    public static Set<String> convertApplicationStateBytesToPermittedNodeList(byte[] applicationState)
+    {
+        if (applicationState == null || applicationState.length == 0)
+        {
+            return Collections.emptySet();
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        try
+        {
+            Map<String, Object> settings = objectMapper.readValue(applicationState, Map.class);
+            return new HashSet<String>((Collection<String>)settings.get(PERMITTED_NODE_LIST));
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Unexpected exception on de-serializing of application state", e);
+        }
+    }
+
+    public static void connectToHelperNodeAndCheckPermittedHosts(String nodeName, String hostPort, String groupName, String helperNodeName, String helperHostPort)
+    {
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug(String.format("Requesting state of the node '%s' at '%s'", helperNodeName, helperHostPort));
+        }
+
+        if (helperNodeName == null || "".equals(helperNodeName))
+        {
+            throw new IllegalConfigurationException(String.format("A helper node is not specified for node '%s'"
+                    + " joining the group '%s'", nodeName, groupName));
+        }
+
+        Collection<String> permittedNodes = null;
+        try
+        {
+            ReplicationNodeImpl node = new ReplicationNodeImpl(helperNodeName, helperHostPort);
+            NodeState state = getRemoteNodeState(groupName, node);
+            byte[] applicationState = state.getAppState();
+            permittedNodes = convertApplicationStateBytesToPermittedNodeList(applicationState);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalConfigurationException(String.format("Cannot connect to '%s'", helperHostPort), e);
+        }
+        catch (ServiceConnectFailedException e)
+        {
+            throw new IllegalConfigurationException(String.format("Failure to connect to '%s'", helperHostPort), e);
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(String.format("Unexpected exception on attempt to retrieve state from '%s' at '%s'",
+                    helperNodeName, helperHostPort), e);
+        }
+
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug(String.format("Attribute 'permittedNodes' on node '%s' is set to '%s'", helperNodeName, String.valueOf(permittedNodes)));
+        }
+
+        if (permittedNodes==null || !permittedNodes.contains(hostPort))
+        {
+            throw new IllegalConfigurationException(String.format("Node from '%s' is not permitted!", hostPort));
+        }
+    }
+
+    private void findMasterNodeStateAndApplyPermittedNodes(Collection<NodeState> nodeStates)
+    {
+        if (ReplicatedEnvironment.State.MASTER != _environment.getState())
+        {
+            for (NodeState nodeState : nodeStates)
+            {
+                if (nodeState.getNodeState() == ReplicatedEnvironment.State.MASTER)
+                {
+                    byte[] applicationState = nodeState.getAppState();
+                    Set<String> permittedNodes = convertApplicationStateBytesToPermittedNodeList(applicationState);
+                    if (!_permittedNodes.equals(permittedNodes))
+                    {
+                        setPermittedNodes(permittedNodes);
+                    }
+                    break;
                 }
             }
         }
@@ -1286,8 +1376,9 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                     executeDatabasePingerOnNodeChangesIfMaster(nodeStates);
 
                     notifyGroupListenerAboutNodeStates(nodeStates);
-                }
 
+                    findMasterNodeStateAndApplyPermittedNodes(nodeStates.values());
+                }
             }
             finally
             {
@@ -1384,7 +1475,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                         NodeState nodeStateObject = null;
                         try
                         {
-                            nodeStateObject = getRemoteNodeState(node);
+                            nodeStateObject = getRemoteNodeState((String)_configuration.getGroupName(), node);
                         }
                         catch (IOException | ServiceConnectFailedException e )
                         {

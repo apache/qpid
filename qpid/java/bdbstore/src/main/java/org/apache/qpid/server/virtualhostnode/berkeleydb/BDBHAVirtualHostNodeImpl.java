@@ -20,11 +20,9 @@
  */
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.PrivilegedAction;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -43,10 +41,8 @@ import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationNode;
 import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
-import com.sleepycat.je.rep.util.DbPing;
 import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 import com.sleepycat.je.rep.utilint.HostPortPair;
-import com.sleepycat.je.rep.utilint.ServiceDispatcher;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -73,7 +69,6 @@ import org.apache.qpid.server.store.berkeleydb.replication.ReplicationGroupListe
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
-import org.codehaus.jackson.map.ObjectMapper;
 
 @ManagedObject( category = false, type = BDBHAVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE )
 public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtualHostNodeImpl> implements
@@ -263,7 +258,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         {
             try
             {
-                connectToHelperNodeAndCheckPermittedHosts(getHelperNodeName(), getHelperAddress(), getAddress());
+                ReplicatedEnvironmentFacade.connectToHelperNodeAndCheckPermittedHosts(getName(), getAddress(), getGroupName(), getHelperNodeName(), getHelperAddress());
             }
             catch(IllegalConfigurationException e)
             {
@@ -704,71 +699,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     private boolean isFirstNodeInAGroup()
     {
         return getAddress().equals(getHelperAddress());
-    }
-
-    private void connectToHelperNodeAndCheckPermittedHosts(String helperNodeName, String helperHostPort, String hostPort)
-    {
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug(String.format("Requesting state of the node '%s' at '%s'", helperNodeName, helperHostPort));
-        }
-
-        if (_helperNodeName == null || "".equals(_helperNodeName))
-        {
-            throw new IllegalConfigurationException(String.format("An attribute '%s' is not set in node '%s'"
-                    + " on joining the group '%s'", HELPER_NODE_NAME, getName(), getGroupName()));
-        }
-
-        Collection<String> permittedNodes = null;
-        try
-        {
-            ReplicatedEnvironmentFacade.ReplicationNodeImpl node = new ReplicatedEnvironmentFacade.ReplicationNodeImpl(helperNodeName, helperHostPort);
-            NodeState state = new DbPing(node, getGroupName(), ReplicatedEnvironmentFacade.DB_PING_SOCKET_TIMEOUT).getNodeState();
-            byte[] applicationState = state.getAppState();
-            permittedNodes = bytesToPermittedNodeList(applicationState);
-        }
-        catch (IOException e)
-        {
-            throw new IllegalConfigurationException(String.format("Cannot connect to '%s'", helperHostPort), e);
-        }
-        catch (ServiceDispatcher.ServiceConnectFailedException e)
-        {
-            throw new IllegalConfigurationException(String.format("Failure to connect to '%s'", helperHostPort), e);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(String.format("Unexpected exception on attempt to retrieve state from '%s' at '%s'",
-                    helperNodeName, helperHostPort), e);
-        }
-
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug(String.format("Attribute 'permittedNodes' on node '%s' is set to '%s'", helperNodeName, String.valueOf(permittedNodes)));
-        }
-
-        if (permittedNodes != null && !permittedNodes.isEmpty() && !permittedNodes.contains(hostPort))
-        {
-            throw new IllegalConfigurationException(String.format("Node from '%s' is not permitted!", hostPort));
-        }
-    }
-
-    private Collection<String> bytesToPermittedNodeList(byte[] applicationState)
-    {
-        if (applicationState == null || applicationState.length == 0)
-        {
-            return Collections.emptySet();
-        }
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        try
-        {
-            Map<String, Object> settings = objectMapper.readValue(applicationState, Map.class);
-            return (Collection<String>)settings.get(ReplicatedEnvironmentFacade.PERMITTED_NODE_LIST);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException("Unexpected exception on de-serializing of application state", e);
-        }
     }
 
     private class RemoteNodesDiscoverer implements ReplicationGroupListener
