@@ -28,8 +28,6 @@ From: 'an unknown organization'
     License: The Apache Software License, Version 2.0  (http://www.apache.org/licenses/LICENSE-2.0.txt)
   - bcel  org.apache.bcel:bcel:jar:5.2
 
-  - CryptoJS (http://webjars.org) org.webjars:cryptojs:jar:3.1.2
-    License: New BSD  (http://opensource.org/licenses/BSD-3-Clause)
 
 From: 'Apache Software Foundation' (http://db.apache.org/)
   - Apache Derby Database Engine and Embedded JDBC Driver (http://db.apache.org/derby/derby/) org.apache.derby:derby:jar:10.8.2.2
