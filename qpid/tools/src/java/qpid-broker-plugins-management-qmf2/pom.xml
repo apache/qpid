@@ -28,6 +28,10 @@
   <name>Qpid QMF2 Management Broker Plug-in</name>
   <description>QMF2 Management broker plug-in</description>
 
+  <properties>
+    <dependency-change-verification>true</dependency-change-verification>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.qpid</groupId>
