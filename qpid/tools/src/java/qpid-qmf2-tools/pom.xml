@@ -28,6 +28,10 @@
   <name>Qpid QMF2 Tools</name>
   <description>QMF2 Tools</description>
 
+  <properties>
+    <dependency-change-verification>true</dependency-change-verification>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.qpid</groupId>
