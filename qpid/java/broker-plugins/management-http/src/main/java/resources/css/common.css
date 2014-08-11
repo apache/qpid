@@ -223,13 +223,18 @@ div .messages {
 
 .alignLeft {
     float: left;
+    display: inline-block;
 }
+
 .alignRight {
     float: right;
+    display: inline-block;
 }
+
 .multiLineValue {
     display: inline-block;
 }
+
 .haOptionLabel {
     font-weight: bold;
     margin-left: 5px;
@@ -238,3 +243,4 @@ div .messages {
     font-style: italic;
     margin: 0px 0px 10px 5px;
 }
+
