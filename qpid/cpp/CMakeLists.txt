@@ -23,7 +23,7 @@ set (CMAKE_BUILD_TYPE RelWithDebInfo CACHE string
 if (CMAKE_BUILD_TYPE MATCHES "Deb")
   set (has_debug_symbols " (has debug symbols)")
 endif (CMAKE_BUILD_TYPE MATCHES "Deb")
-message("Build type is *${CMAKE_BUILD_TYPE}*${has_debug_symbols}")
+message("Build type is \"${CMAKE_BUILD_TYPE}\"${has_debug_symbols}")
 
 project(qpid-cpp)
 
@@ -234,4 +234,5 @@ add_subdirectory(examples)
 include (CPack)
 
 # Build type message again, last so it is visible at end of output.
-message("Build type is *${CMAKE_BUILD_TYPE}*${has_debug_symbols}")
+message("Build type is \"${CMAKE_BUILD_TYPE}\"${has_debug_symbols}")
+
