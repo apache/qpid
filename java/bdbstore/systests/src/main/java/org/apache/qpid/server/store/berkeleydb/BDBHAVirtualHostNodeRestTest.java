@@ -227,38 +227,67 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         assertEquals("Unexpected number of remote nodes on " + NODE2, 1, data.size());
     }
 
+    public void testIntruderBDBHAVHNNotAllowedNoConnect() throws Exception
+    {
+        createHANode(NODE1, _node1HaPort, _node1HaPort);
+        assertNode(NODE1, _node1HaPort, _node1HaPort, NODE1);
+
+        // add permitted node
+        Map<String, Object> node3Data = createNodeAttributeMap(NODE3, _node3HaPort, _node1HaPort);
+        getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE3, "PUT", node3Data, 201);
+        assertNode(NODE3, _node3HaPort, _node1HaPort, NODE1);
+        assertRemoteNodes(NODE1, NODE3);
+
+        int intruderPort = getNextAvailable(_node3HaPort + 1);
+
+        // try to add not permitted node
+        Map<String, Object> nodeData = createNodeAttributeMap(NODE2, intruderPort, _node1HaPort);
+        getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE2, "PUT", nodeData, 409);
+
+        assertRemoteNodes(NODE1, NODE3);
+    }
+
     public void testIntruderProtection() throws Exception
     {
         createHANode(NODE1, _node1HaPort, _node1HaPort);
         assertNode(NODE1, _node1HaPort, _node1HaPort, NODE1);
 
-        String virtualHostRestUrl = "virtualhost/" + NODE1 + "/" + _hostName;
-
-        Map<String,Object> hostData = new HashMap<String,Object>();
-        hostData.put(BDBHAVirtualHost.PERMITTED_NODES, Arrays.asList( "localhost:" + _node1HaPort,  "localhost:" + _node3HaPort));
-        getRestTestHelper().submitRequest(virtualHostRestUrl, "PUT", hostData, 200);
+        Map<String,Object> nodeData = getRestTestHelper().getJsonAsSingletonList(_baseNodeRestUrl + NODE1);
+        String node1StorePath = (String)nodeData.get(BDBHAVirtualHostNode.STORE_PATH);
+        long transactionId =  ((Number)nodeData.get(BDBHAVirtualHostNode.LAST_KNOWN_REPLICATION_TRANSACTION_ID)).longValue();
 
         // add permitted node
         Map<String, Object> node3Data = createNodeAttributeMap(NODE3, _node3HaPort, _node1HaPort);
-        node3Data.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, NODE1);
         getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE3, "PUT", node3Data, 201);
         assertNode(NODE3, _node3HaPort, _node1HaPort, NODE1);
         assertRemoteNodes(NODE1, NODE3);
 
-        // try to add not permitted node
-        Map<String, Object> nodeData = createNodeAttributeMap(NODE2, _node2HaPort, _node1HaPort);
-        nodeData.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, NODE1);
-        getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE2, "PUT", nodeData, 409);
-
-        assertRemoteNodes(NODE1, NODE3);
+        // Ensure PINGDB is created
+        // in order to exclude hanging of environment
+        // when environment.close is called whilst PINGDB is created.
+        // On node joining, a record is updated in PINGDB
+        // if lastTransactionId is incremented then node ping task was executed
+        int counter = 0;
+        long newTransactionId = transactionId;
+        while(newTransactionId == transactionId && counter<50)
+        {
+            nodeData = getRestTestHelper().getJsonAsSingletonList(_baseNodeRestUrl + NODE1);
+            newTransactionId =  ((Number)nodeData.get(BDBHAVirtualHostNode.LAST_KNOWN_REPLICATION_TRANSACTION_ID)).longValue();
+            if (newTransactionId != transactionId)
+            {
+                break;
+            }
+            counter++;
+            Thread.sleep(100l);
+        }
 
         //connect intruder node
         String nodeName = NODE2;
-        String nodeHostPort = (String)nodeData.get(BDBHAVirtualHostNode.ADDRESS);
-        File environmentPathFile = new File((String)nodeData.get(BDBHAVirtualHostNode.STORE_PATH), nodeName);
+        String nodeHostPort = "localhost:" + getNextAvailable(_node3HaPort + 1);
+        File environmentPathFile = new File(node1StorePath, nodeName);
         environmentPathFile.mkdirs();
         ReplicationConfig replicationConfig = new ReplicationConfig((String)nodeData.get(BDBHAVirtualHostNode.GROUP_NAME), nodeName, nodeHostPort);
-        replicationConfig.setHelperHosts((String)nodeData.get(BDBHAVirtualHostNode.HELPER_ADDRESS));
+        replicationConfig.setHelperHosts((String)nodeData.get(BDBHAVirtualHostNode.ADDRESS));
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setAllowCreate(true);
         envConfig.setTransactional(true);
