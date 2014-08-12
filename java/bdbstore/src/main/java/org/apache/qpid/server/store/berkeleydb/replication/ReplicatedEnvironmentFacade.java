@@ -289,10 +289,20 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 {
                     try
                     {
+                        if (LOGGER.isDebugEnabled())
+                        {
+                            LOGGER.debug("Closing replicated environment");
+                        }
+
                         closeEnvironment();
                     }
                     finally
                     {
+                        if (LOGGER.isDebugEnabled())
+                        {
+                            LOGGER.debug("Deregistering environment home " + _environmentDirectory);
+                        }
+
                         EnvHomeRegistry.getInstance().deregisterHome(_environmentDirectory);
                     }
                 }

@@ -306,6 +306,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
             }
         }
         waitForAttributeChanged(_baseNodeRestUrl + NODE1, VirtualHostNode.STATE, State.ERRORED.name());
+        waitForAttributeChanged(_baseNodeRestUrl + NODE3, VirtualHostNode.STATE, State.ERRORED.name());
     }
 
     private void createHANode(String nodeName, int nodePort, int helperPort) throws Exception
