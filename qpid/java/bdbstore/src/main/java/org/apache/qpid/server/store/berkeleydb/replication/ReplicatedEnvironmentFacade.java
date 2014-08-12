@@ -823,6 +823,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     private void closeEnvironment()
     {
+        if (LOGGER.isDebugEnabled())
+        {
+            LOGGER.debug("Closing JE environment for " + _prettyGroupNodeName);
+        }
+
         // Clean the log before closing. This makes sure it doesn't contain
         // redundant data. Closing without doing this means the cleaner may not
         // get a chance to finish.
