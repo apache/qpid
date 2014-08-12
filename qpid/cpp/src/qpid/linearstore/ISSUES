@@ -48,9 +48,13 @@ Current/pending:
    -    1088944  [Linearstore] store does not return all files to EFP after purging big queue
    -    1078937  [linearstore] Installation and tests for new store analysis tool qpid-qls-analyze
                    svn r.1596633 2014-05-21: Modified to run from installed location
+#  5948 1121660  [linearstore] Broker restart failure with durable topic using non-durable exchange
+*  -    1066256  [LinearStore] changing efp size after using store broke the new durable nodes creation
+*  -    1089652  [RFE]: Configuration option for linear store to delete the used journal files instead of recycling them.
 
-Fixed/closed (in commit order):
-===============================
+
+Fixed/closed:
+=============
  Q-JIRA RHBZ     Description / Comments
  ------ -------  ----------------------
    5357 1052518  Linearstore: Empty file recycling not functional
@@ -123,6 +127,13 @@ NO-JIRA -        Added missing Apache copyright/license text
                    * jexception 0x0103 wmgr::get_events() threw JERR__AIO: AIO error. (AIO write operation failed: Invalid argument (-22) [pg=0 size=8192 offset=4096 fh=22])
    5767 1098118  [linearstore] broker segfaults when recovering journal file with damaged header
                    svn r.1596509 2014-05-21 Proposed solution (committed by pmoravec)
+                   svn r.1599243 2014-06-02 Further fix
+   5924 1124906  [linearstore] Qpidd Will Not Start with Large Number of Queues
+                   svn r.1614665 2014-07-30 Proposed solution
+   5948 1121660  [AMQP 1.0] Broker restart failure with durable topic using non-durable exchange
+                   svn r.1616287 2014-08-06 Proposed solution checked in by gsim
+                   This turned out to be an AMQP error, fix does not affect store code.
+                   
 
 Ordered checkin list:
 =====================
@@ -159,6 +170,8 @@ no.   svn r  Q-JIRA     RHBZ       Date Alt Committer
 27. 1594215    5750  1078142 2014-05-13
 28. 1596509    5767  1098118 2014-05-21 (pmoravec)
 29. 1596633  NO-JIRA 1078937 2014-05-21
+30. 1599243    5767  1098118 2014-06-02
+31. 1614665    5924  1124906 2014-07-30
 
 See above sections for details on these checkins.
 
