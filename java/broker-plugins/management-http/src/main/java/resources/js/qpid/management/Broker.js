@@ -339,7 +339,7 @@ define(["dojo/_base/xhr",
 
                              var gridProperties = {
                                      height: 400,
-                                     selectionMode: "extended",
+                                     selectionMode: "single",
                                      plugins: {
                                               pagination: {
                                                   pageSizes: [10, 25, 50, 100],
@@ -349,9 +349,13 @@ define(["dojo/_base/xhr",
                                                   gotoButton: true,
                                                   maxPageStep: 4,
                                                   position: "bottom"
-                                              },
-                                              indirectSelection: true
+                                              }
                                      }};
+
+                             function isActiveVH(item)
+                             {
+                                return item && item.virtualhosts &&  item.virtualhosts[0].state=="ACTIVE";
+                             }
 
                              that.vhostsGrid =
                                 new UpdatableStore(that.brokerData.virtualhostnodes, query(".broker-virtualhosts")[0],
@@ -376,17 +380,17 @@ define(["dojo/_base/xhr",
                                                   },
                                                   { name: "Connections", field: "_item", width: "8%",
                                                     formatter: function(item){
-                                                        return item && item.virtualhosts? item.virtualhosts[0].statistics.connectionCount: "N/A";
+                                                        return isActiveVH(item)? item.virtualhosts[0].statistics.connectionCount: "N/A";
                                                     }
                                                   },
                                                   { name: "Queues",    field: "_item", width: "8%",
                                                     formatter: function(item){
-                                                        return item && item.virtualhosts? item.virtualhosts[0].statistics.queueCount: "N/A";
+                                                        return isActiveVH(item)? item.virtualhosts[0].statistics.queueCount: "N/A";
                                                     }
                                                   },
                                                   { name: "Exchanges", field: "_item", width: "8%",
                                                     formatter: function(item){
-                                                        return item && item.virtualhosts? item.virtualhosts[0].statistics.exchangeCount: "N/A";
+                                                        return isActiveVH(item)? item.virtualhosts[0].statistics.exchangeCount: "N/A";
                                                     }
                                                   },
                                                   {
@@ -517,6 +521,8 @@ define(["dojo/_base/xhr",
                                    }
                                  }
                                });
+                             gridProperties.selectionMode = "extended";
+                             gridProperties.plugins.indirectSelection = true;
 
                              that.portsGrid =
                                 new UpdatableStore(that.brokerData.ports, query(".broker-ports")[0],
