@@ -2925,7 +2925,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                         if(existingPolicy != _exclusive)
                         {
                             ExclusivityPolicy newPolicy = _exclusive;
-                            _exclusive = newPolicy;
+                            _exclusive = existingPolicy;
                             updateExclusivityPolicy(newPolicy);
                         }
                         return true;

@@ -2101,7 +2101,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     void deregisterProducer(long producerId)
     {
-        _producers.remove(new Long(producerId));
+        _producers.remove(producerId);
     }
 
     boolean isInRecovery()
@@ -2935,7 +2935,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     private void registerProducer(long producerId, MessageProducer producer)
     {
-        _producers.put(new Long(producerId), producer);
+        _producers.put(producerId, producer);
     }
 
     /**

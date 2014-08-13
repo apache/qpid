@@ -186,6 +186,7 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
         ConfiguredObjectRecordConverter converter = new ConfiguredObjectRecordConverter(BrokerModel.getInstance());
 
         Reader reader;
+
         try
         {
             URL url = new URL(initialConfigurationLocation);
@@ -196,9 +197,18 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
             reader = new FileReader(initialConfigurationLocation);
         }
 
-        Collection<ConfiguredObjectRecord> records = converter.readFromJson(org.apache.qpid.server.model.Broker.class,
-                                                                            systemConfig, reader);
-        return records.toArray(new ConfiguredObjectRecord[records.size()]);
+        try
+        {
+            Collection<ConfiguredObjectRecord> records =
+                    converter.readFromJson(org.apache.qpid.server.model.Broker.class,
+                                           systemConfig, reader);
+            return records.toArray(new ConfiguredObjectRecord[records.size()]);
+        }
+        finally
+        {
+            reader.close();
+        }
+
 
     }
 

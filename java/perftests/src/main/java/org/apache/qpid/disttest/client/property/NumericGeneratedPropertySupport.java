@@ -102,27 +102,27 @@ public abstract class NumericGeneratedPropertySupport extends GeneratedPropertyS
         Number result = null;
         if (targetType == double.class)
         {
-            result = new Double(value);
+            result = value;
         }
         else if (targetType == float.class)
         {
-            result = new Float(value);
+            result = (float) value;
         }
         else if (targetType == int.class)
         {
-            result = new Integer((int) value);
+            result = (int) value;
         }
         else if (targetType == long.class)
         {
-            result = new Long((long) value);
+            result = (long) value;
         }
         else if (targetType == short.class)
         {
-            result = new Short((short) value);
+            result = (short) value;
         }
         else if (targetType == byte.class)
         {
-            result = new Byte((byte) value);
+            result = (byte) value;
         }
         else
         {
