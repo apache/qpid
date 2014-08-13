@@ -24,7 +24,6 @@ import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.*;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.server.logging.EventLogger;
@@ -34,7 +33,6 @@ import org.apache.qpid.server.logging.messages.HighAvailabilityMessages;
 import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.hamcrest.Description;
-import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 
 /**
@@ -360,22 +358,51 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         reset(_eventLogger);
 
         node2 = (BDBHAVirtualHostNodeImpl)_helper.recoverHaVHN(node2.getId(), node2Attributes);
-        _helper.assertNodeRole(node2, "REPLICA");
-
+        _helper.assertNodeRole(node2, "REPLICA", "MASTER");
         waitForNodeDetachedField(remoteNode, false);
 
-        ArgumentCaptor<LogSubject> subjectArgument = ArgumentCaptor.forClass(LogSubject.class);
-        ArgumentCaptor<LogMessage> messageArgument = ArgumentCaptor.forClass(LogMessage.class);
-        verify(_eventLogger, times(2)).message(subjectArgument.capture(), messageArgument.capture());
+        final String expectedMessage = HighAvailabilityMessages.ATTACHED(node2.getName(), groupName, "REPLICA").toString();
+        final String expectedMessage2 = HighAvailabilityMessages.ATTACHED(node2.getName(), groupName, "UNKNOWN").toString();
+        final String expectedMessage3 = HighAvailabilityMessages.ATTACHED(node2.getName(), groupName, "MASTER").toString();
+        ArgumentMatcher<LogMessage> matcher = new ArgumentMatcher<LogMessage>()
+        {
+            private String _messageErrorDescription = null;
+            private String _hierarchyErrorDescription = null;
 
-        assertEquals("Unexpected subject", node1.getVirtualHostNodeLogSubject(), subjectArgument.getValue());
+            @Override
+            public boolean matches(Object argument)
+            {
+                LogMessage logMessage = (LogMessage)argument;
+                String actualMessage = logMessage.toString();
+                boolean expectedMessageMatches = expectedMessage.equals(actualMessage)
+                        || expectedMessage2.equals(actualMessage) || expectedMessage3.equals(actualMessage);
+                if (!expectedMessageMatches)
+                {
+                    _messageErrorDescription = "Actual message does not match any expected: " + actualMessage;
+                }
+                boolean expectedHierarchyMatches = HighAvailabilityMessages.ATTACHED_LOG_HIERARCHY.equals(logMessage.getLogHierarchy());
+                if (!expectedHierarchyMatches)
+                {
+                    _hierarchyErrorDescription = "Actual hierarchy does not match expected: " + logMessage.getLogHierarchy();
+                }
+                return expectedMessageMatches && expectedHierarchyMatches;
+            }
 
-        String expectedMessage = HighAvailabilityMessages.ATTACHED(node2.getName(), groupName, "REPLICA").toString();
-        String expectedMessage2 = HighAvailabilityMessages.ATTACHED(node2.getName(), groupName, "UNKNOWN").toString();
-
-        List<LogMessage> capturedValues = messageArgument.getAllValues();
-        String m = capturedValues.get(0).toString();
-        assertTrue("Unexpected attached message :" + m, m.equals(expectedMessage) || m.equals(expectedMessage2));
+            @Override
+            public void describeTo(Description description)
+            {
+                if (_messageErrorDescription != null)
+                {
+                    description.appendText(_messageErrorDescription);
+                }
+                if (_hierarchyErrorDescription != null)
+                {
+                    description.appendText(_hierarchyErrorDescription);
+                }
+            }
+        };
+        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
+                argThat(matcher));
     }
 
     private void waitForNodeDetachedField(BDBHARemoteReplicationNodeImpl remoteNode, boolean expectedDetached) throws InterruptedException {
