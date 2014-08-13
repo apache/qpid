@@ -46,9 +46,8 @@ public class InternalMessageMetaDataType implements MessageMetaDataType<Internal
     @Override
     public InternalMessageMetaData createMetaData(final ByteBuffer buf)
     {
-        try
+        try(ObjectInputStream is = new ObjectInputStream(new ByteBufferInputStream(buf)))
         {
-            ObjectInputStream is = new ObjectInputStream(new ByteBufferInputStream(buf));
             InternalMessageMetaData metaData = (InternalMessageMetaData) is.readObject();
             return metaData;
         }

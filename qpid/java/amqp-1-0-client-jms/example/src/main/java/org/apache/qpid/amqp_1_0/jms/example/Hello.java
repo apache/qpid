@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.amqp_1_0.jms.example;
 
+import java.io.InputStream;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -51,11 +52,11 @@ public class Hello
 
     private void runExample()
     {
-        try
+        try(InputStream propertiesStream = getClass().getResourceAsStream("hello.properties"))
         {
-            // Read the hello.properties JNDI properties file and use contents to create the InitialContext.
             Properties properties = new Properties();
-            properties.load(getClass().getResourceAsStream("hello.properties"));
+            // Read the hello.properties JNDI properties file and use contents to create the InitialContext.
+            properties.load(propertiesStream);
             Context context = new InitialContext(properties);
             // Alternatively, JNDI information can be supplied by setting the "java.naming.factory.initial"
             // system property to value "org.apache.qpid.amqp_1_0.jms.jndi.PropertiesFileInitialContextFactory"
