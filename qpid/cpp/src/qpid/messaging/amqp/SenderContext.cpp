@@ -45,6 +45,7 @@ SenderContext::SenderContext(pn_session_t* session, const std::string& n, const 
     address(a),
     helper(address),
     sender(pn_sender(session, n.c_str())), capacity(50), unreliable(helper.isUnreliable()),
+    nextId(0),
     setToOnSend(setToOnSend_) {}
 
 SenderContext::~SenderContext()
