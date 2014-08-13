@@ -21,10 +21,18 @@
 
 package org.apache.qpid.example;
 
-import javax.jms.*;
+import java.io.InputStream;
+import java.util.Properties;
+
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import java.util.Properties;
 
 
 public class Hello 
@@ -42,9 +50,10 @@ public class Hello
 
     private void runTest() 
     {
-        try {
+        try (InputStream resourceAsStream = this.getClass().getResourceAsStream("hello.properties"))
+        {
             Properties properties = new Properties();
-            properties.load(this.getClass().getResourceAsStream("hello.properties"));
+            properties.load(resourceAsStream);
             Context context = new InitialContext(properties);
 
             ConnectionFactory connectionFactory = (ConnectionFactory) context.lookup("qpidConnectionfactory");

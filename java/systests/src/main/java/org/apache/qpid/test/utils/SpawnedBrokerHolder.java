@@ -85,67 +85,79 @@ public class SpawnedBrokerHolder implements BrokerHolder
         try
         {
             Process p = Runtime.getRuntime().exec(new String[] {"wmic", "process", "list"});
-            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            String line;
-            String headers = reader.readLine();
-            int processIdOffset = headers.indexOf(" ProcessId") + 1;
-            int parentProcessIdOffset = headers.indexOf(" ParentProcessId") + 1;
-            String parentProcess = null;
-            Map<String,List<String>> parentProcessMap = new HashMap<String, List<String>>();
-
-            while ((line = reader.readLine()) != null)
+            try(BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream())))
             {
-                if(line.length() > processIdOffset)
-                {
-                    String processIdStr = line.substring(processIdOffset);
-                    processIdStr = processIdStr.substring(0, processIdStr.indexOf(' '));
-                    processIdStr = processIdStr.trim();
+                String line;
+                String headers = reader.readLine();
+                int processIdOffset = headers.indexOf(" ProcessId") + 1;
+                int parentProcessIdOffset = headers.indexOf(" ParentProcessId") + 1;
+                String parentProcess = null;
+                Map<String, List<String>> parentProcessMap = new HashMap<String, List<String>>();
 
-                    String parentProcessIdStr = line.substring(parentProcessIdOffset);
-                    parentProcessIdStr = parentProcessIdStr.substring(0, parentProcessIdStr.indexOf(' '));
-                    parentProcessIdStr = parentProcessIdStr.trim();
-                    if(parentProcessIdStr.length() > 0 && (parentProcess == null || parentProcess.equals(parentProcessIdStr)))
-                    {
-                        List<String> children = parentProcessMap.get(parentProcessIdStr);
-                        if(children == null)
-                        {
-                            children = new ArrayList<String>();
-                            parentProcessMap.put(parentProcessIdStr,children);
-                        }
-                        children.add(processIdStr);
-                    }
-                    if(line.substring(0,_brokerCommand.length()+7).toLowerCase().contains(_brokerCommand.toLowerCase()))
-                    {
-                        parentProcess = processIdStr;
-                    }
-
-                }
-                if(parentProcess != null)
+                while ((line = reader.readLine()) != null)
                 {
-                    List<String> children = parentProcessMap.get(parentProcess);
-                    if(children != null)
+                    if (line.length() > processIdOffset)
                     {
-                        for(String child : children)
+                        String processIdStr = line.substring(processIdOffset);
+                        processIdStr = processIdStr.substring(0, processIdStr.indexOf(' '));
+                        processIdStr = processIdStr.trim();
+
+                        String parentProcessIdStr = line.substring(parentProcessIdOffset);
+                        parentProcessIdStr = parentProcessIdStr.substring(0, parentProcessIdStr.indexOf(' '));
+                        parentProcessIdStr = parentProcessIdStr.trim();
+                        if (parentProcessIdStr.length() > 0 && (parentProcess == null || parentProcess.equals(
+                                parentProcessIdStr)))
                         {
-                            p = Runtime.getRuntime().exec(new String[] {"taskkill", "/PID", child, "/T", "/F"});
-                            reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                            while((line = reader.readLine()) != null)
+                            List<String> children = parentProcessMap.get(parentProcessIdStr);
+                            if (children == null)
                             {
+                                children = new ArrayList<String>();
+                                parentProcessMap.put(parentProcessIdStr, children);
+                            }
+                            children.add(processIdStr);
+                        }
+                        if (line.substring(0, _brokerCommand.length() + 7)
+                                .toLowerCase()
+                                .contains(_brokerCommand.toLowerCase()))
+                        {
+                            parentProcess = processIdStr;
+                        }
+
+                    }
+                    if (parentProcess != null)
+                    {
+                        List<String> children = parentProcessMap.get(parentProcess);
+                        if (children != null)
+                        {
+                            for (String child : children)
+                            {
+                                p = Runtime.getRuntime().exec(new String[]{"taskkill", "/PID", child, "/T", "/F"});
+                                consumeAllOutput(p);
                             }
                         }
+                        p = Runtime.getRuntime().exec(new String[]{"taskkill", "/PID", parentProcess, "/T", "/F"});
+                        consumeAllOutput(p);
                     }
-                    p = Runtime.getRuntime().exec(new String[] {"taskkill", "/PID", parentProcess, "/T", "/F"});
-                    reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                    while((line = reader.readLine()) != null)
-                    {
-                    }
-                }
 
+                }
             }
         }
         catch (IOException e)
         {
             LOGGER.error("Error whilst killing process " + _brokerCommand, e);
+        }
+    }
+
+    private static void consumeAllOutput(Process p) throws IOException
+    {
+        try(InputStreamReader inputStreamReader = new InputStreamReader(p.getInputStream()))
+        {
+            try (BufferedReader reader = new BufferedReader(inputStreamReader))
+            {
+                while (reader.readLine() != null)
+                {
+                }
+            }
         }
     }
 

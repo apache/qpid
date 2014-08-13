@@ -59,23 +59,25 @@ public class DefinedFileServlet extends HttpServlet
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
-        final OutputStream output = HttpManagementUtil.getOutputStream(request, response);
-        InputStream fileInput = getClass().getResourceAsStream("/resources/"+_filename);
-
-        if(fileInput != null)
+        try (OutputStream output = HttpManagementUtil.getOutputStream(request, response))
         {
-            byte[] buffer = new byte[1024];
-            response.setStatus(HttpServletResponse.SC_OK);
-            int read = 0;
+            InputStream fileInput = getClass().getResourceAsStream("/resources/" + _filename);
 
-            while((read = fileInput.read(buffer)) > 0)
+            if (fileInput != null)
             {
-                output.write(buffer, 0, read);
+                byte[] buffer = new byte[1024];
+                response.setStatus(HttpServletResponse.SC_OK);
+                int read = 0;
+
+                while ((read = fileInput.read(buffer)) > 0)
+                {
+                    output.write(buffer, 0, read);
+                }
             }
-        }
-        else
-        {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "unknown file: "+ _filename);
+            else
+            {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND, "unknown file: " + _filename);
+            }
         }
     }
 }
