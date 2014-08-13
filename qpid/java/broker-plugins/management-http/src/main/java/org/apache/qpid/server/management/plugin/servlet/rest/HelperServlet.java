@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Enumeration;
@@ -31,14 +30,15 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
+
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListAccessControlProviderAttributes;
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListAuthenticationProviderAttributes;
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListBrokerAttribute;
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListGroupProviderAttributes;
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListTimeZones;
 import org.apache.qpid.server.model.Broker;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
 
 public class HelperServlet extends AbstractServlet
 {
@@ -122,7 +122,7 @@ public class HelperServlet extends AbstractServlet
             return;
         }
         response.setContentType("application/json");
-        final Writer writer = new BufferedWriter(response.getWriter());
+        final Writer writer = getOutputWriter(request, response);
         _mapper.writeValue(writer, output);
 
         response.setStatus(HttpServletResponse.SC_OK);

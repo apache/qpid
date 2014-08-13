@@ -18,13 +18,15 @@ package org.apache.qpid.server.management.plugin.servlet;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.qpid.server.management.plugin.HttpManagementUtil;
 
 public class DefinedFileServlet extends HttpServlet
 {
@@ -57,7 +59,7 @@ public class DefinedFileServlet extends HttpServlet
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
-        final ServletOutputStream output = response.getOutputStream();
+        final OutputStream output = HttpManagementUtil.getOutputStream(request, response);
         InputStream fileInput = getClass().getResourceAsStream("/resources/"+_filename);
 
         if(fileInput != null)

@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.PreferencesProvider;
@@ -53,15 +54,15 @@ public class UserPreferencesServlet extends AbstractServlet
         String[] pathElements = getPathInfoElements(request);
         if (pathElements != null && pathElements.length > 1)
         {
-            getUserPreferences(pathElements[0], pathElements[1], response);
+            getUserPreferences(pathElements[0], pathElements[1], request, response);
         }
         else
         {
-            getUserList(pathElements, response);
+            getUserList(pathElements, request, response);
         }
     }
 
-    private void getUserPreferences(String authenticationProviderName, String userId, HttpServletResponse response)
+    private void getUserPreferences(String authenticationProviderName, String userId, HttpServletRequest request, HttpServletResponse response)
             throws IOException
     {
         try
@@ -83,10 +84,10 @@ public class UserPreferencesServlet extends AbstractServlet
         }
         preferences =  preferencesProvider.getPreferences(userId);
 
-        sendJsonResponse(preferences, response);
+        sendJsonResponse(preferences, request, response);
     }
 
-    private void getUserList(String[] pathElements, HttpServletResponse response) throws IOException
+    private void getUserList(String[] pathElements, HttpServletRequest request, HttpServletResponse response) throws IOException
     {
         List<Map<String, Object>> users = null;
         try
@@ -98,7 +99,7 @@ public class UserPreferencesServlet extends AbstractServlet
             LOGGER.debug("Bad preferences request", e);
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
-        sendJsonResponse(users, response);
+        sendJsonResponse(users, request, response);
     }
 
     private PreferencesProvider getPreferencesProvider(String authenticationProviderName)

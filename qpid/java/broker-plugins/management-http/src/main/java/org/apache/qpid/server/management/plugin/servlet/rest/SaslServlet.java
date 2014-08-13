@@ -21,7 +21,7 @@
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.Writer;
 import java.net.SocketAddress;
 import java.security.Principal;
 import java.security.SecureRandom;
@@ -100,7 +100,7 @@ public class SaslServlet extends AbstractServlet
 
         outputObject.put("mechanisms", (Object) mechanisms);
 
-        final PrintWriter writer = response.getWriter();
+        final Writer writer = getOutputWriter(request, response);
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
@@ -268,7 +268,7 @@ public class SaslServlet extends AbstractServlet
                 Map<String, Object> outputObject = new LinkedHashMap<String, Object>();
                 outputObject.put("challenge", new String(Base64.encodeBase64(challenge)));
 
-                final PrintWriter writer = response.getWriter();
+                final Writer writer = getOutputWriter(request, response);
 
                 ObjectMapper mapper = new ObjectMapper();
                 mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
@@ -290,7 +290,7 @@ public class SaslServlet extends AbstractServlet
             outputObject.put("id", id);
             outputObject.put("challenge", new String(Base64.encodeBase64(challenge)));
 
-            final PrintWriter writer = response.getWriter();
+            final Writer writer = getOutputWriter(request, response);
 
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
