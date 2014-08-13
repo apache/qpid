@@ -17,7 +17,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.replication;
 
 import java.io.File;
 
@@ -30,14 +30,14 @@ import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-public class HAClusterTwoNodeTest extends QpidBrokerTestCase
+public class TwoNodeTest extends QpidBrokerTestCase
 {
     private static final String VIRTUAL_HOST = "test";
 
     private static final String MANAGED_OBJECT_QUERY = "org.apache.qpid:type=BDBHAMessageStore,name=" + ObjectName.quote(VIRTUAL_HOST);
     private static final int NUMBER_OF_NODES = 2;
 
-    private final HATestClusterCreator _clusterCreator = new HATestClusterCreator(this, VIRTUAL_HOST, NUMBER_OF_NODES);
+    private final GroupCreator _groupCreator = new GroupCreator(this, VIRTUAL_HOST, NUMBER_OF_NODES);
     private final JMXTestUtils _jmxUtils = new JMXTestUtils(this);
 
     private ConnectionURL _brokerFailoverUrl;
@@ -75,21 +75,21 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
     private void startCluster(boolean designedPrimary) throws Exception
     {
         setSystemProperty("java.util.logging.config.file", "etc" + File.separator + "log.properties");
-        _clusterCreator.configureClusterNodes();
-        _clusterCreator.setDesignatedPrimaryOnFirstBroker(designedPrimary);
-        _brokerFailoverUrl = _clusterCreator.getConnectionUrlForAllClusterNodes();
-        _clusterCreator.startCluster();
+        _groupCreator.configureClusterNodes();
+        _groupCreator.setDesignatedPrimaryOnFirstBroker(designedPrimary);
+        _brokerFailoverUrl = _groupCreator.getConnectionUrlForAllClusterNodes();
+        _groupCreator.startCluster();
     }
 
     public void testMasterDesignatedPrimaryCanBeRestartedWithoutReplica() throws Exception
     {
         startCluster(true);
         final Connection initialConnection = getConnection(_brokerFailoverUrl);
-        int masterPort = _clusterCreator.getBrokerPortNumberFromConnection(initialConnection);
+        int masterPort = _groupCreator.getBrokerPortNumberFromConnection(initialConnection);
         assertProducingConsuming(initialConnection);
         initialConnection.close();
-        _clusterCreator.stopCluster();
-        _clusterCreator.startNode(masterPort);
+        _groupCreator.stopCluster();
+        _groupCreator.startNode(masterPort);
         final Connection secondConnection = getConnection(_brokerFailoverUrl);
         assertProducingConsuming(secondConnection);
         secondConnection.close();
@@ -101,8 +101,8 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
         final Connection initialConnection = getConnection(_brokerFailoverUrl);
         assertProducingConsuming(initialConnection);
         initialConnection.close();
-        _clusterCreator.stopCluster();
-        _clusterCreator.startClusterParallel();
+        _groupCreator.stopCluster();
+        _groupCreator.startClusterParallel();
         final Connection secondConnection = getConnection(_brokerFailoverUrl);
         assertProducingConsuming(secondConnection);
         secondConnection.close();
@@ -111,7 +111,7 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
     public void testDesignatedPrimaryContinuesAfterSecondaryStopped() throws Exception
     {
         startCluster(true);
-        _clusterCreator.stopNode(_clusterCreator.getBrokerPortNumberOfSecondaryNode());
+        _groupCreator.stopNode(_groupCreator.getBrokerPortNumberOfSecondaryNode());
         final Connection connection = getConnection(_brokerFailoverUrl);
         assertNotNull("Expected to get a valid connection to primary", connection);
         assertProducingConsuming(connection);
@@ -120,7 +120,7 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
     public void testPersistentOperationsFailOnNonDesignatedPrimaryAfterSecondaryStopped() throws Exception
     {
         startCluster(false);
-        _clusterCreator.stopNode(_clusterCreator.getBrokerPortNumberOfSecondaryNode());
+        _groupCreator.stopNode(_groupCreator.getBrokerPortNumberOfSecondaryNode());
 
         try
         {
@@ -139,7 +139,7 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
     public void testSecondaryDoesNotBecomePrimaryWhenDesignatedPrimaryStopped() throws Exception
     {
         startCluster(true);
-        _clusterCreator.stopNode(_clusterCreator.getBrokerPortNumberOfPrimary());
+        _groupCreator.stopNode(_groupCreator.getBrokerPortNumberOfPrimary());
 
         try
         {
@@ -155,18 +155,18 @@ public class HAClusterTwoNodeTest extends QpidBrokerTestCase
     public void testInitialDesignatedPrimaryStateOfNodes() throws Exception
     {
         startCluster(true);
-        final ManagedBDBHAMessageStore primaryStoreBean = getStoreBeanForNodeAtBrokerPort(_clusterCreator.getBrokerPortNumberOfPrimary());
+        final ManagedBDBHAMessageStore primaryStoreBean = getStoreBeanForNodeAtBrokerPort(_groupCreator.getBrokerPortNumberOfPrimary());
         assertTrue("Expected primary node to be set as designated primary", primaryStoreBean.getDesignatedPrimary());
 
-        final ManagedBDBHAMessageStore secondaryStoreBean = getStoreBeanForNodeAtBrokerPort(_clusterCreator.getBrokerPortNumberOfSecondaryNode());
+        final ManagedBDBHAMessageStore secondaryStoreBean = getStoreBeanForNodeAtBrokerPort(_groupCreator.getBrokerPortNumberOfSecondaryNode());
         assertFalse("Expected secondary node to NOT be set as designated primary", secondaryStoreBean.getDesignatedPrimary());
     }
 
     public void testSecondaryDesignatedAsPrimaryAfterOriginalPrimaryStopped() throws Exception
     {
         startCluster(true);
-        final ManagedBDBHAMessageStore storeBean = getStoreBeanForNodeAtBrokerPort(_clusterCreator.getBrokerPortNumberOfSecondaryNode());
-        _clusterCreator.stopNode(_clusterCreator.getBrokerPortNumberOfPrimary());
+        final ManagedBDBHAMessageStore storeBean = getStoreBeanForNodeAtBrokerPort(_groupCreator.getBrokerPortNumberOfSecondaryNode());
+        _groupCreator.stopNode(_groupCreator.getBrokerPortNumberOfPrimary());
 
         assertFalse("Expected node to NOT be set as designated primary", storeBean.getDesignatedPrimary());
         storeBean.setDesignatedPrimary(true);
