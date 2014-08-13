@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.management.common.sasl;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
@@ -28,8 +31,6 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 public class PlainSaslClient implements SaslClient
 {
@@ -170,9 +171,10 @@ public class PlainSaslClient implements SaslClient
         clearPassword();
     }
 
-    protected void finalize()
+    protected void finalize() throws Throwable
     {
         clearPassword();
+        super.finalize();
     }
 
     private Object[] getUserInfo() throws SaslException

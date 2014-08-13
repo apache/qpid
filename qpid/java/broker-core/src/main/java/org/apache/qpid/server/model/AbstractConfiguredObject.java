@@ -318,7 +318,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 checkCandidate((Class<? extends ConfiguredObject>) interfaceClass, candidates);
             }
         }
-        if(clazz.getSuperclass() != null & ConfiguredObject.class.isAssignableFrom(clazz.getSuperclass()))
+        if(clazz.getSuperclass() != null && ConfiguredObject.class.isAssignableFrom(clazz.getSuperclass()))
         {
             findBestFitInterface((Class<? extends ConfiguredObject>) clazz.getSuperclass(), candidates);
         }
