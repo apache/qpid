@@ -17,7 +17,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.replication;
 
 import static com.sleepycat.je.rep.ReplicatedEnvironment.State.DETACHED;
 import static com.sleepycat.je.rep.ReplicatedEnvironment.State.MASTER;
@@ -52,11 +52,11 @@ import org.junit.Assert;
 /**
  * System test verifying the ability to control a cluster via the Management API.
  *
- * @see HAClusterBlackboxTest
+ * @see MultiNodeTest
  */
-public class HAClusterManagementTest extends QpidBrokerTestCase
+public class JMXManagementTest extends QpidBrokerTestCase
 {
-    protected static final Logger LOGGER = Logger.getLogger(HAClusterManagementTest.class);
+    protected static final Logger LOGGER = Logger.getLogger(JMXManagementTest.class);
 
     private static final Set<String> NON_MASTER_STATES = new HashSet<String>(Arrays.asList(REPLICA.toString(), DETACHED.toString(), UNKNOWN.toString()));;
     private static final String VIRTUAL_HOST = "test";
@@ -64,7 +64,7 @@ public class HAClusterManagementTest extends QpidBrokerTestCase
     private static final String MANAGED_OBJECT_QUERY = "org.apache.qpid:type=BDBHAMessageStore,name=" + ObjectName.quote(VIRTUAL_HOST);
     private static final int NUMBER_OF_NODES = 4;
 
-    private final HATestClusterCreator _clusterCreator = new HATestClusterCreator(this, VIRTUAL_HOST, NUMBER_OF_NODES);
+    private final GroupCreator _clusterCreator = new GroupCreator(this, VIRTUAL_HOST, NUMBER_OF_NODES);
     private final JMXTestUtils _jmxUtils = new JMXTestUtils(this);
 
     private ConnectionURL _brokerFailoverUrl;

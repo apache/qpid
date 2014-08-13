@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.replication;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +39,6 @@ import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
@@ -330,7 +329,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         nodeData.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, NODE1);
         Map<String,String> context = new HashMap<>();
         nodeData.put(BDBHAVirtualHostNode.CONTEXT, context);
-        String bluePrint = HATestClusterCreator.getBlueprint("localhost", _node1HaPort, _node2HaPort, _node3HaPort);
+        String bluePrint = GroupCreator.getBlueprint("localhost", _node1HaPort, _node2HaPort, _node3HaPort);
         context.put(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, bluePrint);
         return nodeData;
     }

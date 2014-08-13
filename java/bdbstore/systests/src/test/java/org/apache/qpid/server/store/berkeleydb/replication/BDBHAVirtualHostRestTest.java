@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.replication;
 
 import static org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost.LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY;
 import static org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost.REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY;
@@ -34,7 +34,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.systest.rest.Asserts;
@@ -60,7 +59,7 @@ public class BDBHAVirtualHostRestTest extends QpidRestTestCase
         _storeBaseDir = new File(TMP_FOLDER, "store-" + _hostName + "-" + System.currentTimeMillis());
         _nodeHaPort = getNextAvailable(getRestTestHelper().getHttpPort() + 1);
         _virtualhostUrl = "virtualhost/" + _nodeName + "/" + _hostName;
-        _bluePrint = HATestClusterCreator.getBlueprint("localhost", _nodeHaPort);
+        _bluePrint = GroupCreator.getBlueprint("localhost", _nodeHaPort);
 
         super.setUp();
     }

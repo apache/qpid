@@ -17,7 +17,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.berkeleydb;
+package org.apache.qpid.server.store.berkeleydb.replication;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,6 +46,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.server.management.plugin.HttpManagement;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
@@ -67,9 +68,9 @@ import org.junit.Assert;
 
 import com.sleepycat.je.rep.ReplicationConfig;
 
-public class HATestClusterCreator
+public class GroupCreator
 {
-    protected static final Logger LOGGER = Logger.getLogger(HATestClusterCreator.class);
+    protected static final Logger LOGGER = Logger.getLogger(GroupCreator.class);
 
     private static final String MANY_BROKER_URL_FORMAT = "amqp://guest:guest@/%s?brokerlist='%s'&failover='roundrobin?cyclecount='%d''";
     private static final String BROKER_PORTION_FORMAT = "tcp://localhost:%d?connectdelay='%d',retries='%d'";
@@ -94,7 +95,7 @@ public class HATestClusterCreator
     private int _bdbHelperPort;
     private int _primaryBrokerPort;
 
-    public HATestClusterCreator(QpidBrokerTestCase testcase, String virtualHostName, int numberOfNodes)
+    public GroupCreator(QpidBrokerTestCase testcase, String virtualHostName, int numberOfNodes)
     {
         _testcase = testcase;
         _virtualHostName = virtualHostName;
@@ -291,7 +292,12 @@ public class HATestClusterCreator
         return new HashSet<Integer>(_brokerPortToBdbPortMap.values());
     }
 
-    public AMQConnectionURL getConnectionUrlForAllClusterNodes() throws Exception
+    public ConnectionURL getConnectionUrlForAllClusterNodes() throws Exception
+    {
+        return  getConnectionUrlForAllClusterNodes(FAILOVER_CONNECTDELAY, FAILOVER_RETRIES, FAILOVER_CYCLECOUNT);
+    }
+
+    public ConnectionURL getConnectionUrlForAllClusterNodes(int connectDelay, int retries, final int cyclecount) throws Exception
     {
         final StringBuilder brokerList = new StringBuilder();
 
@@ -299,14 +305,14 @@ public class HATestClusterCreator
         {
             int brokerPortNumber = itr.next();
 
-            brokerList.append(String.format(BROKER_PORTION_FORMAT, brokerPortNumber, FAILOVER_CONNECTDELAY, FAILOVER_RETRIES));
+            brokerList.append(String.format(BROKER_PORTION_FORMAT, brokerPortNumber, connectDelay, retries));
             if (itr.hasNext())
             {
                 brokerList.append(";");
             }
         }
 
-        return new AMQConnectionURL(String.format(MANY_BROKER_URL_FORMAT, _virtualHostName, brokerList, FAILOVER_CYCLECOUNT));
+        return new AMQConnectionURL(String.format(MANY_BROKER_URL_FORMAT, _virtualHostName, brokerList, cyclecount));
     }
 
     public AMQConnectionURL getConnectionUrlForSingleNodeWithoutRetry(final int brokerPortNumber) throws URLSyntaxException
@@ -434,7 +440,7 @@ public class HATestClusterCreator
         int status = restHelper.submitRequest(url, "PUT", attributeMap);
         if (status != 200)
         {
-            throw new Exception("Unexpected http status when updating " + getNodeNameForBrokerPort(remoteNodePort) + " attribute's : " + status);
+            throw new Exception("Unexpected http status when updating " + getNodeNameForBrokerPort(remoteNodePort) + " attribute(s) : " + status);
         }
     }
 

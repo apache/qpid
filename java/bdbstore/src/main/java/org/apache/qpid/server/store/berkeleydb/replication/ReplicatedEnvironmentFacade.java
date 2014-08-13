@@ -95,7 +95,7 @@ import org.apache.qpid.server.util.DaemonThreadFactory;
 public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChangeListener
 {
     public static final String MASTER_TRANSFER_TIMEOUT_PROPERTY_NAME = "qpid.bdb.ha.master_transfer_interval";
-    public static final String DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME = "qpid.bdb.ha.db_ping_socket_timeout";
+    public static final String DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME = "qpid.bdb.replication.db_ping_socket_timeout";
     public static final String REMOTE_NODE_MONITOR_INTERVAL_PROPERTY_NAME = "qpid.bdb.ha.remote_node_monitor_interval";
 
     private static final Logger LOGGER = Logger.getLogger(ReplicatedEnvironmentFacade.class);
