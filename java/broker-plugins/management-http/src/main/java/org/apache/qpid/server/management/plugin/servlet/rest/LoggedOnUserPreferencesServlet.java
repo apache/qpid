@@ -33,11 +33,12 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.codehaus.jackson.map.ObjectMapper;
+
 import org.apache.qpid.server.management.plugin.HttpManagementUtil;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
-import org.codehaus.jackson.map.ObjectMapper;
 
 public class LoggedOnUserPreferencesServlet extends AbstractServlet
 {
@@ -59,7 +60,7 @@ public class LoggedOnUserPreferencesServlet extends AbstractServlet
         {
             preferences = Collections.<String, Object>emptyMap();
         }
-        sendJsonResponse(preferences, response);
+        sendJsonResponse(preferences, request, response);
     }
 
     /*
@@ -88,7 +89,7 @@ public class LoggedOnUserPreferencesServlet extends AbstractServlet
         {
             preferences = Collections.<String, Object>emptyMap();
         }
-        sendJsonResponse(preferences, response);
+        sendJsonResponse(preferences, request, response);
     }
 
     /*
@@ -115,7 +116,7 @@ public class LoggedOnUserPreferencesServlet extends AbstractServlet
         {
             preferences = Collections.<String, Object>emptyMap();
         }
-        sendJsonResponse(preferences, response);
+        sendJsonResponse(preferences, request, response);
     }
 
     private String getAuthenticatedUserName(HttpServletRequest request)

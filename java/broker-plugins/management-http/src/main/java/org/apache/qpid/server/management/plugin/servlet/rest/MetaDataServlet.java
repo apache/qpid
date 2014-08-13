@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collection;
@@ -69,7 +68,7 @@ public class MetaDataServlet extends AbstractServlet
             classToDataMap.put(clazz.getSimpleName(), processCategory(clazz));
         }
 
-        final Writer writer = new BufferedWriter(response.getWriter());
+        final Writer writer = getOutputWriter(request, response);
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         mapper.writeValue(writer, classToDataMap);

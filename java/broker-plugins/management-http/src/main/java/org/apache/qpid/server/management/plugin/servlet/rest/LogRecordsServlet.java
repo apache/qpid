@@ -17,17 +17,20 @@
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.qpid.server.logging.LogRecorder;
+
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+
+import org.apache.qpid.server.logging.LogRecorder;
 
 public class LogRecordsServlet extends AbstractServlet
 {
@@ -77,7 +80,7 @@ public class LogRecordsServlet extends AbstractServlet
             }
         }
 
-        final PrintWriter writer = response.getWriter();
+        final Writer writer = getOutputWriter(request,response);
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         mapper.writeValue(writer, logRecords);
