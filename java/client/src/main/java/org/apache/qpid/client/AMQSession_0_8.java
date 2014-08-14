@@ -26,6 +26,14 @@ import static org.apache.qpid.configuration.ClientProperties.DEFAULT_FLOW_CONTRO
 import static org.apache.qpid.configuration.ClientProperties.QPID_FLOW_CONTROL_WAIT_FAILURE;
 import static org.apache.qpid.configuration.ClientProperties.QPID_FLOW_CONTROL_WAIT_NOTIFY_PERIOD;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import javax.jms.Destination;
+import javax.jms.JMSException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,13 +59,6 @@ import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.transport.TransportException;
-
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMessageProducer_0_8>
 {
@@ -736,14 +737,9 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                                               boolean isConsumer,
                                               boolean noLocal) throws AMQException
     {
-        throwUnsupportedAddressingSyntax();
+        throw new UnsupportedAddressSyntaxException(dest);
     }
 
-    void throwUnsupportedAddressingSyntax()
-    {
-        throw new UnsupportedOperationException("The new addressing based syntax is "
-                + "not supported for AMQP 0-8/0-9/0-9-1 versions");
-    }
 
     protected void flushAcknowledgments()
     {
