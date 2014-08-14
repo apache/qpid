@@ -175,7 +175,7 @@ bool IncomingMessages::getNextDestination(std::string& destination, qpid::sys::D
 {
     sys::Mutex::ScopedLock l(lock);
     AbsTime deadline(AbsTime::now(), timeout);
-    while (received.empty() && AbsTime::now() < deadline) {
+    while (received.empty()) {
         if (inUse) {
             //someone is already waiting on the sessions incoming queue
             lock.wait(deadline);
@@ -186,6 +186,7 @@ bool IncomingMessages::getNextDestination(std::string& destination, qpid::sys::D
             //wait for an incoming message
             wait(timeout == qpid::sys::TIME_INFINITE ? qpid::sys::TIME_INFINITE : qpid::sys::Duration(AbsTime::now(), deadline));
         }
+        if (!(AbsTime::now() < deadline)) break;
     }
     if (!received.empty()) {
         destination = received.front()->as<MessageTransferBody>()->getDestination();
