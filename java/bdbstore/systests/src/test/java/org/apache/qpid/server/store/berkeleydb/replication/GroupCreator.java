@@ -75,9 +75,9 @@ public class GroupCreator
     private static final String MANY_BROKER_URL_FORMAT = "amqp://guest:guest@/%s?brokerlist='%s'&failover='roundrobin?cyclecount='%d''";
     private static final String BROKER_PORTION_FORMAT = "tcp://localhost:%d?connectdelay='%d',retries='%d'";
 
-    private static final int FAILOVER_CYCLECOUNT = 10;
-    private static final int FAILOVER_RETRIES = 1;
-    private static final int FAILOVER_CONNECTDELAY = 1000;
+    private static final int FAILOVER_CYCLECOUNT = 20;
+    private static final int FAILOVER_RETRIES = 0;
+    private static final int FAILOVER_CONNECTDELAY = 500;
 
     private static final String SINGLE_BROKER_URL_WITH_RETRY_FORMAT = "amqp://guest:guest@/%s?brokerlist='tcp://localhost:%d?connectdelay='%d',retries='%d''";
     private static final String SINGLE_BROKER_URL_WITHOUT_RETRY_FORMAT = "amqp://guest:guest@/%s?brokerlist='tcp://localhost:%d'";
