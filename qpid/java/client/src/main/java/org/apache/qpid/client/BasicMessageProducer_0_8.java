@@ -57,6 +57,12 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
 
     void declareDestination(AMQDestination destination)
     {
+
+        if (destination.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
+        {
+            getSession().throwUnsupportedAddressingSyntax();
+        }
+
         if(getSession().isDeclareExchanges())
         {
             final MethodRegistry methodRegistry = getSession().getMethodRegistry();

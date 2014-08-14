@@ -736,8 +736,13 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                                               boolean isConsumer,
                                               boolean noLocal) throws AMQException
     {
+        throwUnsupportedAddressingSyntax();
+    }
+
+    void throwUnsupportedAddressingSyntax()
+    {
         throw new UnsupportedOperationException("The new addressing based syntax is "
-                + "not supported for AMQP 0-8/0-9 versions");
+                + "not supported for AMQP 0-8/0-9/0-9-1 versions");
     }
 
     protected void flushAcknowledgments()
