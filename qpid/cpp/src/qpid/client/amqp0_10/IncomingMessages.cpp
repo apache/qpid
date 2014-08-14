@@ -186,6 +186,7 @@ bool IncomingMessages::getNextDestination(std::string& destination, qpid::sys::D
             //wait for an incoming message
             wait(timeout == qpid::sys::TIME_INFINITE ? qpid::sys::TIME_INFINITE : qpid::sys::Duration(AbsTime::now(), deadline));
         }
+        if (!(AbsTime::now() < deadline)) break;
     }
     if (!received.empty()) {
         destination = received.front()->as<MessageTransferBody>()->getDestination();

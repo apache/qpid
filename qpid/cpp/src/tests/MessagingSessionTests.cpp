@@ -1465,11 +1465,26 @@ QPID_AUTO_TEST_CASE(testImmediateNextReceiver)
             if (running > 5*qpid::sys::TIME_SEC) {
                 throw qpid::types::Exception("Timed out spinning on nextReceiver(IMMEDIATE)");
             }
+            qpid::sys::usleep(1); // for valgrind
         }
         Message in;
         BOOST_CHECK(next.fetch(in, qpid::messaging::Duration::IMMEDIATE));
         BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
         next.close();
+    } catch (const std::exception& e) {
+        BOOST_FAIL(e.what());
+    }
+}
+
+QPID_AUTO_TEST_CASE(testImmediateNextReceiverNoMessage)
+{
+    QueueFixture fix;
+    Receiver r = fix.session.createReceiver(fix.queue);
+    r.setCapacity(1);
+    Receiver next;
+    try {
+        BOOST_CHECK(!fix.session.nextReceiver(next, qpid::messaging::Duration::IMMEDIATE));
+        r.close();
     } catch (const std::exception& e) {
         BOOST_FAIL(e.what());
     }
