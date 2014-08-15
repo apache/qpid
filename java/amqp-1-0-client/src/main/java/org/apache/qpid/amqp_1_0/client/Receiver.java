@@ -194,9 +194,14 @@ public class Receiver implements DeliveryStateHandler
             }
             catch (InterruptedException e)
             {
-                throw new ConnectionErrorException(AmqpError.INTERNAL_ERROR,"Interrupted whil waiting for detach following failed attach");
+                throw new ConnectionErrorException(AmqpError.INTERNAL_ERROR,"Interrupted while waiting for detach following failed attach");
             }
-            throw new ConnectionErrorException(getError());
+            throw new ConnectionErrorException(getError().getCondition(),
+                                               getError().getDescription() == null
+                                                       ? "AMQP error: '" + getError().getCondition().toString()
+                                                         + "' when attempting to create a receiver"
+                                                         + (source != null ? " from: '" + source.getAddress() +"'" : "")
+                                                       : getError().getDescription());
         }
         else
         {
