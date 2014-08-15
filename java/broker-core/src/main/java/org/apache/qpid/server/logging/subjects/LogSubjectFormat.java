@@ -116,5 +116,4 @@ public class LogSubjectFormat
      */
     public static final String QUEUE_FORMAT = "vh(/{0})/qu({1})";
 
-    public static final String VIRTUAL_HOST_NODE_FORMAT = "vhn(/{0}))";
 }

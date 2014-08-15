@@ -78,65 +78,16 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         _helper.assertNodeRole(node1, "MASTER");
 
-        String expectedMessage = HighAvailabilityMessages.ADDED(node1.getName(), node1.getGroupName()).toString();
-        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
-                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.ADDED_LOG_HIERARCHY)));
+        assertEquals("Unexpected VHN log subject", "[grp(/group)/vhn(/node1)] ", node1.getVirtualHostNodeLogSubject().getLogString());
+        assertEquals("Unexpected group log subject", "[grp(/group)] ", node1.getGroupLogSubject().getLogString());
 
-        expectedMessage = HighAvailabilityMessages.ATTACHED(node1.getName(), node1.getGroupName(), "UNKNOWN").toString();
+        String expectedMessage = HighAvailabilityMessages.CREATED().toString();
         verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
-                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.ATTACHED_LOG_HIERARCHY)));
+                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.CREATED_LOG_HIERARCHY)));
 
-
-        expectedMessage = HighAvailabilityMessages.STARTED(node1.getName(), node1.getGroupName()).toString();
-        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
-                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.STARTED_LOG_HIERARCHY)));
-
-        expectedMessage = HighAvailabilityMessages.ROLE_CHANGED(node1.getName(), node1.getGroupName(), "UNKNOWN", "MASTER").toString();
-        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
+        expectedMessage = HighAvailabilityMessages.ROLE_CHANGED(node1.getName(), node1.getAddress(), "UNKNOWN", "MASTER").toString();
+        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getGroupLogSubject())),
                 argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.ROLE_CHANGED_LOG_HIERARCHY)));
-    }
-
-    public void testStop() throws Exception
-    {
-        int node1PortNumber = findFreePort();
-        String helperAddress = "localhost:" + node1PortNumber;
-        String groupName = "group";
-        String nodeName = "node1";
-
-        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
-        BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
-        _helper.assertNodeRole(node1, "MASTER");
-        reset(_eventLogger);
-
-        node1.stop();
-
-        String expectedMessage = HighAvailabilityMessages.DETACHED(node1.getName(), node1.getGroupName()).toString();
-        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
-                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.DETACHED_LOG_HIERARCHY)));
-
-        expectedMessage = HighAvailabilityMessages.STOPPED(node1.getName(), node1.getGroupName()).toString();
-        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
-                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.STOPPED_LOG_HIERARCHY)));
-    }
-
-    public void testClose() throws Exception
-    {
-        int node1PortNumber = findFreePort();
-        String helperAddress = "localhost:" + node1PortNumber;
-        String groupName = "group";
-        String nodeName = "node1";
-
-        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
-        BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
-        _helper.assertNodeRole(node1, "MASTER");
-
-        reset(_eventLogger);
-
-        node1.close();
-
-        String expectedMessage = HighAvailabilityMessages.DETACHED(node1.getName(), node1.getGroupName()).toString();
-        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
-                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.DETACHED_LOG_HIERARCHY)));
     }
 
     public void testDelete() throws Exception
@@ -154,13 +105,10 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         node1.delete();
 
-        String expectedMessage = HighAvailabilityMessages.DETACHED(node1.getName(), node1.getGroupName()).toString();
-        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
-                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.DETACHED_LOG_HIERARCHY)));
-
-        expectedMessage = HighAvailabilityMessages.DELETED(node1.getName(), node1.getGroupName()).toString();
+        String expectedMessage = HighAvailabilityMessages.DELETED().toString();
         verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
                 argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.DELETED_LOG_HIERARCHY)));
+
     }
 
     public void testSetPriority() throws Exception
@@ -181,7 +129,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         // make sure that task executor thread finishes all scheduled tasks
         node1.stop();
 
-        String expectedMessage = HighAvailabilityMessages.PRIORITY_CHANGED(node1.getName(), node1.getGroupName(), "10").toString();
+        String expectedMessage = HighAvailabilityMessages.PRIORITY_CHANGED("10").toString();
         verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
                 argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.PRIORITY_CHANGED_LOG_HIERARCHY)));
     }
@@ -204,7 +152,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         // make sure that task executor thread finishes all scheduled tasks
         node1.stop();
 
-        String expectedMessage = HighAvailabilityMessages.QUORUM_OVERRIDE_CHANGED(node1.getName(), node1.getGroupName(), "1").toString();
+        String expectedMessage = HighAvailabilityMessages.QUORUM_OVERRIDE_CHANGED("1").toString();
         verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
                 argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.QUORUM_OVERRIDE_CHANGED_LOG_HIERARCHY)));
     }
@@ -227,7 +175,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         // make sure that task executor thread finishes all scheduled tasks
         node1.stop();
 
-        String expectedMessage = HighAvailabilityMessages.DESIGNATED_PRIMARY_CHANGED(node1.getName(), node1.getGroupName(), "true").toString();
+        String expectedMessage = HighAvailabilityMessages.DESIGNATED_PRIMARY_CHANGED("true").toString();
         verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
                 argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.DESIGNATED_PRIMARY_CHANGED_LOG_HIERARCHY)));
     }
@@ -254,14 +202,9 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         // make sure that task executor thread finishes all scheduled tasks
         node2.stop();
 
-        // Verify ADDED message from node2 when its created
-        String expectedMessage = HighAvailabilityMessages.ADDED(node2.getName(), groupName).toString();
-        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node2.getVirtualHostNodeLogSubject())),
-                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.ADDED_LOG_HIERARCHY)));
-
         // Verify ADDED message from node1 when it discovers node2 has been added
-        expectedMessage = HighAvailabilityMessages.ADDED(node2.getName(), groupName).toString();
-        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
+        String expectedMessage = HighAvailabilityMessages.ADDED(node2.getName(), node2.getAddress()).toString();
+        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getGroupLogSubject())),
                 argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.ADDED_LOG_HIERARCHY)));
     }
 
@@ -292,9 +235,9 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         // make sure that task executor thread finishes all scheduled tasks
         node1.stop();
 
-        String expectedMessage = HighAvailabilityMessages.DELETED(node2.getName(), groupName).toString();
-        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
-                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.DELETED_LOG_HIERARCHY)));
+        String expectedMessage = HighAvailabilityMessages.REMOVED(node2.getName(), node2.getAddress()).toString();
+        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getGroupLogSubject())),
+                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.REMOVED_LOG_HIERARCHY)));
     }
 
     public void testRemoteNodeDetached() throws Exception
@@ -324,9 +267,9 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         waitForNodeDetachedField(remoteNode, true);
 
         // verify that remaining node issues the DETACHED operational logging for remote node
-        String expectedMessage = HighAvailabilityMessages.DETACHED(node2.getName(), groupName).toString();
-        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
-                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.DETACHED_LOG_HIERARCHY)));
+        String expectedMessage = HighAvailabilityMessages.LEFT(node2.getName(), node2.getAddress()).toString();
+        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getGroupLogSubject())),
+                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.LEFT_LOG_HIERARCHY)));
     }
 
 
@@ -361,48 +304,9 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         _helper.assertNodeRole(node2, "REPLICA", "MASTER");
         waitForNodeDetachedField(remoteNode, false);
 
-        final String expectedMessage = HighAvailabilityMessages.ATTACHED(node2.getName(), groupName, "REPLICA").toString();
-        final String expectedMessage2 = HighAvailabilityMessages.ATTACHED(node2.getName(), groupName, "UNKNOWN").toString();
-        final String expectedMessage3 = HighAvailabilityMessages.ATTACHED(node2.getName(), groupName, "MASTER").toString();
-        ArgumentMatcher<LogMessage> matcher = new ArgumentMatcher<LogMessage>()
-        {
-            private String _messageErrorDescription = null;
-            private String _hierarchyErrorDescription = null;
-
-            @Override
-            public boolean matches(Object argument)
-            {
-                LogMessage logMessage = (LogMessage)argument;
-                String actualMessage = logMessage.toString();
-                boolean expectedMessageMatches = expectedMessage.equals(actualMessage)
-                        || expectedMessage2.equals(actualMessage) || expectedMessage3.equals(actualMessage);
-                if (!expectedMessageMatches)
-                {
-                    _messageErrorDescription = "Actual message does not match any expected: " + actualMessage;
-                }
-                boolean expectedHierarchyMatches = HighAvailabilityMessages.ATTACHED_LOG_HIERARCHY.equals(logMessage.getLogHierarchy());
-                if (!expectedHierarchyMatches)
-                {
-                    _hierarchyErrorDescription = "Actual hierarchy does not match expected: " + logMessage.getLogHierarchy();
-                }
-                return expectedMessageMatches && expectedHierarchyMatches;
-            }
-
-            @Override
-            public void describeTo(Description description)
-            {
-                if (_messageErrorDescription != null)
-                {
-                    description.appendText(_messageErrorDescription);
-                }
-                if (_hierarchyErrorDescription != null)
-                {
-                    description.appendText(_hierarchyErrorDescription);
-                }
-            }
-        };
-        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
-                argThat(matcher));
+        final String expectedMessage = HighAvailabilityMessages.JOINED(node2.getName(), node2.getAddress()).toString();
+        verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getGroupLogSubject())),
+                argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.JOINED_LOG_HIERARCHY)));
     }
 
     private void waitForNodeDetachedField(BDBHARemoteReplicationNodeImpl remoteNode, boolean expectedDetached) throws InterruptedException {
