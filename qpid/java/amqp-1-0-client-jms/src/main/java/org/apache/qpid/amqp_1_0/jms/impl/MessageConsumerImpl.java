@@ -173,7 +173,10 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
             }
             else
             {
-                throw new JMSException(e.getMessage(), error.getCondition().getValue().toString());
+                JMSException jmsException =
+                        new JMSException(e.getMessage(), error.getCondition().getValue().toString());
+                jmsException.initCause(e);
+                throw jmsException;
 
             }
         }
