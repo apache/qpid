@@ -190,7 +190,7 @@ BrokerOptions::BrokerOptions(const std::string& name) :
         ("default-message-group", optValue(defaultMsgGroup, "GROUP-IDENTIFER"), "Group identifier to assign to messages delivered to a message group queue that do not contain an identifier.")
         ("enable-timestamp", optValue(timestampRcvMsgs, "yes|no"), "Add current time to each received message.")
         ("link-maintenance-interval", optValue(linkMaintenanceInterval, "SECONDS"),
-         "Interval to check link health and re-connect  if need be")
+         "Interval to check federation link health and re-connect if need be")
         ("link-heartbeat-interval", optValue(linkHeartbeatInterval, "SECONDS"),
          "Heartbeat interval for a federation link")
         ("dtx-default-timeout", optValue(dtxDefaultTimeout, "SECONDS"), "Default timeout for DTX transaction before aborting it")

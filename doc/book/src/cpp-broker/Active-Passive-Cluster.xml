@@ -305,7 +305,7 @@ ssl_addr = "ssl:" host [":" port]'
 		virtual IP address instead.
 	      </para>
 	      <para>
-		If set, this URL is advertized by the
+		If set, this URL is advertised by the
 		<literal>amq.failover</literal> exchange and overrides the
 		broker option <literal>known-hosts-url</literal>
 	      </para>
@@ -339,7 +339,8 @@ ssl_addr = "ssl:" host [":" port]'
 	      <para>
 		Values specified as <replaceable>SECONDS</replaceable> can be a
 		fraction of a second, e.g. "0.1" for a tenth of a second.
-		They can also have an explicit unit, e.g. 10s, 10ms, 10us, 10ns
+		They can also have an explicit unit,
+		e.g. 10s (seconds), 10ms (milliseconds), 10us (microseconds), 10ns (nanoseconds)
 	      </para>
 	    </footnote>
 	    </entry>
@@ -357,9 +358,11 @@ ssl_addr = "ssl:" host [":" port]'
 	    </entry>
 	    <entry>
 	      <para>
-		Interval for backup brokers to check the link to the primary re-connect if need be.
-		Default 2 seconds. Can be set lower for faster failover, e.g. 0.1 seconds.
-		Setting it too low will result in excessive link-checking activity on the brokers.
+		HA uses federation links to connect from backup to primary.
+		Backup brokers check the link to the primary on this interval
+		and re-connect if need be. Default 2 seconds. Set lower for
+		faster failover, e.g. 0.1 seconds.  Setting too low will result
+		in excessive link-checking on the backups.
 	      </para>
 	    </entry>
 	  </row>
@@ -370,12 +373,14 @@ ssl_addr = "ssl:" host [":" port]'
 	    </entry>
 	    <entry>
 	      <para>
-		Heartbeat interval for replication links and timeout for broker status checks.
-		It may take up to this interval for rgmanager to detect a hung or partitioned broker.
-		The primary may take up to twice this interval to detect a hung or partitioned backup.
+		HA uses federation links to connect from backup to primary.
+		If no heart-beat is received for twice this interval the primary will consider that
+		backup dead (e.g. if backup is hung or partitioned.)
+		This interval is also used to time-out for broker status checks,
+		it may take up to this interval for rgmanager to detect a hung or partitioned broker.
 		Clients sending messages may be held up during this time.
 		Default 120 seconds: you will probably want to set this to a lower value e.g. 10.
-		If set too low, a slow broker may be considered as failed and killed.
+		If set too low rgmanager may consider a slow broker to have failed and kill it.
 	      </para>
 	    </entry>
 	  </row>
