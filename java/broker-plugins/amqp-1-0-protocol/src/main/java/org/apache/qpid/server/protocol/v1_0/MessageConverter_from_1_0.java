@@ -20,10 +20,32 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
 import org.apache.qpid.amqp_1_0.messaging.SectionDecoderImpl;
 import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Section;
+import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.UnsignedByte;
+import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
+import org.apache.qpid.amqp_1_0.type.UnsignedLong;
+import org.apache.qpid.amqp_1_0.type.UnsignedShort;
 import org.apache.qpid.amqp_1_0.type.messaging.AmqpSequence;
 import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
 import org.apache.qpid.amqp_1_0.type.messaging.Data;
@@ -31,17 +53,6 @@ import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.transport.codec.BBEncoder;
 import org.apache.qpid.typedmessage.TypedBytesContentWriter;
 import org.apache.qpid.typedmessage.TypedBytesFormatException;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
 
 public class MessageConverter_from_1_0
 {
@@ -91,7 +102,7 @@ public class MessageConverter_from_1_0
                 Section firstBodySection = sections.get(0);
                 if(firstBodySection instanceof AmqpValue)
                 {
-                    bodyObject = fixObject(((AmqpValue)firstBodySection).getValue());
+                    bodyObject = convertValue(((AmqpValue)firstBodySection).getValue());
                 }
                 else if(firstBodySection instanceof Data)
                 {
@@ -115,7 +126,7 @@ public class MessageConverter_from_1_0
                     {
                         totalSequence.addAll(((AmqpSequence)section).getValue());
                     }
-                    bodyObject = fixObject(totalSequence);
+                    bodyObject = convertValue(totalSequence);
                 }
             }
 
@@ -127,40 +138,94 @@ public class MessageConverter_from_1_0
         return bodyObject;
     }
 
-    private static Object fixObject(final Object value)
+    private static final Set<Class> STANDARD_TYPES = new HashSet<>(Arrays.<Class>asList(Boolean.class,
+                                                                                        Byte.class,
+                                                                                        Short.class,
+                                                                                        Integer.class,
+                                                                                        Long.class,
+                                                                                        Float.class,
+                                                                                        Double.class,
+                                                                                        Character.class,
+                                                                                        String.class,
+                                                                                        byte[].class,
+                                                                                        UUID.class));
+
+    private static Map convertMap(final Map map)
     {
-        if(value instanceof Binary)
+        Map resultMap = new LinkedHashMap();
+        Iterator<Map.Entry> iterator = map.entrySet().iterator();
+        while(iterator.hasNext())
         {
-            final Binary binaryValue = (Binary) value;
-            byte[] data = new byte[binaryValue.getLength()];
-            binaryValue.asByteBuffer().get(data);
-            return data;
+            Map.Entry entry = iterator.next();
+            resultMap.put(convertValue(entry.getKey()), convertValue(entry.getValue()));
+
         }
-        else if(value instanceof List)
+        return resultMap;
+    }
+
+    public static Object convertValue(final Object value)
+    {
+        if(value != null && !STANDARD_TYPES.contains(value))
         {
-            List listValue = (List) value;
-            List fixedValue = new ArrayList(listValue.size());
-            for(Object o : listValue)
+            if(value instanceof Map)
             {
-                fixedValue.add(fixObject(o));
+                return convertMap((Map)value);
             }
-            return fixedValue;
-        }
-        else if(value instanceof Map)
-        {
-            Map<?,?> mapValue = (Map) value;
-            Map fixedValue = new LinkedHashMap(mapValue.size());
-            for(Map.Entry<?,?> entry : mapValue.entrySet())
+            else if(value instanceof List)
             {
-                fixedValue.put(fixObject(entry.getKey()),fixObject(entry.getValue()));
+                return convertList((List)value);
             }
-            return fixedValue;
+            else if(value instanceof UnsignedByte)
+            {
+                return ((UnsignedByte)value).shortValue();
+            }
+            else if(value instanceof UnsignedShort)
+            {
+                return ((UnsignedShort)value).intValue();
+            }
+            else if(value instanceof UnsignedInteger)
+            {
+                return ((UnsignedInteger)value).longValue();
+            }
+            else if(value instanceof UnsignedLong)
+            {
+                return ((UnsignedLong)value).longValue();
+            }
+            else if(value instanceof Symbol)
+            {
+                return value.toString();
+            }
+            else if(value instanceof Date)
+            {
+                return ((Date)value).getTime();
+            }
+            else if(value instanceof Binary)
+            {
+                Binary binary = (Binary)value;
+                byte[] data = new byte[binary.getLength()];
+                binary.asByteBuffer().get(data);
+                return data;
+            }
+            else
+            {
+                // Throw exception instead?
+                return value.toString();
+            }
         }
         else
         {
             return value;
         }
+    }
 
+    private static List convertList(final List list)
+    {
+        List result = new ArrayList(list.size());
+        for(Object entry : list)
+        {
+            result.add(convertValue(entry));
+        }
+        return result;
     }
 
     public static byte[] convertToBody(Object object)
