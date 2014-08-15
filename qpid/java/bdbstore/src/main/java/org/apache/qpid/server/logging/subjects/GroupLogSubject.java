@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.VIRTUAL_HOST_NODE_FORMAT;
 
-import org.apache.qpid.server.model.VirtualHostNode;
-
-public class VirtualHostNodeLogSubject extends AbstractLogSubject
+public class GroupLogSubject extends AbstractLogSubject
 {
-    public VirtualHostNodeLogSubject(String nodeName)
+    public static final String GROUP_FORMAT = "grp(/{0})";
+
+    public GroupLogSubject(String groupName)
     {
-        setLogStringWithFormat(VIRTUAL_HOST_NODE_FORMAT, nodeName);
+        setLogStringWithFormat(GROUP_FORMAT, groupName);
     }
 }

@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
-import org.apache.qpid.server.logging.subjects.VirtualHostNodeLogSubject;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -54,7 +53,6 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     private final Broker<?> _broker;
     private final AtomicReference<State> _state = new AtomicReference<State>(State.UNINITIALIZED);
     private final EventLogger _eventLogger;
-    private final VirtualHostNodeLogSubject _virtualHostNodeLogSubject;
 
     private DurableConfigurationStore _durableConfigurationStore;
 
@@ -67,7 +65,6 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         _broker = parent;
         SystemConfig<?> systemConfig = _broker.getParent(SystemConfig.class);
         _eventLogger = systemConfig.getEventLogger();
-        _virtualHostNodeLogSubject = new VirtualHostNodeLogSubject(getName());
     }
 
 
@@ -248,8 +245,4 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
 
     protected abstract void activate();
 
-    public VirtualHostNodeLogSubject getVirtualHostNodeLogSubject()
-    {
-        return _virtualHostNodeLogSubject;
-    }
 }
