@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol.converter.v0_10_v1_0;
 
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.plugin.MessageConverter;
@@ -176,7 +177,8 @@ public class MessageConverter_1_0_to_v0_10 implements MessageConverter<Message_1
             messageProps.setReplyTo(replyTo);
         }
 
-        messageProps.setApplicationHeaders(serverMsg.getMessageHeader().getHeadersAsMap());
+        messageProps.setApplicationHeaders((Map<String, Object>) MessageConverter_from_1_0.convertValue(serverMsg.getMessageHeader()
+                                                                                                                .getHeadersAsMap()));
 
         Header header = new Header(deliveryProps, messageProps, null);
         return new MessageMetaData_0_10(header, size, serverMsg.getArrivalTime());
