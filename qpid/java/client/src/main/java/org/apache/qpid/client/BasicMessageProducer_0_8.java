@@ -20,11 +20,8 @@
  */
 package org.apache.qpid.client;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.UUID;
-import java.util.zip.GZIPOutputStream;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -47,6 +44,7 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.util.GZIPUtils;
 
 public class BasicMessageProducer_0_8 extends BasicMessageProducer
 {
@@ -152,34 +150,17 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
 
         int size = (payload != null) ? payload.remaining() : 0;
 
-        if(size > getConnection().getMessageCompressionThresholdSize() && getConnection().getDelegate().isMessageCompressionSupported()
-                && getConnection().isMessageCompressionDesired() && contentHeaderProperties.getEncoding() == null)
+        byte[] compressed;
+        if(size > getConnection().getMessageCompressionThresholdSize()
+               && getConnection().getDelegate().isMessageCompressionSupported()
+               && getConnection().isMessageCompressionDesired()
+               && contentHeaderProperties.getEncoding() == null
+               && (compressed = GZIPUtils.compressBufferToArray(payload)) != null)
         {
             contentHeaderProperties.setEncoding("gzip");
-            try(ByteArrayOutputStream compressedOutputBuffer = new ByteArrayOutputStream(size / 2))
-            {
-                try (GZIPOutputStream output = new GZIPOutputStream(compressedOutputBuffer))
-                {
-                    if(payload.hasArray())
-                    {
-                        output.write(payload.array(),payload.position()+payload.arrayOffset(),payload.remaining());
-                    }
-                    else
-                    {
-                        byte[] tmp = new byte[size];
-                        payload.get(tmp);
-                        output.write(tmp);
-                    }
-                }
+            payload = ByteBuffer.wrap(compressed);
+            size = compressed.length;
 
-                byte[] compressedData = compressedOutputBuffer.toByteArray();
-                payload = ByteBuffer.wrap(compressedData);
-                size = compressedData.length;
-            }
-            catch (IOException e)
-            {
-                // TODO - shouldn't happen
-            }
         }
         final int contentBodyFrameCount = calculateContentBodyFrameCount(payload);
         final AMQFrame[] frames = new AMQFrame[2 + contentBodyFrameCount];
