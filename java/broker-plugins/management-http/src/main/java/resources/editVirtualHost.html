@@ -19,111 +19,112 @@
 <div class="dijitHidden">
   <div data-dojo-type="dijit/Dialog" data-dojo-props="title:'Edit Virtual Host'" id="editVirtualHostDialog">
       <form id="editVirtualHostForm" method="post" data-dojo-type="dijit/form/Form">
-          <div class="editNoteBanner">NOTE: All changes will only take effect after Virtual Host restart.</div>
-          <div class="clear">
-              <div class="formLabel-labelCell tableContainer-labelCell">Name*:</div>
-              <div class="formLabel-controlCell tableContainer-valueCell">
-                  <input type="text" id="editVirtualHost.name"
-                         data-dojo-type="dijit/form/ValidationTextBox"
-                         data-dojo-props="
+          <div id="editVirtualHost.allFields">
+              <div class="editNoteBanner">NOTE: All changes will only take effect after Virtual Host restart.</div>
+              <div class="clear">
+                  <div class="formLabel-labelCell tableContainer-labelCell">Name*:</div>
+                  <div class="formLabel-controlCell tableContainer-valueCell">
+                      <input type="text" id="editVirtualHost.name"
+                             data-dojo-type="dijit/form/ValidationTextBox"
+                             data-dojo-props="
                               name: 'name',
                               placeHolder: 'name',
                               required: true,
-                              missingMessage: 'Name must be supplied',
                               disabled: true,
                               title: 'Enter virtual host name'" />
+                  </div>
               </div>
-          </div>
 
-          <div id="editVirtualHost.typeFields"></div>
+              <div id="editVirtualHost.typeFields"></div>
 
-          <div class="clear formBox">
-              <fieldset>
-                  <legend>Store transaction settings</legend>
-                  <div class="clear">
-                      <div class="formLabel-labelCell tableContainer-labelCell">Idle Timeout Warn:</div>
-                      <div class="tableContainer-valueCell formLabel-controlCell">
-                          <input data-dojo-type="dijit/form/ValidationTextBox"
-                                 id="editVirtualHost.storeTransactionIdleTimeoutWarn"
-                                 name="storeTransactionIdleTimeoutWarn"
-                                 placeHolder="idle timeout warn time in ms"
-                                 missingMessage="An idle timeout warn time in ms must be supplied"/>
+              <div class="clear formBox">
+                  <fieldset>
+                      <legend>Store transaction settings</legend>
+                      <div class="clear">
+                          <div class="formLabel-labelCell tableContainer-labelCell">Idle Timeout Warn:</div>
+                          <div class="tableContainer-valueCell formLabel-controlCell">
+                              <input data-dojo-type="dijit/form/ValidationTextBox"
+                                     id="editVirtualHost.storeTransactionIdleTimeoutWarn"
+                                     name="storeTransactionIdleTimeoutWarn"
+                                     placeHolder="idle timeout warn time in ms"
+                                     promptMessage="Length of time a transaction must be idle before warnings produced"/>
+                          </div>
                       </div>
-                  </div>
-                  <div class="clear">
-                      <div class="formLabel-labelCell tableContainer-labelCell">Idle Timeout Close:</div>
-                      <div class="tableContainer-valueCell formLabel-controlCell">
-                          <input data-dojo-type="dijit/form/ValidationTextBox"
-                                 id="editVirtualHost.storeTransactionIdleTimeoutClose"
-                                 name="storeTransactionIdleTimeoutClose"
-                                 placeHolder="idle timeout close time in ms"
-                                 missingMessage="An idle timeout close time in ms must be supplied"/>
+                      <div class="clear">
+                          <div class="formLabel-labelCell tableContainer-labelCell">Idle Timeout Close:</div>
+                          <div class="tableContainer-valueCell formLabel-controlCell">
+                              <input data-dojo-type="dijit/form/ValidationTextBox"
+                                     id="editVirtualHost.storeTransactionIdleTimeoutClose"
+                                     name="storeTransactionIdleTimeoutClose"
+                                     placeHolder="idle timeout close time in ms"
+                                     promptMessage="Length of time a transaction must be idle before the connection is closed"/>
+                          </div>
                       </div>
-                  </div>
-                  <div class="clear">
-                      <div class="formLabel-labelCell tableContainer-labelCell">Open Timeout Warn:</div>
-                      <div class="tableContainer-valueCell formLabel-controlCell">
-                          <input data-dojo-type="dijit/form/ValidationTextBox"
-                                 id="editVirtualHost.storeTransactionOpenTimeoutWarn"
-                                 name="storeTransactionOpenTimeoutWarn"
-                                 placeHolder="open timeout warn time in ms"
-                                 missingMessage="An open timeout warn time in ms must be supplied"/>
+                      <div class="clear">
+                          <div class="formLabel-labelCell tableContainer-labelCell">Open Timeout Warn:</div>
+                          <div class="tableContainer-valueCell formLabel-controlCell">
+                              <input data-dojo-type="dijit/form/ValidationTextBox"
+                                     id="editVirtualHost.storeTransactionOpenTimeoutWarn"
+                                     name="storeTransactionOpenTimeoutWarn"
+                                     placeHolder="open timeout warn time in ms"
+                                     promptMessage="Length of time a transaction must be open before warnings produced"/>
+                          </div>
                       </div>
-                  </div>
-                  <div class="clear">
-                      <div class="formLabel-labelCell tableContainer-labelCell">Open Timeout Close:</div>
-                      <div class="tableContainer-valueCell formLabel-controlCell">
-                          <input data-dojo-type="dijit/form/ValidationTextBox"
-                                 id="editVirtualHost.storeTransactionOpenTimeoutClose"
-                                 name="storeTransactionOpenTimeoutClose"
-                                 placeHolder="open timeout close time in ms"
-                                 missingMessage="An open timeout close time in ms must be supplied"/>
+                      <div class="clear">
+                          <div class="formLabel-labelCell tableContainer-labelCell">Open Timeout Close:</div>
+                          <div class="tableContainer-valueCell formLabel-controlCell">
+                              <input data-dojo-type="dijit/form/ValidationTextBox"
+                                     id="editVirtualHost.storeTransactionOpenTimeoutClose"
+                                     name="storeTransactionOpenTimeoutClose"
+                                     placeHolder="open timeout close time in ms"
+                                     promptMessage="Length of time a transaction must be open before the connection is closed"/>
+                          </div>
                       </div>
-                  </div>
-              </fieldset>
-          </div>
-
-          <div class="clear formBox">
-              <fieldset>
-                  <legend>House keeping settings</legend>
-                  <div class="clear">
-                      <div class="formLabel-labelCell tableContainer-labelCell">Check period (ms):</div>
-                      <div class="tableContainer-valueCell formLabel-controlCell">
-                          <input data-dojo-type="dijit/form/ValidationTextBox"
-                                  id="editVirtualHost.housekeepingCheckPeriod"
-                                  name="housekeepingCheckPeriod"
-                                  placeHolder="house keeping check period in ms"
-                                  missingMessage="A house keeping check period must be supplied"/>
-                      </div>
-                  </div>
-                  <div class="clear">
-                      <div class="formLabel-labelCell tableContainer-labelCell">Thread count:</div>
-                      <div class="tableContainer-valueCell formLabel-controlCell">
-                          <input data-dojo-type="dijit/form/ValidationTextBox"
-                                 id="editVirtualHost.housekeepingThreadCount"
-                                 name="housekeepingThreadCount"
-                                 placeHolder="house keeping thread count"
-                                 missingMessage="A house keeping thread count must be supplied"/>
-                      </div>
-                  </div>
-              </fieldset>
-          </div>
-          <div class="clear"></div>
-
-          <div class="clear">
-              <div class="formLabel-labelCell tableContainer-labelCell">Dead letter queue enabled:</div>
-              <div class="tableContainer-valueCell formLabel-controlCell">
-                  <input type="checkbox" id="editVirtualHost.queue.deadLetterQueueEnabled"
-                         data-dojo-type="dijit/form/CheckBox"
-                         data-dojo-props="name: 'queue.deadLetterQueueEnabled'">
-                  </input>
+                  </fieldset>
               </div>
-          </div>
-          <div class="clear"></div>
 
-          <div class="dijitDialogPaneActionBar">
-              <button data-dojo-type="dijit/form/Button" id="editVirtualHost.saveButton" data-dojo-props="label: 'Save'">Save</button>
-              <button data-dojo-type="dijit/form/Button" id="editVirtualHost.cancelButton" data-dojo-props="label: 'Cancel'" ></button>
+              <div class="clear formBox">
+                  <fieldset>
+                      <legend>House keeping settings</legend>
+                      <div class="clear">
+                          <div class="formLabel-labelCell tableContainer-labelCell">Check period (ms):</div>
+                          <div class="tableContainer-valueCell formLabel-controlCell">
+                              <input data-dojo-type="dijit/form/ValidationTextBox"
+                                     id="editVirtualHost.housekeepingCheckPeriod"
+                                     name="housekeepingCheckPeriod"
+                                     placeHolder="house keeping check period in ms"
+                                     promptMessage="Frequency with which the housekeeper runs"/>
+                          </div>
+                      </div>
+                      <div class="clear">
+                          <div class="formLabel-labelCell tableContainer-labelCell">Thread count:</div>
+                          <div class="tableContainer-valueCell formLabel-controlCell">
+                              <input data-dojo-type="dijit/form/ValidationTextBox"
+                                     id="editVirtualHost.housekeepingThreadCount"
+                                     name="housekeepingThreadCount"
+                                     placeHolder="house keeping thread count"
+                                     promptMessage="Number of threads used to perform housekeeping"/>
+                          </div>
+                      </div>
+                  </fieldset>
+              </div>
+              <div class="clear"></div>
+
+              <div class="clear">
+                  <div class="formLabel-labelCell tableContainer-labelCell">Dead letter queue enabled:</div>
+                  <div class="tableContainer-valueCell formLabel-controlCell">
+                      <input type="checkbox" id="editVirtualHost.queue.deadLetterQueueEnabled"
+                             data-dojo-type="dijit/form/CheckBox"
+                             data-dojo-props="name: 'queue.deadLetterQueueEnabled'">
+                      </input>
+                  </div>
+              </div>
+              <div class="clear"></div>
+
+              <div class="dijitDialogPaneActionBar">
+                  <button data-dojo-type="dijit/form/Button" id="editVirtualHost.saveButton" data-dojo-props="label: 'Save'">Save</button>
+                  <button data-dojo-type="dijit/form/Button" id="editVirtualHost.cancelButton" data-dojo-props="label: 'Cancel'" ></button>
+              </div>
           </div>
       </form>
   </div>

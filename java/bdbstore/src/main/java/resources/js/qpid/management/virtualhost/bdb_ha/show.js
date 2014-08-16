@@ -47,8 +47,8 @@ define(["qpid/common/util", "dojo/query", "dojo/domReady!"],
         }
         this["permittedNodes"].innerHTML = permittedNodesMarkup ;
 
-        var localSyncPolicy =  data[localTransactionSynchronizationPolicy].toLowerCase();
-        var remoteSyncPolicy =  data[remoteTransactionSynchronizationPolicy].toLowerCase();
+        var localSyncPolicy =  data[localTransactionSynchronizationPolicy] ? data[localTransactionSynchronizationPolicy].toLowerCase() : "";
+        var remoteSyncPolicy =  data[remoteTransactionSynchronizationPolicy] ? data[remoteTransactionSynchronizationPolicy].toLowerCase() : "";
 
         for(var i=0; i<this[localTransactionSynchronizationPolicy].children.length;i++)
         {

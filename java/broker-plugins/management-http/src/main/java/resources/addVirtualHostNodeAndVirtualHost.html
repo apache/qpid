@@ -34,9 +34,9 @@
                                  data-dojo-type="dijit/form/ValidationTextBox"
                                  data-dojo-props="
                               name: 'name',
-                              placeHolder: 'unique node name per broker',
+                              placeHolder: 'node name',
                               required: true,
-                              missingMessage: 'A node name must be supplied',
+                              promptMessage: 'Name of node, must be unique',
                               title: 'Enter a unique node name per broker'" />
                       </div>
                     </div>
@@ -49,6 +49,7 @@
                                     required: true,
                                     disabled: true,
                                     placeHolder: 'select virtual host node type',
+                                    promptMessage: 'Type of virtual host node',
                                     title: 'Select virtual host node type',
                                     searchAttr: 'name'">
                              </select>
@@ -75,6 +76,7 @@
                                 required: true,
                                 disabled: true,
                                 placeHolder: 'select virtual host type',
+                                promptMessage: 'Type of virtual host',
                                 title: 'Select virtual host type',
                                 searchAttr: 'name'">
                         </select>

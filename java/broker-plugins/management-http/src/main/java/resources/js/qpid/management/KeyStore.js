@@ -74,6 +74,7 @@ define(["dojo/dom",
                                   xhr.get({url: that.url, sync: properties.useSyncGet, handleAs: "json", content: { actuals: true }})
                                     .then(function(data)
                                     {
+                                      // calls showKeystoreDialog
                                       that.dialog(data[0], that.url);
                                     });
                                 });

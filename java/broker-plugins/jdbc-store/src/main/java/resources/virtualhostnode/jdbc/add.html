@@ -28,7 +28,7 @@
                               name: 'connectionUrl',
                               placeHolder: 'jdbc:provider:info',
                               required: true,
-                              missingMessage: 'JDBC URL must be supplied',
+                              promptMessage: 'JDBC URL specifying the connection to the database',
                               title: 'Enter JDBC URL'"/>
       </div>
     </div>
@@ -41,7 +41,7 @@
                               name: 'username',
                               placeHolder: 'username',
                               required: true,
-                              missingMessage: 'Username must be supplied',
+                              promptMessage: 'Database user name',
                               title: 'Enter username'" />
         </div>
     </div>
@@ -54,7 +54,7 @@
                               name: 'password',
                               placeHolder: 'password',
                               required: true,
-                              missingMessage: 'Password must be supplied',
+                              promptMessage: 'Database password',
                               title: 'Enter password'" />
         </div>
     </div>
@@ -66,8 +66,8 @@
                           data-dojo-props="
                               name: 'connectionPoolType',
                               required: true,
-                              missingMessage: 'Connection Pool type must be supplied',
-                              title: 'Select Connection Pool',
+                              promptMessage: 'Connection pool type to use when connecting to the database',
+                              title: 'Select the connection pool type',
                               placeHolder: 'Select pool type'" />
       </div>
     </div>

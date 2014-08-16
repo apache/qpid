@@ -27,8 +27,8 @@
                               name: 'groupName',
                               placeHolder: 'group name',
                               required: true,
-                              missingMessage: 'A group name must be supplied',
-                              title: 'Enter a group name'" />
+                              title: 'Enter name to identify the new group',
+                              promptMessage: 'Name to identify the new group.'"/>
       </div>
     </div>
     <div class="clear">
@@ -40,8 +40,8 @@
                               name: 'address',
                               placeHolder: 'host:port',
                               required: true,
-                              missingMessage: 'Node host and port must be supplied',
-                              title: 'Enter address'" />
+                              title: 'Enter node hostname and port number that new node will use',
+                              promptMessage: 'Node hostname and port number that new node will use.<br/>Other nodes will use connect to this address to replicate messages'" />
       </div>
     </div>
     <div class="clear">
@@ -52,7 +52,8 @@
                           data-dojo-props="
                               name: 'storePath',
                               placeHolder: 'path/to/store',
-                              title: 'Enter store path'" />
+                              title: 'Enter file system location for the store',
+                              promptMessage: 'File system location for the store'" />
       </div>
     </div>
     <div class="clear formBox">
@@ -66,7 +67,7 @@
                            data-dojo-props="
                                       name: 'permittedNodesList',
                                       readOnly : 'true',
-                                      title: 'Enter permitted nodes'">
+                                      title: 'Enter list of the other node address that will form the group'">
                     </select> <!-- must use closing tag rather than shorthand - dojo bug? -->
                 </div>
                 <button data-dojo-type="dijit/form/Button" id="addVirtualHostNode.permittedNodeRemove" data-dojo-props="label: '-'" ></button>
@@ -81,8 +82,9 @@
                            data-dojo-props="
                                       name: 'permittedNode',
                                       placeHolder: 'host:port',
-                                      title: 'Enter address',
-                                      intermediateChanges: true" />
+                                      intermediateChanges: true,
+                                      title: 'Enter address of node to be permitted into the group',
+                                      promptMessage: 'Address of node to be permitted into the group'" />
                 </div>
                 <button data-dojo-type="dijit/form/Button" id="addVirtualHostNode.permittedNodeAdd" data-dojo-props="label: '+'"></button>
             </div>

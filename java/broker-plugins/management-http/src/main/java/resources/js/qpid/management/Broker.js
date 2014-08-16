@@ -69,7 +69,8 @@ define(["dojo/_base/xhr",
                           regExpGen: util.nameOrContextVarRegexp,
                           value: brokerData.name,
                           label: "Name*:",
-                          name: "name"})
+                          name: "name",
+                          promptMessage: "Identifies the broker instance."})
                     }
                }, {
                        name: "defaultVirtualHost",
@@ -89,7 +90,8 @@ define(["dojo/_base/xhr",
                            required: true, store: hostsStore,
                            value: brokerData.defaultVirtualHost,
                            label: "Default Virtual Host*:",
-                           name: "defaultVirtualHost"})
+                           name: "defaultVirtualHost",
+                           promptMessage: "Default virtual host used for clients that don't specify one when connecting."})
                        }
                }, {
                        name: "statisticsReportingPeriod",
@@ -97,12 +99,12 @@ define(["dojo/_base/xhr",
                          return new dijit.form.ValidationTextBox({
                            trim: "true",
                            regExpGen: util.numericOrContextVarRegexp,
-                           invalidMessage: "Invalid value",
                            required: false,
                            value: brokerData.statisticsReportingPeriod,
                            placeholder: "Time in ms",
                            label: "Statistics reporting period (ms):",
-                           name: "statisticsReportingPeriod"
+                           name: "statisticsReportingPeriod",
+                           promptMessage: "Frequency with which statistics are reported to broker log."
                          });
                        }
                }, {
@@ -123,11 +125,12 @@ define(["dojo/_base/xhr",
                          return new dijit.form.ValidationTextBox({
                            trim: "true",
                            regExpGen: util.numericOrContextVarRegexp,
-                           invalidMessage: "Invalid value",
                            required: false,
                            value: brokerData["connection.sessionCountLimit"],
+                           placeholder: "Number of sessions",
                            label: "Maximum number of sessions:",
-                           name: "connection.sessionCountLimit"
+                           name: "connection.sessionCountLimit",
+                           promptMessage: "Maximum number of sessions per connection"
                          });
                        }
                }, {
@@ -141,7 +144,8 @@ define(["dojo/_base/xhr",
                            value: brokerData["connection.heartBeatDelay"],
                            placeholder: "Time in ms",
                            label: "Heart beat delay (ms):",
-                           name: "connection.heartBeatDelay"
+                           name: "connection.heartBeatDelay",
+                           promptMessage: "Interval between heart beat messages exchanged between broker and clients"
                          });
                        }
                } ];
@@ -235,7 +239,7 @@ define(["dojo/_base/xhr",
                                           that.attributeWidgetFactories,
                                           brokerData,
                                           query,
-                                          "Set broker attributes");
+                                          "Set broker attributes", "Broker", "broker");
                                       });
                                 }
                             );
