@@ -49,6 +49,10 @@ public class TestRootCategoryImpl extends AbstractConfiguredObject<TestRootCateg
     @ManagedAttributeField
     private Map<String,String> _mapValue;
 
+    @ManagedAttributeField
+    private String _validValue;
+
+
     @ManagedObjectFactoryConstructor
     public TestRootCategoryImpl(final Map<String, Object> attributes)
     {
@@ -108,5 +112,11 @@ public class TestRootCategoryImpl extends AbstractConfiguredObject<TestRootCateg
     public State getState()
     {
         return null;
+    }
+
+    @Override
+    public String getValidValue()
+    {
+        return _validValue;
     }
 }
