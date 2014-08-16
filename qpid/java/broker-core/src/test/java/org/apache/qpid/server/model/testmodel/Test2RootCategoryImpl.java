@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.model.testmodel;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
@@ -48,6 +50,9 @@ public class Test2RootCategoryImpl extends AbstractConfiguredObject<Test2RootCat
 
     @ManagedAttributeField
     private Map<String,String> _mapValue;
+
+    @ManagedAttributeField
+    private String _validValue;
 
     @ManagedObjectFactoryConstructor
     public Test2RootCategoryImpl(final Map<String, Object> attributes)
@@ -93,6 +98,12 @@ public class Test2RootCategoryImpl extends AbstractConfiguredObject<Test2RootCat
     }
 
     @Override
+    public String getValidValue()
+    {
+        return _validValue;
+    }
+
+    @Override
     public int getDerivedAttribute()
     {
         return 0;
@@ -114,5 +125,10 @@ public class Test2RootCategoryImpl extends AbstractConfiguredObject<Test2RootCat
     public State getState()
     {
         return null;
+    }
+
+    public static Collection<String> functionGeneratedValidValues()
+    {
+        return Collections.singleton("generated");
     }
 }

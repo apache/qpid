@@ -27,6 +27,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 import org.apache.log4j.Logger;
 
@@ -138,6 +139,7 @@ public class ConfiguredAutomatedAttribute<C extends ConfiguredObject, T>  extend
             catch (InvocationTargetException | IllegalAccessException e)
             {
                 LOGGER.warn("Could not execute the validValues generation method " + _validValuesMethod.getName(), e);
+                return Collections.emptySet();
             }
         }
         return Arrays.asList(_annotation.validValues());
