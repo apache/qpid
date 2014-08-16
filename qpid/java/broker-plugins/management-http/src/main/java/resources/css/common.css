@@ -239,8 +239,28 @@ div .messages {
     font-weight: bold;
     margin-left: 5px;
 }
+
 .editNoteBanner {
     font-style: italic;
     margin: 0px 0px 10px 5px;
 }
 
+/* Required to keep queue type radio buttons on one line when dialog adds scrollbar */
+#addQueue {
+    max-height: 350px;
+    overflow: auto;
+    width: 630px;
+}
+
+#authenticatedUserControls {
+    max-width: 300px;
+}
+
+.claro .dojoxCheckedMultiSelectWrapper  {
+    height: auto;
+}
+
+.claro .dojoxCheckedMultiSelect .dojoxCheckedMultiSelectWrapper {
+    border: none;
+    background-color: transparent;
+}

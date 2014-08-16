@@ -72,7 +72,7 @@ define(["dojo/_base/xhr",
                 }
                 for(var propName in formValues)
                 {
-                    if(formValues.hasOwnProperty(propName))
+                    if(formValues.hasOwnProperty(propName) && formValues[propName])
                     {
                         if (propName == "needClientAuth" || propName == "wantClientAuth")
                         {
@@ -81,6 +81,12 @@ define(["dojo/_base/xhr",
                         else if (propName === "protocols")
                         {
                             var val = formValues[propName];
+
+                            if(val === "" || (lang.isArray(val) && val.length == 0) )
+                            {
+                                continue;
+                            }
+
                             if (!lang.isArray(val))
                             {
                                 val = [ val ];
@@ -91,7 +97,7 @@ define(["dojo/_base/xhr",
                         {
                             var val = formValues[propName];
 
-                            if(val === "")
+                            if(val === "" || (lang.isArray(val) && val.length == 0) )
                             {
                                 continue;
                             }
@@ -496,10 +502,13 @@ define(["dojo/_base/xhr",
                        providerWidget.initialValue = providerWidget.value;
 
                        registry.byId("addPort").show();
-               });
+                       util.applyMetadataToWidgets(registry.byId("addPort").domNode, "Port", typeWidget.get("value"));
+
+                   });
             }
             else
             {
+                // Creating new port
                 var typeWidget = registry.byId("formAddPort.type");
                 if (typeWidget.get("disabled"))
                 {
@@ -510,7 +519,10 @@ define(["dojo/_base/xhr",
                 name.set("disabled", false);
                 editWarning.style.display = "none";
                 registry.byId("addPort").show();
+
+                util.applyMetadataToWidgets(registry.byId("addPort").domNode, "Port", "AMQP");
             }
+
         };
 
         return addPort;

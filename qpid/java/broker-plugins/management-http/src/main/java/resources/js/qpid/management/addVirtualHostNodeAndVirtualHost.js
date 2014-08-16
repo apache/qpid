@@ -34,6 +34,7 @@ define(["dojo/_base/xhr",
         "dijit/form/FilteringSelect",
         "qpid/common/properties",
         "qpid/common/util",
+        "qpid/common/metadata",
         "dojo/text!addVirtualHostNodeAndVirtualHost.html",
         "dijit/form/Form",
         "dijit/form/CheckBox",
@@ -41,7 +42,7 @@ define(["dojo/_base/xhr",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"],
-  function (xhr, event, lang, array, dom, domConstruct, json, parser, Memory, fobject, registry, Dialog, Button, FilteringSelect, properties, util, template)
+  function (xhr, event, lang, array, dom, domConstruct, json, parser, Memory, fobject, registry, Dialog, Button, FilteringSelect, properties, util, metadata, template)
   {
 
     var addVirtualHostNodeAndVirtualHost =
@@ -71,38 +72,26 @@ define(["dojo/_base/xhr",
         this.virtualHostType = registry.byId("addVirtualHost.type");
         this.virtualHostType.set("disabled", true);
 
-        xhr.get({sync: properties.useSyncGet, handleAs: "json", url: "api/latest/broker?depth=0", load: function(data){that._onBrokerData(data[0]) }});
-      },
-      _makeTypeStore: function (types) {
-          var typeData = [];
-          for (var i = 0; i < types.length; i++) {
-              var type = types[i];
-              typeData.push({id: type, name: type});
-          }
-          return new Memory({ data: typeData });
-      },
-      _onBrokerData: function(brokerData)
-      {
-          var that=this;
-          this.supportedVirtualHostNodeTypes = brokerData.supportedVirtualHostNodeTypes;
-          this.supportedVirtualHostNodeTypes.sort();
-          this.supportedVirtualHostTypes = brokerData.supportedVirtualHostTypes;
-          this.supportedVirtualHostTypes.sort();
+        this.supportedVirtualHostNodeTypes = metadata.getTypesForCategory("VirtualHostNode");
+        this.supportedVirtualHostNodeTypes.sort();
+        this.supportedVirtualHostTypes = metadata.getTypesForCategory("VirtualHost");
+        this.supportedVirtualHostTypes.sort();
 
-          //VH Type BDB_HA_REPLICA is not user creatable. This is only needed until we have model meta data available.
-          this.supportedVirtualHostTypes = array.filter(this.supportedVirtualHostTypes, function(item){
-              return item != "BDB_HA_REPLICA" && item != "BDB_HA";
-          });
+        //VH Type BDB_HA_REPLICA is not user creatable. This is only needed until we have model meta data available.
+        this.supportedVirtualHostTypes = array.filter(this.supportedVirtualHostTypes, function(item){
+            return item != "BDB_HA_REPLICA" && item != "BDB_HA";
+        });
 
-          var virtualHostNodeTypeStore = this._makeTypeStore(this.supportedVirtualHostNodeTypes);
-          this.virtualHostNodeType.set("store", virtualHostNodeTypeStore);
-          this.virtualHostNodeType.set("disabled", false);
-          this.virtualHostNodeType.on("change", function(type){that._vhnTypeChanged(type, that.virtualHostNodeTypeFieldsContainer, "qpid/management/virtualhostnode/");});
+        var virtualHostNodeTypeStore = util.makeTypeStore(this.supportedVirtualHostNodeTypes);
+        this.virtualHostNodeType.set("store", virtualHostNodeTypeStore);
+        this.virtualHostNodeType.set("disabled", false);
+        this.virtualHostNodeType.on("change", function(type){that._vhnTypeChanged(type, that.virtualHostNodeTypeFieldsContainer, "qpid/management/virtualhostnode/");});
 
-          this.virtualHostTypeStore = this._makeTypeStore(this.supportedVirtualHostTypes);
-          this.virtualHostType.set("store", this.virtualHostTypeStore);
-          this.virtualHostType.set("disabled", false);
-          this.virtualHostType.on("change", function(type){that._vhTypeChanged(type, that.virtualHostTypeFieldsContainer, "qpid/management/virtualhost/");});
+        this.virtualHostTypeStore = util.makeTypeStore(this.supportedVirtualHostTypes);
+        this.virtualHostType.set("store", this.virtualHostTypeStore);
+        this.virtualHostType.set("disabled", false);
+        this.virtualHostType.on("change", function(type){that._vhTypeChanged(type, that.virtualHostTypeFieldsContainer, "qpid/management/virtualhost/");});
+
       },
       show: function()
       {
@@ -132,13 +121,14 @@ define(["dojo/_base/xhr",
       {
         this._processDropDownsForBdbHa(type);
         this._processDropDownsForJson(type);
-        this._typeChanged(type, typeFieldsContainer, urlStem);
+
+        this._typeChanged(type, typeFieldsContainer, urlStem, "VirtualHostNode");
       },
       _vhTypeChanged: function (type, typeFieldsContainer, urlStem)
       {
-        this._typeChanged(type, typeFieldsContainer, urlStem);
+        this._typeChanged(type, typeFieldsContainer, urlStem, "VirtualHost");
       },
-      _typeChanged: function (type, typeFieldsContainer, urlStem)
+      _typeChanged: function (type, typeFieldsContainer, urlStem, category)
       {
           var widgets = registry.findWidgets(typeFieldsContainer);
           array.forEach(widgets, function(item) { item.destroyRecursive();});
@@ -148,11 +138,13 @@ define(["dojo/_base/xhr",
           {
             var that = this;
             require([urlStem + type.toLowerCase() + "/add"],
-              function(TypeUI)
+              function(typeUI)
               {
                   try
                   {
-                      TypeUI.show({containerNode:typeFieldsContainer, parent: that});
+                      typeUI.show({containerNode:typeFieldsContainer, parent: that});
+
+                      util.applyMetadataToWidgets(typeFieldsContainer,category, type);
                   }
                   catch(e)
                   {
