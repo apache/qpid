@@ -92,4 +92,9 @@ public class ByteBufferInputStream extends InputStream
     {
         return _buffer.remaining();
     }
+
+    @Override
+    public void close()
+    {
+    }
 }

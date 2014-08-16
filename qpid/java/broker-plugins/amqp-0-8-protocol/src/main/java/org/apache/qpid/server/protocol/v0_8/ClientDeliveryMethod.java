@@ -26,6 +26,6 @@ import org.apache.qpid.server.message.ServerMessage;
 
 public interface ClientDeliveryMethod
 {
-    void deliverToClient(final ConsumerImpl sub, final ServerMessage message, final InstanceProperties props,
+    long deliverToClient(final ConsumerImpl sub, final ServerMessage message, final InstanceProperties props,
                          final long deliveryTag);
 }

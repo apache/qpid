@@ -471,9 +471,8 @@ class QueueConsumerImpl
     public final void send(final QueueEntry entry, final boolean batch)
     {
         _deliveredCount.incrementAndGet();
-        ServerMessage message = entry.getMessage();
-        _deliveredBytes.addAndGet(message.getSize());
-        _target.send(entry, batch);
+        long size = _target.send(entry, batch);
+        _deliveredBytes.addAndGet(size);
     }
 
     @Override

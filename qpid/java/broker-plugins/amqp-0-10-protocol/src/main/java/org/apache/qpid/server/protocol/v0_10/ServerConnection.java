@@ -74,7 +74,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
     private final long _connectionId;
     private final Object _reference = new Object();
-    private VirtualHostImpl _virtualHost;
+    private VirtualHostImpl<?,?,?> _virtualHost;
     private Port<?> _port;
     private AtomicLong _lastIoTime = new AtomicLong();
     private boolean _blocking;
@@ -87,6 +87,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
             new CopyOnWriteArrayList<SessionModelListener>();
 
     private volatile boolean _stopped;
+    private int _messageCompressionThreshold;
 
     public ServerConnection(final long connectionId, Broker broker)
     {
@@ -172,14 +173,22 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
         super.setConnectionDelegate(delegate);
     }
 
-    public VirtualHostImpl getVirtualHost()
+    public VirtualHostImpl<?,?,?> getVirtualHost()
     {
         return _virtualHost;
     }
 
-    public void setVirtualHost(VirtualHostImpl virtualHost)
+    public void setVirtualHost(VirtualHostImpl<?,?,?> virtualHost)
     {
         _virtualHost = virtualHost;
+        _messageCompressionThreshold =
+                virtualHost.getContextValue(Integer.class,
+                                            Broker.MESSAGE_COMPRESSION_THRESHOLD_SIZE);
+
+        if(_messageCompressionThreshold <= 0)
+        {
+            _messageCompressionThreshold = Integer.MAX_VALUE;
+        }
     }
 
     @Override
@@ -638,5 +647,10 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     public void removeDeleteTask(final Action<? super ServerConnection> task)
     {
         _taskList.remove(task);
+    }
+
+    public int getMessageCompressionThreshold()
+    {
+        return _messageCompressionThreshold;
     }
 }

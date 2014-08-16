@@ -70,6 +70,11 @@ public interface ConnectionURL
      */
     public static final String OPTIONS_CLOSE_WHEN_NO_ROUTE = "closeWhenNoRoute";
 
+
+    public static final String OPTIONS_COMPRESS_MESSAGES = "compressMessages";
+    public static final String OPTIONS_MESSAGES_COMPRESSION_THRESHOLD_SIZE = "messageCompressionThresholdSize";
+
+
     public static final String OPTIONS_DEFAULT_TOPIC_EXCHANGE = "defaultTopicExchange";
     public static final String OPTIONS_DEFAULT_QUEUE_EXCHANGE = "defaultQueueExchange";
     public static final String OPTIONS_TEMPORARY_TOPIC_EXCHANGE = "temporaryTopicExchange";

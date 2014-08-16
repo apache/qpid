@@ -41,6 +41,7 @@ import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.framing.ProtocolVersion;
+import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.transport.network.Assembler;
 import org.apache.qpid.transport.network.Disassembler;
 import org.apache.qpid.transport.network.InputHandler;
@@ -78,6 +79,7 @@ public class Connection extends ConnectionInvoker
     private long _lastReadTime;
     private NetworkConnection _networkConnection;
     private FrameSizeObserver _frameSizeObserver;
+    private boolean _messageCompressionSupported;
 
     public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD, RESUMING }
 
@@ -699,6 +701,7 @@ public class Connection extends ConnectionInvoker
     public void setServerProperties(final Map<String, Object> serverProperties)
     {
         _serverProperties = serverProperties == null ? Collections.<String, Object>emptyMap() : serverProperties;
+        _messageCompressionSupported = Boolean.parseBoolean(String.valueOf(_serverProperties.get(ConnectionStartProperties.QPID_MESSAGE_COMPRESSION_SUPPORTED)));
     }
 
     public Map<String, Object> getServerProperties()
@@ -847,5 +850,10 @@ public class Connection extends ConnectionInvoker
                                         }
                                     };
         }
+    }
+
+    public boolean isMessageCompressionSupported()
+    {
+        return _messageCompressionSupported;
     }
 }

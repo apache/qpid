@@ -20,6 +20,17 @@
  */
 package org.apache.qpid.client.message;
 
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.Iterator;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
+
+import javax.jms.JMSException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,16 +39,11 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession_0_8;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.MessageProperties;
-
-import javax.jms.JMSException;
-import java.nio.ByteBuffer;
-import java.util.Iterator;
-import java.util.List;
+import org.apache.qpid.util.GZIPUtils;
 
 public abstract class AbstractJMSMessageFactory implements MessageFactory
 {
@@ -52,46 +58,57 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         ByteBuffer data;
         final boolean debug = _logger.isDebugEnabled();
 
-        // we optimise the non-fragmented case to avoid copying
-        if ((bodies != null) && (bodies.size() == 1))
-        {
-            if (debug)
-            {
-                _logger.debug("Non-fragmented message body (bodySize=" + contentHeader.getBodySize() + ")");
-            }
+        byte[] uncompressed;
 
-            data = ByteBuffer.wrap(((ContentBody) bodies.get(0)).getPayload());
+        if(GZIPUtils.GZIP_CONTENT_ENCODING.equals(contentHeader.getProperties().getEncodingAsString())
+                && (uncompressed = GZIPUtils.uncompressStreamToArray(new BodyInputStream(bodies))) != null )
+        {
+            contentHeader.getProperties().setEncoding((String)null);
+            data = ByteBuffer.wrap(uncompressed);
         }
-        else if (bodies != null)
+        else
         {
-            if (debug)
+            // we optimise the non-fragmented case to avoid copying
+            if ((bodies != null) && (bodies.size() == 1))
             {
-                _logger.debug("Fragmented message body (" + bodies
-                        .size() + " frames, bodySize=" + contentHeader.getBodySize() + ")");
-            }
-
-            data = ByteBuffer.allocate((int) contentHeader.getBodySize()); // XXX: Is cast a problem?
-            final Iterator it = bodies.iterator();
-            while (it.hasNext())
-            {
-                ContentBody cb = (ContentBody) it.next();
-                final ByteBuffer payload = ByteBuffer.wrap(cb.getPayload());
-                if(payload.isDirect() || payload.isReadOnly())
+                if (debug)
                 {
-                    data.put(payload);
-                }
-                else
-                {
-                    data.put(payload.array(), payload.arrayOffset(), payload.limit());
+                    _logger.debug("Non-fragmented message body (bodySize=" + contentHeader.getBodySize() + ")");
                 }
 
+                data = ByteBuffer.wrap(((ContentBody) bodies.get(0)).getPayload());
             }
+            else if (bodies != null)
+            {
+                if (debug)
+                {
+                    _logger.debug("Fragmented message body (" + bodies
+                            .size() + " frames, bodySize=" + contentHeader.getBodySize() + ")");
+                }
 
-            data.flip();
-        }
-        else // bodies == null
-        {
-            data = ByteBuffer.allocate(0);
+                data = ByteBuffer.allocate((int) contentHeader.getBodySize()); // XXX: Is cast a problem?
+                final Iterator it = bodies.iterator();
+                while (it.hasNext())
+                {
+                    ContentBody cb = (ContentBody) it.next();
+                    final ByteBuffer payload = ByteBuffer.wrap(cb.getPayload());
+                    if (payload.isDirect() || payload.isReadOnly())
+                    {
+                        data.put(payload);
+                    }
+                    else
+                    {
+                        data.put(payload.array(), payload.arrayOffset(), payload.limit());
+                    }
+
+                }
+
+                data.flip();
+            }
+            else // bodies == null
+            {
+                data = ByteBuffer.allocate(0);
+            }
         }
 
         if (debug)
@@ -132,22 +149,42 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
             _logger.debug("Creating message from buffer with position=" + data.position() + " and remaining=" + data
                     .remaining());
         }
+        if(GZIPUtils.GZIP_CONTENT_ENCODING.equals(msgProps.getContentEncoding()))
+        {
+            byte[] uncompressed = GZIPUtils.uncompressBufferToArray(data);
+            if(uncompressed != null)
+            {
+                msgProps.setContentEncoding(null);
+                data = ByteBuffer.wrap(uncompressed);
+            }
+        }
         AMQMessageDelegate delegate = new AMQMessageDelegate_0_10(msgProps, deliveryProps, messageNbr);
 
         AbstractJMSMessage message = createMessage(delegate, data);
         return message;
     }
 
-    private static final String asString(byte[] bytes)
+    private ByteBuffer uncompressBody(final InputStream bodyInputStream) throws AMQException
     {
-        if (bytes == null)
+        final ByteBuffer data;
+        try(GZIPInputStream gzipInputStream = new GZIPInputStream(bodyInputStream))
         {
-            return null;
+            ByteArrayOutputStream uncompressedBuffer = new ByteArrayOutputStream();
+            int read;
+            byte[] buf = new byte[4096];
+            while((read = gzipInputStream.read(buf))!=-1)
+            {
+                uncompressedBuffer.write(buf,0,read);
+            }
+            byte[] uncompressedBytes = uncompressedBuffer.toByteArray();
+            data = ByteBuffer.wrap(uncompressedBytes);
         }
-        else
+        catch (IOException e)
         {
-            return new String(bytes);
+            // TODO - shouldn't happen
+            throw new AMQException("Error uncompressing gzipped message data", e);
         }
+        return data;
     }
 
 
@@ -174,4 +211,57 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         return msg;
     }
 
+    private class BodyInputStream extends InputStream
+    {
+        private final Iterator<ContentBody> _bodiesIter;
+        private byte[] _currentBuffer;
+        private int _currentPos;
+        public BodyInputStream(final List<ContentBody> bodies)
+        {
+            _bodiesIter = bodies.iterator();
+            _currentBuffer = _bodiesIter.next().getPayload();
+            _currentPos = 0;
+        }
+
+        @Override
+        public int read() throws IOException
+        {
+            byte[] buf = new byte[1];
+            int size = read(buf);
+            if(size == -1)
+            {
+                throw new EOFException();
+            }
+            else
+            {
+                return ((int)buf[0])&0xff;
+            }
+        }
+
+        @Override
+        public int read(final byte[] dst, final int off, final int len)
+        {
+            while(_currentPos == _currentBuffer.length)
+            {
+                if(!_bodiesIter.hasNext())
+                {
+                    return -1;
+                }
+                else
+                {
+                    _currentBuffer = _bodiesIter.next().getPayload();
+                    _currentPos = 0;
+                }
+            }
+            int size = Math.min(len, _currentBuffer.length - _currentPos);
+            System.arraycopy(_currentBuffer,_currentPos, dst,off,size);
+            _currentPos+=size;
+            return size;
+        }
+
+        @Override
+        public void close()
+        {
+        }
+    }
 }

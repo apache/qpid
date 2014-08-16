@@ -116,7 +116,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
          * @throws org.apache.qpid.AMQException
          */
         @Override
-        public void send(MessageInstance entry, boolean batch)
+        public long send(MessageInstance entry, boolean batch)
         {
             // We don't decrement the reference here as we don't want to consume the message
             // but we do want to send it to the client.
@@ -124,7 +124,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
             synchronized (getChannel())
             {
                 long deliveryTag = getChannel().getNextDeliveryTag();
-                sendToClient(entry.getMessage(), entry.getInstanceProperties(), deliveryTag);
+                return sendToClient(entry.getMessage(), entry.getInstanceProperties(), deliveryTag);
             }
 
         }
@@ -177,7 +177,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
          * @param batch
          */
         @Override
-        public void send(MessageInstance entry, boolean batch)
+        public long send(MessageInstance entry, boolean batch)
         {
             // if we do not need to wait for client acknowledgements
             // we can decrement the reference count immediately.
@@ -194,17 +194,17 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
             MessageReference ref = message.newReference();
             InstanceProperties props = entry.getInstanceProperties();
             entry.delete();
-
+            long size;
             synchronized (getChannel())
             {
                 getChannel().getProtocolSession().setDeferFlush(batch);
                 long deliveryTag = getChannel().getNextDeliveryTag();
 
-                sendToClient(message, props, deliveryTag);
+                size = sendToClient(message, props, deliveryTag);
 
             }
             ref.release();
-
+            return size;
 
         }
 
@@ -291,7 +291,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
          * @param batch
          */
         @Override
-        public void send(MessageInstance entry, boolean batch)
+        public long send(MessageInstance entry, boolean batch)
         {
 
 
@@ -303,9 +303,9 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
                 addUnacknowledgedMessage(entry);
                 recordMessageDelivery(entry, deliveryTag);
                 entry.addStateChangeListener(getReleasedStateChangeListener());
-                sendToClient(entry.getMessage(), entry.getInstanceProperties(), deliveryTag);
+                long size = sendToClient(entry.getMessage(), entry.getInstanceProperties(), deliveryTag);
                 entry.incrementDeliveryCount();
-
+                return size;
             }
         }
 
@@ -502,9 +502,9 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         }
     }
 
-    protected void sendToClient(final ServerMessage message, final InstanceProperties props, final long deliveryTag)
+    protected long sendToClient(final ServerMessage message, final InstanceProperties props, final long deliveryTag)
     {
-        _deliveryMethod.deliverToClient(getConsumer(), message, props, deliveryTag);
+        return _deliveryMethod.deliverToClient(getConsumer(), message, props, deliveryTag);
 
     }
 
