@@ -1431,15 +1431,22 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     static String interpolate(ConfiguredObject<?> object, String value)
     {
-        Map<String,String> inheritedContext = new HashMap<String, String>();
-        generateInheritedContext(object.getModel(), object, inheritedContext);
-        return Strings.expand(value, false,
-                              JSON_SUBSTITUTION_RESOLVER,
-                              getOwnAttributeResolver(object),
-                              new Strings.MapResolver(inheritedContext),
-                              Strings.JAVA_SYS_PROPS_RESOLVER,
-                              Strings.ENV_VARS_RESOLVER,
-                              object.getModel().getTypeRegistry().getDefaultContextResolver());
+        if(object == null)
+        {
+            return value;
+        }
+        else
+        {
+            Map<String, String> inheritedContext = new HashMap<String, String>();
+            generateInheritedContext(object.getModel(), object, inheritedContext);
+            return Strings.expand(value, false,
+                                  JSON_SUBSTITUTION_RESOLVER,
+                                  getOwnAttributeResolver(object),
+                                  new Strings.MapResolver(inheritedContext),
+                                  Strings.JAVA_SYS_PROPS_RESOLVER,
+                                  Strings.ENV_VARS_RESOLVER,
+                                  object.getModel().getTypeRegistry().getDefaultContextResolver());
+        }
     }
 
     private static OwnAttributeResolver getOwnAttributeResolver(final ConfiguredObject<?> object)
