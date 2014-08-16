@@ -58,9 +58,6 @@ import org.apache.qpid.util.Strings;
 public class BasicMessageProducer_0_10 extends BasicMessageProducer
 {
 
-    // TODO - move and add properties to change this
-    private static final int MESSAGE_COMPRESSION_THRESHOLD_SIZE = 4096;
-
     private static final Logger _logger = LoggerFactory.getLogger(BasicMessageProducer_0_10.class);
     private byte[] userIDBytes;
 
@@ -211,8 +208,11 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
         ByteBuffer data = message.getData();
 
-        if(data.remaining() > getConnection().getMessageCompressionThresholdSize() && getConnection().getDelegate().isMessageCompressionSupported()
-           && getConnection().isMessageCompressionDesired() && messageProps.getContentEncoding() == null)
+        if(data != null
+           && data.remaining() > getConnection().getMessageCompressionThresholdSize()
+           && getConnection().getDelegate().isMessageCompressionSupported()
+           && getConnection().isMessageCompressionDesired()
+           && messageProps.getContentEncoding() == null)
         {
             byte[] compressed = GZIPUtils.compressBufferToArray(data);
             if(compressed != null)
