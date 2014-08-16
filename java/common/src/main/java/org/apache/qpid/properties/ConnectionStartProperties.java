@@ -41,6 +41,9 @@ public class ConnectionStartProperties
      */
     public static final String QPID_CLOSE_WHEN_NO_ROUTE = "qpid.close_when_no_route";
 
+    public static final String QPID_MESSAGE_COMPRESSION_SUPPORTED = "qpid.message_compression_supported";
+
+
     public static final String CLIENT_ID_0_10 = "clientName";
     public static final String CLIENT_ID_0_8 = "instance";
 

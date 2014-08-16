@@ -20,8 +20,11 @@
  */
 package org.apache.qpid.client;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.UUID;
+import java.util.zip.GZIPOutputStream;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -147,7 +150,37 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
         contentHeaderProperties.setDeliveryMode((byte) deliveryMode);
         contentHeaderProperties.setPriority((byte) priority);
 
-        final int size = (payload != null) ? payload.limit() : 0;
+        int size = (payload != null) ? payload.remaining() : 0;
+
+        if(size > getConnection().getMessageCompressionThresholdSize() && getConnection().getDelegate().isMessageCompressionSupported()
+                && getConnection().isMessageCompressionDesired() && contentHeaderProperties.getEncoding() == null)
+        {
+            contentHeaderProperties.setEncoding("gzip");
+            try(ByteArrayOutputStream compressedOutputBuffer = new ByteArrayOutputStream(size / 2))
+            {
+                try (GZIPOutputStream output = new GZIPOutputStream(compressedOutputBuffer))
+                {
+                    if(payload.hasArray())
+                    {
+                        output.write(payload.array(),payload.position()+payload.arrayOffset(),payload.remaining());
+                    }
+                    else
+                    {
+                        byte[] tmp = new byte[size];
+                        payload.get(tmp);
+                        output.write(tmp);
+                    }
+                }
+
+                byte[] compressedData = compressedOutputBuffer.toByteArray();
+                payload = ByteBuffer.wrap(compressedData);
+                size = compressedData.length;
+            }
+            catch (IOException e)
+            {
+                // TODO - shouldn't happen
+            }
+        }
         final int contentBodyFrameCount = calculateContentBodyFrameCount(payload);
         final AMQFrame[] frames = new AMQFrame[2 + contentBodyFrameCount];
 

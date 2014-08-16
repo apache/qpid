@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,6 +52,7 @@ import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.Option;
+import org.apache.qpid.util.GZIPUtils;
 
 public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowCreditManager.FlowCreditManagerListener
 {
@@ -198,7 +200,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
 
     private final AddMessageDispositionListenerAction _postIdSettingAction;
 
-    public void send(final MessageInstance entry, boolean batch)
+    public long send(final MessageInstance entry, boolean batch)
     {
         ServerMessage serverMsg = entry.getMessage();
 
@@ -264,11 +266,44 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
 
         deliveryProps.setRedelivered(entry.isRedelivered());
 
+        boolean msgCompressed = messageProps != null && GZIPUtils.GZIP_CONTENT_ENCODING.equals(messageProps.getContentEncoding());
+
+
+        ByteBuffer body = msg.getBody();
+
+        boolean compressionSupported = _session.getConnection().getConnectionDelegate().isCompressionSupported();
+
+        if(msgCompressed && !compressionSupported)
+        {
+            byte[] uncompressed = GZIPUtils.uncompressBufferToArray(body);
+            if(uncompressed != null)
+            {
+                messageProps.setContentEncoding(null);
+                body = ByteBuffer.wrap(uncompressed);
+            }
+        }
+        else if(!msgCompressed
+                && compressionSupported
+                && (messageProps == null || messageProps.getContentEncoding()==null)
+                && body.remaining() > _session.getConnection().getMessageCompressionThreshold())
+        {
+            byte[] compressed = GZIPUtils.compressBufferToArray(body);
+            if(compressed != null)
+            {
+                if(messageProps == null)
+                {
+                    messageProps = new MessageProperties();
+                }
+                messageProps.setContentEncoding(GZIPUtils.GZIP_CONTENT_ENCODING);
+                body = ByteBuffer.wrap(compressed);
+            }
+        }
+        long size = body == null ? 0 : body.remaining();
+
         Header header = new Header(deliveryProps, messageProps, msg.getHeader() == null ? null : msg.getHeader().getNonStandardProperties());
 
-
-        xfr = batch ? new MessageTransfer(getConsumer().getName(),_acceptMode,_acquireMode,header,msg.getBody(), BATCHED)
-                    : new MessageTransfer(getConsumer().getName(),_acceptMode,_acquireMode,header,msg.getBody());
+        xfr = batch ? new MessageTransfer(getConsumer().getName(),_acceptMode,_acquireMode,header, body, BATCHED)
+                    : new MessageTransfer(getConsumer().getName(),_acceptMode,_acquireMode,header, body);
 
         if(_acceptMode == MessageAcceptMode.NONE && _acquireMode != MessageAcquireMode.PRE_ACQUIRED)
         {
@@ -311,7 +346,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         {
             recordUnacknowledged(entry);
         }
-
+        return size;
     }
 
     void recordUnacknowledged(MessageInstance entry)

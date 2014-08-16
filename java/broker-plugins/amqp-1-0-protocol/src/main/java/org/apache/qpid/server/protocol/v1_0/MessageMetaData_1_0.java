@@ -72,6 +72,17 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
         this(sections, encodeSections(sections, encoder));
     }
 
+    public Properties getPropertiesSection()
+    {
+        return _properties;
+    }
+
+
+    public Header getHeaderSection()
+    {
+        return _header;
+    }
+
     private static ArrayList<ByteBuffer> encodeSections(final List<Section> sections, final SectionEncoder encoder)
     {
         ArrayList<ByteBuffer> encodedSections = new ArrayList<ByteBuffer>(sections.size());

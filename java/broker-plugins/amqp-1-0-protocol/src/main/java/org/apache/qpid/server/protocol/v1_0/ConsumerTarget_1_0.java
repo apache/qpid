@@ -112,10 +112,12 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
         }
     }
 
-    public void send(MessageInstance entry, boolean batch)
+    public long send(MessageInstance entry, boolean batch)
     {
         // TODO
+        long size = entry.getMessage().getSize();
         send(entry);
+        return size;
     }
 
     public void flushBatched()

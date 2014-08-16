@@ -17,6 +17,19 @@
  */
 package org.apache.qpid.client;
 
+import static org.apache.qpid.transport.Option.NONE;
+import static org.apache.qpid.transport.Option.SYNC;
+import static org.apache.qpid.transport.Option.UNRELIABLE;
+
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
+import javax.jms.Message;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,25 +49,18 @@ import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.Option;
 import org.apache.qpid.transport.TransportException;
+import org.apache.qpid.util.GZIPUtils;
 import org.apache.qpid.util.Strings;
-
-import static org.apache.qpid.transport.Option.NONE;
-import static org.apache.qpid.transport.Option.SYNC;
-import static org.apache.qpid.transport.Option.UNRELIABLE;
-
-import javax.jms.DeliveryMode;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * This is a 0_10 message producer.
  */
 public class BasicMessageProducer_0_10 extends BasicMessageProducer
 {
+
+    // TODO - move and add properties to change this
+    private static final int MESSAGE_COMPRESSION_THRESHOLD_SIZE = 4096;
+
     private static final Logger _logger = LoggerFactory.getLogger(BasicMessageProducer_0_10.class);
     private byte[] userIDBytes;
 
@@ -204,6 +210,19 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         }
 
         ByteBuffer data = message.getData();
+
+        if(data.remaining() > getConnection().getMessageCompressionThresholdSize() && getConnection().getDelegate().isMessageCompressionSupported()
+           && getConnection().isMessageCompressionDesired() && messageProps.getContentEncoding() == null)
+        {
+            byte[] compressed = GZIPUtils.compressBufferToArray(data);
+            if(compressed != null)
+            {
+                messageProps.setContentEncoding(GZIPUtils.GZIP_CONTENT_ENCODING);
+                data = ByteBuffer.wrap(compressed);
+            }
+        }
+
+
         messageProps.setContentLength(data == null ? 0 : data.remaining());
 
         // send the message

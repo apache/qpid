@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.protocol.v0_8.output;
 
+import java.io.DataOutput;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
@@ -27,6 +31,7 @@ import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicCancelOkBody;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicGetOkBody;
 import org.apache.qpid.framing.BasicReturnBody;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -34,16 +39,13 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.message.InstanceProperties;
+import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
-import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-
-import java.io.DataOutput;
-import java.io.IOException;
-import java.nio.ByteBuffer;
+import org.apache.qpid.util.GZIPUtils;
 
 class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 {
@@ -51,6 +53,7 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
     private final MethodRegistry _methodRegistry;
     private final AMQProtocolSession _protocolSession;
+    private static final AMQShortString GZIP_ENCODING = AMQShortString.valueOf(GZIPUtils.GZIP_CONTENT_ENCODING);
 
     ProtocolOutputConverterImpl(AMQProtocolSession session, MethodRegistry methodRegistry)
     {
@@ -64,7 +67,7 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         return _protocolSession;
     }
 
-    public void writeDeliver(final ServerMessage m,
+    public long writeDeliver(final ServerMessage m,
                              final InstanceProperties props, int channelId,
                              long deliveryTag,
                              AMQShortString consumerTag)
@@ -72,7 +75,7 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         final AMQMessage msg = convertToAMQMessage(m);
         final boolean isRedelivered = Boolean.TRUE.equals(props.getProperty(InstanceProperties.Property.REDELIVERED));
         AMQBody deliverBody = createEncodedDeliverBody(msg, isRedelivered, deliveryTag, consumerTag);
-        writeMessageDelivery(msg, channelId, deliverBody);
+        return writeMessageDelivery(msg, channelId, deliverBody);
     }
 
     private AMQMessage convertToAMQMessage(ServerMessage serverMessage)
@@ -93,21 +96,97 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         return MessageConverterRegistry.getConverter(clazz, AMQMessage.class);
     }
 
-    private void writeMessageDelivery(AMQMessage message, int channelId, AMQBody deliverBody)
+    private long writeMessageDelivery(AMQMessage message, int channelId, AMQBody deliverBody)
     {
-        writeMessageDelivery(message, message.getContentHeaderBody(), channelId, deliverBody);
+        return writeMessageDelivery(message, message.getContentHeaderBody(), channelId, deliverBody);
     }
 
-    private void writeMessageDelivery(MessageContentSource message, ContentHeaderBody contentHeaderBody, int channelId, AMQBody deliverBody)
+    private long writeMessageDelivery(MessageContentSource message, ContentHeaderBody contentHeaderBody, int channelId, AMQBody deliverBody)
     {
 
-
         int bodySize = (int) message.getSize();
+        boolean msgCompressed = isCompressed(contentHeaderBody);
+        byte[] modifiedContent;
 
-        if(bodySize == 0)
+        // straight through case
+        boolean compressionSupported = _protocolSession.isCompressionSupported();
+
+        if(msgCompressed && !compressionSupported &&
+                (modifiedContent = GZIPUtils.uncompressBufferToArray(message.getContent(0,bodySize))) != null)
+        {
+            BasicContentHeaderProperties modifiedProps =
+                    new BasicContentHeaderProperties(contentHeaderBody.getProperties());
+            modifiedProps.setEncoding((String)null);
+
+            writeMessageDeliveryModified(channelId, deliverBody, modifiedProps, modifiedContent);
+
+            return modifiedContent.length;
+        }
+        else if(!msgCompressed
+                && compressionSupported
+                && contentHeaderBody.getProperties().getEncoding()==null
+                && bodySize > _protocolSession.getMessageCompressionThreshold()
+                && (modifiedContent = GZIPUtils.compressBufferToArray(message.getContent(0, bodySize))) != null)
+        {
+            BasicContentHeaderProperties modifiedProps =
+                    new BasicContentHeaderProperties(contentHeaderBody.getProperties());
+            modifiedProps.setEncoding(GZIP_ENCODING);
+
+            writeMessageDeliveryModified(channelId, deliverBody, modifiedProps, modifiedContent);
+
+            return modifiedContent.length;
+        }
+        else
+        {
+            writeMessageDeliveryUnchanged(message, contentHeaderBody, channelId, deliverBody, bodySize);
+
+            return bodySize;
+        }
+    }
+
+    private int writeMessageDeliveryModified(final int channelId,
+                                             final AMQBody deliverBody,
+                                             final BasicContentHeaderProperties modifiedProps,
+                                             final byte[] content)
+    {
+        final int bodySize;
+        bodySize = content.length;
+        ContentHeaderBody modifiedHeaderBody =
+                new ContentHeaderBody(BASIC_CLASS_ID, 0, modifiedProps, bodySize);
+        final MessageContentSource wrappedSource = new MessageContentSource()
+        {
+            @Override
+            public int getContent(final ByteBuffer buf, final int offset)
+            {
+                int size = Math.min(buf.remaining(), content.length - offset);
+                buf.put(content, offset, size);
+                return size;
+            }
+
+            @Override
+            public ByteBuffer getContent(final int offset, final int size)
+            {
+                return ByteBuffer.wrap(content, offset, size);
+            }
+
+            @Override
+            public long getSize()
+            {
+                return content.length;
+            }
+        };
+        writeMessageDeliveryUnchanged(wrappedSource, modifiedHeaderBody, channelId, deliverBody, bodySize);
+        return bodySize;
+    }
+
+    private void writeMessageDeliveryUnchanged(final MessageContentSource message,
+                                               final ContentHeaderBody contentHeaderBody,
+                                               final int channelId, final AMQBody deliverBody, final int bodySize)
+    {
+        if (bodySize == 0)
         {
             SmallCompositeAMQBodyBlock compositeBlock = new SmallCompositeAMQBodyBlock(channelId, deliverBody,
-                                                                             contentHeaderBody);
+                                                                                       contentHeaderBody);
 
             writeFrame(compositeBlock);
         }
@@ -120,13 +199,14 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
             int writtenSize = capacity;
 
-            AMQBody firstContentBody = new MessageContentSourceBody(message,0,capacity);
+            AMQBody firstContentBody = new MessageContentSourceBody(message, 0, capacity);
 
             CompositeAMQBodyBlock
-                    compositeBlock = new CompositeAMQBodyBlock(channelId, deliverBody, contentHeaderBody, firstContentBody);
+                    compositeBlock =
+                    new CompositeAMQBodyBlock(channelId, deliverBody, contentHeaderBody, firstContentBody);
             writeFrame(compositeBlock);
 
-            while(writtenSize < bodySize)
+            while (writtenSize < bodySize)
             {
                 capacity = bodySize - writtenSize > maxBodySize ? maxBodySize : bodySize - writtenSize;
                 MessageContentSourceBody body = new MessageContentSourceBody(message, writtenSize, capacity);
@@ -135,6 +215,11 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
                 writeFrame(new AMQFrame(channelId, body));
             }
         }
+    }
+
+    private boolean isCompressed(final ContentHeaderBody contentHeaderBody)
+    {
+        return GZIP_ENCODING.equals(contentHeaderBody.getProperties().getEncoding());
     }
 
     private class MessageContentSourceBody implements AMQBody
@@ -186,14 +271,14 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         }
     }
 
-    public void writeGetOk(final ServerMessage msg,
+    public long writeGetOk(final ServerMessage msg,
                            final InstanceProperties props,
                            int channelId,
                            long deliveryTag,
                            int queueSize)
     {
         AMQBody deliver = createEncodedGetOkBody(msg, props, deliveryTag, queueSize);
-        writeMessageDelivery(convertToAMQMessage(msg), channelId, deliver);
+        return writeMessageDelivery(convertToAMQMessage(msg), channelId, deliver);
     }
 
 

@@ -32,6 +32,7 @@ import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoderImpl;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Section;
+import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.codec.AMQPDescribedTypeRegistry;
 import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
 import org.apache.qpid.amqp_1_0.type.messaging.Data;
@@ -43,6 +44,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.typedmessage.TypedBytesContentReader;
 import org.apache.qpid.typedmessage.TypedBytesFormatException;
+import org.apache.qpid.util.GZIPUtils;
 
 public abstract class MessageConverter_to_1_0<M extends ServerMessage> implements MessageConverter<M, Message_1_0>
 {
@@ -202,7 +204,19 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
                                                                       SectionEncoder sectionEncoder)
     {
         final String mimeType = serverMessage.getMessageHeader().getMimeType();
-        Section bodySection = getBodySection(serverMessage, mimeType);
+        byte[] data = new byte[(int) serverMessage.getSize()];
+        serverMessage.getContent(ByteBuffer.wrap(data), 0);
+        byte[] uncompressed;
+
+        if(Symbol.valueOf(GZIPUtils.GZIP_CONTENT_ENCODING).equals(metaData.getPropertiesSection().getContentEncoding())
+                && (uncompressed = GZIPUtils.uncompressBufferToArray(ByteBuffer.wrap(data)))!=null)
+        {
+            data = uncompressed;
+            metaData.getPropertiesSection().setContentEncoding(null);
+        }
+
+
+        Section bodySection = convertMessageBody(mimeType, data);
 
         final ByteBuffer allData = encodeConvertedMessage(metaData, bodySection, sectionEncoder);
 
@@ -277,14 +291,6 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
                             return false;
                         }
         };
-    }
-
-    protected Section getBodySection(final M serverMessage, final String mimeType)
-    {
-        byte[] data = new byte[(int) serverMessage.getSize()];
-        serverMessage.getContent(ByteBuffer.wrap(data), 0);
-
-        return convertMessageBody(mimeType, data);
     }
 
     private ByteBuffer encodeConvertedMessage(MessageMetaData_1_0 metaData, Section bodySection, SectionEncoder sectionEncoder)

@@ -26,7 +26,6 @@
  */
 package org.apache.qpid.server.protocol.v0_8.output;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -35,7 +34,6 @@ import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueEntry;
 
 public interface ProtocolOutputConverter
 {
@@ -46,12 +44,12 @@ public interface ProtocolOutputConverter
         ProtocolOutputConverter newInstance(AMQProtocolSession session);
     }
 
-    void writeDeliver(final ServerMessage msg,
+    long writeDeliver(final ServerMessage msg,
                       final InstanceProperties props, int channelId,
                       long deliveryTag,
                       AMQShortString consumerTag);
 
-    void writeGetOk(final ServerMessage msg,
+    long writeGetOk(final ServerMessage msg,
                     final InstanceProperties props,
                     int channelId,
                     long deliveryTag,

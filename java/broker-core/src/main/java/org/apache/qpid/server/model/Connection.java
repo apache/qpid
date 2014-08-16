@@ -43,6 +43,7 @@ public interface Connection<X extends Connection<X>> extends ConfiguredObject<X>
     String TRANSPORT = "transport";
     String PORT = "port";
 
+
     @DerivedAttribute
     String getClientId();
 

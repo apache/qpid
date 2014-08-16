@@ -167,13 +167,15 @@ public class MockConsumer implements ConsumerTarget
     {
     }
 
-    public void send(MessageInstance entry, boolean batch)
+    public long send(MessageInstance entry, boolean batch)
     {
+        long size = entry.getMessage().getSize();
         if (messages.contains(entry))
         {
             entry.setRedelivered();
         }
         messages.add(entry);
+        return size;
     }
 
     public void flushBatched()

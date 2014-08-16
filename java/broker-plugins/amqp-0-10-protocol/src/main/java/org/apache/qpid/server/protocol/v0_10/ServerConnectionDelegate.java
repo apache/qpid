@@ -64,6 +64,8 @@ public class ServerConnectionDelegate extends ServerDelegate
     private final SubjectCreator _subjectCreator;
     private int _maximumFrameSize;
 
+    private boolean _compressionSupported;
+
     public ServerConnectionDelegate(Broker<?> broker, String localFQDN, SubjectCreator subjectCreator)
     {
         this(createConnectionProperties(broker), Collections.singletonList((Object)"en_US"), broker, localFQDN, subjectCreator);
@@ -111,6 +113,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         map.put(ServerPropertyNames.VERSION, QpidProperties.getReleaseVersion());
         map.put(ServerPropertyNames.QPID_BUILD, QpidProperties.getBuildVersion());
         map.put(ServerPropertyNames.QPID_INSTANCE_NAME, broker.getName());
+        map.put(ConnectionStartProperties.QPID_MESSAGE_COMPRESSION_SUPPORTED, String.valueOf(broker.isMessageCompressionEnabled()));
 
         return map;
     }
@@ -366,6 +369,16 @@ public class ServerConnectionDelegate extends ServerDelegate
     public void connectionStartOk(Connection conn, ConnectionStartOk ok)
     {
         _clientProperties = ok.getClientProperties();
+        if(_clientProperties != null)
+        {
+            Object compressionSupported =
+                    _clientProperties.get(ConnectionStartProperties.QPID_MESSAGE_COMPRESSION_SUPPORTED);
+            if (compressionSupported != null)
+            {
+                _compressionSupported = Boolean.parseBoolean(String.valueOf(compressionSupported));
+
+            }
+        }
         super.connectionStartOk(conn, ok);
     }
 
@@ -399,5 +412,10 @@ public class ServerConnectionDelegate extends ServerDelegate
     {
         int delay = (Integer)_broker.getAttribute(Broker.CONNECTION_HEART_BEAT_DELAY);
         return delay == 0 ? super.getHeartbeatMax() : delay;
+    }
+
+    public boolean isCompressionSupported()
+    {
+        return _compressionSupported && _broker.isMessageCompressionEnabled();
     }
 }

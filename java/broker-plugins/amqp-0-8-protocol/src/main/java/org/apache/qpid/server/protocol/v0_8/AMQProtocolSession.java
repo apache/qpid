@@ -174,9 +174,9 @@ public interface AMQProtocolSession<T extends AMQProtocolSession<T>>
 
     Object getReference();
 
-    VirtualHostImpl getVirtualHost();
+    VirtualHostImpl<?,?,?> getVirtualHost();
 
-    void setVirtualHost(VirtualHostImpl virtualHost) throws AMQException;
+    void setVirtualHost(VirtualHostImpl<?,?,?> virtualHost) throws AMQException;
 
     public ProtocolOutputConverter getProtocolOutputConverter();
 
@@ -210,4 +210,8 @@ public interface AMQProtocolSession<T extends AMQProtocolSession<T>>
      * can't be routed rather than returning the message.
      */
     boolean isCloseWhenNoRoute();
+
+    boolean isCompressionSupported();
+
+    int getMessageCompressionThreshold();
 }
