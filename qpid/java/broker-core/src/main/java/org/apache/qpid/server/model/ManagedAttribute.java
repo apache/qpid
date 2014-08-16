@@ -34,4 +34,5 @@ public @interface ManagedAttribute
     boolean persist() default true;
     String defaultValue() default "";
     String description() default "";
+    String[] validValues() default {};
 }

@@ -20,65 +20,27 @@
  */
 package org.apache.qpid.server.model.port;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
+import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
-import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Transport;
 
 @ManagedObject( category = false, type = "RMI")
-public class RmiPort extends AbstractPort<RmiPort>
+public interface RmiPort<X extends RmiPort<X>> extends Port<X>
 {
-    private PortManager _portManager;
 
-    @ManagedObjectFactoryConstructor
-    public RmiPort(final Map<String, Object> attributes,
-                   final Broker<?> broker)
-    {
-        super(attributes, broker);
-    }
+    @ManagedAttribute( validValues = { "[ \"RMI\"]"} )
+    Set<Protocol> getProtocols();
 
-    @Override
-    public void onValidate()
-    {
-        super.onValidate();
+    @ManagedAttribute( defaultValue = "TCP",
+                       validValues = {"[ \"TCP\" ]"})
+    Set<Transport> getTransports();
 
-        validateOnlyOneInstance();
 
-        if (getTransports().contains(Transport.SSL))
-        {
-            throw new IllegalConfigurationException("Can't create RMI registry port which requires SSL");
-        }
+    public void setPortManager(PortManager manager);
 
-    }
 
-    @Override
-    protected Set<Protocol> getDefaultProtocols()
-    {
-        return Collections.singleton(Protocol.RMI);
-    }
-
-    public void setPortManager(PortManager manager)
-    {
-        _portManager = manager;
-    }
-
-    @Override
-    protected State onActivate()
-    {
-        if(_portManager != null && _portManager.isActivationAllowed(this))
-        {
-            return super.onActivate();
-        }
-        else
-        {
-            return State.QUIESCED;
-        }
-    }
 }

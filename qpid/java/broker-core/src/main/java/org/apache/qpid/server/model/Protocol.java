@@ -87,6 +87,6 @@ public enum Protocol
 
     public static enum ProtocolType
     {
-        AMQP, HTTP, JMX, RMI;
+        AMQP, HTTP, JMX, RMI
     }
 }
