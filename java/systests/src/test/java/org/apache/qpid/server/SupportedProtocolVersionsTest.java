@@ -20,6 +20,15 @@
  */
 package org.apache.qpid.server;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.codehaus.jackson.map.ObjectMapper;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.ProtocolVersion;
@@ -43,11 +52,41 @@ public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
         // No-op, we call super.setUp() from test methods after appropriate config overrides
     }
 
-    private void clearProtocolSupportManipulations()
+    private void clearProtocolSupportManipulations() throws Exception
     {
         //Remove the QBTC provided protocol manipulations, giving only the protocols which default to enabled
         setSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES, null);
         setSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES, null);
+        setSystemProperty(QpidBrokerTestCase.TEST_AMQP_PORT_PROTOCOLS_PROPERTY, getProtocolsAsString(getAllAmqpProtocols()));
+    }
+
+    private Collection<Protocol> getAllAmqpProtocols() throws Exception
+    {
+        Collection<Protocol> protocols = new HashSet<>();
+        for(Protocol p : Protocol.values())
+        {
+            if(p.getProtocolType() == Protocol.ProtocolType.AMQP)
+            {
+                protocols.add(p);
+            }
+        }
+
+        return protocols;
+    }
+
+    private String getProtocolsWithExclusions(Protocol... excludes) throws Exception
+    {
+        Set<Protocol> protocols = new HashSet<>(getAllAmqpProtocols());
+        protocols.removeAll(Arrays.asList(excludes));
+        return getProtocolsAsString(protocols);
+    }
+
+    private String getProtocolsAsString(final Collection<Protocol> protocols) throws IOException
+    {
+        ObjectMapper mapper = new ObjectMapper();
+        StringWriter stringWriter = new StringWriter();
+        mapper.writeValue(stringWriter, protocols);
+        return stringWriter.toString();
     }
 
     /**
@@ -89,11 +128,7 @@ public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
 
     public void testDisabling010and10() throws Exception
     {
-        clearProtocolSupportManipulations();
-
-        //disable 0-10 and 1-0 support
-        setSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES,
-                Protocol.AMQP_1_0 + "," + Protocol.AMQP_0_10);
+        setSystemProperty(QpidBrokerTestCase.TEST_AMQP_PORT_PROTOCOLS_PROPERTY, getProtocolsWithExclusions(Protocol.AMQP_1_0, Protocol.AMQP_0_10));
 
         super.setUp();
 
@@ -110,8 +145,8 @@ public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
         clearProtocolSupportManipulations();
 
         //disable 0-10 support, and set the default unsupported protocol initiation reply to 0-9
-        setSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES,
-                Protocol.AMQP_1_0 + "," + Protocol.AMQP_0_10);
+        setSystemProperty(QpidBrokerTestCase.TEST_AMQP_PORT_PROTOCOLS_PROPERTY, getProtocolsWithExclusions(Protocol.AMQP_1_0, Protocol.AMQP_0_10));
+
         setSystemProperty(BrokerProperties.PROPERTY_DEFAULT_SUPPORTED_PROTOCOL_REPLY, "v0_9");
 
         super.setUp();
