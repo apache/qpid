@@ -151,8 +151,7 @@ public class AmqpPortImpl extends AbstractPortWithAuthProvider<AmqpPortImpl> imp
 
             TransportProvider transportProvider = null;
             final HashSet<Transport> transportSet = new HashSet<Transport>(transports);
-            for (TransportProviderFactory tpf : (new QpidServiceLoader<TransportProviderFactory>()).instancesOf(
-                    TransportProviderFactory.class))
+            for (TransportProviderFactory tpf : (new QpidServiceLoader()).instancesOf(TransportProviderFactory.class))
             {
                 if (tpf.getSupportedTransports().contains(transports))
                 {
@@ -284,7 +283,7 @@ public class AmqpPortImpl extends AbstractPortWithAuthProvider<AmqpPortImpl> imp
     public static Set<Protocol> getInstalledProtocols()
     {
         Set<Protocol> protocols = new HashSet<>();
-        for(ProtocolEngineCreator installedEngine : (new QpidServiceLoader<ProtocolEngineCreator>()).instancesOf(ProtocolEngineCreator.class))
+        for(ProtocolEngineCreator installedEngine : (new QpidServiceLoader()).instancesOf(ProtocolEngineCreator.class))
         {
             protocols.add(installedEngine.getVersion());
         }
@@ -343,7 +342,7 @@ public class AmqpPortImpl extends AbstractPortWithAuthProvider<AmqpPortImpl> imp
     {
         Set<Set<Transport>> combinations = new HashSet<>();
 
-        for(TransportProviderFactory providerFactory : (new QpidServiceLoader<TransportProviderFactory>()).instancesOf(TransportProviderFactory.class))
+        for(TransportProviderFactory providerFactory : (new QpidServiceLoader()).instancesOf(TransportProviderFactory.class))
         {
             combinations.addAll(providerFactory.getSupportedTransports());
         }

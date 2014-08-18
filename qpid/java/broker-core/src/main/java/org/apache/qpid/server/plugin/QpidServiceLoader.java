@@ -24,16 +24,17 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 /**
  * Simple facade over a {@link ServiceLoader} to instantiate all configured implementations of an interface.
  */
-public class QpidServiceLoader<C extends Pluggable>
+public class QpidServiceLoader
 {
     private static final Logger _logger = Logger.getLogger(QpidServiceLoader.class);
 
-    public Iterable<C> instancesOf(Class<C> clazz)
+    public <C extends Pluggable> Iterable<C> instancesOf(Class<C> clazz)
     {
         return instancesOf(clazz, false);
     }
@@ -41,12 +42,12 @@ public class QpidServiceLoader<C extends Pluggable>
     /**
      * @throws RuntimeException if at least one implementation is not found.
      */
-    public Iterable<C> atLeastOneInstanceOf(Class<C> clazz)
+    public <C extends Pluggable> Iterable<C> atLeastOneInstanceOf(Class<C> clazz)
     {
         return instancesOf(clazz, true);
     }
 
-    private Iterable<C> instancesOf(Class<C> clazz, boolean atLeastOne)
+    private <C extends Pluggable> Iterable<C> instancesOf(Class<C> clazz, boolean atLeastOne)
     {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         Iterator<C> serviceLoaderIterator = ServiceLoader.load(clazz, classLoader).iterator();
@@ -55,7 +56,11 @@ public class QpidServiceLoader<C extends Pluggable>
         List<C> serviceImplementations = new ArrayList<C>();
         while(serviceLoaderIterator.hasNext())
         {
-            serviceImplementations.add(serviceLoaderIterator.next());
+            C next = serviceLoaderIterator.next();
+            if(!isDisabled(next))
+            {
+                serviceImplementations.add(next);
+            }
         }
 
         if(atLeastOne && serviceImplementations.isEmpty())
@@ -69,5 +74,17 @@ public class QpidServiceLoader<C extends Pluggable>
         }
 
         return serviceImplementations;
+    }
+
+    private <C extends Pluggable> boolean isDisabled(final C next)
+    {
+        return Boolean.getBoolean("qpid.plugin.disabled:"+next.getClass().getName())
+                || (next instanceof ConfiguredObjectTypeFactory && isDisabledConfiguredType((ConfiguredObjectTypeFactory<?>) next));
+    }
+
+    private boolean isDisabledConfiguredType(final ConfiguredObjectTypeFactory<?> typeFactory)
+    {
+        return Boolean.getBoolean("qpid.type.disabled:" + typeFactory.getCategoryClass().getSimpleName().toLowerCase()
+                                  + "." + typeFactory.getType());
     }
 }
