@@ -24,6 +24,7 @@ package org.apache.qpid.server.queue;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
@@ -48,7 +49,7 @@ public class LastValueQueueList extends OrderedQueueEntryList
     };
 
     private final String _conflationKey;
-    private final ConcurrentHashMap<Object, AtomicReference<ConflationQueueEntry>> _latestValuesMap =
+    private final ConcurrentMap<Object, AtomicReference<ConflationQueueEntry>> _latestValuesMap =
         new ConcurrentHashMap<Object, AtomicReference<ConflationQueueEntry>>();
 
     private final ConflationQueueEntry _deleteInProgress = new ConflationQueueEntry(this);

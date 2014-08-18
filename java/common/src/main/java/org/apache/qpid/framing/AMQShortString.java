@@ -21,15 +21,16 @@
 
 package org.apache.qpid.framing;
 
-import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A short string is a representation of an AMQ Short String
@@ -97,7 +98,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         return new AMQShortString(_data, from+_offset, to-from);
     }
 
-    private static final ConcurrentHashMap<AMQShortString, AMQShortString> _globalInternMap =
+    private static final ConcurrentMap<AMQShortString, AMQShortString> _globalInternMap =
             new ConcurrentHashMap<AMQShortString, AMQShortString>();
 
     private static final Logger _logger = LoggerFactory.getLogger(AMQShortString.class);

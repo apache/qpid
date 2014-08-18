@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -306,7 +307,7 @@ public class BrokerOptions
      */
     public Map<String,String> getConfigProperties()
     {
-        ConcurrentHashMap<String, String> properties = new ConcurrentHashMap<String,String>();
+        ConcurrentMap<String, String> properties = new ConcurrentHashMap<String,String>();
         properties.putAll(_configProperties);
 
         properties.putIfAbsent(QPID_WORK_DIR, getWorkDir());

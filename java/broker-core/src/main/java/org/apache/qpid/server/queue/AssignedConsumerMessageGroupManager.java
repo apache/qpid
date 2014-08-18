@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class AssignedConsumerMessageGroupManager implements MessageGroupManager
@@ -33,7 +34,7 @@ public class AssignedConsumerMessageGroupManager implements MessageGroupManager
 
 
     private final String _groupId;
-    private final ConcurrentHashMap<Integer, QueueConsumer<?>> _groupMap = new ConcurrentHashMap<Integer, QueueConsumer<?>>();
+    private final ConcurrentMap<Integer, QueueConsumer<?>> _groupMap = new ConcurrentHashMap<Integer, QueueConsumer<?>>();
     private final int _groupMask;
 
     public AssignedConsumerMessageGroupManager(final String groupId, final int maxGroups)
