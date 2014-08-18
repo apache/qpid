@@ -24,28 +24,28 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.Sequence;
-import com.sleepycat.je.SequenceConfig;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.store.StoreFuture;
+import java.util.concurrent.ConcurrentMap;
 
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
+import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.Sequence;
+import com.sleepycat.je.SequenceConfig;
 import com.sleepycat.je.Transaction;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.store.StoreFuture;
 
 public class StandardEnvironmentFacade implements EnvironmentFacade
 {
     private static final Logger LOGGER = Logger.getLogger(StandardEnvironmentFacade.class);
 
     private final String _storePath;
-    private final ConcurrentHashMap<String, Database> _cachedDatabases = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<DatabaseEntry, Sequence> _cachedSequences = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Database> _cachedDatabases = new ConcurrentHashMap<>();
+    private final ConcurrentMap<DatabaseEntry, Sequence> _cachedSequences = new ConcurrentHashMap<>();
 
     private Environment _environment;
     private final Committer _committer;

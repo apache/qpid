@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
@@ -34,7 +35,7 @@ public abstract class AbstractMemoryStore implements DurableConfigurationStore, 
     private final Class<? extends ConfiguredObject> _rootClass;
 
 
-    private final ConcurrentHashMap<UUID, ConfiguredObjectRecord> _configuredObjectRecords = new ConcurrentHashMap<UUID, ConfiguredObjectRecord>();
+    private final ConcurrentMap<UUID, ConfiguredObjectRecord> _configuredObjectRecords = new ConcurrentHashMap<UUID, ConfiguredObjectRecord>();
 
     protected AbstractMemoryStore(final Class<? extends ConfiguredObject> rootClass)
     {

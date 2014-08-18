@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -157,10 +158,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /** Used to indicate that this session has been started at least once. */
     private AtomicBoolean _startedAtLeastOnce = new AtomicBoolean(false);
 
-    private final ConcurrentHashMap<String, TopicSubscriberAdaptor<C>> _subscriptions =
+    private final ConcurrentMap<String, TopicSubscriberAdaptor<C>> _subscriptions =
             new ConcurrentHashMap<String, TopicSubscriberAdaptor<C>>();
 
-    private final ConcurrentHashMap<C, String> _reverseSubscriptionMap = new ConcurrentHashMap<C, String>();
+    private final ConcurrentMap<C, String> _reverseSubscriptionMap = new ConcurrentHashMap<C, String>();
 
     private final Lock _subscriberDetails = new ReentrantLock(true);
     private final Lock _subscriberAccess = new ReentrantLock(true);
@@ -200,7 +201,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private CopyOnWriteArrayList<C> _removedConsumers = new CopyOnWriteArrayList<C>();
 
     /** Provides a count of consumers on destinations, in order to be able to know if a destination has consumers. */
-    private ConcurrentHashMap<Destination, AtomicInteger> _destinationConsumerCount =
+    private ConcurrentMap<Destination, AtomicInteger> _destinationConsumerCount =
             new ConcurrentHashMap<Destination, AtomicInteger>();
 
     /**
@@ -312,7 +313,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public static final class IdToConsumerMap<C extends BasicMessageConsumer>
     {
         private final BasicMessageConsumer[] _fastAccessConsumers = new BasicMessageConsumer[16];
-        private final ConcurrentHashMap<Integer, C> _slowAccessConsumers = new ConcurrentHashMap<Integer, C>();
+        private final ConcurrentMap<Integer, C> _slowAccessConsumers = new ConcurrentHashMap<Integer, C>();
 
         public C get(int id)
         {

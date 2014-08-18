@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.apache.log4j.Logger;
@@ -133,7 +134,7 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
         }
     }
 
-    private final ConcurrentHashMap<String, BindingSet> _bindingsByKey =
+    private final ConcurrentMap<String, BindingSet> _bindingsByKey =
             new ConcurrentHashMap<String, BindingSet>();
 
     @ManagedObjectFactoryConstructor

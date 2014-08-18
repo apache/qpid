@@ -21,10 +21,11 @@
 package org.apache.qpid.server.exchange.topic;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class TopicWordDictionary
 {
-    private final ConcurrentHashMap<String,TopicWord> _dictionary =
+    private final ConcurrentMap<String,TopicWord> _dictionary =
             new ConcurrentHashMap<String,TopicWord>();
 
     public TopicWordDictionary()

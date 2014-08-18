@@ -20,19 +20,20 @@
  */
 package org.apache.qpid.amqp_1_0.codec;
 
-import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
-import org.apache.qpid.amqp_1_0.type.Symbol;
-
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
+import org.apache.qpid.amqp_1_0.type.Symbol;
 
 public class SymbolTypeConstructor extends VariableWidthTypeConstructor
 {
     private static final Charset ASCII = Charset.forName("US-ASCII");
 
-    private static final ConcurrentHashMap<BinaryString, Symbol> SYMBOL_MAP =
+    private static final ConcurrentMap<BinaryString, Symbol> SYMBOL_MAP =
             new ConcurrentHashMap<BinaryString, Symbol>(2048);
 
     public static SymbolTypeConstructor getInstance(int i)
