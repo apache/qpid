@@ -57,7 +57,7 @@ public class QpidServiceLoader
         while(serviceLoaderIterator.hasNext())
         {
             C next = serviceLoaderIterator.next();
-            if(!isDisabled(next))
+            if(!isDisabled(clazz, next))
             {
                 serviceImplementations.add(next);
             }
@@ -76,9 +76,9 @@ public class QpidServiceLoader
         return serviceImplementations;
     }
 
-    private <C extends Pluggable> boolean isDisabled(final C next)
+    private <C extends Pluggable> boolean isDisabled(Class<C> clazz, final C next)
     {
-        return Boolean.getBoolean("qpid.plugin.disabled:"+next.getClass().getName())
+        return Boolean.getBoolean("qpid.plugin.disabled:"+clazz.getSimpleName().toLowerCase()+"."+next.getType())
                 || (next instanceof ConfiguredObjectTypeFactory && isDisabledConfiguredType((ConfiguredObjectTypeFactory<?>) next));
     }
 
