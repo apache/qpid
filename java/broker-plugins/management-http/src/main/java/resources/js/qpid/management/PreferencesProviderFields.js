@@ -182,7 +182,7 @@ define(["dojo/_base/xhr",
         headers: { "Content-Type": "application/json"},
         putData: json.stringify(data),
         load: function(x) {success = true;},
-        error: function(error) {success = false; alert("Preferences Provider Error: " + error);}});
+        error: function(error) {success = false; util.xhrErrorHandler(error);}});
     }
     return success;
   };

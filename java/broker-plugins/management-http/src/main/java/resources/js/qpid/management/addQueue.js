@@ -178,7 +178,7 @@ define(["dojo/_base/xhr",
                                     }
                                     else
                                     {
-                                        alert("Error:" + this.failureReason);
+                                        util.xhrErrorHandler(this.failureReason);
                                     }
 
                                     return false;
