@@ -90,7 +90,7 @@ public class JMXManagementPluginImpl
         _changeListener = new ChangeListener();
         _pluginMBeanProvider = new PluginMBeansProvider();
         _mBeanProviders = new HashSet<MBeanProvider>();
-        QpidServiceLoader<MBeanProvider> qpidServiceLoader = new QpidServiceLoader<MBeanProvider>();
+        QpidServiceLoader qpidServiceLoader = new QpidServiceLoader();
         for (MBeanProvider provider : qpidServiceLoader.instancesOf(MBeanProvider.class))
         {
             _mBeanProviders.add(provider);

@@ -21,14 +21,9 @@
 package org.apache.qpid.server.plugin;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.jdbc.ConnectionProvider;
 
 public interface JDBCConnectionProviderFactory extends Pluggable
@@ -48,7 +43,7 @@ public interface JDBCConnectionProviderFactory extends Pluggable
 
         public static JDBCConnectionProviderFactory get(String type)
         {
-            QpidServiceLoader<JDBCConnectionProviderFactory> qpidServiceLoader = new QpidServiceLoader<JDBCConnectionProviderFactory>();
+            QpidServiceLoader qpidServiceLoader = new QpidServiceLoader();
             Iterable<JDBCConnectionProviderFactory> factories = qpidServiceLoader.atLeastOneInstanceOf(JDBCConnectionProviderFactory.class);
             for(JDBCConnectionProviderFactory factory : factories)
             {
