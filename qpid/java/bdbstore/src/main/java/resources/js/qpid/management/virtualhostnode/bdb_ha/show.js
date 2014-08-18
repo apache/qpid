@@ -75,7 +75,7 @@ define(["dojo/_base/xhr",
 
         if (!success)
         {
-            alert("Error:" + failureReason);
+            util.xhrErrorHandler(failureReason);
         }
         return success;
     }

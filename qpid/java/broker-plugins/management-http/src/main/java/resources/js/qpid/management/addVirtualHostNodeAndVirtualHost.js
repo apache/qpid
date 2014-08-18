@@ -255,8 +255,7 @@ define(["dojo/_base/xhr",
           }
           else
           {
-              // What if VHN creation was successful but VH was not
-              alert("Error:" + failureReason);
+              util.xhrErrorHandler(failureReason);
           }
         }
         else

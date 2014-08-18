@@ -163,7 +163,7 @@ define(["dojo/_base/xhr",
                         },
                         function(error) {that.success = false; that.failureReason = error;});
                     if(!that.success ) {
-                        alert("Error:" + this.failureReason);
+                        util.xhrErrorHandler(this.failureReason);
                     }
                 }
 }
@@ -238,7 +238,7 @@ define(["dojo/_base/xhr",
                                     if(that.success === true) {
                                         registry.byId("addGroup").hide();
                                     } else {
-                                        alert("Error:" + that.failureReason);
+                                        util.xhrErrorHandler(this.failureReason);
                                     }
 
                                     return false;
