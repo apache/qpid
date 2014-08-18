@@ -35,6 +35,7 @@
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/SessionHandler.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
 #include "qpid/Msg.h"
 #include "qpid/assert.h"
@@ -254,7 +255,9 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     arguments.setInt(QPID_SYNC_FREQUENCY, 1); // TODO aconway 2012-05-22: optimize?
     arguments.setTable(ReplicatingSubscription::QPID_BROKER_INFO, brokerInfo.asFieldTable());
     boost::shared_ptr<QueueSnapshot> qs = queue->getObservers().findType<QueueSnapshot>();
-    if (qs) arguments.setString(ReplicatingSubscription::QPID_ID_SET, encodeStr(qs->getSnapshot()));
+    if (qs) arguments.set(ReplicatingSubscription::QPID_ID_SET,
+                          FieldTable::ValuePtr(
+                              new Var32Value(encodeStr(qs->getSnapshot()), TYPE_CODE_VBIN32)));
 
     try {
         peer.getMessage().subscribe(
