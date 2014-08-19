@@ -51,7 +51,7 @@ public interface HttpPort<X extends HttpPort<X>> extends Port<X>
                        validValues = {"[ \"TCP\" ]", "[ \"SSL\" ]", "[ \"TCP\", \"SSL\" ]"})
     Set<Transport> getTransports();
 
-    @ManagedAttribute( validValues = { "[ \"HTTP\"]"} )
+    @ManagedAttribute( defaultValue = "HTTP", validValues = { "[ \"HTTP\"]"} )
     Set<Protocol> getProtocols();
 
     void setPortManager(PortManager manager);

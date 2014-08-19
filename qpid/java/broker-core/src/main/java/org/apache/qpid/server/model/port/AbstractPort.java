@@ -190,37 +190,9 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     }
 
     @Override
-    public void addTransport(Transport transport)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();
-    }
-
-    @Override
-    public Transport removeTransport(Transport transport)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();
-    }
-
-    @Override
     public Set<Protocol> getProtocols()
     {
         return _protocols;
-    }
-
-    @Override
-    public void addProtocol(Protocol protocol)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();
-    }
-
-    @Override
-    public Protocol removeProtocol(Protocol protocol)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
-    {
-        throw new IllegalStateException();
     }
 
     @Override
@@ -249,19 +221,6 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     {
         return null;
     }
-
-    @Override
-    public Set<Protocol> getAvailableProtocols()
-    {
-        Set<Protocol> protocols = getProtocols();
-        if(protocols == null || protocols.isEmpty())
-        {
-            protocols = getDefaultProtocols();
-        }
-        return protocols;
-    }
-
-    protected abstract Set<Protocol> getDefaultProtocols();
 
     @Override
     public State getState()
@@ -382,11 +341,11 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
 
             for (Port<?> existingPort : existingPorts)
             {
-                Collection<Protocol> portProtocols = existingPort.getAvailableProtocols();
+                Collection<Protocol> portProtocols = existingPort.getProtocols();
                 if (portProtocols != null)
                 {
                     final ArrayList<Protocol> intersection = new ArrayList(portProtocols);
-                    intersection.retainAll(getAvailableProtocols());
+                    intersection.retainAll(getProtocols());
                     if(!intersection.isEmpty())
                     {
                         throw new IllegalConfigurationException("Port for protocols " + intersection + " already exists. Only one management port per protocol can be created.");
