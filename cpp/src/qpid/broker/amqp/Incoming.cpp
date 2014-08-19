@@ -33,7 +33,7 @@ namespace qpid {
 namespace broker {
 namespace amqp {
 Incoming::Incoming(pn_link_t* l, Broker& broker, Session& parent, const std::string& source, const std::string& target, const std::string& name)
-    : ManagedIncomingLink(broker, parent, source, target, name), credit(100), window(0), link(l), session(parent) {}
+    : ManagedIncomingLink(broker, parent, source, target, name), credit(500), window(0), link(l), session(parent) {}
 
 
 Incoming::~Incoming() {}
