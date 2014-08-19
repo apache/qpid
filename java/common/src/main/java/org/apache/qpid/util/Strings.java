@@ -323,9 +323,9 @@ public final class Strings
         sb.append("<");
         if (map != null)
         {
-            for(String key : map.keySet())
+            for(Map.Entry<String,Object> entry : map.entrySet())
             {
-                sb.append(key).append(" = ").append(map.get(key)).append(" ");
+                sb.append(entry.getKey()).append(" = ").append(entry.getValue()).append(" ");
             }
         }
         sb.append(">");

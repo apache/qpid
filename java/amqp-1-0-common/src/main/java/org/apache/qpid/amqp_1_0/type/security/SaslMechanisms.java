@@ -58,7 +58,7 @@ public class SaslMechanisms
             {
                 builder.append(',');
             }
-            builder.append("saslServerMechanisms=").append(_saslServerMechanisms == null ? "" : Arrays.asList(_saslServerMechanisms));
+            builder.append("saslServerMechanisms=").append(Arrays.asList(_saslServerMechanisms));
         }
 
         builder.append('}');

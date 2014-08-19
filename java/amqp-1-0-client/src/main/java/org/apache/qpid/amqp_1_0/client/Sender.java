@@ -448,9 +448,9 @@ public class Sender implements DeliveryStateHandler
 
     public void handle(Binary deliveryTag, DeliveryState state, Boolean settled)
     {
+        OutcomeAction action;
         if(state instanceof Outcome)
         {
-            OutcomeAction action;
             if((action = _outcomeActions.remove(deliveryTag)) != null)
             {
 
@@ -464,13 +464,16 @@ public class Sender implements DeliveryStateHandler
         }
         else if(state instanceof TransactionalState)
         {
-            OutcomeAction action;
             if((action = _outcomeActions.remove(deliveryTag)) != null)
             {
                 final Outcome outcome = ((TransactionalState) state).getOutcome();
                 action.onOutcome(deliveryTag, outcome == null ? _defaultOutcome : outcome);
             }
 
+        }
+        else if(state == null && settled && (action = _outcomeActions.remove(deliveryTag)) != null)
+        {
+            action.onOutcome(deliveryTag, _defaultOutcome);
         }
     }
 

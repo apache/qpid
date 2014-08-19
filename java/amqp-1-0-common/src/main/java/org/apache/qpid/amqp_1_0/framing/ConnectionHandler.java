@@ -318,22 +318,7 @@ public class ConnectionHandler
                     {
                         _writer.setValue(frame);
 
-                        try
-                        {
                         _writer.writeToBuffer(_buffer);
-                        }
-                        catch(RuntimeException e)
-                        {
-                            e.printStackTrace();
-                            throw e;
-                        }
-                        catch(Error e)
-                        {
-                            e.printStackTrace();
-                            throw e;
-                        }
-
-
                     }
                     else
                     {

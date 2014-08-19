@@ -74,7 +74,7 @@ public class QpidTestCase extends TestCase
             String testExcludes = System.getProperty(TEST_EXCLUDES);
 
             //For the maven build, process the test.excludes property
-            if(testExcludes != null && exclusionListURIs == "")
+            if(testExcludes != null && "".equals(exclusionListURIs))
             {
                 for (String exclude : testExcludes.split("\\s+"))
                 {
