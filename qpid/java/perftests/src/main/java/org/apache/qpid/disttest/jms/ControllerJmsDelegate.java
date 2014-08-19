@@ -36,13 +36,14 @@ import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.NamingException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.controller.CommandListener;
 import org.apache.qpid.disttest.controller.config.QueueConfig;
 import org.apache.qpid.disttest.message.Command;
 import org.apache.qpid.disttest.message.RegisterClientCommand;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ControllerJmsDelegate
 {
@@ -121,7 +122,7 @@ public class ControllerJmsDelegate
                         processCommandWithFirstSupportingListener(command);
                         LOGGER.debug("Finished processing command for message " + jmsMessageID);
                     }
-                    catch (Throwable t)
+                    catch (Exception t)
                     {
                         LOGGER.error("Can't handle JMS message", t);
                     }

@@ -136,42 +136,42 @@ public class BasicContentHeaderProperties
         {
             int size = 0;
 
-            if ((_propertyFlags & (CONTENT_TYPE_MASK)) > 0)
+            if ((_propertyFlags & (CONTENT_TYPE_MASK)) != 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_contentType);
             }
 
-            if ((_propertyFlags & ENCODING_MASK) > 0)
+            if ((_propertyFlags & ENCODING_MASK) != 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_encoding);
             }
 
-            if ((_propertyFlags & HEADERS_MASK) > 0)
+            if ((_propertyFlags & HEADERS_MASK) != 0)
             {
                 size += EncodingUtils.encodedFieldTableLength(_headers);
             }
 
-            if ((_propertyFlags & DELIVERY_MODE_MASK) > 0)
+            if ((_propertyFlags & DELIVERY_MODE_MASK) != 0)
             {
                 size += 1;
             }
 
-            if ((_propertyFlags & PRIORITY_MASK) > 0)
+            if ((_propertyFlags & PRIORITY_MASK) != 0)
             {
                 size += 1;
             }
 
-            if ((_propertyFlags & CORRELATION_ID_MASK) > 0)
+            if ((_propertyFlags & CORRELATION_ID_MASK) != 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_correlationId);
             }
 
-            if ((_propertyFlags & REPLY_TO_MASK) > 0)
+            if ((_propertyFlags & REPLY_TO_MASK) != 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_replyTo);
             }
 
-            if ((_propertyFlags & EXPIRATION_MASK) > 0)
+            if ((_propertyFlags & EXPIRATION_MASK) != 0)
             {
                 if (_expiration == 0L)
                 {
@@ -183,32 +183,32 @@ public class BasicContentHeaderProperties
                 }
             }
 
-            if ((_propertyFlags & MESSAGE_ID_MASK) > 0)
+            if ((_propertyFlags & MESSAGE_ID_MASK) != 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_messageId);
             }
 
-            if ((_propertyFlags & TIMESTAMP_MASK) > 0)
+            if ((_propertyFlags & TIMESTAMP_MASK) != 0)
             {
                 size += 8;
             }
 
-            if ((_propertyFlags & TYPE_MASK) > 0)
+            if ((_propertyFlags & TYPE_MASK) != 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_type);
             }
 
-            if ((_propertyFlags & USER_ID_MASK) > 0)
+            if ((_propertyFlags & USER_ID_MASK) != 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_userId);
             }
 
-            if ((_propertyFlags & APPLICATION_ID_MASK) > 0)
+            if ((_propertyFlags & APPLICATION_ID_MASK) != 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_appId);
             }
 
-            if ((_propertyFlags & CLUSTER_ID_MASK) > 0)
+            if ((_propertyFlags & CLUSTER_ID_MASK) != 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_clusterId);
             }

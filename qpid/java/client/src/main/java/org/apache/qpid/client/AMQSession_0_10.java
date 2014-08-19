@@ -101,7 +101,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 {
                     ssn.flushAcknowledgments(true);
                 }
-                catch (Throwable t)
+                catch (Exception t)
                 {
                     _logger.error("error flushing acks", t);
                 }
