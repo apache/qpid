@@ -87,30 +87,33 @@ public class ConfiguredObjectRegistrationGenerator extends AbstractProcessor
                     PackageElement packageElement = elementUtils.getPackageOf(e);
                     String packageName = packageElement.getQualifiedName().toString();
                     String className = e.getSimpleName().toString();
-                    for(AnnotationMirror a : e.getAnnotationMirrors())
+                    AnnotationMirror annotation = getAnnotation(e, annotationElement);
+
+                    AnnotationValue registerValue = getAnnotationValue(annotation, "register");
+
+                    if(registerValue == null || (Boolean) registerValue.getValue() )
                     {
-                        if(a.getAnnotationType().asElement().equals(annotationElement))
+                        AnnotationValue typeValue = getAnnotationValue(annotation, "type");
+
+                        if (typeValue != null)
                         {
-                            for(Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : a.getElementValues().entrySet())
-                            {
-                                if(entry.getKey().getSimpleName().toString().equals("type"))
-                                {
-                                    _typeMap.put(packageName + "." + className, (String) entry.getValue().getValue());
-                                    processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "looking for " + packageName + "." + className);
-                                    _categoryMap.put(packageName + "." + className, getCategory((TypeElement)e));
-                                    break;
-                                }
-                            }
-                            break;
+                            _typeMap.put(packageName + "." + className, (String) typeValue.getValue());
+                            processingEnv.getMessager()
+                                    .printMessage(Diagnostic.Kind.NOTE,
+                                                  "looking for " + packageName + "." + className);
+                            _categoryMap.put(packageName + "." + className, getCategory((TypeElement) e));
+
                         }
+
+
+                        Set<String> classNames = _managedObjectClasses.get(packageName);
+                        if (classNames == null)
+                        {
+                            classNames = new HashSet<>();
+                            _managedObjectClasses.put(packageName, classNames);
+                        }
+                        classNames.add(className);
                     }
-                    Set<String> classNames = _managedObjectClasses.get(packageName);
-                    if (classNames == null)
-                    {
-                        classNames = new HashSet<>();
-                        _managedObjectClasses.put(packageName, classNames);
-                    }
-                    classNames.add(className);
                 }
             }
             for (Map.Entry<String, Set<String>> entry : _managedObjectClasses.entrySet())
@@ -127,6 +130,30 @@ public class ConfiguredObjectRegistrationGenerator extends AbstractProcessor
         }
 
         return false;
+    }
+
+    private AnnotationValue getAnnotationValue(final AnnotationMirror annotation, final String attribute)
+    {
+        for(Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : annotation.getElementValues().entrySet())
+        {
+            if(entry.getKey().getSimpleName().toString().equals(attribute))
+            {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    private AnnotationMirror getAnnotation(final Element e, final TypeElement annotationElement)
+    {
+        for(AnnotationMirror a : e.getAnnotationMirrors())
+        {
+            if (a.getAnnotationType().asElement().equals(annotationElement))
+            {
+                return a;
+            }
+        }
+        return null;
     }
 
     private String getCategory(final TypeElement e)

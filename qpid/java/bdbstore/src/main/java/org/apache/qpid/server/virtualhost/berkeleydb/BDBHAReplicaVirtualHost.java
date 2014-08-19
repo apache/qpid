@@ -58,7 +58,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
   Object that represents the VirtualHost whilst the VirtualHostNode is in the replica role.  The
   real virtualhost will be elsewhere in the group.
  */
-@ManagedObject( category = false, type = "BDB_HA_REPLICA" )
+@ManagedObject( category = false, type = "BDB_HA_REPLICA", register = false )
 public class BDBHAReplicaVirtualHost extends AbstractConfiguredObject<BDBHAReplicaVirtualHost>
     implements VirtualHostImpl<BDBHAReplicaVirtualHost, AMQQueue<?>, ExchangeImpl<?>>,
                VirtualHost<BDBHAReplicaVirtualHost,AMQQueue<?>, ExchangeImpl<?>>
