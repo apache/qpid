@@ -345,15 +345,18 @@ define(["dojo/_base/xhr",
                  var hasMessage = error.hasOwnProperty("message");
                  var message;
 
-                 if (error.status == 401)
+                 if (error.status == 0)
                  {
-                   message = hasMessage ? error.message : "Authentication required";
+                   message = "Unable to contact the Broker";
+                 }
+                 else if (error.status == 401)
+                 {
+                   message = "Authentication required";
                    userMustReauth = true;
                  }
                  else if (error.status == 403)
                  {
-                   message =  hasMessage ? error.message : "Forbidden";
-                   userMustReauth = true;
+                   message =  "Access Forbidden";
                  }
                  else
                  {
@@ -397,22 +400,6 @@ define(["dojo/_base/xhr",
                }
              }
            };
-
-           util.errorHandler = function errorHandler(error)
-           {
-               if(error.status == 401)
-               {
-                   alert("Authentication Failed");
-               }
-               else if(error.status == 403)
-               {
-                   alert("Access Denied");
-               }
-               else
-               {
-                   alert(error);
-               }
-           }
 
            util.sendRequest = function (url, method, attributes, sync)
            {
