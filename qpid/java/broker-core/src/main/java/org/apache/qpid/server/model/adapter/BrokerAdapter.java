@@ -47,6 +47,8 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.port.AbstractPortWithAuthProvider;
+import org.apache.qpid.server.plugin.ConfigurationSecretEncrypterFactory;
+import org.apache.qpid.server.plugin.PluggableFactoryLoader;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.access.Operation;
@@ -94,6 +96,8 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     private boolean _statisticsReportingResetEnabled;
     @ManagedAttributeField
     private boolean _messageCompressionEnabled;
+    @ManagedAttributeField
+    private String _confidentialConfigurationEncryptionProvider;
 
     private State _state = State.UNINITIALIZED;
 
@@ -120,6 +124,25 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         _dataDelivered = new StatisticsCounter("bytes-delivered");
         _messagesReceived = new StatisticsCounter("messages-received");
         _dataReceived = new StatisticsCounter("bytes-received");
+    }
+
+    @Override
+    protected void postResolve()
+    {
+        super.postResolve();
+        if(_confidentialConfigurationEncryptionProvider != null)
+        {
+
+            PluggableFactoryLoader<ConfigurationSecretEncrypterFactory> factoryLoader =
+                    new PluggableFactoryLoader<>(ConfigurationSecretEncrypterFactory.class);
+            ConfigurationSecretEncrypterFactory factory = factoryLoader.get(_confidentialConfigurationEncryptionProvider);
+            if(factory == null)
+            {
+                throw new IllegalConfigurationException("Unknown Configuration Secret Encryption method " + _confidentialConfigurationEncryptionProvider);
+            }
+            setEncrypter(factory.createEncrypter(this));
+        }
+
     }
 
     public void onValidate()
@@ -365,6 +388,12 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     public boolean isMessageCompressionEnabled()
     {
         return _messageCompressionEnabled;
+    }
+
+    @Override
+    public String getConfidentialConfigurationEncryptionProvider()
+    {
+        return _confidentialConfigurationEncryptionProvider;
     }
 
     @Override
