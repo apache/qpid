@@ -170,6 +170,7 @@ public class GenericRecoverer
                     {
                         updatesMade = true;
                         ConfiguredObject<?> resolved = recovered.resolve();
+                        resolved.decryptSecrets();
                         resolvedObjects.put(resolved.getId(), resolved);
                     }
                     else
