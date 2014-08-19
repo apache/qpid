@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.model;
 
-import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Set;
 
@@ -63,30 +62,6 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
 
     @ManagedAttribute
     Collection<TrustStore> getTrustStores();
-
-
-
-
-
-
-    void addTransport(Transport transport) throws IllegalStateException,
-                                                  AccessControlException,
-                                                  IllegalArgumentException;
-
-    Transport removeTransport(Transport transport) throws IllegalStateException,
-                                                          AccessControlException,
-                                                          IllegalArgumentException;
-
-
-    void addProtocol(Protocol protocol) throws IllegalStateException,
-                                               AccessControlException,
-                                               IllegalArgumentException;
-
-    Protocol removeProtocol(Protocol protocol) throws IllegalStateException,
-                                                      AccessControlException,
-                                                      IllegalArgumentException;
-
-    Collection<Protocol> getAvailableProtocols();
 
     //children
     Collection<VirtualHostAlias> getVirtualHostBindings();

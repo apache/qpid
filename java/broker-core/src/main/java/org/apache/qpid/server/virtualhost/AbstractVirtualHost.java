@@ -251,7 +251,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             for(Port port :_broker.getPorts())
             {
-                if (Protocol.hasAmqpProtocol(port.getAvailableProtocols()))
+                if (Protocol.hasAmqpProtocol(port.getProtocols()))
                 {
                     _aliases.add(new VirtualHostAliasAdapter(this, port));
                 }

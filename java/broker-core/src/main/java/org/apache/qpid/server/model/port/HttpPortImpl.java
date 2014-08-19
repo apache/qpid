@@ -40,12 +40,6 @@ public class HttpPortImpl extends AbstractPortWithAuthProvider<HttpPortImpl> imp
         super(attributes, broker);
     }
 
-    @Override
-    protected Set<Protocol> getDefaultProtocols()
-    {
-        return Collections.singleton(Protocol.HTTP);
-    }
-
     public void setPortManager(PortManager manager)
     {
         _portManager = manager;
