@@ -285,6 +285,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         else if(!msgCompressed
                 && compressionSupported
                 && (messageProps == null || messageProps.getContentEncoding()==null)
+                && body != null
                 && body.remaining() > _session.getConnection().getMessageCompressionThreshold())
         {
             byte[] compressed = GZIPUtils.compressBufferToArray(body);
