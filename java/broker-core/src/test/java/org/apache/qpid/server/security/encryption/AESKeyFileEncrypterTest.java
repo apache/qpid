@@ -32,7 +32,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.qpid.test.utils.QpidTestCase;
 
-public class AESFileEncrypterTest extends QpidTestCase
+public class AESKeyFileEncrypterTest extends QpidTestCase
 {
     private final SecureRandom _random = new SecureRandom();
     public static final String PLAINTEXT = "notaverygoodpassword";

@@ -46,13 +46,15 @@ import org.apache.qpid.server.plugin.PluggableService;
 @PluggableService
 public class AESKeyFileEncrypterFactory implements ConfigurationSecretEncrypterFactory
 {
-    private static final String ENCRYPTER_KEY_FILE = "encrypter.key.file";
+    static final String ENCRYPTER_KEY_FILE = "encrypter.key.file";
 
     private static final int AES_KEY_SIZE_BITS = 256;
     private static final int AES_KEY_SIZE_BYTES = AES_KEY_SIZE_BITS / 8;
     private static final String AES_ALGORITHM = "AES";
 
     public static final String TYPE = "AESKeyFile";
+
+    static final String DEFAULT_KEYS_SUBDIR_NAME = ".keys";
 
     @Override
     public ConfigurationSecretEncrypter createEncrypter(final ConfiguredObject<?> object)
@@ -66,7 +68,7 @@ public class AESKeyFileEncrypterFactory implements ConfigurationSecretEncrypterF
         {
 
             fileLocation = object.getContextValue(String.class, BrokerOptions.QPID_WORK_DIR)
-                           + File.separator + ".keys" + File.separator
+                           + File.separator + DEFAULT_KEYS_SUBDIR_NAME + File.separator
                            + object.getCategoryClass().getSimpleName() + "_"
                            + object.getName() + ".key";
 
@@ -94,14 +96,14 @@ public class AESKeyFileEncrypterFactory implements ConfigurationSecretEncrypterF
                 || permissions.contains(PosixFilePermission.GROUP_WRITE)
                 || permissions.contains(PosixFilePermission.OTHERS_WRITE))
             {
-                throw new IllegalStateException("Key file '"
+                throw new IllegalArgumentException("Key file '"
                                                 + fileLocation
                                                 + "' has incorrect permissions.  Only the owner "
                                                 + "should be able to read or write this file.");
             }
             if(Files.size(file.toPath()) != AES_KEY_SIZE_BYTES)
             {
-                throw new IllegalConfigurationException("Key file '" + fileLocation + "' contains an incorrect about of data");
+                throw new IllegalArgumentException("Key file '" + fileLocation + "' contains an incorrect about of data");
             }
 
             try(FileInputStream inputStream = new FileInputStream(file))
@@ -151,7 +153,7 @@ public class AESKeyFileEncrypterFactory implements ConfigurationSecretEncrypterF
         }
         catch (NoSuchAlgorithmException | IOException e)
         {
-            throw new IllegalConfigurationException("Cannot create key file: " + e.getMessage(), e);
+            throw new IllegalArgumentException("Cannot create key file: " + e.getMessage(), e);
         }
 
     }
