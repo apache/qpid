@@ -1,6 +1,3 @@
-#ifndef QPID_HA_STANDALONE_H
-#define QPID_HA_STANDALONE_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,21 +18,18 @@
  * under the License.
  *
  */
-namespace qpid {
-struct Url;
+#include "LogPrefix.h"
+#include <iostream>
 
+namespace qpid {
 namespace ha {
 
-/**
- * Stand-alone role: acts as a stand-alone broker, no clustering.
- * HA module needed to setting up replication via QMF methods.
- */
-class StandAlone : public Role
-{
-  public:
-    Role* promote() { return 0; }
-    void setBrokerUrl(const Url&) {}
-};
-}} // namespace qpid::ha
+std::ostream& operator<<(std::ostream& o, const LogPrefix& lp) {
+    return o << lp.get();
+}
 
-#endif  /*!QPID_HA_STANDALONE_H*/
+std::ostream& operator<<(std::ostream& o, const LogPrefix2& lp) {
+    return o << lp.prePrefix.get() << lp.get();
+}
+
+}} // namespace qpid::ha

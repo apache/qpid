@@ -34,6 +34,7 @@ struct Address;
 namespace ha {
 class BrokerInfo;
 class HaBroker;
+class LogPrefix;
 
 /**
  * Observes connections, delegates to another ConnectionObserver for
@@ -59,7 +60,7 @@ class ConnectionObserver : public broker::ConnectionObserver
 
     ConnectionObserver(HaBroker& haBroker, const types::Uuid& self);
 
-    void setObserver(const ObserverPtr&, const std::string& logPrefix);
+    void setObserver(const ObserverPtr&);
     ObserverPtr getObserver();
 
     void reset();
@@ -72,7 +73,7 @@ class ConnectionObserver : public broker::ConnectionObserver
 
     sys::Mutex lock;
     HaBroker& haBroker;
-    std::string logPrefix;
+    const LogPrefix& logPrefix;
     ObserverPtr observer;
     types::Uuid self;
 };

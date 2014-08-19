@@ -43,9 +43,14 @@ Membership::Membership(const BrokerInfo& info, HaBroker& b)
     : haBroker(b), self(info.getSystemId())
 {
     brokers[self] = info;
+    setPrefix();
     oldStatus = info.getStatus();
 }
 
+void Membership::setPrefix() {
+    haBroker.logPrefix = Msg() << shortStr(brokers[self].getSystemId())
+                               << "(" << printable(brokers[self].getStatus()) << ") ";
+}
 void Membership::clear() {
     Mutex::ScopedLock l(lock);
     BrokerInfo me = brokers[self];
@@ -57,7 +62,7 @@ void Membership::add(const BrokerInfo& b) {
     Mutex::ScopedLock l(lock);
     assert(b.getSystemId() != self);
     brokers[b.getSystemId()] = b;
-    update(l);
+    update(true, l);
 }
 
 
@@ -67,7 +72,7 @@ void Membership::remove(const types::Uuid& id) {
     BrokerInfo::Map::iterator i = brokers.find(id);
     if (i != brokers.end()) {
         brokers.erase(i);
-        update(l);
+        update(true, l);
     }
 }
 
@@ -83,7 +88,7 @@ void Membership::assign(const types::Variant::List& list) {
         BrokerInfo b(i->asMap());
         brokers[b.getSystemId()] = b;
     }
-    update(l);
+    update(true, l);
 }
 
 types::Variant::List Membership::asList() const {
@@ -144,8 +149,7 @@ bool checkTransition(BrokerStatus from, BrokerStatus to) {
 }
 } // namespace
 
-void Membership::update(Mutex::ScopedLock& l) {
-    QPID_LOG(info, "Membership: " <<  brokers);
+void Membership::update(bool log, Mutex::ScopedLock& l) {
     // Update managment and send update event.
     BrokerStatus newStatus = getStatus(l);
     Variant::List brokerList = asList(l);
@@ -171,27 +175,30 @@ void Membership::update(Mutex::ScopedLock& l) {
 
     // Check status transitions
     if (oldStatus != newStatus) {
-        QPID_LOG(info, "Status change: "
+        QPID_LOG(info, haBroker.logPrefix << "Status change: "
                  << printable(oldStatus) << " -> " << printable(newStatus));
         if (!checkTransition(oldStatus, newStatus)) {
             haBroker.shutdown(QPID_MSG("Illegal state transition: " << printable(oldStatus)
                                        << " -> " << printable(newStatus)));
         }
         oldStatus = newStatus;
+        setPrefix();
+        if (newStatus == READY) QPID_LOG(notice, haBroker.logPrefix << "Backup is ready");
     }
+    if (log) QPID_LOG(info, haBroker.logPrefix << "Membership update: " <<  brokers);
 }
 
 void Membership::setMgmtObject(boost::shared_ptr<_qmf::HaBroker> mo) {
     Mutex::ScopedLock l(lock);
     mgmtObject = mo;
-    update(l);
+    update(false, l);
 }
 
 
 void Membership::setStatus(BrokerStatus newStatus) {
     Mutex::ScopedLock l(lock);
     brokers[self].setStatus(newStatus);
-    update(l);
+    update(false, l);
 }
 
 BrokerStatus Membership::getStatus() const  {
@@ -215,7 +222,7 @@ BrokerInfo Membership::getSelf() const  {
 void Membership::setSelfAddress(const Address& a) {
     Mutex::ScopedLock l(lock);
     brokers[self].setAddress(a);
-    update(l);
+    update(false, l);
 }
 
 }} // namespace qpid::ha

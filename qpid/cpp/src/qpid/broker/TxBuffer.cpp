@@ -96,7 +96,8 @@ std::string TxBuffer::endCommit(TransactionalStore* const store) {
 void TxBuffer::setError(const std::string& e) {
     QPID_LOG(error, "Asynchronous transaction error: " << e);
     sys::Mutex::ScopedLock l(errorLock);
-    error = e;
+    if (!error.empty()) error += " ";
+    error += e;
 }
 
 }} // namespace qpid::broker

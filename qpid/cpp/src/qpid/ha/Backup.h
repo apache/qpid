@@ -22,6 +22,7 @@
  *
  */
 
+#include "LogPrefix.h"
 #include "Role.h"
 #include "Settings.h"
 #include "qpid/Url.h"
@@ -53,8 +54,6 @@ class Backup : public Role
     Backup(HaBroker&, const Settings&);
     ~Backup();
 
-    std::string getLogPrefix() const { return logPrefix; }
-
     void setBrokerUrl(const Url&);
 
     Role* promote();
@@ -65,7 +64,7 @@ class Backup : public Role
     void stop(sys::Mutex::ScopedLock&);
     Role* recover(sys::Mutex::ScopedLock&);
 
-    std::string logPrefix;
+    const LogPrefix& logPrefix;
     Membership& membership;
 
     sys::Mutex lock;

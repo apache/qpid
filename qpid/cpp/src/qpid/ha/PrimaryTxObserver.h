@@ -24,6 +24,7 @@
 
 #include "types.h"
 #include "ReplicationTest.h"
+#include "LogPrefix.h"
 #include "qpid/broker/SessionState.h"
 #include "qpid/broker/TransactionObserver.h"
 #include "qpid/log/Statement.h"
@@ -105,11 +106,11 @@ class PrimaryTxObserver : public broker::TransactionObserver,
     void txPrepareOkEvent(const std::string& data);
     void txPrepareFailEvent(const std::string& data);
     bool completed(const types::Uuid& id, sys::Mutex::ScopedLock&);
-    bool error(const types::Uuid& id, const char* msg, sys::Mutex::ScopedLock& l);
+    bool error(const types::Uuid& id, const std::string& msg, sys::Mutex::ScopedLock& l);
 
     sys::Monitor lock;
     State state;
-    std::string logPrefix;
+    LogPrefix2 logPrefix;
     Primary& primary;
     HaBroker& haBroker;
     broker::Broker& broker;

@@ -22,6 +22,7 @@
 #include "Event.h"
 #include "HaBroker.h"
 #include "IdSetter.h"
+#include "LogPrefix.h"
 #include "QueueReplicator.h"
 #include "QueueSnapshot.h"
 #include "ReplicatingSubscription.h"
@@ -97,12 +98,11 @@ class QueueReplicator::ErrorListener : public SessionHandler::ErrorListener {
             QPID_LOG(error, logPrefix << "Incoming "
                      << framing::createSessionException(code, msg).what());
     }
-    void detach() {
-        QPID_LOG(debug, logPrefix << "Session detached");
-    }
+    void detach() {}
+
   private:
     boost::weak_ptr<QueueReplicator> queueReplicator;
-    std::string logPrefix;
+    const LogPrefix& logPrefix;
 };
 
 class QueueReplicator::QueueObserver : public broker::QueueObserver {
@@ -152,11 +152,12 @@ QueueReplicator::QueueReplicator(HaBroker& hb,
       link(l),
       queue(q),
       sessionHandler(0),
-      logPrefix("Backup of "+q->getName()+": "),
+      logPrefix(hb.logPrefix, "Backup of "+q->getName()+": "),
       subscribed(false),
       settings(hb.getSettings()),
       nextId(0), maxId(0)
 {
+    QPID_LOG(debug, logPrefix << "Created");
     // The QueueReplicator will take over setting replication IDs.
     boost::shared_ptr<IdSetter> setter =
         q->getMessageInterceptors().findType<IdSetter>();
@@ -181,7 +182,6 @@ QueueReplicator::~QueueReplicator() {}
 
 void QueueReplicator::initialize() {
     Mutex::ScopedLock l(lock);
-    QPID_LOG(debug, logPrefix << "Created");
     if (!queue) return;         // Already destroyed
 
     // Enable callback to route()
@@ -255,10 +255,13 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     arguments.setInt(QPID_SYNC_FREQUENCY, 1); // TODO aconway 2012-05-22: optimize?
     arguments.setTable(ReplicatingSubscription::QPID_BROKER_INFO, brokerInfo.asFieldTable());
     boost::shared_ptr<QueueSnapshot> qs = queue->getObservers().findType<QueueSnapshot>();
-    if (qs) arguments.set(ReplicatingSubscription::QPID_ID_SET,
-                          FieldTable::ValuePtr(
-                              new Var32Value(encodeStr(qs->getSnapshot()), TYPE_CODE_VBIN32)));
-
+    ReplicationIdSet snapshot;
+    if (qs) {
+        snapshot = qs->getSnapshot();
+        arguments.set(
+            ReplicatingSubscription::QPID_ID_SET,
+            FieldTable::ValuePtr(new Var32Value(encodeStr(snapshot), TYPE_CODE_VBIN32)));
+    }
     try {
         peer.getMessage().subscribe(
             args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/,
@@ -268,12 +271,12 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
         peer.getMessage().flow(getName(), 1, settings.getFlowBytes());
     }
     catch(const exception& e) {
-        QPID_LOG(error, QPID_MSG(logPrefix + "Cannot connect to primary: " << e.what()));
+        QPID_LOG(error, logPrefix << "Cannot connect to primary: " << e.what());
         throw;
     }
     qpid::Address primary;
     link->getRemoteAddress(primary);
-    QPID_LOG(debug, logPrefix << "Connected to " << primary << "(" << bridgeName << ")");
+    QPID_LOG(debug, logPrefix << "Connected to " << primary << " snapshot=" << snapshot << " bridge=" << bridgeName);
     QPID_LOG(trace, logPrefix << "Subscription arguments: " << arguments);
 }
 
@@ -391,7 +394,7 @@ void QueueReplicator::promoted() {
         // On primary QueueReplicator no longer sets IDs, start an IdSetter.
         QPID_LOG(debug, logPrefix << "Promoted, first replication-id " << maxId+1)
         queue->getMessageInterceptors().add(
-            boost::shared_ptr<IdSetter>(new IdSetter(queue->getName(), maxId+1)));
+            boost::shared_ptr<IdSetter>(new IdSetter(logPrefix, queue->getName(), maxId+1)));
         // Process auto-deletes
         if (queue->isAutoDelete()) {
             // Make a temporary shared_ptr to prevent premature deletion of queue.

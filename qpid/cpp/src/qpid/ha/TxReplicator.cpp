@@ -39,10 +39,11 @@
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/framing/BufferTypes.h"
 #include "qpid/log/Statement.h"
-#include <boost/shared_ptr.hpp>
-#include <boost/bind.hpp>
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
 #include "qpid/framing/MessageTransferBody.h"
+#include <boost/shared_ptr.hpp>
+#include <boost/bind.hpp>
+#include <sstream>
 
 namespace qpid {
 namespace ha {
@@ -57,15 +58,19 @@ namespace {
 const string PREFIX(TRANSACTION_REPLICATOR_PREFIX);
 } // namespace
 
-
-
 bool TxReplicator::isTxQueue(const string& q) {
     return startsWith(q, PREFIX);
 }
 
-string TxReplicator::getTxId(const string& q) {
-    assert(isTxQueue(q));
-    return q.substr(PREFIX.size());
+Uuid TxReplicator::getTxId(const string& q) {
+    if (TxReplicator::isTxQueue(q)) {
+        std::istringstream is(q);
+        is.seekg(PREFIX.size());
+        Uuid id;
+        is >> id;
+        if (!is.fail()) return id;
+    }
+    throw Exception(QPID_MSG("Invalid tx queue: " << q));
 }
 
 string TxReplicator::getType() const { return ReplicatingSubscription::QPID_TX_REPLICATOR; }
@@ -85,15 +90,14 @@ TxReplicator::TxReplicator(
     const boost::shared_ptr<broker::Queue>& txQueue,
     const boost::shared_ptr<broker::Link>& link) :
     QueueReplicator(hb, txQueue, link),
+    logPrefix(hb.logPrefix),
     store(hb.getBroker().hasStore() ? &hb.getBroker().getStore() : 0),
     channel(link->nextChannel()),
     empty(true), ended(false),
     dequeueState(hb.getBroker().getQueues())
 {
-    string id(getTxId(txQueue->getName()));
-    string shortId = id.substr(0, 8);
-    logPrefix = "Backup of transaction "+shortId+": ";
-    QPID_LOG(debug, logPrefix << "Started TX " << id);
+    logPrefix = "Backup of TX "+shortStr(getTxId(txQueue->getName()))+": ";
+    QPID_LOG(debug, logPrefix << "Started");
     if (!store) throw Exception(QPID_MSG(logPrefix << "No message store loaded."));
 
     // Dispatch transaction events.
@@ -213,7 +217,7 @@ void TxReplicator::prepare(const string&, sys::Mutex::ScopedLock& l) {
         QPID_LOG(debug, logPrefix << "Local prepare OK");
         sendMessage(TxPrepareOkEvent(haBroker.getSystemId()).message(queue->getName()), l);
     } else {
-        QPID_LOG(debug, logPrefix << "Local prepare failed");
+        QPID_LOG(error, logPrefix << "Local prepare failed");
         sendMessage(TxPrepareFailEvent(haBroker.getSystemId()).message(queue->getName()), l);
     }
 }
@@ -240,7 +244,7 @@ void TxReplicator::backups(const string& data, sys::Mutex::ScopedLock& l) {
     TxBackupsEvent e;
     decodeStr(data, e);
     if (!e.backups.count(haBroker.getMembership().getSelf().getSystemId())) {
-        QPID_LOG(info, logPrefix << "Not participating in transaction");
+        QPID_LOG(info, logPrefix << "Not participating");
         end(l);
     } else {
         QPID_LOG(debug, logPrefix << "Backups: " << e.backups);

@@ -63,7 +63,6 @@ ostream& operator<<(ostream& o, const OstreamUrls& urls) {
 FailoverExchange::FailoverExchange(management::Manageable& parent, Broker& b)
     : Exchange(typeName, &parent, &b)
 {
-    QPID_LOG(debug, typeName << " created.");
     if (mgmtExchange != 0)
         mgmtExchange->set_type(typeName);
 }
@@ -114,7 +113,7 @@ bool FailoverExchange::hasBindings() {
 }
 
 void FailoverExchange::route(Deliverable&) {
-    QPID_LOG(warning, "Message received by exchange " << typeName << " ignoring");
+    QPID_LOG(warning, typeName << " unexpected message, ignored.");
 }
 
 void FailoverExchange::sendUpdate(const Queue::shared_ptr& queue, sys::Mutex::ScopedLock&) {

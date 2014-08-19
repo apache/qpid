@@ -25,6 +25,7 @@
 #include "BrokerInfo.h"
 #include "Membership.h"
 #include "types.h"
+#include "LogPrefix.h"
 #include "Settings.h"
 #include "qpid/Url.h"
 #include "FailoverExchange.h"
@@ -100,6 +101,9 @@ class HaBroker : public management::Manageable
 
     /** Authenticated user ID for queue create/delete */
     std::string getUserId() const { return userId; }
+
+    /** logPrefix is thread safe and used by other classes (Membership) */
+    LogPrefix logPrefix;
 
   private:
     class BrokerObserver;

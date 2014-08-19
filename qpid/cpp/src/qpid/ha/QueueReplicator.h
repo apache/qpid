@@ -22,7 +22,10 @@
  *
  */
 
+
+
 #include "BrokerInfo.h"
+#include "LogPrefix.h"
 #include "hash.h"
 #include "qpid/broker/Exchange.h"
 #include <boost/enable_shared_from_this.hpp>
@@ -134,7 +137,7 @@ class QueueReplicator : public broker::Exchange,
 
     bool deletedOnPrimary(framing::execution::ErrorCode e, const std::string& msg);
 
-    std::string logPrefix;
+    LogPrefix2 logPrefix;
     std::string bridgeName;
 
     bool subscribed;

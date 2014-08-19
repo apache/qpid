@@ -49,7 +49,7 @@ using std::string;
 using sys::Mutex;
 
 Backup::Backup(HaBroker& hb, const Settings& s) :
-    logPrefix("Backup: "), membership(hb.getMembership()), stopped(false),
+    logPrefix(hb.logPrefix), membership(hb.getMembership()), stopped(false),
     haBroker(hb), broker(hb.getBroker()), settings(s),
     statusCheck(new StatusCheck(hb))
 {}
@@ -60,7 +60,7 @@ void Backup::setBrokerUrl(const Url& brokers) {
     if (stopped) return;
     if (haBroker.getStatus() == JOINING) statusCheck->setUrl(brokers);
     if (!link) {                // Not yet initialized
-        QPID_LOG(info, logPrefix << "Connecting to cluster, broker URL: " << brokers);
+        QPID_LOG(info, logPrefix << "Connecting to cluster: " << brokers);
         string protocol = brokers[0].protocol.empty() ? "tcp" : brokers[0].protocol;
         types::Uuid uuid(true);
         link = broker.getLinks().declare(
@@ -78,7 +78,6 @@ void Backup::setBrokerUrl(const Url& brokers) {
 void Backup::stop(Mutex::ScopedLock&) {
     if (stopped) return;
     stopped = true;
-    QPID_LOG(debug, logPrefix << "Leaving backup role.");
     if (link) link->close();
     if (replicator.get()) {
         replicator->shutdown();
@@ -106,8 +105,7 @@ Role* Backup::promote() {
       case JOINING:
         if (statusCheck->canPromote()) return recover(l);
         else {
-            QPID_LOG(error,
-                     logPrefix << "Joining active cluster, cannot be promoted.");
+            QPID_LOG(error, logPrefix << "Joining active cluster, cannot be promoted.");
             throw Exception("Joining active cluster, cannot be promoted.");
         }
         break;

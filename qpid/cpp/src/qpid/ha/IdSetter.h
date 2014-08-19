@@ -33,6 +33,7 @@
 
 namespace qpid {
 namespace ha {
+class LogPrefix;
 
 /**
  * A MessageInterceptor that sets the ReplicationId on each message as it is
@@ -43,16 +44,16 @@ namespace ha {
 class IdSetter : public broker::MessageInterceptor
 {
   public:
-    IdSetter(const std::string& q, ReplicationId firstId=1) : queue(q), nextId(firstId) {
-        QPID_LOG(debug, "Replication-ID will be set for " << queue << " from " << firstId);
-    }
+    IdSetter(const LogPrefix& lp, const std::string& q, ReplicationId firstId=1) :
+        logPrefix(lp), queue(q), nextId(firstId)
+    {}
 
     void record(broker::Message& m) {
         // Record is called when a message is first delivered to a queue, before it has
         // been enqueued or saved in a transaction buffer. This is when we normally want
         // to assign a replication-id.
         m.setReplicationId(nextId++);
-        QPID_LOG(trace, "Replication-ID set: " << logMessageId(queue, m.getReplicationId()));
+        QPID_LOG(trace, logPrefix << "Replication-ID set: " << logMessageId(queue, m.getReplicationId()));
     }
 
     void publish(broker::Message& m) {
@@ -62,11 +63,12 @@ class IdSetter : public broker::MessageInterceptor
         // store record() is not called, so set the ID now if not already set.
         if (!m.hasReplicationId()) {
             m.setReplicationId(nextId++);
-            QPID_LOG(trace, "Replication-ID set: " << logMessageId(queue, m));
+            QPID_LOG(trace, logPrefix << "Replication-ID set: " << logMessageId(queue, m));
         }
     }
 
   private:
+    const LogPrefix& logPrefix;
     std::string queue;
     sys::AtomicValue<uint32_t> nextId;
 };

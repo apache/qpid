@@ -92,7 +92,7 @@ void BrokerInfo::assign(const Variant::Map& m) {
 }
 
 std::ostream& BrokerInfo::printId(std::ostream& o) const {
-    o  << getSystemId().str().substr(0,8);
+    o  << shortStr(getSystemId());
     if (getAddress() != empty) o << "@" << getAddress();
     return o;
 }

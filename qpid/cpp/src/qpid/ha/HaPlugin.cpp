@@ -76,7 +76,7 @@ struct HaPlugin : public Plugin {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         if (broker && (settings.cluster || settings.queueReplication)) {
             if (!broker->getManagementAgent()) {
-                QPID_LOG(warning, "HA plugin disabled because management is disabled");
+                QPID_LOG(warning, "Cannot start HA: management is disabled");
                 if (settings.cluster)
                     throw Exception("Cannot start HA: management is disabled");
             } else {
