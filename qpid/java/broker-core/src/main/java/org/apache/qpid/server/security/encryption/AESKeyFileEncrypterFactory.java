@@ -52,7 +52,7 @@ public class AESKeyFileEncrypterFactory implements ConfigurationSecretEncrypterF
     private static final int AES_KEY_SIZE_BYTES = AES_KEY_SIZE_BITS / 8;
     private static final String AES_ALGORITHM = "AES";
 
-    public static String TYPE = "AESKeyFile";
+    public static final String TYPE = "AESKeyFile";
 
     @Override
     public ConfigurationSecretEncrypter createEncrypter(final ConfiguredObject<?> object)
