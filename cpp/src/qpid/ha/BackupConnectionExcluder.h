@@ -22,6 +22,7 @@
  *
  */
 
+#include "LogPrefix.h"
 #include "qpid/broker/ConnectionObserver.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/log/Statement.h"
@@ -35,12 +36,17 @@ namespace ha {
 class BackupConnectionExcluder : public broker::ConnectionObserver
 {
   public:
+    BackupConnectionExcluder(const LogPrefix& lp) : logPrefix(lp) {}
+
     void opened(broker::Connection& connection) {
-        QPID_LOG(debug, "Backup: Rejected connection "+connection.getMgmtId());
+        QPID_LOG(trace, logPrefix << "Rejected connection "+connection.getMgmtId());
         connection.abort();
     }
 
     void closed(broker::Connection&) {}
+
+  private:
+    const LogPrefix& logPrefix;
 };
 
 }} // namespace qpid::ha

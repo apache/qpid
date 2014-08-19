@@ -40,9 +40,6 @@ class Role
   public:
     virtual ~Role() {}
 
-    /** Log prefix appropriate to the role */
-    virtual std::string getLogPrefix() const = 0;
-
     /** QMF promote method handler.
      * @return The new role if promoted, 0 if not. Caller takes ownership.
      */

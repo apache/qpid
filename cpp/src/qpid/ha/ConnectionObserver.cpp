@@ -31,7 +31,7 @@ namespace qpid {
 namespace ha {
 
 ConnectionObserver::ConnectionObserver(HaBroker& hb, const types::Uuid& uuid)
-    : haBroker(hb), logPrefix("Backup: "), self(uuid) {}
+    : haBroker(hb), logPrefix(hb.logPrefix), self(uuid) {}
 
 bool ConnectionObserver::getBrokerInfo(const broker::Connection& connection, BrokerInfo& info) {
     qpid::types::Variant::Map::const_iterator i = connection.getClientProperties().find(ConnectionObserver::BACKUP_TAG);
@@ -55,11 +55,10 @@ bool ConnectionObserver::getAddress(const broker::Connection& connection, Addres
     return false;
 }
 
-void ConnectionObserver::setObserver(const ObserverPtr& o, const std::string& newlogPrefix)
+void ConnectionObserver::setObserver(const ObserverPtr& o)
 {
     sys::Mutex::ScopedLock l(lock);
     observer = o;
-    logPrefix = newlogPrefix;
 }
 
 ConnectionObserver::ObserverPtr ConnectionObserver::getObserver() {
@@ -83,21 +82,21 @@ void ConnectionObserver::opened(broker::Connection& connection) {
             // Set my own address if there is an address header.
             Address addr;
             if (getAddress(connection, addr)) haBroker.setAddress(addr);
-            QPID_LOG(debug, logPrefix << "Rejected self connection "+connection.getMgmtId());
+            QPID_LOG(trace, logPrefix << "Rejected self connection "+connection.getMgmtId());
             connection.abort();
             return;
         }
         if (connection.isLink()) return; // Allow outgoing links.
         if (connection.getClientProperties().find(ADMIN_TAG) != connection.getClientProperties().end()) {
-            QPID_LOG(debug, logPrefix << "Accepted admin connection: "
-                     << connection.getMgmtId());
+            QPID_LOG(trace, logPrefix << "Accepted admin connection: " << connection.getMgmtId());
             return;                 // No need to call observer, always allow admins.
         }
         ObserverPtr o(getObserver());
         if (o) o->opened(connection);
     }
     catch (const std::exception& e) {
-        QPID_LOG(error, logPrefix << "Open error: " << e.what());
+        QPID_LOG(error, logPrefix << "Error on incoming connection " << connection.getMgmtId()
+                 << ": " << e.what());
         throw;
     }
 }
@@ -109,7 +108,8 @@ void ConnectionObserver::closed(broker::Connection& connection) {
         if (o) o->closed(connection);
     }
     catch (const std::exception& e) {
-        QPID_LOG(error, logPrefix << "Close error: " << e.what());
+        QPID_LOG(error, logPrefix << "Error closing incoming connection " << connection.getMgmtId()
+                 << ": " << e.what());
         throw;
     }
 }

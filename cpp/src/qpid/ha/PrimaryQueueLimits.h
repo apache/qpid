@@ -36,6 +36,7 @@ class Queue;
 }
 
 namespace ha {
+class LogPrefix;
 class RemoteBackup;
 
 /**
@@ -48,7 +49,7 @@ class PrimaryQueueLimits
 {
   public:
     // FIXME aconway 2014-01-24: hardcoded maxQueues, use negotiated channel-max
-    PrimaryQueueLimits(const std::string& lp,
+    PrimaryQueueLimits(const LogPrefix& lp,
                        broker::QueueRegistry& qr,
                        const ReplicationTest& rt
     ) :
@@ -97,7 +98,7 @@ class PrimaryQueueLimits
     void removeBackup(const boost::shared_ptr<RemoteBackup>&) {}
 
   private:
-    std::string logPrefix;
+    const LogPrefix& logPrefix;
     uint64_t maxQueues;
     uint64_t queues;
 }; 

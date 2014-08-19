@@ -522,7 +522,6 @@ option(BUILD_HA "Build Active-Passive HA plugin" ${ha_default})
 
 if (BUILD_HA)
     set (ha_SOURCES
-	qpid/ha/QueueSnapshot.h
         qpid/ha/AlternateExchangeSetter.h
         qpid/ha/Backup.cpp
         qpid/ha/Backup.h
@@ -533,24 +532,29 @@ if (BUILD_HA)
         qpid/ha/BrokerReplicator.h
         qpid/ha/ConnectionObserver.cpp
         qpid/ha/ConnectionObserver.h
-	qpid/ha/Event.cpp
-	qpid/ha/Event.h
+        qpid/ha/Event.cpp
+        qpid/ha/Event.h
         qpid/ha/FailoverExchange.cpp
         qpid/ha/FailoverExchange.h
         qpid/ha/HaBroker.cpp
         qpid/ha/HaBroker.h
         qpid/ha/HaPlugin.cpp
-	qpid/ha/IdSetter.h
-        qpid/ha/QueueSnapshot.h
+        qpid/ha/IdSetter.h
+        qpid/ha/LogPrefix.cpp
+        qpid/ha/LogPrefix.h
         qpid/ha/Membership.cpp
         qpid/ha/Membership.h
         qpid/ha/Primary.cpp
         qpid/ha/Primary.h
         qpid/ha/PrimaryQueueLimits.h
+        qpid/ha/PrimaryTxObserver.cpp
+        qpid/ha/PrimaryTxObserver.h
         qpid/ha/QueueGuard.cpp
         qpid/ha/QueueGuard.h
         qpid/ha/QueueReplicator.cpp
         qpid/ha/QueueReplicator.h
+        qpid/ha/QueueSnapshot.h
+        qpid/ha/QueueSnapshot.h
         qpid/ha/RemoteBackup.cpp
         qpid/ha/RemoteBackup.h
         qpid/ha/ReplicatingSubscription.cpp
@@ -564,11 +568,9 @@ if (BUILD_HA)
         qpid/ha/StatusCheck.h
         qpid/ha/TxReplicatingSubscription.cpp
         qpid/ha/TxReplicatingSubscription.h
-        qpid/ha/PrimaryTxObserver.cpp
-        qpid/ha/PrimaryTxObserver.h
+        qpid/ha/TxReplicator.cpp
+        qpid/ha/TxReplicator.h
         qpid/ha/types.cpp
-	qpid/ha/TxReplicator.cpp
-	qpid/ha/TxReplicator.h
         qpid/ha/types.h
     )
 

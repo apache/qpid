@@ -47,8 +47,8 @@ class QueueGuard::QueueObserver : public broker::QueueObserver
 
 
 
-QueueGuard::QueueGuard(broker::Queue& q, const BrokerInfo& info)
-    : cancelled(false), queue(q)
+QueueGuard::QueueGuard(broker::Queue& q, const BrokerInfo& info, const LogPrefix& lp)
+    : cancelled(false), logPrefix(lp), queue(q)
 {
     std::ostringstream os;
     os << "Guard of " << queue.getName() << " at ";
@@ -61,7 +61,9 @@ QueueGuard::QueueGuard(broker::Queue& q, const BrokerInfo& info)
     QueuePosition front, back;
     q.getRange(front, back, broker::REPLICATOR);
     first = back + 1;
-    QPID_LOG(debug, logPrefix << "First guarded position " << first);
+    QPID_LOG(debug, logPrefix << "Guarded: front " << front
+             << ", back " << back
+             << ", guarded " << first);
 }
 
 QueueGuard::~QueueGuard() { cancel(); }

@@ -22,6 +22,7 @@
  *
  */
 
+#include "LogPrefix.h"
 #include "ReplicationTest.h"
 #include "BrokerInfo.h"
 #include "types.h"
@@ -56,7 +57,7 @@ class RemoteBackup
     /** Note: isReady() can be true after construction
      *@param connected true if the backup is already connected.
      */
-    RemoteBackup(const BrokerInfo&, broker::Connection*);
+    RemoteBackup(const BrokerInfo&, broker::Connection*, const LogPrefix&);
     ~RemoteBackup();
 
     /** Return guard associated with a queue. Used to create ReplicatingSubscription. */
@@ -102,7 +103,7 @@ class RemoteBackup
 
     typedef std::set<QueuePtr> QueueSet;
 
-    std::string logPrefix;
+    LogPrefix2 logPrefix;
     BrokerInfo brokerInfo;
     ReplicationTest replicationTest;
     GuardMap guards;

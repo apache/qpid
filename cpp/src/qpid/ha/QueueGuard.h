@@ -24,6 +24,7 @@
 
 #include "types.h"
 #include "hash.h"
+#include "LogPrefix.h"
 #include "qpid/types/Uuid.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/unordered_map.h"
@@ -59,7 +60,7 @@ class ReplicatingSubscription;
  */
 class QueueGuard {
   public:
-    QueueGuard(broker::Queue& q, const BrokerInfo&);
+    QueueGuard(broker::Queue& q, const BrokerInfo&, const LogPrefix&);
     ~QueueGuard();
 
     /** QueueObserver override. Delay completion of the message.
@@ -97,7 +98,7 @@ class QueueGuard {
     sys::Mutex lock;
     QueuePosition first;
     bool cancelled;
-    std::string logPrefix;
+    LogPrefix2 logPrefix;
     broker::Queue& queue;
     Delayed delayed;
     boost::shared_ptr<QueueObserver> observer;

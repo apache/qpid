@@ -23,6 +23,7 @@
  */
 
 #include "BrokerInfo.h"
+#include "LogPrefix.h"
 #include "qpid/broker/SemanticState.h"
 #include "qpid/broker/ConsumerFactory.h"
 #include "qpid/broker/QueueObserver.h"
@@ -144,7 +145,7 @@ class ReplicatingSubscription :
     bool doDispatch();
 
   private:
-    std::string logPrefix;
+    LogPrefix2 logPrefix;
     QueuePosition position;
     ReplicationIdSet dequeues;  // Dequeues to be sent in next dequeue event.
     ReplicationIdSet skipEnqueue; // Enqueues to skip: messages already on backup and tx enqueues.

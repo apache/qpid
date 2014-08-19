@@ -52,6 +52,7 @@ class FieldTable;
 }
 
 namespace ha {
+class LogPrefix;
 class HaBroker;
 class QueueReplicator;
 
@@ -155,7 +156,7 @@ class BrokerReplicator : public broker::Exchange,
 
     void setMembership(const types::Variant::List&); // Set membership from list.
 
-    std::string logPrefix;
+    const LogPrefix& logPrefix;
     ReplicationTest replicationTest;
     std::string userId, remoteHost;
     HaBroker& haBroker;

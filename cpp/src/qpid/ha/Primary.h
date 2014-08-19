@@ -25,6 +25,7 @@
 #include "types.h"
 #include "hash.h"
 #include "BrokerInfo.h"
+#include "LogPrefix.h"
 #include "PrimaryQueueLimits.h"
 #include "ReplicationTest.h"
 #include "Role.h"
@@ -81,7 +82,6 @@ class Primary : public Role
     ~Primary();
 
     // Role implementation
-    std::string getLogPrefix() const { return logPrefix; }
     Role* promote();
     void setBrokerUrl(const Url&) {}
 
@@ -142,7 +142,7 @@ class Primary : public Role
     mutable sys::Mutex lock;
     HaBroker& haBroker;
     Membership& membership;
-    std::string logPrefix;
+    const LogPrefix& logPrefix;
     bool active;
     ReplicationTest replicationTest;
 

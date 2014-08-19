@@ -175,7 +175,7 @@ Variant::Map asMapVoid(const Variant& value) {
 // Report errors on the broker replication session.
 class BrokerReplicator::ErrorListener : public broker::SessionHandler::ErrorListener {
   public:
-    ErrorListener(const std::string& logPrefix_) : logPrefix(logPrefix_) {}
+    ErrorListener(const LogPrefix& lp) : logPrefix(lp) {}
 
     void connectionException(framing::connection::CloseCode code, const std::string& msg) {
         QPID_LOG(error, logPrefix << framing::createConnectionException(code, msg).what());
@@ -189,12 +189,10 @@ class BrokerReplicator::ErrorListener : public broker::SessionHandler::ErrorList
     void incomingExecutionException(framing::execution::ErrorCode code, const std::string& msg) {
         QPID_LOG(error, logPrefix << "Incoming " << framing::createSessionException(code, msg).what());
     }
-    void detach() {
-        QPID_LOG(debug, logPrefix << "Session detached.");
-    }
+    void detach() {}
 
   private:
-    std::string logPrefix;
+    const LogPrefix& logPrefix;
 };
 
 /** Keep track of queues or exchanges during the update process to solve 2
@@ -213,8 +211,9 @@ class BrokerReplicator::UpdateTracker {
     typedef boost::function<void (const std::string&)> CleanFn;
 
     UpdateTracker(const std::string& type_, // "queue" or "exchange"
-                  CleanFn f)
-        : type(type_), cleanFn(f) {}
+                  CleanFn f,
+                  const LogPrefix& lp)
+        : type(type_), cleanFn(f), logPrefix(lp) {}
 
     /** Destructor cleans up remaining initial queues. */
     ~UpdateTracker() {
@@ -224,7 +223,7 @@ class BrokerReplicator::UpdateTracker {
                      boost::bind(&UpdateTracker::clean, this, _1));
         }
         catch (const std::exception& e) {
-            QPID_LOG(error, "Error in cleanup of lost objects: " << e.what());
+            QPID_LOG(error, logPrefix << "Error in cleanup of lost objects: " << e.what());
         }
     }
 
@@ -251,7 +250,7 @@ class BrokerReplicator::UpdateTracker {
 
   private:
     void clean(const std::string& name) {
-        QPID_LOG(debug, "Backup: Deleted " << type << " " << name <<
+        QPID_LOG(debug, logPrefix << "Deleted " << type << " " << name <<
                  ": no longer exists on primary");
         try { cleanFn(name); }
         catch (const framing::NotFoundException&) {}
@@ -260,6 +259,7 @@ class BrokerReplicator::UpdateTracker {
     std::string type;
     Names initial, events;
     CleanFn cleanFn;
+    const LogPrefix& logPrefix;
 };
 
 namespace {
@@ -279,7 +279,7 @@ boost::shared_ptr<BrokerReplicator> BrokerReplicator::create(
 
 BrokerReplicator::BrokerReplicator(HaBroker& hb, const boost::shared_ptr<Link>& l)
     : Exchange(QPID_CONFIGURATION_REPLICATOR),
-      logPrefix("Backup: "), replicationTest(NONE),
+      logPrefix(hb.logPrefix), replicationTest(NONE),
       haBroker(hb), broker(hb.getBroker()),
       exchanges(broker.getExchanges()), queues(broker.getQueues()),
       link(l),
@@ -372,19 +372,20 @@ void BrokerReplicator::connected(Bridge& bridge, SessionHandler& sessionHandler)
     link->getRemoteAddress(primary);
     string queueName = bridge.getQueueName();
 
-    QPID_LOG(notice, logPrefix << (initialized ? "Failing over" : "Connecting")
-             << " to primary " << primary
-             << " status:" << printable(haBroker.getStatus()));
+    QPID_LOG(info, logPrefix << (initialized ? "Failing over" : "Connecting")
+             << " to primary " << primary);
     initialized = true;
 
     exchangeTracker.reset(
         new UpdateTracker("exchange",
-                          boost::bind(&BrokerReplicator::deleteExchange, this, _1)));
+                          boost::bind(&BrokerReplicator::deleteExchange, this, _1),
+                          logPrefix));
     exchanges.eachExchange(boost::bind(&BrokerReplicator::existingExchange, this, _1));
 
     queueTracker.reset(
         new UpdateTracker("queue",
-                          boost::bind(&BrokerReplicator::deleteQueue, this, _1, true)));
+                          boost::bind(&BrokerReplicator::deleteQueue, this, _1, true),
+                          logPrefix));
     queues.eachQueue(boost::bind(&BrokerReplicator::existingQueue, this, _1));
 
     framing::AMQP_ServerProxy peer(sessionHandler.out);
@@ -417,14 +418,14 @@ void BrokerReplicator::connected(Bridge& bridge, SessionHandler& sessionHandler)
 // Called for each queue in existence when the backup connects to a primary.
 void BrokerReplicator::existingQueue(const boost::shared_ptr<Queue>& q) {
     if (replicationTest.getLevel(*q)) {
-        QPID_LOG(debug, "Existing queue: " << q->getName());
+        QPID_LOG(debug, logPrefix << "Existing queue: " << q->getName());
         queueTracker->addQueue(q);
     }
 }
 
 void BrokerReplicator::existingExchange(const boost::shared_ptr<Exchange>& ex) {
     if (replicationTest.getLevel(*ex)) {
-        QPID_LOG(debug, "Existing exchange: " << ex->getName());
+        QPID_LOG(debug, logPrefix << "Existing exchange: " << ex->getName());
         exchangeTracker->addExchange(ex);
     }
 }
@@ -447,7 +448,7 @@ void BrokerReplicator::route(Deliverable& msg) {
         if (msg.getMessage().getPropertyAsString(QMF_CONTENT) == EVENT) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
                 Variant::Map& map = i->asMap();
-                QPID_LOG(trace, "Broker replicator event: " << map);
+                QPID_LOG(trace, logPrefix << "Broker replicator event: " << map);
                 Variant::Map& schema = map[SCHEMA_ID].asMap();
                 Variant::Map& values = map[VALUES].asMap();
                 std::string key = (schema[PACKAGE_NAME].asString() +
@@ -459,7 +460,7 @@ void BrokerReplicator::route(Deliverable& msg) {
         } else if (msg.getMessage().getPropertyAsString(QMF_OPCODE) == QUERY_RESPONSE) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
                 Variant::Map& map = i->asMap();
-                QPID_LOG(trace, "Broker replicator response: " << map);
+                QPID_LOG(trace, logPrefix << "Broker replicator response: " << map);
                 string type = map[SCHEMA_ID].asMap()[CLASS_NAME].asString();
                 Variant::Map& values = map[VALUES].asMap();
                 framing::FieldTable args;
@@ -691,8 +692,7 @@ void BrokerReplicator::doResponseExchange(Variant::Map& values) {
     if (exchange &&
         exchange->getArgs().getAsString(QPID_HA_UUID) != args.getAsString(QPID_HA_UUID))
     {
-        QPID_LOG(warning, logPrefix << "UUID mismatch, replacing exchange: "
-                 << name);
+        QPID_LOG(warning, logPrefix << "Exchange response replacing (UUID mismatch): " << name);
         deleteExchange(name);
     }
     CreateExchangeResult result = createExchange(
@@ -793,21 +793,17 @@ void BrokerReplicator::deleteQueue(const std::string& name, bool purge) {
 }
 
 void BrokerReplicator::deleteExchange(const std::string& name) {
-    try {
-        boost::shared_ptr<broker::Exchange> exchange = exchanges.find(name);
-        if (!exchange) {
-            QPID_LOG(warning, logPrefix << "Cannot delete exchange, not found: " << name);
-            return;
-        }
-        if (exchange->inUseAsAlternate()) {
-            QPID_LOG(warning, "Cannot delete exchange, in use as alternate: " << name);
-            return;
-        }
-        broker.deleteExchange(name, userId, remoteHost);
-        QPID_LOG(debug, logPrefix << "Exchange deleted: " << name);
-    } catch (const framing::NotFoundException&) {
-        QPID_LOG(debug, logPrefix << "Exchange not found for deletion: " << name);
+    boost::shared_ptr<broker::Exchange> exchange = exchanges.find(name);
+    if (!exchange) {
+        QPID_LOG(warning, logPrefix << "Cannot delete exchange, not found: " << name);
+        return;
     }
+    if (exchange->inUseAsAlternate()) {
+        QPID_LOG(warning, logPrefix << "Cannot delete exchange, in use as alternate: " << name);
+        return;
+    }
+    broker.deleteExchange(name, userId, remoteHost);
+    QPID_LOG(debug, logPrefix << "Exchange deleted: " << name);
 }
 
 boost::shared_ptr<QueueReplicator> BrokerReplicator::replicateQueue(

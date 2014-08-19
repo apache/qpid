@@ -85,7 +85,8 @@ class Membership
     void setSelfAddress(const Address&);
 
   private:
-    void update(sys::Mutex::ScopedLock&);
+    void setPrefix();
+    void update(bool log, sys::Mutex::ScopedLock&);
     BrokerStatus getStatus(sys::Mutex::ScopedLock&) const;
     types::Variant::List asList(sys::Mutex::ScopedLock&) const;
 

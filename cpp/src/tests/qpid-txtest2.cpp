@@ -165,7 +165,7 @@ struct Client
             session.close();
             connection.close();
         } catch(const std::exception& e) {
-            std::cout << e.what() << std::endl;
+            std::cout << "Client shutdown: " << e.what() << std::endl;
         }
     }
 };
@@ -350,7 +350,7 @@ int main(int argc, char** argv)
         }
         return 0;
     } catch(const std::exception& e) {
-	std::cout << e.what() << std::endl;
+	std::cout << argv[0] << ": " << e.what() << std::endl;
     }
     return 2;
 }

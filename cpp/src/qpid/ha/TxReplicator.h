@@ -22,11 +22,13 @@
  *
  */
 
+#include "LogPrefix.h"
 #include "QueueReplicator.h"
 #include "Event.h"
 #include "qpid/broker/DeliveryRecord.h"
 #include "qpid/broker/TransactionalStore.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/types/Uuid.h"
 
 namespace qpid {
 
@@ -56,7 +58,7 @@ class TxReplicator : public QueueReplicator {
     typedef boost::shared_ptr<broker::Link> LinkPtr;
 
     static bool isTxQueue(const std::string& queue);
-    static std::string getTxId(const std::string& queue);
+    static types::Uuid getTxId(const std::string& queue);
 
     static boost::shared_ptr<TxReplicator> create(
         HaBroker&, const QueuePtr& txQueue, const LinkPtr& link);
@@ -90,7 +92,7 @@ class TxReplicator : public QueueReplicator {
     void backups(const std::string& data, sys::Mutex::ScopedLock&);
     void end(sys::Mutex::ScopedLock&);
 
-    std::string logPrefix;
+    LogPrefix2 logPrefix;
     TxEnqueueEvent enq;         // Enqueue data for next deliver.
     boost::intrusive_ptr<broker::TxBuffer> txBuffer;
     broker::MessageStore* store;

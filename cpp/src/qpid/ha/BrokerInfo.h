@@ -63,9 +63,14 @@ class BrokerInfo
     void assign(const types::Variant::Map&);
 
     // So it can be put in a set.
-    bool operator<(const BrokerInfo x) const { return systemId < x.systemId; }
+    bool operator<(const BrokerInfo& x) const { return systemId < x.systemId; }
 
-    // Print just the identifying information, not the status.
+    bool operator==(const BrokerInfo& x) const
+    { return address == x.address && systemId == x.systemId && status == x.status; }
+
+    bool operator!=(const BrokerInfo& x) const { return !(*this == x); }
+
+    // Print just the identifying information (shortId@address), not the status.
     std::ostream& printId(std::ostream& o) const;
 
   private:

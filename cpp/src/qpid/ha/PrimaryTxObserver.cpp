@@ -94,6 +94,7 @@ PrimaryTxObserver::PrimaryTxObserver(
     Primary& p, HaBroker& hb, const boost::intrusive_ptr<broker::TxBuffer>& tx
 ) :
     state(SENDING),
+    logPrefix(hb.logPrefix),
     primary(p), haBroker(hb), broker(hb.getBroker()),
     replicationTest(hb.getSettings().replicateDefault.get()),
     txBuffer(tx),
@@ -101,7 +102,7 @@ PrimaryTxObserver::PrimaryTxObserver(
     exchangeName(TRANSACTION_REPLICATOR_PREFIX+id.str()),
     empty(true)
 {
-    logPrefix = "Primary transaction "+shortStr(id)+": ";
+    logPrefix = "Primary TX "+shortStr(id)+": ";
 
     // The brokers known at this point are the ones that will be included
     // in the transaction. Brokers that join later are not included.
@@ -115,8 +116,7 @@ PrimaryTxObserver::PrimaryTxObserver(
     for (size_t i = 0; i < incomplete.size(); ++i)
         txBuffer->startCompleter();
 
-    QPID_LOG(debug, logPrefix << "Started TX " << id);
-    QPID_LOG(debug, logPrefix << "Backups: " << backups);
+    QPID_LOG(debug, logPrefix << "Started, backups " << backups);
 }
 
 void PrimaryTxObserver::initialize() {
@@ -140,9 +140,7 @@ void PrimaryTxObserver::initialize() {
 }
 
 
-PrimaryTxObserver::~PrimaryTxObserver() {
-    QPID_LOG(debug, logPrefix << "Ended");
-}
+PrimaryTxObserver::~PrimaryTxObserver() {}
 
 void PrimaryTxObserver::checkState(State expect, const std::string& msg) {
     if (state != expect)
@@ -254,7 +252,7 @@ void PrimaryTxObserver::end(Mutex::ScopedLock&) {
     try {
         broker.getExchanges().destroy(getExchangeName());
     } catch (const std::exception& e) {
-        QPID_LOG(error, logPrefix << "Deleting transaction exchange: "  << e.what());
+        QPID_LOG(error, logPrefix << "Deleting TX exchange: "  << e.what());
     }
 }
 
@@ -266,11 +264,12 @@ bool PrimaryTxObserver::completed(const Uuid& id, Mutex::ScopedLock&) {
     return false;
 }
 
-bool PrimaryTxObserver::error(const Uuid& id, const char* msg, Mutex::ScopedLock& l)
+bool PrimaryTxObserver::error(const Uuid& id, const std::string& msg, Mutex::ScopedLock& l)
 {
     if (incomplete.find(id) != incomplete.end()) {
         // Note: setError before completed since completed may trigger completion.
-        txBuffer->setError(QPID_MSG(logPrefix << msg << id));
+        // Only use the TX part of the log prefix.
+        txBuffer->setError(Msg() << logPrefix.get() << msg << shortStr(id) << ".");
         completed(id, l);
         return true;
     }
@@ -290,7 +289,7 @@ void PrimaryTxObserver::txPrepareOkEvent(const string& data) {
 void PrimaryTxObserver::txPrepareFailEvent(const string& data) {
     Mutex::ScopedLock l(lock);
     types::Uuid backup = decodeStr<TxPrepareFailEvent>(data).broker;
-    if (error(backup, "Prepare failed on backup: ", l)) {
+    if (error(backup, "Prepare failed on backup ", l)) {
         QPID_LOG(error, logPrefix << "Prepare failed on backup " << backup);
     } else {
         QPID_LOG(error, logPrefix << "Unexpected prepare-fail response from " << backup);
