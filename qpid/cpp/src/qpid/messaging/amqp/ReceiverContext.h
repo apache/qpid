@@ -67,8 +67,10 @@ class ReceiverContext
     AddressHelper helper;
     pn_link_t* receiver;
     uint32_t capacity;
+    uint32_t used;
     qpid::sys::AtomicCount fetching;
     void configure(pn_terminus_t*);
+    bool wakeupToIssueCredit();
 };
 }}} // namespace qpid::messaging::amqp
 

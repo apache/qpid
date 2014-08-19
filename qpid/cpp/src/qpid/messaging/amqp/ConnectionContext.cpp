@@ -272,7 +272,11 @@ bool ConnectionContext::get(boost::shared_ptr<SessionContext> ssn, boost::shared
             pn_link_advance(lnk->receiver);
             if (lnk->capacity) {
                 pn_link_flow(lnk->receiver, 1);
-                wakeupDriver();//TODO: wakeup less frequently
+                if (lnk->wakeupToIssueCredit()) {
+                    wakeupDriver();
+                } else {
+                    haveOutput = true;
+                }
             }
             return true;
         } else if (until > qpid::sys::now()) {

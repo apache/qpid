@@ -36,7 +36,7 @@ ReceiverContext::ReceiverContext(pn_session_t* session, const std::string& n, co
     address(a),
     helper(address),
     receiver(pn_receiver(session, name.c_str())),
-    capacity(0) {}
+    capacity(0), used(0) {}
 ReceiverContext::~ReceiverContext()
 {
     //pn_link_free(receiver);
@@ -123,6 +123,16 @@ void ReceiverContext::reset(pn_session_t* session)
 bool ReceiverContext::hasCurrent()
 {
     return pn_link_current(receiver);
+}
+
+bool ReceiverContext::wakeupToIssueCredit()
+{
+    if (++used >= (capacity/2)) {
+        used = 0;
+        return true;
+    } else {
+        return false;
+    }
 }
 
 }}} // namespace qpid::messaging::amqp
