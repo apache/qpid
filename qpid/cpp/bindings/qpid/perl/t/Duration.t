@@ -21,7 +21,10 @@
 use Test::More qw(no_plan);
 use Test::Exception;
 
-require 'utils.pm';
+# append the location of the test to the PERL5LIB path
+use File::Basename;
+BEGIN {push @INC, dirname (__FILE__)};
+use utils;
 
 # verify that qpid is available
 BEGIN { use_ok( 'qpid' ); }
