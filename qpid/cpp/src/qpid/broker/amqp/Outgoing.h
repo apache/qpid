@@ -140,7 +140,6 @@ class OutgoingFromQueue : public Outgoing, public qpid::broker::Consumer, public
     pn_link_t* link;
     qpid::sys::OutputControl& out;
     size_t current;
-    int outstanding;
     std::vector<char> buffer;
     std::string subjectFilter;
     boost::scoped_ptr<Selector> selector;
