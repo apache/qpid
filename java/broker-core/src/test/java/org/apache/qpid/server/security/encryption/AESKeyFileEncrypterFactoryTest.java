@@ -36,11 +36,15 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.crypto.Cipher;
+
+import org.junit.Assume;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -84,6 +88,8 @@ public class AESKeyFileEncrypterFactoryTest extends QpidTestCase
 
     public void testCreateKeyInDefaultLocation() throws Exception
     {
+        Assume.assumeTrue(isStrongEncryptionEnabled());
+
         ConfigurationSecretEncrypter encrypter = _factory.createEncrypter(_broker);
 
         KeyFilePathChecker keyFilePathChecker = new KeyFilePathChecker();
@@ -114,6 +120,8 @@ public class AESKeyFileEncrypterFactoryTest extends QpidTestCase
 
     public void testSettingContextKeyLeadsToFileCreation() throws Exception
     {
+        Assume.assumeTrue(isStrongEncryptionEnabled());
+
         String filename = UUID.randomUUID().toString() + ".key";
         String subdirName = getTestName() + File.separator + "test";
         String fileLocation = _tmpDir.toString() + File.separator + subdirName + File.separator + filename;
@@ -132,6 +140,8 @@ public class AESKeyFileEncrypterFactoryTest extends QpidTestCase
 
     public void testUnableToCreateFileInSpecifiedLocation() throws Exception
     {
+        Assume.assumeTrue(isStrongEncryptionEnabled());
+
         String filename = UUID.randomUUID().toString() + ".key";
         String subdirName = getTestName() + File.separator + "test";
         String fileLocation = _tmpDir.toString() + File.separator + subdirName + File.separator + filename;
@@ -155,6 +165,8 @@ public class AESKeyFileEncrypterFactoryTest extends QpidTestCase
 
     public void testPermissionsAreChecked() throws Exception
     {
+        Assume.assumeTrue(isStrongEncryptionEnabled());
+
         String filename = UUID.randomUUID().toString() + ".key";
         String subdirName = getTestName() + File.separator + "test";
         String fileLocation = _tmpDir.toString() + File.separator + subdirName + File.separator + filename;
@@ -181,6 +193,8 @@ public class AESKeyFileEncrypterFactoryTest extends QpidTestCase
 
     public void testInvalidKey() throws Exception
     {
+        Assume.assumeTrue(isStrongEncryptionEnabled());
+
         String filename = UUID.randomUUID().toString() + ".key";
         String subdirName = getTestName() + File.separator + "test";
         String fileLocation = _tmpDir.toString() + File.separator + subdirName + File.separator + filename;
@@ -231,6 +245,11 @@ public class AESKeyFileEncrypterFactoryTest extends QpidTestCase
                                }
                            });
         super.tearDown();
+    }
+
+    private boolean isStrongEncryptionEnabled() throws NoSuchAlgorithmException
+    {
+        return Cipher.getMaxAllowedKeyLength("AES")>=256;
     }
 
     private class KeyFilePathChecker extends SimpleFileVisitor<Path>

@@ -21,14 +21,18 @@
 package org.apache.qpid.server.security.encryption;
 
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 
+import javax.crypto.Cipher;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+
+import org.junit.Assume;
 
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -39,12 +43,14 @@ public class AESKeyFileEncrypterTest extends QpidTestCase
 
     public void testSimpleEncryptDecrypt() throws Exception
     {
+        Assume.assumeTrue(isStrongEncryptionEnabled());
         doTestSimpleEncryptDecrypt(PLAINTEXT);
     }
 
 
-    public void testRepeatedEncryptionsReturnDifferentValues()
+    public void testRepeatedEncryptionsReturnDifferentValues() throws Exception
     {
+        Assume.assumeTrue(isStrongEncryptionEnabled());
         SecretKeySpec secretKey = createSecretKey();
         AESKeyFileEncrypter encrypter = new AESKeyFileEncrypter(secretKey);
 
@@ -67,6 +73,7 @@ public class AESKeyFileEncrypterTest extends QpidTestCase
 
     public void testCreationFailsOnInvalidSecret() throws Exception
     {
+        Assume.assumeTrue(isStrongEncryptionEnabled());
         try
         {
             new AESKeyFileEncrypter(null);
@@ -90,8 +97,9 @@ public class AESKeyFileEncrypterTest extends QpidTestCase
         }
     }
 
-    public void testEncryptionOfEmptyString()
+    public void testEncryptionOfEmptyString() throws Exception
     {
+        Assume.assumeTrue(isStrongEncryptionEnabled());
         String text = "";
         doTestSimpleEncryptDecrypt(text);
     }
@@ -109,8 +117,9 @@ public class AESKeyFileEncrypterTest extends QpidTestCase
         assertTrue("Encryption was not reversible", text.equals(decrypted));
     }
 
-    public void testEncryptingNullFails()
+    public void testEncryptingNullFails() throws Exception
     {
+        Assume.assumeTrue(isStrongEncryptionEnabled());
         try
         {
             SecretKeySpec secretKey = createSecretKey();
@@ -125,8 +134,9 @@ public class AESKeyFileEncrypterTest extends QpidTestCase
         }
     }
 
-    public void testEncryptingVeryLargeSecret()
+    public void testEncryptingVeryLargeSecret() throws Exception
     {
+        Assume.assumeTrue(isStrongEncryptionEnabled());
         Random random = new Random();
         byte[] data = new byte[4096];
         random.nextBytes(data);
@@ -137,9 +147,14 @@ public class AESKeyFileEncrypterTest extends QpidTestCase
         doTestSimpleEncryptDecrypt(new String(data, StandardCharsets.US_ASCII));
     }
 
-    public void testDecryptNonsense()
+    private boolean isStrongEncryptionEnabled() throws NoSuchAlgorithmException
     {
+        return Cipher.getMaxAllowedKeyLength("AES")>=256;
+    }
 
+    public void testDecryptNonsense() throws Exception
+    {
+        Assume.assumeTrue(isStrongEncryptionEnabled());
         SecretKeySpec secretKey = createSecretKey();
         AESKeyFileEncrypter encrypter = new AESKeyFileEncrypter(secretKey);
 
