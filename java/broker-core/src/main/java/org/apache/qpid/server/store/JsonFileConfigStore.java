@@ -31,11 +31,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
@@ -385,8 +388,6 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     {
         ConfiguredObjectRecord record = _objectsById.get(id);
         Map<String,Object> map = new LinkedHashMap<String, Object>();
-        map.put("id", id);
-        map.putAll(record.getAttributes());
 
         Collection<Class<? extends ConfiguredObject>> parentTypes = _parent.getModel().getParentTypes(type);
         if(parentTypes.size() > 1)
@@ -403,8 +404,20 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             }
         }
 
-        Collection<Class<? extends ConfiguredObject>> childClasses =
+        map.put("id", id);
+        map.putAll(record.getAttributes());
+
+        List<Class<? extends ConfiguredObject>> childClasses =
                 new ArrayList<Class<? extends ConfiguredObject>>(_parent.getModel().getChildTypes(type));
+
+        Collections.sort(childClasses, new Comparator<Class<? extends ConfiguredObject>>()
+        {
+            @Override
+            public int compare(final Class<? extends ConfiguredObject> o1, final Class<? extends ConfiguredObject> o2)
+            {
+                return o1.getSimpleName().compareTo(o2.getSimpleName());
+            }
+        });
 
         for(Class<? extends ConfiguredObject> childClass : childClasses)
         {
@@ -416,6 +429,14 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                 if(childIds != null)
                 {
                     List<Map<String,Object>> entities = new ArrayList<Map<String, Object>>();
+                    SortedSet<ConfiguredObjectRecord> sortedChildren = new TreeSet<>(new Comparator<ConfiguredObjectRecord>()
+                    {
+                        @Override
+                        public int compare(final ConfiguredObjectRecord o1, final ConfiguredObjectRecord o2)
+                        {
+                            return ((String)o1.getAttributes().get(ConfiguredObject.NAME)).compareTo(((String)o2.getAttributes().get(ConfiguredObject.NAME)));
+                        }
+                    });
                     for(UUID childId : childIds)
                     {
                         ConfiguredObjectRecord childRecord = _objectsById.get(childId);
