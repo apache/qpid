@@ -30,6 +30,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.IOException;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Arrays;
@@ -526,6 +527,7 @@ public final class QpidConfig
             {
                 System.out.printf("%-10s%-" + maxNameLen + "s ", exchange.getStringValue("type"), name);
                 Map args = (Map)exchange.getValue("arguments");
+                args = (args == null) ? Collections.EMPTY_MAP : args;
 
                 if (exchange.getBooleanValue("durable"))
                 {
@@ -599,7 +601,7 @@ public final class QpidConfig
 
                         String bindingKey = binding.getStringValue("bindingKey");
                         Map arguments = (Map)binding.getValue("arguments");
-                        if (arguments.isEmpty())
+                        if (arguments == null || arguments.isEmpty())
                         {
                             System.out.printf("    bind [%s] => %s\n", bindingKey, queueName);
                         }
@@ -657,6 +659,7 @@ public final class QpidConfig
             {
                 System.out.printf("%-" + maxNameLen + "s ", name);
                 Map<String, Object> args = queue.<Map<String, Object>>getValue("arguments");
+                args = (args == null) ? Collections.EMPTY_MAP : args;
 /*System.out.println(args);
 for (Map.Entry<String, Object> entry  : args.entrySet()) {
     System.out.println(entry.getKey() + " " + entry.getValue().getClass().getCanonicalName());
@@ -803,7 +806,7 @@ for (Map.Entry<String, Object> entry  : args.entrySet()) {
 
                         String bindingKey = binding.getStringValue("bindingKey");
                         Map arguments = (Map)binding.getValue("arguments");
-                        if (arguments.isEmpty())
+                        if (arguments == null || arguments.isEmpty())
                         {
                             System.out.printf("    bind [%s] => %s\n", bindingKey, exchangeName);
                         }

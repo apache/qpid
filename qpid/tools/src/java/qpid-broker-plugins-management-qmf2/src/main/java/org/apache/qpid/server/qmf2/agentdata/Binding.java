@@ -22,6 +22,7 @@
 package org.apache.qpid.server.qmf2.agentdata;
 
 // Misc Imports
+import java.util.Collections;
 import java.util.Map;
 
 // Simple Logging Facade 4 Java
@@ -118,10 +119,15 @@ public class Binding extends QmfAgentData
         setValue("bindingKey", binding.getName());
 
         Map<String, Object> arguments = binding.getArguments();
-        // Only add arguments property if the bindings have arguments
+        // Only add arguments property if the bindings have arguments otherwise
+        // set to empty Map to be consistent with C++ Broker.
         if (arguments != null && arguments.size() > 0)
         {
             setValue("arguments", arguments);
+        }
+        else
+        {
+            setValue("arguments", Collections.EMPTY_MAP);
         }
         // origin not implemented in Java Broker - not really sure what the origin property means anyway???
     }
