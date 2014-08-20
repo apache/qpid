@@ -21,7 +21,10 @@
 use Test::More qw(no_plan);
 use Test::Exception;
 
-require 'utils.pm';
+# append the location of the test to the PERL5LIB path
+use File::Basename;
+BEGIN {push @INC, dirname (__FILE__)};
+use utils;
 
 # verify that qpid is available
 BEGIN { use_ok( 'qpid' ); }
@@ -241,53 +244,33 @@ dies_ok (sub {$message->set_content(undef);},
          "Content cannot be null");
 
 # can be an empty string
-$message->set_content("");
-ok ($message->get_content() eq "",
+$message->set_content_object("");
+ok ($message->get_content_object() eq "",
     "Content can be an empty string");
 
 # can be an arbitrary string
 my $content = random_string(255);
-$message->set_content($content);
-ok ($message->get_content() eq $content,
+$message->set_content_object($content);
+ok ($message->get_content_object() eq $content,
     "Content can be an arbitrary string");
 
 # Embedded nulls should be handled properly
 $content = { id => 1234, name => "With\x00null" };
 qpid::messaging::encode($content, $message);
-my $map = qpid::messaging::decode_map($message);
+my $map = qpid::messaging::decode($message);
 ok ($map->{name} eq "With\x00null",
     "Nulls embedded in map values work.");
 
 # Unicode strings shouldn't be broken
 $content = { id => 1234, name => "Euro=\x{20AC}" };
 qpid::messaging::encode($content, $message);
-$map = qpid::messaging::decode_map($message);
+$map = qpid::messaging::decode($message);
 ok ($map->{name} eq "Euro=\x{20AC}",
     "Unicode strings encoded correctly.");
 
 # Maps inside maps should work
 $content = { id => 1234, name => { first => "tom" } };
 qpid::messaging::encode($content, $message);
-$map = qpid::messaging::decode_map($message);
+$map = qpid::messaging::decode($message);
 ok ($map->{name}{first} eq "tom",
     "Map inside map encoded correctly.");
-
-# Setting the content as a hash automatically encodes it
-($content) = {"id" => "1234", "name" => "qpid"};
-$message->set_content($content);
-ok ($message->get_content_type() eq "amqp/map",
-    "Hashes are automatically encoded correctly");
-
-# Setting the content as a list automatically encodes it
-my @acontent = (1, 2, 3, 4);
-$message->set_content(\@acontent);
-ok ($message->get_content_type() eq "amqp/list",
-    "Lists are automatically encoded correctly");
-
-# content size
-# content size is correct
-my $content_size = int(rand(256));
-$content = random_string($content_size);
-$message->set_content($content);
-ok ($message->get_content_size() == $content_size,
-    "Content size is correct");
