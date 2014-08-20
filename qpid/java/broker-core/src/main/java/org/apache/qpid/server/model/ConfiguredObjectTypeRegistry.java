@@ -24,6 +24,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.AbstractCollection;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -33,6 +34,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
@@ -45,15 +47,104 @@ public class ConfiguredObjectTypeRegistry
 {
     private static final Logger LOGGER = Logger.getLogger(ConfiguredObjectTypeRegistry.class);
 
-    private static final Comparator<ConfiguredObjectAttributeOrStatistic<?,?>> NAME_COMPARATOR = new Comparator<ConfiguredObjectAttributeOrStatistic<?, ?>>()
+    private static Map<String,Integer> STANDARD_FIRST_FIELDS_ORDER = new HashMap<>();
+    static
+    {
+        int i = 0;
+        for(String name : Arrays.asList(ConfiguredObject.ID,
+                                        ConfiguredObject.NAME,
+                                        ConfiguredObject.DESCRIPTION,
+                                        ConfiguredObject.TYPE,
+                                        ConfiguredObject.DESIRED_STATE,
+                                        ConfiguredObject.DURABLE,
+                                        ConfiguredObject.LIFETIME_POLICY,
+                                        ConfiguredObject.CONTEXT))
+        {
+            STANDARD_FIRST_FIELDS_ORDER.put(name, i++);
+        }
+
+    }
+
+    private static Map<String,Integer> STANDARD_LAST_FIELDS_ORDER = new HashMap<>();
+    static
+    {
+        int i = 0;
+        for(String name : Arrays.asList(ConfiguredObject.LAST_UPDATED_BY,
+                                        ConfiguredObject.LAST_UPDATED_TIME,
+                                        ConfiguredObject.CREATED_BY,
+                                        ConfiguredObject.CREATED_TIME))
+        {
+            STANDARD_LAST_FIELDS_ORDER.put(name, i++);
+        }
+
+    }
+
+
+    private static final Comparator<ConfiguredObjectAttributeOrStatistic<?,?>> OBJECT_NAME_COMPARATOR = new Comparator<ConfiguredObjectAttributeOrStatistic<?, ?>>()
     {
         @Override
         public int compare(final ConfiguredObjectAttributeOrStatistic<?, ?> left,
                            final ConfiguredObjectAttributeOrStatistic<?, ?> right)
         {
-            return left.getName().compareTo(right.getName());
+            String leftName = left.getName();
+            String rightName = right.getName();
+            return compareAttributeNames(leftName, rightName);
         }
     };
+
+    private static final Comparator<String> NAME_COMPARATOR = new Comparator<String>()
+    {
+        @Override
+        public int compare(final String left, final String right)
+        {
+            return compareAttributeNames(left, right);
+        }
+    };
+
+    private static int compareAttributeNames(final String leftName, final String rightName)
+    {
+        int result;
+        if(leftName.equals(rightName))
+        {
+            result = 0;
+        }
+        else if(STANDARD_FIRST_FIELDS_ORDER.containsKey(leftName))
+        {
+            if(STANDARD_FIRST_FIELDS_ORDER.containsKey(rightName))
+            {
+                result = STANDARD_FIRST_FIELDS_ORDER.get(leftName) - STANDARD_FIRST_FIELDS_ORDER.get(rightName);
+            }
+            else
+            {
+                result = -1;
+            }
+        }
+        else if(STANDARD_FIRST_FIELDS_ORDER.containsKey(rightName))
+        {
+            result = 1;
+        }
+        else if(STANDARD_LAST_FIELDS_ORDER.containsKey(rightName))
+        {
+            if(STANDARD_LAST_FIELDS_ORDER.containsKey(leftName))
+            {
+                result = STANDARD_LAST_FIELDS_ORDER.get(leftName) - STANDARD_LAST_FIELDS_ORDER.get(rightName);
+            }
+            else
+            {
+                result = -1;
+            }
+        }
+        else if(STANDARD_LAST_FIELDS_ORDER.containsKey(leftName))
+        {
+            result = 1;
+        }
+        else
+        {
+            result = leftName.compareTo(rightName);
+        }
+
+        return result;
+    }
 
 
     private final Map<Class<? extends ConfiguredObject>, Collection<ConfiguredObjectAttribute<?,?>>> _allAttributes =
@@ -373,8 +464,8 @@ public class ConfiguredObjectTypeRegistry
                 process((Class<? extends ConfiguredObject>) superclass);
             }
 
-            final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet = new TreeSet<>(NAME_COMPARATOR);
-            final SortedSet<ConfiguredObjectStatistic<?, ?>> statisticSet = new TreeSet<>(NAME_COMPARATOR);
+            final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet = new TreeSet<>(OBJECT_NAME_COMPARATOR);
+            final SortedSet<ConfiguredObjectStatistic<?, ?>> statisticSet = new TreeSet<>(OBJECT_NAME_COMPARATOR);
 
             _allAttributes.put(clazz, attributeSet);
             _allStatistics.put(clazz, statisticSet);
@@ -480,7 +571,7 @@ public class ConfiguredObjectTypeRegistry
 
     private <X extends ConfiguredObject> void processAttributesTypesAndFields(final Class<X> clazz)
     {
-        Map<String,ConfiguredObjectAttribute<?,?>> attrMap = new HashMap<String, ConfiguredObjectAttribute<?, ?>>();
+        Map<String,ConfiguredObjectAttribute<?,?>> attrMap = new TreeMap<>(NAME_COMPARATOR);
         Map<String,AutomatedField> fieldMap = new HashMap<String, AutomatedField>();
 
 

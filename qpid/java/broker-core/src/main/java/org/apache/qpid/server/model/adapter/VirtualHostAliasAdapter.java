@@ -52,6 +52,7 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
         final Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(ID, UUID.randomUUID());
         attributes.put(NAME, virtualHost.getName());
+        attributes.put(DURABLE, false);
         return attributes;
     }
 

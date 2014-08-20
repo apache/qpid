@@ -59,8 +59,14 @@ public class RestServlet extends AbstractServlet
     public static final String ACTUALS_PARAM = "actuals";
     public static final String SORT_PARAM = "sort";
     public static final String INCLUDE_SYS_CONTEXT_PARAM = "includeSysContext";
+    public static final String EXTRACT_INITIAL_CONFIG_PARAM = "extractInitialConfig";
 
-    public static final Set<String> RESERVED_PARAMS = new HashSet<String>(Arrays.asList(DEPTH_PARAM, SORT_PARAM, ACTUALS_PARAM, INCLUDE_SYS_CONTEXT_PARAM));
+    public static final Set<String> RESERVED_PARAMS =
+            new HashSet<>(Arrays.asList(DEPTH_PARAM,
+                                        SORT_PARAM,
+                                        ACTUALS_PARAM,
+                                        INCLUDE_SYS_CONTEXT_PARAM,
+                                        EXTRACT_INITIAL_CONFIG_PARAM));
 
     private Class<? extends ConfiguredObject>[] _hierarchy;
 
@@ -316,15 +322,29 @@ public class RestServlet extends AbstractServlet
         Collection<ConfiguredObject<?>> allObjects = getObjects(request);
 
         // TODO - sort special params, everything else should act as a filter
-        int depth = getDepthParameterFromRequest(request);
-        boolean actuals = getBooleanParameterFromRequest(request, ACTUALS_PARAM);
-        boolean includeSystemContext = getBooleanParameterFromRequest(request, INCLUDE_SYS_CONTEXT_PARAM);
+        boolean extractInitialConfig = getBooleanParameterFromRequest(request, EXTRACT_INITIAL_CONFIG_PARAM);
+        int depth;
+        boolean actuals;
+        boolean includeSystemContext;
+
+        if(extractInitialConfig)
+        {
+            depth = Integer.MAX_VALUE;
+            actuals = true;
+            includeSystemContext = false;
+        }
+        else
+        {
+            depth = getDepthParameterFromRequest(request);
+            actuals = getBooleanParameterFromRequest(request, ACTUALS_PARAM);
+            includeSystemContext = getBooleanParameterFromRequest(request, INCLUDE_SYS_CONTEXT_PARAM);
+        }
 
         List<Map<String, Object>> output = new ArrayList<Map<String, Object>>();
         for(ConfiguredObject configuredObject : allObjects)
         {
             output.add(_objectConverter.convertObjectToMap(configuredObject, getConfiguredClass(),
-                    depth, actuals, includeSystemContext));
+                    depth, actuals, includeSystemContext, extractInitialConfig));
         }
 
         Writer writer = getOutputWriter(request, response);

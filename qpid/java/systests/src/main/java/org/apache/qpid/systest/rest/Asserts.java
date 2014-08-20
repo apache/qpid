@@ -378,6 +378,7 @@ public class Asserts
         assertAttributesPresent(binding,
                                 BrokerModel.getInstance().getTypeRegistry().getAttributeNames(Binding.class),
                                 Binding.STATE,
+                                Binding.ARGUMENTS,
                                 ConfiguredObject.TYPE,
                                 ConfiguredObject.CREATED_BY,
                                 ConfiguredObject.CREATED_TIME,
