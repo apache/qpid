@@ -39,8 +39,6 @@
     <test.working.directory>${basedir}/..</test.working.directory>
     <test.resource.directory>${basedir}/..</test.resource.directory>
     <test.systest.resource.directory>${basedir}</test.systest.resource.directory>
-    <!-- Jacoco skip workaround -->
-    <argLine />
   </properties>
 
   <dependencies>
