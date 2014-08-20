@@ -163,8 +163,9 @@ public class Queue extends QmfAgentData
         // altExchange needs to be set later, done in mapEncode() for convenience, because it isn't set during
         // Queue construction in the Java Broker.
 
-        // TODO arguments properties.
-
+        // TODO figure out mapping from Java Broker model to QMF queue arguments.
+        // Set to empty Map for now to be consistent with C++ broker.
+        setValue("arguments", Collections.EMPTY_MAP);
 
         // ObjectId needs to be set here in Queue because the QMF2 version of qpid-config uses a hardcoded
         // _object_name as below in the _object_id that it sets in the getQueue() call and in queueRef.
