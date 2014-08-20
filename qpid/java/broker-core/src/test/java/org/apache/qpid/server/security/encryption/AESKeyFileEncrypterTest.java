@@ -32,8 +32,6 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.junit.Assume;
-
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class AESKeyFileEncrypterTest extends QpidTestCase
@@ -43,65 +41,73 @@ public class AESKeyFileEncrypterTest extends QpidTestCase
 
     public void testSimpleEncryptDecrypt() throws Exception
     {
-        Assume.assumeTrue(isStrongEncryptionEnabled());
-        doTestSimpleEncryptDecrypt(PLAINTEXT);
+        if(isStrongEncryptionEnabled())
+        {
+            doTestSimpleEncryptDecrypt(PLAINTEXT);
+        }
     }
 
 
     public void testRepeatedEncryptionsReturnDifferentValues() throws Exception
     {
-        Assume.assumeTrue(isStrongEncryptionEnabled());
-        SecretKeySpec secretKey = createSecretKey();
-        AESKeyFileEncrypter encrypter = new AESKeyFileEncrypter(secretKey);
-
-        Set<String> encryptions = new HashSet<>();
-
-        int iterations = 100;
-
-        for(int i = 0; i < iterations; i++)
+        if(isStrongEncryptionEnabled())
         {
-            encryptions.add(encrypter.encrypt(PLAINTEXT));
-        }
+            SecretKeySpec secretKey = createSecretKey();
+            AESKeyFileEncrypter encrypter = new AESKeyFileEncrypter(secretKey);
 
-        assertEquals("Not all encryptions were distinct", iterations, encryptions.size());
+            Set<String> encryptions = new HashSet<>();
 
-        for(String encrypted : encryptions)
-        {
-            assertEquals("Not all encryptions decrypt correctly", PLAINTEXT, encrypter.decrypt(encrypted));
+            int iterations = 100;
+
+            for (int i = 0; i < iterations; i++)
+            {
+                encryptions.add(encrypter.encrypt(PLAINTEXT));
+            }
+
+            assertEquals("Not all encryptions were distinct", iterations, encryptions.size());
+
+            for (String encrypted : encryptions)
+            {
+                assertEquals("Not all encryptions decrypt correctly", PLAINTEXT, encrypter.decrypt(encrypted));
+            }
         }
     }
 
     public void testCreationFailsOnInvalidSecret() throws Exception
     {
-        Assume.assumeTrue(isStrongEncryptionEnabled());
-        try
+        if(isStrongEncryptionEnabled())
         {
-            new AESKeyFileEncrypter(null);
-            fail("An encrypter should not be creatable from a null key");
-        }
-        catch(NullPointerException e)
-        {
-            // pass
-        }
+            try
+            {
+                new AESKeyFileEncrypter(null);
+                fail("An encrypter should not be creatable from a null key");
+            }
+            catch (NullPointerException e)
+            {
+                // pass
+            }
 
-        try
-        {
-            PBEKeySpec keySpec = new PBEKeySpec("password".toCharArray());
-            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
-            new AESKeyFileEncrypter(factory.generateSecret(keySpec));
-            fail("An encrypter should not be creatable from the wrong type of secret key");
-        }
-        catch (IllegalArgumentException e)
-        {
-            // pass
+            try
+            {
+                PBEKeySpec keySpec = new PBEKeySpec("password".toCharArray());
+                SecretKeyFactory factory = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
+                new AESKeyFileEncrypter(factory.generateSecret(keySpec));
+                fail("An encrypter should not be creatable from the wrong type of secret key");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // pass
+            }
         }
     }
 
     public void testEncryptionOfEmptyString() throws Exception
     {
-        Assume.assumeTrue(isStrongEncryptionEnabled());
-        String text = "";
-        doTestSimpleEncryptDecrypt(text);
+        if(isStrongEncryptionEnabled())
+        {
+            String text = "";
+            doTestSimpleEncryptDecrypt(text);
+        }
     }
 
     private void doTestSimpleEncryptDecrypt(final String text)
@@ -119,32 +125,36 @@ public class AESKeyFileEncrypterTest extends QpidTestCase
 
     public void testEncryptingNullFails() throws Exception
     {
-        Assume.assumeTrue(isStrongEncryptionEnabled());
-        try
+        if(isStrongEncryptionEnabled())
         {
-            SecretKeySpec secretKey = createSecretKey();
-            AESKeyFileEncrypter encrypter = new AESKeyFileEncrypter(secretKey);
+            try
+            {
+                SecretKeySpec secretKey = createSecretKey();
+                AESKeyFileEncrypter encrypter = new AESKeyFileEncrypter(secretKey);
 
-            String encrypted = encrypter.encrypt(null);
-            fail("Attempting to encrypt null should fail");
-        }
-        catch(NullPointerException e)
-        {
-            // pass
+                String encrypted = encrypter.encrypt(null);
+                fail("Attempting to encrypt null should fail");
+            }
+            catch (NullPointerException e)
+            {
+                // pass
+            }
         }
     }
 
     public void testEncryptingVeryLargeSecret() throws Exception
     {
-        Assume.assumeTrue(isStrongEncryptionEnabled());
-        Random random = new Random();
-        byte[] data = new byte[4096];
-        random.nextBytes(data);
-        for(int i = 0; i < data.length; i++)
+        if(isStrongEncryptionEnabled())
         {
-            data[i] = (byte)(data[i] & 0xEF);
+            Random random = new Random();
+            byte[] data = new byte[4096];
+            random.nextBytes(data);
+            for (int i = 0; i < data.length; i++)
+            {
+                data[i] = (byte) (data[i] & 0xEF);
+            }
+            doTestSimpleEncryptDecrypt(new String(data, StandardCharsets.US_ASCII));
         }
-        doTestSimpleEncryptDecrypt(new String(data, StandardCharsets.US_ASCII));
     }
 
     private boolean isStrongEncryptionEnabled() throws NoSuchAlgorithmException
@@ -154,49 +164,51 @@ public class AESKeyFileEncrypterTest extends QpidTestCase
 
     public void testDecryptNonsense() throws Exception
     {
-        Assume.assumeTrue(isStrongEncryptionEnabled());
-        SecretKeySpec secretKey = createSecretKey();
-        AESKeyFileEncrypter encrypter = new AESKeyFileEncrypter(secretKey);
+        if(isStrongEncryptionEnabled())
+        {
+            SecretKeySpec secretKey = createSecretKey();
+            AESKeyFileEncrypter encrypter = new AESKeyFileEncrypter(secretKey);
 
 
-        try
-        {
-            encrypter.decrypt(null);
-            fail("Should not decrypt a null value");
-        }
-        catch(NullPointerException e)
-        {
-            // pass
-        }
+            try
+            {
+                encrypter.decrypt(null);
+                fail("Should not decrypt a null value");
+            }
+            catch (NullPointerException e)
+            {
+                // pass
+            }
 
-        try
-        {
-            encrypter.decrypt("");
-            fail("Should not decrypt the empty String");
-        }
-        catch(IllegalArgumentException e)
-        {
-            // pass
-        }
+            try
+            {
+                encrypter.decrypt("");
+                fail("Should not decrypt the empty String");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // pass
+            }
 
-        try
-        {
-            encrypter.decrypt("thisisnonsense");
-            fail("Should not decrypt a small amount of nonsense");
-        }
-        catch(IllegalArgumentException e)
-        {
-            // pass
-        }
+            try
+            {
+                encrypter.decrypt("thisisnonsense");
+                fail("Should not decrypt a small amount of nonsense");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // pass
+            }
 
-        try
-        {
-            String answer = encrypter.decrypt("thisisn'tvalidBase64!soitshouldfailwithanIllegalArgumentException");
-            fail("Should not decrypt a larger amount of nonsense");
-        }
-        catch(IllegalArgumentException e)
-        {
-            // pass
+            try
+            {
+                String answer = encrypter.decrypt("thisisn'tvalidBase64!soitshouldfailwithanIllegalArgumentException");
+                fail("Should not decrypt a larger amount of nonsense");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // pass
+            }
         }
     }
 
