@@ -148,6 +148,13 @@
       <scope>runtime</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.apache.qpid</groupId>
+      <artifactId>qpid-broker-plugins-websocket</artifactId>
+      <version>${project.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+
     <!-- optional modules -->
     <dependency>
       <groupId>org.apache.qpid</groupId>
