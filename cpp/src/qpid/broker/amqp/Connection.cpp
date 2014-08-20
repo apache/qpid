@@ -153,7 +153,8 @@ size_t Connection::decode(const char* buffer, size_t size)
 
 size_t Connection::encode(char* buffer, size_t size)
 {
-    QPID_LOG(trace, "encode(" << size << ")")
+    QPID_LOG(trace, "encode(" << size << ")");
+    doOutput(size);
     ssize_t n = pn_transport_output(transport, buffer, size);
     if (n > 0) {
         QPID_LOG_CAT(debug, network, id << " encoded " << n << " bytes from " << size)
@@ -166,6 +167,33 @@ size_t Connection::encode(char* buffer, size_t size)
         return 0;
     }
 }
+
+void Connection::doOutput(ssize_t capacity)
+{
+    for (ssize_t n = pn_transport_pending(transport); n > 0 && n < capacity; n = pn_transport_pending(transport)) {
+        if (dispatch()) processDeliveries();
+        else break;
+    }
+}
+
+bool Connection::dispatch()
+{
+    bool result = false;
+    for (Sessions::iterator i = sessions.begin();i != sessions.end();) {
+        if (i->second->endedByManagement()) {
+            pn_session_close(i->first);
+            i->second->close();
+            sessions.erase(i++);
+            result = true;
+            QPID_LOG_CAT(debug, model, id << " session ended by management");
+        } else {
+            if (i->second->dispatch()) result = true;
+            ++i;
+        }
+    }
+    return result;
+}
+
 bool Connection::canEncode()
 {
     if (!closeInitiated) {
@@ -174,18 +202,7 @@ bool Connection::canEncode()
             return true;
         }
         try {
-            for (Sessions::iterator i = sessions.begin();i != sessions.end();) {
-                if (i->second->endedByManagement()) {
-                    pn_session_close(i->first);
-                    i->second->close();
-                    sessions.erase(i++);
-                    haveOutput = true;
-                    QPID_LOG_CAT(debug, model, id << " session ended by management");
-                } else {
-                    if (i->second->dispatch()) haveOutput = true;
-                    ++i;
-                }
-            }
+            if (dispatch()) haveOutput = true;
             process();
         } catch (const Exception& e) {
             QPID_LOG(error, id << ": " << e.what());
@@ -304,6 +321,37 @@ void Connection::process()
         }
     }
 
+    processDeliveries();
+
+    for (pn_link_t* l = pn_link_head(connection, REQUIRES_CLOSE); l; l = pn_link_next(l, REQUIRES_CLOSE)) {
+        pn_link_close(l);
+        Sessions::iterator session = sessions.find(pn_link_session(l));
+        if (session == sessions.end()) {
+            QPID_LOG(error, id << " peer attempted to detach link on unknown session!");
+        } else {
+            session->second->detach(l);
+            QPID_LOG_CAT(debug, model, id << " link detached");
+        }
+    }
+    for (pn_session_t* s = pn_session_head(connection, REQUIRES_CLOSE); s; s = pn_session_next(s, REQUIRES_CLOSE)) {
+        pn_session_close(s);
+        Sessions::iterator i = sessions.find(s);
+        if (i != sessions.end()) {
+            i->second->close();
+            sessions.erase(i);
+            QPID_LOG_CAT(debug, model, id << " session ended");
+        } else {
+            QPID_LOG(error, id << " peer attempted to close unrecognised session");
+        }
+    }
+    if ((pn_connection_state(connection) & REQUIRES_CLOSE) == REQUIRES_CLOSE) {
+        QPID_LOG_CAT(debug, model, id << " connection closed");
+        pn_connection_close(connection);
+    }
+}
+
+void Connection::processDeliveries()
+{
     //handle deliveries
     for (pn_delivery_t* delivery = pn_work_head(connection); delivery; delivery = pn_work_next(delivery)) {
         pn_link_t* link = pn_delivery_link(delivery);
@@ -331,33 +379,6 @@ void Connection::process()
             pn_condition_set_description(error, e.what());
             pn_link_close(link);
         }
-    }
-
-
-    for (pn_link_t* l = pn_link_head(connection, REQUIRES_CLOSE); l; l = pn_link_next(l, REQUIRES_CLOSE)) {
-        pn_link_close(l);
-        Sessions::iterator session = sessions.find(pn_link_session(l));
-        if (session == sessions.end()) {
-            QPID_LOG(error, id << " peer attempted to detach link on unknown session!");
-        } else {
-            session->second->detach(l);
-            QPID_LOG_CAT(debug, model, id << " link detached");
-        }
-    }
-    for (pn_session_t* s = pn_session_head(connection, REQUIRES_CLOSE); s; s = pn_session_next(s, REQUIRES_CLOSE)) {
-        pn_session_close(s);
-        Sessions::iterator i = sessions.find(s);
-        if (i != sessions.end()) {
-            i->second->close();
-            sessions.erase(i);
-            QPID_LOG_CAT(debug, model, id << " session ended");
-        } else {
-            QPID_LOG(error, id << " peer attempted to close unrecognised session");
-        }
-    }
-    if ((pn_connection_state(connection) & REQUIRES_CLOSE) == REQUIRES_CLOSE) {
-        QPID_LOG_CAT(debug, model, id << " connection closed");
-        pn_connection_close(connection);
     }
 }
 
