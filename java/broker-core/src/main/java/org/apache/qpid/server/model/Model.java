@@ -98,7 +98,7 @@ public abstract class Model
         return null;
     }
 
-    private Class<? extends ConfiguredObject> getAncestorClassWithGivenDescendant(
+    public Class<? extends ConfiguredObject> getAncestorClassWithGivenDescendant(
             final Class<? extends ConfiguredObject> category,
             final Class<? extends ConfiguredObject> descendantClass)
     {
