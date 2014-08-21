@@ -22,8 +22,11 @@ package org.apache.qpid.server.store;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -36,6 +39,11 @@ import org.apache.qpid.server.model.Model;
 public class ConfiguredObjectRecordConverter
 {
     private final Model _model;
+
+    private static interface NameToIdResolver
+    {
+        public boolean resolve(Map<UUID, ConfiguredObjectRecord> objectsById);
+    }
 
     public ConfiguredObjectRecordConverter(final Model model)
     {
@@ -52,16 +60,32 @@ public class ConfiguredObjectRecordConverter
         Map data = objectMapper.readValue(reader, Map.class);
         if(!data.isEmpty())
         {
-            loadChild(rootClass, data, parent.getCategoryClass(), parent.getId(), objectsById);
+            Collection<NameToIdResolver> unresolved =
+                    loadChild(rootClass, data, parent.getCategoryClass(), parent.getId(), objectsById);
+
+            Iterator<NameToIdResolver> iterator = unresolved.iterator();
+            while(iterator.hasNext())
+            {
+                if(iterator.next().resolve(objectsById))
+                {
+                    iterator.remove();
+                }
+            }
+
+            if(!unresolved.isEmpty())
+            {
+                throw new IllegalArgumentException("Initial configuration has unresolved references");
+            }
         }
         return objectsById.values();
     }
 
 
-    private void loadChild(final Class<? extends ConfiguredObject> clazz,
-                           final Map<String, Object> data,
-                           final Class<? extends ConfiguredObject> parentClass,
-                           final UUID parentId, final Map<UUID, ConfiguredObjectRecord> records)
+    private Collection<NameToIdResolver> loadChild(final Class<? extends ConfiguredObject> clazz,
+                                                   final Map<String, Object> data,
+                                                   final Class<? extends ConfiguredObject> parentClass,
+                                                   final UUID parentId,
+                                                   final Map<UUID, ConfiguredObjectRecord> records)
     {
         String idStr = (String) data.remove("id");
 
@@ -70,6 +94,7 @@ public class ConfiguredObjectRecordConverter
         Map<String,UUID> parentMap = new HashMap<>();
 
         Collection<Class<? extends ConfiguredObject>> childClasses = _model.getChildTypes(clazz);
+        List<NameToIdResolver> requiringResolution = new ArrayList<>();
         for(Class<? extends ConfiguredObject> childClass : childClasses)
         {
             final String childType = childClass.getSimpleName();
@@ -83,13 +108,14 @@ public class ConfiguredObjectRecordConverter
                     {
                         if(child instanceof Map)
                         {
-                            loadChild(childClass, (Map)child, clazz, id, records);
+                            requiringResolution.addAll(loadChild(childClass, (Map) child, clazz, id, records));
                         }
                     }
                 }
             }
 
         }
+
         if(parentId != null)
         {
             parentMap.put(parentClass.getSimpleName(),parentId);
@@ -107,7 +133,15 @@ public class ConfiguredObjectRecordConverter
                         }
                         catch(IllegalArgumentException e)
                         {
-                            // TODO
+                            final String ancestorClassName =
+                                    _model.getAncestorClassWithGivenDescendant(clazz, otherParent).getSimpleName();
+                            final String parentName = (String) otherParentId;
+                            final String parentType = otherParent.getSimpleName();
+
+                            requiringResolution.add(new AncestorFindingResolver(id,
+                                                                                parentType,
+                                                                                parentName,
+                                                                                ancestorClassName));
                         }
                     }
                 }
@@ -117,7 +151,79 @@ public class ConfiguredObjectRecordConverter
 
         records.put(id, new ConfiguredObjectRecordImpl(id, type, data, parentMap));
 
+        return requiringResolution;
     }
 
 
+    private static class AncestorFindingResolver implements NameToIdResolver
+    {
+        private final String _parentType;
+        private final String _parentName;
+        private final String _commonAncestorType;
+        private final UUID _id;
+
+        public AncestorFindingResolver(final UUID id,
+                                       final String parentType,
+                                       final String parentName,
+                                       final String commonAncestorType)
+        {
+            _id = id;
+            _parentType = parentType;
+            _parentName = parentName;
+            _commonAncestorType = commonAncestorType;
+        }
+
+        @Override
+        public boolean resolve(final Map<UUID, ConfiguredObjectRecord> objectsById)
+        {
+
+            ConfiguredObjectRecord record = objectsById.get(_id);
+            Collection<ConfiguredObjectRecord> recordsWithMatchingName = new ArrayList<>();
+            for(ConfiguredObjectRecord possibleParentRecord : objectsById.values())
+            {
+                if(possibleParentRecord.getType().equals(_parentType)
+                   && _parentName.equals(possibleParentRecord.getAttributes().get(ConfiguredObject.NAME)))
+                {
+                    recordsWithMatchingName.add(possibleParentRecord);
+                }
+            }
+            for(ConfiguredObjectRecord candidate : recordsWithMatchingName)
+            {
+                UUID candidateAncestor = findAncestor(candidate, _commonAncestorType, objectsById);
+                UUID recordAncestor = findAncestor(record, _commonAncestorType, objectsById);
+                if(recordAncestor.equals(candidateAncestor))
+                {
+                    HashMap<String, UUID> parents = new HashMap<>(record.getParents());
+                    parents.put(_parentType, candidate.getId());
+                    objectsById.put(_id, new ConfiguredObjectRecordImpl(_id, record.getType(), record.getAttributes(), parents));
+
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private UUID findAncestor(final ConfiguredObjectRecord record,
+                                  final String commonAncestorType,
+                                  final Map<UUID, ConfiguredObjectRecord> objectsById)
+        {
+            UUID id = record.getParents().get(commonAncestorType);
+            if(id == null)
+            {
+                for(UUID parentId : record.getParents().values())
+                {
+                    ConfiguredObjectRecord parent = objectsById.get(parentId);
+                    if(parent != null)
+                    {
+                        id = findAncestor(parent, commonAncestorType, objectsById);
+                    }
+                    if(id != null)
+                    {
+                        break;
+                    }
+                }
+            }
+            return id;
+        }
+    }
 }
