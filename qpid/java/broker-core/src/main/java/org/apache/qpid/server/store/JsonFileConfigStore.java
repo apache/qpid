@@ -432,9 +432,13 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                     SortedSet<ConfiguredObjectRecord> sortedChildren = new TreeSet<>(new Comparator<ConfiguredObjectRecord>()
                     {
                         @Override
-                        public int compare(final ConfiguredObjectRecord o1, final ConfiguredObjectRecord o2)
+                        public int compare(final ConfiguredObjectRecord left, final ConfiguredObjectRecord right)
                         {
-                            return ((String)o1.getAttributes().get(ConfiguredObject.NAME)).compareTo(((String)o2.getAttributes().get(ConfiguredObject.NAME)));
+                            String leftName = (String) left.getAttributes().get(ConfiguredObject.NAME);
+                            String rightName = (String) right.getAttributes().get(ConfiguredObject.NAME);
+                            return leftName == null
+                                    ?  -1
+                                    : rightName == null ? 1 : leftName.compareTo(rightName);
                         }
                     });
                     for(UUID childId : childIds)
