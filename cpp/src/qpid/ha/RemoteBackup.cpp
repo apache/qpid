@@ -70,7 +70,7 @@ void RemoteBackup::catchupQueue(const QueuePtr& q, bool createGuard) {
         QPID_LOG(debug, logPrefix << "Catch-up queue"
                  << (createGuard ? " and guard" : "") << ": " << q->getName());
         catchupQueues.insert(q);
-        if (createGuard) guards[q].reset(new QueueGuard(*q, brokerInfo, logPrefix));
+        if (createGuard) guards[q].reset(new QueueGuard(*q, brokerInfo, logPrefix.prePrefix));
     }
 }
 
@@ -91,7 +91,7 @@ void RemoteBackup::ready(const QueuePtr& q) {
 // Called via BrokerObserver::queueCreate and from catchupQueue
 void RemoteBackup::queueCreate(const QueuePtr& q) {
     if (replicationTest.getLevel(*q) == ALL)
-        guards[q].reset(new QueueGuard(*q, brokerInfo, logPrefix));
+        guards[q].reset(new QueueGuard(*q, brokerInfo, logPrefix.prePrefix));
 }
 
 // Called via BrokerObserver

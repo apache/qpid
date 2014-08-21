@@ -158,7 +158,7 @@ Primary::Primary(HaBroker& hb, const BrokerInfo::Set& expect) :
         // the QueueGuards are created.
         QPID_LOG(notice, logPrefix << "Recovering backups: " << expect);
         for (BrokerInfo::Set::const_iterator i = expect.begin(); i != expect.end(); ++i) {
-            boost::shared_ptr<RemoteBackup> backup(new RemoteBackup(*i, 0, logPrefix));
+            boost::shared_ptr<RemoteBackup> backup(new RemoteBackup(*i, 0, haBroker.logPrefix));
             backups[i->getSystemId()] = backup;
             if (!backup->isReady()) expectedBackups.insert(backup);
             setCatchupQueues(backup, true); // Create guards
@@ -361,7 +361,7 @@ void Primary::exchangeDestroy(const ExchangePtr& ex) {
 shared_ptr<RemoteBackup> Primary::backupConnect(
     const BrokerInfo& info, broker::Connection& connection, Mutex::ScopedLock&)
 {
-    shared_ptr<RemoteBackup> backup(new RemoteBackup(info, &connection, logPrefix));
+    shared_ptr<RemoteBackup> backup(new RemoteBackup(info, &connection, haBroker.logPrefix));
     queueLimits.addBackup(backup);
     backups[info.getSystemId()] = backup;
     return backup;
