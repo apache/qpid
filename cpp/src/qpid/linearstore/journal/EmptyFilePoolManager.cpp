@@ -81,9 +81,9 @@ void EmptyFilePoolManager::findEfpPartitions() {
             }
         }
 
-        // If no partition was found, create an empty default partition with a warning.
+        // If no partition was found, create an empty default partition.
         if (!foundPartition) {
-            journalLogRef_.log(JournalLog::LOG_WARN, "No EFP partition found, creating an empty partition.");
+            journalLogRef_.log(JournalLog::LOG_INFO, "No EFP partition found, creating an empty partition.");
             std::ostringstream oss;
             oss << qlsStorePath_ << "/" << EmptyFilePoolPartition::getPartionDirectoryName(defaultPartitionNumber_)
                 << "/" << EmptyFilePoolPartition::s_efpTopLevelDir_ << "/" << EmptyFilePool::dirNameFromDataSize(defaultEfpDataSize_kib_);
