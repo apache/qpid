@@ -36,7 +36,6 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.model.UnknownConfiguredObjectException;
 import org.apache.qpid.server.util.BrokerTestHelper;
 
 public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
@@ -108,10 +107,12 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
             _factory.create(AuthenticationProvider.class, _configuration, _broker);
             fail("Exception not thrown");
         }
-        catch(UnknownConfiguredObjectException e)
+        catch(IllegalArgumentException e)
         {
-            assertEquals(e.getCategory(), TrustStore.class);
-            assertEquals(e.getName(), "notfound");
+            // PASS
+            assertTrue("Message does not include underlying issue", e.getMessage().contains("name 'notfound'"));
+            assertTrue("Message does not include the attribute name", e.getMessage().contains("trustStore"));
+            assertTrue("Message does not include the expected type", e.getMessage().contains("TrustStore"));
         }
     }
 

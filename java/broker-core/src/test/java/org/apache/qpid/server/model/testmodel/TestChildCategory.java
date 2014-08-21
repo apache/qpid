@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.model.testmodel;
 
+import java.util.Set;
+
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedObject;
@@ -30,6 +32,12 @@ public interface TestChildCategory<X extends TestChildCategory<X>> extends Confi
 
     String NON_INTERPOLATED_VALID_VALUE = "${file.separator}";
 
-    @ManagedAttribute(validValues = { NON_INTERPOLATED_VALID_VALUE })
+    @ManagedAttribute(validValues = { NON_INTERPOLATED_VALID_VALUE }, defaultValue = "")
     String getValidValueNotInterpolated();
+
+    @ManagedAttribute( defaultValue = "3" )
+    int getIntValue();
+
+    @ManagedAttribute( defaultValue = "[ \"1\", \"2\", \"foo\" ]" )
+    Set<Integer> getIntegerSet();
 }

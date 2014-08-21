@@ -21,6 +21,7 @@
 package org.apache.qpid.server.model.testmodel;
 
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
@@ -36,6 +37,12 @@ public class TestChildCategoryImpl
 
     @ManagedAttributeField
     private String _validValueNotInterpolated;
+
+    @ManagedAttributeField
+    private int _intValue;
+
+    @ManagedAttributeField
+    private Set<Integer> _integerSet;
 
 
     @ManagedObjectFactoryConstructor
@@ -56,5 +63,17 @@ public class TestChildCategoryImpl
     public String getValidValueNotInterpolated()
     {
         return _validValueNotInterpolated;
+    }
+
+    @Override
+    public int getIntValue()
+    {
+        return _intValue;
+    }
+
+    @Override
+    public Set<Integer> getIntegerSet()
+    {
+        return _integerSet;
     }
 }

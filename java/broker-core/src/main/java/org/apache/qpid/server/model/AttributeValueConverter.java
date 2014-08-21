@@ -89,7 +89,15 @@ abstract class AttributeValueConverter<T>
             }
             else if(value instanceof String)
             {
-                return Long.valueOf(AbstractConfiguredObject.interpolate(object, (String) value));
+                String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
+                try
+                {
+                    return Long.valueOf(interpolated);
+                }
+                catch(NumberFormatException e)
+                {
+                    throw new IllegalArgumentException("Cannot convert string '" + interpolated + "'",e);
+                }
             }
             else if(value == null)
             {
@@ -117,7 +125,15 @@ abstract class AttributeValueConverter<T>
             }
             else if(value instanceof String)
             {
-                return Integer.valueOf(AbstractConfiguredObject.interpolate(object, (String) value));
+                String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
+                try
+                {
+                    return Integer.valueOf(interpolated);
+                }
+                catch(NumberFormatException e)
+                {
+                    throw new IllegalArgumentException("Cannot convert string '" + interpolated + "'",e);
+                }
             }
             else if(value == null)
             {
@@ -145,7 +161,15 @@ abstract class AttributeValueConverter<T>
             }
             else if(value instanceof String)
             {
-                return Short.valueOf(AbstractConfiguredObject.interpolate(object, (String) value));
+                String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
+                try
+                {
+                    return Short.valueOf(interpolated);
+                }
+                catch(NumberFormatException e)
+                {
+                    throw new IllegalArgumentException("Cannot convert string '" + interpolated + "'",e);
+                }
             }
             else if(value == null)
             {
