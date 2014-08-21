@@ -38,6 +38,7 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 
 import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Queue;
@@ -248,10 +249,14 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         createRootRecord();
 
         final UUID id = UUID.randomUUID();
-        _store.create(new ConfiguredObjectRecordImpl(id, "Queue", Collections.<String, Object>emptyMap(), getRootAsParentMap()));
+        _store.create(new ConfiguredObjectRecordImpl(id, "Queue",
+                                                     Collections.<String, Object>singletonMap(ConfiguredObject.NAME, "queue"),
+                                                     getRootAsParentMap()));
         try
         {
-            _store.create(new ConfiguredObjectRecordImpl(id, "Exchange", Collections.<String, Object>emptyMap(), getRootAsParentMap()));
+            _store.create(new ConfiguredObjectRecordImpl(id, "Exchange",
+                                                         Collections.<String, Object>singletonMap(ConfiguredObject.NAME, "exchange"),
+                                                         getRootAsParentMap()));
             fail("Should not be able to create two objects with same id");
         }
         catch (StoreException e)
@@ -261,19 +266,61 @@ public class JsonFileConfigStoreTest extends QpidTestCase
     }
 
 
+    public void testObjectWithoutName() throws Exception
+    {
+        _store.openConfigurationStore(_parent, false);
+        createRootRecord();
+
+        final UUID id = UUID.randomUUID();
+        try
+        {
+            _store.create(new ConfiguredObjectRecordImpl(id, "Exchange",
+                                                         Collections.<String, Object>emptyMap(),
+                                                         getRootAsParentMap()));
+            fail("Should not be able to create an object without a name");
+        }
+        catch (StoreException e)
+        {
+            // pass
+        }
+    }
+
+    public void testObjectWithNonStringName() throws Exception
+    {
+        _store.openConfigurationStore(_parent, false);
+        createRootRecord();
+
+        final UUID id = UUID.randomUUID();
+        try
+        {
+            _store.update(true, new ConfiguredObjectRecordImpl(id, "Exchange",
+                                                         Collections.<String, Object>singletonMap(ConfiguredObject.NAME, 3),
+                                                         getRootAsParentMap()));
+            fail("Should not be able to create an object without a name");
+        }
+        catch (StoreException e)
+        {
+            // pass
+        }
+    }
+
     public void testChangeTypeOfObject() throws Exception
     {
         _store.openConfigurationStore(_parent, false);
         createRootRecord();
 
         final UUID id = UUID.randomUUID();
-        _store.create(new ConfiguredObjectRecordImpl(id, "Queue", Collections.<String, Object>emptyMap(), getRootAsParentMap()));
+        _store.create(new ConfiguredObjectRecordImpl(id, "Queue",
+                                                     Collections.<String, Object>singletonMap(ConfiguredObject.NAME, "queue"),
+                                                     getRootAsParentMap()));
         _store.closeConfigurationStore();
         _store.openConfigurationStore(_parent, false);
 
         try
         {
-            _store.update(false, new ConfiguredObjectRecordImpl(id, "Exchange", Collections.<String, Object>emptyMap(), getRootAsParentMap()));
+            _store.update(false, new ConfiguredObjectRecordImpl(id, "Exchange",
+                                                                Collections.<String, Object>singletonMap(ConfiguredObject.NAME, "exchange"),
+                                                                getRootAsParentMap()));
             fail("Should not be able to update object to different type");
         }
         catch (StoreException e)
@@ -329,40 +376,57 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         final UUID queueId = new UUID(0, 1);
         final UUID queue2Id = new UUID(1, 1);
 
-        final Map<String, Object> EMPTY_ATTR = Collections.emptyMap();
         final UUID exchangeId = new UUID(0, 2);
 
         final UUID bindingId = new UUID(0, 3);
         final UUID binding2Id = new UUID(1, 3);
 
         Map<String, UUID> parents = getRootAsParentMap();
-        final ConfiguredObjectRecordImpl queueRecord = new ConfiguredObjectRecordImpl(queueId, "Queue", EMPTY_ATTR, parents);
+        Map<String, Object> queueAttr = Collections.<String, Object>singletonMap(ConfiguredObject.NAME, "queue");
+        final ConfiguredObjectRecordImpl queueRecord =
+                new ConfiguredObjectRecordImpl(queueId, "Queue",
+                                               queueAttr,
+                                               parents);
         _store.create(queueRecord);
-        final ConfiguredObjectRecordImpl queue2Record = new ConfiguredObjectRecordImpl(queue2Id, "Queue", EMPTY_ATTR, parents);
+        Map<String, Object> queue2Attr = Collections.<String, Object>singletonMap(ConfiguredObject.NAME, "queue2");
+        final ConfiguredObjectRecordImpl queue2Record =
+                new ConfiguredObjectRecordImpl(queue2Id, "Queue",
+                                               queue2Attr,
+                                               parents);
         _store.create(queue2Record);
-        final ConfiguredObjectRecordImpl exchangeRecord = new ConfiguredObjectRecordImpl(exchangeId, "Exchange", EMPTY_ATTR, parents);
+        Map<String, Object> exchangeAttr = Collections.<String, Object>singletonMap(ConfiguredObject.NAME, "exchange");
+        final ConfiguredObjectRecordImpl exchangeRecord =
+                new ConfiguredObjectRecordImpl(exchangeId, "Exchange",
+                                               exchangeAttr,
+                                               parents);
         _store.create(exchangeRecord);
         Map<String,UUID> bindingParents = new HashMap();
         bindingParents.put("Exchange", exchangeRecord.getId());
         bindingParents.put("Queue", queueRecord.getId());
+        Map<String, Object> bindingAttr = Collections.<String, Object>singletonMap(ConfiguredObject.NAME, "binding");
         final ConfiguredObjectRecordImpl bindingRecord =
-                new ConfiguredObjectRecordImpl(bindingId, "Binding", EMPTY_ATTR, bindingParents);
+                new ConfiguredObjectRecordImpl(bindingId, "Binding",
+                                               bindingAttr,
+                                               bindingParents);
 
 
         Map<String,UUID> binding2Parents = new HashMap();
         binding2Parents.put("Exchange", exchangeRecord.getId());
         binding2Parents.put("Queue", queue2Record.getId());
+        Map<String, Object> binding2Attr = Collections.<String, Object>singletonMap(ConfiguredObject.NAME, "binding2");
         final ConfiguredObjectRecordImpl binding2Record =
-                new ConfiguredObjectRecordImpl(binding2Id, "Binding", EMPTY_ATTR, binding2Parents);
+                new ConfiguredObjectRecordImpl(binding2Id, "Binding",
+                                               binding2Attr,
+                                               binding2Parents);
         _store.update(true, bindingRecord, binding2Record);
         _store.closeConfigurationStore();
         _store.openConfigurationStore(_parent, false);
         _store.visitConfiguredObjectRecords(_handler);
-        verify(_handler).handle(matchesRecord(queueId, "Queue", EMPTY_ATTR));
-        verify(_handler).handle(matchesRecord(queue2Id, "Queue", EMPTY_ATTR));
-        verify(_handler).handle(matchesRecord(exchangeId, "Exchange", EMPTY_ATTR));
-        verify(_handler).handle(matchesRecord(bindingId, "Binding", EMPTY_ATTR));
-        verify(_handler).handle(matchesRecord(binding2Id, "Binding", EMPTY_ATTR));
+        verify(_handler).handle(matchesRecord(queueId, "Queue", queueAttr));
+        verify(_handler).handle(matchesRecord(queue2Id, "Queue", queue2Attr));
+        verify(_handler).handle(matchesRecord(exchangeId, "Exchange", exchangeAttr));
+        verify(_handler).handle(matchesRecord(bindingId, "Binding", bindingAttr));
+        verify(_handler).handle(matchesRecord(binding2Id, "Binding", binding2Attr));
         _store.closeConfigurationStore();
 
     }
@@ -371,7 +435,10 @@ public class JsonFileConfigStoreTest extends QpidTestCase
     private void createRootRecord()
     {
         UUID rootRecordId = UUID.randomUUID();
-        _rootRecord = new ConfiguredObjectRecordImpl(rootRecordId, VIRTUAL_HOST_TYPE, Collections.<String, Object>emptyMap());
+        _rootRecord =
+                new ConfiguredObjectRecordImpl(rootRecordId,
+                                               VIRTUAL_HOST_TYPE,
+                                               Collections.<String, Object>singletonMap(ConfiguredObject.NAME, "root"));
         _store.create(_rootRecord);
     }
 
