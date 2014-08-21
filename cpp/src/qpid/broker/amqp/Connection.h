@@ -72,7 +72,7 @@ class Connection : public BrokerContext, public sys::ConnectionCodec, public Man
     bool closeRequested;
 
     virtual void process();
-    void doOutput(ssize_t);
+    void doOutput(size_t);
     bool dispatch();
     void processDeliveries();
     std::string getError();

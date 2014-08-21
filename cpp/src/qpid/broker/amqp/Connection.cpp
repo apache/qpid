@@ -168,9 +168,9 @@ size_t Connection::encode(char* buffer, size_t size)
     }
 }
 
-void Connection::doOutput(ssize_t capacity)
+void Connection::doOutput(size_t capacity)
 {
-    for (ssize_t n = pn_transport_pending(transport); n > 0 && n < capacity; n = pn_transport_pending(transport)) {
+    for (ssize_t n = pn_transport_pending(transport); n > 0 && n < (ssize_t) capacity; n = pn_transport_pending(transport)) {
         if (dispatch()) processDeliveries();
         else break;
     }
