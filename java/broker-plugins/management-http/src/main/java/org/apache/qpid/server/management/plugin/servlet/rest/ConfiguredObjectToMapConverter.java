@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 
@@ -152,10 +153,10 @@ public class ConfiguredObjectToMapConverter
     }
 
     private void incorporateStatisticsIntoMap(
-            final ConfiguredObject confObject, Map<String, Object> object)
+            final ConfiguredObject<?> confObject, Map<String, Object> object)
     {
 
-        Map<String, Object> statMap = confObject.getStatistics();
+        Map<String, Object> statMap = new TreeMap<String,Object>(confObject.getStatistics());
 
         if(!statMap.isEmpty())
         {
