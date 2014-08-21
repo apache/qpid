@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectAttribute;
 
 public class ConfiguredObjectToMapConverter
 {
@@ -147,6 +148,18 @@ public class ConfiguredObjectToMapConverter
                 else if (value != null)
                 {
                     object.put(name, value);
+                }
+                else if (extractAsConfig)
+                {
+                    ConfiguredObjectAttribute<?, ?> attribute = confObject.getModel()
+                            .getTypeRegistry()
+                            .getAttributeTypes(confObject.getClass())
+                            .get(name);
+
+                    if(attribute.isPersisted() &&  attribute.isDerived())
+                    {
+                        object.put(name, confObject.getAttribute(name));
+                    }
                 }
             }
         }
