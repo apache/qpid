@@ -445,9 +445,14 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                         String parentId = parent.toString();
                         if(id.toString().equals(parentId))
                         {
-                            entities.add(build(childClass,childId));
+                            sortedChildren.add(childRecord);
                         }
                     }
+                    for(ConfiguredObjectRecord childRecord : sortedChildren)
+                    {
+                        entities.add(build(childClass, childRecord.getId()));
+                    }
+
                     if(!entities.isEmpty())
                     {
                         map.put(attrName,entities);
