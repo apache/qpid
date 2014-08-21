@@ -56,6 +56,7 @@ public class ConfiguredObjectTypeRegistry
                                         ConfiguredObject.DESCRIPTION,
                                         ConfiguredObject.TYPE,
                                         ConfiguredObject.DESIRED_STATE,
+                                        ConfiguredObject.STATE,
                                         ConfiguredObject.DURABLE,
                                         ConfiguredObject.LIFETIME_POLICY,
                                         ConfiguredObject.CONTEXT))
