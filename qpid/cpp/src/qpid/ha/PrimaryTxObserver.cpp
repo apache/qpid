@@ -136,7 +136,6 @@ void PrimaryTxObserver::initialize() {
     txQueue = result.first;
     txQueue->markInUse(); // Prevent auto-delete till we are done.
     txQueue->deliver(TxBackupsEvent(backups).message());
-
 }
 
 
