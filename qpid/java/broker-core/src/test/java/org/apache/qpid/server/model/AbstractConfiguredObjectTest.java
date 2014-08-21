@@ -26,6 +26,7 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.server.model.testmodel.TestChildCategory;
 import org.apache.qpid.server.model.testmodel.TestModel;
 import org.apache.qpid.server.model.testmodel.TestRootCategory;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -185,6 +186,75 @@ public class AbstractConfiguredObjectTest extends TestCase
 
         assertEquals(objectName, object1.getName());
         assertEquals("myValue", object1.getStringValue());
+    }
+
+    public void testCreationOfObjectWithInvalidInterpolatedValues()
+    {
+        final String parentName = "parent";
+        TestRootCategory parent =
+                _model.getObjectFactory().create(TestRootCategory.class,
+                                                 Collections.<String, Object>singletonMap(ConfiguredObject.NAME,
+                                                                                          parentName)
+                                                );
+
+        parent.setAttributes(Collections.singletonMap(ConfiguredObject.CONTEXT,
+                                                      Collections.singletonMap("contextVal", "foo")));
+
+        final Map<String, Object> attributes = new HashMap<>();
+        attributes.put("intValue", "${contextVal}");
+        attributes.put("name", "child");
+        attributes.put("integerSet", "[ ]");
+        attributes.put(ConfiguredObject.TYPE, "test");
+
+        try
+        {
+            _model.getObjectFactory().create(TestChildCategory.class, attributes, parent);
+            fail("creation of child object should have failed due to invalid value");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // PASS
+            String message = e.getMessage();
+            assertTrue("Message does not contain the attribute name", message.contains("intValue"));
+            assertTrue("Message does not contain the non-interpolated value", message.contains("contextVal"));
+            assertTrue("Message does not contain the interpolated value", message.contains("foo"));
+
+        }
+
+        assertTrue("Child should not have been registered with parent",
+                   parent.getChildren(TestChildCategory.class).isEmpty());
+    }
+
+    public void testCreationOfObjectWithInvalidDefaultValues()
+    {
+        final String parentName = "parent";
+        TestRootCategory parent =
+                _model.getObjectFactory().create(TestRootCategory.class,
+                                                 Collections.<String, Object>singletonMap(ConfiguredObject.NAME,
+                                                                                          parentName)
+                                                );
+
+        final Map<String, Object> attributes = new HashMap<>();
+        attributes.put("intValue", "1");
+        attributes.put("name", "child");
+        attributes.put(ConfiguredObject.TYPE, "test");
+
+        try
+        {
+            _model.getObjectFactory().create(TestChildCategory.class, attributes, parent);
+            fail("creation of child object should have failed due to invalid value");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // PASS
+            String message = e.getMessage();
+            assertTrue("Message does not contain the attribute name", message.contains("integerSet"));
+            assertTrue("Message does not contain the error value", message.contains("foo"));
+
+        }
+
+        assertTrue("Child should not have been registered with parent",
+                   parent.getChildren(TestChildCategory.class).isEmpty());
     }
 
 }

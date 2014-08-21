@@ -469,7 +469,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         if(_dynamicState.compareAndSet(DynamicState.UNINIT, DynamicState.OPENED))
         {
-            registerWithParents();
             final AuthenticatedPrincipal currentUser = SecurityManager.getCurrentUser();
             if(currentUser != null)
             {
@@ -487,6 +486,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
             doResolution(true);
             doValidation(true);
+
+            registerWithParents();
+
             doCreation(true);
             doOpening(true);
             doAttainState();
