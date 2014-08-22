@@ -154,6 +154,7 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     } state;
     std::auto_ptr<Sasl> sasl;
     CodecAdapter codecAdapter;
+    bool notifyOnWrite;
 
     void check();
     bool checkDisconnected();
