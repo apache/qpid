@@ -89,7 +89,8 @@ ConnectionContext::ConnectionContext(const std::string& url, const qpid::types::
       readHeader(false),
       haveOutput(false),
       state(DISCONNECTED),
-      codecAdapter(*this)
+      codecAdapter(*this),
+      notifyOnWrite(false)
 {
     // Concatenate all known URLs into a single URL, get rid of duplicate addresses.
     sys::urlAddStrings(fullUrl, urls.begin(), urls.end(), protocol.empty() ?
@@ -408,6 +409,13 @@ void ConnectionContext::send(boost::shared_ptr<SessionContext> ssn, boost::share
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
     checkClosed(ssn);
     SenderContext::Delivery* delivery(0);
+    while (pn_transport_pending(engine) > 65536) {
+        QPID_LOG(debug, "Have " << pn_transport_pending(engine) << " bytes of output pending; waiting for this to be written...");
+        notifyOnWrite = true;
+        wakeupDriver();
+        wait(ssn, snd);
+        notifyOnWrite = false;
+    }
     while (!snd->send(message, &delivery)) {
         QPID_LOG(debug, "Waiting for capacity...");
         wait(ssn, snd);//wait for capacity
@@ -758,6 +766,7 @@ std::size_t ConnectionContext::encodePlain(char* buffer, std::size_t size)
     if (n > 0) {
         QPID_LOG_CAT(debug, network, id << " encoded " << n << " bytes from " << size)
         haveOutput = true;
+        if (notifyOnWrite) lock.notifyAll();
         return n;
     } else if (n == PN_ERR) {
         throw MessagingException(QPID_MSG("Error on output: " << getError()));
