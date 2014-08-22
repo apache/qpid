@@ -123,8 +123,13 @@ void PrimaryTxObserver::initialize() {
     boost::shared_ptr<Exchange> ex(new Exchange(shared_from_this()));
     broker.getExchanges().registerExchange(ex);
     pair<QueuePtr, bool> result =
-        broker.getQueues().declare(
-            exchangeName, QueueSettings(/*durable*/false, /*autodelete*/true));
+        broker.createQueue(
+            exchangeName,
+            QueueSettings(/*durable*/false, /*autodelete*/true),
+            0,            // no owner regardless of exclusivity on primary
+            string(),     // No alternate exchange
+            haBroker.getUserId(),
+            string());          // Remote host.
     if (!result.second)
         throw InvalidArgumentException(
             QPID_MSG(logPrefix << "TX replication queue already exists."));
