@@ -116,9 +116,19 @@ class SessionState : public qpid::SessionState,
 
     const SessionId& getSessionId() const { return getId(); }
 
-    // Used by ExecutionHandler sync command processing.  Notifies
-    // the SessionState of a received Execution.Sync command.
-    void addPendingExecutionSync();
+    /**
+     * Used by ExecutionHandler sync command processing.  Notifies
+     * the SessionState of a received Execution.Sync command.
+     * Return true if there are incomplete commands before the execution sync.
+     */
+    bool addPendingExecutionSync();
+
+    /**
+     * Mark commannd ID as an execution sync point, completions will be sent
+     * when all commands up to that point are completed.
+     */
+    bool addPendingExecutionSync(SequenceNumber id);
+
 
     void setUnackedCount(uint64_t count) {
         if (mgmtObject)

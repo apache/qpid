@@ -198,7 +198,9 @@ void SemanticState::commit(MessageStore* const store)
     txBuffer->startCommit(store);
     AsyncCommandCallback callback(
         session,
-        boost::bind(&TxBuffer::endCommit, txBuffer, store));
+        boost::bind(&TxBuffer::endCommit, txBuffer, store),
+        true                    // This is a sync point
+    );
     txBuffer->end(callback);
 }
 

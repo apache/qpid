@@ -50,7 +50,7 @@ class SessionContext : public OwnershipToken
     virtual Broker& getBroker() = 0;
     virtual uint16_t getChannel() const = 0;
     virtual const SessionId& getSessionId() const = 0;
-    virtual void addPendingExecutionSync() = 0;
+    virtual bool addPendingExecutionSync() = 0;
     virtual void setUnackedCount(uint64_t) {}
 };
 

@@ -28,8 +28,8 @@ namespace broker {
 
 using namespace framing;
 
-AsyncCommandCallback::AsyncCommandCallback(SessionState& ss, Command f) :
-    AsyncCommandContext(ss), command(f), channel(ss.getChannel())
+AsyncCommandCallback::AsyncCommandCallback(SessionState& ss, Command f, bool sync) :
+    AsyncCommandContext(ss), command(f), channel(ss.getChannel()), syncPoint(sync)
 {}
 
 void AsyncCommandCallback::completed(bool sync) {
@@ -57,8 +57,11 @@ void AsyncCommandCallback::complete() {
 
 void AsyncCommandCallback::doCommand() {
     SessionState* session = completerContext->getSession();
-    if (session && session->isAttached())
-        session->completeCommand(id, false, requiresSync, command());
+    if (session && session->isAttached()) {
+        // Complete now unless this is a syncPoint and there are incomplete commands.
+        if (!(syncPoint && session->addPendingExecutionSync(id)))
+            session->completeCommand(id, false, requiresSync, command());
+    }
     else
         throw InternalErrorException("Cannot complete command, no session");
 }
