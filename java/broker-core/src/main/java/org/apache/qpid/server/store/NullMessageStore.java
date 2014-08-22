@@ -29,6 +29,8 @@ import org.apache.qpid.server.store.handler.MessageInstanceHandler;
 
 public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore, MessageStoreProvider
 {
+    private ConfiguredObjectRecord[] _initialRecords;
+
     @Override
     public MessageStore getMessageStore()
     {
@@ -40,6 +42,7 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
                                        final boolean overwrite,
                                        final ConfiguredObjectRecord... initialRecords)
     {
+        _initialRecords = initialRecords;
     }
 
     @Override
@@ -121,6 +124,18 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     @Override
     public void visitConfiguredObjectRecords(ConfiguredObjectRecordHandler handler) throws StoreException
     {
+        handler.begin();
+        if(_initialRecords != null)
+        {
+            for(ConfiguredObjectRecord record : _initialRecords)
+            {
+                if(!handler.handle(record))
+                {
+                    break;
+                }
+            }
+        }
+        handler.end();
     }
 
     @Override

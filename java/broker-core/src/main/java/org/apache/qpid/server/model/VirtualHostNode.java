@@ -27,6 +27,16 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 @ManagedObject(category=true, managesChildren=false)
 public interface VirtualHostNode<X extends VirtualHostNode<X>> extends ConfiguredObject<X>
 {
+    String VIRTUALHOST_INITIAL_CONFIGURATION = "virtualHostInitialConfiguration";
+
+    String VIRTUALHOST_BLUEPRINT_CONTEXT_VAR = "virtualhostBlueprint";
+
+    @ManagedContextDefault(name = VIRTUALHOST_BLUEPRINT_CONTEXT_VAR)
+    String DEFAULT_INITIAL_CONFIGURATION = "{}";
+
+    @ManagedAttribute( defaultValue = "${" + VIRTUALHOST_BLUEPRINT_CONTEXT_VAR + "}")
+    String getVirtualHostInitialConfiguration();
+
     VirtualHost<?,?,?> getVirtualHost();
 
     DurableConfigurationStore getConfigurationStore();

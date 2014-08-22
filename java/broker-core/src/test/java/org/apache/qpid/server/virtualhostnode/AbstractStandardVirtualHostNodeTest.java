@@ -139,7 +139,7 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
      */
     public void testActivateVHNWithVHBlueprint_StoreHasNoVH() throws Exception
     {
-        DurableConfigurationStore configStore = configStoreThatProducesNoRecords();
+        DurableConfigurationStore configStore = new NullMessageStore() {};
 
         String vhBlueprint = String.format("{ \"type\" : \"%s\", \"name\" : \"%s\"}",
                                            TestMemoryVirtualHost.VIRTUAL_HOST_TYPE,
@@ -162,18 +162,12 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         assertEquals("Unexpected virtual host state", State.ACTIVE, virtualHost.getState());
         assertNotNull("Unexpected virtual host id", virtualHost.getId());
 
-        Map<String, String> updatedContext = node.getContext();
-
-        assertTrue("Context should now have utilised flag", updatedContext.containsKey(
-                AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR));
-        assertEquals("Utilised flag should be true",
-                     Boolean.TRUE.toString(),
-                     updatedContext.get(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR));
+        assertEquals("Initial configuration should be empty", "{}", node.getVirtualHostInitialConfiguration());
     }
 
     /**
      *  Tests activating a virtualhostnode with blueprint context variable and the
-     *  marked utilised flag.  Config store does not specify a virtualhost.
+     *  but the virtualhostInitialConfiguration set to empty.  Config store does not specify a virtualhost.
      *  Checks virtualhost is not recreated from the blueprint.
      */
     public void testActivateVHNWithVHBlueprintUsed_StoreHasNoVH() throws Exception
@@ -185,12 +179,12 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
                                            TEST_VIRTUAL_HOST_NAME);
         Map<String, String> context = new HashMap<>();
         context.put(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, vhBlueprint);
-        context.put(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR, Boolean.TRUE.toString());
 
         Map<String, Object> nodeAttributes = new HashMap<>();
         nodeAttributes.put(VirtualHostNode.NAME, TEST_VIRTUAL_HOST_NODE_NAME);
         nodeAttributes.put(VirtualHostNode.ID, _nodeId);
         nodeAttributes.put(VirtualHostNode.CONTEXT, context);
+        nodeAttributes.put(VirtualHostNode.VIRTUALHOST_INITIAL_CONFIGURATION, "{}");
 
         VirtualHostNode<?> node = new TestVirtualHostNode(_broker, nodeAttributes, configStore);
         node.open();

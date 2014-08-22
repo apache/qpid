@@ -350,7 +350,7 @@ public class RestServlet extends AbstractServlet
         Writer writer = getOutputWriter(request, response);
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
-        mapper.writeValue(writer, output);
+        mapper.writeValue(writer, extractInitialConfig && output.size() == 1 ? output.get(0) : output);
 
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);

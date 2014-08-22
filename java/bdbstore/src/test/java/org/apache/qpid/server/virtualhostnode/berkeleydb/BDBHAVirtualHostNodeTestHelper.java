@@ -38,10 +38,19 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.sleepycat.je.rep.ReplicationConfig;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
-import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.RemoteReplicationNode;
+import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -50,8 +59,6 @@ import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.util.FileUtils;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
 
 /**
  * Helper class to make the tests of BDB HA Virtual Host Nodes simpler and more concise.
@@ -281,7 +288,7 @@ public class BDBHAVirtualHostNodeTestHelper
         if (ports != null)
         {
             String bluePrint = getBlueprint(ports);
-            context.put(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, bluePrint);
+            node1Attributes.put(AbstractVirtualHostNode.VIRTUALHOST_INITIAL_CONFIGURATION, bluePrint);
         }
 
         node1Attributes.put(BDBHAVirtualHostNode.CONTEXT, context);
@@ -307,4 +314,24 @@ public class BDBHAVirtualHostNodeTestHelper
         return writer.toString();
     }
 
+    public void awaitForVirtualhost(final VirtualHostNode<?> node, final int wait)
+    {
+        long endTime = System.currentTimeMillis() + wait;
+        do
+        {
+            if(node.getVirtualHost() != null)
+            {
+                return;
+            }
+            try
+            {
+                Thread.sleep(100);
+            }
+            catch (InterruptedException e)
+            {
+                // ignore
+            }
+        }
+        while(System.currentTimeMillis() < endTime);
+    }
 }
