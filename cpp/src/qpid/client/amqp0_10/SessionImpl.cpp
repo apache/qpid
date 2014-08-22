@@ -67,6 +67,7 @@ void SessionImpl::abortTransaction()
 {
     ScopedLock l(lock);
     aborted = true;
+    checkAbortedLH(l);
 }
 
 void SessionImpl::checkAborted()
