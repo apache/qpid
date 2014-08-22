@@ -732,13 +732,14 @@ class Session(Endpoint):
       raise NontransactionalSession()
     self.committing = True
     self._wakeup()
-    self._ecwait(lambda: not self.committing, timeout=timeout)
+    if not self._ecwait(lambda: not self.committing, timeout=timeout):
+      raise Timeout("commit timed out")
     if self.aborted:
       raise TransactionAborted()
     assert self.committed
 
   @synchronized
-  def rollback(self):
+  def rollback(self, timeout=None):
     """
     Rollback outstanding transactional work. This consists of all
     message sends and receives since the prior commit or rollback.
@@ -747,7 +748,8 @@ class Session(Endpoint):
       raise NontransactionalSession()
     self.aborting = True
     self._wakeup()
-    self._ecwait(lambda: not self.aborting)
+    if not self._ecwait(lambda: not self.aborting, timeout=timeout):
+      raise Timeout("rollback timed out")
     assert self.aborted
 
   @synchronized
