@@ -76,7 +76,7 @@ start() {
     lock
     $QPID_INIT start primary || return $?
     echo -n $"Promoting to primary: "
-    err=$($QPID_HA promote 2>&1)
+    err=$($QPID_HA promote --cluster-manager 2>&1)
     RETVAL=$?
     [ $RETVAL = 0 ] && success || { echo -n "$err: "; failure; }
     echo

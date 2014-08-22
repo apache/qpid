@@ -176,7 +176,7 @@ acl allow all all
         except Exception, e:
             raise Exception("Error in qpid_ha -b %s %s: %s"%(url, args,e))
 
-    def promote(self): self.ready(); self.qpid_ha(["promote"])
+    def promote(self): self.ready(); self.qpid_ha(["promote", "--cluster-manager"])
     def replicate(self, from_broker, queue): self.qpid_ha(["replicate", from_broker, queue])
     @property
     def agent(self):
