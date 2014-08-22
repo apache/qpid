@@ -45,7 +45,11 @@ class AsyncCommandCallback : public SessionState::AsyncCommandContext {
      */
     typedef boost::function<std::string ()> Command;
 
-    AsyncCommandCallback(SessionState& ss, Command f);
+    /**
+     * @param syncPoint: if true have this command complete only when all
+     * preceeding commands are complete, like execution.sync.
+     */
+    AsyncCommandCallback(SessionState& ss, Command f, bool syncPoint=false);
 
     void completed(bool sync);
 
@@ -57,6 +61,7 @@ class AsyncCommandCallback : public SessionState::AsyncCommandContext {
 
     Command command;
     uint16_t channel;
+    bool syncPoint;
 };
 }} // namespace qpid::broker
 

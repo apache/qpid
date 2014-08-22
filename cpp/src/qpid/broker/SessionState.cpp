@@ -266,11 +266,14 @@ void SessionState::completeCommand(SequenceNumber id,
     // Are there any outstanding Execution.Sync commands pending the
     // completion of this cmd?  If so, complete them.
     while (!pendingExecutionSyncs.empty() &&
-           receiverGetIncomplete().front() >= pendingExecutionSyncs.front()) {
-        const SequenceNumber id = pendingExecutionSyncs.front();
+           (receiverGetIncomplete().empty() ||
+            receiverGetIncomplete().front() >= pendingExecutionSyncs.front()))
+    {
+        const SequenceNumber syncId = pendingExecutionSyncs.front();
         pendingExecutionSyncs.pop();
-        QPID_LOG(debug, getId() << ": delayed execution.sync " << id << " is completed.");
-        receiverCompleted(id);
+        QPID_LOG(debug, getId() << ": delayed execution.sync " << syncId << " is completed.");
+        if (receiverGetIncomplete().contains(syncId))
+            receiverCompleted(syncId);
         callSendCompletion = true;   // likely peer is pending for this completion.
     }
 
@@ -348,15 +351,24 @@ void SessionState::setTimeout(uint32_t) { }
 // Current received command is an execution.sync command.
 // Complete this command only when all preceding commands have completed.
 // (called via the invoker() in handleCommand() above)
-void SessionState::addPendingExecutionSync()
-{
-    SequenceNumber syncCommandId = currentCommand.getId();
-    if (receiverGetIncomplete().front() < syncCommandId) {
+bool SessionState::addPendingExecutionSync() {
+    SequenceNumber id = currentCommand.getId();
+    if (addPendingExecutionSync(id)) {
         currentCommand.setCompleteSync(false);
-        pendingExecutionSyncs.push(syncCommandId);
-        asyncCommandCompleter->flushPendingMessages();
-        QPID_LOG(debug, getId() << ": delaying completion of execution.sync " << syncCommandId);
+        QPID_LOG(debug, getId() << ": delaying completion of execution.sync " << id);
+        return true;
     }
+    return false;
+}
+
+bool SessionState::addPendingExecutionSync(SequenceNumber id)
+{
+    if (receiverGetIncomplete().front() < id) {
+        pendingExecutionSyncs.push(id);
+        asyncCommandCompleter->flushPendingMessages();
+        return true;
+    }
+    return false;
 }
 
 /** factory for creating a reference-counted IncompleteIngressMsgXfer object
