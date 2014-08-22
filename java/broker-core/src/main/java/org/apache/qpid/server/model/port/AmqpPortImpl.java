@@ -71,6 +71,9 @@ public class AmqpPortImpl extends AbstractPortWithAuthProvider<AmqpPortImpl> imp
     @ManagedAttributeField
     private int _receiveBufferSize;
 
+    @ManagedAttributeField
+    private String _bindingAddress;
+
     private final Broker<?> _broker;
     private AcceptingTransport _transport;
 
@@ -79,6 +82,13 @@ public class AmqpPortImpl extends AbstractPortWithAuthProvider<AmqpPortImpl> imp
     {
         super(attributes, broker);
         _broker = broker;
+    }
+
+
+    @Override
+    public String getBindingAddress()
+    {
+        return _bindingAddress;
     }
 
     @Override

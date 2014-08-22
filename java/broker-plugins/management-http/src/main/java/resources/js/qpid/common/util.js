@@ -26,7 +26,7 @@ define(["dojo/_base/xhr",
         "dojo/dom-construct",
         "dojo/dom-geometry",
         "dojo/dom-style",
-        "dojo/window",
+        "dojo/_base/window",
         "dojo/query",
         "dojo/parser",
         "dojo/store/Memory",
@@ -681,6 +681,36 @@ define(["dojo/_base/xhr",
                    typeData.push({id: type, name: type});
                }
                return new Memory({ data: typeData });
+           }
+
+           util.setMultiSelectOptions = function(multiSelectWidget, options)
+           {
+               util.addMultiSelectOptions(multiSelectWidget, options, true);
+           }
+
+           util.addMultiSelectOptions = function(multiSelectWidget, options, clearExistingOptions)
+           {
+               if (clearExistingOptions)
+               {
+                   var children = multiSelectWidget.children;
+                   var initialLength = children.length;
+                   for (var i = initialLength - 1; i >= 0 ; i--)
+                   {
+                       var child = children.item(i);
+                       multiSelectWidget.removeChild(child);
+                   }
+               }
+               for (var i = 0; i < options.length; i++)
+               {
+                   // construct new option for list
+                   var newOption = win.doc.createElement('option');
+                   var value = options[i];
+                   newOption.innerHTML = value;
+                   newOption.value = value;
+
+                   // add new option to list
+                   multiSelectWidget.appendChild(newOption);
+               }
            }
 
            var singleContextVarRegexp = "(\\${[\\w\\.\\-]+})";

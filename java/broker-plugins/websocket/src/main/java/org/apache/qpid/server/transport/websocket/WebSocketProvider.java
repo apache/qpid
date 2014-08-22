@@ -32,6 +32,8 @@ import java.util.Set;
 import javax.net.ssl.SSLContext;
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.qpid.server.model.port.AmqpPort;
+import org.apache.qpid.server.model.port.HttpPort;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
@@ -108,11 +110,22 @@ class WebSocketProvider implements AcceptingTransport
         {
             throw new IllegalArgumentException("Unexpected transport on port " + _port.getName() + ":" + _transport);
         }
-        String bindingAddress = _port.getBindingAddress();
-        if(bindingAddress != null && !bindingAddress.trim().equals("") && !bindingAddress.trim().equals("*"))
+
+        String bindingAddress = null;
+        if (_port instanceof HttpPort)
+        {
+            bindingAddress = ((HttpPort)_port).getBindingAddress();
+        }
+        else if (_port instanceof AmqpPort)
+        {
+            bindingAddress = ((AmqpPort)_port).getBindingAddress();
+        }
+
+        if (bindingAddress != null && !bindingAddress.trim().equals("") && !bindingAddress.trim().equals("*"))
         {
             connector.setHost(bindingAddress.trim());
         }
+
         connector.setPort(_port.getPort());
         _server.addConnector(connector);
 

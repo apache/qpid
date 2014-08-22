@@ -210,7 +210,7 @@ define(["dojo/_base/xhr",
 
                             var addPortButton = query(".addPort", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(addPortButton), "onClick", function(evt){
-                              addPort.show(null, that.brokerUpdater.brokerData.authenticationproviders,
+                              addPort.show(null, "AMQP", that.brokerUpdater.brokerData.authenticationproviders,
                                   that.brokerUpdater.brokerData.keystores, that.brokerUpdater.brokerData.truststores);
                             });
 
@@ -543,7 +543,8 @@ define(["dojo/_base/xhr",
                                                             var idx = evt.rowIndex,
                                                                 theItem = this.getItem(idx);
                                                             var name = obj.dataStore.getValue(theItem,"name");
-                                                            that.controller.show("port", name, brokerObj, theItem.id);
+                                                            var type = obj.dataStore.getValue(theItem,"type");
+                                                            that.controller.show("port", name, brokerObj, theItem.id, type);
                                                         });
                                                 }, gridProperties, EnhancedGrid);
 

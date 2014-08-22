@@ -39,6 +39,25 @@
                                 title: 'Enter name of port'"/>
                     </div>
                 </div>
+
+                <div class="clear">
+                    <div class="formLabel-labelCell">
+                        <label for="formAddPort.type">Port Type*:</label>
+                    </div>
+                    <div class="formLabel-controlCell">
+                        <select id="formAddPort.type"
+                                data-dojo-type="dijit.form.FilteringSelect"
+                                data-dojo-props="
+                                    name: 'type',
+                                    label: 'Port Type*:',
+                                    value: '',
+                                    placeHolder: 'port type',
+                                    promptMessage: 'Port type',
+                                    title: 'Enter port type'">
+                        </select>
+                    </div>
+                </div>
+
                 <div class="clear">
                     <div class="formLabel-labelCell">
                         <label for="formAddPort.port">Port Number*:</label>
@@ -54,27 +73,27 @@
                                 title: 'Enter port number'"/>
                     </div>
                 </div>
+            </div>
+
+            <div id="formAddPort:fieldsProtocols">
                 <div class="clear">
                     <div class="formLabel-labelCell">
-                        <label for="formAddPort.type">Port Type*:</label>
+                        <label for="formAddPort.protocols">Protocols*:</label>
                     </div>
                     <div class="formLabel-controlCell">
-                        <select id="formAddPort.type"
-                                data-dojo-type="dijit.form.FilteringSelect"
+                        <select id="formAddPort.protocols"
+                                data-dojo-type="dijit.form.MultiSelect"
                                 data-dojo-props="
-                                    name: 'type',
-                                    label: 'Port Type*:',
+                                    name: 'protocols',
                                     value: '',
-                                    placeHolder: 'port type',
-                                    promptMessage: 'Port type',
-                                    title: 'Enter port type'">
-                            <option value="AMQP" selected="selected">AMQP</option>
-                            <option value="JMX">JMX</option>
-                            <option value="HTTP">HTTP</option>
+                                    label: 'protocol*:',
+                                    promptMessage: 'Protocol to be associated with this port',
+                                    title: 'Enter protocol to be associated with this port'">
                         </select>
                     </div>
                 </div>
             </div>
+
             <div id="formAddPort:fieldsAuthenticationProvider">
                 <div class="clear">
                     <div class="formLabel-labelCell">
@@ -94,6 +113,7 @@
                     </div>
                 </div>
             </div>
+
             <div id="formAddPort:fieldsBindingAddress">
                 <div class="clear">
                     <div class="formLabel-labelCell">
@@ -107,79 +127,6 @@
                             placeHolder: 'binding address',
                             promptMessage: 'Restricts the port to listen on the specified address only. The <code>*</code> wildcard signifies all addresses',
                             title: 'Enter a binding address'"/>
-                    </div>
-                </div>
-            </div>
-            <div id="formAddPort:fieldsAMQP">
-                <div class="clear">
-                    <div class="formLabel-labelCell">
-                        <label for="formAddPort.protocolsDefault">Support default protocols:</label>
-                    </div>
-                    <div class="formLabel-controlCell">
-                        <input id="formAddPort.protocolsDefault" type="checkbox"
-                               dojoType="dijit.form.CheckBox"
-                               data-dojo-props="checked: true"/>
-                    </div>
-                </div>
-                <div class="clear">
-                    <div class="formLabel-labelCell">
-                        <label for="formAddPort.protocolsAMQP">AMQP protocols:</label>
-                    </div>
-                    <div class="formLabel-controlCell">
-                        <select id="formAddPort.protocolsAMQP"
-                                data-dojo-type="dijit.form.MultiSelect"
-                                data-dojo-props="
-                                    name: 'protocols',
-                                    value: '',
-                                    placeHolder: 'AMQP protocols',
-                                    promptMessage: 'AMQP protocols to be associated with this port',
-                                    title: 'Select AMQP protocols to be associated with this port',
-                                    multiple: true">
-                            <option value="AMQP_0_8">AMQP 0.8</option>
-                            <option value="AMQP_0_9">AMQP 0.9</option>
-                            <option value="AMQP_0_9_1">AMQP 0.9.1</option>
-                            <option value="AMQP_0_10">AMQP 0.10</option>
-                            <option value="AMQP_1_0">AMQP 1.0</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div id="formAddPort:fieldsJMX">
-                <div class="clear">
-                    <div class="formLabel-labelCell">
-                        <label for="formAddPort.protocolsJMX">JMX protocol*:</label>
-                    </div>
-                    <div class="formLabel-controlCell">
-                        <select id="formAddPort.protocolsJMX"
-                                data-dojo-type="dijit.form.FilteringSelect"
-                                data-dojo-props="
-                                    name: 'protocols',
-                                    value: '',
-                                    promptMessage: 'JMX protocol to be associated with this port',
-                                    title: 'Enter JMX protocol to be associated with this port'">
-                            <option value="RMI">RMI</option>
-                            <option value="JMX_RMI">JMX RMI</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div id="formAddPort:fieldsHTTP">
-                <div class="clear">
-                    <div class="formLabel-labelCell">
-                        <label for="formAddPort.protocolsHTTP">HTTP protocols*:</label>
-                    </div>
-                    <div class="formLabel-controlCell">
-                        <select id="formAddPort.protocolsHTTP"
-                                data-dojo-type="dijit.form.FilteringSelect"
-                                data-dojo-props="
-                                    name: 'protocols',
-                                    value: 'HTTP',
-                                    label: 'HTTP protocol*:',
-                                    promptMessage: 'HTTP protocol to be associated with this port',
-                                    title: 'Enter HTTP protocol to be associated with this port'">
-                            <option value="HTTP">HTTP</option>
-                        </select>
                     </div>
                 </div>
             </div>
@@ -199,13 +146,11 @@
                                     multiple: true,
                                     promptMessage: 'Transport(s)',
                                     title: 'Select transports'">
-                            <option value="TCP">TCP</option>
-                            <option value="SSL">SSL</option>
                         </select>
                     </div>
                 </div>
-                <div class="clear"/>
             </div>
+
             <div id="formAddPort:fieldsTransportSSL">
                 <div class="clear">
                     <div class="formLabel-labelCell">
@@ -227,6 +172,7 @@
                     </div>
                 </div>
             </div>
+
             <div id="formAddPort:fieldsClientAuth">
                 <div id="formAddPort:fieldsClientAuthCheckboxes">
                     <div class="clear">
@@ -252,6 +198,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="clear">
                     <div class="formLabel-labelCell">
                         Trust Stores:
@@ -265,7 +212,7 @@
                                data-dojo-props="
                                 plugins: {indirectSelection: true},
                                 rowSelector:'0px'"
-                               style="height: 100px; width:400px">
+                               style="height: 100px; width:400px"> <!--todo remove -->
                             <thead>
                                 <tr>
                                     <th field="name">Name</th>
@@ -276,8 +223,9 @@
                     </div>
                 </div>
             </div>
+
             <input type="hidden" id="formAddPort.id" name="id"/>
-            <div class="clear"/>
+            <div class="clear"></div>
             <div class="dijitDialogPaneActionBar">
                 <!-- submit buttons -->
                 <input type="submit" value="Save Port" label="Save Port" dojoType="dijit.form.Button" />

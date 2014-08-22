@@ -61,9 +61,6 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     private int _port;
 
     @ManagedAttributeField
-    private String _bindingAddress;
-
-    @ManagedAttributeField
     private KeyStore<?> _keyStore;
 
     @ManagedAttributeField
@@ -169,12 +166,6 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
             throw new IllegalConfigurationException("Can't create RMI Registry port which requires SSL.");
         }
 
-    }
-
-    @Override
-    public String getBindingAddress()
-    {
-        return _bindingAddress;
     }
 
     @Override
