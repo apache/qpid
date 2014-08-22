@@ -1514,16 +1514,15 @@ class TransactionTests(HaBrokerTest):
         self.assertRaises(Exception, commit_sync)
 
     def test_tx_backup_fail(self):
-        cluster = HaCluster(
-            self, 2, test_store=True, s_args=[[],["--test-store-throw=bang"]])
+        cluster = HaCluster(self, 2, test_store=True, s_args=[[],["--test-store-name=bang"]])
         c = cluster[0].connect(protocol=self.tx_protocol)
         tx = c.session(transactional=True)
         s = tx.sender("q;{create:always,node:{durable:true}}")
-        for m in ["foo","bang","bar"]: s.send(qm.Message(m, durable=True))
+        for m in ["foo","TEST_STORE_DO bang: throw","bar"]: s.send(qm.Message(m, durable=True))
         self.assert_commit_raises(tx)
         for b in cluster: b.assert_browse_backup("q", [])
-        self.assertEqual(open_read(cluster[0].store_log), "<begin tx 1>\n<enqueue q foo tx=1>\n<enqueue q bang tx=1>\n<enqueue q bar tx=1>\n<abort tx=1>\n")
-        self.assertEqual(open_read(cluster[1].store_log), "<begin tx 1>\n<enqueue q foo tx=1>\n<enqueue q bang tx=1>\n<abort tx=1>\n")
+        self.assertEqual(open_read(cluster[0].store_log), "<begin tx 1>\n<enqueue q foo tx=1>\n<enqueue q TEST_STORE_DO bang: throw tx=1>\n<enqueue q bar tx=1>\n<abort tx=1>\n")
+        self.assertEqual(open_read(cluster[1].store_log), "<begin tx 1>\n<enqueue q foo tx=1>\n<enqueue q TEST_STORE_DO bang: throw tx=1>\n<abort tx=1>\n")
 
     def test_tx_join_leave(self):
         """Test cluster members joining/leaving cluster.

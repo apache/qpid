@@ -402,7 +402,7 @@ class Broker(Popen):
 
     def host_port(self): return "%s:%s" % (self.host(), self.port())
 
-    def ready(self, timeout=30, **kwargs):
+    def ready(self, timeout=10, **kwargs):
         """Wait till broker is ready to serve clients"""
         deadline = time.time()+timeout
         while True:
