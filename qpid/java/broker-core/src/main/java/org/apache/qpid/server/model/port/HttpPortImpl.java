@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
@@ -32,6 +33,9 @@ import org.apache.qpid.server.model.State;
 public class HttpPortImpl extends AbstractPortWithAuthProvider<HttpPortImpl> implements HttpPort<HttpPortImpl>
 {
     private PortManager _portManager;
+
+    @ManagedAttributeField
+    private String _bindingAddress;
 
     @ManagedObjectFactoryConstructor
     public HttpPortImpl(final Map<String, Object> attributes,
@@ -43,6 +47,13 @@ public class HttpPortImpl extends AbstractPortWithAuthProvider<HttpPortImpl> imp
     public void setPortManager(PortManager manager)
     {
         _portManager = manager;
+    }
+
+
+    @Override
+    public String getBindingAddress()
+    {
+        return _bindingAddress;
     }
 
     @Override

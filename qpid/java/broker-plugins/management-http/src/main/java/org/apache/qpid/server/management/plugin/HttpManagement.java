@@ -210,7 +210,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
                                                        + transports);
                 }
                 lastPort = port.getPort();
-                String bindingAddress = port.getBindingAddress();
+                String bindingAddress = ((HttpPort)port).getBindingAddress();
                 if (bindingAddress != null && !bindingAddress.trim().equals("") && !bindingAddress.trim().equals("*"))
                 {
                     connector.setHost(bindingAddress.trim());

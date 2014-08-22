@@ -32,20 +32,8 @@ import org.apache.qpid.server.model.Transport;
 @ManagedObject( category = false, type = "JMX")
 public interface JmxPort<X extends JmxPort<X>> extends Port<X>
 {
-
-    String DEFAULT_AMQP_NEED_CLIENT_AUTH = "false";
-    String DEFAULT_AMQP_WANT_CLIENT_AUTH = "false";
-
-
-    @ManagedAttribute( defaultValue = DEFAULT_AMQP_NEED_CLIENT_AUTH )
-    boolean getNeedClientAuth();
-
-    @ManagedAttribute( defaultValue = DEFAULT_AMQP_WANT_CLIENT_AUTH )
-    boolean getWantClientAuth();
-
     @ManagedAttribute( mandatory = true )
     AuthenticationProvider getAuthenticationProvider();
-
 
     @ManagedAttribute( defaultValue = "TCP",
                        validValues = {"[ \"TCP\" ]", "[ \"SSL\" ]"})
