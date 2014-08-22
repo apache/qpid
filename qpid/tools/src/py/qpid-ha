@@ -50,12 +50,17 @@ def find_qpidd_conf():
         if p.isfile(conf): return conf
     return None
 
-class Command:
-    commands = {}
+class Command(object):
+    """
+    Common options and logic for all commands. Subclasses provide additional
+    options and execution logic.
+    """
+
+    commands = []
 
     def __init__(self, name, help, arg_names=[], connect_agent=True):
         """@param connect_agent true if we should establish a QMF agent connection"""
-        Command.commands[name] = self
+        Command.commands.append(self)
         self.name = name
         self.connect_agent = connect_agent
         self.arg_names = arg_names
@@ -141,6 +146,21 @@ class Command:
     def do_execute(self, qmf_broker, opts, args):
         raise Exception("Command '%s' is not yet implemented"%self.name)
 
+class ManagerCommand(Command):
+    """
+    Base for commands that should only be used by a cluster manager tool that ensures
+    cluster consistency.
+    """
+
+    manager_commands = []           # Cluster manager commands
+
+    def __init__(self, name, help, arg_names=[], connect_agent=True):
+        """@param connect_agent true if we should establish a QMF agent connection"""
+        super(ManagerCommand, self).__init__(name, "[Cluster manager only] "+help, arg_names, connect_agent)
+        self.commands.remove(self)   # Not a user command
+        self.manager_commands.append(self)
+
+
 class PingCmd(Command):
     def __init__(self):
         Command.__init__(self, "ping","Check if the broker is alive and responding", connect_agent=False)
@@ -148,11 +168,13 @@ class PingCmd(Command):
         self.connection.session() # Make sure we can establish a session.
 PingCmd()
 
-class PromoteCmd(Command):
+class PromoteCmd(ManagerCommand):
     def __init__(self):
-        Command.__init__(self, "promote","Promote a backup broker to primary. Note this command will not detect if another broker is already primary, and creating a second primary will make the cluster inconsistent. It is up to the caller (normally the cluster resource manager) to ensure there is only one primary.")
+        super(PromoteCmd, self).__init__("promote", "Promote a backup broker to primary. This command should *only* be used by a cluster manager (such as rgmanager) that ensures only one broker is primary at a time. Promoting more than one broker to primary at the same time will make the cluster inconsistent and will cause data loss and unexpected behavior.")
+
     def do_execute(self, qmf_broker, ha_broker, opts, args):
         qmf_broker._method("promote", {}, HA_BROKER, timeout=opts.timeout)
+
 PromoteCmd()
 
 
@@ -226,25 +248,37 @@ def print_usage(prog):
         print "  %-12s %s."%(name, help.split(".")[0])
     print "\nFor help with a command type: %s <command> --help\n"%prog
 
-def find_command(args):
+def find_command(args, commands):
     """Find a command among the arguments and options"""
     for arg in args:
-        if arg in Command.commands:
-            return Command.commands[arg]
+        cmds = [cmd for cmd in commands if cmd.name == arg]
+        if cmds: return cmds[0]
     return None
 
 def main_except(argv):
     """This version of main raises exceptions"""
-    args=argv[1:]
-    if args and args[0] == "--help-all":
-        for c in Command.commands.itervalues():
-            c.op.print_help(); print
+    args = argv[1:]
+    commands = Command.commands
+    if "--cluster-manager" in args:
+        commands += ManagerCommand.manager_commands
+        args.remove("--cluster-manager")
+    if "--help-all" in args:
+        for c in commands: c.op.print_help(); print
     else:
-        command = find_command(args)
-        if not command:
-            print_usage(os.path.basename(argv[0]));
-            raise Exception("Command not found")
-        command.execute(args)
+        command = find_command(args, commands)
+        if command:
+            command.execute(args)
+        else:
+            # Check for attempt to use a manager command without --cluster-manager
+            command = find_command(args, ManagerCommand.manager_commands)
+            if command:
+                message="""'%s' should only be called by the cluster manager.
+Incorrect use of '%s' will cause cluster malfunction.
+To call from a cluster manager use '%s --cluster-manager'. """
+                raise Exception(message%((command.name,)*3))
+            else:
+                print_usage(os.path.basename(argv[0]));
+                raise Exception("No valid command")
 
 def main(argv):
     try:

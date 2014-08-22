@@ -927,29 +927,35 @@ acl allow <replaceable>USER</replaceable>@QPID all all
       </itemizedlist>
     </para>
     <para>
-      The <command>qpid-ha</command> command allows you to check if a broker is primary,
-      and to promote a backup to primary.
+      The <command>qpid-ha</command> command allows you to check if a broker is
+      primary, and to promote a backup to primary.
     </para>
     <para>
       To test if a broker is the primary:
-      <programlisting>
-qpid-ha -b <replaceable>broker-address</replaceable> status --expect=primary
-      </programlisting>
-      This command will return 0 if the broker at <replaceable>broker-address</replaceable>
-      is the primary, non-0 otherwise.
+    </para>
+    <programlisting>qpid-ha -b <replaceable>broker-address</replaceable> status --expect=primary</programlisting>
+    <para>
+      This will return 0 if the broker at <replaceable>broker-address</replaceable> is the primary,
+      non-0 otherwise.
     </para>
     <para>
       To promote a broker to primary:
-      <programlisting>
-qpid-ha -b <replaceable>broker-address</replaceable> promote
-      </programlisting>
+    <programlisting>qpid-ha --cluster-manager -b <replaceable>broker-address</replaceable> promote</programlisting>
     </para>
     <para>
-      <command>qpid-ha --help</command> gives information on other commands and options available.
-      You can also use <command>qpid-ha</command> to manually examine and promote brokers. This
-      can be useful for testing failover scenarios without having to set up a full resource manager,
-      or to simulate a cluster on a single node. For deployment, a resource manager is required.
+      Note that <literal>promote</literal> is considered a "cluster manager
+      only" command. Incorrect use of <literal>promote</literal> outside of the
+      cluster manager could create a cluster with multiple primaries. Such a
+      cluster will malfunction and lose data.  "Cluster manager only" commands
+      are not accessible in <command>qpid-ha</command> without the
+      <literal>--cluster-manager</literal> option.
     </para>
+    <para>
+      To list the full set of commands use:
+    </para>
+    <programlisting>
+qpid-ha --cluster-manager --help
+    </programlisting>
   </section>
 
   <section id ="ha-store">
@@ -999,8 +1005,9 @@ warning Client closed connection with 320: ACL denied anonymous@QPID creating a 
       <para>
 	Set the HA security configuration and ACL file as described in <xref
 	linkend="ha-security"/>.  Once the cluster is running and the primary is
-	promoted , run <literal>qpid-ha</literal> to make sure that the brokers
-	are running as one cluster.
+	promoted , run:
+	<programlisting>qpid-ha status --all</programlisting>
+	to make sure that the brokers are running as one cluster.
       </para>
     </section>
     <section id="ha-troubleshoot-slow-recovery">
