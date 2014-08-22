@@ -26,6 +26,7 @@ import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -63,6 +64,8 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.VirtualHostStoreUpgraderAndRecoverer;
 import org.apache.qpid.server.store.berkeleydb.BDBConfigurationStore;
@@ -434,41 +437,40 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                 {
                     LOGGER.debug("Creating new virtualhost with name : " + getGroupName());
                 }
-
-                boolean hasBlueprint = getContextKeys(false).contains(VIRTUALHOST_BLUEPRINT_CONTEXT_VAR);
-                boolean blueprintUtilised = getContext().containsKey(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR)
-                                            && Boolean.parseBoolean(String.valueOf(getContext().get(
-                        VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR)));
-
-                Map<String, Object> hostAttributes = new HashMap<>();
-                if (hasBlueprint && !blueprintUtilised)
+                ConfiguredObjectRecord[] initialRecords = getInitialRecords();
+                if(initialRecords != null && initialRecords.length > 0)
                 {
-                    Map<String, Object> virtualhostBlueprint =
-                            getContextValue(Map.class, VIRTUALHOST_BLUEPRINT_CONTEXT_VAR);
-
-                    if (LOGGER.isDebugEnabled())
+                    getConfigurationStore().update(true, initialRecords);
+                    getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.RECOVERY_START());
+                    upgraderAndRecoverer = new VirtualHostStoreUpgraderAndRecoverer(this);
+                    upgraderAndRecoverer.perform(getConfigurationStore());
+                    getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.RECOVERY_COMPLETE());
+                    setAttribute(VIRTUALHOST_INITIAL_CONFIGURATION, getVirtualHostInitialConfiguration(), "{}" );
+                    host = getVirtualHost();
+                    if(host != null)
                     {
-                        LOGGER.debug("Using virtualhost blueprint " + virtualhostBlueprint);
+                        final VirtualHost<?,?,?> recoveredHost = host;
+                        Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
+                        {
+                            @Override
+                            public Object run()
+                            {
+                                recoveredHost.open();
+                                return null;
+                            }
+                        });
                     }
-
-                    hostAttributes.putAll(virtualhostBlueprint);
-
-
                 }
-
-                hostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
-                hostAttributes.put(VirtualHost.NAME, getGroupName());
-                hostAttributes.put(VirtualHost.TYPE, BDBHAVirtualHostImpl.VIRTUAL_HOST_TYPE);
-                host = createChild(VirtualHost.class, hostAttributes);
-
-                if (hasBlueprint && !blueprintUtilised)
+                else
                 {
-                    // Update the context with the utilised flag
-                    Map<String, String> actualContext = (Map<String, String>) getActualAttributes().get(CONTEXT);
-                    Map<String, String> context = new HashMap<>(actualContext);
-                    context.put(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR, Boolean.TRUE.toString());
-                    setAttribute(CONTEXT, getContext(), context);
+                    Map<String, Object> hostAttributes = new HashMap<>();
+
+                    hostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
+                    hostAttributes.put(VirtualHost.NAME, getGroupName());
+                    hostAttributes.put(VirtualHost.TYPE, BDBHAVirtualHostImpl.VIRTUAL_HOST_TYPE);
+                    host = createChild(VirtualHost.class, hostAttributes);
                 }
+
             }
             else
             {
@@ -704,6 +706,17 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     GroupLogSubject getGroupLogSubject()
     {
         return _groupLogSubject;
+    }
+
+    @Override
+    protected ConfiguredObjectRecord enrichInitialVirtualHostRootRecord(final ConfiguredObjectRecord vhostRecord)
+    {
+        Map<String,Object> hostAttributes = new LinkedHashMap<>(vhostRecord.getAttributes());
+        hostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
+        hostAttributes.put(VirtualHost.NAME, getGroupName());
+        hostAttributes.put(VirtualHost.TYPE, BDBHAVirtualHostImpl.VIRTUAL_HOST_TYPE);
+        return new ConfiguredObjectRecordImpl(vhostRecord.getId(), vhostRecord.getType(),
+                                              hostAttributes, vhostRecord.getParents());
     }
 
     private class RemoteNodesDiscoverer implements ReplicationGroupListener

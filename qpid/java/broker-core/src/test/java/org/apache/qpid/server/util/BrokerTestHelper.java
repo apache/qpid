@@ -91,6 +91,7 @@ public class BrokerTestHelper
         when(broker.getSecurityManager()).thenReturn(new SecurityManager(broker, false));
         when(broker.getObjectFactory()).thenReturn(objectFactory);
         when(broker.getModel()).thenReturn(objectFactory.getModel());
+        when(broker.getModelVersion()).thenReturn(BrokerModel.MODEL_VERSION);
         when(broker.getEventLogger()).thenReturn(eventLogger);
         when(broker.getCategoryClass()).thenReturn(Broker.class);
         when(broker.getParent(SystemConfig.class)).thenReturn(systemConfig);

@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import static java.util.Collections.*;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
@@ -29,7 +28,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,12 +46,10 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
-import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNodeImpl;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNodeTestHelper;
-import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNodeImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class BDBHAVirtualHostNodeTest extends QpidTestCase
@@ -94,20 +90,6 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         context.put(ReplicationConfig.REP_STREAM_TIMEOUT, repStreamTimeout);
         BDBHAVirtualHostNode<?> node = _helper.createHaVHN(attributes);
 
-        final CountDownLatch virtualHostAddedLatch = new CountDownLatch(1);
-        node.addChangeListener(new NoopConfigurationChangeListener()
-        {
-            @Override
-            public void childAdded(ConfiguredObject<?> object, ConfiguredObject<?> child)
-            {
-                if (child instanceof VirtualHost)
-                {
-                    child.addChangeListener(this);
-                    virtualHostAddedLatch.countDown();
-                }
-            }
-        });
-
         node.start();
         _helper.assertNodeRole(node, "MASTER", "REPLICA");
 
@@ -128,7 +110,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertEquals("SYNC,NO_SYNC,SIMPLE_MAJORITY", environment.getConfig().getDurability().toString());
         assertEquals("Unexpected JE replication stream timeout", repStreamTimeout, replicationConfig.getConfigParam(ReplicationConfig.REP_STREAM_TIMEOUT));
 
-        assertTrue("Virtual host child has not been added", virtualHostAddedLatch.await(30, TimeUnit.SECONDS));
+        _helper.awaitForVirtualhost(node, 30000);
         VirtualHost<?, ?, ?> virtualHost = node.getVirtualHost();
         assertNotNull("Virtual host child was not added", virtualHost);
         assertEquals("Unexpected virtual host name", groupName, virtualHost.getName());
@@ -314,25 +296,11 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         Map<String, Object> nodeAttributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNode<?> node = _helper.createHaVHN(nodeAttributes);
 
-        final CountDownLatch virtualHostAddedLatch = new CountDownLatch(1);
-        node.addChangeListener(new NoopConfigurationChangeListener()
-        {
-            @Override
-            public void childAdded(ConfiguredObject<?> object, ConfiguredObject<?> child)
-            {
-                if (child instanceof VirtualHost)
-                {
-                    child.addChangeListener(this);
-                    virtualHostAddedLatch.countDown();
-                }
-            }
-        });
-
         node.start();
         _helper.assertNodeRole(node, "MASTER", "REPLICA");
         assertEquals("Unexpected node state", State.ACTIVE, node.getState());
 
-        assertTrue("Virtual host child has not been added", virtualHostAddedLatch.await(30, TimeUnit.SECONDS));
+        _helper.awaitForVirtualhost(node,30000);
         BDBHAVirtualHostImpl virtualHost = (BDBHAVirtualHostImpl)node.getVirtualHost();
         assertNotNull("Virtual host is not created", virtualHost);
 

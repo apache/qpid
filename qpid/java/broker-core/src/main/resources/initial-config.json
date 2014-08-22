@@ -55,9 +55,7 @@
   "virtualhostnodes" : [ {
     "name" : "default",
     "type" : "JSON",
-    "context" : {
-        "virtualhostBlueprint" : "{ \"type\" : \"DERBY\" }"
-    }
+    "virtualHostInitialConfiguration" : "{ \"type\" : \"DERBY\" }"
   } ],
   "plugins" : [ {
     "type" : "MANAGEMENT-HTTP",
