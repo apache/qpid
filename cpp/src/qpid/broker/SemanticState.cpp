@@ -397,7 +397,6 @@ bool SemanticStateConsumerImpl::deliver(const QueueCursor& cursor, const Message
     }
     if (acquire && !ackExpected) {  // auto acquire && auto accept
         queue->dequeue(0 /*ctxt*/, cursor);
-        record.setEnded();
     }
     if (mgmtObject) { mgmtObject->inc_delivered(); }
     return true;
