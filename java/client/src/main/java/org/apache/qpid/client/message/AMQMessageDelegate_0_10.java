@@ -21,6 +21,23 @@
 
 package org.apache.qpid.client.message;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import javax.jms.DeliveryMode;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
+import javax.jms.MessageNotWriteableException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +45,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQPInvalidClassException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
-import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.client.CustomJMSXProperty;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.Message;
@@ -41,22 +57,6 @@ import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.ReplyTo;
 import org.apache.qpid.transport.TransportException;
-
-import javax.jms.DeliveryMode;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
-import javax.jms.MessageNotWriteableException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * This extends AbstractAMQMessageDelegate which contains common code between
@@ -352,14 +352,14 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         {
            try
            {
-               int type = ((AMQSession_0_10)getAMQSession()).resolveAddressType(amqd);
+               int type = getAMQSession().resolveAddressType(amqd);
                if (type == AMQDestination.QUEUE_TYPE)
                {
-                   ((AMQSession_0_10)getAMQSession()).setLegacyFieldsForQueueType(amqd);
+                   getAMQSession().setLegacyFieldsForQueueType(amqd);
                }
                else
                {
-                   ((AMQSession_0_10)getAMQSession()).setLegacyFiledsForTopicType(amqd);
+                   getAMQSession().setLegacyFieldsForTopicType(amqd);
                }
            }
            catch(AMQException ex)

@@ -43,6 +43,7 @@ import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.StateWaiter;
 import org.apache.qpid.common.ServerPropertyNames;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.BasicQosBody;
 import org.apache.qpid.framing.BasicQosOkBody;
 import org.apache.qpid.framing.ChannelOpenBody;
@@ -67,6 +68,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionDelegate_8_0.class);
     private final AMQConnection _conn;
     private boolean _messageCompressionSupported;
+    private boolean _addrSyntaxSupported;
 
     public void closeConnection(long timeout) throws JMSException, AMQException
     {
@@ -76,6 +78,9 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     public AMQConnectionDelegate_8_0(AMQConnection conn)
     {
         _conn = conn;
+        _addrSyntaxSupported =
+                Boolean.parseBoolean(System.getProperty(ClientProperties.ADDR_SYNTAX_SUPPORTED_IN_0_8,
+                                                        String.valueOf(ClientProperties.DEFAULT_ADDR_SYNTAX_0_8_SUPPORT)));
     }
 
     protected boolean checkException(Throwable thrown)
@@ -428,5 +433,10 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     public boolean isMessageCompressionSupported()
     {
         return _messageCompressionSupported;
+    }
+
+    public boolean isAddrSyntaxSupported()
+    {
+        return _addrSyntaxSupported;
     }
 }

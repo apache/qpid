@@ -57,30 +57,34 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
         super(_logger,connection, destination,transacted,channelId,session, producerId, immediate, mandatory);
     }
 
-    void declareDestination(AMQDestination destination)
+    void declareDestination(AMQDestination destination) throws AMQException
     {
 
         if (destination.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
         {
-            throw new UnsupportedAddressSyntaxException(destination);
+            getSession().resolveAddress(destination, false, false);
         }
-
-        if(getSession().isDeclareExchanges())
+        else
         {
-            final MethodRegistry methodRegistry = getSession().getMethodRegistry();
-            ExchangeDeclareBody body =
-                methodRegistry.createExchangeDeclareBody(getSession().getTicket(),
-                                                         destination.getExchangeName(),
-                                                         destination.getExchangeClass(),
-                                                         destination.getExchangeName().toString().startsWith("amq."),
-                                                         destination.isExchangeDurable(),
-                                                         destination.isExchangeAutoDelete(),
-                                                         destination.isExchangeInternal(),
-                                                         true,
-                                                         null);
-            AMQFrame declare = body.generateFrame(getChannelId());
+            if (getSession().isDeclareExchanges())
+            {
+                final MethodRegistry methodRegistry = getSession().getMethodRegistry();
+                ExchangeDeclareBody body =
+                        methodRegistry.createExchangeDeclareBody(getSession().getTicket(),
+                                                                 destination.getExchangeName(),
+                                                                 destination.getExchangeClass(),
+                                                                 destination.getExchangeName()
+                                                                         .toString()
+                                                                         .startsWith("amq."),
+                                                                 destination.isExchangeDurable(),
+                                                                 destination.isExchangeAutoDelete(),
+                                                                 destination.isExchangeInternal(),
+                                                                 true,
+                                                                 null);
+                AMQFrame declare = body.generateFrame(getChannelId());
 
-            getConnection().getProtocolHandler().writeFrame(declare);
+                getConnection().getProtocolHandler().writeFrame(declare);
+            }
         }
     }
 

@@ -20,6 +20,20 @@
  */
 package org.apache.qpid.client;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.net.URISyntaxException;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
+import javax.jms.Destination;
+import javax.naming.NamingException;
+import javax.naming.Reference;
+import javax.naming.Referenceable;
+import javax.naming.StringRefAddr;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,20 +47,6 @@ import org.apache.qpid.messaging.Address;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLHelper;
-
-import javax.jms.Destination;
-import javax.naming.NamingException;
-import javax.naming.Reference;
-import javax.naming.Referenceable;
-import javax.naming.StringRefAddr;
-
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.net.URISyntaxException;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 
 public abstract class AMQDestination implements Destination, Referenceable, Externalizable
@@ -813,7 +813,8 @@ public abstract class AMQDestination implements Destination, Referenceable, Exte
         _address = addr;
     }
 
-    public int getAddressType(){
+    public int getAddressType()
+    {
         return _addressType;
     }
 
