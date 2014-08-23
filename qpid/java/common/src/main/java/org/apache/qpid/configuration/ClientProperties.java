@@ -267,6 +267,9 @@ public class ClientProperties
     public static final String CONNECTION_OPTION_MESSAGE_COMPRESSION_THRESHOLD_SIZE = "qpid.message_compression_threshold_size";
     public static final int DEFAULT_MESSAGE_COMPRESSION_THRESHOLD_SIZE = 102400;
 
+    public static final String ADDR_SYNTAX_SUPPORTED_IN_0_8 = "qpid.addr_syntax_supported";
+    public static final boolean DEFAULT_ADDR_SYNTAX_0_8_SUPPORT = true;
+
     private ClientProperties()
     {
         //No instances

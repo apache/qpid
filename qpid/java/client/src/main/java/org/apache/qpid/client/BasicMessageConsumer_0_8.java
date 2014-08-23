@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.client;
 
+import javax.jms.JMSException;
+import javax.jms.Message;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,9 +40,6 @@ import org.apache.qpid.framing.BasicCancelBody;
 import org.apache.qpid.framing.BasicCancelOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.jms.ConnectionURL;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
 
 public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMessage_0_8>
 {
@@ -70,6 +70,19 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
 
         _topicDestinationCache = session.getTopicDestinationCache();
         _queueDestinationCache = session.getQueueDestinationCache();
+
+
+        // This is due to the Destination carrying the temporary subscription name which is incorrect.
+        if (destination.isAddressResolved() && AMQDestination.TOPIC_TYPE == destination.getAddressType())
+        {
+            boolean namedQueue = destination.getLink() != null && destination.getLink().getName() != null ;
+
+            if (!namedQueue)
+            {
+                setDestination(destination.copyDestination());
+                getDestination().setQueueName(null);
+            }
+        }
 
         if (destination.getRejectBehaviour() != null)
         {

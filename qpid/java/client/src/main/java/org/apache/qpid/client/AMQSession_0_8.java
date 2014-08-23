@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -48,10 +49,14 @@ import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.ReturnMessage;
 import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.messaging.address.AddressHelper;
+import org.apache.qpid.client.messaging.address.Link;
+import org.apache.qpid.client.messaging.address.Node;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
 import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
@@ -230,9 +235,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                 table.setObject(entry.getKey(), entry.getValue());
             }
         }
-        QueueDeclareBody body = getMethodRegistry().createQueueDeclareBody(getTicket(),name,false,durable,exclusive,autoDelete,false,table);
-        AMQFrame queueDeclare = body.generateFrame(getChannelId());
-        getProtocolHandler().syncWrite(queueDeclare, QueueDeclareOkBody.class);
+        sendQueueDeclare(name, durable, exclusive, autoDelete, table, false);
     }
 
     public void sendRecover() throws AMQException, FailoverException
@@ -428,6 +431,32 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         return (responseBody.getReplyCode() == 0);
     }
 
+
+    protected boolean exchangeExists(final AMQShortString exchangeName)
+            throws AMQException
+    {
+        if(!getAMQConnection().getDelegate().supportsIsBound())
+        {
+            return false;
+        }
+
+        AMQMethodEvent response = new FailoverNoopSupport<AMQMethodEvent, AMQException>(
+                new FailoverProtectedOperation<AMQMethodEvent, AMQException>()
+                {
+                    public AMQMethodEvent execute() throws AMQException, FailoverException
+                    {
+                        return sendExchangeBound(exchangeName, null, null);
+
+                    }
+                }, getAMQConnection()).execute();
+
+        // Extract and return the response code from the query.
+        ExchangeBoundOkBody responseBody = (ExchangeBoundOkBody) response.getMethod();
+
+        // valid if no issues, or just no bindings
+        return (responseBody.getReplyCode() == 0 || responseBody.getReplyCode() == 3);
+    }
+
     private AMQMethodEvent sendExchangeBound(AMQShortString exchangeName,
                                              AMQShortString routingKey,
                                              AMQShortString queueName) throws AMQException, FailoverException
@@ -444,6 +473,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                                       boolean nowait,
                                       int tag) throws AMQException, FailoverException
     {
+        queueName = preprocessAddressTopic(consumer, queueName);
 
         BasicConsumeBody body = getMethodRegistry().createBasicConsumeBody(getTicket(),
                                                                            queueName,
@@ -468,6 +498,63 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
     }
 
     @Override
+    void createSubscriptionQueue(AMQDestination dest, boolean noLocal, String messageSelector) throws AMQException
+    {
+        final Link link = dest.getLink();
+        final String queueName ;
+
+        if (dest.getQueueName() == null)
+        {
+            queueName = link.getName() == null ? "TempQueue" + UUID.randomUUID() : link.getName();
+            dest.setQueueName(new AMQShortString(queueName));
+        }
+        else
+        {
+            queueName = dest.getQueueName();
+        }
+
+        final Link.SubscriptionQueue queueProps = link.getSubscriptionQueue();
+        final Map<String,Object> arguments = queueProps.getDeclareArgs();
+        if (!arguments.containsKey((AddressHelper.NO_LOCAL)))
+        {
+            arguments.put(AddressHelper.NO_LOCAL, noLocal);
+        }
+
+        if (link.isDurable() && queueName.startsWith("TempQueue"))
+        {
+            throw new AMQException("You cannot mark a subscription queue as durable without providing a name for the link.");
+        }
+
+        (new FailoverNoopSupport<Void, AMQException>(
+                new FailoverProtectedOperation<Void, AMQException>()
+                {
+                    public Void execute() throws AMQException, FailoverException
+                    {
+
+                        // not setting alternate exchange
+                        sendQueueDeclare(AMQShortString.valueOf(queueName),
+                                         link.isDurable(),
+                                         queueProps.isExclusive(),
+                                         queueProps.isAutoDelete(),
+                                         FieldTable.convertToFieldTable(arguments),
+                                         false);
+
+                        return null;
+                    }
+                }, getAMQConnection())).execute();
+
+
+        Map<String,Object> bindingArguments = new HashMap<String, Object>();
+        bindingArguments.put(AMQPFilterTypes.JMS_SELECTOR.getValue().toString(), messageSelector == null ? "" : messageSelector);
+
+        bindQueue(AMQShortString.valueOf(queueName),
+                  AMQShortString.valueOf(dest.getSubject()),
+                  FieldTable.convertToFieldTable(bindingArguments),
+                  AMQShortString.valueOf(dest.getAddressName()),dest,false);
+
+    }
+
+    @Override
     public void sendExchangeDeclare(final AMQShortString name, final AMQShortString type, final boolean nowait,
             boolean durable, boolean autoDelete, boolean internal) throws AMQException, FailoverException
     {
@@ -481,17 +568,52 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class);
     }
 
+    @Override
+    public void sendExchangeDeclare(final AMQShortString name, final AMQShortString type, final boolean nowait,
+                                    boolean durable, boolean autoDelete, FieldTable arguments, final boolean passive) throws AMQException, FailoverException
+    {
+        //The 'noWait' parameter is only used on the 0-10 path, it is ignored on the 0-8/0-9/0-9-1 path
+
+        MethodRegistry methodRegistry = getMethodRegistry();
+        ExchangeDeclareBody body = methodRegistry.createExchangeDeclareBody(getTicket(),
+                                                                            name,
+                                                                            type,
+                                                                            passive || name.toString().startsWith("amq."),
+                                                                            durable,
+                                                                            autoDelete,
+                                                                            false,
+                                                                            false,
+                                                                            arguments);
+        AMQFrame exchangeDeclare = body.generateFrame(getChannelId());
+
+        getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class);
+    }
+
     private void sendQueueDeclare(final AMQDestination amqd, boolean passive) throws AMQException, FailoverException
+    {
+        AMQShortString queueName = amqd.getAMQQueueName();
+        boolean durable = amqd.isDurable();
+        boolean exclusive = amqd.isExclusive();
+        boolean autoDelete = amqd.isAutoDelete();
+        FieldTable arguments = null;
+        sendQueueDeclare(queueName, durable, exclusive, autoDelete, arguments, passive);
+    }
+
+    private void sendQueueDeclare(final AMQShortString queueName,
+                                  final boolean durable,
+                                  final boolean exclusive,
+                                  final boolean autoDelete, final FieldTable arguments, final boolean passive)
+            throws AMQException, FailoverException
     {
         QueueDeclareBody body =
                 getMethodRegistry().createQueueDeclareBody(getTicket(),
-                                                           amqd.getAMQQueueName(),
+                                                           queueName,
                                                            passive,
-                                                           amqd.isDurable(),
-                                                           amqd.isExclusive(),
-                                                           amqd.isAutoDelete(),
+                                                           durable,
+                                                           exclusive,
+                                                           autoDelete,
                                                            false,
-                                                           null);
+                                                           arguments);
 
         AMQFrame queueDeclare = body.generateFrame(getChannelId());
 
@@ -733,13 +855,207 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         declareExchange(new AMQShortString("amq.direct"), new AMQShortString("direct"), false);
     }
 
-    public void resolveAddress(AMQDestination dest,
-                                              boolean isConsumer,
-                                              boolean noLocal) throws AMQException
+    @Override
+    public void resolveAddress(final AMQDestination dest, final boolean isConsumer, final boolean noLocal)
+            throws AMQException
     {
-        throw new UnsupportedAddressSyntaxException(dest);
+        if(!isAddrSyntaxSupported())
+        {
+            throw new UnsupportedAddressSyntaxException(dest);
+        }
+        super.resolveAddress(dest, isConsumer, noLocal);
     }
 
+    private boolean isAddrSyntaxSupported()
+    {
+        return ((AMQConnectionDelegate_8_0)(getAMQConnection().getDelegate())).isAddrSyntaxSupported();
+    }
+
+    public int resolveAddressType(AMQDestination dest) throws AMQException
+    {
+        int type = dest.getAddressType();
+        String name = dest.getAddressName();
+        if (type != AMQDestination.UNKNOWN_TYPE)
+        {
+            return type;
+        }
+        else
+        {
+            boolean isExchange = exchangeExists(AMQShortString.valueOf(name));
+            boolean isQueue = isBound(null,AMQShortString.valueOf(name), null);
+
+            if (!isExchange && !isQueue)
+            {
+                type = dest instanceof AMQTopic ? AMQDestination.TOPIC_TYPE : AMQDestination.QUEUE_TYPE;
+            }
+            else if (!isExchange)
+            {
+                //name refers to a queue
+                type = AMQDestination.QUEUE_TYPE;
+            }
+            else if (!isQueue)
+            {
+                //name refers to an exchange
+                type = AMQDestination.TOPIC_TYPE;
+            }
+            else
+            {
+                //both a queue and exchange exist for that name
+                throw new AMQException("Ambiguous address, please specify queue or topic as node type");
+            }
+            dest.setAddressType(type);
+            return type;
+        }
+    }
+
+    protected void handleQueueNodeCreation(final AMQDestination dest, boolean noLocal) throws AMQException
+    {
+        final Node node = dest.getNode();
+        final Map<String,Object> arguments = node.getDeclareArgs();
+        if (!arguments.containsKey((AddressHelper.NO_LOCAL)))
+        {
+            arguments.put(AddressHelper.NO_LOCAL, noLocal);
+        }
+
+        (new FailoverNoopSupport<Void, AMQException>(
+                new FailoverProtectedOperation<Void, AMQException>()
+                {
+                    public Void execute() throws AMQException, FailoverException
+                    {
+
+                        sendQueueDeclare(AMQShortString.valueOf(dest.getAddressName()),
+                                         node.isDurable(),
+                                         node.isExclusive(),
+                                         node.isAutoDelete(),
+                                         FieldTable.convertToFieldTable(arguments),
+                                         false);
+
+                        return null;
+                    }
+                }, getAMQConnection())).execute();
+
+
+        createBindings(dest, dest.getNode().getBindings());
+        sync();
+    }
+
+    void handleExchangeNodeCreation(AMQDestination dest) throws AMQException
+    {
+        Node node = dest.getNode();
+        // can't set alt. exchange
+        declareExchange(AMQShortString.valueOf(dest.getAddressName()),
+                        AMQShortString.valueOf(node.getExchangeType()),
+                        false,
+                        node.isDurable(),
+                        node.isAutoDelete(),
+                        FieldTable.convertToFieldTable(node.getDeclareArgs()), false);
+
+        // If bindings are specified without a queue name and is called by the producer,
+        // the broker will send an exception as expected.
+        createBindings(dest, dest.getNode().getBindings());
+        sync();
+    }
+
+
+    protected void doBind(final AMQDestination dest,
+                        final AMQDestination.Binding binding,
+                        final String queue,
+                        final String exchange) throws AMQException
+    {
+        bindQueue(AMQShortString.valueOf(queue),AMQShortString.valueOf(binding.getBindingKey()),
+                  FieldTable.convertToFieldTable(binding.getArgs()),
+                  AMQShortString.valueOf(exchange),dest);
+    }
+
+    public boolean isQueueExist(AMQDestination dest, boolean assertNode) throws AMQException
+    {
+        Node node = dest.getNode();
+        return isQueueExist(dest.getAddressName(), assertNode,
+                            node.isDurable(), node.isAutoDelete(),
+                            node.isExclusive(), node.getDeclareArgs());
+    }
+
+    public boolean isQueueExist(final String queueName, boolean assertNode,
+                                final boolean durable, final boolean autoDelete,
+                                final boolean exclusive, final Map<String, Object> args) throws AMQException
+    {
+        boolean match = isBound(null,AMQShortString.valueOf(queueName), null);
+
+        if (assertNode)
+        {
+            if(!match)
+            {
+                throw new AMQException("Assert failed for queue : " + queueName  +". Queue does not exist." );
+
+            }
+            else
+            {
+
+                new FailoverNoopSupport<Void, AMQException>(
+                        new FailoverProtectedOperation<Void, AMQException>()
+                        {
+                            public Void execute() throws AMQException, FailoverException
+                            {
+
+                                sendQueueDeclare(AMQShortString.valueOf(queueName),
+                                                 durable,
+                                                 exclusive,
+                                                 autoDelete,
+                                                 FieldTable.convertToFieldTable(args),
+                                                 true);
+
+                                return null;
+                            }
+                        }, getAMQConnection());
+
+            }
+        }
+
+
+        return match;
+    }
+
+    public boolean isExchangeExist(AMQDestination dest,boolean assertNode) throws AMQException
+    {
+        boolean match = exchangeExists(AMQShortString.valueOf(dest.getAddressName()));
+
+        Node node = dest.getNode();
+
+        if (match)
+        {
+            if (assertNode)
+            {
+
+                declareExchange(AMQShortString.valueOf(dest.getAddressName()),
+                                AMQShortString.valueOf(node.getExchangeType()),
+                                false,
+                                node.isDurable(),
+                                node.isAutoDelete(),
+                                FieldTable.convertToFieldTable(node.getDeclareArgs()), true);
+
+            }
+            else
+            {
+                // TODO - some way to determine the exchange type
+            /*
+                _logger.debug("Setting Exchange type " + result.getType());
+                node.setExchangeType(result.getType());
+                dest.setExchangeClass(new AMQShortString(result.getType()));
+             */
+
+            }
+        }
+
+        if (assertNode)
+        {
+            if (!match)
+            {
+                throw new AMQException("Assert failed for address : " + dest  +". Exchange not found.");
+            }
+        }
+
+        return match;
+    }
 
     protected void flushAcknowledgments()
     {
