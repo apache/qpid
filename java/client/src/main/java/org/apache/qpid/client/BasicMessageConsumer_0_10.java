@@ -17,12 +17,18 @@
  */
 package org.apache.qpid.client;
 
+import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination.AddressOption;
-import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
 import org.apache.qpid.client.message.AbstractJMSMessage;
@@ -40,12 +46,6 @@ import org.apache.qpid.transport.RangeSet;
 import org.apache.qpid.transport.RangeSetFactory;
 import org.apache.qpid.transport.SessionException;
 import org.apache.qpid.transport.TransportException;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This is a 0.10 message consumer.
@@ -480,26 +480,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             clearReceiveQueue();
         }
     }
-    
-    public boolean isExclusive()
-    {
-        AMQDestination dest = this.getDestination();
-        if (dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
-        {
-            if (dest.getAddressType() == AMQDestination.TOPIC_TYPE)
-            {
-                return true;
-            }
-            else
-            {                
-                return dest.getLink().getSubscription().isExclusive();
-            }
-        }
-        else
-        {
-            return super.isExclusive();
-        }
-    }
+
     
     void postSubscription() throws AMQException
     {
@@ -509,10 +490,10 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             if (dest.getDelete() == AddressOption.ALWAYS ||
                 dest.getDelete() == AddressOption.RECEIVER )
             {
-                ((AMQSession_0_10) getSession()).handleNodeDelete(dest);                
+                getSession().handleNodeDelete(dest);
             }
             // Subscription queue is handled as part of linkDelete method.
-            ((AMQSession_0_10) getSession()).handleLinkDelete(dest);
+            getSession().handleLinkDelete(dest);
             if (!isDurableSubscriber())
             {
                 ((AMQSession_0_10) getSession()).deleteSubscriptionQueue(dest);

@@ -118,10 +118,30 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
         final AMQFrame cancelFrame = body.generateFrame(getChannelId());
 
         getConnection().getProtocolHandler().syncWrite(cancelFrame, BasicCancelOkBody.class);
-
+        postSubscription();
+        getSession().sync();
         if (_logger.isDebugEnabled())
         {
             _logger.debug("CancelOk'd for consumer:" + debugIdentity());
+        }
+    }
+
+    void postSubscription() throws AMQException
+    {
+        AMQDestination dest = this.getDestination();
+        if (dest != null && dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
+        {
+            if (dest.getDelete() == AMQDestination.AddressOption.ALWAYS ||
+                dest.getDelete() == AMQDestination.AddressOption.RECEIVER )
+            {
+                getSession().handleNodeDelete(dest);
+            }
+            // Subscription queue is handled as part of linkDelete method.
+            getSession().handleLinkDelete(dest);
+            if (!isDurableSubscriber())
+            {
+                getSession().deleteSubscriptionQueue(dest);
+            }
         }
     }
 

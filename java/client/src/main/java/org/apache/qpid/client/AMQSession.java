@@ -313,6 +313,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         return _immediatePrefetch;
     }
 
+    abstract void handleNodeDelete(final AMQDestination dest) throws AMQException;
+
+    abstract void handleLinkDelete(final AMQDestination dest) throws AMQException;
+
     public static final class IdToConsumerMap<C extends BasicMessageConsumer>
     {
         private final BasicMessageConsumer[] _fastAccessConsumers = new BasicMessageConsumer[16];

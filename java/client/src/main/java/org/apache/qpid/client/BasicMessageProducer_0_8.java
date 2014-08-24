@@ -34,15 +34,18 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_8;
 import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.QpidMessageProperties;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.CompositeAMQDataBlock;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.util.GZIPUtils;
 
@@ -63,6 +66,9 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
         if (destination.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
         {
             getSession().resolveAddress(destination, false, false);
+
+            getSession().handleLinkCreation(destination);
+            getSession().sync();
         }
         else
         {
@@ -92,18 +98,43 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
                      UUID messageId, int deliveryMode,int priority, long timeToLive, boolean mandatory,
                      boolean immediate) throws JMSException
     {
+
+
+
+        AMQMessageDelegate_0_8 delegate = (AMQMessageDelegate_0_8) message.getDelegate();
+        BasicContentHeaderProperties contentHeaderProperties = delegate.getContentHeaderProperties();
+
+        AMQShortString routingKey = destination.getRoutingKey();
+
+        FieldTable headers = delegate.getContentHeaderProperties().getHeaders();
+
+        if (destination.getDestSyntax() == AMQDestination.DestSyntax.ADDR &&
+            (destination.getSubject() != null
+             || (headers != null && headers.get(QpidMessageProperties.QPID_SUBJECT) != null)))
+        {
+
+            if (headers.get(QpidMessageProperties.QPID_SUBJECT) == null)
+            {
+                // use default subject in address string
+                headers.setString(QpidMessageProperties.QPID_SUBJECT, destination.getSubject());
+            }
+
+            if (destination.getAddressType() == AMQDestination.TOPIC_TYPE)
+            {
+               routingKey = AMQShortString.valueOf(headers.getString(QpidMessageProperties.QPID_SUBJECT));
+            }
+        }
+
         BasicPublishBody body = getSession().getMethodRegistry().createBasicPublishBody(getSession().getTicket(),
-                                                                                        destination.getExchangeName(),
-                                                                                        destination.getRoutingKey(),
-                                                                                        mandatory,
-                                                                                        immediate);
+                                                                                    destination.getExchangeName(),
+                                                                                    routingKey,
+                                                                                    mandatory,
+                                                                                    immediate);
 
         AMQFrame publishFrame = body.generateFrame(getChannelId());
 
         message.prepareForSending();
         ByteBuffer payload = message.getData();
-        AMQMessageDelegate_0_8 delegate = (AMQMessageDelegate_0_8) message.getDelegate();
-        BasicContentHeaderProperties contentHeaderProperties = delegate.getContentHeaderProperties();
 
         contentHeaderProperties.setUserId(getUserID());
 

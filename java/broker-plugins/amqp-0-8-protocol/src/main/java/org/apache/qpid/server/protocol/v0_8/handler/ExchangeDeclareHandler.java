@@ -32,6 +32,7 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeclareBody;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.ExchangeImpl;
@@ -115,15 +116,22 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                 {
                     String name = exchangeName == null ? null : exchangeName.intern().toString();
                     String type = body.getType() == null ? null : body.getType().intern().toString();
-                    Map<String,Object> attributes = new HashMap<String, Object>();
 
+                    Map<String,Object> attributes = new HashMap<String, Object>();
+                    if(body.getArguments() != null)
+                    {
+                        attributes.putAll(FieldTable.convertToMap(body.getArguments()));
+                    }
                     attributes.put(org.apache.qpid.server.model.Exchange.ID, null);
                     attributes.put(org.apache.qpid.server.model.Exchange.NAME,name);
                     attributes.put(org.apache.qpid.server.model.Exchange.TYPE,type);
                     attributes.put(org.apache.qpid.server.model.Exchange.DURABLE, body.getDurable());
                     attributes.put(org.apache.qpid.server.model.Exchange.LIFETIME_POLICY,
                                    body.getAutoDelete() ? LifetimePolicy.DELETE_ON_NO_LINKS : LifetimePolicy.PERMANENT);
-                    attributes.put(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE, null);
+                    if(!attributes.containsKey(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE))
+                    {
+                        attributes.put(org.apache.qpid.server.model.Exchange.ALTERNATE_EXCHANGE, null);
+                    }
                     exchange = virtualHost.createExchange(attributes);
 
                 }
@@ -159,6 +167,10 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                 {
                     // note - since 0-8/9/9-1 can't set the alt. exchange this exception should never occur
                     throw body.getConnectionException(AMQConstant.NOT_FOUND, "Unknown alternate exchange",e);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    throw body.getConnectionException(AMQConstant.COMMAND_INVALID, "Error creating exchange",e);
                 }
             }
         }

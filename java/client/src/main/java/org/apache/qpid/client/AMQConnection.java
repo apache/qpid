@@ -87,6 +87,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnection.class);
     private static final AtomicLong CONN_NUMBER_GENERATOR = new AtomicLong();
 
+    private static final long DEFAULT_CLOSE_TIMEOUT = 2000l;
+
     private final long _connectionNumber;
 
     /**
@@ -160,7 +162,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     /** Thread Pool for executing connection level processes. Such as returning bounced messages. */
     private final ExecutorService _taskPool = Executors.newCachedThreadPool();
-    private static final long DEFAULT_TIMEOUT = 1000 * 30;
 
     private AMQConnectionDelegate _delegate;
 
@@ -873,7 +874,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public void close() throws JMSException
     {
-        close(DEFAULT_TIMEOUT);
+        close(DEFAULT_CLOSE_TIMEOUT);
     }
 
     public void close(long timeout) throws JMSException

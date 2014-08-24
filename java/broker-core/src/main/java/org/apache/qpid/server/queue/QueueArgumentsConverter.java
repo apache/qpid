@@ -23,6 +23,8 @@ package org.apache.qpid.server.queue;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 
@@ -87,6 +89,8 @@ public class QueueArgumentsConverter
         ATTRIBUTE_MAPPINGS.put(X_QPID_PRIORITIES, PriorityQueue.PRIORITIES);
 
         ATTRIBUTE_MAPPINGS.put(X_QPID_DESCRIPTION, Queue.DESCRIPTION);
+        ATTRIBUTE_MAPPINGS.put(Queue.ALTERNATE_EXCHANGE, Queue.ALTERNATE_EXCHANGE);
+
 
         ATTRIBUTE_MAPPINGS.put(X_QPID_DLQ_ENABLED, AbstractVirtualHost.CREATE_DLQ_ON_CREATION);
         ATTRIBUTE_MAPPINGS.put(QPID_GROUP_HEADER_KEY, Queue.MESSAGE_GROUP_KEY);
@@ -146,6 +150,10 @@ public class QueueArgumentsConverter
                 if(value instanceof Enum)
                 {
                     value = ((Enum) value).name();
+                }
+                else if(value instanceof ConfiguredObject)
+                {
+                    value = ((ConfiguredObject)value).getName();
                 }
                 wireArguments.put(entry.getKey(), value);
             }

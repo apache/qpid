@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -111,6 +112,12 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     public AbstractExchange(Map<String, Object> attributes, VirtualHostImpl vhost)
     {
         super(parentsMap(vhost), attributes);
+        Set<String> providedAttributeNames = new HashSet<>(attributes.keySet());
+        providedAttributeNames.removeAll(getAttributeNames());
+        if(!providedAttributeNames.isEmpty())
+        {
+            throw new IllegalArgumentException("Unknown attributes provided: " + providedAttributeNames);
+        }
         _virtualHost = vhost;
         // check ACL
         try

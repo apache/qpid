@@ -1462,6 +1462,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
     }
 
+    @Override
     void handleNodeDelete(AMQDestination dest) throws AMQException
     {
         if (AMQDestination.TOPIC_TYPE == dest.getAddressType())
