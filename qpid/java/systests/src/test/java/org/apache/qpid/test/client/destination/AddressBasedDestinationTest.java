@@ -52,7 +52,6 @@ import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.client.message.QpidMessageProperties;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.messaging.Address;
@@ -76,7 +75,14 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     @Override
     public void tearDown() throws Exception
     {
-        _connection.close();
+        try
+        {
+            _connection.close();
+        }
+        catch(JMSException e)
+        {
+            // ignore
+        }
         super.tearDown();
     }
 
@@ -90,14 +96,15 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         // create never --------------------------------------------
         String addr1 = "ADDR:testQueue1";
         AMQDestination  dest = new AMQAnyDestination(addr1);
+        final String queueErrorMessage = "The name 'testQueue1' supplied in the address " +
+                   "doesn't resolve to an exchange or a queue";
         try
         {
             cons = jmsSession.createConsumer(dest);
         }
         catch(JMSException e)
         {
-            assertTrue(e.getMessage().contains("The name 'testQueue1' supplied in the address " +
-                    "doesn't resolve to an exchange or a queue"));
+            assertTrue(e.getMessage().contains(queueErrorMessage));
         }
 
         try
@@ -106,12 +113,12 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
         catch(JMSException e)
         {
-            assertTrue(e.getCause().getCause().getMessage().contains("The name 'testQueue1' supplied in the address " +
-                    "doesn't resolve to an exchange or a queue"));
+            assertTrue(e.getCause().getMessage().contains(queueErrorMessage)
+                       || e.getCause().getCause().getMessage().contains(queueErrorMessage));
         }
 
         assertFalse("Queue should not be created",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest,false));
+                (AMQSession)jmsSession).isQueueExist(dest,false));
 
 
         // create always -------------------------------------------
@@ -120,9 +127,9 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         cons = jmsSession.createConsumer(dest);
 
         assertTrue("Queue not created as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession)jmsSession).isQueueExist(dest, true));
         assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("",
+                (AMQSession)jmsSession).isQueueBound("",
                     dest.getAddressName(),dest.getAddressName(), null));
 
         // create receiver -----------------------------------------
@@ -134,33 +141,36 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
         catch(JMSException e)
         {
-            assertTrue(e.getCause().getCause().getMessage().contains("The name 'testQueue2' supplied in the address " +
-                    "doesn't resolve to an exchange or a queue"));
+            String expectedMessage = "The name 'testQueue2' supplied in the address " +
+                       "doesn't resolve to an exchange or a queue";
+            assertTrue(e.getCause().getMessage().contains(expectedMessage)
+                       || e.getCause().getCause().getMessage().contains(expectedMessage));
         }
 
         assertFalse("Queue should not be created",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, false));
+                (AMQSession)jmsSession).isQueueExist(dest, false));
 
 
         cons = jmsSession.createConsumer(dest);
 
         assertTrue("Queue not created as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession)jmsSession).isQueueExist(dest, true));
         assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("",
+                (AMQSession)jmsSession).isQueueBound("",
                     dest.getAddressName(),dest.getAddressName(), null));
 
         // create never --------------------------------------------
         addr1 = "ADDR:testQueue3; { create: never }";
         dest = new AMQAnyDestination(addr1);
+        String testQueue3ErrorMessage = "The name 'testQueue3' supplied in the address " +
+                   "doesn't resolve to an exchange or a queue";
         try
         {
             cons = jmsSession.createConsumer(dest);
         }
         catch(JMSException e)
         {
-            assertTrue(e.getMessage().contains("The name 'testQueue3' supplied in the address " +
-                    "doesn't resolve to an exchange or a queue"));
+            assertTrue(e.getMessage().contains(testQueue3ErrorMessage));
         }
 
         try
@@ -169,12 +179,12 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
         catch(JMSException e)
         {
-            assertTrue(e.getCause().getCause().getMessage().contains("The name 'testQueue3' supplied in the address " +
-                    "doesn't resolve to an exchange or a queue"));
+            assertTrue(e.getCause().getMessage().contains(testQueue3ErrorMessage)
+                       || e.getCause().getCause().getMessage().contains(testQueue3ErrorMessage));
         }
 
         assertFalse("Queue should not be created",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, false));
+                (AMQSession)jmsSession).isQueueExist(dest, false));
 
         // create sender ------------------------------------------
         addr1 = "ADDR:testQueue3; { create: sender }";
@@ -186,17 +196,16 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
         catch(JMSException e)
         {
-            assertTrue(e.getMessage().contains("The name 'testQueue3' supplied in the address " +
-                    "doesn't resolve to an exchange or a queue"));
+            assertTrue(e.getMessage().contains(testQueue3ErrorMessage));
         }
         assertFalse("Queue should not be created",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, false));
+                (AMQSession)jmsSession).isQueueExist(dest, false));
 
         prod = jmsSession.createProducer(dest);
         assertTrue("Queue not created as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession)jmsSession).isQueueExist(dest, true));
         assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("",
+                (AMQSession)jmsSession).isQueueBound("",
                     dest.getAddressName(),dest.getAddressName(), null));
 
     }
@@ -234,22 +243,22 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         // Even if the consumer is closed the queue and the bindings should be intact.
 
         assertTrue("Queue not created as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession)jmsSession).isQueueExist(dest, true));
 
         assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("",
+                (AMQSession)jmsSession).isQueueBound("",
                     dest.getAddressName(),dest.getAddressName(), null));
 
         assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("amq.direct",
+                (AMQSession)jmsSession).isQueueBound("amq.direct",
                     dest.getAddressName(),"test", null));
 
         assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("amq.fanout",
+                (AMQSession)jmsSession).isQueueBound("amq.fanout",
                     dest.getAddressName(),null, null));
 
         assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("amq.topic",
+                (AMQSession)jmsSession).isQueueBound("amq.topic",
                     dest.getAddressName(),"a.#", null));
 
         Map<String,Object> args = new HashMap<String,Object>();
@@ -257,7 +266,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         args.put("dep","sales");
         args.put("loc","CA");
         assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("amq.match",
+                (AMQSession)jmsSession).isQueueBound("amq.match",
                     dest.getAddressName(),null, args));
 
         MessageProducer prod = jmsSession.createProducer(dest);
@@ -339,6 +348,11 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
             {
                 return;
             }
+            else if((useNonsenseExchangeType || useNonsenseArguments) && !isBroker010()
+                    && String.valueOf(AMQConstant.COMMAND_INVALID.getCode()).equals(e.getErrorCode()))
+            {
+                return;
+            }
             else
             {
                 fail("Unexpected exception whilst creating consumer: " + e);
@@ -346,11 +360,11 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
 
         assertTrue("Exchange not created as expected",(
-                (AMQSession_0_10)jmsSession).isExchangeExist(dest,true));
+                (AMQSession)jmsSession).isExchangeExist(dest,true));
 
         // The existence of the queue is implicitly tested here
         assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("my-exchange",
+                (AMQSession)jmsSession).isQueueBound("my-exchange",
                     dest.getQueueName(),"hello", null));
 
         // The client should be able to query and verify the existence of my-exchange (QPID-2774)
@@ -387,23 +401,23 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     public void checkQueueForBindings(Session jmsSession, AMQDestination dest,String headersBinding) throws Exception
     {
     	assertTrue("Queue not created as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, true));
+                (AMQSession)jmsSession).isQueueExist(dest, true));
+
+        assertTrue("Queue not bound as expected", (
+                (AMQSession) jmsSession).isQueueBound("",
+                                                      dest.getAddressName(), dest.getAddressName(), null));
 
         assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("",
-                    dest.getAddressName(),dest.getAddressName(), null));
-
-        assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("amq.direct",
+                (AMQSession)jmsSession).isQueueBound("amq.direct",
                     dest.getAddressName(),"test", null));
 
         assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("amq.topic",
+                (AMQSession)jmsSession).isQueueBound("amq.topic",
                     dest.getAddressName(),"a.#", null));
 
         Address a = Address.parse(headersBinding);
         assertTrue("Queue not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("amq.match",
+                (AMQSession)jmsSession).isQueueBound("amq.match",
                     dest.getAddressName(),null, a.getOptions()));
     }
 
@@ -526,17 +540,17 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         MessageConsumer cons3 = jmsSession.createConsumer(dest3);
 
         assertTrue("Destination1 was not created as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest1, true));
+                (AMQSession)jmsSession).isQueueExist(dest1, true));
 
         assertTrue("Destination1 was not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("",
+                (AMQSession)jmsSession).isQueueBound("",
                     dest1.getAddressName(),dest1.getAddressName(), null));
 
         assertTrue("Destination2 was not created as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest2,true));
+                (AMQSession)jmsSession).isQueueExist(dest2,true));
 
         assertTrue("Destination2 was not bound as expected",(
-                (AMQSession_0_10)jmsSession).isQueueBound("",
+                (AMQSession)jmsSession).isQueueBound("",
                     dest2.getAddressName(),dest2.getAddressName(), null));
 
         MessageProducer producer = jmsSession.createProducer(dest3);
@@ -587,7 +601,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         MessageProducer prod = ssn.createProducer(queue);
         MessageConsumer cons = ssn.createConsumer(queue);
         assertTrue("my-queue was not created as expected",(
-                (AMQSession_0_10)ssn).isQueueBound("amq.direct",
+                (AMQSession)ssn).isQueueBound("amq.direct",
                     "my-queue","my-queue", null));
 
         prod.send(ssn.createTextMessage("test"));
@@ -606,7 +620,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         {
         	String s = "The name 'my-queue2' supplied in the address " +
         			"doesn't resolve to an exchange or a queue";
-        	assertEquals(s,e.getCause().getCause().getMessage());
+        	assertTrue(s.equals(e.getCause().getMessage()) || s.equals(e.getCause().getCause().getMessage()));
         }
 
         // explicit create case
@@ -614,7 +628,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         prod = ssn.createProducer(queue);
         cons = ssn.createConsumer(queue);
         assertTrue("my-queue2 was not created as expected",(
-                (AMQSession_0_10)ssn).isQueueBound("",
+                (AMQSession)ssn).isQueueBound("",
                     "my-queue2","my-queue2", null));
 
         prod.send(ssn.createTextMessage("test"));
@@ -631,7 +645,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         cons = ssn.createConsumer(queue);
         prod = ssn.createProducer(queue);
         assertTrue("MY.RESP.QUEUE was not created as expected",(
-                (AMQSession_0_10)ssn).isQueueBound("amq.direct",
+                (AMQSession)ssn).isQueueBound("amq.direct",
                     "MY.RESP.QUEUE","x512", null));
         cons.close();
     }
@@ -701,15 +715,15 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         prod = ssn.createProducer(topic);
 
         assertTrue("The queue was not bound to vehicle exchange using bus as the binding key",(
-                (AMQSession_0_10)ssn).isQueueBound("vehicles",
+                (AMQSession)ssn).isQueueBound("vehicles",
                     "my-topic","bus", null));
 
         assertTrue("The queue was not bound to vehicle exchange using car as the binding key",(
-                (AMQSession_0_10)ssn).isQueueBound("vehicles",
+                (AMQSession)ssn).isQueueBound("vehicles",
                     "my-topic","car", null));
 
         assertTrue("The queue was not bound to vehicle exchange using van as the binding key",(
-                (AMQSession_0_10)ssn).isQueueBound("vehicles",
+                (AMQSession)ssn).isQueueBound("vehicles",
                     "my-topic","van", null));
 
         Message msg = ssn.createTextMessage("test");
@@ -822,15 +836,18 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         catch(Exception e)
         {
         }
-        _connection.close();
 
+    }
+
+    public void testJMSTopicIsTreatedAsQueueIn0_10() throws Exception
+    {
         _connection = getConnection() ;
         _connection.start();
-        ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
-        dest = ssn.createTopic("ADDR:my_queue; {create: always}");
-        consumer1 = ssn.createConsumer(dest);
-        consumer2 = ssn.createConsumer(dest);
-        prod = ssn.createProducer(dest);
+        final Session ssn = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        final Destination dest = ssn.createTopic("ADDR:my_queue; {create: always}");
+        final MessageConsumer consumer1 = ssn.createConsumer(dest);
+        final MessageConsumer consumer2 = ssn.createConsumer(dest);
+        final MessageProducer prod = ssn.createProducer(dest);
 
         prod.send(ssn.createTextMessage("A"));
         Message m1 = consumer1.receive(1000);
@@ -864,15 +881,15 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         MessageConsumer  cons = ssn.createConsumer(topic);
 
         assertTrue("The queue was not bound to MRKT exchange using NYSE.# as the binding key",(
-                (AMQSession_0_10)ssn).isQueueBound("MRKT",
+                (AMQSession)ssn).isQueueBound("MRKT",
                     "my-topic","NYSE.#", null));
 
         assertTrue("The queue was not bound to MRKT exchange using NASDAQ.# as the binding key",(
-                (AMQSession_0_10)ssn).isQueueBound("MRKT",
+                (AMQSession)ssn).isQueueBound("MRKT",
                     "my-topic","NASDAQ.#", null));
 
         assertTrue("The queue was not bound to MRKT exchange using CNTL.# as the binding key",(
-                (AMQSession_0_10)ssn).isQueueBound("MRKT",
+                (AMQSession)ssn).isQueueBound("MRKT",
                     "my-topic","CNTL.#", null));
 
         MessageProducer prod = ssn.createProducer(topic);
@@ -886,7 +903,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     public void testXSubscribeOverrides() throws Exception
     {
         Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
-        String str = "ADDR:my_queue; {create:always,link: {x-subscribes:{exclusive: true, arguments: {a:b,x:y}}}}";
+        String str = "ADDR:my_queue; {create:always, node: { type: queue }, link: {x-subscribes:{exclusive: true, arguments: {a:b,x:y}}}}";
         Destination dest = ssn.createTopic(str);
         MessageConsumer consumer1 = ssn.createConsumer(dest);
         try
@@ -937,7 +954,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         props.setProperty("destination.address1", "ADDR:amq.topic/test");
         props.setProperty("destination.address2", "ADDR:amq.topic/test; {node:{" + bindingStr);
         props.setProperty("destination.address3", "ADDR:amq.topic/test; {link:{" + bindingStr);
-        String addrStr = "ADDR:my_queue; {create:always,link: {x-subscribes:{exclusive: true, arguments: {a:b,x:y}}}}";
+        String addrStr = "ADDR:my_queue; {create:always,node : {type: queue}, link: {x-subscribes:{exclusive: true, arguments: {a:b,x:y}}}}";
         props.setProperty("destination.address5", addrStr);
 
         Context ctx = new InitialContext(props);
@@ -1055,7 +1072,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
 
         assertFalse("Queue not deleted as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, false));
+                (AMQSession)jmsSession).isQueueExist(dest, false));
 
 
         String addr2 = "ADDR:testQueue2;{create: always, delete: receiver}";
@@ -1071,7 +1088,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
 
         assertFalse("Queue not deleted as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, false));
+                (AMQSession)jmsSession).isQueueExist(dest, false));
 
 
         String addr3 = "ADDR:testQueue3;{create: always, delete: sender}";
@@ -1088,7 +1105,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
 
         assertFalse("Queue not deleted as expected",(
-                (AMQSession_0_10)jmsSession).isQueueExist(dest, false));
+                (AMQSession)jmsSession).isQueueExist(dest, false));
     }
 
     /**
@@ -1206,11 +1223,11 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
 		m.setJMSReplyTo(replyToDest);
 		prod.send(m);
 
-		Message msg = cons.receive();
+		Message msg = cons.receive(5000l);
 		MessageProducer prodR = session.createProducer(msg.getJMSReplyTo());
 		prodR.send(session.createTextMessage("x"));
 
-		Message m1 = replyToCons.receive();
+		Message m1 = replyToCons.receive(5000l);
 		assertNotNull("The reply to consumer should have received the messsage",m1);
     }
 
@@ -1422,7 +1439,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
 
         AMQDestination dest = (AMQDestination)jmsSession.createQueue(addr);
         MessageConsumer cons = jmsSession.createConsumer(dest);
-        AMQSession_0_10 ssn = (AMQSession_0_10)jmsSession;
+        AMQSession ssn = (AMQSession)jmsSession;
 
         assertTrue("Queue not created as expected",ssn.isQueueExist(dest, true));
         assertTrue("Queue not bound as expected",ssn.isQueueBound("amq.direct","my-queue","test", null));
@@ -1454,11 +1471,11 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
 
         String verifyAddr = "ADDR:my-queue;{ node: {durable:true, " + xDeclareArgs + "}}";
         AMQDestination verifyDest = (AMQDestination)ssn.createQueue(verifyAddr);
-        ((AMQSession_0_10)ssn).isQueueExist(verifyDest, true);
+        ((AMQSession)ssn).isQueueExist(verifyDest, true);
 
         // Verify that the producer does not delete the subscription queue.
         MessageProducer prod = ssn.createProducer(dest);
         prod.close();
-        ((AMQSession_0_10)ssn).isQueueExist(verifyDest, true);
+        ((AMQSession)ssn).isQueueExist(verifyDest, true);
     }
 }

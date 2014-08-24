@@ -85,7 +85,6 @@ public class BrokerOptions
         Map<String,Object> attributes = new HashMap<String, Object>();
 
         attributes.put("storePath", getConfigurationStoreLocation());
-        attributes.put("storeTye", getConfigurationStoreType());
         attributes.put(ConfiguredObject.CONTEXT, getConfigProperties());
         return attributes;
     }

@@ -29,6 +29,7 @@ import static org.apache.qpid.configuration.ClientProperties.QPID_FLOW_CONTROL_W
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -64,6 +65,7 @@ import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.transport.TransportException;
+import org.apache.qpid.util.Strings;
 
 public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMessageProducer_0_8>
 {
@@ -175,12 +177,49 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
     }
 
     public void sendQueueBind(final AMQShortString queueName, final AMQShortString routingKey, final FieldTable arguments,
-                              final AMQShortString exchangeName, final AMQDestination dest,
+                              final AMQShortString exchangeName, final AMQDestination destination,
                               final boolean nowait) throws AMQException, FailoverException
     {
-        getProtocolHandler().syncWrite(getProtocolHandler().getMethodRegistry().createQueueBindBody
-                                        (getTicket(),queueName,exchangeName,routingKey,false,arguments).
-                                        generateFrame(getChannelId()), QueueBindOkBody.class);
+        if (destination == null || destination.getDestSyntax() == AMQDestination.DestSyntax.BURL)
+        {
+
+            getProtocolHandler().syncWrite(getProtocolHandler().getMethodRegistry().createQueueBindBody
+                    (getTicket(), queueName, exchangeName, routingKey, false, arguments).
+                    generateFrame(getChannelId()), QueueBindOkBody.class);
+
+        }
+        else
+        {
+            // Leaving this here to ensure the public method bindQueue in AMQSession.java works as expected.
+            List<AMQDestination.Binding> bindings = new ArrayList<AMQDestination.Binding>();
+            bindings.addAll(destination.getNode().getBindings());
+
+            String defaultExchange = destination.getAddressType() == AMQDestination.TOPIC_TYPE ?
+                    destination.getAddressName(): "amq.topic";
+
+            for (AMQDestination.Binding binding: bindings)
+            {
+                // Currently there is a bug (QPID-3317) with setting up and tearing down x-bindings for link.
+                // The null check below is a way to side step that issue while fixing QPID-4146
+                // Note this issue only affects producers.
+                if (binding.getQueue() == null && queueName == null)
+                {
+                    continue;
+                }
+                String queue = binding.getQueue() == null?
+                        queueName.asString(): binding.getQueue();
+
+                String exchange = binding.getExchange() == null ?
+                        defaultExchange :
+                        binding.getExchange();
+
+                _logger.debug("Binding queue : " + queue +
+                              " exchange: " + exchange +
+                              " using binding key " + binding.getBindingKey() +
+                              " with args " + Strings.printMap(binding.getArgs()));
+                doBind(destination, binding, queue, exchange);
+            }
+        }
     }
 
     public void sendClose(long timeout) throws AMQException, FailoverException
@@ -547,10 +586,8 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         Map<String,Object> bindingArguments = new HashMap<String, Object>();
         bindingArguments.put(AMQPFilterTypes.JMS_SELECTOR.getValue().toString(), messageSelector == null ? "" : messageSelector);
 
-        bindQueue(AMQShortString.valueOf(queueName),
-                  AMQShortString.valueOf(dest.getSubject()),
-                  FieldTable.convertToFieldTable(bindingArguments),
-                  AMQShortString.valueOf(dest.getAddressName()),dest,false);
+        final AMQDestination.Binding binding = new AMQDestination.Binding(dest.getAddressName(), queueName, dest.getSubject(), bindingArguments);
+        doBind(dest, binding, queueName, dest.getAddressName());
 
     }
 
@@ -584,6 +621,15 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                                                                             false,
                                                                             false,
                                                                             arguments);
+        AMQFrame exchangeDeclare = body.generateFrame(getChannelId());
+
+        getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class);
+    }
+
+    public void sendExchangeDelete(final String name) throws AMQException, FailoverException
+    {
+        ExchangeDeleteBody body =
+                getMethodRegistry().createExchangeDeleteBody(getTicket(),AMQShortString.valueOf(name),false, false);
         AMQFrame exchangeDeclare = body.generateFrame(getChannelId());
 
         getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class);
@@ -821,18 +867,25 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
     protected Long requestQueueDepth(AMQDestination amqd, boolean sync) throws AMQException, FailoverException
     {
-        AMQFrame queueDeclare =
-            getMethodRegistry().createQueueDeclareBody(getTicket(),
-                                                       amqd.getAMQQueueName(),
-                                                       true,
-                                                       amqd.isDurable(),
-                                                       amqd.isExclusive(),
-                                                       amqd.isAutoDelete(),
-                                                       false,
-                                                       null).generateFrame(getChannelId());
-        QueueDeclareOkHandler okHandler = new QueueDeclareOkHandler();
-        getProtocolHandler().writeCommandFrameAndWaitForReply(queueDeclare, okHandler);
-        return okHandler.getMessageCount();
+        if(isBound(null, amqd.getAMQQueueName(), null))
+        {
+            AMQFrame queueDeclare =
+                    getMethodRegistry().createQueueDeclareBody(getTicket(),
+                                                               amqd.getAMQQueueName(),
+                                                               true,
+                                                               amqd.isDurable(),
+                                                               amqd.isExclusive(),
+                                                               amqd.isAutoDelete(),
+                                                               false,
+                                                               null).generateFrame(getChannelId());
+            QueueDeclareOkHandler okHandler = new QueueDeclareOkHandler();
+            getProtocolHandler().writeCommandFrameAndWaitForReply(queueDeclare, okHandler);
+            return okHandler.getMessageCount();
+        }
+        else
+        {
+            return 0l;
+        }
     }
 
     protected boolean tagLE(long tag1, long tag2)
@@ -916,6 +969,11 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         {
             arguments.put(AddressHelper.NO_LOCAL, noLocal);
         }
+        String altExchange = node.getAlternateExchange();
+        if(altExchange != null && !"".equals(altExchange))
+        {
+            arguments.put("alternateExchange", altExchange);
+        }
 
         (new FailoverNoopSupport<Void, AMQException>(
                 new FailoverProtectedOperation<Void, AMQException>()
@@ -942,13 +1000,21 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
     void handleExchangeNodeCreation(AMQDestination dest) throws AMQException
     {
         Node node = dest.getNode();
+        String altExchange = dest.getNode().getAlternateExchange();
+        Map<String, Object> arguments = node.getDeclareArgs();
+
+        if(altExchange != null && !"".equals(altExchange))
+        {
+            arguments.put("alternateExchange", altExchange);
+        }
+
         // can't set alt. exchange
         declareExchange(AMQShortString.valueOf(dest.getAddressName()),
                         AMQShortString.valueOf(node.getExchangeType()),
                         false,
                         node.isDurable(),
                         node.isAutoDelete(),
-                        FieldTable.convertToFieldTable(node.getDeclareArgs()), false);
+                        FieldTable.convertToFieldTable(arguments), false);
 
         // If bindings are specified without a queue name and is called by the producer,
         // the broker will send an exception as expected.
@@ -962,9 +1028,79 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                         final String queue,
                         final String exchange) throws AMQException
     {
-        bindQueue(AMQShortString.valueOf(queue),AMQShortString.valueOf(binding.getBindingKey()),
-                  FieldTable.convertToFieldTable(binding.getArgs()),
-                  AMQShortString.valueOf(exchange),dest);
+        final String bindingKey = binding.getBindingKey() == null ? queue : binding.getBindingKey();
+
+        new FailoverNoopSupport<Object, AMQException>(new FailoverProtectedOperation<Object, AMQException>()
+        {
+            public Object execute() throws AMQException, FailoverException
+            {
+
+
+                MethodRegistry methodRegistry = getProtocolHandler().getMethodRegistry();
+                QueueBindBody queueBindBody =
+                        methodRegistry.createQueueBindBody(getTicket(),
+                                                           AMQShortString.valueOf(queue),
+                                                           AMQShortString.valueOf(exchange),
+                                                           AMQShortString.valueOf(bindingKey),
+                                                           false,
+                                                           FieldTable.convertToFieldTable(binding.getArgs()));
+
+                getProtocolHandler().syncWrite(queueBindBody.
+                generateFrame(getChannelId()), QueueBindOkBody.class);
+                return null;
+            }
+        }, getAMQConnection()).execute();
+
+    }
+
+
+    protected void doUnbind(final AMQDestination.Binding binding,
+                            final String queue,
+                            final String exchange) throws AMQException
+    {
+        new FailoverNoopSupport<Object, AMQException>(new FailoverProtectedOperation<Object, AMQException>()
+        {
+            public Object execute() throws AMQException, FailoverException
+            {
+
+                if (isBound(null, AMQShortString.valueOf(queue), null))
+                {
+                    MethodRegistry methodRegistry = getProtocolHandler().getMethodRegistry();
+                    AMQMethodBody body;
+                    if (methodRegistry instanceof MethodRegistry_0_9)
+                    {
+                        String bindingKey = binding.getBindingKey() == null ? queue : binding.getBindingKey();
+
+                        MethodRegistry_0_9 methodRegistry_0_9 = (MethodRegistry_0_9) methodRegistry;
+                        body = methodRegistry_0_9.createQueueUnbindBody(getTicket(),
+                                                                        AMQShortString.valueOf(queue),
+                                                                        AMQShortString.valueOf(exchange),
+                                                                        AMQShortString.valueOf(bindingKey),
+                                                                        null);
+                    }
+                    else if (methodRegistry instanceof MethodRegistry_0_91)
+                    {
+                        MethodRegistry_0_91 methodRegistry_0_91 = (MethodRegistry_0_91) methodRegistry;
+                        body = methodRegistry_0_91.createQueueUnbindBody(getTicket(),
+                                                                         AMQShortString.valueOf(queue),
+                                                                         AMQShortString.valueOf(exchange),
+                                                                         AMQShortString.valueOf(binding.getBindingKey()),
+                                                                         null);
+
+                    }
+                    else
+                    {
+                        throw new AMQException(AMQConstant.NOT_IMPLEMENTED, "Cannot unbind a queue in AMQP 0-8");
+                    }
+                    getProtocolHandler().syncWrite(body.generateFrame(getChannelId()), QueueUnbindOkBody.class);
+                    return null;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }, getAMQConnection()).execute();
     }
 
     public boolean isQueueExist(AMQDestination dest, boolean assertNode) throws AMQException
@@ -1055,6 +1191,102 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         }
 
         return match;
+    }
+
+    @Override
+    void handleNodeDelete(final AMQDestination dest) throws AMQException
+    {
+        if (AMQDestination.TOPIC_TYPE == dest.getAddressType())
+        {
+            if (isExchangeExist(dest,false))
+            {
+
+                new FailoverNoopSupport<Object, AMQException>(new FailoverProtectedOperation<Object, AMQException>()
+                {
+                    public Object execute() throws AMQException, FailoverException
+                    {
+                        sendExchangeDelete(dest.getAddressName());
+                        return null;
+                    }
+                }, getAMQConnection()).execute();
+                dest.setAddressResolved(0);
+            }
+        }
+        else
+        {
+            if (isQueueExist(dest,false))
+            {
+
+                new FailoverNoopSupport<Object, AMQException>(new FailoverProtectedOperation<Object, AMQException>()
+                {
+                    public Object execute() throws AMQException, FailoverException
+                    {
+                        sendQueueDelete(AMQShortString.valueOf(dest.getAddressName()));
+                        return null;
+                    }
+                }, getAMQConnection()).execute();
+                dest.setAddressResolved(0);
+            }
+        }
+    }
+
+    @Override
+    void handleLinkDelete(AMQDestination dest) throws AMQException
+    {
+        // We need to destroy link bindings
+        String defaultExchangeForBinding = dest.getAddressType() == AMQDestination.TOPIC_TYPE ? dest
+                .getAddressName() : "amq.topic";
+
+        String defaultQueueName = null;
+        if (AMQDestination.QUEUE_TYPE == dest.getAddressType())
+        {
+            defaultQueueName = dest.getQueueName();
+        }
+        else
+        {
+            defaultQueueName = dest.getLink().getName() != null ? dest.getLink().getName() : dest.getQueueName();
+        }
+
+        for (AMQDestination.Binding binding: dest.getLink().getBindings())
+        {
+            String queue = binding.getQueue() == null?
+                    defaultQueueName: binding.getQueue();
+
+            String exchange = binding.getExchange() == null ?
+                    defaultExchangeForBinding :
+                    binding.getExchange();
+
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Unbinding queue : " + queue +
+                              " exchange: " + exchange +
+                              " using binding key " + binding.getBindingKey() +
+                              " with args " + Strings.printMap(binding.getArgs()));
+            }
+            doUnbind(binding, queue, exchange);
+        }
+    }
+
+
+    void deleteSubscriptionQueue(final AMQDestination dest) throws AMQException
+    {
+        // We need to delete the subscription queue.
+        if (dest.getAddressType() == AMQDestination.TOPIC_TYPE &&
+            dest.getLink().getSubscriptionQueue().isExclusive() &&
+            isQueueExist(dest.getQueueName(), false, false, false, false, null))
+        {
+            (new FailoverNoopSupport<Void, AMQException>(
+                    new FailoverProtectedOperation<Void, AMQException>()
+                    {
+                        public Void execute() throws AMQException, FailoverException
+                        {
+
+                            sendQueueDelete(AMQShortString.valueOf(dest.getQueueName()));
+                            return null;
+                        }
+                    }, getAMQConnection())).execute();
+
+        }
     }
 
     protected void flushAcknowledgments()

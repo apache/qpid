@@ -25,9 +25,17 @@
 org.apache.qpid.test.client.message.JMSDestinationTest#testReceiveResend
 org.apache.qpid.server.message.MessageProtocolConversionTest#*
 
+//QPID-3422: test fails because ring queue is not implemented on java broker
+org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testBrowseMode
+//QPID-3392: the Java broker does not yet implement exchange creation arguments
+org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateExchangeWithArgs
+org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testSessionCreateTopicWithExchangeArgs
+//QPID-6037: the 0-9-1 client takes the view that if you don't specify the node type but you ask for a JMS Topic
+//           you want a topic behaviour.  The 0-10 client thinks you must want a queue.
+org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testJMSTopicIsTreatedAsQueueIn0_10
+
 // The new addressing based syntax is not supported for AMQP 0-8/0-9 versions
 org.apache.qpid.client.failover.AddressBasedFailoverBehaviourTest#*
-org.apache.qpid.test.client.destination.AddressBasedDestinationTest#*
 org.apache.qpid.test.client.queue.QueuePolicyTest#testRingPolicy
 org.apache.qpid.test.client.queue.QueuePolicyTest#testRejectPolicy
 org.apache.qpid.test.unit.message.JMSPropertiesTest#testApplicationProperties

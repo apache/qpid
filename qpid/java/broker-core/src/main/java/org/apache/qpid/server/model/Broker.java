@@ -47,8 +47,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String DEFAULT_VIRTUAL_HOST = "defaultVirtualHost";
     String STATISTICS_REPORTING_PERIOD = "statisticsReportingPeriod";
     String STATISTICS_REPORTING_RESET_ENABLED = "statisticsReportingResetEnabled";
-    String STORE_TYPE = "storeType";
-    String STORE_VERSION = "storeVersion";
     String STORE_PATH = "storePath";
     String MODEL_VERSION = "modelVersion";
     String CONFIDENTIAL_CONFIGURATION_ENCRYPTION_PROVIDER = "confidentialConfigurationEncryptionProvider";

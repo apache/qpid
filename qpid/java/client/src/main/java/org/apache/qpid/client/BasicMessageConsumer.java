@@ -20,30 +20,6 @@
  */
 package org.apache.qpid.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInternalException;
-import org.apache.qpid.client.failover.FailoverException;
-import org.apache.qpid.client.filter.MessageFilter;
-import org.apache.qpid.client.message.AMQMessageDelegateFactory;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.CloseConsumerMessage;
-import org.apache.qpid.client.message.MessageFactoryRegistry;
-import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.client.filter.JMSSelectorFilter;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.FieldTableFactory;
-import org.apache.qpid.jms.MessageConsumer;
-import org.apache.qpid.jms.Session;
-import org.apache.qpid.transport.TransportException;
-
-import javax.jms.InvalidSelectorException;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -54,6 +30,31 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.jms.InvalidSelectorException;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.client.filter.JMSSelectorFilter;
+import org.apache.qpid.client.filter.MessageFilter;
+import org.apache.qpid.client.message.AMQMessageDelegateFactory;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.CloseConsumerMessage;
+import org.apache.qpid.client.message.MessageFactoryRegistry;
+import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
+import org.apache.qpid.jms.MessageConsumer;
+import org.apache.qpid.jms.Session;
+import org.apache.qpid.transport.TransportException;
 
 public abstract class BasicMessageConsumer<U> extends Closeable implements MessageConsumer
 {
@@ -376,7 +377,23 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
      */
     public boolean isExclusive()
     {
-        return _exclusive;
+
+        AMQDestination dest = this.getDestination();
+        if (dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
+        {
+            if (dest.getAddressType() == AMQDestination.TOPIC_TYPE)
+            {
+                return true;
+            }
+            else
+            {
+                return dest.getLink().getSubscription().isExclusive();
+            }
+        }
+        else
+        {
+            return _exclusive;
+        }
     }
 
     public boolean isReceiving()

@@ -20,7 +20,6 @@
  */
 {
   "name": "${broker.name}",
-  "storeVersion": 1,
   "modelVersion": "2.0",
   "defaultVirtualHost" : "default",
   "authenticationproviders" : [ {
