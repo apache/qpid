@@ -543,8 +543,7 @@ define(["dojo/_base/xhr",
                                                             var idx = evt.rowIndex,
                                                                 theItem = this.getItem(idx);
                                                             var name = obj.dataStore.getValue(theItem,"name");
-                                                            var type = obj.dataStore.getValue(theItem,"type");
-                                                            that.controller.show("port", name, brokerObj, theItem.id, type);
+                                                            that.controller.show("port", name, brokerObj, theItem.id);
                                                         });
                                                 }, gridProperties, EnhancedGrid);
 
