@@ -20,22 +20,11 @@
  */
 package org.apache.qpid.transport;
 
-import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.transport.network.*;
-import org.apache.qpid.transport.network.security.SecurityLayer;
-import org.apache.qpid.transport.network.security.SecurityLayerFactory;
-import org.apache.qpid.transport.util.Logger;
-import org.apache.qpid.transport.util.Waiter;
-import org.apache.qpid.util.Strings;
-
 import static org.apache.qpid.transport.Connection.State.CLOSED;
 import static org.apache.qpid.transport.Connection.State.CLOSING;
 import static org.apache.qpid.transport.Connection.State.NEW;
 import static org.apache.qpid.transport.Connection.State.OPEN;
 import static org.apache.qpid.transport.Connection.State.OPENING;
-
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslServer;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -47,6 +36,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslServer;
+
+import org.apache.qpid.framing.ProtocolVersion;
+import org.apache.qpid.transport.network.Assembler;
+import org.apache.qpid.transport.network.Disassembler;
+import org.apache.qpid.transport.network.InputHandler;
+import org.apache.qpid.transport.network.NetworkConnection;
+import org.apache.qpid.transport.network.OutgoingNetworkTransport;
+import org.apache.qpid.transport.network.Transport;
+import org.apache.qpid.transport.network.TransportActivity;
+import org.apache.qpid.transport.network.security.SecurityLayer;
+import org.apache.qpid.transport.network.security.SecurityLayerFactory;
+import org.apache.qpid.transport.util.Logger;
+import org.apache.qpid.transport.util.Waiter;
+import org.apache.qpid.util.Strings;
 
 
 /**
@@ -71,7 +77,7 @@ public class Connection extends ConnectionInvoker
     private long _lastSendTime;
     private long _lastReadTime;
     private NetworkConnection _networkConnection;
-
+    private FrameSizeObserver _frameSizeObserver;
 
     public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD, RESUMING }
 
@@ -224,7 +230,9 @@ public class Connection extends ConnectionInvoker
             securityLayer = SecurityLayerFactory.newInstance(getConnectionSettings());
 
             OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(ProtocolVersion.v0_10);
-            Receiver<ByteBuffer> secureReceiver = securityLayer.receiver(new InputHandler(new Assembler(this)));
+            final InputHandler inputHandler = new InputHandler(new Assembler(this));
+            addFrameSizeObserver(inputHandler);
+            Receiver<ByteBuffer> secureReceiver = securityLayer.receiver(inputHandler);
             if(secureReceiver instanceof ConnectionListener)
             {
                 addConnectionListener((ConnectionListener)secureReceiver);
@@ -241,7 +249,9 @@ public class Connection extends ConnectionInvoker
             {
                 addConnectionListener((ConnectionListener)secureSender);
             }
-            sender = new Disassembler(secureSender, settings.getMaxFrameSize());
+            Disassembler disassembler = new Disassembler(secureSender, Constant.MIN_MAX_FRAME_SIZE);
+            sender = disassembler;
+            addFrameSizeObserver(disassembler);
 
             send(new ProtocolHeader(1, 0, 10));
 
@@ -808,5 +818,34 @@ public class Connection extends ConnectionInvoker
     public NetworkConnection getNetworkConnection()
     {
         return _networkConnection;
+    }
+
+    public void setMaxFrameSize(final int maxFrameSize)
+    {
+        if(_frameSizeObserver != null)
+        {
+            _frameSizeObserver.setMaxFrameSize(maxFrameSize);
+        }
+    }
+
+    public void addFrameSizeObserver(final FrameSizeObserver frameSizeObserver)
+    {
+        if(_frameSizeObserver == null)
+        {
+            _frameSizeObserver = frameSizeObserver;
+        }
+        else
+        {
+            final FrameSizeObserver currentObserver = _frameSizeObserver;
+            _frameSizeObserver = new FrameSizeObserver()
+                                    {
+                                        @Override
+                                        public void setMaxFrameSize(final int frameSize)
+                                        {
+                                            currentObserver.setMaxFrameSize(frameSize);
+                                            frameSizeObserver.setMaxFrameSize(frameSize);
+                                        }
+                                    };
+        }
     }
 }

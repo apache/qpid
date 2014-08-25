@@ -89,7 +89,7 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
 
     long getLastIoTime();
 
-    Port getPort();
+    Port<?> getPort();
 
     Transport getTransport();
 

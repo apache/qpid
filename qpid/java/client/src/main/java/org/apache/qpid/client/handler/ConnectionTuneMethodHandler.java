@@ -72,6 +72,8 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener<Con
         ConnectionTuneOkBody tuneOkBody = methodRegistry.createConnectionTuneOkBody(params.getChannelMax(),
                                                                                     params.getFrameMax(),
                                                                                     params.getHeartbeat());
+
+        session.setMaxFrameSize(params.getFrameMax());
         // Be aware of possible changes to parameter order as versions change.
         session.writeFrame(tuneOkBody.generateFrame(channelId));
 

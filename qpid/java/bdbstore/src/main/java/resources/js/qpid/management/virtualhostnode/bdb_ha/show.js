@@ -99,7 +99,7 @@ define(["dojo/_base/xhr",
            { name: 'Role', field: 'role', width: '10%' },
            { name: 'Address', field: 'address', width: '35%' },
            { name: 'Join Time', field: 'joinTime', width: '25%', formatter: function(value){ return value ? UserPreferences.formatDateTime(value) : "";} },
-           { name: 'Replication Transaction ID', field: 'lastKnownReplicationTransactionId', width: '20%' }
+           { name: 'Replication Transaction ID', field: 'lastKnownReplicationTransactionId', width: '20%', formatter: function(value){ return value > 0 ? value : "N/A";} }
           ],
           null,
           {

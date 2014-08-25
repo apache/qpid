@@ -20,6 +20,8 @@
 */
 package org.apache.qpid.server.protocol;
 
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.net.InetSocketAddress;
@@ -32,6 +34,7 @@ import java.util.Set;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -52,6 +55,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         _broker = BrokerTestHelper.createBrokerMock();
         when(_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST)).thenReturn("default");
         when(_broker.getDefaultVirtualHost()).thenReturn("default");
+        when(_broker.getContextValue(eq(Long.class), eq(Broker.BROKER_FRAME_SIZE))).thenReturn(0xffffl);
 
     }
 
@@ -149,8 +153,10 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
     {
         Set<Protocol> protocols = getAllAMQPProtocols();
 
+        Port<?> port = mock(Port.class);
+        when(port.getContextValue(eq(Long.class),eq(Port.CONNECTION_MAXIMUM_AUTHENTICATION_DELAY))).thenReturn(10000l);
         MultiVersionProtocolEngineFactory factory =
-            new MultiVersionProtocolEngineFactory(_broker, null, false, false, protocols, null, null,
+            new MultiVersionProtocolEngineFactory(_broker, null, false, false, protocols, null, port,
                     org.apache.qpid.server.model.Transport.TCP);
 
         //create a dummy to retrieve the 'current' ID number

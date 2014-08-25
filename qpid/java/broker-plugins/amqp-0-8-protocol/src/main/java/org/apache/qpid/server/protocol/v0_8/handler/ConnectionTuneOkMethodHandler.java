@@ -22,8 +22,11 @@ package org.apache.qpid.server.protocol.v0_8.handler;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ConnectionTuneOkBody;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
@@ -49,8 +52,29 @@ public class ConnectionTuneOkMethodHandler implements StateAwareMethodListener<C
             _logger.debug(body);
         }
         stateManager.changeState(AMQState.CONNECTION_NOT_OPENED);
+
         session.initHeartbeats(body.getHeartbeat());
-        session.setMaxFrameSize(body.getFrameMax());
+
+        long brokerFrameMax = stateManager.getBroker().getContextValue(Long.class,Broker.BROKER_FRAME_SIZE);
+        if(brokerFrameMax != 0 && body.getFrameMax() > brokerFrameMax)
+        {
+            throw new AMQConnectionException(AMQConstant.SYNTAX_ERROR,
+                                             "Attempt to set max frame size to " + body.getFrameMax()
+                                             + "greater than the broker will allow: "
+                                             + brokerFrameMax,
+                                             body.getClazz(), body.getMethod(),
+                                             body.getMajor(), body.getMinor(),null);
+        }
+        else if(body.getFrameMax() > 0 && body.getFrameMax() < AMQConstant.FRAME_MIN_SIZE.getCode())
+        {
+            throw new AMQConnectionException(AMQConstant.SYNTAX_ERROR,
+                                             "Attempt to set max frame size to " + body.getFrameMax()
+                                             + "which is smaller than the specification definined minimum: "
+                                             + AMQConstant.FRAME_MIN_SIZE.getCode(),
+                                             body.getClazz(), body.getMethod(),
+                                             body.getMajor(), body.getMinor(),null);
+        }
+        session.setMaxFrameSize(body.getFrameMax()== 0l ? (brokerFrameMax == 0l ? 0xFFFFFFFFl : brokerFrameMax) : body.getFrameMax());
 
         long maxChannelNumber = body.getChannelMax();
         //0 means no implied limit, except that forced by protocol limitations (0xFFFF)

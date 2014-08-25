@@ -293,7 +293,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
             else
             {
                 msgheader.limit(_header.remaining());
-                msg.position(_header.remaining());
+                msg.position(msg.position()+_header.remaining());
             }
 
             _header.put(msgheader);

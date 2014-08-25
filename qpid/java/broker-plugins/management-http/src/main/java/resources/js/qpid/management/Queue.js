@@ -333,7 +333,11 @@ define(["dojo/_base/xhr",
                            "bytesInRateUnits",
                            "msgOutRate",
                            "bytesOutRate",
-                           "bytesOutRateUnits"]);
+                           "bytesOutRateUnits",
+                           "queueFlowResumeSizeBytes",
+                           "queueFlowControlSizeBytes",
+                           "maximumDeliveryAttempts",
+                           "oldestMessageAge"]);
 
 
 
@@ -413,6 +417,13 @@ define(["dojo/_base/xhr",
                {
                    this.messageGroups.style.display = "none";
                }
+
+               this.queueFlowControlSizeBytes.innerHTML = entities.encode(String(this.queueData[ "queueFlowControlSizeBytes" ]));
+               this.queueFlowResumeSizeBytes.innerHTML = entities.encode(String(this.queueData[ "queueFlowResumeSizeBytes" ]));
+
+               this.oldestMessageAge.innerHTML = entities.encode(String(this.queueData[ "oldestMessageAge" ] / 1000));
+               var maximumDeliveryAttempts = this.queueData[ "maximumDeliveryAttempts" ];
+               this.maximumDeliveryAttempts.innerHTML = entities.encode(String( maximumDeliveryAttempts == 0 ? "" : maximumDeliveryAttempts));
            };
 
            QueueUpdater.prototype.update = function()

@@ -20,19 +20,20 @@
  */
 package org.apache.qpid.transport;
 
+import static org.apache.qpid.transport.Connection.State.OPEN;
+import static org.apache.qpid.transport.Connection.State.RESUMING;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
+
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.transport.util.Logger;
-
-import static org.apache.qpid.transport.Connection.State.OPEN;
-import static org.apache.qpid.transport.Connection.State.RESUMING;
-
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 
 /**
@@ -138,13 +139,24 @@ public class ClientDelegate extends ConnectionDelegate
         int actualHeartbeatInterval = calculateHeartbeatInterval(heartbeatInterval,
                                                            tune.getHeartbeatMin(),
                                                            tune.getHeartbeatMax());
+        int maxFrameSize = tune.getMaxFrameSize();
+        int settingsMaxFrameSize = conn.getConnectionSettings().getMaxFrameSize();
+        if(maxFrameSize == 0 && settingsMaxFrameSize != 0 && settingsMaxFrameSize < 0xffff)
+        {
+            maxFrameSize = Math.max(Constant.MIN_MAX_FRAME_SIZE, settingsMaxFrameSize);
+        }
+        else if(maxFrameSize != 0 && settingsMaxFrameSize != 0)
+        {
+            maxFrameSize = Math.max(Constant.MIN_MAX_FRAME_SIZE, Math.min(maxFrameSize, settingsMaxFrameSize));
+        }
         conn.connectionTuneOk(tune.getChannelMax(),
-                              tune.getMaxFrameSize(),
+                              maxFrameSize,
                               actualHeartbeatInterval);
 
         int idleTimeout = (int)(actualHeartbeatInterval * 1000 * heartbeatTimeoutFactor);
         conn.getNetworkConnection().setMaxReadIdle((int)(actualHeartbeatInterval*heartbeatTimeoutFactor));
         conn.getNetworkConnection().setMaxWriteIdle(actualHeartbeatInterval);
+        conn.setMaxFrameSize(maxFrameSize == 0 ? 0xffff : maxFrameSize);
         conn.setIdleTimeout(idleTimeout);
 
         int channelMax = tune.getChannelMax();
@@ -183,7 +195,7 @@ public class ClientDelegate extends ConnectionDelegate
     /**
      * Currently the spec specified the min and max for heartbeat using secs
      */
-    private int calculateHeartbeatInterval(int heartbeat,int min, int max)
+    int calculateHeartbeatInterval(int heartbeat,int min, int max)
     {
         int i = heartbeat;
         if (i == 0)

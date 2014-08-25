@@ -20,27 +20,32 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
+import javax.security.auth.Subject;
+
+import org.apache.log4j.Logger;
+
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.transport.Constant;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.Assembler;
 import org.apache.qpid.transport.network.Disassembler;
 import org.apache.qpid.transport.network.InputHandler;
 import org.apache.qpid.transport.network.NetworkConnection;
 
-import javax.security.auth.Subject;
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 
 public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocolEngine
 {
     public static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
+    private static final Logger _logger = Logger.getLogger(ProtocolEngine_0_10.class);
+
 
     private NetworkConnection _network;
     private long _readBytes;
@@ -87,7 +92,9 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
             _network = network;
 
             _connection.setNetworkConnection(network);
-            _connection.setSender(new Disassembler(wrapSender(sender), MAX_FRAME_SIZE));
+            Disassembler disassembler = new Disassembler(wrapSender(sender), Constant.MIN_MAX_FRAME_SIZE);
+            _connection.setSender(disassembler);
+            _connection.addFrameSizeObserver(disassembler);
             // FIXME Two log messages to maintain compatibility with earlier protocol versions
             _connection.getEventLogger().message(ConnectionMessages.OPEN(null, "0-10", null, null, false, true, false, false));
 
@@ -154,6 +161,26 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     public void received(final ByteBuffer buf)
     {
         _lastReadTime = System.currentTimeMillis();
+        if(_connection.getAuthorizedPrincipal() == null &&
+           (_lastReadTime - _createTime) > _connection.getPort().getContextValue(Long.class,
+                                                                                 Port.CONNECTION_MAXIMUM_AUTHENTICATION_DELAY) )
+        {
+            Subject.doAs(_connection.getAuthorizedSubject(), new PrivilegedAction<Object>()
+            {
+                @Override
+                public Object run()
+                {
+
+                    _logger.warn("Connection has taken more than "
+                                 + _connection.getPort()
+                            .getContextValue(Long.class, Port.CONNECTION_MAXIMUM_AUTHENTICATION_DELAY)
+                                 + "ms to establish identity.  Closing as possible DoS.");
+                    _connection.getEventLogger().message(ConnectionMessages.IDLE_CLOSE());
+                    _network.close();
+                    return null;
+                }
+            });
+        }
         super.received(buf);
         _connection.receivedComplete();
     }

@@ -75,7 +75,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     private final long _connectionId;
     private final Object _reference = new Object();
     private VirtualHostImpl _virtualHost;
-    private Port _port;
+    private Port<?> _port;
     private AtomicLong _lastIoTime = new AtomicLong();
     private boolean _blocking;
     private Transport _transport;
@@ -189,12 +189,12 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     }
 
     @Override
-    public Port getPort()
+    public Port<?> getPort()
     {
         return _port;
     }
 
-    public void setPort(Port port)
+    public void setPort(Port<?> port)
     {
         _port = port;
     }

@@ -20,6 +20,17 @@
  */
 package org.apache.qpid.transport.network;
 
+import static java.lang.Math.min;
+import static org.apache.qpid.transport.network.Frame.FIRST_FRAME;
+import static org.apache.qpid.transport.network.Frame.FIRST_SEG;
+import static org.apache.qpid.transport.network.Frame.HEADER_SIZE;
+import static org.apache.qpid.transport.network.Frame.LAST_FRAME;
+import static org.apache.qpid.transport.network.Frame.LAST_SEG;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
+import org.apache.qpid.transport.FrameSizeObserver;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.ProtocolDelegate;
@@ -31,24 +42,13 @@ import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.Struct;
 import org.apache.qpid.transport.codec.BBEncoder;
 
-import static org.apache.qpid.transport.network.Frame.FIRST_FRAME;
-import static org.apache.qpid.transport.network.Frame.FIRST_SEG;
-import static org.apache.qpid.transport.network.Frame.HEADER_SIZE;
-import static org.apache.qpid.transport.network.Frame.LAST_FRAME;
-import static org.apache.qpid.transport.network.Frame.LAST_SEG;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
-import static java.lang.Math.min;
-
 /**
  * Disassembler
  */
-public final class Disassembler implements Sender<ProtocolEvent>, ProtocolDelegate<Void>
+public final class Disassembler implements Sender<ProtocolEvent>, ProtocolDelegate<Void>, FrameSizeObserver
 {
     private final Sender<ByteBuffer> sender;
-    private final int maxPayload;
+    private int maxPayload;
     private final Object sendlock = new Object();
     private final static ThreadLocal<BBEncoder> _encoder = new ThreadLocal<BBEncoder>()
     {
@@ -60,11 +60,11 @@ public final class Disassembler implements Sender<ProtocolEvent>, ProtocolDelega
 
     public Disassembler(Sender<ByteBuffer> sender, int maxFrame)
     {
+        this.sender = sender;
         if (maxFrame <= HEADER_SIZE || maxFrame >= 64*1024)
         {
             throw new IllegalArgumentException("maxFrame must be > HEADER_SIZE and < 64K: " + maxFrame);
         }
-        this.sender = sender;
         this.maxPayload  = maxFrame - HEADER_SIZE;
     }
 
@@ -254,5 +254,16 @@ public final class Disassembler implements Sender<ProtocolEvent>, ProtocolDelega
     public void setIdleTimeout(int i)
     {
         sender.setIdleTimeout(i);
+    }
+
+    @Override
+    public void setMaxFrameSize(final int maxFrame)
+    {
+        if (maxFrame <= HEADER_SIZE || maxFrame >= 64*1024)
+        {
+            throw new IllegalArgumentException("maxFrame must be > HEADER_SIZE and < 64K: " + maxFrame);
+        }
+        this.maxPayload  = maxFrame - HEADER_SIZE;
+
     }
 }

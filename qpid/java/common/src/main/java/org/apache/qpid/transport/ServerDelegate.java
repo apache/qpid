@@ -20,17 +20,18 @@
  */
 package org.apache.qpid.transport;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import static org.apache.qpid.transport.Connection.State.OPEN;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * ServerDelegate
@@ -136,12 +137,14 @@ public class ServerDelegate extends ConnectionDelegate
 
     protected void tuneAuthorizedConnection(final Connection conn)
     {
-        conn.connectionTune
-            (getChannelMax(),
-             org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
-             0, getHeartbeatMax());
+        conn.connectionTune(getChannelMax(), getFrameMax(), 0, getHeartbeatMax());
     }
-    
+
+    protected int getFrameMax()
+    {
+        return org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE;
+    }
+
     protected void secure(final Connection conn, final byte[] response)
     {
         final SaslServer ss = conn.getSaslServer();

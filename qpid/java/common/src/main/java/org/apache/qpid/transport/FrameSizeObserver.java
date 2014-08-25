@@ -18,14 +18,9 @@
  * under the License.
  *
  */
-package org.apache.qpid.framing;
+package org.apache.qpid.transport;
 
-import org.apache.qpid.transport.TransportException;
-
-public class AMQProtocolHeaderException extends TransportException
+public interface FrameSizeObserver
 {
-    public AMQProtocolHeaderException(String message, Throwable cause)
-    {
-        super(message, cause);
-    }
+    void setMaxFrameSize(int frameSize);
 }

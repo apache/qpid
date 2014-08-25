@@ -584,7 +584,7 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
-        public Port getPort()
+        public Port<?> getPort()
         {
             return null;
         }

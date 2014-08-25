@@ -20,8 +20,16 @@
  */
 package org.apache.qpid.client.protocol;
 
+import java.nio.ByteBuffer;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import javax.jms.JMSException;
+import javax.security.sasl.SaslClient;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
@@ -46,13 +54,6 @@ import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
-
-import javax.jms.JMSException;
-import javax.security.sasl.SaslClient;
-
-import java.nio.ByteBuffer;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Wrapper for protocol session that provides type-safe access to session attributes.
@@ -542,5 +543,10 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     public FieldTable getConnectionStartServerProperties()
     {
         return _connectionStartServerProperties;
+    }
+
+    public void setMaxFrameSize(final long frameMax)
+    {
+        _protocolHandler.setMaxFrameSize(frameMax);
     }
 }

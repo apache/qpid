@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.framing;
 
+import java.io.IOException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.codec.MarkableDataInput;
-
-import java.io.IOException;
+import org.apache.qpid.protocol.AMQConstant;
 
 public class AMQDataBlockDecoder
 {
@@ -40,6 +41,7 @@ public class AMQDataBlockDecoder
     }
 
     private Logger _logger = LoggerFactory.getLogger(AMQDataBlockDecoder.class);
+    private long _maxFrameSize = AMQConstant.FRAME_MIN_SIZE.getCode();
 
     public AMQDataBlockDecoder()
     { }
@@ -59,14 +61,17 @@ public class AMQDataBlockDecoder
 
         // Get an unsigned int, lifted from MINA ByteBuffer getUnsignedInt() 
         final long bodySize = in.readInt() & 0xffffffffL;
-
+        if(bodySize > _maxFrameSize)
+        {
+            throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR, "Incoming frame size of "+bodySize+" is larger than negotiated maximum of  " + _maxFrameSize);
+        }
         in.reset();
 
         return (remainingAfterAttributes >= bodySize);
 
     }
 
-    public AMQFrame createAndPopulateFrame(AMQMethodBodyFactory methodBodyFactory, MarkableDataInput in)
+    public AMQFrame createAndPopulateFrame(BodyFactory methodBodyFactory, MarkableDataInput in)
             throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
     {
         final byte type = in.readByte();
@@ -83,7 +88,7 @@ public class AMQDataBlockDecoder
 
         if (bodyFactory == null)
         {
-            throw new AMQFrameDecodingException(null, "Unsupported frame type: " + type, null);
+            throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR, "Unsupported frame type: " + type);
         }
 
         final int channel = in.readUnsignedShort();
@@ -92,8 +97,8 @@ public class AMQDataBlockDecoder
         // bodySize can be zero
         if ((channel < 0) || (bodySize < 0))
         {
-            throw new AMQFrameDecodingException(null, "Undecodable frame: type = " + type + " channel = " + channel
-                + " bodySize = " + bodySize, null);
+            throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR, "Undecodable frame: type = " + type + " channel = " + channel
+                + " bodySize = " + bodySize);
         }
 
         AMQFrame frame = new AMQFrame(in, channel, bodySize, bodyFactory);
@@ -101,11 +106,15 @@ public class AMQDataBlockDecoder
         byte marker = in.readByte();
         if ((marker & 0xFF) != 0xCE)
         {
-            throw new AMQFrameDecodingException(null, "End of frame marker not found. Read " + marker + " length=" + bodySize
-                + " type=" + type, null);
+            throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR, "End of frame marker not found. Read " + marker + " length=" + bodySize
+                + " type=" + type);
         }
 
         return frame;
     }
 
+    public void setMaxFrameSize(final long maxFrameSize)
+    {
+        _maxFrameSize = maxFrameSize;
+    }
 }

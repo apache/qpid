@@ -51,12 +51,12 @@ public class AMQStateManager implements AMQMethodListener
 {
     private static final Logger _logger = Logger.getLogger(AMQStateManager.class);
 
-    private final Broker _broker;
+    private final Broker<?> _broker;
     private final AMQProtocolSession _protocolSession;
     /** The current state */
     private AMQState _currentState;
 
-    public AMQStateManager(Broker broker, AMQProtocolSession protocolSession)
+    public AMQStateManager(Broker<?> broker, AMQProtocolSession protocolSession)
     {
         _broker = broker;
         _protocolSession = protocolSession;
@@ -69,7 +69,7 @@ public class AMQStateManager implements AMQMethodListener
      *
      * @return the Broker
      */
-    public Broker getBroker()
+    public Broker<?> getBroker()
     {
         return _broker;
     }
