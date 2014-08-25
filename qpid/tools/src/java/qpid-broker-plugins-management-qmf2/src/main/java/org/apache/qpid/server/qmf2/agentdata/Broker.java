@@ -364,7 +364,8 @@ public class Broker extends QmfAgentData
         {
             boolean isAMQP = false;
             boolean isTCP  = false;
-            for (Protocol protocol : port.getAvailableProtocols())
+
+            for (Protocol protocol : port.getProtocols())
             {
                 isAMQP = protocol.isAMQP();
                 if (isAMQP)
