@@ -17,11 +17,12 @@
  * under the License.
  */
 define(["dojo/_base/xhr",
+        "dojo/_base/array",
         "dojox/lang/functional/object",
         "qpid/common/properties",
         "dojo/domReady!"
         ],
-  function (xhr, fobject, properties)
+  function (xhr, array, fobject, properties)
   {
    var metadata =
    {
@@ -48,6 +49,22 @@ define(["dojo/_base/xhr",
      getTypesForCategory: function (category)
      {
         return fobject.keys(this.metadata[category]);
+     },
+     extractUniqueListOfValues : function(data)
+     {
+        var values = [];
+        for (i = 0; i < data.length; i++)
+        {
+           for (j = 0; j < data[i].length; j++)
+           {
+               var current = data[i][j];
+               if (array.indexOf(values, current) == -1)
+               {
+                   values.push(current);
+               }
+           }
+        }
+        return values;
      }
    };
 

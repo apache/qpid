@@ -49,12 +49,14 @@
     <!-- enforcer plugin config properties -->
     <supported-test-profiles-regex>(java-mms.0-9|java-mms.0-9-1|java-mms.0-10|java-bdb.0-9|java-bdb.0-9-1|java-bdb.0-10|java-dby.0-9|java-dby.0-9-1|java-dby.0-10|java-dby-mem.0-9|java-dby-mem.0-9-1|java-dby-mem.0-10|cpp|java-json.0-9-1|java-json.0-10)</supported-test-profiles-regex>
 
+    <!-- surefire forked jvm arguments -->
+    <argLine>-Xmx512m</argLine>
+
     <!-- test profile properties and defaults-->
     <qpid.home>${basedir}</qpid.home> <!-- override for broker tests -->
     <qpid.home.qbtc.output>${qpid.home}${file.separator}target${file.separator}qbtc-output</qpid.home.qbtc.output> <!-- override for broker tests -->
     <qpid.work>${project.build.directory}${file.separator}QPID_WORK</qpid.work>
 
-    <argLine />
     <profile>java-mms.0-10</profile>
     <profile.broker.language>java</profile.broker.language>
     <profile.broker.type>internal</profile.broker.type>
@@ -203,7 +205,6 @@
           <includes>
             <include>**/*Test.java</include>
           </includes>
-          <argLine>${argLine} -Xmx512m</argLine>
           <systemPropertyVariables>
             <!-- Defaults -->
             <QPID_HOME>${qpid.home}</QPID_HOME>

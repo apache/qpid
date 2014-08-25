@@ -20,24 +20,27 @@
  */
 package org.apache.qpid.server.virtualhostnode;
 
+import java.io.IOException;
 import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.VirtualHostStoreUpgraderAndRecoverer;
 
 public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandardVirtualHostNode<X>> extends AbstractVirtualHostNode<X>
@@ -71,7 +74,20 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
             LOGGER.debug("Activating virtualhost node " + this);
         }
 
-        getConfigurationStore().openConfigurationStore(this, false);
+        try
+        {
+            ConfiguredObjectRecord[] initialRecords = getInitialRecords();
+            getConfigurationStore().openConfigurationStore(this, false, initialRecords);
+            if(initialRecords != null && initialRecords.length > 0)
+            {
+                setAttribute(VIRTUALHOST_INITIAL_CONFIGURATION, getVirtualHostInitialConfiguration(), "{}");
+            }
+        }
+        catch (IOException e)
+        {
+            throw new IllegalConfigurationException("Could not process initial configuration", e);
+        }
+
         getConfigurationStore().upgradeStoreStructure();
 
         getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.CREATED());
@@ -87,47 +103,7 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
 
         VirtualHost<?,?,?>  host = getVirtualHost();
 
-        if (host == null)
-        {
-
-            boolean hasBlueprint = getContextKeys(false).contains(VIRTUALHOST_BLUEPRINT_CONTEXT_VAR);
-            boolean blueprintUtilised = getContext().containsKey(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR)
-                    && Boolean.parseBoolean(String.valueOf(getContext().get(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR)));
-
-            if (hasBlueprint && !blueprintUtilised)
-            {
-                Map<String, Object> virtualhostBlueprint = getContextValue(Map.class, VIRTUALHOST_BLUEPRINT_CONTEXT_VAR);
-
-                if (LOGGER.isDebugEnabled())
-                {
-                    LOGGER.debug("Using virtualhost blueprint " + virtualhostBlueprint);
-                }
-
-                Map<String, Object> virtualhostAttributes = new HashMap<>();
-                virtualhostAttributes.put(VirtualHost.MODEL_VERSION, BrokerModel.MODEL_VERSION);
-                virtualhostAttributes.put(VirtualHost.NAME, getName());
-                virtualhostAttributes.putAll(virtualhostBlueprint);
-
-                if (LOGGER.isDebugEnabled())
-                {
-                    LOGGER.debug("Creating new virtualhost named " + virtualhostAttributes.get(VirtualHost.NAME));
-                }
-
-                host = createChild(VirtualHost.class, virtualhostAttributes);
-
-                if (LOGGER.isDebugEnabled())
-                {
-                    LOGGER.debug("Created new virtualhost: " + host);
-                }
-
-                // Update the context with the utilised flag
-                Map<String, String> actualContext = (Map<String, String>) getActualAttributes().get(CONTEXT);
-                Map<String, String> context = new HashMap<>(actualContext);
-                context.put(VIRTUALHOST_BLUEPRINT_UTILISED_CONTEXT_VAR, Boolean.TRUE.toString());
-                setAttribute(CONTEXT, getContext(), context);
-            }
-        }
-        else
+        if (host != null)
         {
             final VirtualHost<?,?,?> recoveredHost = host;
             Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
@@ -141,6 +117,44 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
             });
         }
     }
+
+
+    @Override
+    protected ConfiguredObjectRecord enrichInitialVirtualHostRootRecord(final ConfiguredObjectRecord vhostRecord)
+    {
+        ConfiguredObjectRecord replacementRecord;
+        if (vhostRecord.getAttributes().get(ConfiguredObject.NAME) == null)
+        {
+            Map<String, Object> updatedAttributes = new LinkedHashMap<>(vhostRecord.getAttributes());
+            updatedAttributes.put(ConfiguredObject.NAME, getName());
+            if (!updatedAttributes.containsKey(VirtualHost.MODEL_VERSION))
+            {
+                updatedAttributes.put(VirtualHost.MODEL_VERSION, getBroker().getModelVersion());
+            }
+            replacementRecord = new ConfiguredObjectRecordImpl(vhostRecord.getId(),
+                                                               vhostRecord.getType(),
+                                                               updatedAttributes,
+                                                               vhostRecord.getParents());
+        }
+        else if (vhostRecord.getAttributes().get(VirtualHost.MODEL_VERSION) == null)
+        {
+            Map<String, Object> updatedAttributes = new LinkedHashMap<>(vhostRecord.getAttributes());
+
+            updatedAttributes.put(VirtualHost.MODEL_VERSION, getBroker().getModelVersion());
+
+            replacementRecord = new ConfiguredObjectRecordImpl(vhostRecord.getId(),
+                                                               vhostRecord.getType(),
+                                                               updatedAttributes,
+                                                               vhostRecord.getParents());
+        }
+        else
+        {
+            replacementRecord = vhostRecord;
+        }
+
+        return replacementRecord;
+    }
+
 
     protected abstract void writeLocationEventLog();
 

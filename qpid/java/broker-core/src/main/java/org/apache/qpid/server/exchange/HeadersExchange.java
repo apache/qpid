@@ -123,7 +123,6 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
     {
         String bindingKey = binding.getBindingKey();
         AMQQueue queue = binding.getAMQQueue();
-        Map<String,Object> args = binding.getArguments();
 
         assert queue != null;
         assert bindingKey != null;
@@ -143,7 +142,7 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
         if(_logger.isDebugEnabled())
         {
             _logger.debug("Exchange " + getName() + ": Binding " + queue.getName() +
-                          " with binding key '" +bindingKey + "' and args: " + args);
+                          " with binding key '" +bindingKey + "' and args: " + binding.getArguments());
         }
 
         _bindingHeaderMatchers.add(new HeadersBinding(binding));

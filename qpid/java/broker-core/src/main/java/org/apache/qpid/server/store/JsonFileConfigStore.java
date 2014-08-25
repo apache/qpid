@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -56,6 +57,28 @@ import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 public class JsonFileConfigStore implements DurableConfigurationStore
 {
     private static final Logger _logger = Logger.getLogger(JsonFileConfigStore.class);
+
+    private static final Comparator<Class<? extends ConfiguredObject>> CATEGORY_CLASS_COMPARATOR =
+            new Comparator<Class<? extends ConfiguredObject>>()
+            {
+                @Override
+                public int compare(final Class<? extends ConfiguredObject> left,
+                                   final Class<? extends ConfiguredObject> right)
+                {
+                    return left.getSimpleName().compareTo(right.getSimpleName());
+                }
+            };
+    private static final Comparator<ConfiguredObjectRecord> CONFIGURED_OBJECT_RECORD_COMPARATOR =
+            new Comparator<ConfiguredObjectRecord>()
+            {
+                @Override
+                public int compare(final ConfiguredObjectRecord left, final ConfiguredObjectRecord right)
+                {
+                    String leftName = (String) left.getAttributes().get(ConfiguredObject.NAME);
+                    String rightName = (String) right.getAttributes().get(ConfiguredObject.NAME);
+                    return leftName.compareTo(rightName);
+                }
+            };
 
     private final Map<UUID, ConfiguredObjectRecord> _objectsById = new HashMap<UUID, ConfiguredObjectRecord>();
     private final Map<String, List<UUID>> _idsByType = new HashMap<String, List<UUID>>();
@@ -313,6 +336,14 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         {
             throw new StoreException("Cannot create object of unknown type " + record.getType());
         }
+        else if(record.getAttributes() == null || !(record.getAttributes().get(ConfiguredObject.NAME) instanceof String))
+        {
+            throw new StoreException("The record " + record.getId()
+                                     + " of type " + record.getType()
+                                     + " does not have an attribute '"
+                                     + ConfiguredObject.NAME
+                                     + "' of type String");
+        }
         else
         {
             record = new ConfiguredObjectRecordImpl(record);
@@ -385,8 +416,6 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     {
         ConfiguredObjectRecord record = _objectsById.get(id);
         Map<String,Object> map = new LinkedHashMap<String, Object>();
-        map.put("id", id);
-        map.putAll(record.getAttributes());
 
         Collection<Class<? extends ConfiguredObject>> parentTypes = _parent.getModel().getParentTypes(type);
         if(parentTypes.size() > 1)
@@ -403,8 +432,13 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             }
         }
 
-        Collection<Class<? extends ConfiguredObject>> childClasses =
+        map.put("id", id);
+        map.putAll(record.getAttributes());
+
+        List<Class<? extends ConfiguredObject>> childClasses =
                 new ArrayList<Class<? extends ConfiguredObject>>(_parent.getModel().getChildTypes(type));
+
+        Collections.sort(childClasses, CATEGORY_CLASS_COMPARATOR);
 
         for(Class<? extends ConfiguredObject> childClass : childClasses)
         {
@@ -416,6 +450,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                 if(childIds != null)
                 {
                     List<Map<String,Object>> entities = new ArrayList<Map<String, Object>>();
+                    List<ConfiguredObjectRecord> sortedChildren = new ArrayList<>();
                     for(UUID childId : childIds)
                     {
                         ConfiguredObjectRecord childRecord = _objectsById.get(childId);
@@ -424,9 +459,17 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                         String parentId = parent.toString();
                         if(id.toString().equals(parentId))
                         {
-                            entities.add(build(childClass,childId));
+                            sortedChildren.add(childRecord);
                         }
                     }
+
+                    Collections.sort(sortedChildren, CONFIGURED_OBJECT_RECORD_COMPARATOR);
+
+                    for(ConfiguredObjectRecord childRecord : sortedChildren)
+                    {
+                        entities.add(build(childClass, childRecord.getId()));
+                    }
+
                     if(!entities.isEmpty())
                     {
                         map.put(attrName,entities);
@@ -474,6 +517,13 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         {
             final UUID id = record.getId();
             final String type = record.getType();
+
+            if(record.getAttributes() == null || !(record.getAttributes().get(ConfiguredObject.NAME) instanceof String))
+            {
+                throw new StoreException("The record " + id + " of type " + type + " does not have an attribute '"
+                                         + ConfiguredObject.NAME
+                                         + "' of type String");
+            }
 
             if(_objectsById.containsKey(id))
             {

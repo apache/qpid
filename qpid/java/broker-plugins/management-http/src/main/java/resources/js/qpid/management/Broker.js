@@ -210,7 +210,7 @@ define(["dojo/_base/xhr",
 
                             var addPortButton = query(".addPort", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(addPortButton), "onClick", function(evt){
-                              addPort.show(null, that.brokerUpdater.brokerData.authenticationproviders,
+                              addPort.show(null, "AMQP", that.brokerUpdater.brokerData.authenticationproviders,
                                   that.brokerUpdater.brokerData.keystores, that.brokerUpdater.brokerData.truststores);
                             });
 

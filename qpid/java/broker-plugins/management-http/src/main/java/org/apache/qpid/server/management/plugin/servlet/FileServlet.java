@@ -119,7 +119,7 @@ public class FileServlet extends HttpServlet
         }
         else
         {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "unknown file: "+ filename);
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "unknown file");
         }
 
     }

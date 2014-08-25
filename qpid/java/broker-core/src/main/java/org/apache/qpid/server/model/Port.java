@@ -45,9 +45,6 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
 
     // Attributes
 
-    @ManagedAttribute(defaultValue = "*")
-    String getBindingAddress();
-
     @ManagedAttribute( mandatory = true )
     int getPort();
 

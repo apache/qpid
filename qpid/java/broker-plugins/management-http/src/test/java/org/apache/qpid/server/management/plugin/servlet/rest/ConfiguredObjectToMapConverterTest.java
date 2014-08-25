@@ -58,7 +58,7 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
         when(_configuredObject.getStatistics()).thenReturn(Collections.singletonMap(statisticName, (Number) statisticValue));
 
         Map<String, Object> resultMap = _converter.convertObjectToMap(_configuredObject, ConfiguredObject.class, 0,
-                                                                      false, false);
+                                                                      false, false, false);
         Map<String, Object> statsAsMap = (Map<String, Object>) resultMap.get(STATISTICS_MAP_KEY);
         assertNotNull("Statistics should be part of map", statsAsMap);
         assertEquals("Unexpected number of statistics", 1, statsAsMap.size());
@@ -72,7 +72,7 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
         configureMockToReturnOneAttribute(_configuredObject, attributeName, attributeValue);
 
         Map<String, Object> resultMap = _converter.convertObjectToMap(_configuredObject, ConfiguredObject.class, 0,
-                                                                      false, false);
+                                                                      false, false, false);
         assertEquals("Unexpected number of attributes", 1, resultMap.size());
         assertEquals("Unexpected attribute value", attributeValue, resultMap.get(attributeName));
     }
@@ -90,7 +90,7 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
         configureMockToReturnOneAttribute(_configuredObject, attributeName, attributeValue);
 
         Map<String, Object> resultMap = _converter.convertObjectToMap(_configuredObject, ConfiguredObject.class, 0,
-                                                                      false, false);
+                                                                      false, false, false);
         assertEquals("Unexpected number of attributes", 1, resultMap.size());
         assertEquals("Unexpected attribute value", "attributeConfiguredObjectName", resultMap.get(attributeName));
     }
@@ -109,7 +109,7 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
         when(_configuredObject.getChildren(TestChild.class)).thenReturn(Arrays.asList(mockChild));
 
         Map<String, Object> resultMap = _converter.convertObjectToMap(_configuredObject, ConfiguredObject.class, 1,
-                                                                      false, false);
+                                                                      false, false, false);
         assertEquals("Unexpected parent map size", 1, resultMap.size());
 
         final List<Map<String, Object>> childList = (List<Map<String, Object>>) resultMap.get("testchilds");
@@ -146,18 +146,18 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
 
 
         Map<String, Object> resultMap = _converter.convertObjectToMap(_configuredObject, ConfiguredObject.class, 1, true,
-                                                                      false);
+                                                                      false, false);
         assertEquals("Unexpected parent map size", 2, resultMap.size());
         assertEquals("Incorrect context", resultMap.get(ConfiguredObject.CONTEXT), actualContext);
         List<Map<String, Object>> childList = (List<Map<String, Object>>) resultMap.get("testchilds");
         assertEquals("Unexpected number of children", 1, childList.size());
         Map<String, Object> childMap = childList.get(0);
-        assertEquals("Unexpected child map size", 2, childMap.size());
         assertNotNull(childMap);
+        assertEquals("Unexpected child map size", 1, childMap.size());
 
         assertEquals("Unexpected child attribute value", childActualAttributeValue, childMap.get(childAttributeName));
 
-        resultMap = _converter.convertObjectToMap(_configuredObject, ConfiguredObject.class, 1, false, false);
+        resultMap = _converter.convertObjectToMap(_configuredObject, ConfiguredObject.class, 1, false, false, false);
         assertEquals("Unexpected parent map size", 2, resultMap.size());
         Map<String, Object> inheritedContext = new HashMap<>();
         inheritedContext.put("key","value");
@@ -166,7 +166,7 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
         childList = (List<Map<String, Object>>) resultMap.get("testchilds");
         assertEquals("Unexpected number of children", 1, childList.size());
         childMap = childList.get(0);
-        assertEquals("Unexpected child map size", 2, childMap.size());
+        assertEquals("Unexpected child map size", 1, childMap.size());
         assertNotNull(childMap);
 
         assertEquals("Unexpected child attribute value", childAttributeValue, childMap.get(childAttributeName));

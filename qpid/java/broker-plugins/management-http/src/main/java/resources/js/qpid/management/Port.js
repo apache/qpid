@@ -30,8 +30,9 @@ define(["dojo/dom",
         "qpid/common/util",
         "qpid/common/formatter",
         "qpid/management/addPort",
+        "qpid/common/metadata",
         "dojo/domReady!"],
-       function (dom, xhr, parser, query, connect, registry, entities, properties, updater, util, formatter, addPort) {
+       function (dom, xhr, parser, query, connect, registry, entities, properties, updater, util, formatter, addPort, metadata) {
 
            function Port(name, parent, controller) {
                this.name = name;
@@ -104,7 +105,7 @@ define(["dojo/dom",
                .then(function(data)
                      {
                          var brokerData= data[0];
-                         addPort.show(that.name, brokerData.authenticationproviders, brokerData.keystores, brokerData.truststores);
+                         addPort.show(that.name, that.portUpdater.portData.type, brokerData.authenticationproviders, brokerData.keystores, brokerData.truststores);
                      }
                );
            }
@@ -126,6 +127,7 @@ define(["dojo/dom",
 
                storeNodes(["nameValue",
                            "stateValue",
+                           "typeValue",
                            "portValue",
                            "authenticationProviderValue",
                            "protocolsValue",
@@ -146,7 +148,7 @@ define(["dojo/dom",
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
                                {
-                                  that.keyStoreData = data[0];
+                                  that.portData = data[0];
                                   that.updateHeader();
                                });
 
@@ -166,26 +168,26 @@ define(["dojo/dom",
                    return data + "</div>";
                }
 
-              this.nameValue.innerHTML = entities.encode(String(this.keyStoreData[ "name" ]));
-              this.stateValue.innerHTML = entities.encode(String(this.keyStoreData[ "state" ]));
-              this.portValue.innerHTML = entities.encode(String(this.keyStoreData[ "port" ]));
-              this.authenticationProviderValue.innerHTML = this.keyStoreData[ "authenticationProvider" ] ? entities.encode(String(this.keyStoreData[ "authenticationProvider" ])) : "";
-              this.protocolsValue.innerHTML = printArray( "protocols", this.keyStoreData);
-              this.transportsValue.innerHTML = printArray( "transports", this.keyStoreData);
-              this.bindingAddressValue.innerHTML = this.keyStoreData[ "bindingAddress" ] ? entities.encode(String(this.keyStoreData[ "bindingAddress" ])) : "" ;
-              this.keyStoreValue.innerHTML = this.keyStoreData[ "keyStore" ] ? entities.encode(String(this.keyStoreData[ "keyStore" ])) : "";
-              this.needClientAuthValue.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.keyStoreData[ "needClientAuth" ] ? "checked='checked'": "")+" />" ;
-              this.wantClientAuthValue.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.keyStoreData[ "wantClientAuth" ] ? "checked='checked'": "")+" />" ;
-              this.trustStoresValue.innerHTML = printArray( "trustStores", this.keyStoreData);
-              var amqpProtocol = this.keyStoreData["protocols"][0] && this.keyStoreData["protocols"][0].indexOf("AMQP") == 0;
-              this.bindingAddress.style.display= amqpProtocol? "block" : "none";
-              var sslTransport = this.keyStoreData["transports"][0] && this.keyStoreData["transports"][0] == "SSL";
-              var displayStyle = sslTransport ? "block" : "none";
-              this.trustStoresValue.style.display = displayStyle;
-              this.keyStore.style.display = displayStyle;
-              this.needClientAuth.style.display = displayStyle;
-              this.wantClientAuth.style.display = displayStyle;
-              this.trustStores.style.display = displayStyle;
+              this.nameValue.innerHTML = entities.encode(String(this.portData[ "name" ]));
+              this.stateValue.innerHTML = entities.encode(String(this.portData[ "state" ]));
+              this.typeValue.innerHTML = entities.encode(String(this.portData[ "type" ]));
+              this.portValue.innerHTML = entities.encode(String(this.portData[ "port" ]));
+              this.authenticationProviderValue.innerHTML = this.portData[ "authenticationProvider" ] ? entities.encode(String(this.portData[ "authenticationProvider" ])) : "";
+              this.protocolsValue.innerHTML = printArray( "protocols", this.portData);
+              this.transportsValue.innerHTML = printArray( "transports", this.portData);
+              this.bindingAddressValue.innerHTML = this.portData[ "bindingAddress" ] ? entities.encode(String(this.portData[ "bindingAddress" ])) : "" ;
+              this.keyStoreValue.innerHTML = this.portData[ "keyStore" ] ? entities.encode(String(this.portData[ "keyStore" ])) : "";
+              this.needClientAuthValue.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.portData[ "needClientAuth" ] ? "checked='checked'": "")+" />" ;
+              this.wantClientAuthValue.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.portData[ "wantClientAuth" ] ? "checked='checked'": "")+" />" ;
+              this.trustStoresValue.innerHTML = printArray( "trustStores", this.portData);
+
+              var typeMetaData = metadata.getMetaData("Port", this.portData["type"]);
+
+              this.bindingAddress.style.display = "bindingAddress" in typeMetaData.attributes ? "block" : "none";
+              this.keyStore.style.display = "keyStore" in typeMetaData.attributes ? "block" : "none";
+              this.needClientAuth.style.display = "needClientAuth" in typeMetaData.attributes ? "block" : "none";
+              this.wantClientAuth.style.display = "wantClientAuth" in typeMetaData.attributes ? "block" : "none";
+              this.trustStores.style.display = "trustStores" in typeMetaData.attributes ? "block" : "none";
            };
 
            PortUpdater.prototype.update = function()
@@ -195,7 +197,7 @@ define(["dojo/dom",
 
               xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
                    {
-                      thisObj.keyStoreData = data[0];
+                      thisObj.portData = data[0];
                       thisObj.updateHeader();
                    });
            };

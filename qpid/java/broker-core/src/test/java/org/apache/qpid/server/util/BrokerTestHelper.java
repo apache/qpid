@@ -22,6 +22,7 @@ package org.apache.qpid.server.util;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -90,6 +91,7 @@ public class BrokerTestHelper
         when(broker.getSecurityManager()).thenReturn(new SecurityManager(broker, false));
         when(broker.getObjectFactory()).thenReturn(objectFactory);
         when(broker.getModel()).thenReturn(objectFactory.getModel());
+        when(broker.getModelVersion()).thenReturn(BrokerModel.MODEL_VERSION);
         when(broker.getEventLogger()).thenReturn(eventLogger);
         when(broker.getCategoryClass()).thenReturn(Broker.class);
         when(broker.getParent(SystemConfig.class)).thenReturn(systemConfig);
@@ -117,9 +119,11 @@ public class BrokerTestHelper
         VirtualHostNode virtualHostNode = mock(VirtualHostNode.class);
         when(virtualHostNode.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
 
+        when(virtualHostNode.getParent(eq(Broker.class))).thenReturn(broker);
+
         DurableConfigurationStore dcs = mock(DurableConfigurationStore.class);
         when(virtualHostNode.getConfigurationStore()).thenReturn(dcs);
-        when(virtualHostNode.getParent(Broker.class)).thenReturn(broker);
+        when(virtualHostNode.getParent(eq(VirtualHostNode.class))).thenReturn(virtualHostNode);
         when(virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
         when(virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
         when(virtualHostNode.getCategoryClass()).thenReturn(VirtualHostNode.class);

@@ -34,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQDestination.AddressOption;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
 import org.apache.qpid.client.message.AbstractJMSMessage;
@@ -48,7 +47,6 @@ import org.apache.qpid.transport.MessageDeliveryMode;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.Option;
-import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.util.GZIPUtils;
 import org.apache.qpid.util.Strings;
 
@@ -90,8 +88,8 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             try
             {
                 getSession().resolveAddress(destination,false,false);
-                ((AMQSession_0_10)getSession()).handleLinkCreation(destination);
-                ((AMQSession_0_10)getSession()).sync();
+                getSession().handleLinkCreation(destination);
+                getSession().sync();
             }
             catch(Exception e)
             {
@@ -278,31 +276,6 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
     public void close() throws JMSException
     {
         super.close();
-        AMQDestination dest = getAMQDestination();
-        AMQSession_0_10 ssn = (AMQSession_0_10) getSession();
-        if (!ssn.isClosed() && dest != null && dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
-        {
-            try
-            {
-                if (dest.getDelete() == AddressOption.ALWAYS ||
-                    dest.getDelete() == AddressOption.SENDER )
-                {
-                    ssn.handleNodeDelete(dest);
-                }
-                ssn.handleLinkDelete(dest);
-            }
-            catch(TransportException e)
-            {
-                throw getSession().toJMSException("Exception while closing producer:" + e.getMessage(), e);
-            }
-            catch (AMQException e)
-            {
-                JMSException ex = new JMSException("Exception while closing producer:" + e.getMessage());
-                ex.setLinkedException(e);
-                ex.initCause(e);
-                throw ex;
-            }
-        }
     }
 
 }

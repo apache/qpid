@@ -36,6 +36,7 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.BindingMessages;
 import org.apache.qpid.server.logging.subjects.BindingLogSubject;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Queue;
@@ -66,10 +67,29 @@ public class BindingImpl
 
     public BindingImpl(Map<String, Object> attributes, AMQQueue queue, ExchangeImpl exchange)
     {
-        super(parentsMap(queue,exchange),enhanceWithDurable(attributes,queue,exchange));
+        super(parentsMap(queue,exchange),stripEmptyArguments(enhanceWithDurable(attributes, queue, exchange)));
         _bindingKey = getName();
         _queue = queue;
         _exchange = exchange;
+    }
+
+    private static Map<String, Object> stripEmptyArguments(final Map<String, Object> attributes)
+    {
+        Map<String,Object> returnVal;
+        if(attributes != null
+           && attributes.containsKey(Binding.ARGUMENTS)
+           && (attributes.get(Binding.ARGUMENTS) instanceof Map)
+           && ((Map)(attributes.get(Binding.ARGUMENTS))).isEmpty())
+        {
+            returnVal = new HashMap<>(attributes);
+            returnVal.remove(Binding.ARGUMENTS);
+        }
+        else
+        {
+            returnVal = attributes;
+        }
+
+        return returnVal;
     }
 
     @Override
@@ -113,7 +133,7 @@ public class BindingImpl
     {
         if(!attributes.containsKey(DURABLE))
         {
-            attributes = new HashMap<String, Object>(attributes);
+            attributes = new HashMap(attributes);
             attributes.put(DURABLE, queue.isDurable() && exchange.isDurable());
         }
         return attributes;

@@ -279,3 +279,7 @@ div .messages {
     border: none;
     background-color: transparent;
 }
+
+.dijitMultiSelect {
+    width : 14.75em;
+}

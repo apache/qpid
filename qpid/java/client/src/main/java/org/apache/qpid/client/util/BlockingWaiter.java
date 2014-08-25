@@ -159,7 +159,7 @@ public abstract class BlockingWaiter<T>
             {
                 _waiting.set(true);
 
-                while (!_ready)
+                while (!_ready && _error == null)
                 {
                     try
                     {

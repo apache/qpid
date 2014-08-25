@@ -21,11 +21,10 @@
 package org.apache.qpid.server.model;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 
 public abstract class ConfiguredObjectAttribute<C extends ConfiguredObject, T> extends ConfiguredObjectAttributeOrStatistic<C,T>
 {
-
-
     ConfiguredObjectAttribute(Class<C> clazz,
                               final Method getter)
     {
@@ -48,6 +47,20 @@ public abstract class ConfiguredObjectAttribute<C extends ConfiguredObject, T> e
 
     public T convert(final Object value, C object)
     {
-        return getConverter().convert(value, object);
+        final AttributeValueConverter<T> converter = getConverter();
+        try
+        {
+            return converter.convert(value, object);
+        }
+        catch (IllegalArgumentException iae)
+        {
+            Type returnType = getGetter().getGenericReturnType();
+            String simpleName = returnType instanceof Class ? ((Class) returnType).getSimpleName() : returnType.toString();
+
+            throw new IllegalArgumentException("Cannot convert '" + value
+                                               + "' into a " + simpleName
+                                               + " for attribute " + getName()
+                                               + " (" + iae.getMessage() + ")", iae);
+        }
     }
 }

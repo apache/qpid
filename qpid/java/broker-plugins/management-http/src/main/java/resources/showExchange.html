@@ -25,8 +25,37 @@
             <div class="name"></div>
         </div>
         <div class="clear">
-            <div class="formLabel-labelCell">State:</div>
-            <div class="state"></div>
+            <div class="alignLeft">
+
+                <div class="clear">
+                    <div class="formLabel-labelCell">Type:</div>
+                    <div class="type  formValue-valueCell"></div>
+                </div>
+                <div class="clear">
+                    <div class="formLabel-labelCell">State:</div>
+                    <div class="state formValue-valueCell"></div>
+                </div>
+            </div>
+            <div class="alignRight">
+                <div class="clear">
+                    <div class="formLabel-labelCell">Inbound:</div>
+                    <div class="formValue-valueCell">
+                        <span class="msgInRate"></span>
+                        <span> msg/s</span>
+                        <span class="bytesInRate">(</span>
+                        <span class="bytesInRateUnits">)</span>
+                    </div>
+                </div>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Dropped:</div>
+                    <div class="formValue-valueCell">
+                        <span class="msgDropRate"></span>
+                        <span> msg/s</span>
+                        <span class="bytesDropRate">(</span>
+                        <span class="bytesDropRateUnits">)</span>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="clear">
             <div class="formLabel-labelCell">Durable:</div>
@@ -36,33 +65,18 @@
             <div class="formLabel-labelCell">Lifespan:</div>
             <div class="lifetimePolicy"></div>
         </div>
-        <div class="clear">
-            <div class="formLabel-labelCell">Inbound:</div>
-            <div>
-                <span class="msgInRate"></span>
-                <span> msg/s</span>
-                <span class="bytesInRate">(</span>
-                <span class="bytesInRateUnits">)</span>
-            </div>
-        </div>
-        <div class="clear">
-            <div class="formLabel-labelCell">Dropped:</div>
-            <div>
-                <span class="msgDropRate"></span>
-                <span> msg/s</span>
-                <span class="bytesDropRate">(</span>
-                <span class="bytesDropRateUnits">)</span>
-            </div>
-        </div>
+
         <div class="clear"></div>
     </div>
     <br/>
+
     <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Bindings'">
         <div class="bindings"></div>
         <button data-dojo-type="dijit.form.Button" class="addBindingButton">Add Binding</button>
         <button data-dojo-type="dijit.form.Button" class="deleteBindingButton">Delete Binding</button>
     </div>
     <br/>
+
     <div class="dijitDialogPaneActionBar">
         <button data-dojo-type="dijit.form.Button" class="deleteExchangeButton" type="button">Delete Exchange</button>
     </div>

@@ -21,6 +21,7 @@
 package org.apache.qpid.client;
 
 import java.util.UUID;
+
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
@@ -32,13 +33,15 @@ import javax.jms.ObjectMessage;
 import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
+
+import org.slf4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageConverter;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.util.UUIDGen;
 import org.apache.qpid.util.UUIDs;
-import org.slf4j.Logger;
 
 public abstract class BasicMessageProducer extends Closeable implements org.apache.qpid.jms.MessageProducer
 {
@@ -286,6 +289,31 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     {
         setClosed();
         _session.deregisterProducer(_producerId);
+        AMQDestination dest = getAMQDestination();
+        AMQSession ssn = getSession();
+        if (!ssn.isClosed() && dest != null && dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
+        {
+            try
+            {
+                if (dest.getDelete() == AMQDestination.AddressOption.ALWAYS ||
+                    dest.getDelete() == AMQDestination.AddressOption.SENDER )
+                {
+                    ssn.handleNodeDelete(dest);
+                }
+                ssn.handleLinkDelete(dest);
+            }
+            catch(TransportException e)
+            {
+                throw getSession().toJMSException("Exception while closing producer:" + e.getMessage(), e);
+            }
+            catch (AMQException e)
+            {
+                JMSException ex = new JMSException("Exception while closing producer:" + e.getMessage());
+                ex.setLinkedException(e);
+                ex.initCause(e);
+                throw ex;
+            }
+        }
     }
 
     public void send(Message message) throws JMSException

@@ -140,6 +140,7 @@ define(["dojo/_base/xhr",
                }
 
                storeNodes(["name",
+                           "type",
                            "state",
                            "durable",
                            "lifetimePolicy",
@@ -197,6 +198,8 @@ define(["dojo/_base/xhr",
            ExchangeUpdater.prototype.updateHeader = function()
            {
               this.name.innerHTML = entities.encode(String(this.exchangeData[ "name" ]));
+              this["type"].innerHTML = entities.encode(String(this.exchangeData[ "type" ]));
+
               this.state.innerHTML = entities.encode(String(this.exchangeData[ "state" ]));
               this.durable.innerHTML = entities.encode(String(this.exchangeData[ "durable" ]));
               this.lifetimePolicy.innerHTML = entities.encode(String(this.exchangeData[ "lifetimePolicy" ]));

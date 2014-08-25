@@ -115,7 +115,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
         _configStore = createConfigStore();
         _configStore.openConfigurationStore(_parent, false);
-        _rootRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), VirtualHost.class.getSimpleName(), Collections.<String, Object>emptyMap());
+        _rootRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), VirtualHost.class.getSimpleName(), Collections.<String, Object>singletonMap(ConfiguredObject.NAME, "vhost"));
         _configStore.create(_rootRecord);
     }
 

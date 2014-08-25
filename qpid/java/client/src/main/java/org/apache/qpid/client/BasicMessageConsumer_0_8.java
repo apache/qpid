@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.client;
 
+import javax.jms.JMSException;
+import javax.jms.Message;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,9 +40,6 @@ import org.apache.qpid.framing.BasicCancelBody;
 import org.apache.qpid.framing.BasicCancelOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.jms.ConnectionURL;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
 
 public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMessage_0_8>
 {
@@ -70,6 +70,19 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
 
         _topicDestinationCache = session.getTopicDestinationCache();
         _queueDestinationCache = session.getQueueDestinationCache();
+
+
+        // This is due to the Destination carrying the temporary subscription name which is incorrect.
+        if (destination.isAddressResolved() && AMQDestination.TOPIC_TYPE == destination.getAddressType())
+        {
+            boolean namedQueue = destination.getLink() != null && destination.getLink().getName() != null ;
+
+            if (!namedQueue)
+            {
+                setDestination(destination.copyDestination());
+                getDestination().setQueueName(null);
+            }
+        }
 
         if (destination.getRejectBehaviour() != null)
         {
@@ -105,10 +118,30 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
         final AMQFrame cancelFrame = body.generateFrame(getChannelId());
 
         getConnection().getProtocolHandler().syncWrite(cancelFrame, BasicCancelOkBody.class);
-
+        postSubscription();
+        getSession().sync();
         if (_logger.isDebugEnabled())
         {
             _logger.debug("CancelOk'd for consumer:" + debugIdentity());
+        }
+    }
+
+    void postSubscription() throws AMQException
+    {
+        AMQDestination dest = this.getDestination();
+        if (dest != null && dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
+        {
+            if (dest.getDelete() == AMQDestination.AddressOption.ALWAYS ||
+                dest.getDelete() == AMQDestination.AddressOption.RECEIVER )
+            {
+                getSession().handleNodeDelete(dest);
+            }
+            // Subscription queue is handled as part of linkDelete method.
+            getSession().handleLinkDelete(dest);
+            if (!isDurableSubscriber())
+            {
+                getSession().deleteSubscriptionQueue(dest);
+            }
         }
     }
 
