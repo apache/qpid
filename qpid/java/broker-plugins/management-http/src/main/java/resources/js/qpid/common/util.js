@@ -713,7 +713,7 @@ define(["dojo/_base/xhr",
                }
            }
 
-           var singleContextVarRegexp = "(\\${[\\w\\.\\-]+})";
+           var singleContextVarRegexp = "(\\${[\\w+\\.\\-:]+})";
 
            util.numericOrContextVarRegexp = function(constraints)
            {
