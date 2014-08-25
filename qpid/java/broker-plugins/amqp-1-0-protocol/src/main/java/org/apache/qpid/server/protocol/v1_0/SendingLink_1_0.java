@@ -628,7 +628,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 queueEntry.release();
                 _unsettledMap.remove(deliveryTag);
             }
-            else if(initialUnsettledMap != null && (initialUnsettledMap.get(deliveryTag) instanceof Outcome))
+            else if(initialUnsettledMap.get(deliveryTag) instanceof Outcome)
             {
                 Outcome outcome = (Outcome) initialUnsettledMap.get(deliveryTag);
 

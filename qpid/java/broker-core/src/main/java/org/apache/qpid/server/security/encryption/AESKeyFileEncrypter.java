@@ -36,17 +36,25 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.xml.bind.DatatypeConverter;
 
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
-
 class AESKeyFileEncrypter implements ConfigurationSecretEncrypter
 {
     private static final String CIPHER_NAME = "AES/CBC/PKCS5Padding";
     private static final int AES_INITIALIZATION_VECTOR_LENGTH = 16;
+    private static final String AES_ALGORITHM = "AES";
     private final SecretKey _secretKey;
     private final SecureRandom _random = new SecureRandom();
 
     AESKeyFileEncrypter(SecretKey secretKey)
     {
+        if(secretKey == null)
+        {
+            throw new NullPointerException("A non null secret key must be supplied");
+        }
+        if(!AES_ALGORITHM.equals(secretKey.getAlgorithm()))
+        {
+            throw new IllegalArgumentException("Provided secret key was for the algorithm: " + secretKey.getAlgorithm()
+                                                + "when" + AES_ALGORITHM + "was needed.");
+        }
         _secretKey = secretKey;
     }
 
@@ -68,19 +76,26 @@ class AESKeyFileEncrypter implements ConfigurationSecretEncrypter
         }
         catch (IOException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException e)
         {
-            throw new IllegalConfigurationException("Unable to encrypt secret", e);
+            throw new IllegalArgumentException("Unable to encrypt secret", e);
         }
     }
 
     @Override
     public String decrypt(final String encrypted)
     {
+        if(!isValidBase64(encrypted))
+        {
+            throw new IllegalArgumentException("Encrypted value is not valid Base 64 data: '" + encrypted + "'");
+        }
         byte[] encryptedBytes = DatatypeConverter.parseBase64Binary(encrypted);
         try
         {
             Cipher cipher = Cipher.getInstance(CIPHER_NAME);
-            cipher.init(Cipher.DECRYPT_MODE, _secretKey, new IvParameterSpec(encryptedBytes, 0,
-                                                                             AES_INITIALIZATION_VECTOR_LENGTH));
+
+            IvParameterSpec ivParameterSpec = new IvParameterSpec(encryptedBytes, 0, AES_INITIALIZATION_VECTOR_LENGTH);
+
+            cipher.init(Cipher.DECRYPT_MODE, _secretKey, ivParameterSpec);
+
             return new String(readFromCipherStream(encryptedBytes,
                                                    AES_INITIALIZATION_VECTOR_LENGTH,
                                                    encryptedBytes.length - AES_INITIALIZATION_VECTOR_LENGTH,
@@ -88,8 +103,13 @@ class AESKeyFileEncrypter implements ConfigurationSecretEncrypter
         }
         catch (IOException | InvalidAlgorithmParameterException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException e)
         {
-            throw new IllegalConfigurationException("Unable to encrypt secret", e);
+            throw new IllegalArgumentException("Unable to encrypt secret", e);
         }
+    }
+
+    private boolean isValidBase64(final String encrypted)
+    {
+        return encrypted.matches("^([\\w\\d+/]{4})*([\\w\\d+/]{2}==|[\\w\\d+/]{3}=)?$");
     }
 
 
@@ -106,16 +126,16 @@ class AESKeyFileEncrypter implements ConfigurationSecretEncrypter
                                                                                                   offset,
                                                                                                   length), cipher))
         {
-            byte[] buf = new byte[1024];
+            byte[] buf = new byte[512];
             int pos = 0;
             int read;
             while ((read = cipherInputStream.read(buf, pos, buf.length - pos)) != -1)
             {
                 pos += read;
-                if (pos == buf.length - 1)
+                if (pos == buf.length)
                 {
                     byte[] tmp = buf;
-                    buf = new byte[buf.length + 1024];
+                    buf = new byte[buf.length + 512];
                     System.arraycopy(tmp, 0, buf, 0, tmp.length);
                 }
             }

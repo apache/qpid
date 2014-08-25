@@ -550,8 +550,6 @@ public class QpidBrokerTestCase extends QpidTestCase
                 // in to the external broker's QPID_OPTS string.
                 setSystemProperty("amqj.protocol.logging.level");
                 setSystemProperty("root.logging.level");
-                setSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES);
-                setSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES);
 
                 setSystemProperty("test.port");
                 setSystemProperty("test.mport");

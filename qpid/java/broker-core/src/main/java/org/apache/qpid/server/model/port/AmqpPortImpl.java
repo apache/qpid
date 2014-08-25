@@ -25,7 +25,6 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -43,6 +42,7 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
@@ -53,6 +53,7 @@ import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.TransportProviderFactory;
 import org.apache.qpid.server.transport.AcceptingTransport;
 import org.apache.qpid.server.transport.TransportProvider;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 
@@ -110,34 +111,6 @@ public class AmqpPortImpl extends AbstractPortWithAuthProvider<AmqpPortImpl> imp
         return (VirtualHostImpl) _broker.findVirtualHostByName(name);
     }
 
-    protected Set<Protocol> getDefaultProtocols()
-    {
-        Set<Protocol> defaultProtocols = EnumSet.of(Protocol.AMQP_0_8, Protocol.AMQP_0_9, Protocol.AMQP_0_9_1,
-                                                    Protocol.AMQP_0_10, Protocol.AMQP_1_0);
-        String excludedProtocols = System.getProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES);
-        if (excludedProtocols != null)
-        {
-            String[] excludes = excludedProtocols.split(",");
-            for (String exclude : excludes)
-            {
-                Protocol protocol = Protocol.valueOf(exclude);
-                defaultProtocols.remove(protocol);
-            }
-        }
-        String includedProtocols = System.getProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES);
-        if (includedProtocols != null)
-        {
-            String[] includes = includedProtocols.split(",");
-            for (String include : includes)
-            {
-                Protocol protocol = Protocol.valueOf(include);
-                defaultProtocols.add(protocol);
-            }
-        }
-        return defaultProtocols;
-    }
-
-
     @Override
     protected State onActivate()
     {
@@ -178,7 +151,7 @@ public class AmqpPortImpl extends AbstractPortWithAuthProvider<AmqpPortImpl> imp
             _transport = transportProvider.createTransport(transportSet,
                                                            sslContext,
                                                            this,
-                                                           getAvailableProtocols(),
+                                                           getProtocols(),
                                                            defaultSupportedProtocolReply);
 
             _transport.start();
@@ -362,5 +335,22 @@ public class AmqpPortImpl extends AbstractPortWithAuthProvider<AmqpPortImpl> imp
             }
         }
         return Collections.unmodifiableSet(combinationsAsString);
+    }
+
+
+    public static String getInstalledProtocolsAsString()
+    {
+        Set<Protocol> installedProtocols = getInstalledProtocols();
+        ObjectMapper mapper = new ObjectMapper();
+
+        try(StringWriter output = new StringWriter())
+        {
+            mapper.writeValue(output, installedProtocols);
+            return output.toString();
+        }
+        catch (IOException e)
+        {
+            throw new ServerScopedRuntimeException(e);
+        }
     }
 }

@@ -51,7 +51,7 @@ public interface JmxPort<X extends JmxPort<X>> extends Port<X>
                        validValues = {"[ \"TCP\" ]", "[ \"SSL\" ]"})
     Set<Transport> getTransports();
 
-    @ManagedAttribute( validValues = { "[ \"JMX_RMI\"]"} )
+    @ManagedAttribute( defaultValue = "JMX_RMI", validValues = { "[ \"JMX_RMI\"]"} )
     Set<Protocol> getProtocols();
 
     void setPortManager(PortManager manager);

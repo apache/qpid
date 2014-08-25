@@ -34,7 +34,6 @@ import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.Protocol;
-import org.apache.qpid.server.model.adapter.PortFactoryTest;
 import org.apache.qpid.server.plugin.AMQPProtocolVersionWrapper;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
@@ -43,7 +42,6 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
  * versions entirely, rather than selectively excluding them on particular ports,
  * and it is possible to configure the reply to an unsupported protocol initiation.
  *<p>
- * Protocol exclusion/inclusion are unit tested as part of {@link PortFactoryTest}
  */
 public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
 {
@@ -55,8 +53,7 @@ public class SupportedProtocolVersionsTest extends QpidBrokerTestCase
     private void clearProtocolSupportManipulations() throws Exception
     {
         //Remove the QBTC provided protocol manipulations, giving only the protocols which default to enabled
-        setSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_EXCLUDES, null);
-        setSystemProperty(BrokerProperties.PROPERTY_BROKER_DEFAULT_AMQP_PROTOCOL_INCLUDES, null);
+
         setSystemProperty(QpidBrokerTestCase.TEST_AMQP_PORT_PROTOCOLS_PROPERTY, getProtocolsAsString(getAllAmqpProtocols()));
     }
 

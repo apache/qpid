@@ -146,7 +146,7 @@ public class Main
             {
                 execute();
             }
-            catch(Throwable e)
+            catch(Exception e)
             {
                 System.err.println("Exception during startup: " + e);
                 e.printStackTrace();

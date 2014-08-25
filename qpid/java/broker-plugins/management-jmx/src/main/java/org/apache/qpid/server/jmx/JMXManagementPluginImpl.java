@@ -184,12 +184,12 @@ public class JMXManagementPluginImpl
 
     private boolean isConnectorPort(Port<?> port)
     {
-        return port.getAvailableProtocols().contains(Protocol.JMX_RMI);
+        return port.getProtocols().contains(Protocol.JMX_RMI);
     }
 
     private boolean isRegistryPort(Port<?> port)
     {
-        return port.getAvailableProtocols().contains(Protocol.RMI);
+        return port.getProtocols().contains(Protocol.RMI);
     }
 
     @Override

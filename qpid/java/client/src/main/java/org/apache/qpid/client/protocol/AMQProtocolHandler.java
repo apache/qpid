@@ -172,6 +172,10 @@ public class AMQProtocolHandler implements ProtocolEngine
     private long _writtenBytes;
     private long _readBytes;
 
+    private int _messageReceivedCount;
+    private int _messagesOut;
+
+
     private NetworkConnection _network;
     private Sender<ByteBuffer> _sender;
     private long _lastReadTime = System.currentTimeMillis();
@@ -451,9 +455,6 @@ public class AMQProtocolHandler implements ProtocolEngine
         _lastFailoverException = null;
     }
 
-    private static int _messageReceivedCount;
-
-
     public void received(ByteBuffer msg)
     {
         _readBytes += msg.remaining();
@@ -558,8 +559,6 @@ public class AMQProtocolHandler implements ProtocolEngine
         }
 
     }
-
-    private static int _messagesOut;
 
     public StateWaiter createWaiter(Set<AMQState> states) throws AMQException
     {

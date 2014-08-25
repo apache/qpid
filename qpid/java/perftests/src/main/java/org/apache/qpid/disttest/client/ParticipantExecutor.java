@@ -25,9 +25,10 @@ import java.util.concurrent.ThreadFactory;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.apache.qpid.disttest.message.ParticipantResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.disttest.message.ParticipantResult;
 
 public class ParticipantExecutor
 {
@@ -100,7 +101,7 @@ public class ParticipantExecutor
                 }
                 result = _participant.doIt(_client.getClientName());
             }
-            catch (Throwable t)
+            catch (Exception t)
             {
                 String errorMessage = "Unhandled error: " + t.getMessage();
                 LOGGER.error(errorMessage, t);

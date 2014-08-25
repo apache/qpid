@@ -151,15 +151,15 @@ public class URLHelper
         }
         else
         {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append('?');
-            for (String key : options.keySet())
+            for (Map.Entry<String,String> entry : options.entrySet())
             {
-                sb.append(key);
+                sb.append(entry.getKey());
 
                 sb.append("='");
 
-                sb.append(options.get(key));
+                sb.append(entry.getValue());
 
                 sb.append("'");
                 sb.append(DEFAULT_OPTION_SEPERATOR);

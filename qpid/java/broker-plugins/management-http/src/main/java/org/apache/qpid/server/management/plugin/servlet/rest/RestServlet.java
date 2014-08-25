@@ -17,7 +17,6 @@
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.Writer;
 import java.security.AccessControlException;
 import java.util.ArrayList;
@@ -43,6 +42,7 @@ import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
@@ -407,7 +407,7 @@ public class RestServlet extends AbstractServlet
                 }
                 catch (RuntimeException e)
                 {
-                    setResponseStatus(response, e);
+                    setResponseStatus(request, response, e);
                 }
                 return;
             }
@@ -423,7 +423,7 @@ public class RestServlet extends AbstractServlet
         Collection<ConfiguredObject>[] objects = new Collection[_hierarchy.length];
         if (_hierarchy.length == 1)
         {
-            createOrUpdate(providedObject, _hierarchy[0], getBroker(), null, response);
+            createOrUpdate(providedObject, _hierarchy[0], getBroker(), null, request, response);
         }
         else
         {
@@ -486,13 +486,14 @@ public class RestServlet extends AbstractServlet
             ConfiguredObject theParent = parents.remove(0);
             ConfiguredObject[] otherParents = parents.toArray(new ConfiguredObject[parents.size()]);
 
-            createOrUpdate(providedObject, objClass, theParent, otherParents, response);
+            createOrUpdate(providedObject, objClass, theParent, otherParents, request, response);
         }
 
     }
 
     private void createOrUpdate(Map<String, Object> providedObject, Class<? extends ConfiguredObject> objClass,
-            ConfiguredObject theParent, ConfiguredObject[] otherParents, HttpServletResponse response) throws IOException
+            ConfiguredObject theParent, ConfiguredObject[] otherParents, HttpServletRequest request,
+            HttpServletResponse response) throws IOException
     {
         try
         {
@@ -513,7 +514,7 @@ public class RestServlet extends AbstractServlet
         }
         catch (RuntimeException e)
         {
-            setResponseStatus(response, e);
+            setResponseStatus(request, response, e);
         }
     }
 
@@ -552,24 +553,40 @@ public class RestServlet extends AbstractServlet
         return true;
     }
 
-    private void setResponseStatus(HttpServletResponse response, RuntimeException e) throws IOException
+    private void setResponseStatus(HttpServletRequest request, HttpServletResponse response, RuntimeException e) throws IOException
     {
         if (e instanceof AccessControlException)
         {
             if (LOGGER.isDebugEnabled())
             {
-                LOGGER.debug("Caught security exception, sending " + HttpServletResponse.SC_FORBIDDEN, e);
+                LOGGER.debug("AccessControlException, sending " + HttpServletResponse.SC_FORBIDDEN, e);
             }
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         }
         else
         {
-            LOGGER.warn("Caught exception", e);
+            if (e instanceof IllegalConfigurationException || e instanceof IllegalArgumentException)
+            {
+                if (LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug(e.getClass().getSimpleName() + " processing request : " + e.getMessage());
+                }
+                else if (LOGGER.isTraceEnabled())
+                {
+                    LOGGER.trace(e.getClass().getSimpleName() + " processing request", e);
+                }
+            }
+            else
+            {
+                LOGGER.warn("Unexpected exception processing request ", e);
+            }
+
             response.setStatus(HttpServletResponse.SC_CONFLICT);
 
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
-            PrintWriter out = response.getWriter();
+
+            Writer out = getOutputWriter(request, response);
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
             mapper.writeValue(out, Collections.singletonMap("errorMessage", e.getMessage()));
@@ -596,7 +613,7 @@ public class RestServlet extends AbstractServlet
         }
         catch(RuntimeException e)
         {
-            setResponseStatus(response, e);
+            setResponseStatus(request, response, e);
         }
     }
 

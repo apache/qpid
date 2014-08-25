@@ -137,15 +137,6 @@ public class ConfiguredObjectFactoryImpl implements ConfiguredObjectFactory
         else
         {
             factory = getConfiguredObjectTypeFactory(category, null);
-            if(factory == null)
-            {
-                ManagedObject annotation = categoryClass.getAnnotation(ManagedObject.class);
-                factory = getConfiguredObjectTypeFactory(category, annotation.defaultType());
-                if(factory == null)
-                {
-                    throw new NoFactoryForTypeException(category, annotation.defaultType());
-                }
-            }
         }
         return factory;
     }

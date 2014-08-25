@@ -21,12 +21,12 @@
 package org.apache.qpid.transport.network.security.sasl;
 
 
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
+
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionException;
 import org.apache.qpid.transport.ConnectionListener;
-
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
 
 public abstract class SASLEncryptor implements ConnectionListener
 {
@@ -45,7 +45,7 @@ public abstract class SASLEncryptor implements ConnectionListener
         if (conn.getSaslClient() != null)
         {
             saslClient = conn.getSaslClient();
-            if (saslClient.isComplete() && saslClient.getNegotiatedProperty(Sasl.QOP) == "auth-conf")
+            if (saslClient.isComplete() && "auth-conf".equals(saslClient.getNegotiatedProperty(Sasl.QOP)))
             {                
                 sendBuffSize = Integer.parseInt(
                         (String)saslClient.getNegotiatedProperty(Sasl.RAW_SEND_SIZE));

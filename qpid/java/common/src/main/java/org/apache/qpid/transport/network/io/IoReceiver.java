@@ -210,7 +210,7 @@ final class IoReceiver implements Runnable
                 }
             }
         }
-        catch (Throwable t)
+        catch (Exception t)
         {
             if (shouldReport(t))
             {

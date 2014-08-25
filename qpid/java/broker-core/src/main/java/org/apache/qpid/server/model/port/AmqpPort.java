@@ -24,6 +24,7 @@ import java.util.Set;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -41,6 +42,11 @@ public interface AmqpPort<X extends AmqpPort<X>> extends Port<X>
     String DEFAULT_AMQP_WANT_CLIENT_AUTH = "false";
     String SEND_BUFFER_SIZE                     = "sendBufferSize";
     String RECEIVE_BUFFER_SIZE                  = "receiveBufferSize";
+
+    String DEFAULT_AMQP_PROTOCOLS = "qpid.port.default_amqp_protocols";
+
+    @ManagedContextDefault(name = DEFAULT_AMQP_PROTOCOLS)
+    String INSTALLED_PROTOCOLS = AmqpPortImpl.getInstalledProtocolsAsString();
 
     @ManagedAttribute( defaultValue = AmqpPort.DEFAULT_AMQP_TCP_NO_DELAY )
     boolean isTcpNoDelay();
@@ -66,8 +72,9 @@ public interface AmqpPort<X extends AmqpPort<X>> extends Port<X>
                        validValues = {"org.apache.qpid.server.model.port.AmqpPortImpl#getAllAvailableTransportCombinations()"})
     Set<Transport> getTransports();
 
-    @ManagedAttribute( validValues = {"org.apache.qpid.server.model.port.AmqpPortImpl#getAllAvailableProtocolCombinations()"} )
+    @ManagedAttribute( defaultValue = "${" + DEFAULT_AMQP_PROTOCOLS + "}", validValues = {"org.apache.qpid.server.model.port.AmqpPortImpl#getAllAvailableProtocolCombinations()"} )
     Set<Protocol> getProtocols();
 
     VirtualHostImpl getVirtualHost(String name);
+
 }

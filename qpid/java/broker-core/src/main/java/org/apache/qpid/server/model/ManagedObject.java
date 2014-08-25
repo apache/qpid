@@ -35,4 +35,5 @@ public @interface ManagedObject
     boolean creatable() default true;
     String defaultType() default ""; // in this case the class/interface itself is to be used
     String type() default "";
+    boolean register() default true;
 }

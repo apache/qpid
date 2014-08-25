@@ -32,7 +32,7 @@ import org.apache.qpid.server.model.Transport;
 public interface RmiPort<X extends RmiPort<X>> extends Port<X>
 {
 
-    @ManagedAttribute( validValues = { "[ \"RMI\"]"} )
+    @ManagedAttribute( defaultValue = "RMI", validValues = { "[ \"RMI\"]"} )
     Set<Protocol> getProtocols();
 
     @ManagedAttribute( defaultValue = "TCP",

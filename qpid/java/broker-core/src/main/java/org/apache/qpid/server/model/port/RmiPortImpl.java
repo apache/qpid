@@ -56,12 +56,6 @@ public class RmiPortImpl extends AbstractPort<RmiPortImpl> implements RmiPort<Rm
 
     }
 
-    @Override
-    protected Set<Protocol> getDefaultProtocols()
-    {
-        return Collections.singleton(Protocol.RMI);
-    }
-
     public void setPortManager(PortManager manager)
     {
         _portManager = manager;

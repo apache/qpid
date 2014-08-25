@@ -61,10 +61,10 @@ class InetNetwork
     @Override
     public boolean equals(Object obj)
     {
-        return  (obj != null) &&
-                (obj instanceof InetNetwork) &&
-                ((InetNetwork)obj).network.equals(network) &&
-                ((InetNetwork)obj).netmask.equals(netmask);
+        return (obj != null) &&
+               (obj instanceof InetNetwork) &&
+               ((InetNetwork) obj).network.equals(network) &&
+               ((InetNetwork) obj).netmask.equals(netmask);
     }
 
     public static InetNetwork getFromString(String netspec) throws java.net.UnknownHostException
@@ -95,15 +95,13 @@ class InetNetwork
     {
         try
         {
-            return getByAddress(
-                new byte[]
-                {
-                    (byte) (mask[0] & ip[0]),
-                    (byte) (mask[1] & ip[1]),
-                    (byte) (mask[2] & ip[2]),
-                    (byte) (mask[3] & ip[3])
-                }
-            );
+            return InetAddress.getByAddress(new byte[]
+                                {
+                                        (byte) (mask[0] & ip[0]),
+                                        (byte) (mask[1] & ip[1]),
+                                        (byte) (mask[2] & ip[2]),
+                                        (byte) (mask[3] & ip[3])
+                                });
         }
         catch (Exception _)
         {
@@ -127,7 +125,7 @@ class InetNetwork
      */
     static private String normalizeFromAsterisk(final String netspec)
     {
-        String[] masks = {  "0.0.0.0/0.0.0.0", "0.0.0/255.0.0.0", "0.0/255.255.0.0", "0/255.255.255.0" };
+        String[] masks = {"0.0.0.0/0.0.0.0", "0.0.0/255.0.0.0", "0.0/255.255.0.0", "0/255.255.255.0"};
         char[] srcb = netspec.toCharArray();
         int octets = 0;
         for (int i = 1; i < netspec.length(); i++)
@@ -137,7 +135,7 @@ class InetNetwork
                 octets++;
             }
         }
-        return (octets == 0) ? masks[0] : netspec.substring(0, netspec.length() -1 ).concat(masks[octets]);
+        return (octets == 0) ? masks[0] : netspec.substring(0, netspec.length() - 1).concat(masks[octets]);
     }
 
     /*
@@ -148,30 +146,14 @@ class InetNetwork
      */
     static private String normalizeFromCIDR(final String netspec)
     {
-        final int bits = 32 - Integer.parseInt(netspec.substring(netspec.indexOf('/')+1));
-        final int mask = (bits == 32) ? 0 : 0xFFFFFFFF - ((1 << bits)-1);
+        final int bits = 32 - Integer.parseInt(netspec.substring(netspec.indexOf('/') + 1));
+        final int mask = (bits == 32) ? 0 : 0xFFFFFFFF - ((1 << bits) - 1);
 
         return netspec.substring(0, netspec.indexOf('/') + 1) +
-                Integer.toString(mask >> 24 & 0xFF, 10) + "." +
-                Integer.toString(mask >> 16 & 0xFF, 10) + "." +
-                Integer.toString(mask >>  8 & 0xFF, 10) + "." +
-                Integer.toString(mask >>  0 & 0xFF, 10);
+               Integer.toString(mask >> 24 & 0xFF, 10) + "." +
+               Integer.toString(mask >> 16 & 0xFF, 10) + "." +
+               Integer.toString(mask >> 8 & 0xFF, 10) + "." +
+               Integer.toString(mask >> 0 & 0xFF, 10);
     }
 
-    private static InetAddress getByAddress(byte[] ip) throws java.net.UnknownHostException
-    {
-        InetAddress addr = InetAddress.getByAddress(ip);
-
-        if (addr == null) {
-            addr = InetAddress.getByName
-                   (
-                    Integer.toString(ip[0] & 0xFF, 10) + "." +
-                    Integer.toString(ip[1] & 0xFF, 10) + "." +
-                    Integer.toString(ip[2] & 0xFF, 10) + "." +
-                    Integer.toString(ip[3] & 0xFF, 10)
-                   );
-        }
-
-        return addr;
-    }
 }

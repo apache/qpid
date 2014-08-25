@@ -48,12 +48,6 @@ public class JmxPortImpl extends AbstractPortWithAuthProvider<JmxPortImpl> imple
     }
 
     @Override
-    protected Set<Protocol> getDefaultProtocols()
-    {
-        return Collections.singleton(Protocol.JMX_RMI);
-    }
-
-    @Override
     public void setPortManager(PortManager manager)
     {
         _portManager = manager;

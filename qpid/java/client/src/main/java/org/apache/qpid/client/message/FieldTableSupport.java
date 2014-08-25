@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
 
 public class FieldTableSupport
 {

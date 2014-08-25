@@ -20,14 +20,12 @@
  */
 package org.apache.qpid.client.message;
 
-import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
 
 import javax.jms.JMSException;
 
@@ -163,30 +161,6 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         AbstractJMSMessage message = createMessage(delegate, data);
         return message;
     }
-
-    private ByteBuffer uncompressBody(final InputStream bodyInputStream) throws AMQException
-    {
-        final ByteBuffer data;
-        try(GZIPInputStream gzipInputStream = new GZIPInputStream(bodyInputStream))
-        {
-            ByteArrayOutputStream uncompressedBuffer = new ByteArrayOutputStream();
-            int read;
-            byte[] buf = new byte[4096];
-            while((read = gzipInputStream.read(buf))!=-1)
-            {
-                uncompressedBuffer.write(buf,0,read);
-            }
-            byte[] uncompressedBytes = uncompressedBuffer.toByteArray();
-            data = ByteBuffer.wrap(uncompressedBytes);
-        }
-        catch (IOException e)
-        {
-            // TODO - shouldn't happen
-            throw new AMQException("Error uncompressing gzipped message data", e);
-        }
-        return data;
-    }
-
 
     public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered, ContentHeaderBody contentHeader,
                                             AMQShortString exchange, AMQShortString routingKey, List bodies,

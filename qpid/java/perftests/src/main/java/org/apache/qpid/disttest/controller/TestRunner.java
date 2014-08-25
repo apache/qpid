@@ -26,6 +26,9 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.controller.config.QueueConfig;
 import org.apache.qpid.disttest.controller.config.TestInstance;
@@ -36,8 +39,6 @@ import org.apache.qpid.disttest.message.ParticipantResult;
 import org.apache.qpid.disttest.message.Response;
 import org.apache.qpid.disttest.message.StartTestCommand;
 import org.apache.qpid.disttest.message.TearDownTestCommand;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TestRunner
 {
@@ -72,7 +73,7 @@ public class TestRunner
             {
                 deleteQueues();
             }
-            catch (Throwable t)
+            catch (Exception t)
             {
                 LOGGER.error("Failed to delete test queues during shutdown", t);
             }

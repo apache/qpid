@@ -441,7 +441,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         Collection<Port<?>> httpPorts = new HashSet<>();
         for (Port<?> port : ports)
         {
-            if (port.getAvailableProtocols().contains(Protocol.HTTP))
+            if (port.getProtocols().contains(Protocol.HTTP))
             {
                 httpPorts.add(port);
             }

@@ -23,8 +23,6 @@ package org.apache.qpid.amqp_1_0.type;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
-import static java.lang.Math.min;
-
 public class Binary
 {
 
@@ -64,32 +62,32 @@ public class Binary
 
     public final boolean equals(Object o)
     {
-        Binary buf = (Binary) o;
-        if(o == null)
+        if(o instanceof Binary)
         {
-            return false;
-        }
-        final int size = _length;
-        if (size != buf._length)
-        {
-            return false;
-        }
+            Binary buf = (Binary) o;
 
-        final byte[] myData = _data;
-        final byte[] theirData = buf._data;
-        int myOffset = _offset;
-        int theirOffset = buf._offset;
-        final int myLimit = myOffset + size;
-
-        while(myOffset < myLimit)
-        {
-            if (myData[myOffset++] != theirData[theirOffset++])
+            final int size = _length;
+            if (size == buf._length)
             {
-                return false;
+                final byte[] myData = _data;
+                final byte[] theirData = buf._data;
+                int myOffset = _offset;
+                int theirOffset = buf._offset;
+                final int myLimit = myOffset + size;
+
+                while (myOffset < myLimit)
+                {
+                    if (myData[myOffset++] != theirData[theirOffset++])
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
         }
 
-        return true;
+        return false;
     }
 
 
