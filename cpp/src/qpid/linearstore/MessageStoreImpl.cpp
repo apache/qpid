@@ -54,7 +54,7 @@ qpid::sys::Mutex TxnCtxt::globalSerialiser;
 MessageStoreImpl::MessageStoreImpl(qpid::broker::Broker* broker_, const char* envpath_) :
                                    defaultEfpPartitionNumber(0),
                                    defaultEfpFileSize_kib(0),
-                                   truncateFlag(false),
+                                   overwriteBeforeReturnFlag(false),
                                    wCachePgSizeSblks(0),
                                    wCacheNumPages(0),
                                    tplWCachePgSizeSblks(0),
@@ -174,7 +174,8 @@ bool MessageStoreImpl::init(const qpid::Options* options_)
     uint32_t tplJrnlWrCachePageSizeKib = chkJrnlWrPageCacheSize(opts->tplWCachePageSizeKib, "tpl-wcache-page-size");
 
     // Pass option values to init()
-    return init(opts->storeDir, efpPartition, efpFilePoolSize_kib, opts->truncateFlag, jrnlWrCachePageSizeKib, tplJrnlWrCachePageSizeKib);
+    return init(opts->storeDir, efpPartition, efpFilePoolSize_kib, opts->truncateFlag, jrnlWrCachePageSizeKib,
+                tplJrnlWrCachePageSizeKib, opts->overwriteBeforeReturnFlag);
 }
 
 // These params, taken from options, are assumed to be correct and verified
@@ -183,11 +184,13 @@ bool MessageStoreImpl::init(const std::string& storeDir_,
                            qpid::linearstore::journal::efpDataSize_kib_t efpFileSize_kib_,
                            const bool truncateFlag_,
                            uint32_t wCachePageSizeKib_,
-                           uint32_t tplWCachePageSizeKib_)
+                           uint32_t tplWCachePageSizeKib_,
+                           const bool overwriteBeforeReturnFlag_)
 {
     if (isInit) return true;
 
     // Set geometry members (converting to correct units where req'd)
+    overwriteBeforeReturnFlag = overwriteBeforeReturnFlag_;
     defaultEfpPartitionNumber = efpPartition_;
     defaultEfpFileSize_kib = efpFileSize_kib_;
     wCachePgSizeSblks = wCachePageSizeKib_ / QLS_SBLK_SIZE_KIB; // convert from KiB to number sblks
@@ -210,6 +213,7 @@ bool MessageStoreImpl::init(const std::string& storeDir_,
     QLS_LOG(info,   "> TPL number of write cache pages: " << tplWCacheNumPages);
     QLS_LOG(info,   "> EFP partition: " << defaultEfpPartitionNumber);
     QLS_LOG(info,   "> EFP file size pool: " << defaultEfpFileSize_kib << " (KiB)");
+    QLS_LOG(info,   "> Overwrite before return to EFP: " << (overwriteBeforeReturnFlag?"True":"False"));
 
     return isInit;
 }
@@ -291,6 +295,7 @@ void MessageStoreImpl::init()
     efpMgr.reset(new qpid::linearstore::journal::EmptyFilePoolManager(getStoreTopLevelDir(),
                                                           defaultEfpPartitionNumber,
                                                           defaultEfpFileSize_kib,
+                                                          overwriteBeforeReturnFlag,
                                                           jrnlLog));
     efpMgr->findEfpPartitions();
 }
@@ -1522,7 +1527,8 @@ MessageStoreImpl::StoreOptions::StoreOptions(const std::string& name_) :
                                              wCachePageSizeKib(defWCachePageSizeKib),
                                              tplWCachePageSizeKib(defTplWCachePageSizeKib),
                                              efpPartition(defEfpPartition),
-                                             efpFileSizeKib(defEfpFileSizeKib)
+                                             efpFileSizeKib(defEfpFileSizeKib),
+                                             overwriteBeforeReturnFlag(defOverwriteBeforeReturnFlag)
 {
     addOptions()
         ("store-dir", qpid::optValue(storeDir, "DIR"),
@@ -1543,6 +1549,11 @@ MessageStoreImpl::StoreOptions::StoreOptions(const std::string& name_) :
                 "Empty File Pool partition to use for finding empty journal files")
         ("efp-file-size", qpid::optValue(efpFileSizeKib, "N"),
                 "Empty File Pool file size in KiB to use for journal files. Must be a multiple of 4 KiB.")
+        ("overwrite-before-return", qpid::optValue(overwriteBeforeReturnFlag, "yes|no"),
+                "If yes|true|1, will overwrite each store file with zeros before returning "
+                "it to the Empty File Pool. When not in use (the default), then old message data remains "
+                "in the file, but is overwritten on next use. This option should only be used where security "
+                "considerations justify it as it makes the store somewhat slower.")
         ;
 }
 

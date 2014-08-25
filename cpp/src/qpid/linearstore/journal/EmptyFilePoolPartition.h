@@ -46,6 +46,7 @@ protected:
 
     const efpPartitionNumber_t partitionNum_;
     const std::string partitionDir_;
+    const bool overwriteBeforeReturnFlag_;
     JournalLog& journalLogRef_;
     efpMap_t efpMap_;
     smutex efpMapMutex_;
@@ -53,6 +54,7 @@ protected:
 public:
     EmptyFilePoolPartition(const efpPartitionNumber_t partitionNum,
                            const std::string& partitionDir,
+                           const bool overwriteBeforeReturnFlag,
                            JournalLog& journalLogRef);
     virtual ~EmptyFilePoolPartition();
 
@@ -60,6 +62,7 @@ public:
     EmptyFilePool* getEmptyFilePool(const efpDataSize_kib_t efpDataSize_kib);
     void getEmptyFilePools(std::vector<EmptyFilePool*>& efpList);
     void getEmptyFilePoolSizes_kib(std::vector<efpDataSize_kib_t>& efpDataSizesList) const;
+    bool getOverwriteBeforeReturnFlag() const;
     std::string getPartitionDirectory() const;
     efpPartitionNumber_t getPartitionNumber() const;
 

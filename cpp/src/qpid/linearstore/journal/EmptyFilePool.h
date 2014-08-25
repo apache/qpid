@@ -83,6 +83,7 @@ protected:
     void createEmptyFile();
     std::string getEfpFileName();
     std::string popEmptyFile();
+    bool overwriteFileContents(const std::string& fqFileName);
     void pushEmptyFile(const std::string fqFileName);
     void resetEmptyFileHeader(const std::string& fqFileName);
     bool validateEmptyFile(const std::string& emptyFileName) const;

@@ -36,10 +36,12 @@ namespace journal {
 EmptyFilePoolManager::EmptyFilePoolManager(const std::string& qlsStorePath,
                                            const efpPartitionNumber_t defaultPartitionNumber,
                                            const efpDataSize_kib_t defaultEfpDataSize_kib,
+                                           const bool overwriteBeforeReturnFlag,
                                            JournalLog& journalLogRef) :
                 qlsStorePath_(qlsStorePath),
                 defaultPartitionNumber_(defaultPartitionNumber),
                 defaultEfpDataSize_kib_(defaultEfpDataSize_kib),
+                overwriteBeforeReturnFlag_(overwriteBeforeReturnFlag),
                 journalLogRef_(journalLogRef)
 {}
 
@@ -63,7 +65,7 @@ void EmptyFilePoolManager::findEfpPartitions() {
                 std::string fullDirPath(qlsStorePath_ + "/" + (*i));
                 EmptyFilePoolPartition* efppp = 0;
                 try {
-                    efppp = new EmptyFilePoolPartition(pn, fullDirPath, journalLogRef_);
+                    efppp = new EmptyFilePoolPartition(pn, fullDirPath, overwriteBeforeReturnFlag_, journalLogRef_);
                     {
                         slock l(partitionMapMutex_);
                         partitionMap_[pn] = efppp;

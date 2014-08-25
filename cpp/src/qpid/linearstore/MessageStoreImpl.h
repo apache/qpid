@@ -82,6 +82,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
         uint32_t tplWCachePageSizeKib;
         uint16_t efpPartition;
         uint64_t efpFileSizeKib;
+        bool overwriteBeforeReturnFlag;
     };
 
   protected:
@@ -101,6 +102,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     static const uint32_t defTplWCachePageSizeKib = defWCachePageSizeKib / 8;
     static const uint16_t defEfpPartition = 1;
     static const uint64_t defEfpFileSizeKib = 512 * QLS_SBLK_SIZE_KIB;
+    static const bool defOverwriteBeforeReturnFlag = false;
     static const std::string storeTopLevelDir;
 
     static qpid::sys::Duration defJournalGetEventsTimeout;
@@ -129,7 +131,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     std::string storeDir;
     qpid::linearstore::journal::efpPartitionNumber_t defaultEfpPartitionNumber;
     qpid::linearstore::journal::efpDataSize_kib_t defaultEfpFileSize_kib;
-    bool      truncateFlag;
+    bool     overwriteBeforeReturnFlag;
     uint32_t wCachePgSizeSblks;
     uint16_t wCacheNumPages;
     uint32_t tplWCachePgSizeSblks;
@@ -252,7 +254,8 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
               qpid::linearstore::journal::efpDataSize_kib_t efpFileSizeKib = defEfpFileSizeKib,
               const bool truncateFlag = false,
               uint32_t wCachePageSize = defWCachePageSizeKib,
-              uint32_t tplWCachePageSize = defTplWCachePageSizeKib);
+              uint32_t tplWCachePageSize = defTplWCachePageSizeKib,
+              const bool overwriteBeforeReturnFlag_ = false);
 
     void truncateInit();
 
