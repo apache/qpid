@@ -27,6 +27,7 @@ define(["dojo/_base/xhr",
         "dojo/_base/array",
         "dojo/_base/event",
         'dojo/_base/json',
+        'qpid/common/util',
         "dijit/form/NumberSpinner", // required by the form
         /* dojox/ validate resources */
         "dojox/validate/us", "dojox/validate/web",
@@ -41,7 +42,7 @@ define(["dojo/_base/xhr",
         /* basic dojox classes */
         "dojox/form/BusyButton", "dojox/form/CheckedMultiSelect",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser, array, event, json) {
+    function (xhr, dom, construct, win, registry, parser, array, event, json, util) {
 
         var addQueue = {};
 
@@ -147,6 +148,8 @@ define(["dojo/_base/xhr",
                                                 {
                                                     dijit.byId('formAddQueue.' + requiredFields[widgetValue]).required = isChecked;
                                                 }
+
+                                                util.applyMetadataToWidgets(obj.domNode, "Queue", widgetValue);
                                             }
                                         })
                                     }
@@ -192,9 +195,12 @@ define(["dojo/_base/xhr",
         addQueue.show = function(data) {
                             addQueue.vhost = data.virtualhost;
                             addQueue.vhostnode = data.virtualhostnode;
-                            registry.byId("formAddQueue").reset();
+                            var form = registry.byId("formAddQueue");
+                            form.reset();
                             registry.byId("addQueue").show();
-                        };
+                            util.applyMetadataToWidgets(form.domNode, "Queue", "standard");
+
+        };
 
         return addQueue;
     });

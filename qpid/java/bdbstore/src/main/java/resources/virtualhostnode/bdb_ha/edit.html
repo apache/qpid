@@ -25,8 +25,7 @@
                                     placeHolder: 'Group Name',
                                     required: true,
                                     disabled: true,
-                                    missingMessage: 'A group name must be supplied',
-                                    title: 'Enter group name'" />
+                                    title: 'Name of the group'" />
         </div>
     </div>
     <div class="clear">
@@ -39,9 +38,7 @@
                                     placeHolder: 'host:port',
                                     required: true,
                                     disabled: true,
-                                    missingMessage: 'A Host and Port must be supplied',
-                                    invalidMessage: 'Must be of the form host:port',
-                                    title: 'Enter Host and Port name'" />
+                                    title: 'Node address of the group member'" />
         </div>
     </div>
     <div class="clear">
@@ -51,8 +48,9 @@
                    data-dojo-type="dijit/form/ValidationTextBox"
                    data-dojo-props="
                                   name: 'storePath',
-                                  placeHolder: 'path/to/store',
-                                  title: 'Enter configuration store path'" />
+                                  title: 'File system location for the store',
+                                  promptMessage: 'File system location for the store'" />
+
         </div>
     </div>
     <div class="clear">
@@ -63,7 +61,8 @@
                    data-dojo-props="
                                     name: 'designatedPrimary',
                                     required: false,
-                                    title: 'Designate node as primary. It is applicable only to 2-nodes cluster'" />
+                                    title: 'Designate node as primary allowing it to operate solo in a group of two.',
+                                    promptMessage: 'Designate node as primary allowing it to operate solo operate solo in a group of two'" />
         </div>
     </div>
     <div class="clear">
@@ -80,8 +79,9 @@
                    data-dojo-props="
                                 name: 'priority',
                                 required: false,
-                                title: 'Select node priority for election as a Master',
                                 store: nodePriorityStore,
+                                title: 'Set the election priority associated with this node',
+                                promptMessage: 'Election priority associated with this node.<br/>Elections will choose the node with the most recent transactions.<br/>If there is a tie, priority is used as a tie-breaker.',
                                 searchAttr: 'name'" />
         </div>
     </div>
@@ -95,7 +95,8 @@
                    data-dojo-props="
                                 name: 'quorumOverride',
                                 required: false,
-                                title: 'Enter quorum override. 0 signifies simple majority',
+                                title: 'Select minimum required number of nodes or choose Majority',
+                                promptMessage: 'Modifies the minimum number of nodes required to be present to elect a master or commit transactions.<br/>Majority signifies that a natural majority of nodes must be present.',
                                 store: nodeQuorumOverrideStore,
                                 searchAttr: 'name'" />
         </div>

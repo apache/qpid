@@ -92,6 +92,8 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     private int _statisticsReportingPeriod;
     @ManagedAttributeField
     private boolean _statisticsReportingResetEnabled;
+    @ManagedAttributeField
+    private boolean _messageCompressionEnabled;
 
     private State _state = State.UNINITIALIZED;
 
@@ -357,6 +359,12 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     public boolean getStatisticsReportingResetEnabled()
     {
         return _statisticsReportingResetEnabled;
+    }
+
+    @Override
+    public boolean isMessageCompressionEnabled()
+    {
+        return _messageCompressionEnabled;
     }
 
     @Override

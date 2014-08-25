@@ -103,7 +103,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private String _clientProduct = null;
     private String _remoteProcessPid = null;
 
-    private VirtualHostImpl _virtualHost;
+    private VirtualHostImpl<?,?,?> _virtualHost;
 
     private final Map<Integer, AMQChannel<AMQProtocolEngine>> _channelMap =
             new HashMap<Integer, AMQChannel<AMQProtocolEngine>>();
@@ -175,6 +175,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private volatile boolean _stopped;
     private long _readBytes;
     private boolean _authenticated;
+    private boolean _compressionSupported;
+    private int _messageCompressionThreshold;
 
     public AMQProtocolEngine(Broker broker,
                              final NetworkConnection network,
@@ -208,7 +210,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                 return null;
             }
         });
-
+        
         _messagesDelivered = new StatisticsCounter("messages-delivered-" + getSessionID());
         _dataDelivered = new StatisticsCounter("data-delivered-" + getSessionID());
         _messagesReceived = new StatisticsCounter("messages-received-" + getSessionID());
@@ -539,6 +541,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                     _broker.getName());
             serverProperties.setString(ConnectionStartProperties.QPID_CLOSE_WHEN_NO_ROUTE,
                     String.valueOf(_closeWhenNoRoute));
+            serverProperties.setString(ConnectionStartProperties.QPID_MESSAGE_COMPRESSION_SUPPORTED,
+                                       String.valueOf(_broker.isMessageCompressionEnabled()));
 
             AMQMethodBody responseBody = getMethodRegistry().createConnectionStartBody((short) getProtocolMajorVersion(),
                                                                                        (short) pv.getActualMinorVersion(),
@@ -1131,6 +1135,15 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                     _logger.debug("Client set closeWhenNoRoute=" + _closeWhenNoRoute + " for protocol engine " + this);
                 }
             }
+            String compressionSupported = clientProperties.getString(ConnectionStartProperties.QPID_MESSAGE_COMPRESSION_SUPPORTED);
+            if (compressionSupported != null)
+            {
+                _compressionSupported = Boolean.parseBoolean(compressionSupported);
+                if(_logger.isDebugEnabled())
+                {
+                    _logger.debug("Client set compressionSupported=" + _compressionSupported + " for protocol engine " + this);
+                }
+            }
 
             _clientVersion = clientProperties.getString(ConnectionStartProperties.VERSION_0_8);
             _clientProduct = clientProperties.getString(ConnectionStartProperties.PRODUCT);
@@ -1181,17 +1194,24 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         return getMethodRegistry();
     }
 
-    public VirtualHostImpl getVirtualHost()
+    public VirtualHostImpl<?,?,?> getVirtualHost()
     {
         return _virtualHost;
     }
 
-    public void setVirtualHost(VirtualHostImpl virtualHost) throws AMQException
+    public void setVirtualHost(VirtualHostImpl<?,?,?> virtualHost) throws AMQException
     {
         _virtualHost = virtualHost;
 
         _virtualHost.getConnectionRegistry().registerConnection(this);
 
+
+        _messageCompressionThreshold = virtualHost.getContextValue(Integer.class,
+                                                                   Broker.MESSAGE_COMPRESSION_THRESHOLD_SIZE);
+        if(_messageCompressionThreshold <= 0)
+        {
+            _messageCompressionThreshold = Integer.MAX_VALUE;
+        }
     }
 
     public void addDeleteTask(Action<? super AMQProtocolEngine> task)
@@ -1595,15 +1615,16 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         }
 
         @Override
-        public void deliverToClient(final ConsumerImpl sub, final ServerMessage message,
+        public long deliverToClient(final ConsumerImpl sub, final ServerMessage message,
                                     final InstanceProperties props, final long deliveryTag)
         {
-            registerMessageDelivered(message.getSize());
-            _protocolOutputConverter.writeDeliver(message,
+            long size = _protocolOutputConverter.writeDeliver(message,
                                                   props,
                                                   _channelId,
                                                   deliveryTag,
                                                   new AMQShortString(sub.getName()));
+            registerMessageDelivered(size);
+            return size;
         }
 
     }
@@ -1634,6 +1655,18 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     public boolean isCloseWhenNoRoute()
     {
         return _closeWhenNoRoute;
+    }
+
+    @Override
+    public boolean isCompressionSupported()
+    {
+        return _compressionSupported && _broker.isMessageCompressionEnabled();
+    }
+
+    @Override
+    public int getMessageCompressionThreshold()
+    {
+        return _messageCompressionThreshold;
     }
 
     public EventLogger getEventLogger()

@@ -56,6 +56,8 @@ define(["dojo/_base/lang",
                     disabled: accessControlProvider.name ? true : false,
                     label: "Name*:",
                     regexp: "^[\x20-\x2e\x30-\x7F]{1,255}$",
+                    promptMessage: "Name of access control provider.",
+                    placeHolder: "name",
                     name: "name"});
               }
           }, {
@@ -171,6 +173,8 @@ define(["dojo/_base/lang",
               accessControlProvider ? accessControlProvider : {},
               "api/latest/accesscontrolprovider" + (name ? "/" + encodeURIComponent(name.name) : ""),
               accessControlProvider ? "Edit access control provider - " + accessControlProvider.name : "Add access control provider",
+              "AccessControlProvider",
+              accessControlProvider && accessControlProvider.type ? accessControlProvider.type : "AclFile",
               accessControlProvider ? false : true);
         };
         return addAccessControlProvider;

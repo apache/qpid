@@ -143,7 +143,12 @@ public class MessageServlet extends AbstractServlet
             throw new IllegalArgumentException("Could not find virtual host with name '" + vhostName + "'");
         }
 
-        return getQueueFromVirtualHost(queueName, vhost);
+        Queue queueFromVirtualHost = getQueueFromVirtualHost(queueName, vhost);
+        if (queueFromVirtualHost == null)
+        {
+            throw new IllegalArgumentException("Could not find queue with name '" + queueName  + "' on virtual host '" + vhost.getName() + "'");
+        }
+        return queueFromVirtualHost;
     }
 
     private Queue getQueueFromVirtualHost(String queueName, VirtualHost<?,?,?> vhost)

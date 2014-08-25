@@ -19,15 +19,19 @@
  *
  */
 define(["dojo/_base/xhr",
+        "dojo/_base/array",
         "dojo/_base/event",
-        "dojo/json",
         "dojo/_base/lang",
+        "dojo/json",
         "dojo/dom-construct",
         "dojo/dom-geometry",
         "dojo/window",
         "dojo/query",
         "dojo/parser",
+        "dojo/store/Memory",
         "dojox/html/entities",
+        "qpid/common/metadata",
+        "qpid/common/widgetconfigurer",
         "dijit/registry",
         "dijit/TitlePane",
         "dijit/Dialog",
@@ -35,13 +39,15 @@ define(["dojo/_base/xhr",
         "dijit/form/Button",
         "dijit/form/RadioButton",
         "dijit/form/CheckBox",
+        "dijit/form/FilteringSelect",
+        "dijit/form/ValidationTextBox",
         "dojox/layout/TableContainer",
         "dijit/layout/ContentPane",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"
         ],
-       function (xhr, event, json, lang, dom, geometry, win, query, parser, entities, registry) {
+       function (xhr, array, event, lang, json, dom, geometry, win, query, parser, Memory, entities, metadata, widgetconfigurer, registry) {
            var util = {};
            if (Array.isArray) {
                util.isArray = function (object) {
@@ -146,7 +152,7 @@ define(["dojo/_base/xhr",
                return (type === "PlainPasswordFile" || type === "Base64MD5PasswordFile" || type === "SCRAM-SHA-1" || type === "SCRAM-SHA-256");
            };
 
-           util.showSetAttributesDialog = function(attributeWidgetFactories, data, putURL, dialogTitle, appendNameToUrl)
+           util.showSetAttributesDialog = function(attributeWidgetFactories, data, putURL, dialogTitle, category, type, appendNameToUrl)
            {
               var layout = new dojox.layout.TableContainer({
                    cols: 1,
@@ -200,7 +206,7 @@ define(["dojo/_base/xhr",
                    {
                      groupFieldContainer = new dojox.layout.TableContainer({
                            cols: 1,
-                           "labelWidth": "290",
+                           "labelWidth": "300",
                            showLabels: true,
                            orientation: "horiz",
                            customClass: "formLabel"
@@ -219,6 +225,8 @@ define(["dojo/_base/xhr",
                    requiredFor[attributeWidgetFactory.requiredFor] = widget;
                  }
               }
+
+              this.applyMetadataToWidgets(dialogContent, category, type);
 
               // add onchange handler to set required property for dependent widget
               for(var widgetName in requiredFor)
@@ -310,12 +318,15 @@ define(["dojo/_base/xhr",
                      aproximateHeight += 30;
                  }
              }
-             var viewport = win.getBox();
-             var maxHeight = Math.max(Math.floor(viewport.h * 0.6), 100);
              dialogContentArea.style.overflow= "auto";
-             dialogContentArea.style.height = Math.min(aproximateHeight, maxHeight ) + "px";
+             dialogContentArea.style.height = "300";
              setAttributesDialog.on("hide", function(e){setAttributesDialog.destroy();});
              setAttributesDialog.show();
+           };
+
+           util.findAllWidgets = function(root)
+           {
+               return query("[widgetid]", root).map(registry.byNode).filter(function(w){ return w;});
            };
 
            util.xhrErrorHandler = function(error)
@@ -540,6 +551,16 @@ define(["dojo/_base/xhr",
              }
            }
 
+           util.applyMetadataToWidgets = function(domRoot, category, type)
+           {
+             var widgets = util.findAllWidgets(domRoot);
+             array.forEach(widgets,
+               function (widget)
+               {
+                 widgetconfigurer.config(widget, category, type);
+               });
+           }
+
            util.getFormWidgetValues = function (form, initialData)
            {
                var values = {};
@@ -634,6 +655,16 @@ define(["dojo/_base/xhr",
                        updatableStore.grid.render();
                    }
                }
+           }
+
+           util.makeTypeStore = function (types)
+           {
+               var typeData = [];
+               for (var i = 0; i < types.length; i++) {
+                   var type = types[i];
+                   typeData.push({id: type, name: type});
+               }
+               return new Memory({ data: typeData });
            }
 
            var singleContextVarRegexp = "(\\${[\\w\\.\\-]+})";

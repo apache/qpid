@@ -42,8 +42,14 @@ public interface TestRootCategory<X extends TestRootCategory<X>> extends Configu
     String getAutomatedNonPersistedValue();
 
     String DEFAULTED_VALUE_DEFAULT = "myDefaultVar";
+    String VALID_VALUE1 = "FOO";
+    String VALID_VALUE2 = "BAR";
+
     @ManagedAttribute( defaultValue = DEFAULTED_VALUE_DEFAULT)
     String getDefaultedValue();
+
+    @ManagedAttribute(validValues = {VALID_VALUE1, VALID_VALUE2} )
+    String getValidValue();
 
     @ManagedAttribute
     String getStringValue();

@@ -386,7 +386,9 @@ define(["dojo/_base/connect",
                     that.queueChooser = new FilteringSelect({ id: "addBindingSelectQueue",
                                                               name: "queue",
                                                               store: queueStore,
-                                                              searchAttr: "name"}, input);
+                                                              searchAttr: "name",
+                                                              promptMessage: "Name of the queue",
+                                                              title: "Select the name of the queue"}, input);
 
                     if(obj.queue)
                     {
@@ -414,7 +416,9 @@ define(["dojo/_base/connect",
                             that.exchangeChooser = new FilteringSelect({ id: "addBindingSelectExchange",
                                                                       name: "exchange",
                                                                       store: exchangeStore,
-                                                                      searchAttr: "name"}, input);
+                                                                      searchAttr: "name",
+                                                                      promptMessage: "Name of the exchange",
+                                                                      title: "Select the name of the exchange"}, input);
 
                             if(obj.exchange)
                             {

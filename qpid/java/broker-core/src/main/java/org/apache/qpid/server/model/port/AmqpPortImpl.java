@@ -19,9 +19,12 @@
  */
 package org.apache.qpid.server.model.port;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Map;
@@ -31,6 +34,8 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
+import org.codehaus.jackson.map.ObjectMapper;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -43,6 +48,7 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
+import org.apache.qpid.server.plugin.ProtocolEngineCreator;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.TransportProviderFactory;
 import org.apache.qpid.server.transport.AcceptingTransport;
@@ -275,4 +281,87 @@ public class AmqpPortImpl extends AbstractPortWithAuthProvider<AmqpPortImpl> imp
         return null;
     }
 
+    public static Set<Protocol> getInstalledProtocols()
+    {
+        Set<Protocol> protocols = new HashSet<>();
+        for(ProtocolEngineCreator installedEngine : (new QpidServiceLoader<ProtocolEngineCreator>()).instancesOf(ProtocolEngineCreator.class))
+        {
+            protocols.add(installedEngine.getVersion());
+        }
+        return protocols;
+    }
+
+    @SuppressWarnings("unused")
+    public static Collection<String> getAllAvailableProtocolCombinations()
+    {
+        Set<Protocol> protocols = getInstalledProtocols();
+
+        Set<Set<String>> last = new HashSet<>();
+        for(Protocol protocol : protocols)
+        {
+            last.add(Collections.singleton(protocol.name()));
+        }
+
+        Set<Set<String>> protocolCombinations = new HashSet<>(last);
+        for(int i = 1; i < protocols.size(); i++)
+        {
+            Set<Set<String>> current = new HashSet<>();
+            for(Set<String> set : last)
+            {
+                for(Protocol p : protocols)
+                {
+                    if(!set.contains(p.name()))
+                    {
+                        Set<String> potential = new HashSet<>(set);
+                        potential.add(p.name());
+                        current.add(potential);
+                    }
+                }
+            }
+            protocolCombinations.addAll(current);
+            last = current;
+        }
+        Set<String> combinationsAsString = new HashSet<>(protocolCombinations.size());
+        ObjectMapper mapper = new ObjectMapper();
+        for(Set<String> combination : protocolCombinations)
+        {
+            try(StringWriter writer = new StringWriter())
+            {
+                mapper.writeValue(writer, combination);
+                combinationsAsString.add(writer.toString());
+            }
+            catch (IOException e)
+            {
+                throw new IllegalArgumentException("Unexpected IO Exception generating JSON string", e);
+            }
+        }
+        return Collections.unmodifiableSet(combinationsAsString);
+    }
+
+    @SuppressWarnings("unused")
+    public static Collection<String> getAllAvailableTransportCombinations()
+    {
+        Set<Set<Transport>> combinations = new HashSet<>();
+
+        for(TransportProviderFactory providerFactory : (new QpidServiceLoader<TransportProviderFactory>()).instancesOf(TransportProviderFactory.class))
+        {
+            combinations.addAll(providerFactory.getSupportedTransports());
+        }
+
+        Set<String> combinationsAsString = new HashSet<>(combinations.size());
+        ObjectMapper mapper = new ObjectMapper();
+        for(Set<Transport> combination : combinations)
+        {
+            try(StringWriter writer = new StringWriter())
+            {
+                mapper.writeValue(writer, combination);
+                combinationsAsString.add(writer.toString());
+            }
+            catch (IOException e)
+            {
+                throw new IllegalArgumentException("Unexpected IO Exception generating JSON string", e);
+            }
+        }
+        return Collections.unmodifiableSet(combinationsAsString);
+    }
 }

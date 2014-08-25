@@ -50,7 +50,7 @@ public interface ConsumerTarget
 
     AMQSessionModel getSessionModel();
 
-    void send(MessageInstance entry, boolean batch);
+    long send(MessageInstance entry, boolean batch);
 
     void flushBatched();
 

@@ -21,6 +21,17 @@
 
 package org.apache.qpid.client;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.XASession;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +40,6 @@ import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.transport.ClientConnectionDelegate;
 import org.apache.qpid.common.ServerPropertyNames;
-
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
@@ -47,16 +57,6 @@ import org.apache.qpid.transport.ProtocolVersionException;
 import org.apache.qpid.transport.SessionDetachCode;
 import org.apache.qpid.transport.SessionException;
 import org.apache.qpid.transport.TransportException;
-
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.XASession;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
 public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, ConnectionListener
 {
@@ -441,7 +441,11 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         try
         {
             clientProps.put(ConnectionStartProperties.CLIENT_ID_0_10, _conn.getClientID());
-	        conSettings.setClientProperties(clientProps);
+            if(_conn.isMessageCompressionDesired())
+            {
+                clientProps.put(ConnectionStartProperties.QPID_MESSAGE_COMPRESSION_SUPPORTED, Boolean.TRUE.toString());
+            }
+            conSettings.setClientProperties(clientProps);
         }
         catch (JMSException e)
         {
@@ -503,5 +507,11 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     {
         //0-10 supports the isBound method
         return true;
+    }
+
+    @Override
+    public boolean isMessageCompressionSupported()
+    {
+        return _qpidConnection.isMessageCompressionSupported();
     }
 }

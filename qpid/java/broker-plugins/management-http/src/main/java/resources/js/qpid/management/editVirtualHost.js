@@ -56,6 +56,7 @@ define(["dojo/_base/xhr",
         var that=this;
         this.containerNode = domConstruct.create("div", {innerHTML: template});
         parser.parse(this.containerNode);
+        this.allFieldsContainer = dom.byId("editVirtualHost.allFields");
         this.typeFieldsContainer = dom.byId("editVirtualHost.typeFields");
         this.dialog = registry.byId("editVirtualHostDialog");
         this.saveButton = registry.byId("editVirtualHost.saveButton");
@@ -176,6 +177,8 @@ define(["dojo/_base/xhr",
                 {
                     TypeUI.show({containerNode:that.typeFieldsContainer, parent: that, data: virtualHostData});
                     that.form.connectChildren();
+
+                    util.applyMetadataToWidgets(that.allFieldsContainer, "VirtualHost", virtualHostData.type);
                 }
                 catch(e)
                 {

@@ -254,6 +254,19 @@ public class ClientProperties
     public static final String CONNECTION_OPTION_SSL_VERIFY_HOST_NAME = "qpid.connection_ssl_verify_hostname";
     public static final boolean DEFAULT_CONNECTION_OPTION_SSL_VERIFY_HOST_NAME = true;
 
+    /**
+     * System property to set a default value for a connection option 'compress_messages'
+     */
+    public static final String CONNECTION_OPTION_COMPRESS_MESSAGES = "qpid.connection_compress_messages";
+    public static final boolean DEFAULT_CONNECTION_OPTION_COMPRESS_MESSAGES = false;
+
+
+    /**
+     * System property to set a default value for a connection option 'message_compression_threshold_size'
+     */
+    public static final String CONNECTION_OPTION_MESSAGE_COMPRESSION_THRESHOLD_SIZE = "qpid.message_compression_threshold_size";
+    public static final int DEFAULT_MESSAGE_COMPRESSION_THRESHOLD_SIZE = 102400;
+
     private ClientProperties()
     {
         //No instances

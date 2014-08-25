@@ -30,8 +30,8 @@
                                   name: 'groupName',
                                   placeHolder: 'group name',
                                   required: true,
-                                  missingMessage: 'The group name must be supplied',
-                                  title: 'Enter the group name'" />
+                                  promptMessage: 'Name of the existing group',
+                                  title: 'Enter name of the existing group'," />
                 </div>
             </div>
             <div class="clear">
@@ -43,8 +43,8 @@
                                   name: 'helperNodeName',
                                   placeHolder: 'node name from group',
                                   required: true,
-                                  missingMessage: 'A node name must be supplied',
-                                  title: 'Enter a node name'" />
+                                  promptMessage: 'Node name of an existing group member.',
+                                  title: 'Enter node name of an existing member of the group'" />
                 </div>
             </div>
             <div class="clear">
@@ -56,8 +56,8 @@
                                   name: 'helperAddress',
                                   placeHolder: 'node address from group',
                                   required: true,
-                                  missingMessage: 'Node host and port must be supplied',
-                                  title: 'Enter address'" />
+                                  promptMessage: 'Node address of the existing group member.',
+                                  title: 'Enter node address of the existing group member'" />
                 </div>
             </div>
         </fieldset>
@@ -76,8 +76,8 @@
                               name: 'address',
                               placeHolder: 'host:port',
                               required: true,
-                              missingMessage: 'Node host and port must be supplied',
-                              title: 'Enter address'" />
+                              promptMessage: 'Node hostname and port number that new node will use.<br/>Other nodes will use connect to this address to replicate messages',
+                              title: 'Enter node hostname and port number that new node will use'" />
                 </div>
             </div>
             <div class="clear">
@@ -88,7 +88,8 @@
                            data-dojo-props="
                               name: 'storePath',
                               placeHolder: 'path/to/store',
-                              title: 'Enter store path'" />
+                              promptMessage: 'File system location for the store',
+                              title: 'Enter file system location for the store'" />
                 </div>
             </div>
         </fieldset>

@@ -36,7 +36,8 @@ public class TestModel extends Model
     private static final Model INSTANCE = new TestModel();
     private Class<? extends ConfiguredObject>[] _supportedClasses =
             new Class[] {
-                    TestRootCategory.class
+                    TestRootCategory.class,
+                    TestChildCategory.class
             };
 
     private final ConfiguredObjectFactory _objectFactory;
@@ -77,7 +78,9 @@ public class TestModel extends Model
     @Override
     public Collection<Class<? extends ConfiguredObject>> getChildTypes(final Class<? extends ConfiguredObject> parent)
     {
-        return Collections.emptySet();
+        return TestRootCategory.class.isAssignableFrom(parent)
+                ? Collections.<Class<? extends ConfiguredObject>>singleton(TestChildCategory.class)
+                : Collections.<Class<? extends ConfiguredObject>>emptySet();
     }
 
     @Override
@@ -89,7 +92,9 @@ public class TestModel extends Model
     @Override
     public Collection<Class<? extends ConfiguredObject>> getParentTypes(final Class<? extends ConfiguredObject> child)
     {
-        return Collections.emptySet();
+        return TestChildCategory.class.isAssignableFrom(child)
+                ? Collections.<Class<? extends ConfiguredObject>>singleton(TestRootCategory.class)
+                : Collections.<Class<? extends ConfiguredObject>>emptySet();
     }
 
     @Override

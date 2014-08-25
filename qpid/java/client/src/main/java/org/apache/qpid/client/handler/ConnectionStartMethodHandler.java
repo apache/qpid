@@ -20,6 +20,13 @@
  */
 package org.apache.qpid.client.handler;
 
+import java.io.UnsupportedEncodingException;
+import java.util.StringTokenizer;
+
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,12 +46,6 @@ import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.properties.ConnectionStartProperties;
-
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
-import java.io.UnsupportedEncodingException;
-import java.util.StringTokenizer;
 
 public class ConnectionStartMethodHandler implements StateAwareMethodListener<ConnectionStartBody>
 {
@@ -173,6 +174,9 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
                 ConnectionURL url = getConnectionURL(session);
                 _closeWhenNoRouteHelper.setClientProperties(clientProperties, url, serverProperties);
 
+                clientProperties.setString(ConnectionStartProperties.QPID_MESSAGE_COMPRESSION_SUPPORTED,
+                                           String.valueOf(session.getAMQConnection().isMessageCompressionDesired()));
+
                 ConnectionStartOkBody connectionStartOkBody = session.getMethodRegistry().createConnectionStartOkBody(clientProperties,new AMQShortString(mechanism),saslResponse,new AMQShortString(locales));
                 // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
@@ -188,7 +192,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
         else
         {
             _log.error("Broker requested Protocol [" + body.getVersionMajor() + "-" + body.getVersionMinor()
-                + "] which is not supported by this version of the client library");
+                       + "] which is not supported by this version of the client library");
 
             session.closeProtocolSession();
         }

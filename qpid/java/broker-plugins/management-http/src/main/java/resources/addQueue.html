@@ -21,216 +21,316 @@
 <div class="dijitHidden">
     <div data-dojo-type="dijit.Dialog" data-dojo-props="title:'Add Queue'" id="addQueue">
         <form id="formAddQueue" method="post" dojoType="dijit.form.Form">
-            <div  style="height:250px; width:600px; overflow: auto">
-            <table cellpadding="0" cellspacing="2">
-                <tr>
-                    <td valign="top"><strong>Queue Name*: </strong></td>
-                    <td><input type="text" required="true" name="name" id="formAddQueue.name" placeholder="Queue Name"
-                        dojoType="dijit.form.ValidationTextBox" missingMessage="A name must be supplied" regexp="^[\x20-\x2e\x30-\x7F]{1,255}$"/></td>
-                </tr>
-                <tr>
-                    <td valign="top"><strong>Durable? </strong></td>
-                    <td><input type="checkbox" name="durable" id="formAddQueue.durable" value="durable" checked="checked" dojoType="dijit.form.CheckBox" /></td>
-                </tr>
-                <tr>
-                    <td valign="top"><strong>Persist Messages? </strong></td>
-                    <td>
-                        <select id="formAddQueue.messageDurability" name="messageDurability" data-dojo-type="dijit.form.FilteringSelect"
-                                data-dojo-props="name: 'messageDurability', value: '', searchAttr: 'name', placeHolder: '', value: '', required: false ">
-                            <option value="ALWAYS">Always</option>
-                            <option value="DEFAULT">Default</option>
-                            <option value="NEVER">Never</option>
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <td valign="top"><strong>Max Ttl:  </strong></td>
-                    <td><input type="text" required="false" name="maximumMessageTtl" id="formAddQueue.maximumMessageTtl" placeholder="Ttl in ms."
-                               dojoType="dijit.form.ValidationTextBox"
-                               trim="true"
-                               regexp="[0-9]+"
-                               invalidMessage= "Invalid value" /></td>
-                </tr>
-                <tr>
-                    <td valign="top"><strong>Min Ttl:  </strong></td>
-                    <td><input type="text" required="false" name="minimumMessageTtl" id="formAddQueue.minimumMessageTtl" placeholder="Ttl in ms."
-                               dojoType="dijit.form.ValidationTextBox"
-                               trim="true"
-                               regexp="[0-9]+"
-                               invalidMessage= "Invalid value" /></td>
-                </tr>
-                <tr>
-                    <td valign="top"><strong>Queue Type: </strong></td>
-                    <td>
+
+            <div class="clear">
+                <div class="formLabel-labelCell">Queue Name*:</div>
+                <div class="formLabel-controlCell">
+                    <input type="text" id="formAddQueue.name"
+                           data-dojo-type="dijit/form/ValidationTextBox"
+                           data-dojo-props="
+                                  name: 'name',
+                                  placeHolder: 'queue name',
+                                  required: true,
+                                  promptMessage: 'Name of queue',
+                                  title: 'Enter a queue name',
+                                  regExp:'^[\x20-\x2e\x30-\x7F]{1,255}$'"/>
+                </div>
+            </div>
+            <div class="clear">
+                <div class="formLabel-labelCell">Queue Type:</div>
+                <div class="formLabel-controlCell">
                     <input type="radio" id="formAddQueueTypeStandard" name="type" value="standard" checked="checked" dojoType="dijit.form.RadioButton" />
                     <label for="formAddQueueTypeStandard">Standard</label>
-                    &nbsp;&nbsp;
+                    &nbsp;
                     <input type="radio" id="formAddQueueTypePriority" name="type" value="priority" dojoType="dijit.form.RadioButton" />
                     <label for="formAddQueueTypePriority">Priority</label>
-                    &nbsp;&nbsp;
+                    &nbsp;
                     <input type="radio" id="formAddQueueTypeLVQ" name="type" value="lvq" dojoType="dijit.form.RadioButton" />
                     <label for="formAddQueueTypeLVQ">LVQ</label>
-                    &nbsp;&nbsp;
+                    &nbsp;
                     <input type="radio" id="formAddQueueTypeSorted" name="type" value="sorted" dojoType="dijit.form.RadioButton" />
                     <label for="formAddQueueTypeSorted">Sorted</label>
-                    </td>
-                </tr>
-            </table>
+                </div>
+            </div>
+            <div class="clear">
+                <div class="formLabel-labelCell">Durable?</div>
+                <div class="formLabel-controlCell">
+                    <input type="checkbox" id="formAddQueue.durable"
+                           dojoType="dijit.form.CheckBox"
+                           data-dojo-props="
+                              name: 'durable',
+                              value: 'durable',
+                              checked: true"/>
+                </div>
+            </div>
+            <div class="clear">
+                <div class="formLabel-labelCell">Persist Messages?</div>
+                <div class="formLabel-controlCell">
+                    <select id="formAddQueue.messageDurability"
+                            dojoType="dijit.form.FilteringSelect"
+                            data-dojo-props="
+                              name: 'messageDurability',
+                              value: '',
+                              searchAttr: 'name',
+                              required: false,
+                              promptMessage: 'Message durability override. If not default, messages arriving will have durability setting overridden',
+                              title: 'Enter message durability override'">
+                        <option value="ALWAYS">Always</option>
+                        <option value="DEFAULT">Default</option>
+                        <option value="NEVER">Never</option>
+                    </select>
+                </div>
+            </div>
+            <div class="clear">
+                <div class="formLabel-labelCell">Maximum Ttl:</div>
+                <div class="formLabel-controlCell">
+                    <input type="text" id="formAddQueue.maximumMessageTtl"
+                           data-dojo-type="dijit/form/ValidationTextBox"
+                           data-dojo-props="
+                                  name: 'maximumMessageTtl',
+                                  placeHolder: 'ttl in ms',
+                                  promptMessage: 'Maximum message time to live (ttl) in ms. Messages arriving with larger ttl values will be overridden by this value',
+                                  title: 'Enter the maximum message time to live in milliseconds',
+                                  trim: true"/>
+                </div>
+            </div>
+            <div class="clear">
+                <div class="formLabel-labelCell">Minimum Ttl:</div>
+                <div class="formLabel-controlCell">
+                    <input type="text" id="formAddQueue.minimumMessageTtl"
+                           data-dojo-type="dijit/form/ValidationTextBox"
+                           data-dojo-props="
+                                  name: 'minimumMessageTtl',
+                                  placeHolder: 'ttl in ms',
+                                  promptMessage: 'Minimum message time to live (ttl) in ms. Messages arriving with smaller ttl values will be overridden by this value',
+                                  title: 'Enter the minimum message time to live in milliseconds',
+                                  trim: true"/>
+                </div>
+            </div>
+
             <br/>
+            <div class="clear"></div>
+
 
             <div id="formAddQueueTypePriority:fields" class="hidden"
                  data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Priority Queue Settings'">
-                <table cellpadding="0" cellspacing="2">
-                    <tr>
-                        <td valign="top"><strong>Priorities:  </strong></td>
-                        <td><input data-dojo-type="dijit.form.NumberSpinner" id="formAddQueue.priorities"
-                                   name="priorities" value="10" smallDelta="1" constraints="{min:1,max:10,places:0}"/>
-                    </tr>
-                </table>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Priorities:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.priorities"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'priorities',
+                                  placeHolder: 'number of priorities',
+                                  promptMessage: 'Number of priorities supported by the queue',
+                                  title: 'Enter the number of priorities supported by the queue',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear"></div>
             </div>
-
 
             <div id="formAddQueueTypeLVQ:fields" class="hidden"
                  data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Last Value Queue Settings'">
-                <table cellpadding="0" cellspacing="2">
-                    <tr>
-                        <td valign="top"><strong>LVQ Message Property:  </strong></td>
-                        <td><input type="text" name="lvqKey" id="formAddQueue.lvqkey"
-                                   placeholder="qpid.LVQ_key" dojoType="dijit.form.ValidationTextBox" /></td>
-                    </tr>
-                </table>
+                <div class="clear">
+                    <div class="formLabel-labelCell">LVQ Message Property:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.lvqkey"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'lvqKey',
+                                  placeHolder: 'lvq key',
+                                  promptMessage: 'Name of the message property used to perform the conflation',
+                                  title: 'Enter the name of the message property used to perform the conflation',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear"></div>
             </div>
 
             <div id="formAddQueueTypeSorted:fields" class="hidden"
                  data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Sorted Queue Settings'">
-                <table cellpadding="0" cellspacing="2">
-                    <tr>
-                        <td valign="top"><strong>Sort Message Property:  </strong></td>
-                        <td><input type="text" name="sortKey" id="formAddQueue.sortkey" required="false"
-                                                       placeholder="" dojoType="dijit.form.ValidationTextBox" /></td>
-                    </tr>
-                </table>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Sort Message Property*:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.sortkey"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'sortKey',
+                                  placeHolder: 'sort key',
+                                  promptMessage: 'Name of the message property used for sorting the messages on the queue',
+                                  title: 'Enter the name of the message property used for sorting the messages on the queue',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear"></div>
             </div>
 
             <br/>
             <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Flow Control Settings', open: false">
-                <table cellpadding="0" cellspacing="2">
-
-                    <!-- x-qpid-capacity -->
-                    <tr>
-                        <td valign="top"><strong>Capacity:  </strong></td>
-                        <td><input type="text" required="false" name="queueFlowControlSizeBytes" id="formAddQueue.capacity" placeholder="Size in bytes"
-                            dojoType="dijit.form.ValidationTextBox"
-                            trim="true"
-                            regexp="[0-9]+"
-                            invalidMessage= "Invalid value"/></td>
-                    </tr>
-                    <!-- x-qpid-flow-resume-capacity -->
-                    <tr>
-                        <td valign="top"><strong>Resume Capacity:  </strong></td>
-                        <td><input type="text" required="false" name="queueFlowResumeSizeBytes" id="formAddQueue.flowResumeCapacity" placeholder="Size in bytes"
-                            dojoType="dijit.form.ValidationTextBox"
-                            trim="true"
-                            regexp="[0-9]+"
-                            invalidMessage= "Invalid value"/></td>
-                    </tr>
-                </table>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Capacity:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.capacity"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'queueFlowControlSizeBytes',
+                                  placeHolder: 'size in bytes',
+                                  promptMessage: 'Ceiling (in bytes) at which queue will begin to throttle sessions producing messages',
+                                  title: 'Enter the ceiling (in bytes) at which queue will begin to throttle sessions producing messages',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Resume Capacity:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.flowResumeCapacity"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'queueFlowResumeSizeBytes',
+                                  placeHolder: 'size in bytes',
+                                  promptMessage: 'Floor (in bytes) at which queue will cease to throttle sessions producing messages',
+                                  title: 'Enter the floor (in bytes) at which queue will cease to throttle sessions producing messages',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear"></div>
             </div>
+
             <br/>
             <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Settings', open: false">
-                <table cellpadding="0" cellspacing="2">
-                    <!-- x-qpid-maximum-message-count -->
-                    <tr>
-                        <td valign="top"><strong>Queue Depth:  </strong></td>
-                        <td><input type="text" required="false" name="alertThresholdQueueDepthMessages" id="formAddQueue.maximumMessageCount" placeholder="Number of messages"
-                            dojoType="dijit.form.ValidationTextBox"
-                            trim="true"
-                            regexp="[0-9]+"
-                            invalidMessage= "Invalid value" /></td>
-                    </tr>
-                    <!-- x-qpid-maximum-queue-depth -->
-                    <tr>
-                        <td valign="top"><strong>Queue Depth:  </strong></td>
-                        <td><input type="text" required="false" name="alertThresholdQueueDepthBytes" id="formAddQueue.maximumQueueDepth" placeholder="Total message size in bytes"
-                            dojoType="dijit.form.ValidationTextBox"
-                            trim="true"
-                            regexp="[0-9]+"
-                            invalidMessage= "Invalid value" /></td>
-                    </tr>
-                    <!-- x-qpid-maximum-message-age -->
-                    <tr>
-                        <td valign="top"><strong>Message Age:  </strong></td>
-                        <td><input type="text" required="false" name="alertThresholdMessageAge" id="formAddQueue.maximumMessageAge" placeholder="Time in ms"
-                            dojoType="dijit.form.ValidationTextBox"
-                            trim="true"
-                            regexp="[0-9]+"
-                            invalidMessage= "Invalid value"  /></td>
-                    </tr>
-                    <!-- x-qpid-maximum-message-size -->
-                    <tr>
-                        <td valign="top"><strong>Message Size:  </strong></td>
-                        <td><input type="text" required="false" name="alertThresholdMessageSize" id="formAddQueue.maximumMessageSize" placeholder="Size in bytes"
-                            dojoType="dijit.form.ValidationTextBox"
-                            trim="true"
-                            regexp="[0-9]+"
-                            invalidMessage= "Invalid value"/></td>
-                    </tr>
-                    <!-- x-qpid-minimum-alert-repeat-gap -->
-                    <tr>
-                        <td valign="top"><strong>Gap between alerts:  </strong></td>
-                        <td><input type="text" required="false" name="alertRepeatGap" id="formAddQueue.minimumAlertRepeatGap" placeholder="Time in ms"
-                            dojoType="dijit.form.ValidationTextBox"
-                            trim="true"
-                            regexp="[0-9]+"
-                            invalidMessage= "Invalid value" /></td>
-                    </tr>
-                </table>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Queue Depth:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.maximumMessageCount"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'alertThresholdQueueDepthMessages',
+                                  placeHolder: 'number of messages',
+                                  promptMessage: 'Ceiling value for number of messages on queue before alerts will be generated',
+                                  title: 'Enter the ceiling value for number of messages on queue before alerts will be generated',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Queue Depth:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.maximumQueueDepth"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'alertThresholdQueueDepthBytes',
+                                  placeHolder: 'total message size in bytes',
+                                  promptMessage: 'Ceiling value (in bytes) for total size of all messages on the queue before alerts will be generated',
+                                  title: 'Enter the ceiling value (in bytes) for total size of all messages on the queue before alerts will be generated',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Message Age:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.maximumMessageAge"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'alertThresholdMessageAge',
+                                  placeHolder: 'time in ms',
+                                  promptMessage: 'Message age (in milliseconds) above which alerts will be generated',
+                                  title: 'Enter the message age (in milliseconds) above which alerts will be generated',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Message Size:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.maximumMessageSize"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'alertThresholdMessageSize',
+                                  placeHolder: 'message size in bytes',
+                                  promptMessage: 'Message size (in bytes) above which alerts will be generated',
+                                  title: 'Enter the message size (in bytes) above which alerts will be generated',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Gap between alerts:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.alertRepeatGap"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'alertRepeatGap',
+                                  placeHolder: 'time in ms',
+                                  promptMessage: 'Minimum time (in milliseconds) between each alert',
+                                  title: 'Enter the minimum time (in milliseconds) between each alert.',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear"></div>
             </div>
+
             <br/>
             <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Other Settings', open: false">
-                <table cellpadding="0" cellspacing="2">
+                <div class="clear">
+                    <div class="formLabel-labelCell">Maximum Delivery Retries:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.maximumDeliveryAttempts"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'maximumDeliveryAttempts',
+                                  placeHolder: 'number of retries',
+                                  promptMessage: 'Maximum number of delivery attempts before the message will be sent to the alternate exchange',
+                                  title: 'Enter the maximum number of delivery attempts before the message will be sent to the alternate exchange',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Create DLQ?</div>
+                    <div class="formLabel-controlCell">
+                        <input type="checkbox" id="formAddQueue.dlqEnabled"
+                               dojoType="dijit.form.CheckBox"
+                               data-dojo-props="
+                              name: 'dlqEnabled',
+                              value: 'dlqEnabled',
+                              title: 'Controls where a dead letter queue is automatically created',
+                              checked: false"/>
+                    </div>
+                </div>
 
-                    <!-- x-qpid-maximum-delivery-count -->
-                    <tr>
-                        <td valign="top"><strong>Maximum Delivery Retries:  </strong></td>
-                        <td><input type="text" required="false" name="maximumDeliveryAttempts" id="formAddQueue.maximumDeliveryCount"
-                            dojoType="dijit.form.ValidationTextBox"
-                            trim="true"
-                            regexp="[0-9]+"
-                            invalidMessage= "Invalid value"/></td>
-                    </tr>
-                    <tr>
-                        <td valign="top"><strong>Create DLQ? </strong></td>
-                        <td><input type="checkbox" name="dlqEnabled" id="formAddQueue.dlqEnabled" value="dlqEnabled" dojoType="dijit.form.CheckBox" /></td>
-                    </tr>
-                </table>
-                <table cellpadding="0" cellspacing="2">
-                    <tr>
-                        <td valign="top">NOTE: Configuring maximum delivery retries on a queue which has no DLQ / AlternateExchange will result in messages being discarded after the limit is reached.</td>
-                    </tr>
-                </table>
-                <table cellpadding="0" cellspacing="2">
+                <div class="clear"></div>
+                <div class="infoMessage">Configuring maximum delivery retries on a queue which has no DLQ or alternate <br/>exchange will result in messages being discarded after the limit is reached.</div>
 
-                    <!-- qpid.group_header_key -->
-                    <tr>
-                        <td valign="top"><strong>Message Group Key:  </strong></td>
-                        <td><input type="text" required="false" name="messageGroupKey" id="formAddQueue.messageGroupKey"
-                            dojoType="dijit.form.ValidationTextBox"
-                            trim="true"/></td>
-                    </tr>
-
-                    <!-- qpid.qpid.shared_msg_group -->
-                    <tr>
-                        <td valign="top"><strong>Shared Message Groups? </strong></td>
-                        <td><input type="checkbox" name="messageGroupSharedGroups" id="formAddQueue.messageGroupSharedGroups" value="messageGroupSharedGroups" dojoType="dijit.form.CheckBox" /></td>
-                    </tr>
-                </table>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Message Group Key:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.messageGroupKey"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'messageGroupKey',
+                                  placeHolder: 'message group key',
+                                  promptMessage: 'Name of the message property used for message grouping',
+                                  title: 'Enter the name of the message property used for message grouping',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Shared Message Groups?</div>
+                    <div class="formLabel-controlCell">
+                        <input type="checkbox" id="formAddQueue.messageGroupSharedGroups"
+                               dojoType="dijit.form.CheckBox"
+                               data-dojo-props="
+                              name: 'messageGroupSharedGroups',
+                              value: 'messageGroupSharedGroups',
+                              checked: false,
+                              title: 'Controls where a shared groups feature is enabled'"/>
+                    </div>
+                </div>
+                <div class="clear"></div>
             </div>
-            </div>
+
           <div class="dijitDialogPaneActionBar">
             <!-- submit buttons -->
             <input type="submit" value="Create Queue" label="Create Queue" dojoType="dijit.form.Button" />
           </div>
+
         </form>
     </div>
 </div>

@@ -56,6 +56,8 @@ define(["dojo/_base/lang",
                     disabled: groupProvider.name ? true : false,
                     label: "Name*:",
                     regexp: "^[\x20-\x2e\x30-\x7F]{1,255}$",
+                    promptMessage: "Name of group provider.",
+                    placeHolder: "name",
                     name: "name"});
               }
           }, {
@@ -171,6 +173,8 @@ define(["dojo/_base/lang",
               groupProvider ? groupProvider : {},
               "api/latest/groupprovider" + (name ? "/" + encodeURIComponent(name.name) : ""),
               groupProvider ? "Edit group provider - " + groupProvider.name : "Add group provider",
+              "Group",
+              groupProvider && groupProvider.type ? groupProvider.type : "Group",
               groupProvider ? false : true);
         };
         return addGroupProvider;

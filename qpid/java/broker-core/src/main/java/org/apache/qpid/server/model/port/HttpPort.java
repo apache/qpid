@@ -20,10 +20,14 @@
  */
 package org.apache.qpid.server.model.port;
 
+import java.util.Set;
+
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.Transport;
 
 @ManagedObject( category = false, type = "HTTP")
 public interface HttpPort<X extends HttpPort<X>> extends Port<X>
@@ -41,6 +45,14 @@ public interface HttpPort<X extends HttpPort<X>> extends Port<X>
 
     @ManagedAttribute( mandatory = true )
     AuthenticationProvider getAuthenticationProvider();
+
+
+    @ManagedAttribute( defaultValue = "TCP",
+                       validValues = {"[ \"TCP\" ]", "[ \"SSL\" ]", "[ \"TCP\", \"SSL\" ]"})
+    Set<Transport> getTransports();
+
+    @ManagedAttribute( validValues = { "[ \"HTTP\"]"} )
+    Set<Protocol> getProtocols();
 
     void setPortManager(PortManager manager);
 }

@@ -21,6 +21,9 @@
 
 package org.apache.qpid.server.protocol.v0_8.handler;
 
+import java.security.AccessControlException;
+import java.util.EnumSet;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
@@ -30,25 +33,22 @@ import org.apache.qpid.framing.BasicGetEmptyBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.consumer.ConsumerImpl;
+import org.apache.qpid.server.flow.FlowCreditManager;
+import org.apache.qpid.server.flow.MessageOnlyCreditManager;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
-import org.apache.qpid.server.flow.FlowCreditManager;
-import org.apache.qpid.server.flow.MessageOnlyCreditManager;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
+import org.apache.qpid.server.protocol.v0_8.ClientDeliveryMethod;
 import org.apache.qpid.server.protocol.v0_8.ConsumerTarget_0_8;
-import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.protocol.v0_8.RecordDeliveryMethod;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.protocol.v0_8.ClientDeliveryMethod;
-import org.apache.qpid.server.protocol.v0_8.RecordDeliveryMethod;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import java.security.AccessControlException;
-import java.util.EnumSet;
 
 public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetBody>
 {
@@ -202,17 +202,18 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
         }
 
         @Override
-        public void deliverToClient(final ConsumerImpl sub, final ServerMessage message,
+        public long deliverToClient(final ConsumerImpl sub, final ServerMessage message,
                                     final InstanceProperties props, final long deliveryTag)
         {
             _singleMessageCredit.useCreditForMessage(message.getSize());
-            _session.getProtocolOutputConverter().writeGetOk(message,
+            long size =_session.getProtocolOutputConverter().writeGetOk(message,
                                                             props,
                                                             _channel.getChannelId(),
                                                             deliveryTag,
                                                             _queue.getQueueDepthMessages());
 
             _deliveredMessage = true;
+            return size;
         }
 
         public boolean hasDeliveredMessage()

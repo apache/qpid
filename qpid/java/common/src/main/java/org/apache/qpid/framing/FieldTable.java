@@ -84,7 +84,7 @@ public class FieldTable
         _encodedSize = length;
     }
 
-    public FieldTable(byte[] encodedForm, int offset, int length) throws IOException
+    public FieldTable(byte[] encodedForm, int offset, int length)
     {
         this();
         _encodedForm = encodedForm;
@@ -858,7 +858,17 @@ public class FieldTable
             }
 
         }
-        return _encodedForm.clone();
+        else if(_encodedFormOffset == 0 && _encodedSize == _encodedForm.length)
+        {
+            return _encodedForm.clone();
+        }
+        else
+        {
+            byte[] encodedCopy = new byte[(int) _encodedSize];
+            System.arraycopy(_encodedForm,_encodedFormOffset,encodedCopy,0,(int)_encodedSize);
+            return encodedCopy;
+        }
+
     }
 
     public long getEncodedSize()

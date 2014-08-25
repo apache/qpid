@@ -128,6 +128,18 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     @ManagedAttribute( defaultValue = "false")
     boolean getStatisticsReportingResetEnabled();
 
+    String BROKER_MESSAGE_COMPRESSION_ENABLED = "broker.messageCompressionEnabled";
+    @ManagedContextDefault(name = BROKER_MESSAGE_COMPRESSION_ENABLED)
+    boolean DEFAULT_MESSAGE_COMPRESSION_ENABLED = true;
+
+    @ManagedAttribute( defaultValue = "${"+ BROKER_MESSAGE_COMPRESSION_ENABLED +"}")
+    boolean isMessageCompressionEnabled();
+
+    String MESSAGE_COMPRESSION_THRESHOLD_SIZE = "connection.messageCompressionThresholdSize";
+    @ManagedContextDefault(name = MESSAGE_COMPRESSION_THRESHOLD_SIZE)
+    int DEFAULT_MESSAGE_COMPRESSION_THRESHOLD_SIZE = 102400;
+
+
     @DerivedAttribute( persist = true )
     String getModelVersion();
 

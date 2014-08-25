@@ -20,8 +20,21 @@
  */
 package org.apache.qpid.client;
 
+import java.io.IOException;
+import java.net.ConnectException;
+import java.nio.channels.UnresolvedAddressException;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.Set;
+
+import javax.jms.JMSException;
+import javax.jms.XASession;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
@@ -49,22 +62,11 @@ import org.apache.qpid.transport.network.Transport;
 import org.apache.qpid.transport.network.security.SecurityLayer;
 import org.apache.qpid.transport.network.security.SecurityLayerFactory;
 
-import javax.jms.JMSException;
-import javax.jms.XASession;
-
-import java.io.IOException;
-import java.net.ConnectException;
-import java.nio.channels.UnresolvedAddressException;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.Iterator;
-import java.util.Set;
-
 public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionDelegate_8_0.class);
     private final AMQConnection _conn;
+    private boolean _messageCompressionSupported;
 
     public void closeConnection(long timeout) throws JMSException, AMQException
     {
@@ -139,6 +141,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             _conn.getFailoverPolicy().attainedConnection();
             _conn.setConnected(true);
             _conn.logConnected(network.getLocalAddress(), network.getRemoteAddress());
+            _messageCompressionSupported = checkMessageCompressionSupported();
             return null;
         }
         else
@@ -412,5 +415,18 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         }
 
         return connectedToQpid;
+    }
+
+    private boolean checkMessageCompressionSupported()
+    {
+        FieldTable serverProperties = _conn.getProtocolHandler().getProtocolSession().getConnectionStartServerProperties();
+        return serverProperties != null
+           && Boolean.parseBoolean(serverProperties.getString(ConnectionStartProperties.QPID_MESSAGE_COMPRESSION_SUPPORTED));
+
+    }
+
+    public boolean isMessageCompressionSupported()
+    {
+        return _messageCompressionSupported;
     }
 }

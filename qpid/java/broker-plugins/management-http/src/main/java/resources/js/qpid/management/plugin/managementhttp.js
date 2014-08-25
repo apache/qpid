@@ -139,7 +139,9 @@ define(["dojo/_base/xhr",
               widgetFactories,
               data,
               "api/latest/plugin/" + encodeURIComponent(data.name),
-              "Edit plugin - " + data.name);
+              "Edit plugin - " + data.name,
+              "Plugin",
+              "MANAGEMENT-HTTP");
         };
 
         function ManagementHttpUpdater(node, pluginObject, controller)

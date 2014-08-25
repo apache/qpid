@@ -20,21 +20,16 @@
  */
 package org.apache.qpid.server.model.testmodel;
 
-import org.apache.qpid.server.model.DerivedAttribute;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedObject;
 
-public interface Test2RootCategory<X extends Test2RootCategory<X>> extends TestRootCategory<X>
+@ManagedObject
+public interface TestChildCategory<X extends TestChildCategory<X>> extends ConfiguredObject<X>
 {
-    String DEFAULTED_VALUE_DEFAULT = "differentDefault";
 
-    @Override
-    @ManagedAttribute( defaultValue = DEFAULTED_VALUE_DEFAULT)
-    String getDefaultedValue();
+    String NON_INTERPOLATED_VALID_VALUE = "${file.separator}";
 
-    @Override
-    @ManagedAttribute( validValues = {"org.apache.qpid.server.model.testmodel.Test2RootCategoryImpl#functionGeneratedValidValues()"})
-    String getValidValue();
-
-    @DerivedAttribute
-    public int getDerivedAttribute();
+    @ManagedAttribute(validValues = { NON_INTERPOLATED_VALID_VALUE })
+    String getValidValueNotInterpolated();
 }

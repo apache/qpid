@@ -22,6 +22,7 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -52,7 +53,11 @@ public class MetaDataServlet extends AbstractServlet
         super.init();
 
         _instance = BrokerModel.getInstance();
+
+
     }
+
+
 
     @Override
     protected void doGetWithSubjectAndActor(final HttpServletRequest request, final HttpServletResponse response)
@@ -124,6 +129,18 @@ public class MetaDataServlet extends AbstractServlet
                 {
                     attrDetails.put("mandatory",((ConfiguredAutomatedAttribute)attribute).isMandatory());
                 }
+                if(!(((ConfiguredAutomatedAttribute)attribute).validValues()).isEmpty())
+                {
+                    Collection<String> validValues = ((ConfiguredAutomatedAttribute<?,?>) attribute).validValues();
+
+                    Collection<Object> convertedValues = new ArrayList<>(validValues.size());
+                    for(String value : validValues)
+                    {
+                        convertedValues.add(attribute.convert(value,null));
+                    }
+                    attrDetails.put("validValues", convertedValues);
+                }
+
             }
             if(attribute.isSecure())
             {

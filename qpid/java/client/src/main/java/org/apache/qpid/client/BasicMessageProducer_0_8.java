@@ -44,6 +44,7 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.util.GZIPUtils;
 
 public class BasicMessageProducer_0_8 extends BasicMessageProducer
 {
@@ -147,7 +148,20 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
         contentHeaderProperties.setDeliveryMode((byte) deliveryMode);
         contentHeaderProperties.setPriority((byte) priority);
 
-        final int size = (payload != null) ? payload.limit() : 0;
+        int size = (payload != null) ? payload.remaining() : 0;
+
+        byte[] compressed;
+        if(size > getConnection().getMessageCompressionThresholdSize()
+               && getConnection().getDelegate().isMessageCompressionSupported()
+               && getConnection().isMessageCompressionDesired()
+               && contentHeaderProperties.getEncoding() == null
+               && (compressed = GZIPUtils.compressBufferToArray(payload)) != null)
+        {
+            contentHeaderProperties.setEncoding("gzip");
+            payload = ByteBuffer.wrap(compressed);
+            size = compressed.length;
+
+        }
         final int contentBodyFrameCount = calculateContentBodyFrameCount(payload);
         final AMQFrame[] frames = new AMQFrame[2 + contentBodyFrameCount];
 

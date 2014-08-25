@@ -141,13 +141,13 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
     {
     }
 
-    public void writeDeliver(final ServerMessage msg,
+    public long writeDeliver(final ServerMessage msg,
                              final InstanceProperties props, int channelId,
                              long deliveryTag,
                              AMQShortString consumerTag)
     {
         _deliveryCount.incrementAndGet();
-
+        long size = msg.getSize();
         synchronized (_channelDelivers)
         {
             Map<String, LinkedList<DeliveryPair>> consumers = _channelDelivers.get(channelId);
@@ -168,14 +168,16 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
 
             consumerDelivers.add(new DeliveryPair(deliveryTag, msg));
         }
+        return size;
     }
 
-    public void writeGetOk(final ServerMessage msg,
+    public long writeGetOk(final ServerMessage msg,
                            final InstanceProperties props,
                            int channelId,
                            long deliveryTag,
                            int queueSize)
     {
+        return msg.getSize();
     }
 
     public void awaitDelivery(int msgs)
@@ -244,11 +246,11 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
 
 
         @Override
-        public void deliverToClient(ConsumerImpl sub, ServerMessage message,
+        public long deliverToClient(ConsumerImpl sub, ServerMessage message,
                                     InstanceProperties props, long deliveryTag)
         {
             _deliveryCount.incrementAndGet();
-
+            long size = message.getSize();
             synchronized (_channelDelivers)
             {
                 Map<String, LinkedList<DeliveryPair>> consumers = _channelDelivers.get(_channelId);
@@ -269,6 +271,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
 
                 consumerDelivers.add(new DeliveryPair(deliveryTag, message));
             }
+            return size;
         }
     }
 

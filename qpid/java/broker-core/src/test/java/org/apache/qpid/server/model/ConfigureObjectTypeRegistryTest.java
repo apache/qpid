@@ -20,12 +20,14 @@
  */
 package org.apache.qpid.server.model;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.model.testmodel.Test2RootCategory;
 import org.apache.qpid.server.model.testmodel.Test2RootCategoryImpl;
+import org.apache.qpid.server.model.testmodel.TestChildCategory;
 import org.apache.qpid.server.model.testmodel.TestModel;
 import org.apache.qpid.server.model.testmodel.TestRootCategory;
 import org.apache.qpid.server.model.testmodel.TestRootCategoryImpl;
@@ -76,6 +78,21 @@ public class ConfigureObjectTypeRegistryTest extends TestCase
                             Test2RootCategory.DEFAULTED_VALUE_DEFAULT);
     }
 
+    public void testValidValues()
+    {
+        checkValidValues("validValue",_typeRegistry.getAttributes((Class) TestRootCategoryImpl.class),
+                         Arrays.asList( TestRootCategory.VALID_VALUE1, TestRootCategory.VALID_VALUE2 ) );
+
+        checkValidValues("validValue", _typeRegistry.getAttributes((Class) Test2RootCategoryImpl.class),
+                            Test2RootCategoryImpl.functionGeneratedValidValues());
+
+
+        checkValidValues("validValueNotInterpolated", _typeRegistry.getAttributes((Class) TestChildCategory.class),
+                         Arrays.asList(TestChildCategory.NON_INTERPOLATED_VALID_VALUE));
+
+
+    }
+
     private void checkDefaultedValue(final Collection<ConfiguredObjectAttribute<?, ?>> attrs,
                                      final String defaultedValueDefault)
     {
@@ -91,5 +108,25 @@ public class ConfigureObjectTypeRegistryTest extends TestCase
 
         }
         assertTrue("Could not find attribute defaultedValue", found);
+    }
+
+    private void checkValidValues(final String attrName, final Collection<ConfiguredObjectAttribute<?, ?>> attrs,
+                                     final Collection<String> validValues)
+    {
+        boolean found = false;
+        for(ConfiguredObjectAttribute<?, ?> attr : attrs)
+        {
+            if(attr.getName().equals(attrName))
+            {
+                Collection<String> foundValues = ((ConfiguredAutomatedAttribute<?, ?>) attr).validValues();
+                assertEquals("Valid values not as expected, counts differ", validValues.size(), foundValues.size());
+                assertTrue("Valid values do not include all expected values", foundValues.containsAll(validValues));
+                assertTrue("Valid values contain unexpected addtional values", validValues.containsAll(foundValues));
+                found = true;
+                break;
+            }
+
+        }
+        assertTrue("Could not find attribute " + attrName, found);
     }
 }

@@ -57,6 +57,8 @@ define(["dojo/_base/lang",
                       disabled: keystore.name ? true : false,
                       label: "Name:",
                       regExpGen: util.nameOrContextVarRegexp,
+                      promptMessage: "Name of keystore. Used to refer to the keystore from other objects within the Broker.",
+                      placeHolder: "name",
                       name: "name"});
                 }
             }, {
@@ -66,6 +68,8 @@ define(["dojo/_base/lang",
                       required: true,
                       value: keystore.path,
                       label: "Path to keystore:",
+                      promptMessage: "File system location to the keystore file",
+                      placeHolder: "path/to/keystore",
                       name: "path"});
                 }
             }, {
@@ -75,7 +79,7 @@ define(["dojo/_base/lang",
                     return new dijit.form.ValidationTextBox({
                       required: false,
                       label: "Keystore password:",
-                      invalidMessage: "Missed keystore password",
+                      promptMessage: "Password used to open the keystore",
                       name: "password",
                       placeHolder: keystore["password"] ? keystore["password"] : ""
                       });
@@ -96,10 +100,11 @@ define(["dojo/_base/lang",
             }
             fields.push({
               name: "Options",
+
               createWidget: function(keystore) {
                 var optionalFieldContainer = new dojox.layout.TableContainer({
                   cols: 1,
-                  "labelWidth": "290",
+                  "labelWidth": "300",
                   showLabels: true,
                   orientation: "horiz",
                   customClass: "formLabel"
@@ -110,12 +115,16 @@ define(["dojo/_base/lang",
                     required: false,
                     value: keystore.certificateAlias,
                     label: "Keystore certificate alias:",
-                    name: "certificateAlias"}));
+                    name: "certificateAlias",
+                    placeHolder: "alias",
+                    promptMessage: "Used to identify one certificate in a store that has many"}));
+
                   optionalFieldContainer.addChild( new dijit.form.ValidationTextBox({
                     required: false,
                     value: keystore.keyManagerFactoryAlgorithm,
                     label: "Key manager factory algorithm:",
-                    placeHolder: "Use default",
+                    placeHolder: "algorithm name",
+                    promptMessage: "Name of the key manager algorithm known to Java",
                     name: "keyManagerFactoryAlgorithm"}));
                 }
                 else
@@ -124,16 +133,20 @@ define(["dojo/_base/lang",
                     required: false,
                     value: keystore.trustManagerFactoryAlgorithm,
                     label: "Trust manager factory algorithm:",
-                    placeHolder: "Use default",
+                    placeHolder: "algorithm name",
+                    promptMessage: "Name of the trust manager algorithm known to Java",
                     name: "trustManagerFactoryAlgorithm"}));
                 }
                 optionalFieldContainer.addChild(new dijit.form.ValidationTextBox({
                   required: false,
                   value: isKeystore ? keystore.keyStoreType : keystore.trustStoreType,
                   label: "Key store type:",
-                  placeHolder: "Use default",
+                  placeHolder: "store type",
+                  promptMessage: "Name of the store type known to Java",
                   name: isKeystore ? "keyStoreType" : "trustStoreType"}));
+
                 var panel = new dijit.TitlePane({title: "Optional Attributes", content: optionalFieldContainer.domNode, open: false});
+
                 return panel;
               }
             });
@@ -148,6 +161,8 @@ define(["dojo/_base/lang",
               keystore ? keystore : {},
               keystore ? putURL : "api/latest/keystore",
               keystore ? "Edit keystore - " + keystore.name : "Add keystore",
+              "KeyStore",
+              keystore && keystore.type ? keystore.type : "FileKeyStore",  // GET?actuals=true doesn't get type for objects of the default type for the category
               keystore ? false : true);
         };
 
@@ -158,6 +173,8 @@ define(["dojo/_base/lang",
               truststore ? truststore : {},
               truststore ? putURL : "api/latest/truststore",
               truststore ? "Edit truststore - " + truststore.name : "Add truststore",
+              "TrustStore",
+              truststore && truststore.type ? truststore.type : "FileTrustStore",
               truststore ? false : true);
         };
         return addKeystore;

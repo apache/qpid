@@ -86,7 +86,9 @@ define(["dojo/_base/xhr",
               widgetFactories,
               data,
               "api/latest/plugin/" + encodeURIComponent(data.name),
-              "Edit plugin - " + data.name);
+              "Edit plugin - " + data.name,
+              "Plugin",
+              "MANAGEMENT-JMX");
         };
 
         function ManagementJmxUpdater(node, pluginObject, controller)

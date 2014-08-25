@@ -16,8 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-define(["qpid/common/util", "dojo/domReady!"],
-   function (util)
+define(["qpid/common/util", "dijit/registry", "dojo/domReady!"],
+   function (util, registry)
    {
        var fieldNames = ["storeUnderfullSize", "storeOverfullSize", "storePath"];
        return {

@@ -20,6 +20,39 @@
  */
 package org.apache.qpid.client;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.net.ConnectException;
+import java.net.SocketAddress;
+import java.net.UnknownHostException;
+import java.nio.channels.UnresolvedAddressException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+import javax.jms.ConnectionConsumer;
+import javax.jms.ConnectionMetaData;
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
+import javax.jms.Queue;
+import javax.jms.QueueConnection;
+import javax.jms.QueueSession;
+import javax.jms.ServerSessionPool;
+import javax.jms.Topic;
+import javax.jms.TopicConnection;
+import javax.jms.TopicSession;
+import javax.naming.NamingException;
+import javax.naming.Reference;
+import javax.naming.Referenceable;
+import javax.naming.StringRefAddr;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,38 +81,6 @@ import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.FailoverPolicy;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.url.URLSyntaxException;
-
-import javax.jms.ConnectionConsumer;
-import javax.jms.ConnectionMetaData;
-import javax.jms.Destination;
-import javax.jms.ExceptionListener;
-import javax.jms.IllegalStateException;
-import javax.jms.JMSException;
-import javax.jms.Queue;
-import javax.jms.QueueConnection;
-import javax.jms.QueueSession;
-import javax.jms.ServerSessionPool;
-import javax.jms.Topic;
-import javax.jms.TopicConnection;
-import javax.jms.TopicSession;
-import javax.naming.NamingException;
-import javax.naming.Reference;
-import javax.naming.Referenceable;
-import javax.naming.StringRefAddr;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.ConnectException;
-import java.net.SocketAddress;
-import java.net.UnknownHostException;
-import java.nio.channels.UnresolvedAddressException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class AMQConnection extends Closeable implements Connection, QueueConnection, TopicConnection, Referenceable
 {
@@ -190,6 +191,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     //used to track the last failover time for
     //Address resolution purposes
     private volatile long _lastFailoverTime = 0;
+
+    private boolean _compressMessages;
+    private int _messageCompressionThresholdSize;
 
     /**
      * @param broker      brokerdetails
@@ -325,6 +329,31 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 Boolean.parseBoolean(System.getProperty(ClientProperties.VERIFY_QUEUE_ON_SEND, "false"));
         }
 
+        if(connectionURL.getOption(ConnectionURL.OPTIONS_COMPRESS_MESSAGES) != null)
+        {
+            _compressMessages = Boolean.parseBoolean(connectionURL.getOption(ConnectionURL.OPTIONS_COMPRESS_MESSAGES));
+        }
+        else
+        {
+            _compressMessages =
+                    Boolean.parseBoolean(System.getProperty(ClientProperties.CONNECTION_OPTION_COMPRESS_MESSAGES,
+                                         String.valueOf(ClientProperties.DEFAULT_CONNECTION_OPTION_COMPRESS_MESSAGES)));
+        }
+
+
+        if(connectionURL.getOption(ConnectionURL.OPTIONS_MESSAGES_COMPRESSION_THRESHOLD_SIZE) != null)
+        {
+            _messageCompressionThresholdSize = Integer.valueOf(connectionURL.getOption(ConnectionURL.OPTIONS_MESSAGES_COMPRESSION_THRESHOLD_SIZE));
+        }
+        else
+        {
+            _messageCompressionThresholdSize = Integer.getInteger(ClientProperties.CONNECTION_OPTION_MESSAGE_COMPRESSION_THRESHOLD_SIZE,
+                                                                ClientProperties.DEFAULT_MESSAGE_COMPRESSION_THRESHOLD_SIZE);
+        }
+        if(_messageCompressionThresholdSize <= 0)
+        {
+            _messageCompressionThresholdSize = Integer.MAX_VALUE;
+        }
 
         String amqpVersion = System.getProperty((ClientProperties.AMQP_VERSION), "0-10");
         if (_logger.isDebugEnabled())
@@ -449,16 +478,13 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 }
             }
 
-            if ((message == null) || message.equals(""))
+            if (message == null)
             {
-                if (message == null)
-                {
-                    message = "Unable to Connect";
-                }
-                else // can only be "" if getMessage() returned it therfore lastException != null
-                {
-                    message = "Unable to Connect:" + connectionException.getClass();
-                }
+                message = "Unable to Connect";
+            }
+            else if("".equals(message))
+            {
+                message = "Unable to Connect:" + connectionException.getClass();
             }
 
             for (Throwable th = connectionException; th != null; th = th.getCause())
@@ -1543,6 +1569,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return _syncPublish;
     }
 
+    public boolean isMessageCompressionDesired()
+    {
+        return _compressMessages;
+    }
+
     public int getNextChannelID()
     {
         return _sessions.getNextChannelId();
@@ -1614,5 +1645,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     protected boolean setClosed()
     {
         return super.setClosed();
+    }
+
+    public int getMessageCompressionThresholdSize()
+    {
+        return _messageCompressionThresholdSize;
     }
 }

@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.framing;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BasicContentHeaderProperties
 {
@@ -83,8 +83,48 @@ public class BasicContentHeaderProperties
     private byte[] _encodedForm;
 
 
+    public BasicContentHeaderProperties(BasicContentHeaderProperties other)
+    {
+        if(other._headers != null)
+        {
+            byte[] encodedHeaders = other._headers.getDataAsBytes();
+
+            _headers = new FieldTable(encodedHeaders,0,encodedHeaders.length);
+
+        }
+
+        _contentType = other._contentType;
+
+        _encoding = other._encoding;
+
+        _deliveryMode = other._deliveryMode;
+
+        _priority = other._priority;
+
+        _correlationId = other._correlationId;
+
+        _replyTo = other._replyTo;
+
+        _expiration = other._expiration;
+
+        _messageId = other._messageId;
+
+        _timestamp = other._timestamp;
+
+        _type = other._type;
+
+        _userId = other._userId;
+
+        _appId = other._appId;
+
+        _clusterId = other._clusterId;
+        
+        _propertyFlags = other._propertyFlags;
+    }
+
     public BasicContentHeaderProperties()
-    { }
+    { 
+    }
 
     public int getPropertyListSize()
     {

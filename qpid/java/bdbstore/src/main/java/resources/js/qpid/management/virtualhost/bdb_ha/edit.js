@@ -16,10 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-define(["qpid/common/util", "dijit/registry", "dojo/_base/window", "dojo/domReady!"],
-   function (util, registry, win)
+define(["qpid/common/util", "qpid/common/metadata", "dijit/registry", "dojo/_base/window", "dojo/domReady!"],
+   function (util, metadata, registry, win)
    {
-       var fieldNames = ["storeUnderfullSize", "storeOverfullSize"];
+       var fieldNames = ["storeUnderfullSize", "storeOverfullSize",
+                         "localTransactionSynchronizationPolicy", "remoteTransactionSynchronizationPolicy"];
        return {
            show: function(data)
            {
@@ -27,17 +28,6 @@ define(["qpid/common/util", "dijit/registry", "dojo/_base/window", "dojo/domRead
 
               registry.byId("editVirtualHost.storeUnderfullSize").set("regExpGen", util.numericOrContextVarRegexp);
               registry.byId("editVirtualHost.storeOverfullSize").set("regExpGen", util.numericOrContextVarRegexp);
-
-              var widget = registry.byId("editVirtualHost.localTransactionSynchronizationPolicy-" + data.data["localTransactionSynchronizationPolicy"]);
-              if (widget)
-              {
-                widget.set("checked", true);
-              }
-              widget = registry.byId("editVirtualHost.remoteTransactionSynchronizationPolicy-" + data.data["remoteTransactionSynchronizationPolicy"]);
-              if (widget)
-              {
-                widget.set("checked", true);
-              }
 
               var that = this;
               this.permittedNodes = registry.byId("editVirtualHost.permittedNodes");

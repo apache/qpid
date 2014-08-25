@@ -54,6 +54,7 @@
     <qpid.home.qbtc.output>${qpid.home}${file.separator}target${file.separator}qbtc-output</qpid.home.qbtc.output> <!-- override for broker tests -->
     <qpid.work>${project.build.directory}${file.separator}QPID_WORK</qpid.work>
 
+    <argLine />
     <profile>java-mms.0-10</profile>
     <profile.broker.language>java</profile.broker.language>
     <profile.broker.type>internal</profile.broker.type>

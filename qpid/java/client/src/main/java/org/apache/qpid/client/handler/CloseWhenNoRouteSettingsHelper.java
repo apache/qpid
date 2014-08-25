@@ -18,11 +18,12 @@
  */
 package org.apache.qpid.client.handler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.properties.ConnectionStartProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Used during connection establishment to optionally set the "close when no route" client property
