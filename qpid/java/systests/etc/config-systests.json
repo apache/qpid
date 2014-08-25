@@ -41,7 +41,8 @@
   "ports" : [  {
     "name" : "amqp",
     "authenticationProvider" : "plain",
-    "port" : "${test.port}"
+    "port" : "${test.port}",
+    "protocols" : "${test.amqp_port_protocols}"
   }, {
     "name" : "http",
     "authenticationProvider" : "plain",

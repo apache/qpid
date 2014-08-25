@@ -142,6 +142,8 @@ public class QpidBrokerTestCase extends QpidTestCase
     public static final int DEFAULT_HTTP_MANAGEMENT_PORT_VALUE = 8080;
     public static final int DEFAULT_HTTPS_MANAGEMENT_PORT_VALUE = 8443;
 
+    public static final String TEST_AMQP_PORT_PROTOCOLS_PROPERTY="test.amqp_port_protocols";
+
     // values
     protected static final String JAVA = "java";
     protected static final String CPP = "cpp";
@@ -559,6 +561,8 @@ public class QpidBrokerTestCase extends QpidTestCase
                 setSystemProperty("test.port.ssl");
                 setSystemProperty("test.port.alt");
                 setSystemProperty("test.port.alt.ssl");
+                setSystemProperty("test.amqp_port_protocols");
+
                 setSystemProperty("virtualhostnode.type");
                 setSystemProperty("virtualhostnode.context.blueprint");
 

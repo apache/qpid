@@ -204,6 +204,7 @@ public class BrokerRestTest extends QpidRestTestCase
         Asserts.assertAttributesPresent(brokerDetails, BrokerModel.getInstance().getTypeRegistry().getAttributeNames(
                 Broker.class),
                 Broker.PROCESS_PID,
+                Broker.CONFIDENTIAL_CONFIGURATION_ENCRYPTION_PROVIDER,
                 ConfiguredObject.TYPE,
                 ConfiguredObject.CREATED_BY,
                 ConfiguredObject.CREATED_TIME,

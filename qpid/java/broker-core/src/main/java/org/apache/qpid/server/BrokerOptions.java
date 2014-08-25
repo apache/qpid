@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -54,6 +55,7 @@ public class BrokerOptions
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
     public static final String DEFAULT_INITIAL_CONFIG_LOCATION =
         BrokerOptions.class.getClassLoader().getResource(DEFAULT_INITIAL_CONFIG_NAME).toExternalForm();
+
     public static final String MANAGEMENT_MODE_USER_NAME = "mm_admin";
     private static final int MANAGEMENT_MODE_PASSWORD_LENGTH = 10;
 
@@ -76,6 +78,7 @@ public class BrokerOptions
     private boolean _skipLoggingConfiguration;
     private boolean _overwriteConfigurationStore;
     private Map<String, String> _configProperties = new HashMap<String,String>();
+    private String _initialSystemProperties;
 
     public Map<String, Object> convertToSystemAttributes()
     {
@@ -304,7 +307,7 @@ public class BrokerOptions
      */
     public Map<String,String> getConfigProperties()
     {
-        ConcurrentHashMap<String, String> properties = new ConcurrentHashMap<String,String>();
+        ConcurrentMap<String, String> properties = new ConcurrentHashMap<String,String>();
         properties.putAll(_configProperties);
 
         properties.putIfAbsent(QPID_WORK_DIR, getWorkDir());
@@ -369,4 +372,5 @@ public class BrokerOptions
 
         return _configProperties.get(QPID_HOME_DIR);
     }
+
 }

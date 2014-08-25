@@ -25,6 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -74,7 +75,7 @@ public class HeadersExchange extends AbstractExchange<HeadersExchange>
 
     private static final Logger _logger = Logger.getLogger(HeadersExchange.class);
 
-    private final ConcurrentHashMap<String, CopyOnWriteArraySet<BindingImpl>> _bindingsByKey =
+    private final ConcurrentMap<String, CopyOnWriteArraySet<BindingImpl>> _bindingsByKey =
                             new ConcurrentHashMap<String, CopyOnWriteArraySet<BindingImpl>>();
 
     private final CopyOnWriteArrayList<HeadersBinding> _bindingHeaderMatchers =

@@ -17,6 +17,7 @@
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Writer;
 import java.security.AccessControlException;
 import java.util.ArrayList;
@@ -564,9 +565,15 @@ public class RestServlet extends AbstractServlet
         else
         {
             LOGGER.warn("Caught exception", e);
-
-            // TODO
             response.setStatus(HttpServletResponse.SC_CONFLICT);
+
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            PrintWriter out = response.getWriter();
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
+            mapper.writeValue(out, Collections.singletonMap("errorMessage", e.getMessage()));
+
         }
     }
 

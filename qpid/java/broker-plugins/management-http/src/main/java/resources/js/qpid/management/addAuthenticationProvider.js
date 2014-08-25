@@ -194,7 +194,7 @@ define(["dojo/_base/xhr",
                                     }
                                     else
                                     {
-                                        alert("Authentication Provider Error:" + this.failureReason);
+                                        util.xhrErrorHandler(this.failureReason);
                                     }
                                     return false;
                                 }else{

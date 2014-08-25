@@ -272,7 +272,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private void registerSystemNodes()
     {
-        QpidServiceLoader<SystemNodeCreator> qpidServiceLoader = new QpidServiceLoader<SystemNodeCreator>();
+        QpidServiceLoader qpidServiceLoader = new QpidServiceLoader();
         Iterable<SystemNodeCreator> factories = qpidServiceLoader.instancesOf(SystemNodeCreator.class);
         for(SystemNodeCreator creator : factories)
         {

@@ -245,6 +245,21 @@ div .messages {
     margin: 0px 0px 10px 5px;
 }
 
+#errorDialog {
+    overflow: auto;
+    width: 400px;
+}
+
+.errorDialogErrorPrimary {
+    font-weight: bold;
+    margin-bottom: 10px;
+    max-width: 350px;
+}
+
+.errorDialogErrorSecondary {
+    font-style: italic;
+}
+
 /* Required to keep queue type radio buttons on one line when dialog adds scrollbar */
 #addQueue {
     max-height: 350px;

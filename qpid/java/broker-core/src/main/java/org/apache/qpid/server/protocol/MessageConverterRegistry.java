@@ -35,7 +35,7 @@ public class MessageConverterRegistry
     static
     {
 
-        for(MessageConverter<? extends ServerMessage, ? extends ServerMessage> converter : (new QpidServiceLoader<MessageConverter>()).instancesOf(MessageConverter.class))
+        for(MessageConverter<? extends ServerMessage, ? extends ServerMessage> converter : (new QpidServiceLoader()).instancesOf(MessageConverter.class))
         {
             Map<Class<? extends ServerMessage>, MessageConverter> map = _converters.get(converter.getInputClass());
             if(map == null)

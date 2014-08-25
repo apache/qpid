@@ -33,7 +33,7 @@ public class PluggableFactoryLoader<T extends Pluggable>
     public PluggableFactoryLoader(Class<T> factoryClass)
     {
         Map<String, T> fm = new HashMap<String, T>();
-        QpidServiceLoader<T> qpidServiceLoader = new QpidServiceLoader<T>();
+        QpidServiceLoader qpidServiceLoader = new QpidServiceLoader();
         Iterable<T> factories = qpidServiceLoader.atLeastOneInstanceOf(factoryClass);
         for (T factory : factories)
         {

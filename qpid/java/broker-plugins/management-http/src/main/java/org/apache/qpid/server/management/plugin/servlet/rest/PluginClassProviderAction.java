@@ -19,12 +19,11 @@ package org.apache.qpid.server.management.plugin.servlet.rest;/*
  *
  */
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.plugin.Pluggable;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
@@ -43,7 +42,7 @@ public class PluginClassProviderAction implements Action
         try
         {
             String className = (String) request.get("plugin");
-            QpidServiceLoader<Pluggable> serviceLoader = new QpidServiceLoader<Pluggable>();
+            QpidServiceLoader serviceLoader = new QpidServiceLoader();
             final Class<Pluggable> clazz = (Class<Pluggable>) Class.forName("org.apache.qpid.server.plugin."+className);
             List<String> values = new ArrayList<String>();
             for(Pluggable instance : serviceLoader.instancesOf(clazz))

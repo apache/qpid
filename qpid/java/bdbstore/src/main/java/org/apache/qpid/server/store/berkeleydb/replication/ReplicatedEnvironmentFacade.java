@@ -170,8 +170,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private volatile ReplicatedEnvironment.State _lastKnownEnvironmentState;
     private volatile Durability _messageStoreDurability;
 
-    private final ConcurrentHashMap<String, Database> _cachedDatabases = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<DatabaseEntry, Sequence> _cachedSequences = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Database> _cachedDatabases = new ConcurrentHashMap<>();
+    private final ConcurrentMap<DatabaseEntry, Sequence> _cachedSequences = new ConcurrentHashMap<>();
     private final Set<String> _permittedNodes = new CopyOnWriteArraySet<String>();
 
     public ReplicatedEnvironmentFacade(ReplicatedEnvironmentConfiguration configuration)

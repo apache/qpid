@@ -64,6 +64,7 @@ import org.apache.qpid.server.configuration.updater.VoidTask;
 import org.apache.qpid.server.configuration.updater.VoidTaskWithException;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
+import org.apache.qpid.server.security.encryption.ConfigurationSecretEncrypter;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -88,6 +89,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
         SECURE_VALUES = Collections.unmodifiableMap(secureValues);
     }
+
+    private ConfigurationSecretEncrypter _encrypter;
 
     private enum DynamicState { UNINIT, OPENED, CLOSED };
     private final AtomicReference<DynamicState> _dynamicState = new AtomicReference<>(DynamicState.UNINIT);
@@ -200,6 +203,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         _attributeTypes = model.getTypeRegistry().getAttributeTypes(getClass());
         _automatedFields = model.getTypeRegistry().getAutomatedFields(getClass());
         _stateChangeMethods = model.getTypeRegistry().getStateChangeMethods(getClass());
+
+
+        for(ConfiguredObject<?> parent : parents.values())
+        {
+            if(parent instanceof AbstractConfiguredObject && ((AbstractConfiguredObject)parent)._encrypter != null)
+            {
+                _encrypter = ((AbstractConfiguredObject)parent)._encrypter;
+                break;
+            }
+        }
 
         Object idObj = attributes.get(ID);
 
@@ -541,6 +554,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         if(skipCheck || _dynamicState.get() != DynamicState.OPENED)
         {
             onResolve();
+            postResolve();
             applyToChildren(new Action<ConfiguredObject<?>>()
             {
                 @Override
@@ -553,6 +567,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 }
             });
         }
+    }
+
+    protected void postResolve()
+    {
     }
 
     protected final void doCreation(final boolean skipCheck)
@@ -591,6 +609,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public void onValidate()
     {
+    }
+
+    protected void setEncrypter(final ConfigurationSecretEncrypter encrypter)
+    {
+        _encrypter = encrypter;
     }
 
     protected void onResolve()
@@ -1094,6 +1117,26 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                     {
                                         value = ((ConfiguredObject)value).getId();
                                     }
+                                    if(attr.isSecure() && _encrypter != null && value != null)
+                                    {
+                                        if(value instanceof Collection || value instanceof Map)
+                                        {
+                                            ObjectMapper mapper = new ObjectMapper();
+                                            try(StringWriter stringWriter = new StringWriter())
+                                            {
+                                                mapper.writeValue(stringWriter, value);
+                                                value = _encrypter.encrypt(stringWriter.toString());
+                                            }
+                                            catch (IOException e)
+                                            {
+                                                throw new IllegalConfigurationException("Failure when encrypting a secret value", e);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            value = _encrypter.encrypt(value.toString());
+                                        }
+                                    }
                                     attributes.put(attr.getName(), value);
                                 }
                             }
@@ -1425,6 +1468,27 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             return attr.isPersisted();
         }
         return false;
+    }
+
+    @Override
+    public void decryptSecrets()
+    {
+        if(_encrypter != null)
+        {
+            for (Map.Entry<String, Object> entry : _attributes.entrySet())
+            {
+                ConfiguredObjectAttribute<X, ?> attr =
+                        (ConfiguredObjectAttribute<X, ?>) _attributeTypes.get(entry.getKey());
+                if (attr != null
+                    && attr.isSecure()
+                    && entry.getValue() instanceof String)
+                {
+                    String decrypt = _encrypter.decrypt((String) entry.getValue());
+                    entry.setValue(decrypt);
+                }
+
+            }
+        }
     }
 
     //=========================================================================================

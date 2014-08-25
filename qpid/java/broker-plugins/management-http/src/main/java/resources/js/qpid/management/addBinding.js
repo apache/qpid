@@ -28,6 +28,7 @@ define(["dojo/_base/connect",
         "dojo/_base/declare",
         "dojo/store/Memory",
         "dijit/form/FilteringSelect",
+        "qpid/common/util",
         "dijit/form/NumberSpinner", // required by the form
         /* dojox/ validate resources */
         "dojox/validate/us", "dojox/validate/web",
@@ -44,7 +45,7 @@ define(["dojo/_base/connect",
         "dojox/grid/EnhancedGrid",
         "dojo/data/ObjectStore",
         "dojo/domReady!"],
-    function (connect, xhr, dom, construct, win, registry, parser, array, event, json, lang, declare, Memory, FilteringSelect) {
+    function (connect, xhr, dom, construct, win, registry, parser, array, event, json, lang, declare, Memory, FilteringSelect, util) {
 
         var noLocalValues = new Memory({
             data: [
@@ -325,7 +326,7 @@ define(["dojo/_base/connect",
                                     }
                                     else
                                     {
-                                        alert("Error:" + this.failureReason);
+                                        util.xhrErrorHandler(this.failureReason);
                                     }
 
                                     return false;

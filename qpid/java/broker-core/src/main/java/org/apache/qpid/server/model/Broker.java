@@ -51,6 +51,7 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String STORE_VERSION = "storeVersion";
     String STORE_PATH = "storePath";
     String MODEL_VERSION = "modelVersion";
+    String CONFIDENTIAL_CONFIGURATION_ENCRYPTION_PROVIDER = "confidentialConfigurationEncryptionProvider";
 
     String CONNECTION_SESSION_COUNT_LIMIT = "connection.sessionCountLimit";
     String CONNECTION_HEART_BEAT_DELAY = "connection.heartBeatDelay";
@@ -139,6 +140,8 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     @ManagedContextDefault(name = MESSAGE_COMPRESSION_THRESHOLD_SIZE)
     int DEFAULT_MESSAGE_COMPRESSION_THRESHOLD_SIZE = 102400;
 
+    @ManagedAttribute
+    String getConfidentialConfigurationEncryptionProvider();
 
     @DerivedAttribute( persist = true )
     String getModelVersion();

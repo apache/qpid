@@ -199,3 +199,6 @@ org.apache.qpid.server.queue.QueueMessageDurabilityTest#*
 
 // QPID-4429 : C++ Broker does not enforce max frame size negotiation rules as per the spec
 org.apache.qpid.transport.MaxFrameSizeTest#*
+
+// QPID-6000 : Tests Java specific message compression functionality, and uses the REST API to test it
+org.apache.qpid.systest.MessageCompressionTest#*

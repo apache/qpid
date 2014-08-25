@@ -93,7 +93,7 @@ define(["dojo/dom",
                        },
                        function(error) {that.success = false; that.failureReason = error;});
                    if(!this.success ) {
-                       alert("Error:" + this.failureReason);
+                       util.xhrErrorHandler(this.failureReason);
                    }
                }
            }

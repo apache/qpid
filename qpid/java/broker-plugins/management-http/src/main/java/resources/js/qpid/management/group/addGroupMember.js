@@ -26,7 +26,8 @@ define(["dojo/_base/xhr",
         "dojo/parser",
         "dojo/_base/array",
         "dojo/_base/event",
-        'dojo/_base/json',
+        "dojo/_base/json",
+        "qpid/common/util",
         "dijit/form/NumberSpinner", // required by the form
         /* dojox/ validate resources */
         "dojox/validate/us", "dojox/validate/web",
@@ -41,7 +42,7 @@ define(["dojo/_base/xhr",
         /* basic dojox classes */
         "dojox/form/BusyButton", "dojox/form/CheckedMultiSelect",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser, array, event, json) {
+    function (xhr, dom, construct, win, registry, parser, array, event, json, util) {
 
         var addGroupMember = {};
 
@@ -83,7 +84,7 @@ define(["dojo/_base/xhr",
                                     }
                                     else
                                     {
-                                        alert("Error:" + this.failureReason);
+                                        util.xhrErrorHandler(this.failureReason);
                                     }
 
                                     return false;

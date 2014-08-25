@@ -44,8 +44,8 @@ public class ConfiguredObjectFactoryImpl implements ConfiguredObjectFactory
     public ConfiguredObjectFactoryImpl(Model model)
     {
         _model = model;
-        QpidServiceLoader<ConfiguredObjectTypeFactory> serviceLoader =
-                new QpidServiceLoader<ConfiguredObjectTypeFactory>();
+        QpidServiceLoader serviceLoader =
+                new QpidServiceLoader();
         Iterable<ConfiguredObjectTypeFactory> allFactories =
                 serviceLoader.instancesOf(ConfiguredObjectTypeFactory.class);
         for (ConfiguredObjectTypeFactory factory : allFactories)

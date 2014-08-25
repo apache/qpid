@@ -32,7 +32,7 @@ public class MessageMetaDataTypeRegistry
         int maxOrdinal = -1;
 
         Iterable<MessageMetaDataType> messageMetaDataTypes =
-                new QpidServiceLoader<MessageMetaDataType>().atLeastOneInstanceOf(MessageMetaDataType.class);
+                new QpidServiceLoader().atLeastOneInstanceOf(MessageMetaDataType.class);
 
         for(MessageMetaDataType type : messageMetaDataTypes)
         {
@@ -42,7 +42,7 @@ public class MessageMetaDataTypeRegistry
             }
         }
         values = new MessageMetaDataType[maxOrdinal+1];
-        for(MessageMetaDataType type : new QpidServiceLoader<MessageMetaDataType>().instancesOf(MessageMetaDataType.class))
+        for(MessageMetaDataType type : new QpidServiceLoader().instancesOf(MessageMetaDataType.class))
         {
             if(values[type.ordinal()] != null)
             {

@@ -144,7 +144,7 @@ public class HighAvailabilityMessages
 
     /**
      * Log a HighAvailability message of the Format:
-     * <pre>HA-1011 : Minimum group  : {0}</pre>
+     * <pre>HA-1011 : Minimum group size : {0}</pre>
      * Optional values are contained in [square brackets] and are numbered
      * sequentially in the method call.
      *
@@ -326,7 +326,7 @@ public class HighAvailabilityMessages
 
     /**
      * Log a HighAvailability message of the Format:
-     * <pre>HA-1012 : Priority  : {0}</pre>
+     * <pre>HA-1012 : Priority : {0}</pre>
      * Optional values are contained in [square brackets] and are numbered
      * sequentially in the method call.
      *

@@ -20,11 +20,6 @@
  */
 package org.apache.qpid.server.exchange.topic;
 
-import org.apache.qpid.server.binding.BindingImpl;
-import org.apache.qpid.server.filter.Filterable;
-import org.apache.qpid.server.filter.MessageFilter;
-import org.apache.qpid.server.queue.AMQQueue;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -32,13 +27,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.filter.Filterable;
+import org.apache.qpid.server.filter.MessageFilter;
+import org.apache.qpid.server.queue.AMQQueue;
 
 public final class TopicExchangeResult implements TopicMatcherResult
 {
     private final List<BindingImpl> _bindings = new CopyOnWriteArrayList<BindingImpl>();
     private final Map<AMQQueue, Integer> _unfilteredQueues = new ConcurrentHashMap<AMQQueue, Integer>();
-    private final ConcurrentHashMap<AMQQueue, Map<MessageFilter,Integer>> _filteredQueues = new ConcurrentHashMap<AMQQueue, Map<MessageFilter, Integer>>();
+    private final ConcurrentMap<AMQQueue, Map<MessageFilter,Integer>> _filteredQueues = new ConcurrentHashMap<AMQQueue, Map<MessageFilter, Integer>>();
     private volatile ArrayList<AMQQueue> _unfilteredQueueList = new ArrayList<AMQQueue>(0);
 
     public void addUnfilteredQueue(AMQQueue queue)

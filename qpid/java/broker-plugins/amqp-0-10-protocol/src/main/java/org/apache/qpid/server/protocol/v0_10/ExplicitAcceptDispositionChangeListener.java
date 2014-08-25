@@ -47,7 +47,7 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
         }
         else
         {
-            _logger.info("MessageAccept received for message which is not been acquired - message may have expired or been removed");
+            _logger.debug("MessageAccept received for message which is not been acquired - message may have expired or been removed");
         }
 
     }
@@ -60,7 +60,7 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
         }
         else
         {
-            _logger.warn("MessageRelease received for message which has not been acquired - message may have expired or been removed");
+            _logger.debug("MessageRelease received for message which has not been acquired - message may have expired or been removed");
         }
     }
 
@@ -72,7 +72,7 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
         }
         else
         {
-            _logger.warn("MessageReject received for message which has not been acquired - message may have expired or been removed");
+            _logger.debug("MessageReject received for message which has not been acquired - message may have expired or been removed");
         }
 
     }

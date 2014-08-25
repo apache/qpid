@@ -34,6 +34,9 @@ import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectAttribute;
+import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
@@ -44,7 +47,6 @@ import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
-import org.apache.qpid.server.util.MapValueConverter;
 
 public class ManagementModeStoreHandler implements DurableConfigurationStore
 {
@@ -455,7 +457,13 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
         {
             return null;
         }
-        return MapValueConverter.getEnumSetAttribute(Port.PROTOCOLS, attributes, Protocol.class);
+        Model model = _parent.getModel();
+        ConfiguredObjectTypeRegistry typeRegistry = model.getTypeRegistry();
+        Map<String, ConfiguredObjectAttribute<?, ?>> attributeTypes =
+                typeRegistry.getAttributeTypes(Port.class);
+        ConfiguredObjectAttribute protocolsAttribute = attributeTypes.get(Port.PROTOCOLS);
+        return (Set<Protocol>) protocolsAttribute.convert(object,_parent);
+
     }
 
     private ConfiguredObjectRecord createEntryWithState(ConfiguredObjectRecord entry, Object state)

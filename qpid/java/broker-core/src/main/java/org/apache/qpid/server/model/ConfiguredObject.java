@@ -253,4 +253,6 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     Model getModel();
 
     void delete();
+
+    void decryptSecrets();
 }

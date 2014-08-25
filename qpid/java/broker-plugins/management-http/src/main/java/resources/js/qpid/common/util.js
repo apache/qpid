@@ -25,6 +25,7 @@ define(["dojo/_base/xhr",
         "dojo/json",
         "dojo/dom-construct",
         "dojo/dom-geometry",
+        "dojo/dom-style",
         "dojo/window",
         "dojo/query",
         "dojo/parser",
@@ -47,7 +48,7 @@ define(["dojo/_base/xhr",
         "dojox/validate/web",
         "dojo/domReady!"
         ],
-       function (xhr, array, event, lang, json, dom, geometry, win, query, parser, Memory, entities, metadata, widgetconfigurer, registry) {
+       function (xhr, array, event, lang, json, dom, geometry, domStyle, win, query, parser, Memory, entities, metadata, widgetconfigurer, registry) {
            var util = {};
            if (Array.isArray) {
                util.isArray = function (object) {
@@ -140,7 +141,7 @@ define(["dojo/_base/xhr",
                            function(error) {success = false; failureReason = error;});
                        if(!success )
                        {
-                           alert("Error:" + failureReason);
+                           util.xhrErrorHandler(failureReason);
                        }
                    }
                }
@@ -286,7 +287,8 @@ define(["dojo/_base/xhr",
                      }
                      else
                      {
-                         alert("Error:" + this.failureReason);
+                         util.xhrErrorHandler(this.failureReason);
+
                      }
                      return false;
                  }
@@ -331,36 +333,63 @@ define(["dojo/_base/xhr",
 
            util.xhrErrorHandler = function(error)
            {
+             const fallback = "Unexpected error - see server logs";
+             var statusCodeNode = dojo.byId("errorDialog.statusCode");
+             var errorMessageNode = dojo.byId("errorDialog.errorMessage");
+             var userMustReauth = false;
+
              if (error)
              {
                if (error.hasOwnProperty("status"))
                {
+                 var hasMessage = error.hasOwnProperty("message");
+                 var message;
+
                  if (error.status == 401)
                  {
-                   dojo.byId("statusMessage").innerHTML = "401 - Authentication required.";
+                   message = hasMessage ? error.message : "Authentication required";
+                   userMustReauth = true;
                  }
                  else if (error.status == 403)
                  {
-                   dojo.byId("statusMessage").innerHTML = "403 - Access denied.";
+                   message =  hasMessage ? error.message : "Forbidden";
+                   userMustReauth = true;
                  }
                  else
                  {
-                   dojo.byId("statusMessage").innerHTML = "HTTP status code: " + error.status;
+                   message = hasMessage ? error.message : fallback;
+
+                   // Try for a more detail error sent by the Broker as json
+                   if (error.hasOwnProperty("responseText"))
+                   {
+                     try
+                     {
+                       var errorObj = json.parse(error.responseText);
+                       message = errorObj.hasOwnProperty("errorMessage") ? errorObj.errorMessage : errorMessageNode;
+                     }
+                     catch (e)
+                     {
+                       // Ignore
+                     }
+                   }
                  }
+
+                 errorMessageNode.innerHTML = entities.encode(message ? message : fallback);
+                 statusCodeNode.innerHTML =  entities.encode(String(error.status));
+
+                 dojo.byId("errorDialog.advice.retry").style.display = userMustReauth ? "none" : "block";
+                 dojo.byId("errorDialog.advice.reconnect").style.display = userMustReauth ? "block" : "none";
+
+                 domStyle.set(registry.byId("errorDialog.button.cancel").domNode, 'display', userMustReauth ? "none" : "block");
+                 domStyle.set(registry.byId("errorDialog.button.relogin").domNode, 'display', userMustReauth ? "block" : "none");
+
                }
                else
                {
-                 dojo.byId("statusMessage").innerHTML = "";
+                 statusCodeNode.innerHTML = "";
+                 errorMessageNode.innerHTML = fallback;
                }
-               if (error.hasOwnProperty("message"))
-               {
-                 dojo.byId("errorDetailsMessage").innerHTML = error.message;
-                 dojo.byId("errorDetails").style.display = "block";
-               }
-               else
-               {
-                 dojo.byId("errorDetails").style.display = "none";
-               }
+
                var dialog = dijit.byId("errorDialog");
                if (!dialog.open)
                {
@@ -412,7 +441,7 @@ define(["dojo/_base/xhr",
 
                if (syncRequired && !success)
                {
-                   alert("Error:" + failureReason);
+                   util.xhrErrorHandler(failureReason);
                }
                return success;
            }

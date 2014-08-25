@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.security.auth.Subject;
 
@@ -63,11 +64,11 @@ public class SecurityManager implements ConfigurationChangeListener
                                                      Collections.emptySet(),
                                                      Collections.emptySet());
 
-    private final ConcurrentHashMap<String, AccessControl> _plugins = new ConcurrentHashMap<String, AccessControl>();
+    private final ConcurrentMap<String, AccessControl> _plugins = new ConcurrentHashMap<String, AccessControl>();
     private final boolean _managementMode;
     private final Broker<?> _broker;
 
-    private final ConcurrentHashMap<PublishAccessCheckCacheEntry, PublishAccessCheck> _publishAccessCheckCache = new ConcurrentHashMap<SecurityManager.PublishAccessCheckCacheEntry, SecurityManager.PublishAccessCheck>();
+    private final ConcurrentMap<PublishAccessCheckCacheEntry, PublishAccessCheck> _publishAccessCheckCache = new ConcurrentHashMap<SecurityManager.PublishAccessCheckCacheEntry, SecurityManager.PublishAccessCheck>();
 
     public SecurityManager(Broker<?> broker, boolean managementMode)
     {

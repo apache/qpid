@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
@@ -155,7 +156,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
     public void testScavenge() throws Exception
     {
         OrderedQueueEntryList sqel = new StandardQueueEntryList(null);
-        ConcurrentHashMap<Integer,QueueEntry> entriesMap = new ConcurrentHashMap<Integer,QueueEntry>();
+        ConcurrentMap<Integer,QueueEntry> entriesMap = new ConcurrentHashMap<Integer,QueueEntry>();
 
 
         //Add messages to generate QueueEntry's

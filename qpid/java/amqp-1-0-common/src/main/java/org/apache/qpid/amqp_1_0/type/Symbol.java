@@ -22,11 +22,12 @@
 package org.apache.qpid.amqp_1_0.type;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public final class Symbol implements Comparable<Symbol>, CharSequence
 {
     private final String _underlying;
-    private static final ConcurrentHashMap<String, Symbol> _symbols = new ConcurrentHashMap<String, Symbol>(2048);
+    private static final ConcurrentMap<String, Symbol> _symbols = new ConcurrentHashMap<String, Symbol>(2048);
 
     private Symbol(String underlying)
     {

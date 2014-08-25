@@ -130,7 +130,7 @@ define(["dojo/_base/xhr",
               }
               else
               {
-                  alert("Error:" + failureReason);
+                  util.xhrErrorHandler(failureReason);
               }
           }
           else

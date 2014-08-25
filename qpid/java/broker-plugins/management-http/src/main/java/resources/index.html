@@ -108,17 +108,24 @@
     </div>
 
     <div class="dijitHidden">
-        <div data-dojo-type="dijit.Dialog" data-dojo-props="title: 'Connection Error'" id="errorDialog">
-            <div style="width:400px; overflow: auto">
-                <div><strong><span id="errorMessage">An error occurred when communicating with the broker.</span></strong></div>
-                <div><span id="statusMessage"></span></div>
-                <div style="margin-top: 10px; margin-bottom: 8px"><span id="reloadMessage">Please try to reload.</span></div>
-                <div id="errorDetails" data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Details', open:false">
-                    <span id="errorDetailsMessage"></span>
+        <div data-dojo-type="dijit.Dialog" data-dojo-props="title: 'Error'" id="errorDialog">
+            <div>
+                <div class="errorDialogErrorPrimary">
+                    <span id="errorDialog.statusCode">000</span>&nbsp;-&nbsp;<span id="errorDialog.errorMessage">error</span>
+                </div>
+
+                <div class="clear" class="errorDialogErrorSecondary">
+                    <div id="errorDialog.advice.reconnect">
+                        Please login again and retry your operation.
+                    </div>
+                    <div id="errorDialog.advice.retry">
+                        Please correct the problem and retry your operation.
+                    </div>
                 </div>
             </div>
             <div class="dijitDialogPaneActionBar">
-                <input type="button" value="Close" label="Close" dojoType="dijit.form.Button" onClick="dijit.byId('errorDialog').hide();"/>
+                <input type="button" id="errorDialog.button.cancel" value="Cancel" label="Cancel" dojoType="dijit.form.Button" onClick="dijit.byId('errorDialog').hide();"/>
+                <input type="button" id="errorDialog.button.relogin"  value="Login" label="Login" dojoType="dijit.form.Button" onClick="dijit.byId('errorDialog').hide(); document.location.href = '/';"/>
             </div>
         </div>
     </div>

@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.log4j.Logger;
 
@@ -92,7 +93,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     private final Map<Binary, MessageInstance> _unsettledMap =
             new HashMap<Binary, MessageInstance>();
 
-    private final ConcurrentHashMap<Binary, UnsettledAction> _unsettledActionMap =
+    private final ConcurrentMap<Binary, UnsettledAction> _unsettledActionMap =
             new ConcurrentHashMap<Binary, UnsettledAction>();
     private volatile SendingLinkAttachment _linkAttachment;
     private TerminusDurability _durability;

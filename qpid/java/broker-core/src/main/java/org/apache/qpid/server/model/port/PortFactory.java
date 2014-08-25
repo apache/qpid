@@ -24,8 +24,12 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectAttribute;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
+import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Protocol.ProtocolType;
@@ -34,7 +38,6 @@ import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
-import org.apache.qpid.server.util.MapValueConverter;
 
 @PluggableService
 public class PortFactory<X extends Port<X>> implements ConfiguredObjectTypeFactory<X>
@@ -52,11 +55,14 @@ public class PortFactory<X extends Port<X>> implements ConfiguredObjectTypeFacto
     {
     }
 
-    private ProtocolType getProtocolType(Map<String, Object> portAttributes)
+    private ProtocolType getProtocolType(Map<String, Object> portAttributes, Broker<?> broker)
     {
-
-        Set<Protocol> protocols = MapValueConverter.getEnumSetAttribute(Port.PROTOCOLS, portAttributes, Protocol.class);
-
+        Model model = broker.getModel();
+        ConfiguredObjectTypeRegistry typeRegistry = model.getTypeRegistry();
+        Map<String, ConfiguredObjectAttribute<?, ?>> attributeTypes =
+                typeRegistry.getAttributeTypes(Port.class);
+        ConfiguredObjectAttribute protocolsAttribute = attributeTypes.get(Port.PROTOCOLS);
+        Set<Protocol> protocols = (Set<Protocol>) protocolsAttribute.convert(portAttributes.get(Port.PROTOCOLS),broker);
         ProtocolType protocolType = null;
 
         if(protocols == null || protocols.isEmpty())
@@ -98,7 +104,7 @@ public class PortFactory<X extends Port<X>> implements ConfiguredObjectTypeFacto
                     final Map<String, Object> attributes,
                     final ConfiguredObject<?>... parents)
     {
-        return getPortFactory(factory, attributes).create(factory, attributes,parents);
+        return getPortFactory(factory, attributes, (Broker<?>)parents[0]).create(factory, attributes,parents);
     }
 
     @Override
@@ -106,11 +112,12 @@ public class PortFactory<X extends Port<X>> implements ConfiguredObjectTypeFacto
                                                  final ConfiguredObjectRecord record,
                                                  final ConfiguredObject<?>... parents)
     {
-        return getPortFactory(factory, record.getAttributes()).recover(factory, record, parents);
+        return getPortFactory(factory, record.getAttributes(), (Broker<?>)parents[0]).recover(factory, record, parents);
     }
 
     public ConfiguredObjectTypeFactory<X> getPortFactory(final ConfiguredObjectFactory factory,
-                                                         Map<String, Object> attributes)
+                                                         Map<String, Object> attributes,
+                                                         Broker<?> broker)
     {
         String type;
 
@@ -120,7 +127,7 @@ public class PortFactory<X extends Port<X>> implements ConfiguredObjectTypeFacto
         }
         else
         {
-            type = getProtocolType(attributes).name();
+            type = getProtocolType(attributes, broker).name();
         }
 
         return factory.getConfiguredObjectTypeFactory(Port.class.getSimpleName(), type);
