@@ -329,14 +329,14 @@ define(["dojo/_base/xhr",
                 truststoreWidget.startup();
             }
 
+            // Editing existing port, de-register existing on change handler if set
+            if (this.typeChangeHandler)
+            {
+                this.typeChangeHandler.remove();
+            }
+
             if (portName)
             {
-                // Editing existing port, de-register existing on change handler if set
-                if (this.typeChangeHandler)
-                {
-                    this.typeChangeHandler.remove();
-                }
-
                 editWarning.style.display = "block";
 
                 xhr.get({

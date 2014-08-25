@@ -63,7 +63,7 @@ define(["dojo/dom",
 
            controller.viewedObjects = {};
 
-           controller.show = function(objType, name, parent, objectId, type) {
+           controller.show = function(objType, name, parent, objectId) {
 
                function generateName(obj)
                {
@@ -87,7 +87,7 @@ define(["dojo/dom",
                } else {
                    var Constructor = constructors[ objType ];
                    if(Constructor) {
-                       obj = new Constructor(name, parent, this, type);
+                       obj = new Constructor(name, parent, this);
                        obj.tabData = {
                            objectId: objectId,
                            objectType: objType

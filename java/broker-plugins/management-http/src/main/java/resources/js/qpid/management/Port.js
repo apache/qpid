@@ -34,10 +34,9 @@ define(["dojo/dom",
         "dojo/domReady!"],
        function (dom, xhr, parser, query, connect, registry, entities, properties, updater, util, formatter, addPort, metadata) {
 
-           function Port(name, parent, controller, type) {
+           function Port(name, parent, controller) {
                this.name = name;
                this.controller = controller;
-               this.type = type;
                this.modelObj = { type: "port", name: name, parent: parent};
            }
 
@@ -106,7 +105,7 @@ define(["dojo/dom",
                .then(function(data)
                      {
                          var brokerData= data[0];
-                         addPort.show(that.name, that.type, brokerData.authenticationproviders, brokerData.keystores, brokerData.truststores);
+                         addPort.show(that.name, that.portUpdater.portData.type, brokerData.authenticationproviders, brokerData.keystores, brokerData.truststores);
                      }
                );
            }
@@ -149,7 +148,7 @@ define(["dojo/dom",
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
                                {
-                                  that.keyStoreData = data[0];
+                                  that.portData = data[0];
                                   that.updateHeader();
                                });
 
@@ -169,20 +168,20 @@ define(["dojo/dom",
                    return data + "</div>";
                }
 
-              this.nameValue.innerHTML = entities.encode(String(this.keyStoreData[ "name" ]));
-              this.stateValue.innerHTML = entities.encode(String(this.keyStoreData[ "state" ]));
-              this.typeValue.innerHTML = entities.encode(String(this.keyStoreData[ "type" ]));
-              this.portValue.innerHTML = entities.encode(String(this.keyStoreData[ "port" ]));
-              this.authenticationProviderValue.innerHTML = this.keyStoreData[ "authenticationProvider" ] ? entities.encode(String(this.keyStoreData[ "authenticationProvider" ])) : "";
-              this.protocolsValue.innerHTML = printArray( "protocols", this.keyStoreData);
-              this.transportsValue.innerHTML = printArray( "transports", this.keyStoreData);
-              this.bindingAddressValue.innerHTML = this.keyStoreData[ "bindingAddress" ] ? entities.encode(String(this.keyStoreData[ "bindingAddress" ])) : "" ;
-              this.keyStoreValue.innerHTML = this.keyStoreData[ "keyStore" ] ? entities.encode(String(this.keyStoreData[ "keyStore" ])) : "";
-              this.needClientAuthValue.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.keyStoreData[ "needClientAuth" ] ? "checked='checked'": "")+" />" ;
-              this.wantClientAuthValue.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.keyStoreData[ "wantClientAuth" ] ? "checked='checked'": "")+" />" ;
-              this.trustStoresValue.innerHTML = printArray( "trustStores", this.keyStoreData);
+              this.nameValue.innerHTML = entities.encode(String(this.portData[ "name" ]));
+              this.stateValue.innerHTML = entities.encode(String(this.portData[ "state" ]));
+              this.typeValue.innerHTML = entities.encode(String(this.portData[ "type" ]));
+              this.portValue.innerHTML = entities.encode(String(this.portData[ "port" ]));
+              this.authenticationProviderValue.innerHTML = this.portData[ "authenticationProvider" ] ? entities.encode(String(this.portData[ "authenticationProvider" ])) : "";
+              this.protocolsValue.innerHTML = printArray( "protocols", this.portData);
+              this.transportsValue.innerHTML = printArray( "transports", this.portData);
+              this.bindingAddressValue.innerHTML = this.portData[ "bindingAddress" ] ? entities.encode(String(this.portData[ "bindingAddress" ])) : "" ;
+              this.keyStoreValue.innerHTML = this.portData[ "keyStore" ] ? entities.encode(String(this.portData[ "keyStore" ])) : "";
+              this.needClientAuthValue.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.portData[ "needClientAuth" ] ? "checked='checked'": "")+" />" ;
+              this.wantClientAuthValue.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.portData[ "wantClientAuth" ] ? "checked='checked'": "")+" />" ;
+              this.trustStoresValue.innerHTML = printArray( "trustStores", this.portData);
 
-              var typeMetaData = metadata.getMetaData("Port", this.keyStoreData["type"]);
+              var typeMetaData = metadata.getMetaData("Port", this.portData["type"]);
 
               this.bindingAddress.style.display = "bindingAddress" in typeMetaData.attributes ? "block" : "none";
               this.keyStore.style.display = "keyStore" in typeMetaData.attributes ? "block" : "none";
@@ -198,7 +197,7 @@ define(["dojo/dom",
 
               xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
                    {
-                      thisObj.keyStoreData = data[0];
+                      thisObj.portData = data[0];
                       thisObj.updateHeader();
                    });
            };
