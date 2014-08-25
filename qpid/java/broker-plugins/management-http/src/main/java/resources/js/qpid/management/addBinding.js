@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-define(["dojo/_base/xhr",
+define(["dojo/_base/connect",
+        "dojo/_base/xhr",
         "dojo/dom",
         "dojo/dom-construct",
         "dojo/_base/window",
@@ -43,11 +44,10 @@ define(["dojo/_base/xhr",
         "dojox/grid/EnhancedGrid",
         "dojo/data/ObjectStore",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser, array, event, json, lang, declare, Memory, FilteringSelect) {
+    function (connect, xhr, dom, construct, win, registry, parser, array, event, json, lang, declare, Memory, FilteringSelect) {
 
         var noLocalValues = new Memory({
             data: [
-                {name:"", id:null},
                 {name:"true", id:true},
                 {name:"false", id:false}
             ]
@@ -243,7 +243,7 @@ define(["dojo/_base/xhr",
                                     store: objectStore,
                                     singleClickEdit: true,
                                     structure: layout,
-                                    height: "150px",
+                                    autoHeight: true,
                                     plugins: {indirectSelection: true}
                                     }, argumentsGridNode);
                             grid.startup();
@@ -252,6 +252,15 @@ define(["dojo/_base/xhr",
                             addBinding.idGenerator = 1;
                             var addArgumentButton = registry.byId("formAddbinding.addArgumentButton");
                             var deleteArgumentButton = registry.byId("formAddbinding.deleteArgumentButton");
+
+                            var toggleGridButtons =  function(index)
+                            {
+                                var data = grid.selection.getSelected();
+                                deleteArgumentButton.set("disabled", !data || data.length==0);
+                            };
+                            connect.connect(grid.selection, 'onSelected', toggleGridButtons);
+                            connect.connect(grid.selection, 'onDeselected', toggleGridButtons);
+                            deleteArgumentButton.set("disabled", true);
 
                             addArgumentButton.on("click",
                                 function(event)

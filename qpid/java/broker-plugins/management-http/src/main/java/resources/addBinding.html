@@ -38,6 +38,7 @@
                            data-dojo-props="
                               name: 'name',
                               placeHolder: 'Binding Key',
+                              required: true,
                               missingMessage: 'A binding key must be supplied',
                               title: 'Enter binding key'" />
                 </div>
@@ -49,8 +50,8 @@
                     <div class="editNoteBanner">NOTE: Only arguments with name and value will be submitted. To edit, please, click on a grid cell.</div>
                     <div id="formAddbinding.bindingArguments"></div>
                     <div>
-                        <button data-dojo-type="dijit/form/Button" id="formAddbinding.addArgumentButton" type="button">Add</button>
-                        <button data-dojo-type="dijit/form/Button" id="formAddbinding.deleteArgumentButton" type="button">Delete</button>
+                        <button data-dojo-type="dijit/form/Button" id="formAddbinding.addArgumentButton" type="button" data-dojo-props="title:'Add new binding argument'">+</button>
+                        <button data-dojo-type="dijit/form/Button" id="formAddbinding.deleteArgumentButton" type="button" data-dojo-props="title:'Remove selected binding argument(s)'">-</button>
                     </div>
                 </fieldset>
             </div>
