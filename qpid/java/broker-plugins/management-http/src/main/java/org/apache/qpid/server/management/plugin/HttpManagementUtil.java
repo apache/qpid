@@ -20,17 +20,24 @@
  */
 package org.apache.qpid.server.management.plugin;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.zip.GZIPOutputStream;
 
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.codec.binary.Base64;
@@ -70,6 +77,10 @@ public class HttpManagementUtil
     private static final String ATTR_LOGIN_LOGOUT_REPORTER = "Qpid.loginLogoutReporter";
     private static final String ATTR_SUBJECT = "Qpid.subject";
     private static final String ATTR_LOG_ACTOR = "Qpid.logActor";
+
+    private static final String ACCEPT_ENCODING_HEADER = "Accept-Encoding";
+    private static final String CONTENT_ENCODING_HEADER = "Content-Encoding";
+    private static final String GZIP_CONTENT_ENCODING = "gzip";
 
     public static Broker<?> getBroker(ServletContext servletContext)
     {
@@ -219,5 +230,42 @@ public class HttpManagementUtil
         return null;
     }
 
+    public static Writer getOutputWriter(final HttpServletRequest request, final HttpServletResponse response)
+            throws IOException
+    {
+        return getOutputWriter(request, response, getManagementConfiguration(request.getServletContext()));
+    }
 
+    public static Writer getOutputWriter(final HttpServletRequest request, final HttpServletResponse response, HttpManagementConfiguration managementConfiguration)
+            throws IOException
+    {
+        Writer writer;
+        writer = new BufferedWriter(new OutputStreamWriter(getOutputStream(request,response, managementConfiguration)));
+
+        return writer;
+    }
+
+    public static OutputStream getOutputStream(final HttpServletRequest request, final HttpServletResponse response)
+            throws IOException
+    {
+        return getOutputStream(request, response, getManagementConfiguration(request.getServletContext()));
+    }
+
+    public static OutputStream getOutputStream(final HttpServletRequest request, final HttpServletResponse response, HttpManagementConfiguration managementConfiguration)
+            throws IOException
+    {
+        OutputStream outputStream;
+        if(managementConfiguration.isCompressResponses()
+           && Collections.list(request.getHeaderNames()).contains(ACCEPT_ENCODING_HEADER)
+           && request.getHeader(ACCEPT_ENCODING_HEADER).contains(GZIP_CONTENT_ENCODING))
+        {
+            outputStream = new GZIPOutputStream(response.getOutputStream());
+            response.setHeader(CONTENT_ENCODING_HEADER, GZIP_CONTENT_ENCODING);
+        }
+        else
+        {
+            outputStream = response.getOutputStream();
+        }
+        return outputStream;
+    }
 }

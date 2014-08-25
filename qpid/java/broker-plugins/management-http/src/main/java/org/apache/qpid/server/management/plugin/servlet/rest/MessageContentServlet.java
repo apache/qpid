@@ -60,7 +60,7 @@ public class MessageContentServlet extends AbstractServlet
         {
             response.setContentType(finder.getMimeType());
             response.setContentLength((int) finder.getSize());
-            response.getOutputStream().write(finder.getContent());
+            getOutputStream(request, response).write(finder.getContent());
 
         }
 

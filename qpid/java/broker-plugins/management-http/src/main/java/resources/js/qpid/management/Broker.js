@@ -349,9 +349,13 @@ define(["dojo/_base/xhr",
                                                   gotoButton: true,
                                                   maxPageStep: 4,
                                                   position: "bottom"
-                                              },
-                                              indirectSelection: true
+                                              }
                                      }};
+
+                             function isActiveVH(item)
+                             {
+                                return item && item.virtualhosts &&  item.virtualhosts[0].state=="ACTIVE";
+                             }
 
                              that.vhostsGrid =
                                 new UpdatableStore(that.brokerData.virtualhostnodes, query(".broker-virtualhosts")[0],
@@ -373,20 +377,27 @@ define(["dojo/_base/xhr",
                                                       formatter: function(item){
                                                         return item && item.virtualhosts? item.virtualhosts[0].type: "N/A";
                                                       }
-                                                    },
-                                                  { name: "Connections", field: "_item", width: "10%",
+                                                  },
+                                                  { name: "Connections", field: "_item", width: "8%",
                                                     formatter: function(item){
-                                                        return item && item.virtualhosts? item.virtualhosts[0].statistics.connectionCount: 0;
+                                                        return isActiveVH(item)? item.virtualhosts[0].statistics.connectionCount: "N/A";
                                                     }
                                                   },
-                                                  { name: "Queues",    field: "_item", width: "10%",
+                                                  { name: "Queues",    field: "_item", width: "8%",
                                                     formatter: function(item){
-                                                        return item && item.virtualhosts? item.virtualhosts[0].statistics.queueCount: 0;
+                                                        return isActiveVH(item)? item.virtualhosts[0].statistics.queueCount: "N/A";
                                                     }
                                                   },
-                                                  { name: "Exchanges", field: "_item", width: "10%",
+                                                  { name: "Exchanges", field: "_item", width: "8%",
                                                     formatter: function(item){
-                                                        return item && item.virtualhosts? item.virtualhosts[0].statistics.exchangeCount: 0;
+                                                        return isActiveVH(item)? item.virtualhosts[0].statistics.exchangeCount: "N/A";
+                                                    }
+                                                  },
+                                                  {
+                                                    name: "Default", field: "_item", width: "6%",
+                                                    formatter: function(item){
+                                                        var val = item && item.virtualhosts? item.virtualhosts[0].name: null;
+                                                        return "<input type='radio' disabled='disabled' "+(val == that.brokerData.defaultVirtualHost ? "checked='checked'": "")+" />";
                                                     }
                                                   }
                                                 ], function(obj) {
@@ -424,6 +435,7 @@ define(["dojo/_base/xhr",
                                if (data.length == 1)
                                {
                                  that.showVirtualHost(data[0], brokerObj);
+                                 that.vhostsGrid.grid.selection.clear();
                                }
                              });
 
@@ -434,6 +446,7 @@ define(["dojo/_base/xhr",
                                        {
                                          var item = data[0];
                                          that.controller.show("virtualhostnode", item.name, brokerObj, item.id);
+                                         that.vhostsGrid.grid.selection.clear();
                                        }
                                  }
                              );
@@ -457,6 +470,7 @@ define(["dojo/_base/xhr",
                                    var item = data[0];
                                    util.sendRequest("api/latest/virtualhostnode/" + encodeURIComponent(item.name),
                                            "PUT", {desiredState: "ACTIVE"});
+                                   that.vhostsGrid.grid.selection.clear();
                                  }
                                });
 
@@ -473,6 +487,7 @@ define(["dojo/_base/xhr",
                                    {
                                        util.sendRequest("api/latest/virtualhostnode/" + encodeURIComponent(item.name),
                                                "PUT", {desiredState: "STOPPED"});
+                                       that.vhostsGrid.grid.selection.clear();
                                    }
                                  }
                                });
@@ -486,6 +501,7 @@ define(["dojo/_base/xhr",
                                    var host = item.virtualhosts[0];
                                    util.sendRequest("api/latest/virtualhost/" + encodeURIComponent(item.name) + "/" + encodeURIComponent(host.name),
                                            "PUT", {desiredState: "ACTIVE"});
+                                   that.vhostsGrid.grid.selection.clear();
                                  }
                                });
 
@@ -501,11 +517,12 @@ define(["dojo/_base/xhr",
                                    {
                                        util.sendRequest("api/latest/virtualhost/" + encodeURIComponent(item.name) + "/" + encodeURIComponent(host.name),
                                                "PUT", {desiredState: "STOPPED"});
+                                       that.vhostsGrid.grid.selection.clear();
                                    }
                                  }
                                });
-
-                             gridProperties.selectionMode="extended";
+                             gridProperties.selectionMode = "extended";
+                             gridProperties.plugins.indirectSelection = true;
 
                              that.portsGrid =
                                 new UpdatableStore(that.brokerData.ports, query(".broker-ports")[0],

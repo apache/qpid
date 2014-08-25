@@ -22,16 +22,18 @@ package org.apache.qpid.server.management.plugin.servlet;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.qpid.server.management.plugin.HttpManagementUtil;
 
 public class FileServlet extends HttpServlet
 {
@@ -97,7 +99,7 @@ public class FileServlet extends HttpServlet
             {
                 byte[] buffer = new byte[1024];
                 int read = 0;
-                ServletOutputStream output = response.getOutputStream();
+                OutputStream output = HttpManagementUtil.getOutputStream(request, response);
                 try
                 {
                     while((read = fileInput.read(buffer)) != -1)

@@ -123,7 +123,16 @@ define(["dojo/_base/xhr",
                           name: "sessionTimeout"
                         });
                     }
+              }, {
+              name: "compressResponses",
+              createWidget: function(plugin) {
+                  return new dijit.form.CheckBox({
+                      required: false,
+                      checked: plugin.compressResponses,
+                      label: "Compress responses:",
+                      name: "compressResponses"});
               }
+          }
           ];
           var data = this.managementHttpUpdater.pluginData;
           util.showSetAttributesDialog(
@@ -143,6 +152,8 @@ define(["dojo/_base/xhr",
             this.sessionTimeout = query(".sessionTimeout", node)[0];
             this.httpsSaslAuthenticationEnabled = query(".httpsSaslAuthenticationEnabled", node)[0];
             this.httpSaslAuthenticationEnabled = query(".httpSaslAuthenticationEnabled", node)[0];
+            this.compressResponses = query(".compressResponses", node)[0];
+
         }
 
         ManagementHttpUpdater.prototype.update = function(syncRequest)
@@ -161,6 +172,7 @@ define(["dojo/_base/xhr",
                     that.httpsBasicAuthenticationEnabled.innerHTML = showBoolean(that.pluginData.httpsBasicAuthenticationEnabled);
                     that.httpsSaslAuthenticationEnabled.innerHTML = showBoolean(that.pluginData.httpsSaslAuthenticationEnabled);
                     that.httpSaslAuthenticationEnabled.innerHTML = showBoolean(that.pluginData.httpSaslAuthenticationEnabled);
+                    that.compressResponses.innerHTML = showBoolean(that.pluginData.compressResponses);
                     that.sessionTimeout.innerHTML = that.pluginData.sessionTimeout;
                 });
 

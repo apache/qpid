@@ -29,7 +29,7 @@ public interface DerbyVirtualHost<X extends DerbyVirtualHost<X>> extends Virtual
 {
     String STORE_PATH = "storePath";
 
-    @ManagedAttribute(mandatory = true)
+    @ManagedAttribute(mandatory = true, defaultValue = "${qpid.work_dir}${file.separator}${this:name}${file.separator}messages")
     String getStorePath();
 
     @ManagedAttribute(mandatory = true, defaultValue = "0")

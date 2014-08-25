@@ -26,6 +26,6 @@ public interface BDBVirtualHostNode<X extends BDBVirtualHostNode<X>> extends org
 {
     String STORE_PATH = "storePath";
 
-    @ManagedAttribute(mandatory = true)
+    @ManagedAttribute(mandatory = true, defaultValue = "${qpid.work_dir}${file.separator}${this:name}${file.separator}config")
     String getStorePath();
 }

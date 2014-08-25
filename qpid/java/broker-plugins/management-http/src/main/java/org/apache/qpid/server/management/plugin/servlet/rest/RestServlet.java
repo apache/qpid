@@ -16,7 +16,6 @@
  */
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.security.AccessControlException;
@@ -327,7 +326,7 @@ public class RestServlet extends AbstractServlet
                     depth, actuals, includeSystemContext));
         }
 
-        final Writer writer = new BufferedWriter(response.getWriter());
+        Writer writer = getOutputWriter(request, response);
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         mapper.writeValue(writer, output);

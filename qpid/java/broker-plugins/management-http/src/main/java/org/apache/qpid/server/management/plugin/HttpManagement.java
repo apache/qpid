@@ -111,6 +111,9 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     @ManagedAttributeField
     private int _sessionTimeout;
 
+    @ManagedAttributeField
+    private boolean _compressResponses;
+
     private boolean _allowPortActivation;
 
     @ManagedObjectFactoryConstructor
@@ -474,6 +477,12 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     public boolean isHttpBasicAuthenticationEnabled()
     {
         return _httpBasicAuthenticationEnabled;
+    }
+
+    @Override
+    public boolean isCompressResponses()
+    {
+        return _compressResponses;
     }
 
     @Override

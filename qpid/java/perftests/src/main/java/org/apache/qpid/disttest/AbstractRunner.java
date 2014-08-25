@@ -42,10 +42,10 @@ public class AbstractRunner
     {
         Context context = null;
 
-        try
+        try(FileInputStream inStream = new FileInputStream(getJndiConfig()))
         {
             final Properties properties = new Properties();
-            properties.load(new FileInputStream(getJndiConfig()));
+            properties.load(inStream);
             context = new InitialContext(properties);
         }
         catch (Exception e)

@@ -21,21 +21,22 @@
 
 package org.apache.qpid.tools;
 
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQConnectionFactory;
-import org.apache.qpid.jms.FailoverPolicy;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Properties;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import java.util.Properties;
-import java.util.Hashtable;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.LinkedList;
-import java.io.IOException;
-import java.io.File;
-import java.io.FileInputStream;
+
+import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.jms.FailoverPolicy;
 
 public class JNDICheck
 {
@@ -79,9 +80,9 @@ public class JNDICheck
         // Load JNDI properties
         Properties properties = new Properties();
 
-        try
+        try(FileInputStream propertiesStream = new FileInputStream(new File(propertyFile)))
         {
-            properties.load(new FileInputStream(new File(propertyFile)));
+            properties.load(propertiesStream);
         }
         catch (IOException e)
         {

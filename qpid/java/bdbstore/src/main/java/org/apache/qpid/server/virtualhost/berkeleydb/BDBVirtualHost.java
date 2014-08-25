@@ -38,7 +38,7 @@ public interface BDBVirtualHost<X extends BDBVirtualHost<X>> extends VirtualHost
                                           Math.min(200l*1024l*1024l,
                                                    Runtime.getRuntime().maxMemory()/20l));
 
-    @ManagedAttribute(mandatory = true)
+    @ManagedAttribute(mandatory = true, defaultValue = "${qpid.work_dir}${file.separator}${this:name}${file.separator}messages")
     String getStorePath();
 
     @ManagedAttribute(mandatory = true, defaultValue = "0")

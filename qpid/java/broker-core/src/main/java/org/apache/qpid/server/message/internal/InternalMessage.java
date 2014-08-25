@@ -62,9 +62,8 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
         _contentSize = msg.getMetaData().getContentSize();
         ByteBuffer buf = msg.getContent(0, _contentSize);
 
-        try
+        try(ObjectInputStream is = new ObjectInputStream(new ByteBufferInputStream(buf)))
         {
-            ObjectInputStream is = new ObjectInputStream(new ByteBufferInputStream(buf));
             _messageBody = is.readObject();
 
         }
@@ -128,9 +127,8 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
             internalHeader = new InternalMessageHeader(header);
         }
         ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
-        try
+        try (ObjectOutputStream os = new ObjectOutputStream(bytesOut))
         {
-            ObjectOutputStream os = new ObjectOutputStream(bytesOut);
             os.writeObject(bodyObject);
             byte[] bytes = bytesOut.toByteArray();
 
@@ -181,76 +179,79 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
                                                                                final Object messageBody)
     {
 
-        ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
-        try
+
+        try(ByteArrayOutputStream bytesOut = new ByteArrayOutputStream())
         {
-            ObjectOutputStream os = new ObjectOutputStream(bytesOut);
-            os.writeObject(messageBody);
-            final byte[] bytes = bytesOut.toByteArray();
-
-
-            final InternalMessageMetaData metaData = InternalMessageMetaData.create(persistent, header, bytes.length);
-
-
-            return new StoredMessage<InternalMessageMetaData>()
+            try(ObjectOutputStream os = new ObjectOutputStream(bytesOut))
             {
-                @Override
-                public InternalMessageMetaData getMetaData()
-                {
-                    return metaData;
-                }
+                os.writeObject(messageBody);
+                final byte[] bytes = bytesOut.toByteArray();
 
-                @Override
-                public long getMessageNumber()
-                {
-                    return messageNumber;
-                }
 
-                @Override
-                public void addContent(final int offsetInMessage, final ByteBuffer src)
-                {
-                    throw new UnsupportedOperationException();
-                }
+                final InternalMessageMetaData metaData =
+                        InternalMessageMetaData.create(persistent, header, bytes.length);
 
-                @Override
-                public int getContent(final int offsetInMessage, final ByteBuffer dst)
+
+                return new StoredMessage<InternalMessageMetaData>()
                 {
-                    ByteBuffer buffer = ByteBuffer.wrap(bytes);
-                    buffer.position(offsetInMessage);
-                    buffer = buffer.slice();
-                    if(dst.remaining() < buffer.remaining())
+                    @Override
+                    public InternalMessageMetaData getMetaData()
                     {
-                        buffer.limit(dst.remaining());
+                        return metaData;
                     }
-                    int pos = dst.position();
-                    dst.put(buffer);
-                    return dst.position()-pos;
-                }
 
-                @Override
-                public ByteBuffer getContent(final int offsetInMessage, final int size)
-                {
-                    return ByteBuffer.wrap(bytes,offsetInMessage,size);
-                }
+                    @Override
+                    public long getMessageNumber()
+                    {
+                        return messageNumber;
+                    }
 
-                @Override
-                public void remove()
-                {
-                    throw new UnsupportedOperationException();
-                }
+                    @Override
+                    public void addContent(final int offsetInMessage, final ByteBuffer src)
+                    {
+                        throw new UnsupportedOperationException();
+                    }
 
-                @Override
-                public boolean isInMemory()
-                {
-                    return true;
-                }
+                    @Override
+                    public int getContent(final int offsetInMessage, final ByteBuffer dst)
+                    {
+                        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                        buffer.position(offsetInMessage);
+                        buffer = buffer.slice();
+                        if (dst.remaining() < buffer.remaining())
+                        {
+                            buffer.limit(dst.remaining());
+                        }
+                        int pos = dst.position();
+                        dst.put(buffer);
+                        return dst.position() - pos;
+                    }
 
-                @Override
-                public boolean flowToDisk()
-                {
-                    return false;
-                }
-            };
+                    @Override
+                    public ByteBuffer getContent(final int offsetInMessage, final int size)
+                    {
+                        return ByteBuffer.wrap(bytes, offsetInMessage, size);
+                    }
+
+                    @Override
+                    public void remove()
+                    {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    @Override
+                    public boolean isInMemory()
+                    {
+                        return true;
+                    }
+
+                    @Override
+                    public boolean flowToDisk()
+                    {
+                        return false;
+                    }
+                };
+            }
         }
         catch (IOException e)
         {

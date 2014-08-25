@@ -21,7 +21,8 @@
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.OutputStream;
+import java.io.Writer;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
@@ -32,15 +33,17 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.management.plugin.HttpManagementConfiguration;
-import org.apache.qpid.server.management.plugin.HttpManagementUtil;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+
+import org.apache.qpid.server.management.plugin.HttpManagementConfiguration;
+import org.apache.qpid.server.management.plugin.HttpManagementUtil;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 
 public abstract class AbstractServlet extends HttpServlet
 {
@@ -135,6 +138,18 @@ public abstract class AbstractServlet extends HttpServlet
             request,
             resp
         );
+    }
+
+    public Writer getOutputWriter(final HttpServletRequest request, final HttpServletResponse response)
+            throws IOException
+    {
+        return HttpManagementUtil.getOutputWriter(request, response, _managementConfiguration);
+    }
+
+    public OutputStream getOutputStream(final HttpServletRequest request, final HttpServletResponse response)
+            throws IOException
+    {
+        return HttpManagementUtil.getOutputStream(request, response, _managementConfiguration);
     }
 
     /**
@@ -247,7 +262,7 @@ public abstract class AbstractServlet extends HttpServlet
         }
     }
 
-    protected void sendJsonResponse(Object object, HttpServletResponse response) throws IOException,
+    protected void sendJsonResponse(Object object, HttpServletRequest request, HttpServletResponse response) throws IOException,
             JsonGenerationException, JsonMappingException
     {
         response.setStatus(HttpServletResponse.SC_OK);
@@ -257,7 +272,7 @@ public abstract class AbstractServlet extends HttpServlet
         response.setDateHeader ("Expires", 0);
         response.setContentType("application/json");
 
-        final PrintWriter writer = response.getWriter();
+        final Writer writer = getOutputWriter(request, response);
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         mapper.writeValue(writer, object);

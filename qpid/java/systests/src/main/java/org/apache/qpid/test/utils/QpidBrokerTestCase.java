@@ -848,7 +848,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      * @param brokerPort broker port
      * @param virtualHostNodeName virtual host node name
      */
-    protected void createTestVirtualHostNode(int brokerPort, String virtualHostNodeName)
+    protected void createTestVirtualHostNode(int brokerPort, String virtualHostNodeName, boolean withBlueprint)
     {
         String storeType = getTestProfileVirtualHostNodeType();
         String storeDir = null;
@@ -871,13 +871,22 @@ public class QpidBrokerTestCase extends QpidTestCase
             attributes.put(JsonVirtualHostNode.STORE_PATH, storeDir);
         }
 
-        final String blueprint = getTestProfileVirtualHostNodeBlueprint();
+        if (withBlueprint)
+        {
+            final String blueprint = getTestProfileVirtualHostNodeBlueprint();
 
-        attributes.put(ConfiguredObject.CONTEXT, Collections.singletonMap(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR,
-                                                                          blueprint));
+            attributes.put(ConfiguredObject.CONTEXT,
+                           Collections.singletonMap(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR,
+                                                    blueprint));
+        }
 
         int port = getPort(brokerPort);
         getBrokerConfiguration(port).addObjectConfiguration(VirtualHostNode.class, attributes);
+    }
+
+    protected void createTestVirtualHostNode(int brokerPort, String virtualHostNodeName)
+    {
+        createTestVirtualHostNode(brokerPort, virtualHostNodeName, true);
     }
 
     /**

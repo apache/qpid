@@ -17,7 +17,7 @@
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -55,7 +55,7 @@ public class StructureServlet extends AbstractServlet
 
         Map<String,Object> structure = generateStructure(getBroker(), Broker.class);
 
-        final PrintWriter writer = response.getWriter();
+        final Writer writer = getOutputWriter(request, response);
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         mapper.writeValue(writer, structure);

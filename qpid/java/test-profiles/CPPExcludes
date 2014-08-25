@@ -197,3 +197,5 @@ org.apache.qpid.server.queue.QueueBindTest#testQueueCanBeReboundOnTopicExchange
 // Tests queue message durability settings which are a Java Broker specific feature
 org.apache.qpid.server.queue.QueueMessageDurabilityTest#*
 
+// QPID-4429 : C++ Broker does not enforce max frame size negotiation rules as per the spec
+org.apache.qpid.transport.MaxFrameSizeTest#*

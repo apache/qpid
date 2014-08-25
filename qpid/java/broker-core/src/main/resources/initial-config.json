@@ -55,9 +55,8 @@
   "virtualhostnodes" : [ {
     "name" : "default",
     "type" : "JSON",
-    "storePath" : "${qpid.work_dir}${file.separator}default${file.separator}config",
     "context" : {
-        "virtualhostBlueprint" : "{ \"type\" : \"DERBY\", \"storePath\" : \"${json:qpid.work_dir}${json:file.separator}default${json:file.separator}messages\" }"
+        "virtualhostBlueprint" : "{ \"type\" : \"DERBY\" }"
     }
   } ],
   "plugins" : [ {

@@ -29,6 +29,7 @@ import org.apache.qpid.server.model.Plugin;
 
 public interface HttpManagementConfiguration<X extends HttpManagementConfiguration<X>> extends Plugin<X>
 {
+
     @ManagedAttribute( defaultValue = "true" )
     boolean isHttpsSaslAuthenticationEnabled();
 
@@ -43,6 +44,13 @@ public interface HttpManagementConfiguration<X extends HttpManagementConfigurati
 
     @ManagedAttribute( defaultValue = "600" )
     public int getSessionTimeout();
+
+    String HTTP_MANAGEMENT_COMPRESS_RESPONSES = "httpManagement.compressResponses";
+    @ManagedContextDefault(name = HTTP_MANAGEMENT_COMPRESS_RESPONSES)
+    boolean DEFAULT_COMPRESS_RESPONSES = false;
+
+    @ManagedAttribute( defaultValue = "${"+HTTP_MANAGEMENT_COMPRESS_RESPONSES+"}" )
+    public boolean isCompressResponses();
 
     String MAX_HTTP_FILE_UPLOAD_SIZE_CONTEXT_NAME = "maxHttpFileUploadSize";
     @ManagedContextDefault( name = MAX_HTTP_FILE_UPLOAD_SIZE_CONTEXT_NAME)
