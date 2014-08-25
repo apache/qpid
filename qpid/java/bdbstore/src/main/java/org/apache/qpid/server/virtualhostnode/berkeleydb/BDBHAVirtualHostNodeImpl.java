@@ -22,6 +22,7 @@ package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
 import java.net.InetSocketAddress;
 import java.security.PrivilegedAction;
+import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,6 +50,8 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.Task;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.HighAvailabilityMessages;
+import org.apache.qpid.server.logging.subjects.BDBHAVirtualHostNodeLogSubject;
+import org.apache.qpid.server.logging.subjects.GroupLogSubject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -75,6 +78,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         BDBHAVirtualHostNode<BDBHAVirtualHostNodeImpl>
 {
     public static final String VIRTUAL_HOST_NODE_TYPE = "BDB_HA";
+    public static final String VIRTUAL_HOST_PRINCIPAL_NAME_FORMAT = "grp(/{0})/vhn(/{1})";
 
     /**
      * Length of time we synchronously await the a JE mutation to complete.  It is not considered an error if we exceed this timeout, although a
@@ -87,6 +91,9 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     private final AtomicReference<ReplicatedEnvironmentFacade> _environmentFacade = new AtomicReference<>();
 
     private final AtomicReference<ReplicatedEnvironment.State> _lastReplicatedEnvironmentState = new AtomicReference<>(ReplicatedEnvironment.State.UNKNOWN);
+    private BDBHAVirtualHostNodeLogSubject _virtualHostNodeLogSubject;
+    private GroupLogSubject _groupLogSubject;
+    private String _virtualHostNodePrincipalName;
 
     @ManagedAttributeField
     private String _storePath;
@@ -267,7 +274,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             }
         }
 
-        getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.ADDED(getName(), getGroupName()));
+        getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.CREATED());
     }
 
     protected ReplicatedEnvironmentFacade getReplicatedEnvironmentFacade()
@@ -290,8 +297,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
 
         getConfigurationStore().openConfigurationStore(this, false);
-
-        getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.ATTACHED(getName(), getGroupName(), getRole()));
 
         getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.CREATED());
         getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.STORE_LOCATION(getStorePath()));
@@ -325,23 +330,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             ReplicatedEnvironment.State detached = ReplicatedEnvironment.State.DETACHED;
             _lastReplicatedEnvironmentState.set(detached);
             attributeSet(ROLE, _role, detached);
-
-            //Perhaps, having STOPPED operational logging could be sufficient. However, on START we still will be seeing 2 logs: ATTACHED and STARTED
-            getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DETACHED(getName(), getGroupName()));
-            getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.STOPPED(getName(), getGroupName()));
-        }
-    }
-
-    @StateTransition( currentState = { State.UNINITIALIZED, State.STOPPED, State.ERRORED }, desiredState = State.ACTIVE )
-    protected void doActivate()
-    {
-        try
-        {
-            super.doActivate();
-        }
-        finally
-        {
-            getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.STARTED(getName(), getGroupName()));
         }
     }
 
@@ -359,7 +347,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     {
         Set<InetSocketAddress> helpers = getRemoteNodeAddresses();
         super.doDelete();
-        getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DELETED(getName(), getGroupName()));
+        getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DELETED());
         if (getState() == State.DELETED && !helpers.isEmpty())
         {
             try
@@ -413,8 +401,16 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         finally
         {
             closeEnvironment();
-            getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DETACHED(getName(), getGroupName()));
         }
+    }
+
+    @Override
+    public void onValidate()
+    {
+        super.onValidate();
+        _virtualHostNodeLogSubject =  new BDBHAVirtualHostNodeLogSubject(getGroupName(), getName());
+        _groupLogSubject = new GroupLogSubject(getGroupName());
+        _virtualHostNodePrincipalName = MessageFormat.format(VIRTUAL_HOST_PRINCIPAL_NAME_FORMAT, getGroupName(), getName());
     }
 
     private void onMaster()
@@ -550,7 +546,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             {
                 LOGGER.info("Received BDB event indicating transition to state " + state);
             }
-
+            String previousRole = getRole();
             try
             {
                 switch (state)
@@ -573,10 +569,9 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             finally
             {
                 _lastReplicatedEnvironmentState.set(state);
-                String previousRole = _role;
                 attributeSet(ROLE, _role, state.name());
-                getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.ROLE_CHANGED(getName(),
-                        getGroupName(), previousRole, state.name()));
+                getEventLogger().message(getGroupLogSubject(),
+                        HighAvailabilityMessages.ROLE_CHANGED(getName(), getAddress(), previousRole, state.name()));
             }
         }
     }
@@ -591,8 +586,8 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             try
             {
                 environmentFacade.setPriority(_priority).get(MUTATE_JE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-                getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.PRIORITY_CHANGED(getName(),
-                        getGroupName(), String.valueOf(_priority)));
+                getEventLogger().message(getVirtualHostNodeLogSubject(),
+                        HighAvailabilityMessages.PRIORITY_CHANGED(String.valueOf(_priority)));
             }
             catch (TimeoutException e)
             {
@@ -619,8 +614,8 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             try
             {
                 environmentFacade.setDesignatedPrimary(_designatedPrimary).get(MUTATE_JE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-                getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DESIGNATED_PRIMARY_CHANGED(getName(),
-                        getGroupName(), String.valueOf(_designatedPrimary)));
+                getEventLogger().message(getVirtualHostNodeLogSubject(),
+                        HighAvailabilityMessages.DESIGNATED_PRIMARY_CHANGED(String.valueOf(_designatedPrimary)));
             }
             catch (TimeoutException e)
             {
@@ -647,8 +642,8 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             try
             {
                 environmentFacade.setElectableGroupSizeOverride(_quorumOverride).get(MUTATE_JE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-                getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.QUORUM_OVERRIDE_CHANGED(getName(),
-                        getGroupName(), String.valueOf(_quorumOverride)));
+                getEventLogger().message(getVirtualHostNodeLogSubject(),
+                        HighAvailabilityMessages.QUORUM_OVERRIDE_CHANGED(String.valueOf(_quorumOverride)));
             }
             catch (TimeoutException e)
             {
@@ -674,8 +669,8 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         {
             try
             {
+                getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.TRANSFER_MASTER(getName(), getAddress()));
                 environmentFacade.transferMasterToSelfAsynchronously().get(MUTATE_JE_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-                getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.TRANSFER_MASTER(getName(), getName(), getGroupName()));
             }
             catch (TimeoutException e)
             {
@@ -701,18 +696,27 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         return getAddress().equals(getHelperAddress());
     }
 
+    BDBHAVirtualHostNodeLogSubject getVirtualHostNodeLogSubject()
+    {
+        return _virtualHostNodeLogSubject;
+    }
+
+    GroupLogSubject getGroupLogSubject()
+    {
+        return _groupLogSubject;
+    }
+
     private class RemoteNodesDiscoverer implements ReplicationGroupListener
     {
         @Override
         public void onReplicationNodeAddedToGroup(final ReplicationNode node)
         {
-            getTaskExecutor().submit(new Task<Void>()
+            getTaskExecutor().submit(new VirtualHostNodeGroupTask()
             {
                 @Override
-                public Void execute()
+                public void perform()
                 {
                     addRemoteReplicationNode(node);
-                    return null;
                 }
             });
         }
@@ -722,19 +726,18 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             BDBHARemoteReplicationNodeImpl remoteNode = new BDBHARemoteReplicationNodeImpl(BDBHAVirtualHostNodeImpl.this, nodeToAttributes(node), getReplicatedEnvironmentFacade());
             remoteNode.create();
             childAdded(remoteNode);
-            getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.ADDED(remoteNode.getName(), getGroupName()));
+            getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.ADDED(remoteNode.getName(), remoteNode.getAddress()));
         }
 
         @Override
         public void onReplicationNodeRecovered(final ReplicationNode node)
         {
-            getTaskExecutor().submit(new Task<Void>()
+            getTaskExecutor().submit(new VirtualHostNodeGroupTask()
             {
                 @Override
-                public Void execute()
+                public void perform()
                 {
                     recoverRemoteReplicationNode(node);
-                    return null;
                 }
             });
         }
@@ -745,19 +748,18 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             remoteNode.registerWithParents();
             remoteNode.open();
 
-            getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.ATTACHED(remoteNode.getName(), getGroupName(), String.valueOf(remoteNode.getState())));
+            getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.JOINED(remoteNode.getName(), remoteNode.getAddress()));
         }
 
         @Override
         public void onReplicationNodeRemovedFromGroup(final ReplicationNode node)
         {
-            getTaskExecutor().submit(new Task<Void>()
+            getTaskExecutor().submit(new VirtualHostNodeGroupTask()
             {
                 @Override
-                public Void execute()
+                public void perform()
                 {
                     removeRemoteReplicationNode(node);
-                    return null;
                 }
             });
         }
@@ -768,12 +770,25 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             if (remoteNode != null)
             {
                 remoteNode.deleted();
-                getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DELETED(remoteNode.getName(), getGroupName()));
+                getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.REMOVED(remoteNode.getName(), remoteNode.getAddress()));
             }
         }
 
         @Override
-        public void onNodeState(ReplicationNode node, NodeState nodeState)
+        public void onNodeState(final ReplicationNode node, final NodeState nodeState)
+        {
+            Subject.doAs(SecurityManager.getSystemTaskSubject(_virtualHostNodePrincipalName), new PrivilegedAction<Void>()
+            {
+                @Override
+                public Void run()
+                {
+                    processNodeState(node, nodeState);
+                    return null;
+                }
+            });
+        }
+
+        private void processNodeState(ReplicationNode node, NodeState nodeState)
         {
             BDBHARemoteReplicationNodeImpl remoteNode = getChildByName(BDBHARemoteReplicationNodeImpl.class, node.getName());
             if (remoteNode != null)
@@ -785,7 +800,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                     remoteNode.setLastTransactionId(-1);
                     if (!remoteNode.isDetached())
                     {
-                        getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DETACHED(remoteNode.getName(), getGroupName()));
+                        getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.LEFT(remoteNode.getName(), remoteNode.getAddress()));
                         remoteNode.setDetached(true);
                     }
                 }
@@ -796,7 +811,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                     remoteNode.setRole(nodeState.getNodeState().name());
                     if (remoteNode.isDetached())
                     {
-                        getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.ATTACHED(remoteNode.getName(), getGroupName(), remoteNode.getRole() ));
+                        getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.JOINED(remoteNode.getName(), remoteNode.getAddress()));
                         remoteNode.setDetached(false);
                     }
                 }
@@ -804,17 +819,29 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                 String newRole = remoteNode.getRole();
                 if (!newRole.equals(currentRole))
                 {
-                    getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.ROLE_CHANGED(remoteNode.getName(),
-                            getGroupName(), currentRole, newRole));
+                    getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.ROLE_CHANGED(remoteNode.getName(), remoteNode.getAddress(), currentRole, newRole));
                 }
             }
         }
 
         @Override
-        public void onIntruderNode(ReplicationNode node)
+        public void onIntruderNode(final ReplicationNode node)
+        {
+            Subject.doAs(SecurityManager.getSystemTaskSubject(_virtualHostNodePrincipalName), new PrivilegedAction<Void>()
+            {
+                @Override
+                public Void run()
+                {
+                    processIntruderNode(node);
+                    return null;
+                }
+            });
+        }
+
+        private void processIntruderNode(ReplicationNode node)
         {
             String hostAndPort = node.getHostName() + ":" + node.getPort();
-            getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.INTRUDER_DETECTED(node.getName(), hostAndPort, getGroupName()));
+            getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.INTRUDER_DETECTED(node.getName(), hostAndPort));
 
             boolean inManagementMode = getParent(Broker.class).isManagementMode();
             if (inManagementMode)
@@ -858,7 +885,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         @Override
         public void onNoMajority()
         {
-            getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.MAJORITY_LOST(getName(), getGroupName()));
+            getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.QUORUM_LOST());
         }
 
         private Map<String, Object> nodeToAttributes(ReplicationNode replicationNode)
@@ -870,6 +897,25 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             attributes.put(BDBHARemoteReplicationNode.MONITOR, replicationNode.getType() == NodeType.MONITOR);
             return attributes;
         }
+    }
+
+    private abstract class VirtualHostNodeGroupTask implements Task<Void>
+    {
+        @Override
+        public Void execute()
+        {
+            return Subject.doAs(SecurityManager.getSystemTaskSubject(_virtualHostNodePrincipalName), new PrivilegedAction<Void>()
+            {
+                @Override
+                public Void run()
+                {
+                    perform();
+                    return null;
+                }
+            });
+        }
+
+        abstract void perform();
     }
 
 }

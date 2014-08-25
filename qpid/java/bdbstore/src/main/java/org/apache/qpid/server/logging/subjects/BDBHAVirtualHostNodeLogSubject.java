@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,40 +18,15 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.util;
+package org.apache.qpid.server.logging.subjects;
 
-public class RunStats
+
+public class BDBHAVirtualHostNodeLogSubject extends AbstractLogSubject
 {
-    private long min = Long.MAX_VALUE;
-    private long max;
-    private long total;
-    private int count;
+    public static final String VIRTUAL_HOST_NODE_FORMAT = "grp(/{0})/vhn(/{1})";
 
-    public void record(long time)
+    public BDBHAVirtualHostNodeLogSubject(String groupName, String nodeName)
     {
-        max = Math.max(time, max);
-        min = Math.min(time, min);
-        total += time;
-        count++;
-    }
-
-    public long getMin()
-    {
-        return min;
-    }
-
-    public long getMax()
-    {
-        return max;
-    }
-
-    public long getAverage()
-    {
-       return total / count;
-    }
-
-    public String toString()
-    {
-        return "avg=" + getAverage() + ", min=" + min + ", max=" + max;
+        setLogStringWithFormat(VIRTUAL_HOST_NODE_FORMAT, groupName, nodeName);
     }
 }

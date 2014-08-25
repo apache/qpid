@@ -20,27 +20,29 @@
 package org.apache.qpid.server.store.berkeleydb.replication;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.Map;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
-import javax.management.ObjectName;
 
 import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
-import org.apache.qpid.test.utils.JMXTestUtils;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class TwoNodeTest extends QpidBrokerTestCase
 {
     private static final String VIRTUAL_HOST = "test";
 
-    private static final String MANAGED_OBJECT_QUERY = "org.apache.qpid:type=BDBHAMessageStore,name=" + ObjectName.quote(VIRTUAL_HOST);
     private static final int NUMBER_OF_NODES = 2;
 
     private final GroupCreator _groupCreator = new GroupCreator(this, VIRTUAL_HOST, NUMBER_OF_NODES);
-    private final JMXTestUtils _jmxUtils = new JMXTestUtils(this);
 
-    private ConnectionURL _brokerFailoverUrl;
+    /** Used when expectation is client will not (re)-connect */
+    private ConnectionURL _positiveFailoverUrl;
+
+    /** Used when expectation is client will not (re)-connect */
+    private ConnectionURL _negativeFailoverUrl;
 
     @Override
     protected void setUp() throws Exception
@@ -54,19 +56,6 @@ public class TwoNodeTest extends QpidBrokerTestCase
     }
 
     @Override
-    protected void tearDown() throws Exception
-    {
-        try
-        {
-            _jmxUtils.close();
-        }
-        finally
-        {
-            super.tearDown();
-        }
-    }
-
-    @Override
     public void startBroker() throws Exception
     {
         // Don't start default broker provided by QBTC.
@@ -77,20 +66,21 @@ public class TwoNodeTest extends QpidBrokerTestCase
         setSystemProperty("java.util.logging.config.file", "etc" + File.separator + "log.properties");
         _groupCreator.configureClusterNodes();
         _groupCreator.setDesignatedPrimaryOnFirstBroker(designedPrimary);
-        _brokerFailoverUrl = _groupCreator.getConnectionUrlForAllClusterNodes();
+        _positiveFailoverUrl = _groupCreator.getConnectionUrlForAllClusterNodes();
+        _negativeFailoverUrl = _groupCreator.getConnectionUrlForAllClusterNodes(200, 0, 2);
         _groupCreator.startCluster();
     }
 
     public void testMasterDesignatedPrimaryCanBeRestartedWithoutReplica() throws Exception
     {
         startCluster(true);
-        final Connection initialConnection = getConnection(_brokerFailoverUrl);
+        final Connection initialConnection = getConnection(_positiveFailoverUrl);
         int masterPort = _groupCreator.getBrokerPortNumberFromConnection(initialConnection);
         assertProducingConsuming(initialConnection);
         initialConnection.close();
         _groupCreator.stopCluster();
         _groupCreator.startNode(masterPort);
-        final Connection secondConnection = getConnection(_brokerFailoverUrl);
+        final Connection secondConnection = getConnection(_positiveFailoverUrl);
         assertProducingConsuming(secondConnection);
         secondConnection.close();
     }
@@ -98,12 +88,12 @@ public class TwoNodeTest extends QpidBrokerTestCase
     public void testClusterRestartWithoutDesignatedPrimary() throws Exception
     {
         startCluster(false);
-        final Connection initialConnection = getConnection(_brokerFailoverUrl);
+        final Connection initialConnection = getConnection(_positiveFailoverUrl);
         assertProducingConsuming(initialConnection);
         initialConnection.close();
         _groupCreator.stopCluster();
         _groupCreator.startClusterParallel();
-        final Connection secondConnection = getConnection(_brokerFailoverUrl);
+        final Connection secondConnection = getConnection(_positiveFailoverUrl);
         assertProducingConsuming(secondConnection);
         secondConnection.close();
     }
@@ -112,7 +102,7 @@ public class TwoNodeTest extends QpidBrokerTestCase
     {
         startCluster(true);
         _groupCreator.stopNode(_groupCreator.getBrokerPortNumberOfSecondaryNode());
-        final Connection connection = getConnection(_brokerFailoverUrl);
+        final Connection connection = getConnection(_positiveFailoverUrl);
         assertNotNull("Expected to get a valid connection to primary", connection);
         assertProducingConsuming(connection);
     }
@@ -124,7 +114,7 @@ public class TwoNodeTest extends QpidBrokerTestCase
 
         try
         {
-            Connection connection = getConnection(_brokerFailoverUrl);
+            Connection connection = getConnection(_negativeFailoverUrl);
             assertProducingConsuming(connection);
             fail("Exception not thrown");
         }
@@ -143,7 +133,7 @@ public class TwoNodeTest extends QpidBrokerTestCase
 
         try
         {
-            getConnection(_brokerFailoverUrl);
+            getConnection(_negativeFailoverUrl);
             fail("Connection not expected");
         }
         catch (JMSException e)
@@ -155,41 +145,39 @@ public class TwoNodeTest extends QpidBrokerTestCase
     public void testInitialDesignatedPrimaryStateOfNodes() throws Exception
     {
         startCluster(true);
-        final ManagedBDBHAMessageStore primaryStoreBean = getStoreBeanForNodeAtBrokerPort(_groupCreator.getBrokerPortNumberOfPrimary());
-        assertTrue("Expected primary node to be set as designated primary", primaryStoreBean.getDesignatedPrimary());
 
-        final ManagedBDBHAMessageStore secondaryStoreBean = getStoreBeanForNodeAtBrokerPort(_groupCreator.getBrokerPortNumberOfSecondaryNode());
-        assertFalse("Expected secondary node to NOT be set as designated primary", secondaryStoreBean.getDesignatedPrimary());
+        Map<String, Object> primaryNodeAttributes = _groupCreator.getNodeAttributes(_groupCreator.getBrokerPortNumberOfPrimary());
+        assertTrue("Expected primary node to be set as designated primary",
+                   (Boolean) primaryNodeAttributes.get(BDBHAVirtualHostNode.DESIGNATED_PRIMARY));
+
+        Map<String, Object> secondaryNodeAttributes = _groupCreator.getNodeAttributes(_groupCreator.getBrokerPortNumberOfSecondaryNode());
+        assertFalse("Expected secondary node to NOT be set as designated primary",
+                    (Boolean) secondaryNodeAttributes.get(BDBHAVirtualHostNode.DESIGNATED_PRIMARY));
     }
 
     public void testSecondaryDesignatedAsPrimaryAfterOriginalPrimaryStopped() throws Exception
     {
         startCluster(true);
-        final ManagedBDBHAMessageStore storeBean = getStoreBeanForNodeAtBrokerPort(_groupCreator.getBrokerPortNumberOfSecondaryNode());
+
         _groupCreator.stopNode(_groupCreator.getBrokerPortNumberOfPrimary());
 
-        assertFalse("Expected node to NOT be set as designated primary", storeBean.getDesignatedPrimary());
-        storeBean.setDesignatedPrimary(true);
+        Map<String, Object> secondaryNodeAttributes = _groupCreator.getNodeAttributes(_groupCreator.getBrokerPortNumberOfSecondaryNode());
+        assertFalse("Expected node to NOT be set as designated primary", (Boolean) secondaryNodeAttributes.get(BDBHAVirtualHostNode.DESIGNATED_PRIMARY));
 
-        long limit = System.currentTimeMillis() + 5000;
-        while( !storeBean.getDesignatedPrimary() && System.currentTimeMillis() < limit)
+        _groupCreator.setNodeAttributes(_groupCreator.getBrokerPortNumberOfSecondaryNode(), Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.DESIGNATED_PRIMARY, true));
+
+        int timeout = 5000;
+        long limit = System.currentTimeMillis() + timeout;
+        while( !((Boolean)secondaryNodeAttributes.get(BDBHAVirtualHostNode.DESIGNATED_PRIMARY)) && System.currentTimeMillis() < limit)
         {
             Thread.sleep(100);
+            secondaryNodeAttributes = _groupCreator.getNodeAttributes(_groupCreator.getBrokerPortNumberOfSecondaryNode());
         }
-        assertTrue("Expected node to now be set as designated primary", storeBean.getDesignatedPrimary());
+        assertTrue("Expected secondary to transition to primary within " + timeout, (Boolean) secondaryNodeAttributes.get(BDBHAVirtualHostNode.DESIGNATED_PRIMARY));
 
-        final Connection connection = getConnection(_brokerFailoverUrl);
+        final Connection connection = getConnection(_positiveFailoverUrl);
         assertNotNull("Expected to get a valid connection to new primary", connection);
         assertProducingConsuming(connection);
-    }
-
-    private ManagedBDBHAMessageStore getStoreBeanForNodeAtBrokerPort(
-            final int activeBrokerPortNumber) throws Exception
-    {
-        _jmxUtils.open(activeBrokerPortNumber);
-
-        ManagedBDBHAMessageStore storeBean = _jmxUtils.getManagedObject(ManagedBDBHAMessageStore.class, MANAGED_OBJECT_QUERY);
-        return storeBean;
     }
 
 }

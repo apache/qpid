@@ -281,4 +281,10 @@ class HeadersBinding
 
         return true;
     }
+
+    @Override
+    public int hashCode()
+    {
+        return _binding == null ? 0 : _binding.hashCode();
+    }
 }

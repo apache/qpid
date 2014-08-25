@@ -20,6 +20,17 @@
  */
 package org.apache.qpid.client;
 
+import java.nio.ByteBuffer;
+import java.util.UUID;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Queue;
+import javax.jms.Topic;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_8;
 import org.apache.qpid.client.message.AbstractJMSMessage;
@@ -33,16 +44,6 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.MethodRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Queue;
-import javax.jms.Topic;
-
-import java.nio.ByteBuffer;
-import java.util.UUID;
 
 public class BasicMessageProducer_0_8 extends BasicMessageProducer
 {
@@ -57,6 +58,12 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
 
     void declareDestination(AMQDestination destination)
     {
+
+        if (destination.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
+        {
+            throw new UnsupportedAddressSyntaxException(destination);
+        }
+
         if(getSession().isDeclareExchanges())
         {
             final MethodRegistry methodRegistry = getSession().getMethodRegistry();

@@ -25,6 +25,7 @@ import static org.mockito.Mockito.mock;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
@@ -114,7 +115,10 @@ public class TestBrokerConfiguration
             try
             {
                 URL url = new URL(initialStoreLocation);
-                reader = new InputStreamReader(url.openStream());
+                try(InputStream urlStream = url.openStream())
+                {
+                    reader = new InputStreamReader(urlStream);
+                }
             }
             catch (MalformedURLException e)
             {
@@ -122,6 +126,8 @@ public class TestBrokerConfiguration
             }
 
             Collection<ConfiguredObjectRecord> records = converter.readFromJson(org.apache.qpid.server.model.Broker.class, parentObject, reader);
+            reader.close();
+
             _store = new AbstractMemoryStore(Broker.class){};
 
             ConfiguredObjectRecord[] initialRecords = records.toArray(new ConfiguredObjectRecord[records.size()]);

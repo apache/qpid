@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.jms;
 
-import org.apache.qpid.transport.ConnectionSettings;
-
 import java.util.Map;
+
+import org.apache.qpid.transport.ConnectionSettings;
 
 public interface BrokerDetails
 {
@@ -103,10 +103,6 @@ public interface BrokerDetails
     public void setProperties(Map<String,String> props);
 
     boolean getBooleanProperty(String propName);
-
-    String toString();
-
-    boolean equals(Object o);
 
     ConnectionSettings buildConnectionSettings();
 }

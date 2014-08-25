@@ -90,16 +90,18 @@ public class QpidTestCase extends TestCase
                 if (file.exists())
                 {
                     _logger.info("Using exclude file: " + uri);
-                    try
+                    try(FileReader fileReader = new FileReader(file))
                     {
-                        BufferedReader in = new BufferedReader(new FileReader(file));
-                        String excludedTest = in.readLine();
-                        do
+                        try(BufferedReader in = new BufferedReader(fileReader))
                         {
-                            exclusionList.add(excludedTest);
-                            excludedTest = in.readLine();
+                            String excludedTest = in.readLine();
+                            do
+                            {
+                                exclusionList.add(excludedTest);
+                                excludedTest = in.readLine();
+                            }
+                            while (excludedTest != null);
                         }
-                        while (excludedTest != null);
                     }
                     catch (IOException e)
                     {

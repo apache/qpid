@@ -20,15 +20,16 @@
  */
 package org.apache.qpid.management.common.sasl;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 
 public class UsernameHashedPasswordCallbackHandler implements CallbackHandler
@@ -76,9 +77,10 @@ public class UsernameHashedPasswordCallbackHandler implements CallbackHandler
         }
     }
 
-    protected void finalize()
+    protected void finalize() throws Throwable
     {
         clearPassword();
+        super.finalize();
     }
     
     public static char[] getHash(String text) throws NoSuchAlgorithmException, UnsupportedEncodingException

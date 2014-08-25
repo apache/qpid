@@ -18,16 +18,15 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.logging.subjects;
+package org.apache.qpid.client;
 
-import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.VIRTUAL_HOST_NODE_FORMAT;
-
-import org.apache.qpid.server.model.VirtualHostNode;
-
-public class VirtualHostNodeLogSubject extends AbstractLogSubject
+class UnsupportedAddressSyntaxException extends UnsupportedOperationException
 {
-    public VirtualHostNodeLogSubject(String nodeName)
+    UnsupportedAddressSyntaxException(final AMQDestination dest)
     {
-        setLogStringWithFormat(VIRTUAL_HOST_NODE_FORMAT, nodeName);
+        super("The address '" + dest.toString() + "' uses the " + AMQDestination.DestSyntax.ADDR + " addressing syntax"
+              + " which is not supported for AMQP 0-8/0-9/0-9-1 connections.  Use the " + AMQDestination.DestSyntax.BURL
+              + " syntax instead:\n"
+              + "\tBURL:<Exchange Class>://<Exchange Name>/[<Destination>]/[<Queue>][?<option>='<value>'[&<option>='<value>']]\n");
     }
 }

@@ -194,7 +194,7 @@ public class MessageConverter_1_0_to_v0_8 implements MessageConverter<Message_1_
 
         for(String headerName : serverMsg.getMessageHeader().getHeaderNames())
         {
-            headerProps.put(headerName, serverMsg.getMessageHeader().getHeader(headerName));
+            headerProps.put(headerName, MessageConverter_from_1_0.convertValue(serverMsg.getMessageHeader().getHeader(headerName)));
         }
 
         props.setHeaders(FieldTable.convertToFieldTable(headerProps));

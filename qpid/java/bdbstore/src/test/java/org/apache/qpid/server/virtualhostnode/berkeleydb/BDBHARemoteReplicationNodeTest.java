@@ -19,6 +19,7 @@
 
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -33,6 +34,7 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -69,7 +71,7 @@ public class BDBHARemoteReplicationNodeTest extends QpidTestCase
 
         // Virtualhost needs the EventLogger from the SystemContext.
         when(_virtualHostNode.getParent(Broker.class)).thenReturn(_broker);
-
+        doReturn(VirtualHostNode.class).when(_virtualHostNode).getCategoryClass();
         ConfiguredObjectFactory objectFactory = _broker.getObjectFactory();
         when(_virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
         when(_virtualHostNode.getTaskExecutor()).thenReturn(_taskExecutor);
@@ -80,7 +82,7 @@ public class BDBHARemoteReplicationNodeTest extends QpidTestCase
         String remoteReplicationName = getName();
         BDBHARemoteReplicationNode remoteReplicationNode = createRemoteReplicationNode(remoteReplicationName);
 
-        remoteReplicationNode.setAttribute(BDBHARemoteReplicationNode.ROLE, null, "MASTER");
+        remoteReplicationNode.setAttribute(BDBHARemoteReplicationNode.ROLE, "UNKNOWN", "MASTER");
 
         verify(_facade).transferMasterAsynchronously(remoteReplicationName);
     }

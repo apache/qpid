@@ -34,7 +34,7 @@ public class ConnectionErrorException extends ConnectionException
 
     public ConnectionErrorException(Error remoteError)
     {
-        super(remoteError.getDescription());
+        super(remoteError.getDescription() == null ? remoteError.toString() : remoteError.getDescription());
         _remoteError = remoteError;
     }
 

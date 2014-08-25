@@ -50,7 +50,7 @@ public class ConstantExpression implements Expression
     public static final BooleanConstantExpression TRUE = new BooleanConstantExpression(Boolean.TRUE);
     public static final BooleanConstantExpression FALSE = new BooleanConstantExpression(Boolean.FALSE);
 
-    private Object value;
+    private Object _value;
 
     public static ConstantExpression createFromDecimal(String text)
     {
@@ -64,7 +64,7 @@ public class ConstantExpression implements Expression
         Number value;
         try
         {
-            value = new Long(text);
+            value = Long.valueOf(text);
         }
         catch (NumberFormatException e)
         {
@@ -114,17 +114,17 @@ public class ConstantExpression implements Expression
 
     public ConstantExpression(Object value)
     {
-        this.value = value;
+        this._value = value;
     }
 
     public Object evaluate(FilterableMessage message)
     {
-        return value;
+        return _value;
     }
 
     public Object getValue()
     {
-        return value;
+        return _value;
     }
 
     /**
@@ -132,22 +132,22 @@ public class ConstantExpression implements Expression
      */
     public String toString()
     {
-        if (value == null)
+        if (_value == null)
         {
             return "NULL";
         }
 
-        if (value instanceof Boolean)
+        if (_value instanceof Boolean)
         {
-            return ((Boolean) value) ? "TRUE" : "FALSE";
+            return ((Boolean) _value) ? "TRUE" : "FALSE";
         }
 
-        if (value instanceof String)
+        if (_value instanceof String)
         {
-            return encodeString((String) value);
+            return encodeString((String) _value);
         }
 
-        return value.toString();
+        return _value.toString();
     }
 
     /**
@@ -186,7 +186,7 @@ public class ConstantExpression implements Expression
      */
     public static String encodeString(String s)
     {
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         b.append('\'');
         for (int i = 0; i < s.length(); i++)
         {

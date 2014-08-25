@@ -1333,7 +1333,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                     data = new byte[0];
                 }
             }
-            return ByteBuffer.wrap(data,offsetInMessage,size);
+            return ByteBuffer.wrap(data,offsetInMessage,Math.min(size,data.length-offsetInMessage));
 
         }
 

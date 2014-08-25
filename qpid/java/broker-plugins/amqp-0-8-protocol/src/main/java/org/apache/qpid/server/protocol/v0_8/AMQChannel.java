@@ -474,13 +474,12 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         }
         else
         {
-            getVirtualHost().getEventLogger().message(ExchangeMessages.DISCARDMSG(_currentMessage.getExchangeName().asString(),
-                                                          _currentMessage.getMessagePublishInfo().getRoutingKey()
-                                                          == null
-                                                                  ? null
-                                                                  : _currentMessage.getMessagePublishInfo()
-                                                                          .getRoutingKey()
-                                                                          .toString()));
+            AMQShortString exchangeName = _currentMessage.getExchangeName();
+            AMQShortString routingKey = _currentMessage.getMessagePublishInfo().getRoutingKey();
+
+            getVirtualHost().getEventLogger().message(
+                    ExchangeMessages.DISCARDMSG(exchangeName == null ? null : exchangeName.asString(),
+                                                routingKey == null ? null : routingKey.asString()));
         }
     }
 

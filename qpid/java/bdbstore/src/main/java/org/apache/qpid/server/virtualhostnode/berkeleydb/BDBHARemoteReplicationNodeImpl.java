@@ -30,9 +30,14 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.sleepycat.je.rep.MasterStateException;
+import com.sleepycat.je.rep.ReplicatedEnvironment;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.messages.HighAvailabilityMessages;
+import org.apache.qpid.server.logging.subjects.BDBHAVirtualHostNodeLogSubject;
+import org.apache.qpid.server.logging.subjects.GroupLogSubject;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -40,6 +45,8 @@ import org.apache.qpid.server.model.IllegalStateTransitionException;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
+import org.apache.qpid.server.model.SystemConfig;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 
@@ -53,13 +60,16 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
 
     private volatile long _joinTime;
     private volatile long _lastTransactionId;
+    private volatile String _lastReplicatedEnvironmentState = ReplicatedEnvironment.State.UNKNOWN.name();
 
     @ManagedAttributeField(afterSet="afterSetRole")
-    private volatile String _role;
+    private volatile String _role = ReplicatedEnvironment.State.UNKNOWN.name();
 
     private final AtomicReference<State> _state;
     private final boolean _isMonitor;
     private boolean _detached;
+    private BDBHAVirtualHostNodeLogSubject _virtualHostNodeLogSubject;
+    private GroupLogSubject _groupLogSubject;
 
     public BDBHARemoteReplicationNodeImpl(BDBHAVirtualHostNode<?> virtualHostNode, Map<String, Object> attributes, ReplicatedEnvironmentFacade replicatedEnvironmentFacade)
     {
@@ -92,7 +102,7 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
     @Override
     public String getRole()
     {
-        return _role;
+        return _lastReplicatedEnvironmentState;
     }
 
     @Override
@@ -152,10 +162,7 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
     {
         String nodeName = getName();
 
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug("Deleting node '"  + nodeName + "' from group '" + getGroupName() + "'");
-        }
+        getEventLogger().message(_virtualHostNodeLogSubject, HighAvailabilityMessages.DELETED());
 
         try
         {
@@ -178,19 +185,11 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
         try
         {
             String nodeName = getName();
-            if (LOGGER.isDebugEnabled())
-            {
-                LOGGER.debug("Trying to transfer master to '" + nodeName + "'");
-            }
+            getEventLogger().message(_groupLogSubject, HighAvailabilityMessages.TRANSFER_MASTER(getName(), getAddress()));
 
             _replicatedEnvironmentFacade.transferMasterAsynchronously(nodeName);
-
-            if (LOGGER.isDebugEnabled())
-            {
-                LOGGER.debug("The transfer of mastership to node '" + nodeName + "' has been initiated.");
-            }
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             throw new IllegalConfigurationException("Cannot transfer mastership to '" + getName() + "'", e);
         }
@@ -227,10 +226,7 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
 
     void setRole(String role)
     {
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug(this + " updating role to : " + role);
-        }
+        _lastReplicatedEnvironmentState = role;
         _role = role;
         updateModelStateFromRole(role);
     }
@@ -265,5 +261,18 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
     public void setDetached(boolean detached)
     {
         this._detached = detached;
+    }
+
+    @Override
+    public void onValidate()
+    {
+        super.onValidate();
+        _virtualHostNodeLogSubject =  new BDBHAVirtualHostNodeLogSubject(getGroupName(), getName());
+        _groupLogSubject = new GroupLogSubject(getGroupName());
+    }
+
+    private EventLogger getEventLogger()
+    {
+        return ((SystemConfig)getParent(VirtualHostNode.class).getParent(Broker.class).getParent(SystemConfig.class)).getEventLogger();
     }
 }

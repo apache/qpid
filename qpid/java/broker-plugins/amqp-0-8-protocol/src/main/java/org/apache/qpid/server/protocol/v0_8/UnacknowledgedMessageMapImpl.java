@@ -158,7 +158,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
                 acknowledged.add(instance);
             }
         }
-        return ackedMessageMap.values();
+        return acknowledged;
     }
 
     private void collect(long key, Map<Long, MessageInstance> msgs)
