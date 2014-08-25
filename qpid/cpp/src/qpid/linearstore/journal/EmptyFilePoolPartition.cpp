@@ -37,9 +37,11 @@ const std::string EmptyFilePoolPartition::s_efpTopLevelDir_("efp"); // Sets the 
 
 EmptyFilePoolPartition::EmptyFilePoolPartition(const efpPartitionNumber_t partitionNum,
                                                const std::string& partitionDir,
+                                               const bool overwriteBeforeReturnFlag,
                                                JournalLog& journalLogRef) :
                 partitionNum_(partitionNum),
                 partitionDir_(partitionDir),
+                overwriteBeforeReturnFlag_(overwriteBeforeReturnFlag),
                 journalLogRef_(journalLogRef)
 {
     validatePartitionDir();
@@ -109,6 +111,10 @@ void EmptyFilePoolPartition::getEmptyFilePoolSizes_kib(std::vector<efpDataSize_k
     for (efpMapConstItr_t i=efpMap_.begin(); i!=efpMap_.end(); ++i) {
         efpDataSizesList_kib.push_back(i->first);
     }
+}
+
+bool EmptyFilePoolPartition::getOverwriteBeforeReturnFlag() const {
+    return overwriteBeforeReturnFlag_;
 }
 
 std::string EmptyFilePoolPartition::getPartitionDirectory() const {

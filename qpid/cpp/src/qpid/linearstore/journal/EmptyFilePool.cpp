@@ -132,6 +132,9 @@ void EmptyFilePool::returnEmptyFile(const std::string& fqSrcFile) {
         }
     }
     resetEmptyFileHeader(emptyFileName);
+    if (partitionPtr_->getOverwriteBeforeReturnFlag()) {
+        overwriteFileContents(emptyFileName);
+    }
     pushEmptyFile(emptyFileName);
 }
 
@@ -171,20 +174,9 @@ efpDataSize_kib_t EmptyFilePool::dataSizeFromDirName_kib(const std::string& dirN
 // --- protected functions ---
 
 void EmptyFilePool::createEmptyFile() {
-    ::file_hdr_t fh;
-    ::file_hdr_create(&fh, QLS_FILE_MAGIC, QLS_JRNL_VERSION, QLS_JRNL_FHDR_RES_SIZE_SBLKS, partitionPtr_->getPartitionNumber(), efpDataSize_kib_);
     std::string efpfn = getEfpFileName();
-    std::ofstream ofs(efpfn.c_str(), std::ofstream::out | std::ofstream::binary);
-    if (ofs.good()) {
-        ofs.write((char*)&fh, sizeof(::file_hdr_t));
-        uint64_t rem = ((efpDataSize_kib_ + (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_KIB)) * 1024) - sizeof(::file_hdr_t);
-        while (rem--)
-            ofs.put('\0');
-        ofs.close();
+    if (overwriteFileContents(efpfn)) {
         pushEmptyFile(efpfn);
-//std::cout << "WARNING: EFP " << efpDirectory << " is empty - created new journal file " << efpfn.substr(efpfn.rfind('/') + 1) << " on the fly" << std::endl; // DEBUG
-    } else {
-//std::cerr << "ERROR: Unable to open file \"" << efpfn << "\"" << std::endl; // DEBUG
     }
 }
 
@@ -193,6 +185,24 @@ std::string EmptyFilePool::getEfpFileName() {
     std::ostringstream oss;
     oss << efpDirectory_ << "/" << uuid << QLS_JRNL_FILE_EXTENSION;
     return oss.str();
+}
+
+bool EmptyFilePool::overwriteFileContents(const std::string& fqFileName) {
+    ::file_hdr_t fh;
+    ::file_hdr_create(&fh, QLS_FILE_MAGIC, QLS_JRNL_VERSION, QLS_JRNL_FHDR_RES_SIZE_SBLKS, partitionPtr_->getPartitionNumber(), efpDataSize_kib_);
+    std::ofstream ofs(fqFileName.c_str(), std::ofstream::out | std::ofstream::binary);
+    if (ofs.good()) {
+        ofs.write((char*)&fh, sizeof(::file_hdr_t));
+        uint64_t rem = ((efpDataSize_kib_ + (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_KIB)) * 1024) - sizeof(::file_hdr_t);
+        while (rem--)
+            ofs.put('\0');
+        ofs.close();
+        return true;
+//std::cout << "WARNING: EFP " << efpDirectory << " is empty - created new journal file " << efpfn.substr(efpfn.rfind('/') + 1) << " on the fly" << std::endl; // DEBUG
+    } else {
+//std::cerr << "ERROR: Unable to open file \"" << efpfn << "\"" << std::endl; // DEBUG
+    }
+    return false;
 }
 
 std::string EmptyFilePool::popEmptyFile() {

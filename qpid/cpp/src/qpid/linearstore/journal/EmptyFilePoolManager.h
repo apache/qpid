@@ -45,6 +45,7 @@ protected:
     const std::string qlsStorePath_;
     const efpPartitionNumber_t defaultPartitionNumber_;
     const efpDataSize_kib_t defaultEfpDataSize_kib_;
+    const bool overwriteBeforeReturnFlag_;
     JournalLog& journalLogRef_;
     partitionMap_t partitionMap_;
     smutex partitionMapMutex_;
@@ -53,6 +54,7 @@ public:
     EmptyFilePoolManager(const std::string& qlsStorePath_,
                          const efpPartitionNumber_t defaultPartitionNumber,
                          const efpDataSize_kib_t defaultEfpDataSize_kib,
+                         const bool overwriteBeforeReturnFlag,
                          JournalLog& journalLogRef_);
     virtual ~EmptyFilePoolManager();
 

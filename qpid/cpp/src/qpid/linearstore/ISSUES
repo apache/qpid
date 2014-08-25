@@ -48,8 +48,7 @@ Current/pending:
    -    1088944  [Linearstore] store does not return all files to EFP after purging big queue
    -    1078937  [linearstore] Installation and tests for new store analysis tool qpid-qls-analyze
                    svn r.1596633 2014-05-21: Modified to run from installed location
-#  5948 1121660  [linearstore] Broker restart failure with durable topic using non-durable exchange
-*  -    1066256  [LinearStore] changing efp size after using store broke the new durable nodes creation
+*  6043 1066256  [LinearStore] changing efp size after using store broke the new durable nodes creation
 *  -    1089652  [RFE]: Configuration option for linear store to delete the used journal files instead of recycling them.
 
 
@@ -127,7 +126,7 @@ NO-JIRA -        Added missing Apache copyright/license text
                    * jexception 0x0103 wmgr::get_events() threw JERR__AIO: AIO error. (AIO write operation failed: Invalid argument (-22) [pg=0 size=8192 offset=4096 fh=22])
    5767 1098118  [linearstore] broker segfaults when recovering journal file with damaged header
                    svn r.1596509 2014-05-21 Proposed solution (committed by pmoravec)
-                   svn r.1599243 2014-06-02 Further fix
+                   svn r.1599243 2014-06-02 Solution to additional case of file header corruption
    5924 1124906  [linearstore] Qpidd Will Not Start with Large Number of Queues
                    svn r.1614665 2014-07-30 Proposed solution
    5948 1121660  [AMQP 1.0] Broker restart failure with durable topic using non-durable exchange
@@ -141,35 +140,36 @@ In order to port the linearstore changes from trunk to a branch, the following s
 
 no.   svn r  Q-JIRA     RHBZ       Date Alt Committer
 --- ------- ------- -------- ---------- -------------
- 1. 1545563    5357  1052518 2013-11-26
- 2. 1547601    5358  1052727 2013-12-03
- 3. 1547641    5387  1036071 2013-12-03
- 4. 1547921    5388  1035802 2013-12-04
- 5. 1551304 NO-JIRA        - 2013-12-16 (aconway)
- 6. 1551361    5425  1052445 2013-12-16
- 7. 1552772    5442  1039949 2013-12-20
- 8. 1553148    5444  1052775 2013-12-23
+ 1. 1545563    5357  1052518 2013-11-26 0.22-mrg
+ 2. 1547601    5358  1052727 2013-12-03 0.22-mrg
+ 3. 1547641    5387  1036071 2013-12-03 0.22-mrg
+ 4. 1547921    5388  1035802 2013-12-04 0.22-mrg
+ 5. 1551304 NO-JIRA        - 2013-12-16 0.22-mrg (aconway)
+ 6. 1551361    5425  1052445 2013-12-16 0.22-mrg
+ 7. 1552772    5442  1039949 2013-12-20 0.22-mrg
+ 8. 1553148    5444  1052775 2013-12-23 0.22-mrg
  9. 1556888    5362        - 2014-01-09
-10. 1556892    5460  1051097 2014-01-09
-11. 1557620    5473  1051924 2014-01-12
-12. 1558589    5483        - 2014-01-15
-13. 1558592    5484  1035843 2014-01-15
-14. 1558913    5487  1054448 2014-01-16
+10. 1556892    5460  1051097 2014-01-09 0.22-mrg
+11. 1557620    5473  1051924 2014-01-12 0.22-mrg
+12. 1558589    5483        - 2014-01-15 0.22-mrg
+13. 1558592    5484  1035843 2014-01-15 0.22-mrg
+14. 1558913    5487  1054448 2014-01-16 0.22-mrg
 15. 1560530    5362        - 2014-01-22
 16. 1561848    5362        - 2014-01-27
 17. 1564808    5362        - 2014-02-05
-18. 1564877    5480  1053749 2014-02-05
+18. 1564877    5480  1053749 2014-02-05 0.22-mrg
 19. 1564893    5361        - 2014-02-05
 20. 1564935    5361        - 2014-02-05
-21. 1574513    5603  1063700 2014-03-05
-22. 1575009    5607  1064181 2014-03-06
-23. 1578899    5362        - 2014-03-18
-24. 1582730    5651        - 2014-03-28 (pmoravec)
+21. 1574513    5603  1063700 2014-03-05 0.22-mrg
+22. 1575009    5607  1064181 2014-03-06 0.22-mrg
+23. 1578899    5362        - 2014-03-18 parts in 0.22-mrg
+24. 1582730    5651        - 2014-03-28 0.22-mrg (pmoravec)
 25. 1583778    5362        - 2014-04-01
 26. 1584379    5661        - 2014-04-03
-27. 1594215    5750  1078142 2014-05-13
-28. 1596509    5767  1098118 2014-05-21 (pmoravec)
-29. 1596633  NO-JIRA 1078937 2014-05-21
+27. 1594215    5750  1078142 2014-05-13 0.22-mrg
+28. 1596509    5767  1098118 2014-05-21 0.22-mrg (pmoravec)
+29. 1596633 NO-JIRA 1078937 2014-05-21 (includes tools install update)
+30. 1599243    5767  1098118 2014-06-02 0.22-mrg
 30. 1599243    5767  1098118 2014-06-02
 31. 1614665    5924  1124906 2014-07-30
 
