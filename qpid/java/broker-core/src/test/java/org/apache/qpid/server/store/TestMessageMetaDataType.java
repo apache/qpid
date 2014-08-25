@@ -165,6 +165,24 @@ public class TestMessageMetaDataType implements MessageMetaDataType<TestMessageM
         }
 
         @Override
+        public MessageReference newReference(final TransactionLogResource object)
+        {
+            return _messageReference;
+        }
+
+        @Override
+        public boolean isReferenced(final TransactionLogResource resource)
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isReferenced()
+        {
+            return false;
+        }
+
+        @Override
         public int hashCode()
         {
             final int prime = 31;

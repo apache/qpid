@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +39,7 @@ import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 /**
@@ -137,6 +139,42 @@ public abstract class QueueEntryImplTestBase extends TestCase
         return consumer;
     }
 
+
+    public void testLocking()
+    {
+        QueueConsumer consumer = newConsumer();
+        QueueConsumer consumer2 = newConsumer();
+
+        _queueEntry.acquire(consumer);
+        assertTrue("Queue entry should be in ACQUIRED state after invoking of acquire method",
+                   _queueEntry.isAcquired());
+
+        assertFalse("Acquisition should initially be locked",_queueEntry.removeAcquisitionFromConsumer(consumer));
+        assertTrue("Should be able to unlock locked queue entry", _queueEntry.unlockAcquisition());
+        assertFalse("Acquisition should not be able to be removed from the wrong consumer",
+                    _queueEntry.removeAcquisitionFromConsumer(consumer2));
+        assertTrue("Acquisition should be able to be removed once unlocked",
+                   _queueEntry.removeAcquisitionFromConsumer(consumer));
+        assertTrue("Queue Entry should still be acquired", _queueEntry.isAcquired());
+        assertFalse("Queue Entry should not be marked as acquired by a consumer", _queueEntry.acquiredByConsumer());
+
+        _queueEntry.release();
+
+        assertFalse("Hijacked queue entry should be able to be released", _queueEntry.isAcquired());
+
+        _queueEntry.acquire(consumer);
+        assertTrue("Queue entry should be in ACQUIRED state after invoking of acquire method",
+                   _queueEntry.isAcquired());
+
+        assertFalse("Acquisition should initially be locked",_queueEntry.removeAcquisitionFromConsumer(consumer));
+        assertTrue("Should be able to unlock locked queue entry",_queueEntry.unlockAcquisition());
+        assertTrue("Should be able to unlock locked queue entry",_queueEntry.lockAcquisition());
+        assertFalse("Acquisition should not be able to be hijacked when locked",_queueEntry.removeAcquisitionFromConsumer(consumer));
+
+        _queueEntry.delete();
+        assertTrue("Locked queue entry should be able to be deleted", _queueEntry.isDeleted());
+    }
+
     /**
      * A helper method to get entry state
      *
@@ -220,6 +258,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
             final MessageReference reference = mock(MessageReference.class);
             when(reference.getMessage()).thenReturn(message);
             when(message.newReference()).thenReturn(reference);
+            when(message.newReference(any(TransactionLogResource.class))).thenReturn(reference);
             QueueEntryImpl entry = (QueueEntryImpl) queueEntryList.add(message);
             entries[i] = entry;
         }

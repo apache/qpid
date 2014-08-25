@@ -1164,6 +1164,10 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                     else
                     {
                         deliverMessage(sub, entry, false);
+                        if(sub.acquires())
+                        {
+                            entry.unlockAcquisition();
+                        }
                     }
                 }
             }
@@ -2001,6 +2005,10 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                         else
                         {
                             deliverMessage(sub, node, batch);
+                            if(sub.acquires())
+                            {
+                                node.unlockAcquisition();
+                            }
                         }
 
                     }
@@ -2253,14 +2261,28 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             if (!node.isDeleted())
             {
                 // If the node has expired then acquire it
-                if (node.expired() && node.acquire())
+                if (node.expired())
                 {
-                    if (_logger.isDebugEnabled())
+                    boolean acquiredForDequeueing = node.acquire();
+                    if(!acquiredForDequeueing && node.getDeliveredToConsumer())
                     {
-                        _logger.debug("Dequeuing expired node " + node);
+                        QueueConsumer consumer = (QueueConsumer) node.getDeliveredConsumer();
+                        acquiredForDequeueing = node.removeAcquisitionFromConsumer(consumer);
+                        if(acquiredForDequeueing)
+                        {
+                            consumer.acquisitionRemoved(node);
+                        }
                     }
-                    // Then dequeue it.
-                    dequeueEntry(node);
+
+                    if(acquiredForDequeueing)
+                    {
+                        if (_logger.isDebugEnabled())
+                        {
+                            _logger.debug("Dequeuing expired node " + node);
+                        }
+                        // Then dequeue it.
+                        dequeueEntry(node);
+                    }
                 }
                 else
                 {
@@ -2527,7 +2549,9 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                                                                                         final ServerTransaction txn,
                                                                                         final Action<? super MessageInstance> postEnqueueAction)
     {
-            txn.enqueue(this,message, new ServerTransaction.Action()
+        if(!message.isReferenced(this))
+        {
+            txn.enqueue(this, message, new ServerTransaction.Action()
             {
                 MessageReference _reference = message.newReference();
 
@@ -2549,6 +2573,11 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                 }
             });
             return 1;
+        }
+        else
+        {
+            return 0;
+        }
 
     }
 

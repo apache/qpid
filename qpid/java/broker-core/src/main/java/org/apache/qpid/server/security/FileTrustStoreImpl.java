@@ -166,7 +166,12 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
     {
         super.validateChange(proxyForValidation, changedAttributes);
+
         FileTrustStore updated = (FileTrustStore) proxyForValidation;
+        if (changedAttributes.contains(TrustStore.DESIRED_STATE) && updated.getDesiredState() == State.DELETED)
+        {
+            return;
+        }
         if(changedAttributes.contains(TrustStore.NAME) && !getName().equals(updated.getName()))
         {
             throw new IllegalConfigurationException("Changing the trust store name is not allowed");

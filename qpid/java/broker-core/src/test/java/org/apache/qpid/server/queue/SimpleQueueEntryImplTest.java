@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -35,6 +36,7 @@ import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase
@@ -70,6 +72,7 @@ public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase
         final MessageReference reference = mock(MessageReference.class);
         when(reference.getMessage()).thenReturn(message);
         when(message.newReference()).thenReturn(reference);
+        when(message.newReference(any(TransactionLogResource.class))).thenReturn(reference);
         return (QueueEntryImpl) queueEntryList.add(message);
     }
 

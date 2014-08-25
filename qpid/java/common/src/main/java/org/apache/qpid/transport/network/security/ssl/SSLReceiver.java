@@ -20,17 +20,18 @@
  */
 package org.apache.qpid.transport.network.security.ssl;
 
-import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.transport.network.security.SSLStatus;
-import org.apache.qpid.transport.util.Logger;
+import java.nio.ByteBuffer;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
-import java.nio.ByteBuffer;
+
+import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.TransportException;
+import org.apache.qpid.transport.network.security.SSLStatus;
+import org.apache.qpid.transport.util.Logger;
 
 public class SSLReceiver implements Receiver<ByteBuffer>
 {
@@ -192,7 +193,7 @@ public class SSLReceiver implements Receiver<ByteBuffer>
                 {
                     _sslStatus.getSslLock().notifyAll();
                 }                
-                exception(new TransportException("Error in SSLReceiver",e));
+                exception(new TransportException("Error in SSLReceiver: " + e.getMessage(),e));
             }
 
         }

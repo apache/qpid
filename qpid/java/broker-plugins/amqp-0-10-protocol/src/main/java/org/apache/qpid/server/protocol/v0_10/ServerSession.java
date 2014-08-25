@@ -460,7 +460,7 @@ public class ServerSession extends Session
 
                                  public void postCommit()
                                  {
-                                     sub.acknowledge(entry);
+                                     sub.deleteAcquired(entry);
                                  }
 
                                  public void onRollback()

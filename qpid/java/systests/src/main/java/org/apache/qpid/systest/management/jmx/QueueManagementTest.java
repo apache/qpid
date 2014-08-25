@@ -456,6 +456,61 @@ public class QueueManagementTest extends QpidBrokerTestCase
         assertMessageIndicesOn(_destinationQueue, 0, 1, 2, 7, 8);
     }
 
+
+    /**
+     * Tests {@link ManagedQueue#copyMessages(long, long, String)} interface.
+     */
+    public void testCopyMessagesBetweenQueuesWithDuplicates() throws Exception
+    {
+        final int numberOfMessagesToSend = 10;
+        sendMessage(_session, _sourceQueue, numberOfMessagesToSend);
+        syncSession(_session);
+        assertEquals("Unexpected queue depth after send",
+                     numberOfMessagesToSend,
+                     _managedSourceQueue.getMessageCount().intValue());
+
+        List<Long> amqMessagesIds = getAMQMessageIdsOn(_managedSourceQueue, 1, numberOfMessagesToSend);
+
+        // Copy first three messages to destination
+        long fromMessageId = amqMessagesIds.get(0);
+        long toMessageId = amqMessagesIds.get(2);
+        _managedSourceQueue.copyMessages(fromMessageId, toMessageId, _destinationQueueName);
+
+        assertEquals("Unexpected queue depth on destination queue after first copy",
+                     3,
+                     _managedDestinationQueue.getMessageCount().intValue());
+        assertEquals("Unexpected queue depth on source queue after first copy",
+                     numberOfMessagesToSend,
+                     _managedSourceQueue.getMessageCount().intValue());
+
+        // Now copy a further two messages to destination
+        fromMessageId = amqMessagesIds.get(7);
+        toMessageId = amqMessagesIds.get(8);
+        _managedSourceQueue.copyMessages(fromMessageId, toMessageId, _destinationQueueName);
+        assertEquals("Unexpected queue depth on destination queue after second copy",
+                     5,
+                     _managedDestinationQueue.getMessageCount().intValue());
+        assertEquals("Unexpected queue depth on source queue after second copy",
+                     numberOfMessagesToSend,
+                     _managedSourceQueue.getMessageCount().intValue());
+
+        // Attempt to copy mixture of messages already on and some not already on the queue
+
+        fromMessageId = amqMessagesIds.get(5);
+        toMessageId = amqMessagesIds.get(8);
+        _managedSourceQueue.copyMessages(fromMessageId, toMessageId, _destinationQueueName);
+        assertEquals("Unexpected queue depth on destination queue after second copy",
+                     7,
+                     _managedDestinationQueue.getMessageCount().intValue());
+        assertEquals("Unexpected queue depth on source queue after second copy",
+                     numberOfMessagesToSend,
+                     _managedSourceQueue.getMessageCount().intValue());
+
+        assertMessageIndicesOn(_destinationQueue, 0, 1, 2, 7, 8, 5, 6);
+
+
+    }
+
     public void testMoveMessagesBetweenQueuesWithActiveConsumerOnSourceQueue() throws Exception
     {
         setTestClientSystemProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, new Integer(1).toString());

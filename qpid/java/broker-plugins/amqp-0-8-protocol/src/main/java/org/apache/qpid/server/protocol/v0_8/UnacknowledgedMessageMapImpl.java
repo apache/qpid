@@ -20,31 +20,28 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.queue.QueueEntry;
-
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.MessageInstance;
 
 public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
 {
     private final Object _lock = new Object();
 
-    private long _unackedSize;
-
     private Map<Long, MessageInstance> _map;
-
-    private long _lastDeliveryTag;
 
     private final int _prefetchLimit;
 
     public UnacknowledgedMessageMapImpl(int prefetchLimit)
     {
         _prefetchLimit = prefetchLimit;
-        _map = new LinkedHashMap<Long, MessageInstance>(prefetchLimit);
+        _map = new LinkedHashMap<>(prefetchLimit);
     }
 
     public void collect(long deliveryTag, boolean multiple, Map<Long, MessageInstance> msgs)
@@ -81,12 +78,6 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         {
 
             MessageInstance message = _map.remove(deliveryTag);
-            if(message != null)
-            {
-                _unackedSize -= message.getMessage().getSize();
-
-            }
-
             return message;
         }
     }
@@ -109,8 +100,6 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         synchronized (_lock)
         {
             _map.put(deliveryTag, message);
-            _unackedSize += message.getMessage().getSize();
-            _lastDeliveryTag = deliveryTag;
         }
     }
 
@@ -119,8 +108,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         synchronized (_lock)
         {
             Collection<MessageInstance> currentEntries = _map.values();
-            _map = new LinkedHashMap<Long, MessageInstance>(_prefetchLimit);
-            _unackedSize = 0l;
+            _map = new LinkedHashMap<>(_prefetchLimit);
             return currentEntries;
         }
     }
@@ -138,7 +126,6 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         synchronized (_lock)
         {
             _map.clear();
-            _unackedSize = 0l;
         }
     }
 
@@ -163,6 +150,14 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         Map<Long, MessageInstance> ackedMessageMap = new LinkedHashMap<Long,MessageInstance>();
         collect(deliveryTag, multiple, ackedMessageMap);
         remove(ackedMessageMap);
+        List<MessageInstance> acknowledged = new ArrayList<>();
+        for(MessageInstance instance : ackedMessageMap.values())
+        {
+            if(instance.lockAcquisition())
+            {
+                acknowledged.add(instance);
+            }
+        }
         return ackedMessageMap.values();
     }
 

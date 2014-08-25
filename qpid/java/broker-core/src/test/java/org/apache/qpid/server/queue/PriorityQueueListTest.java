@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +38,7 @@ import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -79,6 +81,7 @@ public class PriorityQueueListTest extends QpidTestCase
 
             when(message.getMessageHeader()).thenReturn(header);
             when(message.newReference()).thenReturn(ref);
+            when(message.newReference(any(TransactionLogResource.class))).thenReturn(ref);
             when(ref.getMessage()).thenReturn(message);
             when(header.getPriority()).thenReturn(PRIORITIES[i]);
 

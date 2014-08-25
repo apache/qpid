@@ -20,10 +20,11 @@
  */
 package org.apache.qpid.server.message;
 
+import java.nio.ByteBuffer;
+
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
-
-import java.nio.ByteBuffer;
+import org.apache.qpid.server.store.TransactionLogResource;
 
 public interface ServerMessage<T extends StorableMessageMetaData> extends EnqueueableMessage, MessageContentSource
 {
@@ -40,6 +41,12 @@ public interface ServerMessage<T extends StorableMessageMetaData> extends Enqueu
     long getExpiration();
 
     MessageReference newReference();
+
+    MessageReference newReference(TransactionLogResource object);
+
+    boolean isReferenced(TransactionLogResource resource);
+
+    boolean isReferenced();
 
     long getMessageNumber();
 

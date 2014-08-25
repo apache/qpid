@@ -477,6 +477,13 @@ class QueueConsumerImpl
     }
 
     @Override
+    public void acquisitionRemoved(final QueueEntry node)
+    {
+        _target.acquisitionRemoved(node);
+        _queue.decrementUnackedMsgCount(node);
+    }
+
+    @Override
     public String getDistributionMode()
     {
         return _distributionMode;

@@ -534,15 +534,25 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         return _stopped.get();
     }
 
-    public void acknowledge(MessageInstance entry)
+    public boolean deleteAcquired(MessageInstance entry)
     {
-        // TODO Fix Store Context / cleanup
         if(entry.isAcquiredBy(getConsumer()))
         {
-            _unacknowledgedBytes.addAndGet(-entry.getMessage().getSize());
-            _unacknowledgedCount.decrementAndGet();
+            acquisitionRemoved(entry);
             entry.delete();
+            return true;
         }
+        else
+        {
+            return false;
+        }
+    }
+
+    @Override
+    public void acquisitionRemoved(final MessageInstance entry)
+    {
+        _unacknowledgedBytes.addAndGet(-entry.getMessage().getSize());
+        _unacknowledgedCount.decrementAndGet();
     }
 
     public void flush()

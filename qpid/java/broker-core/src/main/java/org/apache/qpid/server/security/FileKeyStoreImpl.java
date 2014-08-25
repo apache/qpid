@@ -151,6 +151,10 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
     {
         super.validateChange(proxyForValidation, changedAttributes);
         FileKeyStore changedStore = (FileKeyStore) proxyForValidation;
+        if (changedAttributes.contains(KeyStore.DESIRED_STATE) && changedStore.getDesiredState() == State.DELETED)
+        {
+            return;
+        }
         if(changedAttributes.contains(NAME) && !getName().equals(changedStore.getName()))
         {
             throw new IllegalConfigurationException("Changing the key store name is not allowed");

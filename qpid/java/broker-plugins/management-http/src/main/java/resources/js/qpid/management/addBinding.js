@@ -23,6 +23,8 @@ define(["dojo/_base/xhr",
         "dojo/_base/array",
         "dojo/_base/event",
         'dojo/_base/json',
+        "dojo/_base/lang",
+        "dojo/_base/declare",
         "dojo/store/Memory",
         "dijit/form/FilteringSelect",
         "dijit/form/NumberSpinner", // required by the form
@@ -38,8 +40,77 @@ define(["dojo/_base/xhr",
         "dijit/form/DateTextBox",
         /* basic dojox classes */
         "dojox/form/BusyButton", "dojox/form/CheckedMultiSelect",
+        "dojox/grid/EnhancedGrid",
+        "dojo/data/ObjectStore",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser, array, event, json, Memory, FilteringSelect) {
+    function (xhr, dom, construct, win, registry, parser, array, event, json, lang, declare, Memory, FilteringSelect) {
+
+        var noLocalValues = new Memory({
+            data: [
+                {name:"", id:null},
+                {name:"true", id:true},
+                {name:"false", id:false}
+            ]
+        });
+
+        var xMatchValues  = new Memory({
+             data: [
+                 {name:"all", id:"all"},
+                 {name:"any", id:"any"}
+             ]
+        });
+
+        var defaultBindingArguments = [
+                                          {id: 0, name:"x-filter-jms-selector", value: null},
+                                          {id: 1, name:"x-qpid-no-local", value: null}
+                                      ];
+
+        var GridWidgetProxy = declare("qpid.dojox.grid.cells.GridWidgetProxy", dojox.grid.cells._Widget, {
+            createWidget: function(inNode, inDatum, inRowIndex)
+            {
+                var WidgetClass = this.widgetClass;
+                var widgetProperties = this.getWidgetProps(inDatum);
+                var getWidgetProperties = widgetProperties.getWidgetProperties;
+                if (typeof getWidgetProperties == "function")
+                {
+                    var item = this.grid.getItem(inRowIndex);
+                    if (item)
+                    {
+                        var additionalWidgetProperties = getWidgetProperties(inDatum, inRowIndex, item);
+                        if (additionalWidgetProperties)
+                        {
+                            WidgetClass = additionalWidgetProperties.widgetClass;
+                            for(var prop in additionalWidgetProperties)
+                            {
+                                if(additionalWidgetProperties.hasOwnProperty(prop) && !widgetProperties[prop])
+                                {
+                                    widgetProperties[prop] = additionalWidgetProperties[ prop ];
+                                }
+                            }
+                        }
+                    }
+                }
+                var widget = new WidgetClass(widgetProperties, inNode);
+                return widget;
+            },
+            getValue: function(inRowIndex)
+            {
+                if (this.widget)
+                {
+                    return this.widget.get('value');
+                }
+                return null;
+            },
+            _finish: function(inRowIndex)
+            {
+                if (this.widget)
+                {
+                    this.inherited(arguments);
+                    this.widget.destroyRecursive();
+                    this.widget = null;
+                }
+            }
+        });
 
         var addBinding = {};
 
@@ -73,6 +144,28 @@ define(["dojo/_base/xhr",
                 if(addBinding.exchange) {
                     newBinding.exchange = addBinding.exchange;
                 }
+
+                addBinding.bindingArgumentsGrid.store.fetch({
+                      onComplete:function(items,request)
+                      {
+                          if(items.length)
+                          {
+                              array.forEach(items, function(item)
+                              {
+                                 if (item && item.name && item.value)
+                                 {
+                                    var bindingArguments = newBinding.arguments;
+                                    if (!bindingArguments)
+                                    {
+                                        bindingArguments = {};
+                                        newBinding.arguments = bindingArguments;
+                                    }
+                                    bindingArguments[item.name]=item.value;
+                                 }
+                              });
+                          }
+                      }
+                });
                 return newBinding;
             };
 
@@ -105,6 +198,98 @@ define(["dojo/_base/xhr",
                                     }
 
                                 });
+
+                            var argumentsGridNode = dom.byId("formAddbinding.bindingArguments");
+                            var objectStore = new dojo.data.ObjectStore({objectStore: new Memory({data:lang.clone(defaultBindingArguments), idProperty: "id"})});
+
+                            var layout = [[
+                                  { name: "Argument Name", field: "name", width: "50%", editable: true },
+                                  { name: 'Argument Value', field: 'value', width: '50%', editable: true, type: GridWidgetProxy,
+                                    widgetProps: {
+                                       getWidgetProperties: function(inDatum, inRowIndex, item)
+                                       {
+                                            if (item.name == "x-qpid-no-local")
+                                            {
+                                                return {
+                                                   labelAttr: "name",
+                                                   searchAttr: "id",
+                                                   selectOnClick: false,
+                                                   query: { id: "*"},
+                                                   required: false,
+                                                   store: noLocalValues,
+                                                   widgetClass: dijit.form.FilteringSelect
+                                                };
+                                            }
+                                            else if (item.name && item.name.toLowerCase() == "x-match")
+                                            {
+                                                 return {
+                                                    labelAttr: "name",
+                                                    searchAttr: "id",
+                                                    selectOnClick: false,
+                                                    query: { id: "*"},
+                                                    required: false,
+                                                    store: xMatchValues,
+                                                    widgetClass: dijit.form.FilteringSelect
+                                                 };
+                                            }
+                                            return {widgetClass: dijit.form.TextBox };
+                                       }
+                                    }
+                                  }
+                                ]];
+
+                            var grid = new dojox.grid.EnhancedGrid({
+                                    selectionMode: "multiple",
+                                    store: objectStore,
+                                    singleClickEdit: true,
+                                    structure: layout,
+                                    height: "150px",
+                                    plugins: {indirectSelection: true}
+                                    }, argumentsGridNode);
+                            grid.startup();
+
+                            addBinding.bindingArgumentsGrid = grid;
+                            addBinding.idGenerator = 1;
+                            var addArgumentButton = registry.byId("formAddbinding.addArgumentButton");
+                            var deleteArgumentButton = registry.byId("formAddbinding.deleteArgumentButton");
+
+                            addArgumentButton.on("click",
+                                function(event)
+                                {
+                                    addBinding.idGenerator = addBinding.idGenerator + 1;
+                                    var newItem = {id:addBinding.idGenerator, name: "", value: ""};
+                                    grid.store.newItem(newItem);
+                                    grid.store.save();
+                                    grid.store.fetch(
+                                    {
+                                          onComplete:function(items,request)
+                                          {
+                                              var rowIndex = items.length - 1;
+                                              window.setTimeout(function()
+                                              {
+                                                  grid.focus.setFocusIndex(rowIndex, 1 );
+                                              },10);
+                                          }
+                                    });
+                                }
+                            );
+
+                            deleteArgumentButton.on("click",
+                                function(event)
+                                {
+                                    var data = grid.selection.getSelected();
+                                    if(data.length)
+                                    {
+                                        array.forEach(data, function(selectedItem) {
+                                            if (selectedItem !== null)
+                                            {
+                                                grid.store.deleteItem(selectedItem);
+                                            }
+                                        });
+                                        grid.store.save();
+                                    }
+                                }
+                            );
 
                             theForm.on("submit", function(e) {
 
@@ -154,7 +339,24 @@ define(["dojo/_base/xhr",
             addBinding.exchange = obj.exchange;
             registry.byId("formAddBinding").reset();
 
-
+            var grid = addBinding.bindingArgumentsGrid;
+            grid.store.fetch({
+                  onComplete:function(items,request)
+                  {
+                      if(items.length)
+                      {
+                          array.forEach(items, function(item)
+                          {
+                             if (item !== null)
+                             {
+                                 grid.store.deleteItem(item);
+                             }
+                          });
+                      }
+                  }
+            });
+            array.forEach(lang.clone(defaultBindingArguments), function(item) {grid.store.newItem(item); });
+            grid.store.save();
 
             xhr.get({url: "api/latest/queue/" + encodeURIComponent(obj.virtualhostnode) + "/" + encodeURIComponent(obj.virtualhost) + "?depth=0",
                      handleAs: "json"}).then(

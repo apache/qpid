@@ -1413,7 +1413,11 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
             // explicit rollbacks resend the message after the rollback-ok is sent
             if(_rollingBack)
             {
-                 _resendList.addAll(_ackedMessages);
+                for(MessageInstance entry : _ackedMessages)
+                {
+                    entry.unlockAcquisition();
+                }
+                _resendList.addAll(_ackedMessages);
             }
             else
             {

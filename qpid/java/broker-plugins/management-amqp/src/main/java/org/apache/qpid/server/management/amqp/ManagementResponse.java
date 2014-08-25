@@ -90,6 +90,12 @@ class ManagementResponse implements MessageInstance
     }
 
     @Override
+    public boolean removeAcquisitionFromConsumer(final ConsumerImpl consumer)
+    {
+        return consumer == _consumer;
+    }
+
+    @Override
     public void setRedelivered()
     {
         _isRedelivered = true;
@@ -133,6 +139,18 @@ class ManagementResponse implements MessageInstance
 
     @Override
     public boolean acquire(final ConsumerImpl sub)
+    {
+        return false;
+    }
+
+    @Override
+    public boolean lockAcquisition()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean unlockAcquisition()
     {
         return false;
     }
@@ -190,7 +208,7 @@ class ManagementResponse implements MessageInstance
     @Override
     public void delete()
     {
-        // TODO
+        _isDeleted = true;
     }
 
     @Override

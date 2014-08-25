@@ -511,7 +511,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             Exchange altExchange = getAlternateExchange();
             if(altExchange != null)
             {
-                return ((ExchangeImpl)altExchange).send(message, routingAddress, instanceProperties, txn, postEnqueueAction);
+                return altExchange.send(message, routingAddress, instanceProperties, txn, postEnqueueAction);
             }
             else
             {
@@ -520,7 +520,24 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         }
         else
         {
-            final BaseQueue[] baseQueues = queues.toArray(new BaseQueue[queues.size()]);
+            final BaseQueue[] baseQueues;
+
+            if(message.isReferenced())
+            {
+                ArrayList<BaseQueue> uniqueQueues = new ArrayList<>(queues.size());
+                for(BaseQueue q : queues)
+                {
+                    if(!message.isReferenced(q))
+                    {
+                        uniqueQueues.add(q);
+                    }
+                }
+                baseQueues = uniqueQueues.toArray(new BaseQueue[uniqueQueues.size()]);
+            }
+            else
+            {
+                baseQueues = queues.toArray(new BaseQueue[queues.size()]);
+            }
 
             txn.enqueue(queues,message, new ServerTransaction.Action()
             {

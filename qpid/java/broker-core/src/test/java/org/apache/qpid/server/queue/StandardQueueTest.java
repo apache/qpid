@@ -342,5 +342,17 @@ public class StandardQueueTest extends AbstractQueueTestBase
                 return super.acquire(sub);
             }
         }
+
+        @Override
+        public boolean lockAcquisition()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean unlockAcquisition()
+        {
+            return true;
+        }
     }
 }

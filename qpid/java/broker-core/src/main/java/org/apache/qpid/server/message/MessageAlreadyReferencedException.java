@@ -18,38 +18,14 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.queue;
+package org.apache.qpid.server.message;
 
-import org.apache.qpid.server.consumer.ConsumerImpl;
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.store.TransactionLogResource;
 
-public interface QueueConsumer<X extends QueueConsumer<X>> extends ConsumerImpl, Consumer<X>
+public class MessageAlreadyReferencedException extends RuntimeException
 {
-
-    void flushBatched();
-
-    void queueEmpty();
-
-    boolean hasInterest(QueueEntry node);
-
-    boolean wouldSuspend(QueueEntry entry);
-
-    void restoreCredit(QueueEntry entry);
-
-    void send(QueueEntry entry, boolean batch);
-
-    void acquisitionRemoved(QueueEntry node);
-
-    void queueDeleted();
-
-    SubFlushRunner getRunner();
-
-    AMQQueue getQueue();
-
-    boolean resend(QueueEntry e);
-
-    MessageInstance.ConsumerAcquiredState<X> getOwningState();
-
-    QueueContext getQueueContext();
+    MessageAlreadyReferencedException(final long messageNumber, TransactionLogResource resource)
+    {
+        super("The message with id " + messageNumber + " is already referenced by resource " + resource.getName());
+    }
 }

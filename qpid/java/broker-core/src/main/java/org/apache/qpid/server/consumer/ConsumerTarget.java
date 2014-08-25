@@ -29,6 +29,8 @@ public interface ConsumerTarget
 {
 
 
+    void acquisitionRemoved(MessageInstance node);
+
     enum State
     {
         ACTIVE, SUSPENDED, CLOSED

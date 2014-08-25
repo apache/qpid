@@ -68,6 +68,8 @@ import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueConsumer;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -953,15 +955,26 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         op.withinTransaction(new Transaction()
         {
-            public void dequeue(final MessageInstance entry)
+            public void dequeue(final MessageInstance messageInstance)
             {
-                if(entry.acquire())
+                boolean acquired = messageInstance.acquire();
+                if(!acquired && messageInstance instanceof QueueEntry)
                 {
-                    txn.dequeue(entry.getOwningResource(), entry.getMessage(), new ServerTransaction.Action()
+                    QueueEntry entry = (QueueEntry) messageInstance;
+                    QueueConsumer consumer = (QueueConsumer) entry.getDeliveredConsumer();
+                    acquired = messageInstance.removeAcquisitionFromConsumer(consumer);
+                    if(acquired)
+                    {
+                        consumer.acquisitionRemoved((QueueEntry)messageInstance);
+                    }
+                }
+                if(acquired)
+                {
+                    txn.dequeue(messageInstance.getOwningResource(), messageInstance.getMessage(), new ServerTransaction.Action()
                     {
                         public void postCommit()
                         {
-                            entry.delete();
+                            messageInstance.delete();
                         }
 
                         public void onRollback()
