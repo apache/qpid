@@ -21,6 +21,11 @@
 
 package org.apache.qpid.server.model.port;
 
+import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,6 +34,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 
@@ -53,6 +62,60 @@ import org.apache.qpid.server.security.access.Operation;
 abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractConfiguredObject<X> implements Port<X>
 {
     private static final Logger LOGGER = Logger.getLogger(AbstractPort.class);
+
+    private static final Set<InetAddress> LOCAL_ADDRESSES = new CopyOnWriteArraySet<>();
+    private static final Set<String> LOCAL_ADDRESS_NAMES = new CopyOnWriteArraySet<>();
+    private static final Lock ADDRESS_LOCK = new ReentrantLock();
+    private static final AtomicBoolean ADDRESSES_COMPUTED = new AtomicBoolean();
+
+    static
+    {
+        Thread thread = new Thread(new Runnable()
+        {
+            public void run()
+            {
+                Lock lock = ADDRESS_LOCK;
+
+                lock.lock();
+                try
+                {
+                    for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces()))
+                    {
+                        for (InterfaceAddress inetAddress : networkInterface.getInterfaceAddresses())
+                        {
+                            InetAddress address = inetAddress.getAddress();
+                            LOCAL_ADDRESSES.add(address);
+                            String hostAddress = address.getHostAddress();
+                            if (hostAddress != null)
+                            {
+                                LOCAL_ADDRESS_NAMES.add(hostAddress);
+                            }
+                            String hostName = address.getHostName();
+                            if (hostName != null)
+                            {
+                                LOCAL_ADDRESS_NAMES.add(hostName);
+                            }
+                            String canonicalHostName = address.getCanonicalHostName();
+                            if (canonicalHostName != null)
+                            {
+                                LOCAL_ADDRESS_NAMES.add(canonicalHostName);
+                            }
+                        }
+                    }
+                }
+                catch (SocketException e)
+                {
+                    // ignore
+                }
+                finally
+                {
+                    ADDRESSES_COMPUTED.set(true);
+                    lock.unlock();
+                }
+            }
+        }, "Network Address Resolver");
+        thread.start();
+    }
 
     private final Broker<?> _broker;
     private State _state = State.UNINITIALIZED;
@@ -335,7 +398,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
                 Collection<Protocol> portProtocols = existingPort.getProtocols();
                 if (portProtocols != null)
                 {
-                    final ArrayList<Protocol> intersection = new ArrayList(portProtocols);
+                    final ArrayList<Protocol> intersection = new ArrayList<>(portProtocols);
                     intersection.retainAll(getProtocols());
                     if(!intersection.isEmpty())
                     {
@@ -345,4 +408,39 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
             }
         }
     }
+
+    public boolean isLocalMachine(final String host)
+    {
+        while(!ADDRESSES_COMPUTED.get())
+        {
+            Lock lock = ADDRESS_LOCK;
+            lock.lock();
+            lock.unlock();
+        }
+
+        boolean isNetworkAddress = true;
+        if (!LOCAL_ADDRESS_NAMES.contains(host))
+        {
+            try
+            {
+                InetAddress inetAddress = InetAddress.getByName(host);
+                if (!LOCAL_ADDRESSES.contains(inetAddress))
+                {
+                    isNetworkAddress = false;
+                }
+                else
+                {
+                    LOCAL_ADDRESS_NAMES.add(host);
+                }
+            }
+            catch (UnknownHostException e)
+            {
+                // ignore
+                isNetworkAddress = false;
+            }
+        }
+        return isNetworkAddress;
+
+    }
+
 }

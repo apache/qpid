@@ -22,19 +22,13 @@ package org.apache.qpid.server.protocol.v1_0;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
 
-import java.net.InetAddress;
-import java.net.InterfaceAddress;
-import java.net.NetworkInterface;
 import java.net.SocketAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -142,7 +136,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         }
 
         _vhost = ((AmqpPort)_port).getVirtualHost(host);
-        if(_vhost == null && isNetworkAddress(host))
+        if(_vhost == null && _port.isLocalMachine(host))
         {
             _vhost = ((AmqpPort)_port).getVirtualHost(_broker.getDefaultVirtualHost());
         }
@@ -163,56 +157,6 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
             _subject.getPrivateCredentials().addAll(authSubject.getPrivateCredentials());
         }
     }
-
-    private boolean isNetworkAddress(final String host)
-    {
-
-        try
-        {
-            Set<InetAddress> addresses = new HashSet<>();
-
-            for(NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces()))
-            {
-                for(InterfaceAddress inetAddress : networkInterface.getInterfaceAddresses())
-                {
-                    InetAddress address = inetAddress.getAddress();
-                    addresses.add(address);
-                    if(host.equals(address.getHostAddress()))
-                    {
-                        return true;
-                    }
-                    if(host.equals(address.getHostName()))
-                    {
-                        return true;
-                    }
-                    if(host.equals(address.getCanonicalHostName()))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            try
-            {
-                InetAddress inetAddress = InetAddress.getByName(host);
-                if(addresses.contains(inetAddress))
-                {
-                    return true;
-                }
-            }
-            catch (UnknownHostException e)
-            {
-                // ignore
-            }
-        }
-        catch (SocketException e)
-        {
-            // ignore
-        }
-
-        return false;
-    }
-
     public void remoteSessionCreation(SessionEndpoint endpoint)
     {
         if(!_closedOnOpen)
