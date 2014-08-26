@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.qpid.common.AMQPFilterTypes;
@@ -143,6 +144,6 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
         FieldTable filters = new FieldTable();
         filters.put(AMQPFilterTypes.NO_CONSUME.getValue(), true);
 
-        return channel.consumeFromSource(null, queue, true, filters, true, false);
+        return channel.consumeFromSource(null, Collections.singleton(queue), true, filters, true, false);
     }
 }

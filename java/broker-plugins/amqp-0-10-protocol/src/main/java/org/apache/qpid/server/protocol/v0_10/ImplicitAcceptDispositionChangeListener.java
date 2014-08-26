@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
 
 class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDispositionChangeListener
@@ -30,12 +31,16 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
 
     private final MessageInstance _entry;
-    private ConsumerTarget_0_10 _target;
+    private final ConsumerTarget_0_10 _target;
+    private final ConsumerImpl _consumer;
 
-    public ImplicitAcceptDispositionChangeListener(MessageInstance entry, ConsumerTarget_0_10 target)
+    public ImplicitAcceptDispositionChangeListener(MessageInstance entry,
+                                                   ConsumerTarget_0_10 target,
+                                                   final ConsumerImpl consumer)
     {
         _entry = entry;
         _target = target;
+        _consumer = consumer;
     }
 
     public void onAccept()
@@ -45,7 +50,7 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onRelease(boolean setRedelivered)
     {
-        if(_entry.isAcquiredBy(_target.getConsumer()))
+        if(_entry.isAcquiredBy(_consumer))
         {
             _target.release(_entry, setRedelivered);
         }
@@ -57,7 +62,7 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onReject()
     {
-        if(_entry.isAcquiredBy(_target.getConsumer()))
+        if(_entry.isAcquiredBy(_consumer))
         {
             _target.reject(_entry);
         }
@@ -70,7 +75,7 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public boolean acquire()
     {
-        boolean acquired = _entry.acquire(_target.getConsumer());
+        boolean acquired = _entry.acquire(_consumer);
         if(acquired)
         {
             _target.recordUnacknowledged(_entry);

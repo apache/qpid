@@ -61,6 +61,7 @@ import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.connection.SessionPrincipal;
 import org.apache.qpid.server.consumer.ConsumerImpl;
+import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
@@ -543,10 +544,9 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     }
 
 
-    public ConsumerImpl getSubscription(AMQShortString tag)
+    public ConsumerTarget getSubscription(AMQShortString tag)
     {
-        final ConsumerTarget_0_8 target = _tag2SubscriptionTargetMap.get(tag);
-        return target == null ? null : target.getConsumer();
+        return _tag2SubscriptionTargetMap.get(tag);
     }
 
     /**
@@ -555,7 +555,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
      *
      *
      * @param tag       the tag chosen by the client (if null, server will generate one)
-     * @param source     the queue to subscribe to
+     * @param sources     the queues to subscribe to
      * @param acks      Are acks enabled for this subscriber
      * @param filters   Filters to apply to this subscriber
      *
@@ -564,7 +564,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
      *
      * @throws org.apache.qpid.AMQException                  if something goes wrong
      */
-    public AMQShortString consumeFromSource(AMQShortString tag, MessageSource source, boolean acks,
+    public AMQShortString consumeFromSource(AMQShortString tag, Collection<MessageSource> sources, boolean acks,
                                             FieldTable filters, boolean exclusive, boolean noLocal)
             throws AMQException, MessageSource.ExistingConsumerPreventsExclusive,
                    MessageSource.ExistingExclusiveConsumer, AMQInvalidArgumentException,
@@ -632,18 +632,21 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                     }
                 });
             }
-            ConsumerImpl sub =
-                    source.addConsumer(target,
-                                       filterManager,
-                                       AMQMessage.class,
-                                       AMQShortString.toString(tag),
-                                       options);
-            if(sub instanceof Consumer<?>)
+            for(MessageSource source : sources)
             {
-                final Consumer<?> modelConsumer = (Consumer<?>) sub;
-                consumerAdded(modelConsumer);
-                modelConsumer.addChangeListener(_consumerClosedListener);
-                _consumers.add(modelConsumer);
+                ConsumerImpl sub =
+                        source.addConsumer(target,
+                                           filterManager,
+                                           AMQMessage.class,
+                                           AMQShortString.toString(tag),
+                                           options);
+                if (sub instanceof Consumer<?>)
+                {
+                    final Consumer<?> modelConsumer = (Consumer<?>) sub;
+                    consumerAdded(modelConsumer);
+                    modelConsumer.addChangeListener(_consumerClosedListener);
+                    _consumers.add(modelConsumer);
+                }
             }
         }
         catch (AccessControlException e)
@@ -683,13 +686,16 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
     {
 
         ConsumerTarget_0_8 target = _tag2SubscriptionTargetMap.remove(consumerTag);
-        ConsumerImpl sub = target == null ? null : target.getConsumer();
-        if (sub != null)
+        Collection<ConsumerImpl> subs = target == null ? null : target.getConsumers();
+        if (subs != null)
         {
-            sub.close();
-            if(sub instanceof Consumer<?>)
+            for(ConsumerImpl sub : subs)
             {
-                _consumers.remove(sub);
+                sub.close();
+                if (sub instanceof Consumer<?>)
+                {
+                    _consumers.remove(sub);
+                }
             }
             return true;
         }
@@ -763,11 +769,14 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                 _logger.info("Unsubscribing consumer '" + me.getKey() + "' on channel " + toString());
             }
 
-            ConsumerImpl sub = me.getValue().getConsumer();
+            Collection<ConsumerImpl> subs = me.getValue().getConsumers();
 
-            if(sub != null)
+            if(subs != null)
             {
-                sub.close();
+                for(ConsumerImpl sub : subs)
+                {
+                    sub.close();
+                }
             }
         }
 
@@ -1032,7 +1041,10 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                 // may need to deliver queued messages
                 for (ConsumerTarget_0_8 s : _tag2SubscriptionTargetMap.values())
                 {
-                    s.getConsumer().externalStateChange();
+                    for(ConsumerImpl sub : s.getConsumers())
+                    {
+                        sub.externalStateChange();
+                    }
                 }
             }
 
@@ -1050,11 +1062,11 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                 {
                     try
                     {
-                        s.getConsumer().getSendLock();
+                        s.getSendLock();
                     }
                     finally
                     {
-                        s.getConsumer().releaseSendLock();
+                        s.releaseSendLock();
                     }
                 }
             }
@@ -1133,8 +1145,8 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         // ensure all subscriptions have seen the change to the channel state
         for(ConsumerTarget_0_8 sub : _tag2SubscriptionTargetMap.values())
         {
-            sub.getConsumer().getSendLock();
-            sub.getConsumer().releaseSendLock();
+            sub.getSendLock();
+            sub.releaseSendLock();
         }
 
         try
@@ -1169,9 +1181,12 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         if(requiresSuspend)
         {
             _suspended.set(false);
-            for(ConsumerTarget_0_8 sub : _tag2SubscriptionTargetMap.values())
+            for(ConsumerTarget_0_8 target : _tag2SubscriptionTargetMap.values())
             {
-                sub.getConsumer().externalStateChange();
+                for(ConsumerImpl sub : target.getConsumers())
+                {
+                    sub.externalStateChange();
+                }
             }
 
         }
@@ -1179,7 +1194,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
 
     public String toString()
     {
-        return "["+_session.toString()+":"+_channelId+"]";
+        return "("+ _suspended.get() + ", " + _closing.get() + ", " + _session.isClosing() + ") "+"["+_session.toString()+":"+_channelId+"]";
     }
 
     public void setDefaultQueue(AMQQueue queue)

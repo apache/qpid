@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -138,7 +139,9 @@ public class AcknowledgeTest extends QpidTestCase
         assertEquals("Channel should have no unacked msgs ", 0, getChannel().getUnacknowledgedMessageMap().size());
 
         //Subscribe to the queue
-        AMQShortString subscriber = _channel.consumeFromSource(null, _queue, true, null, true, false);
+        AMQShortString subscriber = _channel.consumeFromSource(null,
+                                                               Collections.singleton(_queue),
+                                                               true, null, true, false);
 
         getQueue().deliverAsync();
 

@@ -31,6 +31,8 @@ public interface ConsumerTarget
 
     void acquisitionRemoved(MessageInstance node);
 
+    void removeStateChangeListener(StateChangeListener<ConsumerTarget, State> listener);
+
     enum State
     {
         ACTIVE, SUSPENDED, CLOSED
@@ -42,7 +44,7 @@ public interface ConsumerTarget
 
     void consumerRemoved(ConsumerImpl sub);
 
-    void setStateListener(StateChangeListener<ConsumerTarget, State> listener);
+    void addStateListener(StateChangeListener<ConsumerTarget, State> listener);
 
     long getUnacknowledgedBytes();
 
@@ -50,7 +52,7 @@ public interface ConsumerTarget
 
     AMQSessionModel getSessionModel();
 
-    long send(MessageInstance entry, boolean batch);
+    long send(final ConsumerImpl consumer, MessageInstance entry, boolean batch);
 
     void flushBatched();
 
@@ -65,4 +67,11 @@ public interface ConsumerTarget
     boolean isSuspended();
 
     boolean close();
+
+    boolean trySendLock();
+
+    void getSendLock();
+
+    void releaseSendLock();
+
 }

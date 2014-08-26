@@ -514,6 +514,16 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
     {
         queueName = preprocessAddressTopic(consumer, queueName);
 
+        AMQDestination destination = consumer.getDestination();
+
+        Map<String, Object> arguments = FieldTable.convertToMap(consumer.getArguments());
+
+        Link link = destination.getLink();
+        if (link != null && link.getSubscription() != null && link.getSubscription().getArgs() != null)
+        {
+            arguments.putAll(link.getSubscription().getArgs());
+        }
+
         BasicConsumeBody body = getMethodRegistry().createBasicConsumeBody(getTicket(),
                                                                            queueName,
                                                                            new AMQShortString(String.valueOf(tag)),
@@ -521,7 +531,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                                                                            consumer.getAcknowledgeMode() == Session.NO_ACKNOWLEDGE,
                                                                            consumer.isExclusive(),
                                                                            nowait,
-                                                                           consumer.getArguments());
+                                                                           FieldTable.convertToFieldTable(arguments));
 
 
         AMQFrame jmsConsume = body.generateFrame(getChannelId());

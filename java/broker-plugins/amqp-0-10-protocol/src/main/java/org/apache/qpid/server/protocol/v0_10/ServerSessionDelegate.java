@@ -25,6 +25,7 @@ import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -198,15 +199,44 @@ public class ServerSessionDelegate extends SessionDelegate
             else
             {
                 String queueName = method.getQueue();
-                VirtualHostImpl vhost = getVirtualHost(session);
+                VirtualHostImpl<?,?,?> vhost = getVirtualHost(session);
 
+                final Collection<MessageSource> sources = new HashSet<>();
                 final MessageSource queue = vhost.getMessageSource(queueName);
-
-                if(queue == null)
+                if(queue != null)
                 {
-                    exception(session,method,ExecutionErrorCode.NOT_FOUND, "Queue: " + queueName + " not found");
+                    sources.add(queue);
                 }
-                else if(!queue.verifySessionAccess((ServerSession)session))
+                else if(vhost.getContextValue(Boolean.class, "qpid.enableMultiQueueConsumers")
+                        && method.getArguments() != null
+                        && method.getArguments().get("x-multiqueue") instanceof Collection)
+                {
+                    for(Object object : (Collection<Object>)method.getArguments().get("x-multiqueue"))
+                    {
+                        String sourceName = String.valueOf(object);
+                        sourceName = sourceName.trim();
+                        if(sourceName.length() != 0)
+                        {
+                            MessageSource source = vhost.getMessageSource(sourceName);
+                            if(source == null)
+                            {
+                                sources.clear();
+                                break;
+                            }
+                            else
+                            {
+                                sources.add(source);
+                            }
+                        }
+                    }
+                    queueName = method.getArguments().get("x-multiqueue").toString();
+                }
+
+                if(sources.isEmpty())
+                {
+                    exception(session, method, ExecutionErrorCode.NOT_FOUND, "Queue: " + queueName + " not found");
+                }
+                else if(!verifySessionAccess((ServerSession) session, sources))
                 {
                     exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
                 }
@@ -250,12 +280,15 @@ public class ServerSessionDelegate extends SessionDelegate
                         {
                             options.add(ConsumerImpl.Option.EXCLUSIVE);
                         }
-                        ((ServerSession)session).register(
-                                queue.addConsumer(target,
-                                                  filterManager,
-                                                  MessageTransferMessage.class,
-                                                  destination,
-                                                  options));
+                        for(MessageSource source : sources)
+                        {
+                            ((ServerSession) session).register(
+                                    source.addConsumer(target,
+                                                      filterManager,
+                                                      MessageTransferMessage.class,
+                                                      destination,
+                                                      options));
+                        }
                     }
                     catch (AMQQueue.ExistingExclusiveConsumer existing)
                     {
@@ -276,6 +309,23 @@ public class ServerSessionDelegate extends SessionDelegate
                 }
             }
         }
+    }
+
+    protected boolean verifySessionAccess(final ServerSession session, final Collection<MessageSource> queues)
+    {
+        for(MessageSource source : queues)
+        {
+            if(!verifySessionAccess(session, source))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected boolean verifySessionAccess(final ServerSession session, final MessageSource queue)
+    {
+        return queue.verifySessionAccess(session);
     }
 
     @Override
@@ -820,17 +870,15 @@ public class ServerSessionDelegate extends SessionDelegate
         return destination;
     }
 
-    private VirtualHostImpl getVirtualHost(Session session)
+    private VirtualHostImpl<?,?,?> getVirtualHost(Session session)
     {
         ServerConnection conn = getServerConnection(session);
-        VirtualHostImpl vhost = conn.getVirtualHost();
-        return vhost;
+        return conn.getVirtualHost();
     }
 
     private ServerConnection getServerConnection(Session session)
     {
-        ServerConnection conn = (ServerConnection) session.getConnection();
-        return conn;
+        return (ServerConnection) session.getConnection();
     }
 
     @Override
@@ -1238,7 +1286,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 exception(session, method, errorCode, description);
 
             }
-            else if (!queue.verifySessionAccess((ServerSession)session))
+            else if (!verifySessionAccess((ServerSession) session, queue))
             {
                 String description = "Cannot declare queue('" + queueName + "'),"
                                                                        + " as exclusive queue with same name "
@@ -1296,7 +1344,7 @@ public class ServerSessionDelegate extends SessionDelegate
             catch(QueueExistsException qe)
             {
                 queue = qe.getExistingQueue();
-                if (!queue.verifySessionAccess((ServerSession)session))
+                if (!verifySessionAccess((ServerSession) session, queue))
                 {
                     String description = "Cannot declare queue('" + queueName + "'),"
                                                                            + " as exclusive queue with same name "
@@ -1357,7 +1405,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                if(!queue.verifySessionAccess((ServerSession)session))
+                if(!verifySessionAccess((ServerSession) session, queue))
                 {
                     exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
                 }

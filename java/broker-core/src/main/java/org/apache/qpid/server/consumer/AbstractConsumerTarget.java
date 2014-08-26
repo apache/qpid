@@ -20,16 +20,24 @@
  */
 package org.apache.qpid.server.consumer;
 
-import org.apache.qpid.server.util.StateChangeListener;
-
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+import org.apache.qpid.server.util.StateChangeListener;
 
 public abstract class AbstractConsumerTarget implements ConsumerTarget
 {
 
     private final AtomicReference<State> _state;
-    private final AtomicReference<StateChangeListener<ConsumerTarget, State>> _stateListener =
-            new AtomicReference<StateChangeListener<ConsumerTarget, State>>();
+
+    private final Set<StateChangeListener<ConsumerTarget, State>> _stateChangeListeners = new
+            CopyOnWriteArraySet<>();
+
+    private final Lock _stateChangeLock = new ReentrantLock();
+
 
     protected AbstractConsumerTarget(final State initialState)
     {
@@ -46,8 +54,7 @@ public abstract class AbstractConsumerTarget implements ConsumerTarget
     {
         if(_state.compareAndSet(from, to))
         {
-            StateChangeListener<ConsumerTarget, State> listener = _stateListener.get();
-            if(listener != null)
+            for (StateChangeListener<ConsumerTarget, State> listener : _stateChangeListeners)
             {
                 listener.stateChanged(this, from, to);
             }
@@ -59,15 +66,38 @@ public abstract class AbstractConsumerTarget implements ConsumerTarget
         }
     }
 
-
-    public final void setStateListener(StateChangeListener<ConsumerTarget, State> listener)
+    public final void notifyCurrentState()
     {
-        _stateListener.set(listener);
+        for (StateChangeListener<ConsumerTarget, State> listener : _stateChangeListeners)
+        {
+            State state = getState();
+            listener.stateChanged(this, state, state);
+        }
+    }
+    public final void addStateListener(StateChangeListener<ConsumerTarget, State> listener)
+    {
+        _stateChangeListeners.add(listener);
     }
 
-    public final StateChangeListener<ConsumerTarget, State> getStateListener()
+    @Override
+    public void removeStateChangeListener(final StateChangeListener<ConsumerTarget, State> listener)
     {
-        return _stateListener.get();
+        _stateChangeListeners.remove(listener);
+    }
+
+    public final boolean trySendLock()
+    {
+        return _stateChangeLock.tryLock();
+    }
+
+    public final void getSendLock()
+    {
+        _stateChangeLock.lock();
+    }
+
+    public final void releaseSendLock()
+    {
+        _stateChangeLock.unlock();
     }
 
 }

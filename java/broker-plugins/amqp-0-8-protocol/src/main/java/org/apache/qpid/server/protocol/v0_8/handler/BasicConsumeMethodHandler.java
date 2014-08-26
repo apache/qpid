@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.protocol.v0_8.handler;
 
+import java.security.AccessControlException;
+import java.util.Collection;
+import java.util.HashSet;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
@@ -32,12 +36,10 @@ import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import java.security.AccessControlException;
 
 public class BasicConsumeMethodHandler implements StateAwareMethodListener<BasicConsumeBody>
 {
@@ -59,7 +61,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
         AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
 
         AMQChannel channel = protocolConnection.getChannel(channelId);
-        VirtualHostImpl vHost = protocolConnection.getVirtualHost();
+        VirtualHostImpl<?,?,?> vHost = protocolConnection.getVirtualHost();
 
         if (channel == null)
         {
@@ -68,25 +70,55 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
         else
         {
             channel.sync();
+            String queueName = body.getQueue() == null ? null : body.getQueue().asString();
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("BasicConsume: from '" + body.getQueue() +
+                _logger.debug("BasicConsume: from '" + queueName +
                               "' for:" + body.getConsumerTag() +
                               " nowait:" + body.getNowait() +
                               " args:" + body.getArguments());
             }
 
-            MessageSource queue = body.getQueue() == null ? channel.getDefaultQueue() : vHost.getQueue(body.getQueue().intern().toString());
+            MessageSource queue = queueName == null ? channel.getDefaultQueue() : vHost.getQueue(queueName);
+            final Collection<MessageSource> sources = new HashSet<>();
+            if(queue != null)
+            {
+                sources.add(queue);
+            }
+            else if(vHost.getContextValue(Boolean.class, "qpid.enableMultiQueueConsumers")
+                    && body.getArguments() != null
+                    && body.getArguments().get("x-multiqueue") instanceof Collection)
+            {
+                for(Object object : (Collection<Object>)body.getArguments().get("x-multiqueue"))
+                {
+                    String sourceName = String.valueOf(object);
+                    sourceName = sourceName.trim();
+                    if(sourceName.length() != 0)
+                    {
+                        MessageSource source = vHost.getMessageSource(sourceName);
+                        if(source == null)
+                        {
+                            sources.clear();
+                            break;
+                        }
+                        else
+                        {
+                            sources.add(source);
+                        }
+                    }
+                }
+                queueName = body.getArguments().get("x-multiqueue").toString();
+            }
 
-            if (queue == null)
+            if (sources.isEmpty())
             {
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("No queue for '" + body.getQueue() + "'");
+                    _logger.debug("No queue for '" + queueName + "'");
                 }
-                if (body.getQueue() != null)
+                if (queueName != null)
                 {
-                    String msg = "No such queue, '" + body.getQueue() + "'";
+                    String msg = "No such queue, '" + queueName + "'";
                     throw body.getChannelException(AMQConstant.NOT_FOUND, msg);
                 }
                 else
@@ -114,7 +146,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                     {
 
                         AMQShortString consumerTag = channel.consumeFromSource(consumerTagName,
-                                                                               queue,
+                                                                               sources,
                                                                                !body.getNoAck(),
                                                                                body.getArguments(),
                                                                                body.getExclusive(),

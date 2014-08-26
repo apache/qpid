@@ -247,6 +247,26 @@ public abstract class QueueEntryImpl implements QueueEntry
     }
 
     @Override
+    public ConsumerImpl getAcquiringConsumer()
+    {
+        ConsumerImpl consumer;
+        EntryState state = _state;
+        if(state instanceof ConsumerAcquiredState)
+        {
+            consumer = ((ConsumerAcquiredState)state).getConsumer();
+        }
+        else if(state instanceof LockedAcquiredState)
+        {
+            consumer = ((LockedAcquiredState)state).getConsumer();
+        }
+        else
+        {
+            consumer = null;
+        }
+        return consumer;
+    }
+
+    @Override
     public boolean isAcquiredBy(ConsumerImpl consumer)
     {
         EntryState state = _state;

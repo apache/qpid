@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.management.amqp;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.message.MessageSource;
@@ -27,19 +31,12 @@ import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.util.StateChangeListener;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 class ManagementNodeConsumer implements ConsumerImpl
 {
     private final long _id = ConsumerImpl.CONSUMER_NUMBER_GENERATOR.getAndIncrement();
     private final ManagementNode _managementNode;
     private final List<ManagementResponse> _queue = Collections.synchronizedList(new ArrayList<ManagementResponse>());
     private final ConsumerTarget _target;
-    private final Lock _stateChangeLock = new ReentrantLock();
     private final String _name;
     private final StateChangeListener<ConsumerTarget, ConsumerTarget.State> _targetChangeListener = new TargetChangeListener();
 
@@ -49,7 +46,7 @@ class ManagementNodeConsumer implements ConsumerImpl
         _name = consumerName;
         _managementNode = managementNode;
         _target = target;
-        target.setStateListener(_targetChangeListener);
+        target.addStateListener(_targetChangeListener);
     }
 
     @Override
@@ -133,19 +130,19 @@ class ManagementNodeConsumer implements ConsumerImpl
     @Override
     public boolean trySendLock()
     {
-        return _stateChangeLock.tryLock();
+        return _target.trySendLock();
     }
 
     @Override
     public void getSendLock()
     {
-        _stateChangeLock.lock();
+        _target.getSendLock();
     }
 
     @Override
     public void releaseSendLock()
     {
-        _stateChangeLock.unlock();
+        _target.releaseSendLock();
     }
 
 
@@ -174,13 +171,13 @@ class ManagementNodeConsumer implements ConsumerImpl
 
     void send(final InternalMessage response)
     {
-        getSendLock();
+        _target.getSendLock();
         try
         {
             final ManagementResponse responseEntry = new ManagementResponse(this, response);
             if(_queue.isEmpty() && _target.allocateCredit(response))
             {
-                _target.send(responseEntry,false);
+                _target.send(this, responseEntry, false);
             }
             else
             {
@@ -189,7 +186,7 @@ class ManagementNodeConsumer implements ConsumerImpl
         }
         finally
         {
-            releaseSendLock();
+            _target.releaseSendLock();
         }
     }
 
@@ -209,7 +206,7 @@ class ManagementNodeConsumer implements ConsumerImpl
 
     private void deliverMessages()
     {
-        getSendLock();
+        _target.getSendLock();
         try
         {
             while(!_queue.isEmpty())
@@ -219,7 +216,7 @@ class ManagementNodeConsumer implements ConsumerImpl
                 if(!_target.isSuspended() && _target.allocateCredit(managementResponse.getMessage()))
                 {
                     _queue.remove(0);
-                    _target.send(managementResponse,false);
+                    _target.send(this, managementResponse, false);
                 }
                 else
                 {
@@ -229,7 +226,7 @@ class ManagementNodeConsumer implements ConsumerImpl
         }
         finally
         {
-            releaseSendLock();
+            _target.releaseSendLock();
         }
     }
 }

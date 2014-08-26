@@ -21,6 +21,7 @@
 
 package org.apache.qpid.server.protocol.v0_10;
 
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.transport.Method;
 
@@ -29,16 +30,22 @@ public class MessageAcceptCompletionListener implements Method.CompletionListene
     private final ConsumerTarget_0_10 _sub;
     private final MessageInstance _entry;
     private final ServerSession _session;
+    private final ConsumerImpl _consumer;
     private long _messageSize;
     private boolean _restoreCredit;
 
-    public MessageAcceptCompletionListener(ConsumerTarget_0_10 sub, ServerSession session, MessageInstance entry, boolean restoreCredit)
+    public MessageAcceptCompletionListener(ConsumerTarget_0_10 sub,
+                                           final ConsumerImpl consumer,
+                                           ServerSession session,
+                                           MessageInstance entry,
+                                           boolean restoreCredit)
     {
         super();
         _sub = sub;
         _entry = entry;
         _session = session;
         _restoreCredit = restoreCredit;
+        _consumer = consumer;
         if(restoreCredit)
         {
             _messageSize = entry.getMessage().getSize();
@@ -51,7 +58,7 @@ public class MessageAcceptCompletionListener implements Method.CompletionListene
         {
             _sub.getCreditManager().restoreCredit(1l, _messageSize);
         }
-        if(_entry.isAcquiredBy(_sub.getConsumer()) && _entry.lockAcquisition())
+        if(_entry.isAcquiredBy(_consumer) && _entry.lockAcquisition())
         {
             _session.acknowledge(_sub, _entry);
         }

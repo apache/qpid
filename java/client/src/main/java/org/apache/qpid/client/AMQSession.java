@@ -683,47 +683,48 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
 
             int type = resolveAddressType(dest);
-
+            boolean resolved = false;
             switch (type)
             {
                 case AMQDestination.QUEUE_TYPE:
-                {
+
+                    setLegacyFieldsForQueueType(dest);
                     if(createNode)
                     {
-                        setLegacyFieldsForQueueType(dest);
                         handleQueueNodeCreation(dest,noLocal);
-                        break;
+                        resolved = true;
                     }
                     else if (isQueueExist(dest,assertNode))
                     {
-                        setLegacyFieldsForQueueType(dest);
-                        break;
+                        resolved = true;
                     }
-                }
+                    break;
 
                 case AMQDestination.TOPIC_TYPE:
-                {
+
+                    setLegacyFieldsForTopicType(dest);
                     if(createNode)
                     {
-                        setLegacyFieldsForTopicType(dest);
                         verifySubject(dest);
                         handleExchangeNodeCreation(dest);
-                        break;
+                        resolved = true;
                     }
                     else if (isExchangeExist(dest,assertNode))
                     {
-                        setLegacyFieldsForTopicType(dest);
                         verifySubject(dest);
-                        break;
+                        resolved = true;
                     }
-                }
+                    break;
 
                 default:
                     throw new AMQException(
                             "The name '" + dest.getAddressName() +
                             "' supplied in the address doesn't resolve to an exchange or a queue");
             }
-            dest.setAddressResolved(System.currentTimeMillis());
+            if(resolved)
+            {
+                dest.setAddressResolved(System.currentTimeMillis());
+            }
         }
     }
 

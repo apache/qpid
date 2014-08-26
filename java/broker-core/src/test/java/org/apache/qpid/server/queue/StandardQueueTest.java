@@ -205,12 +205,13 @@ public class StandardQueueTest extends AbstractQueueTestBase
         {
             /**
              * Send a message and decrement latch
+             * @param consumer
              * @param entry
              * @param batch
              */
-            public long send(MessageInstance entry, boolean batch)
+            public long send(final ConsumerImpl consumer, MessageInstance entry, boolean batch)
             {
-                long size = super.send(entry, batch);
+                long size = super.send(consumer, entry, batch);
                 latch.countDown();
                 return size;
             }
