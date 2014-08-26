@@ -43,7 +43,8 @@ public class AddressHelper
     public static final String LINK = "link";
     public static final String X_DECLARE = "x-declare";
     public static final String X_BINDINGS = "x-bindings";
-    public static final String X_SUBSCRIBE = "x-subscribes";
+    public static final String X_SUBSCRIBES = "x-subscribes";
+    public static final String X_SUBSCRIBE = "x-subscribe";
     public static final String CREATE = "create";
     public static final String ASSERT = "assert";
     public static final String DELETE = "delete";
@@ -265,19 +266,32 @@ public class AddressHelper
             
             Map linkMap = (Map) _address.getOptions().get(LINK);
 
-            if (linkMap != null && linkMap.containsKey(X_SUBSCRIBE))
-            {   
-                Map x_subscribe = (Map)((Map) _address.getOptions().get(LINK)).get(X_SUBSCRIBE);
-                
-                if (x_subscribe.containsKey(ARGUMENTS))
+            if (linkMap != null)
+            {
+                Map x_subscribe = null;
+
+                if(linkMap.containsKey(X_SUBSCRIBE))
                 {
-                    link.getSubscription().setArgs((Map<String,Object>)x_subscribe.get(ARGUMENTS));
+                    x_subscribe = (Map)((Map) _address.getOptions().get(LINK)).get(X_SUBSCRIBE);
                 }
-                
-                boolean exclusive = x_subscribe.containsKey(EXCLUSIVE) ?
-                                    Boolean.parseBoolean((String)x_subscribe.get(EXCLUSIVE)): false;
-                
-                link.getSubscription().setExclusive(exclusive);
+                else if(linkMap.containsKey(X_SUBSCRIBES))
+                {
+                    // left in for backwards compatibility with old broken constant
+                    x_subscribe = (Map)((Map) _address.getOptions().get(LINK)).get(X_SUBSCRIBES);
+                }
+
+                if(x_subscribe != null)
+                {
+                    if (x_subscribe.containsKey(ARGUMENTS))
+                    {
+                        link.getSubscription().setArgs((Map<String, Object>) x_subscribe.get(ARGUMENTS));
+                    }
+
+                    boolean exclusive = x_subscribe.containsKey(EXCLUSIVE) ?
+                            Boolean.parseBoolean((String) x_subscribe.get(EXCLUSIVE)) : false;
+
+                    link.getSubscription().setExclusive(exclusive);
+                }
             }
 
             link.setBindings(getBindings(linkMap));

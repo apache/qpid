@@ -645,18 +645,19 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         Link link = destination.getLink();
         if (link != null && link.getSubscription() != null && link.getSubscription().getArgs() != null)
         {
-            arguments.putAll((Map<? extends String, ? extends Object>) link.getSubscription().getArgs());
+            arguments.putAll(link.getSubscription().getArgs());
         }
 
         boolean acceptModeNone = getAcknowledgeMode() == NO_ACKNOWLEDGE;
 
+        String queue = queueName == null ? destination.getAddressName() : queueName.toString();
         getQpidSession().messageSubscribe
-            (queueName.toString(), String.valueOf(tag),
+            (queue, String.valueOf(tag),
              acceptModeNone ? MessageAcceptMode.NONE : MessageAcceptMode.EXPLICIT,
              preAcquire ? MessageAcquireMode.PRE_ACQUIRED : MessageAcquireMode.NOT_ACQUIRED, null, 0, arguments,
              consumer.isExclusive() ? Option.EXCLUSIVE : Option.NONE);
 
-        String consumerTag = ((BasicMessageConsumer_0_10)consumer).getConsumerTagString();
+        String consumerTag = (consumer).getConsumerTagString();
 
         if (capacity == 0)
         {
@@ -1175,7 +1176,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
         catch(SessionException e)
         {
-            if (e.getException().getErrorCode() == ExecutionErrorCode.RESOURCE_DELETED)
+            if (e.getException().getErrorCode() == ExecutionErrorCode.RESOURCE_DELETED
+                    || e.getException().getErrorCode() == ExecutionErrorCode.NOT_FOUND)
             {
                 match = false;
             }

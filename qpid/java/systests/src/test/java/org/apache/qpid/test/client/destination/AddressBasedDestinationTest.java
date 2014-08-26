@@ -96,25 +96,17 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         // create never --------------------------------------------
         String addr1 = "ADDR:testQueue1";
         AMQDestination  dest = new AMQAnyDestination(addr1);
-        final String queueErrorMessage = "The name 'testQueue1' supplied in the address " +
-                   "doesn't resolve to an exchange or a queue";
         try
         {
             cons = jmsSession.createConsumer(dest);
         }
         catch(JMSException e)
         {
-            assertTrue(e.getMessage().contains(queueErrorMessage));
-        }
+            // pass
+            _connection = getConnection();
+            jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+            dest = new AMQAnyDestination(addr1);
 
-        try
-        {
-            prod = jmsSession.createProducer(dest);
-        }
-        catch(JMSException e)
-        {
-            assertTrue(e.getCause().getMessage().contains(queueErrorMessage)
-                       || e.getCause().getCause().getMessage().contains(queueErrorMessage));
         }
 
         assertFalse("Queue should not be created",(
@@ -170,7 +162,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
         catch(JMSException e)
         {
-            assertTrue(e.getMessage().contains(testQueue3ErrorMessage));
+            // pass
         }
 
         try
@@ -179,8 +171,10 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
         catch(JMSException e)
         {
-            assertTrue(e.getCause().getMessage().contains(testQueue3ErrorMessage)
-                       || e.getCause().getCause().getMessage().contains(testQueue3ErrorMessage));
+            // pass
+            _connection = getConnection();
+            jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+            dest = new AMQAnyDestination(addr1);
         }
 
         assertFalse("Queue should not be created",(
@@ -196,8 +190,12 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
         catch(JMSException e)
         {
-            assertTrue(e.getMessage().contains(testQueue3ErrorMessage));
+            // pass
+            _connection = getConnection();
+            jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+            dest = new AMQAnyDestination(addr1);
         }
+
         assertFalse("Queue should not be created",(
                 (AMQSession)jmsSession).isQueueExist(dest, false));
 
@@ -610,7 +608,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
 
         // Using the ADDR method
         // default case
-        queue = ssn.createQueue("ADDR:my-queue2");
+        queue = ssn.createQueue("ADDR:my-queue2 ; { assert : sender }");
         try
         {
         	prod = ssn.createProducer(queue);
@@ -618,9 +616,8 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
         catch(Exception e)
         {
-        	String s = "The name 'my-queue2' supplied in the address " +
-        			"doesn't resolve to an exchange or a queue";
-        	assertTrue(s.equals(e.getCause().getMessage()) || s.equals(e.getCause().getCause().getMessage()));
+        	String s = "Assert failed for queue : my-queue2";
+        	assertTrue(e.getCause().getMessage().contains(s) || e.getCause().getCause().getMessage().contains(s));
         }
 
         // explicit create case

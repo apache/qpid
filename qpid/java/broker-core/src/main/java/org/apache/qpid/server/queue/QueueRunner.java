@@ -21,17 +21,17 @@
 package org.apache.qpid.server.queue;
 
 import java.security.PrivilegedAction;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.security.auth.Subject;
+
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.transport.TransportException;
-
-import javax.security.auth.Subject;
 
 /**
  * QueueRunners are Runnables used to process a queue when requiring
@@ -111,7 +111,7 @@ public class QueueRunner implements Runnable
 
     public String toString()
     {
-        return "QueueRunner-" + _queue.getLogSubject();
+        return "QueueRunner-" + _queue.getLogSubject().toLogString();
     }
 
     public void execute()

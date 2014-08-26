@@ -60,6 +60,12 @@ public class MockMessageInstance implements MessageInstance
     }
 
     @Override
+    public ConsumerImpl getAcquiringConsumer()
+    {
+        return null;
+    }
+
+    @Override
     public boolean isAcquiredBy(final ConsumerImpl consumer)
     {
         return false;

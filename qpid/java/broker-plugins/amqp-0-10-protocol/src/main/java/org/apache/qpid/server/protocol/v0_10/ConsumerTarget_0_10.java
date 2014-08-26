@@ -22,7 +22,9 @@ package org.apache.qpid.server.protocol.v0_10;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -37,6 +39,7 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueConsumer;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -77,7 +80,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
     private final Map<String, Object> _arguments;
     private int _deferredMessageCredit;
     private long _deferredSizeCredit;
-    private ConsumerImpl _consumer;
+    private final List<ConsumerImpl> _consumers = new CopyOnWriteArrayList<>();
 
 
     public ConsumerTarget_0_10(ServerSession session,
@@ -101,11 +104,6 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         _name = name;
     }
 
-    public ConsumerImpl getConsumer()
-    {
-        return _consumer;
-    }
-
     public boolean isSuspended()
     {
         return getState()!=State.ACTIVE || _deleted.get() || _session.isClosing() || _session.getConnectionModel().isStopped(); // TODO check for Session suspension
@@ -116,11 +114,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         boolean closed = false;
         State state = getState();
 
-        final ConsumerImpl consumer = getConsumer();
-        if(consumer != null)
-        {
-            consumer.getSendLock();
-        }
+        getSendLock();
         try
         {
             while(!closed && state != State.CLOSED)
@@ -135,10 +129,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
             }
         finally
         {
-            if(consumer != null)
-            {
-                consumer.releaseSendLock();
-            }
+            releaseSendLock();
         }
 
         return closed;
@@ -153,7 +144,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
             if(!updateState(State.SUSPENDED, State.ACTIVE))
             {
                 // this is a hack to get round the issue of increasing bytes credit
-                getStateListener().stateChanged(this, State.ACTIVE, State.ACTIVE);
+                notifyCurrentState();
             }
         }
         else
@@ -200,7 +191,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
 
     private final AddMessageDispositionListenerAction _postIdSettingAction;
 
-    public long send(final MessageInstance entry, boolean batch)
+    public long send(final ConsumerImpl consumer, final MessageInstance entry, boolean batch)
     {
         ServerMessage serverMsg = entry.getMessage();
 
@@ -303,12 +294,12 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
 
         Header header = new Header(deliveryProps, messageProps, msg.getHeader() == null ? null : msg.getHeader().getNonStandardProperties());
 
-        xfr = batch ? new MessageTransfer(getConsumer().getName(),_acceptMode,_acquireMode,header, body, BATCHED)
-                    : new MessageTransfer(getConsumer().getName(),_acceptMode,_acquireMode,header, body);
+        xfr = batch ? new MessageTransfer(_name,_acceptMode,_acquireMode,header, body, BATCHED)
+                    : new MessageTransfer(_name,_acceptMode,_acquireMode,header, body);
 
         if(_acceptMode == MessageAcceptMode.NONE && _acquireMode != MessageAcquireMode.PRE_ACQUIRED)
         {
-            xfr.setCompletionListener(new MessageAcceptCompletionListener(this, _session, entry, _flowMode == MessageFlowMode.WINDOW));
+            xfr.setCompletionListener(new MessageAcceptCompletionListener(this, consumer, _session, entry, _flowMode == MessageFlowMode.WINDOW));
         }
         else if(_flowMode == MessageFlowMode.WINDOW)
         {
@@ -325,11 +316,11 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         _postIdSettingAction.setXfr(xfr);
         if(_acceptMode == MessageAcceptMode.EXPLICIT)
         {
-            _postIdSettingAction.setAction(new ExplicitAcceptDispositionChangeListener(entry, this));
+            _postIdSettingAction.setAction(new ExplicitAcceptDispositionChangeListener(entry, this, consumer));
         }
         else if(_acquireMode != MessageAcquireMode.PRE_ACQUIRED)
         {
-            _postIdSettingAction.setAction(new ImplicitAcceptDispositionChangeListener(entry, this));
+            _postIdSettingAction.setAction(new ImplicitAcceptDispositionChangeListener(entry, this, consumer));
         }
         else
         {
@@ -401,10 +392,21 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
     {
         entry.setRedelivered();
         entry.routeToAlternate(null, null);
-        if(entry.isAcquiredBy(getConsumer()))
+        if(isAcquiredByConsumer(entry))
         {
             entry.delete();
         }
+    }
+
+    private boolean isAcquiredByConsumer(final MessageInstance entry)
+    {
+        ConsumerImpl acquiringConsumer = entry.getAcquiringConsumer();
+        if(acquiringConsumer instanceof QueueConsumer)
+        {
+            return ((QueueConsumer)acquiringConsumer).getTarget() == this;
+        }
+
+        return false;
     }
 
     void release(final MessageInstance entry, final boolean setRedelivered)
@@ -503,7 +505,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
     {
         try
         {
-            getConsumer().getSendLock();
+            getSendLock();
 
             updateState(State.ACTIVE, State.SUSPENDED);
             _stopped.set(true);
@@ -512,7 +514,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         }
         finally
         {
-            getConsumer().releaseSendLock();
+            releaseSendLock();
         }
     }
 
@@ -572,7 +574,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
 
     public boolean deleteAcquired(MessageInstance entry)
     {
-        if(entry.isAcquiredBy(getConsumer()))
+        if(isAcquiredByConsumer(entry))
         {
             acquisitionRemoved(entry);
             entry.delete();
@@ -594,7 +596,10 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
     public void flush()
     {
         flushCreditState(true);
-        getConsumer().flush();
+        for(ConsumerImpl consumer : _consumers)
+        {
+            consumer.flush();
+        }
         stop();
     }
 
@@ -626,12 +631,17 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
     @Override
     public void consumerAdded(final ConsumerImpl sub)
     {
-        _consumer = sub;
+        _consumers.add(sub);
     }
 
     @Override
     public void consumerRemoved(final ConsumerImpl sub)
     {
+        _consumers.remove(sub);
+        if(_consumers.isEmpty())
+        {
+            close();
+        }
     }
 
     public long getUnacknowledgedBytes()

@@ -84,6 +84,12 @@ class ManagementResponse implements MessageInstance
     }
 
     @Override
+    public ConsumerImpl getAcquiringConsumer()
+    {
+        return _consumer;
+    }
+
+    @Override
     public boolean isAcquiredBy(final ConsumerImpl consumer)
     {
         return consumer == _consumer && !isDeleted();

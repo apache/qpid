@@ -79,6 +79,8 @@ public interface MessageInstance
 
     Filterable asFilterable();
 
+    ConsumerImpl getAcquiringConsumer();
+
     public static enum State
     {
         AVAILABLE,

@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.consumer.ConsumerImpl;
+import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.model.Consumer;
 
@@ -52,4 +53,6 @@ public interface QueueConsumer<X extends QueueConsumer<X>> extends ConsumerImpl,
     MessageInstance.ConsumerAcquiredState<X> getOwningState();
 
     QueueContext getQueueContext();
+
+    ConsumerTarget getTarget();
 }

@@ -28,7 +28,7 @@ import java.util.Map;
 import org.apache.qpid.client.AMQDestination.Binding;
 
 public class Link
-{ 
+{
     public enum FilterType { SQL92, XQUERY, SUBJECT }
     
     public enum Reliability { UNRELIABLE, AT_MOST_ONCE, AT_LEAST_ONCE, EXACTLY_ONCE }

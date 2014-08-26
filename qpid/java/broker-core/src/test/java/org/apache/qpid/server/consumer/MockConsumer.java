@@ -167,7 +167,7 @@ public class MockConsumer implements ConsumerTarget
     {
     }
 
-    public long send(MessageInstance entry, boolean batch)
+    public long send(final ConsumerImpl consumer, MessageInstance entry, boolean batch)
     {
         long size = entry.getMessage().getSize();
         if (messages.contains(entry))
@@ -202,7 +202,7 @@ public class MockConsumer implements ConsumerTarget
     @Override
     public void consumerRemoved(final ConsumerImpl sub)
     {
-
+       close();
     }
 
     public void setState(State state)
@@ -216,9 +216,18 @@ public class MockConsumer implements ConsumerTarget
     }
 
     @Override
-    public void setStateListener(final StateChangeListener<ConsumerTarget, State> listener)
+    public void addStateListener(final StateChangeListener<ConsumerTarget, State> listener)
     {
         _listener = listener;
+    }
+
+    @Override
+    public void removeStateChangeListener(final StateChangeListener<ConsumerTarget, State> listener)
+    {
+        if(_listener == listener)
+        {
+            _listener = null;
+        }
     }
 
     public ArrayList<MessageInstance> getMessages()
@@ -241,6 +250,23 @@ public class MockConsumer implements ConsumerTarget
     {
         _isActive = isActive;
     }
+
+
+    public final boolean trySendLock()
+    {
+        return _stateChangeLock.tryLock();
+    }
+
+    public final void getSendLock()
+    {
+        _stateChangeLock.lock();
+    }
+
+    public final void releaseSendLock()
+    {
+        _stateChangeLock.unlock();
+    }
+
 
     private static class MockSessionModel implements AMQSessionModel
     {

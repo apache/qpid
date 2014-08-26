@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
 
 
@@ -32,16 +33,20 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     private final MessageInstance _entry;
     private final ConsumerTarget_0_10 _target;
+    private final ConsumerImpl _consumer;
 
-    public ExplicitAcceptDispositionChangeListener(MessageInstance entry, ConsumerTarget_0_10 target)
+    public ExplicitAcceptDispositionChangeListener(MessageInstance entry,
+                                                   ConsumerTarget_0_10 target,
+                                                   final ConsumerImpl consumer)
     {
         _entry = entry;
         _target = target;
+        _consumer = consumer;
     }
 
     public void onAccept()
     {
-        if(_target != null && _entry.isAcquiredBy(_target.getConsumer()) && _entry.lockAcquisition())
+        if(_target != null && _entry.isAcquiredBy(_consumer) && _entry.lockAcquisition())
         {
             _target.getSessionModel().acknowledge(_target, _entry);
         }
@@ -54,7 +59,7 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onRelease(boolean setRedelivered)
     {
-        if(_target != null && _entry.isAcquiredBy(_target.getConsumer()))
+        if(_target != null && _entry.isAcquiredBy(_consumer))
         {
             _target.release(_entry, setRedelivered);
         }
@@ -66,7 +71,7 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public void onReject()
     {
-        if(_target != null && _entry.isAcquiredBy(_target.getConsumer()))
+        if(_target != null && _entry.isAcquiredBy(_consumer))
         {
             _target.reject(_entry);
         }
@@ -79,7 +84,7 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     public boolean acquire()
     {
-        return _entry.acquire(_target.getConsumer());
+        return _entry.acquire(_consumer);
     }
 
 

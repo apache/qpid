@@ -93,7 +93,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
         boolean closed = false;
         State state = getState();
 
-        getConsumer().getSendLock();
+        getSendLock();
         try
         {
             while(!closed && state != State.CLOSED)
@@ -108,11 +108,11 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
         }
         finally
         {
-            getConsumer().releaseSendLock();
+            releaseSendLock();
         }
     }
 
-    public long send(MessageInstance entry, boolean batch)
+    public long send(final ConsumerImpl consumer, MessageInstance entry, boolean batch)
     {
         // TODO
         long size = entry.getMessage().getSize();
@@ -515,7 +515,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
     @Override
     public void consumerRemoved(final ConsumerImpl sub)
     {
-
+        close();
     }
 
     @Override

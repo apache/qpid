@@ -31,8 +31,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.log4j.Logger;
 
@@ -65,7 +63,6 @@ class QueueConsumerImpl
     private final AtomicBoolean _targetClosed = new AtomicBoolean(false);
     private final AtomicBoolean _closed = new AtomicBoolean(false);
     private final long _consumerNumber;
-    private final Lock _stateChangeLock = new ReentrantLock();
     private final long _createTime = System.currentTimeMillis();
     private final MessageInstance.ConsumerAcquiredState<QueueConsumerImpl> _owningState = new MessageInstance.ConsumerAcquiredState<QueueConsumerImpl>(this);
     private final boolean _acquires;
@@ -90,6 +87,8 @@ class QueueConsumerImpl
 
     private final ConsumerTarget _target;
     private final SubFlushRunner _runner = new SubFlushRunner(this);
+    private final StateChangeListener<ConsumerTarget, ConsumerTarget.State>
+            _listener;
     private volatile QueueContext _queueContext;
     private StateChangeListener<? super QueueConsumerImpl, State> _stateListener = new StateChangeListener<QueueConsumerImpl, State>()
     {
@@ -134,17 +133,17 @@ class QueueConsumerImpl
 
         setupLogging();
 
-        _target.setStateListener(
-                new StateChangeListener<ConsumerTarget, ConsumerTarget.State>()
-                    {
-                        @Override
-                        public void stateChanged(final ConsumerTarget object,
-                                                 final ConsumerTarget.State oldState,
-                                                 final ConsumerTarget.State newState)
-                        {
-                            targetStateChanged(oldState, newState);
-                        }
-                    });
+        _listener = new StateChangeListener<ConsumerTarget, ConsumerTarget.State>()
+        {
+            @Override
+            public void stateChanged(final ConsumerTarget object,
+                                     final ConsumerTarget.State oldState,
+                                     final ConsumerTarget.State newState)
+            {
+                targetStateChanged(oldState, newState);
+            }
+        };
+        _target.addStateListener(_listener);
     }
 
     private static Map<String, Object> createAttributeMap(String name, FilterManager filters, EnumSet<Option> optionSet)
@@ -202,6 +201,7 @@ class QueueConsumerImpl
         }
     }
 
+    @Override
     public ConsumerTarget getTarget()
     {
         return _target;
@@ -248,17 +248,17 @@ class QueueConsumerImpl
     {
         if(_closed.compareAndSet(false,true))
         {
-            getSendLock();
+            _target.getSendLock();
             try
             {
-                _target.close();
                 _target.consumerRemoved(this);
+                _target.removeStateChangeListener(_listener);
                 _queue.unregisterConsumer(this);
                 deleted();
             }
             finally
             {
-                releaseSendLock();
+                _target.releaseSendLock();
             }
 
         }
@@ -420,17 +420,17 @@ class QueueConsumerImpl
 
     public final boolean trySendLock()
     {
-        return _stateChangeLock.tryLock();
+        return getTarget().trySendLock();
     }
 
     public final void getSendLock()
     {
-        _stateChangeLock.lock();
+        getTarget().getSendLock();
     }
 
     public final void releaseSendLock()
     {
-        _stateChangeLock.unlock();
+        getTarget().releaseSendLock();
     }
 
     public final long getCreateTime()
@@ -471,7 +471,7 @@ class QueueConsumerImpl
     public final void send(final QueueEntry entry, final boolean batch)
     {
         _deliveredCount.incrementAndGet();
-        long size = _target.send(entry, batch);
+        long size = _target.send(this, entry, batch);
         _deliveredBytes.addAndGet(size);
     }
 

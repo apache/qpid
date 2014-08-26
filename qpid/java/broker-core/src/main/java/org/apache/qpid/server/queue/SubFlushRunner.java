@@ -21,17 +21,17 @@
 package org.apache.qpid.server.queue;
 
 
+import java.security.PrivilegedAction;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.security.auth.Subject;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.transport.TransportException;
-
-import javax.security.auth.Subject;
-import java.security.PrivilegedAction;
-import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 class SubFlushRunner implements Runnable
