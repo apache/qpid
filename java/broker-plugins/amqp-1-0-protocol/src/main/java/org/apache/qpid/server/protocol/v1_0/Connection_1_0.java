@@ -22,13 +22,19 @@ package org.apache.qpid.server.protocol.v1_0;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
 
+import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
 import java.net.SocketAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -99,7 +105,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
 
     private List<Action<? super Connection_1_0>> _closeTasks =
             Collections.synchronizedList(new ArrayList<Action<? super Connection_1_0>>());
-
+    private boolean _closedOnOpen;
 
 
     public Connection_1_0(Broker broker,
@@ -136,13 +142,17 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         }
 
         _vhost = ((AmqpPort)_port).getVirtualHost(host);
-
+        if(_vhost == null && isNetworkAddress(host))
+        {
+            _vhost = ((AmqpPort)_port).getVirtualHost(_broker.getDefaultVirtualHost());
+        }
         if(_vhost == null)
         {
             final Error err = new Error();
             err.setCondition(AmqpError.NOT_FOUND);
             err.setDescription("Unknown hostname " + _conn.getLocalHostname());
             _conn.close(err);
+            _closedOnOpen = true;
         }
         else
         {
@@ -154,47 +164,103 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         }
     }
 
-    public void remoteSessionCreation(SessionEndpoint endpoint)
+    private boolean isNetworkAddress(final String host)
     {
-        final Session_1_0 session = new Session_1_0(this, endpoint);
-        _sessions.add(session);
-        sessionAdded(session);
-        endpoint.setSessionEventListener(new SessionEventListener()
+
+        try
         {
-            @Override
-            public void remoteLinkCreation(final LinkEndpoint endpoint)
+            Set<InetAddress> addresses = new HashSet<>();
+
+            for(NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces()))
             {
-                Subject.doAs(session.getSubject(),new PrivilegedAction<Object>()
+                for(InterfaceAddress inetAddress : networkInterface.getInterfaceAddresses())
                 {
-                    @Override
-                    public Object run()
+                    InetAddress address = inetAddress.getAddress();
+                    addresses.add(address);
+                    if(host.equals(address.getHostAddress()))
                     {
-                        session.remoteLinkCreation(endpoint);
-                        return null;
+                        return true;
                     }
-                });
+                    if(host.equals(address.getHostName()))
+                    {
+                        return true;
+                    }
+                    if(host.equals(address.getCanonicalHostName()))
+                    {
+                        return true;
+                    }
+                }
             }
 
-            @Override
-            public void remoteEnd(final End end)
+            try
             {
-                Subject.doAs(session.getSubject(),new PrivilegedAction<Object>()
+                InetAddress inetAddress = InetAddress.getByName(host);
+                if(addresses.contains(inetAddress))
                 {
-                    @Override
-                    public Object run()
-                    {
-                        session.remoteEnd(end);
-                        return null;
-                    }
-                });
+                    return true;
+                }
             }
-        });
+            catch (UnknownHostException e)
+            {
+                // ignore
+            }
+        }
+        catch (SocketException e)
+        {
+            // ignore
+        }
+
+        return false;
+    }
+
+    public void remoteSessionCreation(SessionEndpoint endpoint)
+    {
+        if(!_closedOnOpen)
+        {
+            final Session_1_0 session = new Session_1_0(this, endpoint);
+            _sessions.add(session);
+            sessionAdded(session);
+            endpoint.setSessionEventListener(new SessionEventListener()
+            {
+                @Override
+                public void remoteLinkCreation(final LinkEndpoint endpoint)
+                {
+                    Subject.doAs(session.getSubject(), new PrivilegedAction<Object>()
+                    {
+                        @Override
+                        public Object run()
+                        {
+                            session.remoteLinkCreation(endpoint);
+                            return null;
+                        }
+                    });
+                }
+
+                @Override
+                public void remoteEnd(final End end)
+                {
+                    Subject.doAs(session.getSubject(), new PrivilegedAction<Object>()
+                    {
+                        @Override
+                        public Object run()
+                        {
+                            session.remoteEnd(end);
+                            return null;
+                        }
+                    });
+                }
+            });
+        }
     }
 
     void sessionEnded(Session_1_0 session)
     {
-        _sessions.remove(session);
-        sessionRemoved(session);
+        if(!_closedOnOpen)
+        {
+
+            _sessions.remove(session);
+            sessionRemoved(session);
+        }
     }
 
     public void removeDeleteTask(final Action<? super Connection_1_0> task)
