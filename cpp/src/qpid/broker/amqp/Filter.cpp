@@ -262,7 +262,9 @@ void Filter::bind(boost::shared_ptr<Exchange> exchange, boost::shared_ptr<Queue>
         active.push_back(&headersFilter);
     } else if (exchange->getType() == XML) {
         setDefaultXQueryFilter();
-        setDefaultSubjectFilter();
+        if (!setDefaultSubjectFilter() && adjustDirectFilter()) {
+            QPID_LOG(info, "Using legacy topic filter as a direct matching filter for " << exchange->getName());
+        }
         bindingArgs.setString(XQUERY, xqueryFilter.value);
         active.push_back(&subjectFilter);
         active.push_back(&xqueryFilter);
