@@ -99,7 +99,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
 
     private List<Action<? super Connection_1_0>> _closeTasks =
             Collections.synchronizedList(new ArrayList<Action<? super Connection_1_0>>());
-
+    private boolean _closedOnOpen;
 
 
     public Connection_1_0(Broker broker,
@@ -136,13 +136,17 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         }
 
         _vhost = ((AmqpPort)_port).getVirtualHost(host);
-
+        if(_vhost == null && _port.isLocalMachine(host))
+        {
+            _vhost = ((AmqpPort)_port).getVirtualHost(_broker.getDefaultVirtualHost());
+        }
         if(_vhost == null)
         {
             final Error err = new Error();
             err.setCondition(AmqpError.NOT_FOUND);
             err.setDescription("Unknown hostname " + _conn.getLocalHostname());
             _conn.close(err);
+            _closedOnOpen = true;
         }
         else
         {
@@ -153,48 +157,54 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
             _subject.getPrivateCredentials().addAll(authSubject.getPrivateCredentials());
         }
     }
-
     public void remoteSessionCreation(SessionEndpoint endpoint)
     {
-        final Session_1_0 session = new Session_1_0(this, endpoint);
-        _sessions.add(session);
-        sessionAdded(session);
-        endpoint.setSessionEventListener(new SessionEventListener()
+        if(!_closedOnOpen)
         {
-            @Override
-            public void remoteLinkCreation(final LinkEndpoint endpoint)
+            final Session_1_0 session = new Session_1_0(this, endpoint);
+            _sessions.add(session);
+            sessionAdded(session);
+            endpoint.setSessionEventListener(new SessionEventListener()
             {
-                Subject.doAs(session.getSubject(),new PrivilegedAction<Object>()
+                @Override
+                public void remoteLinkCreation(final LinkEndpoint endpoint)
                 {
-                    @Override
-                    public Object run()
+                    Subject.doAs(session.getSubject(), new PrivilegedAction<Object>()
                     {
-                        session.remoteLinkCreation(endpoint);
-                        return null;
-                    }
-                });
-            }
+                        @Override
+                        public Object run()
+                        {
+                            session.remoteLinkCreation(endpoint);
+                            return null;
+                        }
+                    });
+                }
 
-            @Override
-            public void remoteEnd(final End end)
-            {
-                Subject.doAs(session.getSubject(),new PrivilegedAction<Object>()
+                @Override
+                public void remoteEnd(final End end)
                 {
-                    @Override
-                    public Object run()
+                    Subject.doAs(session.getSubject(), new PrivilegedAction<Object>()
                     {
-                        session.remoteEnd(end);
-                        return null;
-                    }
-                });
-            }
-        });
+                        @Override
+                        public Object run()
+                        {
+                            session.remoteEnd(end);
+                            return null;
+                        }
+                    });
+                }
+            });
+        }
     }
 
     void sessionEnded(Session_1_0 session)
     {
-        _sessions.remove(session);
-        sessionRemoved(session);
+        if(!_closedOnOpen)
+        {
+
+            _sessions.remove(session);
+            sessionRemoved(session);
+        }
     }
 
     public void removeDeleteTask(final Action<? super Connection_1_0> task)
