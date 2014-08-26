@@ -324,13 +324,13 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                     exchange.addBinding(exchangeDestination.getInitialRoutingAddress(),queue,null);
                 }
                 if(binding == null
-                   && exchangeDestination.getInitialRoutingAddress() != null
+                   && exchangeDestination.getInitialRoutingAddress() == null
                    && exchange.getType().equals(ExchangeDefaults.FANOUT_EXCHANGE_CLASS))
                 {
                     exchange.addBinding(queue.getName(), queue, null);
                 }
                 else if(binding == null
-                     && exchangeDestination.getInitialRoutingAddress() != null
+                     && exchangeDestination.getInitialRoutingAddress() == null
                      && exchange.getType().equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS))
                 {
                     exchange.addBinding("#", queue, null);
