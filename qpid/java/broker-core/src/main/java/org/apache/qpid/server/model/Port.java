@@ -65,4 +65,7 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
     Collection<Connection> getConnections();
 
     void start();
+
+    boolean isLocalMachine(final String host);
+
 }
