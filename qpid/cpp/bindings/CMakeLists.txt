@@ -17,14 +17,37 @@
 # under the License.
 #
 
+# Work-around for bug in older versions of cmake where find_package(PythonLib)
+# finds the static .a library before the the dynamic .so one on Unix.
+# Force search for .so first (this is exactly what newer versions of cmake do.)
+#
+# NOTE: Must be a macro, not a function. find_package in a function sets
+# the package found variables in the function scope, not the parent scope.
+#
+macro(find_python_libs)
+  # Only do this on unix-like systems that use the .so library suffix.
+  if(UNIX AND CMAKE_FIND_LIBRARY_SUFFIXES MATCHES "\\.so")
+    set(SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES}) # Save the suffixes.
+    # Look just for shared libraries.
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ".so")
+    find_package(PythonLibs)
+    # Restore the suffixes
+    set(CMAKE_FIND_LIBRARY_SUFFIXES ${SUFFIXES})
+  endif()
+  # If we are not on a Unix/.so platform or we didn't find the library with the .so search
+  # then do a plain search
+  if (NOT PYTHONLIBS_FOUND)
+    find_package(PythonLibs)
+  endif()
+endmacro(find_python_libs)
+
 
 find_package(SWIG)
-
 if (SWIG_FOUND)
 
   include(UseSWIG)
   find_package(Ruby)
-  find_package(PythonLibs)
+  find_python_libs()
   find_package(PerlLibs)
 
   if ((${CMAKE_MAJOR_VERSION} EQUAL 2) AND (${CMAKE_MINOR_VERSION} LESS 8))
