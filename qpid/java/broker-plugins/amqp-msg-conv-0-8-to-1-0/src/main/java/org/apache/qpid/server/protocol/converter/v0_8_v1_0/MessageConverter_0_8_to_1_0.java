@@ -22,7 +22,10 @@ package org.apache.qpid.server.protocol.converter.v0_8_v1_0;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Section;
@@ -152,7 +155,15 @@ public class MessageConverter_0_8_to_1_0 extends MessageConverter_to_1_0<AMQMess
 
         sections.add(props);
 
-        sections.add(new ApplicationProperties(FieldTable.convertToMap(contentHeader.getHeaders())));
+        Map<String, Object> applicationProperties = FieldTable.convertToMap(contentHeader.getHeaders());
+
+        if(applicationProperties.containsKey("qpid.subject"))
+        {
+            props.setSubject(String.valueOf(applicationProperties.get("qpid.subject")));
+            applicationProperties = new LinkedHashMap<>(applicationProperties);
+            applicationProperties.remove("qpid.subject");
+        }
+        sections.add(new ApplicationProperties(applicationProperties));
 
         return new MessageMetaData_1_0(sections, sectionEncoder);
     }
