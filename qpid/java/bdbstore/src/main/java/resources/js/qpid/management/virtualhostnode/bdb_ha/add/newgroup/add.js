@@ -67,7 +67,7 @@ define(["dojo/_base/xhr",
           this.addVirtualHostNodePermittedNodeRemoveButton.on("click", function(e){that._clickRemovePermittedNodeButton(e);});
 
           // This will contain the serialised form that will go to the server
-          this.addVirtualHostNodeVirtualhostBlueprint = registry.byId("addVirtualHostNode.virtualhostBlueprint");
+          this.addVirtualHostNodePermittedNodes = registry.byId("addVirtualHostNode.permittedNodes");
 
           registry.byId("addVirtualHostNode.groupName").set("regExpGen", util.nameOrContextVarRegexp);
         },
@@ -90,7 +90,7 @@ define(["dojo/_base/xhr",
             }
           }
 
-          this.addVirtualHostNodeVirtualhostBlueprint.set("value",json.stringify({"permittedNodes" : permittedNodes}));
+          this.addVirtualHostNodePermittedNodes.set("value", permittedNodes);
         },
         _changePermittedNodeList: function(value)
         {

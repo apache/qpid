@@ -36,7 +36,6 @@ public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends Virtual
     String COALESCING_SYNC = "coalescingSync";
     String DURABILITY = "durability";
     String STORE_PATH = "storePath";
-    String PERMITTED_NODES = "permittedNodes";
 
     @ManagedAttribute( defaultValue = "SYNC")
     String getLocalTransactionSynchronizationPolicy();
@@ -55,7 +54,4 @@ public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends Virtual
 
     @ManagedAttribute(mandatory = true, defaultValue = "0")
     Long getStoreOverfullSize();
-
-    @ManagedAttribute(mandatory = true)
-    List<String> getPermittedNodes();
 }

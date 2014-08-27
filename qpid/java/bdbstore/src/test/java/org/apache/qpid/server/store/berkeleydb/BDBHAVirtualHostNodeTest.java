@@ -401,11 +401,9 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         };
         node1.addChangeListener(listener);
 
-        BDBHAVirtualHost<?> host = (BDBHAVirtualHost<?>)node1.getVirtualHost();
-
         List<String> permittedNodes = new ArrayList<String>();
         permittedNodes.add(helperAddress);
-        host.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHost.PERMITTED_NODES, permittedNodes));
+        node1.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, permittedNodes));
 
         assertTrue("Intruder protection was not triggered during expected timeout", stopLatch.await(10, TimeUnit.SECONDS));
 

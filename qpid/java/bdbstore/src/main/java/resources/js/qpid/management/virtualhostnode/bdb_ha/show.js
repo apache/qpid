@@ -90,7 +90,7 @@ define(["dojo/_base/xhr",
       this.designatedPrimaryContainer = findNode("designatedPrimaryContainer", containerNode);
       this.priorityContainer = findNode("priorityContainer", containerNode);
       this.quorumOverrideContainer = findNode("quorumOverrideContainer", containerNode);
-
+      this.permittedNodes = query(".permittedNodes", containerNode)[0];
       this.membersGridPanel = registry.byNode(query(".membersGridPanel", containerNode)[0]);
       this.membersGrid = new UpdatableStore([],
           findNode("groupMembers", containerNode),
@@ -158,6 +158,18 @@ define(["dojo/_base/xhr",
     BDBHA.prototype.update=function(data)
     {
       this.parent.editNodeButton.set("disabled", false);
+
+
+      var permittedNodesMarkup = "";
+      if (data.permittedNodes)
+      {
+        for(var i=0;i<data.permittedNodes.length;i++)
+        {
+            permittedNodesMarkup+="<div>" + data.permittedNodes[i] + "</div>";
+        }
+      }
+      this.permittedNodes.innerHTML = permittedNodesMarkup ;
+
       this.data = data;
       for(var i = 0; i < nodeFields.length; i++)
       {

@@ -1220,7 +1220,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    public static void connectToHelperNodeAndCheckPermittedHosts(String nodeName, String hostPort, String groupName, String helperNodeName, String helperHostPort)
+    public static Collection<String> connectToHelperNodeAndCheckPermittedHosts(String nodeName, String hostPort, String groupName, String helperNodeName, String helperHostPort)
     {
         if (LOGGER.isDebugEnabled())
         {
@@ -1264,26 +1264,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             throw new IllegalConfigurationException(String.format("Node from '%s' is not permitted!", hostPort));
         }
-    }
 
-    private void findMasterNodeStateAndApplyPermittedNodes(Collection<NodeState> nodeStates)
-    {
-        if (ReplicatedEnvironment.State.MASTER != _environment.getState())
-        {
-            for (NodeState nodeState : nodeStates)
-            {
-                if (nodeState.getNodeState() == ReplicatedEnvironment.State.MASTER)
-                {
-                    byte[] applicationState = nodeState.getAppState();
-                    Set<String> permittedNodes = convertApplicationStateBytesToPermittedNodeList(applicationState);
-                    if (!_permittedNodes.equals(permittedNodes))
-                    {
-                        setPermittedNodes(permittedNodes);
-                    }
-                    break;
-                }
-            }
-        }
+        return permittedNodes;
     }
 
     private void registerAppStateMonitorIfPermittedNodesSpecified()
@@ -1312,16 +1294,17 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     }
 
 
-    private void onIntruder(ReplicationGroupListener replicationGroupListener, ReplicationNode replicationNode)
+    private boolean onIntruder(ReplicationGroupListener replicationGroupListener, ReplicationNode replicationNode)
     {
         if (replicationGroupListener != null)
         {
-            replicationGroupListener.onIntruderNode(replicationNode);
+            return replicationGroupListener.onIntruderNode(replicationNode);
         }
         else
         {
             LOGGER.warn(String.format("Found an intruder node '%s' from ''%s' . The node is not listed in permitted list: %s",
                     replicationNode.getName(), getHostPort(replicationNode), String.valueOf(_permittedNodes)));
+            return true;
         }
     }
 
@@ -1373,46 +1356,55 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         @Override
         public Void call()
         {
+            boolean continueMonitoring = true;
             try
             {
                 if (_state.get() == State.OPEN)
                 {
                     try
                     {
-                        detectGroupChangesAndNotify();
+                        continueMonitoring = detectGroupChangesAndNotify();
                     }
                     catch(DatabaseException e)
                     {
                         handleDatabaseException("Exception on replication group check", e);
                     }
 
-                    Map<ReplicationNode, NodeState> nodeStates = discoverNodeStates(_remoteReplicationNodes.values());
+                    if (continueMonitoring)
+                    {
+                        Map<ReplicationNode, NodeState> nodeStates = discoverNodeStates(_remoteReplicationNodes.values());
 
-                    executeDatabasePingerOnNodeChangesIfMaster(nodeStates);
+                        executeDatabasePingerOnNodeChangesIfMaster(nodeStates);
 
-                    notifyGroupListenerAboutNodeStates(nodeStates);
-
-                    findMasterNodeStateAndApplyPermittedNodes(nodeStates.values());
+                       notifyGroupListenerAboutNodeStates(nodeStates);
+                    }
                 }
             }
             finally
             {
                 State state = _state.get();
-                if (state != State.CLOSED && state != State.CLOSING)
+                if (state != State.CLOSED && state != State.CLOSING && continueMonitoring)
                 {
                     _groupChangeExecutor.schedule(this, REMOTE_NODE_MONITOR_INTERVAL, TimeUnit.MILLISECONDS);
+                }
+                else
+                {
+                    if (LOGGER.isDebugEnabled())
+                    {
+                        LOGGER.debug("Monitoring task is not scheduled:  state " + state + ", continue monitoring flag " + continueMonitoring);
+                    }
                 }
             }
             return null;
         }
 
-        private void detectGroupChangesAndNotify()
+        private boolean detectGroupChangesAndNotify()
         {
             if (LOGGER.isDebugEnabled())
             {
                 LOGGER.debug("Checking for changes in the group " + _configuration.getGroupName() + " on node " + _configuration.getName());
             }
-
+            boolean shouldContinue = true;
             String groupName = _configuration.getGroupName();
             ReplicatedEnvironment env = _environment;
             ReplicationGroupListener replicationGroupListener = _replicationGroupListener.get();
@@ -1446,7 +1438,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                             }
                             else
                             {
-                                onIntruder(replicationGroupListener, replicationNode);
+                                if (!onIntruder(replicationGroupListener, replicationNode))
+                                {
+                                    shouldContinue = false;
+                                }
                             }
                         }
                         else
@@ -1473,6 +1468,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                     }
                 }
             }
+            return shouldContinue;
         }
 
         private Map<ReplicationNode, NodeState> discoverNodeStates(Collection<ReplicationNode> electableNodes)

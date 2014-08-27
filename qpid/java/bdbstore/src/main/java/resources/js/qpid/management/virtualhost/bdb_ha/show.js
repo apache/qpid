@@ -28,7 +28,7 @@ define(["qpid/common/util", "dojo/query", "dojo/domReady!"],
     function BDB(data)
     {
         util.buildUI(data.containerNode, data.parent, "virtualhost/bdb_ha/show.html", fields, this);
-        this["permittedNodes"]= query(".permittedNodes", data.containerNode)[0];
+
         this[localTransactionSynchronizationPolicy]= query("." + localTransactionSynchronizationPolicy, data.containerNode)[0];
         this[remoteTransactionSynchronizationPolicy]= query("."+ remoteTransactionSynchronizationPolicy, data.containerNode)[0];
     }
@@ -36,16 +36,6 @@ define(["qpid/common/util", "dojo/query", "dojo/domReady!"],
     BDB.prototype.update = function(data)
     {
         util.updateUI(data, fields, this);
-
-        var permittedNodesMarkup = "";
-        if (data.permittedNodes)
-        {
-            for(var i=0;i<data.permittedNodes.length;i++)
-            {
-                permittedNodesMarkup+="<div>" + data.permittedNodes[i] + "</div>";
-            }
-        }
-        this["permittedNodes"].innerHTML = permittedNodesMarkup ;
 
         var localSyncPolicy =  data[localTransactionSynchronizationPolicy] ? data[localTransactionSynchronizationPolicy].toLowerCase() : "";
         var remoteSyncPolicy =  data[remoteTransactionSynchronizationPolicy] ? data[remoteTransactionSynchronizationPolicy].toLowerCase() : "";

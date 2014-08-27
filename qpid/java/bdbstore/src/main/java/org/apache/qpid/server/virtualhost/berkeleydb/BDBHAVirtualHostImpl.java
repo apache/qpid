@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.virtualhost.berkeleydb;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,9 +53,6 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
 
     @ManagedAttributeField
     private Long _storeOverfullSize;
-
-    @ManagedAttributeField(afterSet = "applyPermittedNodes")
-    private List<String> _permittedNodes;
 
     @ManagedObjectFactoryConstructor
     public BDBHAVirtualHostImpl(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
@@ -132,34 +128,6 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
             validateTransactionSynchronizationPolicy(policy);
         }
 
-        if(changedAttributes.contains(PERMITTED_NODES))
-        {
-            validatePermittedNodes(((BDBHAVirtualHost<?>)proxyForValidation).getPermittedNodes());
-        }
-    }
-
-    private void validatePermittedNodes(List<String> permittedNodes)
-    {
-        if (permittedNodes == null || permittedNodes.isEmpty())
-        {
-            throw new IllegalArgumentException(String.format("Attribute '%s' is mandatory and must be set", PERMITTED_NODES));
-        }
-        for (String permittedNode: permittedNodes)
-        {
-            String[] tokens = permittedNode.split(":");
-            if (tokens.length != 2)
-            {
-                throw new IllegalArgumentException(String.format("Invalid permitted node specified '%s'. ", permittedNode));
-            }
-            try
-            {
-                Integer.parseInt(tokens[1]);
-            }
-            catch(Exception e)
-            {
-                throw new IllegalArgumentException(String.format("Invalid port is specified in permitted node '%s'. ", permittedNode));
-            }
-        }
     }
 
     private void validateTransactionSynchronizationPolicy(String policy)
@@ -192,27 +160,12 @@ public class BDBHAVirtualHostImpl extends AbstractVirtualHost<BDBHAVirtualHostIm
     }
 
     @Override
-    public List<String> getPermittedNodes()
-    {
-        return _permittedNodes;
-    }
-
-    @Override
     public void onValidate()
     {
         super.onValidate();
 
-        validatePermittedNodes(this.getPermittedNodes());
         validateTransactionSynchronizationPolicy(this.getLocalTransactionSynchronizationPolicy());
         validateTransactionSynchronizationPolicy(this.getRemoteTransactionSynchronizationPolicy());
     }
 
-    protected void applyPermittedNodes()
-    {
-        ReplicatedEnvironmentFacade facade = getReplicatedEnvironmentFacade();
-        if (facade != null)
-        {
-            facade.setPermittedNodes(getPermittedNodes());
-        }
-    }
 }
