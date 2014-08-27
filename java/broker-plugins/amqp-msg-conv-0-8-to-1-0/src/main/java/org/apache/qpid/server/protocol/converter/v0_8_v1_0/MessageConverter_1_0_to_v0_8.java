@@ -136,6 +136,8 @@ public class MessageConverter_1_0_to_v0_8 implements MessageConverter<Message_1_
     private MessageMetaData convertMetaData(final Message_1_0 serverMsg, final String bodyMimeType, final int size)
     {
 
+        final MessageMetaData_1_0.MessageHeader_1_0 header = serverMsg.getMessageHeader();
+
         MessagePublishInfo publishInfo = new MessagePublishInfo()
                                             {
                                                 @Override
@@ -165,8 +167,6 @@ public class MessageConverter_1_0_to_v0_8 implements MessageConverter<Message_1_
                                                 @Override
                                                 public AMQShortString getRoutingKey()
                                                 {
-                                                    MessageMetaData_1_0.MessageHeader_1_0 header =
-                                                            serverMsg.getMessageHeader();
                                                     String key = header.getTo();
                                                     if(key == null)
                                                     {
@@ -191,6 +191,11 @@ public class MessageConverter_1_0_to_v0_8 implements MessageConverter<Message_1_
         props.setUserId(serverMsg.getMessageHeader().getUserId());
 
         Map<String,Object> headerProps = new LinkedHashMap<String, Object>();
+
+        if(header.getSubject() != null)
+        {
+            headerProps.put("qpid.subject", header.getSubject());
+        }
 
         for(String headerName : serverMsg.getMessageHeader().getHeaderNames())
         {

@@ -21,14 +21,15 @@
 package org.apache.qpid.server.protocol.converter.v0_10_v1_0;
 
 import java.nio.ByteBuffer;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
 import org.apache.qpid.server.protocol.v0_10.MessageTransferMessage;
 import org.apache.qpid.server.protocol.v1_0.MessageConverter_from_1_0;
+import org.apache.qpid.server.protocol.v1_0.MessageMetaData_1_0;
 import org.apache.qpid.server.protocol.v1_0.Message_1_0;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -138,7 +139,7 @@ public class MessageConverter_1_0_to_v0_10 implements MessageConverter<Message_1
         DeliveryProperties deliveryProps = new DeliveryProperties();
         MessageProperties messageProps = new MessageProperties();
 
-        final AMQMessageHeader origHeader = serverMsg.getMessageHeader();
+        final MessageMetaData_1_0.MessageHeader_1_0  origHeader = serverMsg.getMessageHeader();
 
 
         deliveryProps.setExpiration(serverMsg.getExpiration());
@@ -177,8 +178,15 @@ public class MessageConverter_1_0_to_v0_10 implements MessageConverter<Message_1
             messageProps.setReplyTo(replyTo);
         }
 
-        messageProps.setApplicationHeaders((Map<String, Object>) MessageConverter_from_1_0.convertValue(serverMsg.getMessageHeader()
-                                                                                                                .getHeadersAsMap()));
+        Map<String, Object> appHeaders =
+                (Map<String, Object>) MessageConverter_from_1_0.convertValue(serverMsg.getMessageHeader()
+                                                                                     .getHeadersAsMap());
+        if(origHeader.getSubject() != null && !appHeaders.containsKey("qpid.subject"))
+        {
+            appHeaders = new LinkedHashMap<>(appHeaders);
+            appHeaders.put("qpid.subject", origHeader.getSubject());
+        }
+        messageProps.setApplicationHeaders(appHeaders);
 
         Header header = new Header(deliveryProps, messageProps, null);
         return new MessageMetaData_0_10(header, size, serverMsg.getArrivalTime());
