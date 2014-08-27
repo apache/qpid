@@ -161,6 +161,16 @@ namespace {
     }
 }
 
+void initialiseSSL()
+{
+    init.checkInitialised();
+}
+
+void shutdownSSL()
+{
+    if (StaticInit::initialised) shutdownNSS();
+}
+
 SslConnector::SslConnector(Poller::shared_ptr p,
                      ProtocolVersion ver,
                      const ConnectionSettings& settings,

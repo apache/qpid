@@ -35,6 +35,10 @@ OTHER_CA_PEM_FILE=${TEST_CERT_DIR}/other_ca_cert.pem
 PY_PING_BROKER=${QPID_TEST_SRC_DIR}/ping_broker
 COUNT=10
 
+if [[ -a $AMQP_LIB ]] ; then
+    MODULES="--load-module $AMQP_LIB"
+fi
+
 trap cleanup EXIT
 
 error() { echo $*; exit 1; }
@@ -135,7 +139,7 @@ cleanup() {
 }
 
 start_ssl_broker() {
-    start_brokers 1 "--transport ssl --ssl-port 0 --require-encryption --auth no"
+    start_brokers 1 "--transport ssl --ssl-port 0 --require-encryption --auth no $MODULES"
 }
 
 start_ssl_mux_broker() {
@@ -146,7 +150,7 @@ start_ssl_mux_broker() {
 sasl_config_dir=$QPID_TEST_EXEC_DIR/sasl_config
 
 start_authenticating_broker() {
-    start_brokers 1 "--transport ssl --ssl-port 0 --require-encryption --ssl-sasl-no-dict --ssl-require-client-authentication --auth yes --sasl-config=${sasl_config_dir}"
+    start_brokers 1 "--transport ssl --ssl-port 0 --require-encryption --ssl-sasl-no-dict --ssl-require-client-authentication --auth yes --sasl-config=${sasl_config_dir} $MODULES"
 }
 
 ssl_cluster_broker() {		# $1 = port
@@ -183,6 +187,13 @@ URL=amqp:ssl:$TEST_HOSTNAME:$PORT
 ./qpid-send -b $URL --content-string=hello -a "foo;{create:always}"
 MSG=`./qpid-receive -b $URL -a "foo;{create:always}" --messages 1`
 test "$MSG" = "hello" || { echo "receive failed '$MSG' != 'hello'"; exit 1; }
+
+if [[ -a $AMQP_LIB ]] ; then
+    echo "Testing ssl over AMQP 1.0"
+    ./qpid-send --connection-options '{protocol:amqp1.0}'  -b $URL --content-string=hello -a "foo;{create:always}"
+    MSG=`./qpid-receive --connection-options '{protocol:amqp1.0}' -b $URL -a "foo;{create:always}" --messages 1`
+    test "$MSG" = "hello" || { echo "receive failed for AMQP 1.0 '$MSG' != 'hello'"; exit 1; }
+fi
 
 ## Test connection with a combination of URL and connection options (in messaging API)
 URL=$TEST_HOSTNAME:$PORT
