@@ -207,7 +207,7 @@
 # Third Party Dependency Licensing Information:
 ###############################################
 
-This bundles portions of crypto-js jar which is under the MIT licence:
+This bundles portions of crypto-js which is under the MIT licence:
 
 Copyright (c) 2009-2013 Jeff Mott
 
