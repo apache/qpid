@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -694,9 +693,10 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         ReplicationGroupListener listener = new NoopReplicationGroupListener()
         {
             @Override
-            public void onIntruderNode(ReplicationNode node)
+            public boolean onIntruderNode(ReplicationNode node)
             {
                 intruderLatch.countDown();
+                return true;
             }
         };
         ReplicatedEnvironmentFacade firstNode = createMaster(listener);
@@ -710,42 +710,6 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
         String nodeName = TEST_NODE_NAME + "_1";
         createIntruder(nodeName, node1NodeHostPort);
-        assertTrue("Intruder node was not detected", intruderLatch.await(10, TimeUnit.SECONDS));
-    }
-
-    public void testIntruderNodeDetectionOnMasterAndReplicaNodes() throws Exception
-    {
-        final CountDownLatch intruderLatch = new CountDownLatch(2);
-        ReplicationGroupListener listener = new NoopReplicationGroupListener()
-        {
-            @Override
-            public void onIntruderNode(ReplicationNode node)
-            {
-                intruderLatch.countDown();
-            }
-        };
-
-        ReplicatedEnvironmentFacade firstNode = createMaster(listener);
-        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
-        String node2NodeHostPort = "localhost:" + replica1Port;
-        String nodeName2 = TEST_NODE_NAME + "_1";
-        ReplicatedEnvironmentFacade secondNode = createReplica(nodeName2, node2NodeHostPort, listener);
-
-        Set<String> permittedNodes = new HashSet<String>();
-        permittedNodes.add("localhost:" + TEST_NODE_PORT);
-        permittedNodes.add(nodeName2);
-        firstNode.setPermittedNodes(permittedNodes);
-
-        int counter = 0;
-        while(secondNode.getPermittedNodes().isEmpty() && counter < 100)
-        {
-            counter++;
-            Thread.sleep(50);
-        }
-        assertEquals("Permitted nodes are not set on a replica", permittedNodes, secondNode.getPermittedNodes());
-
-        int intruderPort = getNextAvailable(replica1Port+ 1);
-        createIntruder("intruder", "localhost:" + intruderPort);
         assertTrue("Intruder node was not detected", intruderLatch.await(10, TimeUnit.SECONDS));
     }
 
@@ -872,9 +836,10 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         }
 
         @Override
-        public void onIntruderNode(ReplicationNode node)
+        public boolean onIntruderNode(ReplicationNode node)
         {
             LOGGER.warn("Intruder node " + node);
+            return true;
         }
 
         @Override

@@ -23,10 +23,12 @@ package org.apache.qpid.server.virtualhostnode.berkeleydb;
 import java.net.InetSocketAddress;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -126,6 +128,9 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     @ManagedAttributeField
     private String _helperNodeName;
 
+    @ManagedAttributeField(afterSet = "postSetPermittedNodes")
+    private List<String> _permittedNodes;
+
     @ManagedObjectFactoryConstructor
     public BDBHAVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> broker)
     {
@@ -136,6 +141,8 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
     {
         super.validateChange(proxyForValidation, changedAttributes);
+        BDBHAVirtualHostNode<?> proposed = (BDBHAVirtualHostNode<?>)proxyForValidation;
+
         if (changedAttributes.contains(ROLE))
         {
             String currentRole = getRole();
@@ -143,11 +150,16 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             {
                 throw new IllegalStateException("Cannot transfer mastership when not a replica, current role is " + currentRole);
             }
-            BDBHAVirtualHostNode<?> proposed = (BDBHAVirtualHostNode<?>)proxyForValidation;
+
             if (!ReplicatedEnvironment.State.MASTER.name().equals(proposed.getRole()))
             {
                 throw new IllegalArgumentException("Changing role to other value then " + ReplicatedEnvironment.State.MASTER.name() + " is unsupported");
             }
+        }
+
+        if (changedAttributes.contains(PERMITTED_NODES))
+        {
+            validatePermittedNodes(proposed.getPermittedNodes());
         }
     }
 
@@ -227,6 +239,12 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         return _helperNodeName;
     }
 
+    @Override
+    public List<String> getPermittedNodes()
+    {
+        return _permittedNodes;
+    }
+
     @SuppressWarnings("rawtypes")
     @Override
     public Collection<? extends RemoteReplicationNode> getRemoteReplicationNodes()
@@ -268,7 +286,8 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         {
             try
             {
-                ReplicatedEnvironmentFacade.connectToHelperNodeAndCheckPermittedHosts(getName(), getAddress(), getGroupName(), getHelperNodeName(), getHelperAddress());
+                Collection<String> permittedNodes = ReplicatedEnvironmentFacade.connectToHelperNodeAndCheckPermittedHosts(getName(), getAddress(), getGroupName(), getHelperNodeName(), getHelperAddress());
+                setAttribute(PERMITTED_NODES, null, new ArrayList<String>(permittedNodes));
             }
             catch(IllegalConfigurationException e)
             {
@@ -314,6 +333,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         {
             environmentFacade.setStateChangeListener(new EnvironmentStateChangeListener());
             environmentFacade.setReplicationGroupListener(new RemoteNodesDiscoverer());
+            environmentFacade.setPermittedNodes(_permittedNodes);
         }
     }
 
@@ -414,6 +434,14 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         _virtualHostNodeLogSubject =  new BDBHAVirtualHostNodeLogSubject(getGroupName(), getName());
         _groupLogSubject = new GroupLogSubject(getGroupName());
         _virtualHostNodePrincipalName = MessageFormat.format(VIRTUAL_HOST_PRINCIPAL_NAME_FORMAT, getGroupName(), getName());
+    }
+
+    @Override
+    public  void onOpen()
+    {
+        super.onOpen();
+
+        validatePermittedNodes(_permittedNodes);
     }
 
     private void onMaster()
@@ -719,6 +747,40 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                                               hostAttributes, vhostRecord.getParents());
     }
 
+    protected void postSetPermittedNodes()
+    {
+        ReplicatedEnvironmentFacade replicatedEnvironmentFacade = getReplicatedEnvironmentFacade();
+        if (replicatedEnvironmentFacade != null)
+        {
+            replicatedEnvironmentFacade.setPermittedNodes(_permittedNodes);
+        }
+    }
+
+    private void validatePermittedNodes(List<String> permittedNodes)
+    {
+        if (permittedNodes == null || permittedNodes.isEmpty())
+        {
+            throw new IllegalArgumentException(String.format("Attribute '%s' is mandatory and must be set", PERMITTED_NODES));
+        }
+        for (String permittedNode: permittedNodes)
+        {
+            String[] tokens = permittedNode.split(":");
+            if (tokens.length != 2)
+            {
+                throw new IllegalArgumentException(String.format("Invalid permitted node specified '%s'. ", permittedNode));
+            }
+            try
+            {
+                Integer.parseInt(tokens[1]);
+            }
+            catch(Exception e)
+            {
+                throw new IllegalArgumentException(String.format("Invalid port is specified in permitted node '%s'. ", permittedNode));
+            }
+        }
+
+    }
+
     private class RemoteNodesDiscoverer implements ReplicationGroupListener
     {
         @Override
@@ -827,6 +889,23 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                         getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.JOINED(remoteNode.getName(), remoteNode.getAddress()));
                         remoteNode.setDetached(false);
                     }
+                    if (ReplicatedEnvironment.State.MASTER.name().equals(remoteNode.getRole()))
+                    {
+                        byte[] applicationState = nodeState.getAppState();
+                        Set<String> permittedNodes = ReplicatedEnvironmentFacade.convertApplicationStateBytesToPermittedNodeList(applicationState);
+                        if (!_permittedNodes.equals(permittedNodes))
+                        {
+                            if (_permittedNodes.contains(remoteNode.getAddress()))
+                            {
+                                setAttribute(PERMITTED_NODES, _permittedNodes, new ArrayList<String>(permittedNodes));
+                            }
+                            else
+                            {
+                                LOGGER.warn("Cannot change permitted nodes from Master as existing master node '" + remoteNode.getName()
+                                        + "' (" + remoteNode.getAddress() + ") is not in list of trusted nodes " + _permittedNodes);
+                            }
+                        }
+                    }
                 }
 
                 String newRole = remoteNode.getRole();
@@ -838,20 +917,20 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
 
         @Override
-        public void onIntruderNode(final ReplicationNode node)
+        public boolean onIntruderNode(final ReplicationNode node)
         {
-            Subject.doAs(SecurityManager.getSystemTaskSubject(_virtualHostNodePrincipalName), new PrivilegedAction<Void>()
+            return Subject.doAs(SecurityManager.getSystemTaskSubject(_virtualHostNodePrincipalName), new PrivilegedAction<Boolean>()
             {
                 @Override
-                public Void run()
+                public Boolean run()
                 {
-                    processIntruderNode(node);
-                    return null;
+                    return processIntruderNode(node);
+
                 }
             });
         }
 
-        private void processIntruderNode(ReplicationNode node)
+        private boolean processIntruderNode(ReplicationNode node)
         {
             String hostAndPort = node.getHostName() + ":" + node.getPort();
             getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.INTRUDER_DETECTED(node.getName(), hostAndPort));
@@ -864,11 +943,12 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                 {
                     addRemoteReplicationNode(node);
                 }
+                return true;
             }
             else
             {
-                LOGGER.error(String.format("Intruder node '%s' from '%s' is detected. Stopping down virtual host node '%s'",
-                        node.getName(), hostAndPort, BDBHAVirtualHostNodeImpl.this.toString() ));
+                LOGGER.error(String.format("Intruder node '%s' from '%s' detected. Shutting down virtual host node '%s' based on permitted nodes '%s'",
+                        node.getName(), hostAndPort, BDBHAVirtualHostNodeImpl.this.getName(), String.valueOf(BDBHAVirtualHostNodeImpl.this.getPermittedNodes()) ));
 
                 getTaskExecutor().submit(new Task<Void>()
                 {
@@ -876,12 +956,15 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                     public Void execute()
                     {
                         State state = getState();
-
                         if (state == State.ACTIVE)
                         {
                             try
                             {
                                 stopAndSetStateTo(State.ERRORED);
+                            }
+                            catch(Exception e)
+                            {
+                                LOGGER.error("Unexpected exception on closing the node when intruder is detected ", e);
                             }
                             finally
                             {
@@ -892,6 +975,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                         return null;
                     }
                 });
+                return false;
             }
         }
 

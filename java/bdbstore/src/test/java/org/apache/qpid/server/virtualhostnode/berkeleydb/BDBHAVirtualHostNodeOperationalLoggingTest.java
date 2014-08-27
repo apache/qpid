@@ -300,6 +300,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         reset(_eventLogger);
 
+        node2Attributes.put(BDBHAVirtualHostNode.PERMITTED_NODES, node1Attributes.get(BDBHAVirtualHostNode.PERMITTED_NODES));
         node2 = (BDBHAVirtualHostNodeImpl)_helper.recoverHaVHN(node2.getId(), node2Attributes);
         _helper.assertNodeRole(node2, "REPLICA", "MASTER");
         waitForNodeDetachedField(remoteNode, false);

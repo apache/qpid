@@ -51,7 +51,7 @@ public interface ReplicationGroupListener
     /**
      * Invoked on intruder node detected
      */
-    void onIntruderNode(ReplicationNode node);
+    boolean onIntruderNode(ReplicationNode node);
 
     void onNoMajority();
 

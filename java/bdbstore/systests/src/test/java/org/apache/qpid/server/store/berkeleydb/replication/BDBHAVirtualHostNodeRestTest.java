@@ -226,7 +226,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         assertEquals("Unexpected number of remote nodes on " + NODE2, 1, data.size());
     }
 
-    public void testIntruderBDBHAVHNNotAllowedNoConnect() throws Exception
+    public void testIntruderBDBHAVHNNotAllowedToConnect() throws Exception
     {
         createHANode(NODE1, _node1HaPort, _node1HaPort);
         assertNode(NODE1, _node1HaPort, _node1HaPort, NODE1);
@@ -304,6 +304,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
                 intruder.close();
             }
         }
+
         waitForAttributeChanged(_baseNodeRestUrl + NODE1, VirtualHostNode.STATE, State.ERRORED.name());
         waitForAttributeChanged(_baseNodeRestUrl + NODE3, VirtualHostNode.STATE, State.ERRORED.name());
     }
@@ -329,7 +330,11 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         nodeData.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, NODE1);
         Map<String,String> context = new HashMap<>();
         nodeData.put(BDBHAVirtualHostNode.CONTEXT, context);
-        String bluePrint = GroupCreator.getBlueprint("localhost", _node1HaPort, _node2HaPort, _node3HaPort);
+        if (nodePort == helperPort)
+        {
+            nodeData.put(BDBHAVirtualHostNode.PERMITTED_NODES, GroupCreator.getPermittedNodes("localhost", _node1HaPort, _node2HaPort, _node3HaPort));
+        }
+        String bluePrint = GroupCreator.getBlueprint();
         context.put(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, bluePrint);
         return nodeData;
     }

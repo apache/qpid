@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
@@ -49,6 +50,8 @@ public class BDBHAVirtualHostRestTest extends QpidRestTestCase
     private Object _nodeName;
     private String _virtualhostUrl;
     private String _bluePrint;
+    private List<String> _permittedNodes;
+    private String _address;
 
     @Override
     public void setUp() throws Exception
@@ -59,8 +62,9 @@ public class BDBHAVirtualHostRestTest extends QpidRestTestCase
         _storeBaseDir = new File(TMP_FOLDER, "store-" + _hostName + "-" + System.currentTimeMillis());
         _nodeHaPort = getNextAvailable(getRestTestHelper().getHttpPort() + 1);
         _virtualhostUrl = "virtualhost/" + _nodeName + "/" + _hostName;
-        _bluePrint = GroupCreator.getBlueprint("localhost", _nodeHaPort);
-
+        _bluePrint = GroupCreator.getBlueprint();
+        _permittedNodes = GroupCreator.getPermittedNodes("localhost", _nodeHaPort);
+        _address = "localhost:" + _nodeHaPort;
         super.setUp();
     }
 
@@ -93,9 +97,11 @@ public class BDBHAVirtualHostRestTest extends QpidRestTestCase
         nodeAttributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
         nodeAttributes.put(BDBHAVirtualHostNode.STORE_PATH, _storeBaseDir.getPath() + File.separator + _nodeName);
         nodeAttributes.put(BDBHAVirtualHostNode.GROUP_NAME, _hostName);
-        nodeAttributes.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + _nodeHaPort);
+        nodeAttributes.put(BDBHAVirtualHostNode.ADDRESS, _address);
         nodeAttributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, "localhost:" + _nodeHaPort);
         nodeAttributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, _nodeName);
+
+        nodeAttributes.put(BDBHAVirtualHostNode.PERMITTED_NODES, _permittedNodes);
         Map<String, String> context = new HashMap<String,String>();
         context.put(AbstractVirtualHostNode.VIRTUALHOST_BLUEPRINT_CONTEXT_VAR, _bluePrint);
 

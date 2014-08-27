@@ -45,45 +45,6 @@
         </div>
     </div>
 
-     <div class="formBox clear">
-        <fieldset>
-            <legend>Permitted group nodes</legend>
-            <div class="clear">
-                <div class="formLabel-labelCell tableContainer-labelCell">Permitted addresses*:</div>
-                <div class="formLabel-controlCell tableContainer-valueCell addPermittedNodeList">
-                    <select type="text" id="editVirtualHost.permittedNodesList"
-                            data-dojo-type="dijit/form/MultiSelect"
-                            data-dojo-props="
-                                      multiple: true,
-                                      name: 'permittedNodeList',
-                                      readOnly : 'true',
-                                      excluded: true,
-                                      title: 'Enter permitted nodes'">
-                    </select> <!-- must use closing tag rather than shorthand - dojo bug? -->
-                    <input type="hidden" id="editVirtualHost.permittedNodes"
-                           data-dojo-type="dijit/form/ValidationTextBox"
-                           name="permittedNodes"/>
-                </div>
-                <button data-dojo-type="dijit/form/Button" id="editVirtualHost.permittedNodeRemove" data-dojo-props="label: '-'" ></button>
-            </div>
-
-            <div class="clear"></div>
-            <div class="clear">
-                <div class="formLabel-labelCell tableContainer-labelCell">Address:</div>
-                <div class="formLabel-controlCell tableContainer-valueCell">
-                    <input type="text" id="editVirtualHost.permittedNode"
-                           data-dojo-type="dijit/form/ValidationTextBox"
-                           data-dojo-props="
-                                      name: 'permittedNode',
-                                      placeHolder: 'host:port',
-                                      intermediateChanges: true,
-                                      title: 'Enter address of node to be permitted into the group',
-                                      promptMessage: 'Address of node to be permitted into the group'" />
-                </div>
-                <button data-dojo-type="dijit/form/Button" id="editVirtualHost.permittedNodeAdd" data-dojo-props="label: '+'"></button>
-            </div>
-        </fieldset>
-    </div>
 
     <div class="clear"></div>
 
