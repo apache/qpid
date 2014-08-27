@@ -208,7 +208,7 @@
 
 broker-plugins/management-http/src/main/java/resources/js/crypto-js/
 
-This bundles portions of crypto-js jar which is under the MIT licence:
+This bundles portions of crypto-js which is under the MIT licence:
 
 
 Copyright (c) 2009-2013 Jeff Mott
