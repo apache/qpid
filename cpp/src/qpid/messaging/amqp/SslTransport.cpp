@@ -25,6 +25,7 @@
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/ConnectionCodec.h"
 #include "qpid/sys/Poller.h"
+#include "qpid/client/ssl.h"
 #include "qpid/log/Statement.h"
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
@@ -40,6 +41,7 @@ namespace amqp {
 namespace {
 Transport* create(TransportContext& c, Poller::shared_ptr p)
 {
+    qpid::client::initialiseSSL();
     return new SslTransport(c, p);
 }
 
@@ -49,6 +51,11 @@ struct StaticInit
     {
         Transport::add("ssl", &create);
     };
+
+    ~StaticInit()
+    {
+        qpid::client::shutdownSSL();
+    }
 } init;
 }
 
