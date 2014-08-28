@@ -286,7 +286,7 @@ public class QpidSend
 				config.reportEvery(),
 				config.isReportHeader()
 				);
-		Destination dest = AMQDestination.createDestination(config.getAddress());
+		Destination dest = AMQDestination.createDestination(config.getAddress(), false);
 		QpidSend sender = new QpidSend(reporter,config, config.createConnection(),dest);
 		sender.setUp();
 		sender.send();
