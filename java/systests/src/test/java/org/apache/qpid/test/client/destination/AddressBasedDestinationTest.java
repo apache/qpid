@@ -1209,7 +1209,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     private void replyToTest(String replyTo) throws Exception
     {
 		Session session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-		Destination replyToDest = AMQDestination.createDestination(replyTo);
+		Destination replyToDest = AMQDestination.createDestination(replyTo, false);
 	    MessageConsumer replyToCons = session.createConsumer(replyToDest);
 
 		Destination dest = session.createQueue("ADDR:amq.direct/test");
