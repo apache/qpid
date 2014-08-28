@@ -243,7 +243,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         String remoteHost;
 
         boolean binaryMessageId = true;
-        Boolean syncPublish = Boolean.getBoolean("qpid.sync_publish");
+        Boolean syncPublish;
         int maxSessions;
         public boolean ssl;
         public int maxPrefetch;
