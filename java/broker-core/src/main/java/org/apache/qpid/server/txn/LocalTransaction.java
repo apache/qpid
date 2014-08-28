@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
+import org.apache.qpid.transport.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -279,9 +281,9 @@ public class LocalTransaction implements ServerTransaction
     public StoreFuture commitAsync(final Runnable deferred)
     {
         sync();
+        StoreFuture future = StoreFuture.IMMEDIATE_FUTURE;
         try
         {
-            StoreFuture future = StoreFuture.IMMEDIATE_FUTURE;
             if(_transaction != null)
             {
                 future = new StoreFuture()
@@ -325,8 +327,7 @@ public class LocalTransaction implements ServerTransaction
                                 }
                                 catch (RuntimeException e)
                                 {
-                                    doRollbackActions();
-                                    throw e;
+                                    handleUnexpectedException(e);
                                 }
                                 finally
                                 {
@@ -350,21 +351,40 @@ public class LocalTransaction implements ServerTransaction
                 }
             }
 
-            return future;
         }
         catch (RuntimeException e)
         {
             try
             {
-                doRollbackActions();
+                handleUnexpectedException(e);
             }
             finally
             {
                 resetDetails();
             }
+        }
+        return future;
+    }
+
+    private void handleUnexpectedException(RuntimeException e)
+    {
+        if(e instanceof ConnectionScopedRuntimeException || e instanceof TransportException)
+        {
             throw e;
         }
-
+        else
+        {
+            _logger.error("Unexpected exception on execution of post commit deferred actions", e);
+            boolean continueOnError = Boolean.getBoolean("qpid.broker.exceptionHandler.continue");
+            if (continueOnError)
+            {
+                throw e;
+            }
+            else
+            {
+                Runtime.getRuntime().halt(1);
+            }
+        }
     }
 
     private void doPostTransactionActions()

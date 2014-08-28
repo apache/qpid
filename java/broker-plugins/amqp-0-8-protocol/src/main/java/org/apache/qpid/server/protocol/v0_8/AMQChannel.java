@@ -1109,10 +1109,16 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                 @Override
                 public void run()
                 {
-                    immediateAction.run();
-                    _txnCommits.incrementAndGet();
-                    _txnStarts.incrementAndGet();
-                    decrementOutstandingTxnsIfNecessary();
+                    try
+                    {
+                        immediateAction.run();
+                    }
+                    finally
+                    {
+                        _txnCommits.incrementAndGet();
+                        _txnStarts.incrementAndGet();
+                        decrementOutstandingTxnsIfNecessary();
+                    }
                 }
             });
         }
