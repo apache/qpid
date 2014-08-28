@@ -33,10 +33,15 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
+import com.sleepycat.je.Durability;
+import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.rep.ReplicatedEnvironment;
+import com.sleepycat.je.rep.ReplicationConfig;
 import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestUtils;
@@ -318,6 +323,47 @@ public class MultiNodeTest extends QpidBrokerTestCase
         assertEquals("Inactive broker has unexpected role", "MASTER", attributes.get(BDBHAVirtualHostNode.ROLE));
 
         assertProducingConsuming(connection);
+    }
+
+    public void testClusterCannotStartWithIntruder() throws Exception
+    {
+        int intruderPort = getNextAvailable(Collections.max(_groupCreator.getBdbPortNumbers()) + 1);
+        String nodeName = "intruder";
+        String nodeHostPort = _groupCreator.getIpAddressOfBrokerHost() + ":" + intruderPort;
+        File environmentPathFile = new File(System.getProperty("QPID_WORK"), intruderPort + "");
+        environmentPathFile.mkdirs();
+        ReplicationConfig replicationConfig = new ReplicationConfig(_groupCreator.getGroupName(), nodeName, nodeHostPort);
+        replicationConfig.setHelperHosts(_groupCreator.getHelperHostPort());
+        EnvironmentConfig envConfig = new EnvironmentConfig();
+        envConfig.setAllowCreate(true);
+        envConfig.setTransactional(true);
+        envConfig.setDurability(new Durability(Durability.SyncPolicy.SYNC, Durability.SyncPolicy.WRITE_NO_SYNC, Durability.ReplicaAckPolicy.SIMPLE_MAJORITY));
+
+        ReplicatedEnvironment intruder = null;
+        try
+        {
+            intruder = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
+        }
+        finally
+        {
+            if (intruder != null)
+            {
+                intruder.close();
+            }
+        }
+
+        for (int port: _groupCreator.getBrokerPortNumbersForNodes())
+        {
+            _groupCreator.awaitNodeToAttainAttributeValue(port, port, BDBHAVirtualHostNode.STATE, State.ERRORED.name());
+        }
+
+        _groupCreator.stopCluster();
+        _groupCreator.startCluster();
+
+        for (int port: _groupCreator.getBrokerPortNumbersForNodes())
+        {
+            _groupCreator.awaitNodeToAttainAttributeValue(port, port, BDBHAVirtualHostNode.STATE, State.ERRORED.name());
+        }
     }
 
     private final class FailoverAwaitingListener implements ConnectionListener

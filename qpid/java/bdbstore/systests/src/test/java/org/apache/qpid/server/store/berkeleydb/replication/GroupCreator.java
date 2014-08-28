@@ -52,7 +52,6 @@ import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
@@ -118,7 +117,8 @@ public class GroupCreator
             brokerPort = _testcase.getNextAvailable(bdbPort + 1);
         }
 
-        String bluePrintJson =  getBlueprint(_ipAddressOfBroker, bdbPorts);
+        String bluePrintJson =  getBlueprint();
+        List<String> permittedNodes = getPermittedNodes(_ipAddressOfBroker, bdbPorts);
 
         String helperName = null;
         for (Map.Entry<Integer,Integer> entry: _brokerPortToBdbPortMap.entrySet())
@@ -145,6 +145,7 @@ public class GroupCreator
             virtualHostNodeAttributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, getHelperHostPort());
             virtualHostNodeAttributes.put(BDBHAVirtualHostNode.TYPE, BDBHAVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE);
             virtualHostNodeAttributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, helperName);
+            virtualHostNodeAttributes.put(BDBHAVirtualHostNode.PERMITTED_NODES, permittedNodes);
 
             Map<String, String> context = new HashMap<>();
             context.put(ReplicationConfig.INSUFFICIENT_REPLICAS_TIMEOUT, "2 s");
@@ -365,11 +366,6 @@ public class GroupCreator
         return _ipAddressOfBroker + ":" + _bdbHelperPort;
     }
 
-    public void setHelperHostPort(int bdbHelperPort)
-    {
-        _bdbHelperPort = bdbHelperPort;
-    }
-
     public int getBrokerPortNumberOfPrimary()
     {
         if (_numberOfNodes != 2)
@@ -404,21 +400,6 @@ public class GroupCreator
         {
             throw new RuntimeException("Could not determine IP address of host : " + brokerHost, e);
         }
-    }
-
-    public void modifyClusterNodeBdbAddress(int brokerPortNumberToBeMoved, int newBdbPort)
-    {
-        TestBrokerConfiguration config = _testcase.getBrokerConfiguration(brokerPortNumberToBeMoved);
-        String nodeName = getNodeNameForNodeAt(_brokerPortToBdbPortMap.get(brokerPortNumberToBeMoved));
-
-        Map<String, Object> objectAttributes = config.getObjectAttributes(VirtualHostNode.class, nodeName);
-
-        String oldBdbHostPort = (String)objectAttributes.get(BDBHAVirtualHostNode.ADDRESS);
-        String[] oldHostAndPort = StringUtils.split(oldBdbHostPort, ":");
-        String oldHost = oldHostAndPort[0];
-        String newBdbHostPort = oldHost + ":" + newBdbPort;
-        config.setObjectAttribute(VirtualHostNode.class, nodeName, BDBHAVirtualHostNode.ADDRESS, newBdbHostPort);
-        config.setSaved(false);
     }
 
     public String getNodeNameForBrokerPort(final int brokerPort)
@@ -491,20 +472,25 @@ public class GroupCreator
 
     public void awaitNodeToAttainRole(int localNodePort, int remoteNodePort, String desiredRole) throws Exception
     {
+        awaitNodeToAttainAttributeValue(localNodePort, remoteNodePort, BDBHARemoteReplicationNode.ROLE, desiredRole);
+    }
+
+    public void awaitNodeToAttainAttributeValue(int localNodePort, int remoteNodePort, String attributeName, String desiredValue) throws Exception
+    {
         final long startTime = System.currentTimeMillis();
         Map<String, Object> data = Collections.emptyMap();
 
-        while(!desiredRole.equals(data.get(BDBHARemoteReplicationNode.ROLE)) && (System.currentTimeMillis() - startTime) < 30000)
+        while(!desiredValue.equals(data.get(attributeName)) && (System.currentTimeMillis() - startTime) < 30000)
         {
-            LOGGER.debug("Awaiting node '" + getNodeNameForBrokerPort(remoteNodePort) + "' to transit into " + desiredRole + " role");
+            LOGGER.debug("Awaiting node '" + getNodeNameForBrokerPort(remoteNodePort) + "' to transit into " + desiredValue + " role");
             data = getNodeAttributes(localNodePort, remoteNodePort);
-            if (!desiredRole.equals(data.get(BDBHARemoteReplicationNode.ROLE)))
+            if (!desiredValue.equals(data.get(attributeName)))
             {
                 Thread.sleep(1000);
             }
         }
-        LOGGER.debug("Node '" + getNodeNameForBrokerPort(remoteNodePort) + "' role is " + data.get(BDBHARemoteReplicationNode.ROLE));
-        Assert.assertEquals("Node is in unexpected role", desiredRole, data.get(BDBHARemoteReplicationNode.ROLE));
+        LOGGER.debug("Node '" + getNodeNameForBrokerPort(remoteNodePort) + "' attribute  '" + attributeName + "' is " + data.get(attributeName));
+        Assert.assertEquals("Unexpected " + attributeName + " at " + localNodePort, desiredValue, data.get(attributeName));
     }
 
     public RestTestHelper createRestTestHelper(int brokerPort)
@@ -515,21 +501,25 @@ public class GroupCreator
         return helper;
     }
 
-    public static String getBlueprint(String hostName, int... ports) throws Exception
+    public static String getBlueprint() throws Exception
     {
-        List<String> permittedNodes = new ArrayList<String>();
-        for (int port:ports)
-        {
-            permittedNodes.add(hostName + ":" + port);
-        }
         Map<String,Object> bluePrint = new HashMap<>();
         bluePrint.put(VirtualHost.TYPE, BDBHAVirtualHostImpl.VIRTUAL_HOST_TYPE);
-        bluePrint.put(BDBHAVirtualHost.PERMITTED_NODES, permittedNodes);
 
         StringWriter writer = new StringWriter();
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         mapper.writeValue(writer, bluePrint);
         return writer.toString();
+    }
+
+    public static List<String> getPermittedNodes(String hostName, int... ports)
+    {
+        List<String> permittedNodes = new ArrayList<String>();
+        for (int port: ports)
+        {
+            permittedNodes.add(hostName + ":" + port);
+        }
+        return permittedNodes;
     }
 }

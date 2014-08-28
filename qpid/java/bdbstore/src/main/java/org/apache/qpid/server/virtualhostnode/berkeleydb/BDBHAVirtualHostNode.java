@@ -20,9 +20,12 @@
  */
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
+import java.util.List;
+
 import org.apache.qpid.server.model.DerivedAttribute;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.store.berkeleydb.HASettings;
+
 
 public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends BDBVirtualHostNode<X>, HASettings
 {
@@ -37,6 +40,7 @@ public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends
     public static final String LAST_KNOWN_REPLICATION_TRANSACTION_ID = "lastKnownReplicationTransactionId";
     public static final String JOIN_TIME = "joinTime";
     public static final String HELPER_NODE_NAME = "helperNodeName";
+    public static final String PERMITTED_NODES = "permittedNodes";
 
     @ManagedAttribute(mandatory=true)
     String getGroupName();
@@ -67,4 +71,7 @@ public interface BDBHAVirtualHostNode<X extends BDBHAVirtualHostNode<X>> extends
 
     @ManagedAttribute(persist = false)
     String getHelperNodeName();
+
+    @ManagedAttribute(persist = true)
+    List<String> getPermittedNodes();
 }

@@ -54,7 +54,6 @@ import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.UnresolvedConfiguredObject;
 import org.apache.qpid.server.util.BrokerTestHelper;
-import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -240,7 +239,8 @@ public class BDBHAVirtualHostNodeTestHelper
             iterationCounter++;
         }
         while(!inRole && iterationCounter<100);
-        assertTrue("Node " + node.getName() + " did not transit into role " + Arrays.toString(roleName), inRole);
+        assertTrue("Node " + node.getName() + " did not transit into role " + Arrays.toString(roleName)
+                + " Node role is " + node.getRole(), inRole);
     }
 
     public BDBHAVirtualHostNode<?> createAndStartHaVHN(Map<String, Object> attributes)  throws InterruptedException
@@ -280,6 +280,10 @@ public class BDBHAVirtualHostNodeTestHelper
         node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, getMessageStorePath() + File.separator + nodeName);
         node1Attributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, helperNodeNode);
+        if (address.equals(helperAddress))
+        {
+            node1Attributes.put(BDBHAVirtualHostNode.PERMITTED_NODES, getPermittedNodes(ports));
+        }
 
         Map<String, String> context = new HashMap<String, String>();
         context.put(ReplicationConfig.REPLICA_ACK_TIMEOUT, "2 s");
@@ -287,7 +291,7 @@ public class BDBHAVirtualHostNodeTestHelper
 
         if (ports != null)
         {
-            String bluePrint = getBlueprint(ports);
+            String bluePrint = getBlueprint();
             node1Attributes.put(AbstractVirtualHostNode.VIRTUALHOST_INITIAL_CONFIGURATION, bluePrint);
         }
 
@@ -296,22 +300,26 @@ public class BDBHAVirtualHostNodeTestHelper
         return node1Attributes;
     }
 
-    public static String getBlueprint(int... ports) throws Exception
+    public static String getBlueprint() throws Exception
     {
-        List<String> permittedNodes = new ArrayList<String>();
-        for (int port:ports)
-        {
-            permittedNodes.add("localhost:" + port);
-        }
         Map<String,Object> bluePrint = new HashMap<>();
         bluePrint.put(VirtualHost.TYPE, BDBHAVirtualHostImpl.VIRTUAL_HOST_TYPE);
-        bluePrint.put(BDBHAVirtualHost.PERMITTED_NODES, permittedNodes);
 
         StringWriter writer = new StringWriter();
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         mapper.writeValue(writer, bluePrint);
         return writer.toString();
+    }
+
+    public static List<String> getPermittedNodes(int[] ports)
+    {
+        List<String> permittedNodes = new ArrayList<String>();
+        for (int port:ports)
+        {
+            permittedNodes.add("localhost:" + port);
+        }
+        return permittedNodes;
     }
 
     public void awaitForVirtualhost(final VirtualHostNode<?> node, final int wait)
