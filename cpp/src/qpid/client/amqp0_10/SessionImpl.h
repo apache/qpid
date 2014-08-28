@@ -30,6 +30,7 @@
 #include "qpid/client/amqp0_10/IncomingMessages.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/sys/ExceptionHolder.h"
 #include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
@@ -97,7 +98,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     template <class T> bool execute(T& f)
     {
         try {
-            checkAborted();
+            txError.raise();
             f();
             return true;
         } catch (const qpid::TransportFailure&) {
@@ -131,16 +132,14 @@ class SessionImpl : public qpid::messaging::SessionImpl
     Receivers receivers;
     Senders senders;
     const bool transactional;
-    bool aborted;
+    bool committing;
+    sys::ExceptionHolder txError;
 
     bool accept(ReceiverImpl*, qpid::messaging::Message*, IncomingMessages::MessageTransfer&);
     bool getIncoming(IncomingMessages::Handler& handler, qpid::messaging::Duration timeout);
     bool getNextReceiver(qpid::messaging::Receiver* receiver, IncomingMessages::MessageTransfer& transfer);
     void reconnect();
     bool backoff();
-    void abortTransaction();
-    void checkAborted();
-    void checkAbortedLH(const qpid::sys::Mutex::ScopedLock&);
 
     void commitImpl();
     void rollbackImpl();

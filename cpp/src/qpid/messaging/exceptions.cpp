@@ -53,6 +53,7 @@ SessionClosed::SessionClosed() : SessionError("Session Closed") {}
 
 TransactionError::TransactionError(const std::string& msg) : SessionError(msg) {}
 TransactionAborted::TransactionAborted(const std::string& msg) : TransactionError(msg) {}
+TransactionUnknown::TransactionUnknown(const std::string& msg) : TransactionError(msg) {}
 UnauthorizedAccess::UnauthorizedAccess(const std::string& msg) : SessionError(msg) {}
 
 ConnectionError::ConnectionError(const std::string& msg) : MessagingException(msg) {}

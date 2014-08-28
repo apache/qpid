@@ -350,7 +350,9 @@ class HaCluster(object):
 
     def connect(self, i, **kwargs):
         """Connect with reconnect_urls"""
-        return self[i].connect(reconnect=True, reconnect_urls=self.url.split(","), **kwargs)
+        c = self[i].connect(reconnect=True, reconnect_urls=self.url.split(","), **kwargs)
+        self.test.teardown_add(c)    # Clean up
+        return c
 
     def kill(self, i, promote_next=True, final=True):
         """Kill broker i, promote broker i+1"""

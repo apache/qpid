@@ -44,6 +44,10 @@
       static VALUE merror = rb_define_class("TransactionAborted", eMessagingError);
       rb_raise(merror, "%s", error.what());
     }
+    catch(qpid::messaging::TransactionUnknown& error) {
+      static VALUE merror = rb_define_class("TransactionUnknown", eMessagingError);
+      rb_raise(merror, "%s", error.what());
+    }
     catch(qpid::messaging::TransactionError& error) {
       static VALUE merror = rb_define_class("TransactionError", eMessagingError);
       rb_raise(merror, "%s", error.what());

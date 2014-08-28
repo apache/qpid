@@ -86,6 +86,7 @@ QPID_EXCEPTION(SessionError, MessagingError)
 /* QPID_EXCEPTION(SessionClosed, SessionError) */
 QPID_EXCEPTION(TransactionError, SessionError)
 QPID_EXCEPTION(TransactionAborted, TransactionError)
+QPID_EXCEPTION(TransactionUnknown, TransactionError)
 QPID_EXCEPTION(UnauthorizedAccess, SessionError)
 
 /* QPID_EXCEPTION(InternalError, MessagingError) */
@@ -122,6 +123,7 @@ QPID_EXCEPTION(UnauthorizedAccess, SessionError)
     TRANSLATE_EXCEPTION(qpid::messaging::InvalidOptionString, InvalidOption)
     TRANSLATE_EXCEPTION(qpid::messaging::LinkError, LinkError)
     TRANSLATE_EXCEPTION(qpid::messaging::TransactionAborted, TransactionAborted)
+    TRANSLATE_EXCEPTION(qpid::messaging::TransactionUnknown, TransactionUnknown)
     TRANSLATE_EXCEPTION(qpid::messaging::TransactionError, TransactionError)
     TRANSLATE_EXCEPTION(qpid::messaging::UnauthorizedAccess, UnauthorizedAccess)
     TRANSLATE_EXCEPTION(qpid::messaging::SessionError, SessionError)

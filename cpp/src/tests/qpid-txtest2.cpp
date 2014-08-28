@@ -66,7 +66,7 @@ struct Options : public qpid::Options {
 
     Options() : help(false), init(true), transfer(true), check(true),
                 size(256), durable(true), queues(2),
-                base("tx-test2"), msgsPerTx(1), txCount(5), totalMsgCount(10),
+                base("tx"), msgsPerTx(1), txCount(5), totalMsgCount(10),
                 capacity(1000), url("localhost"), port(0), quiet(false)
     {
         addOptions()
@@ -140,8 +140,10 @@ std::string generateData(uint size)
 void generateSet(const std::string& base, uint count, StringSet& collection)
 {
     for (uint i = 0; i < count; i++) {
+        std::ostringstream digits;
+        digits << count;
         std::ostringstream out;
-        out << base << "-" << (i+1);
+        out << base << "-" << std::setw(digits.str().size()) << std::setfill('0') << (i+1);
         collection.push_back(out.str());
     }
 }
@@ -193,6 +195,8 @@ struct Transfer : public TransactionalClient, public Runnable
             Receiver receiver(session.createReceiver(source));
             receiver.setCapacity(opts.capacity);
             for (uint t = 0; t < opts.txCount;) {
+                std::ostringstream id;
+                id << source << ">" << target << ":" << t+1;
                 try {
                     for (uint m = 0; m < opts.msgsPerTx; m++) {
                         Message msg = receiver.fetch(Duration::SECOND*30);
@@ -205,9 +209,9 @@ struct Transfer : public TransactionalClient, public Runnable
                     }
                     session.commit();
                     t++;
-                    if (!opts.quiet) std::cout << "Transaction " << t << " of " << opts.txCount << " committed successfully" << std::endl;
+                    if (!opts.quiet) std::cout << "Transaction " << id.str() << " of " << opts.txCount << " committed successfully" << std::endl;
                 } catch (const TransactionAborted&) {
-                    std::cout << "Transaction " << (t+1) << " of " << opts.txCount << " was aborted and will be retried" << std::endl;
+                    std::cout << "Transaction " << id.str() << " of " << opts.txCount << " was aborted and will be retried" << std::endl;
                     session = connection.createTransactionalSession();
                     sender = session.createSender(target);
                     receiver = session.createReceiver(source);

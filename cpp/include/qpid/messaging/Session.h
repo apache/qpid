@@ -65,7 +65,8 @@ class QPID_MESSAGING_CLASS_EXTERN Session : public qpid::messaging::Handle<Sessi
     /**
      * Commits the sessions transaction.
      *
-     * @exception TransactionAborted if the original session is lost
+     * @exception TransactionAborted if the transaction was rolled back due to an error.
+     * @exception TransactionUnknown if the connection was lost and the transaction outcome is unknown.
      * forcing an automatic rollback.
      */
     QPID_MESSAGING_EXTERN void commit();
