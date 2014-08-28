@@ -330,7 +330,14 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
             {
                 public void setOption(ConnectionOptions options, String value)
                 {
-                    options.syncPublish = Boolean.parseBoolean(value);
+                    if("".equals(value) || "default".equals(value))
+                    {
+                        options.syncPublish = null;
+                    }
+                    else
+                    {
+                        options.syncPublish = Boolean.parseBoolean(value);
+                    }
                 }
             },
             new OptionSetter("max-sessions", "set maximum number of sessions allowed")
