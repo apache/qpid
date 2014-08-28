@@ -774,7 +774,8 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                     // Bounced message is processed here, away from the mina thread
                     AbstractJMSMessage bouncedMessage =
                             getMessageFactoryRegistry().createMessage(0, false, msg.getExchange(),
-                                    msg.getRoutingKey(), msg.getContentHeader(), msg.getBodies(), _queueDestinationCache, _topicDestinationCache);
+                                    msg.getRoutingKey(), msg.getContentHeader(), msg.getBodies(), _queueDestinationCache,
+                                    _topicDestinationCache, AMQDestination.UNKNOWN_TYPE);
                     AMQConstant errorCode = AMQConstant.getConstant(msg.getReplyCode());
                     AMQShortString reason = msg.getReplyText();
                     _logger.debug("Message returned with error code " + errorCode + " (" + reason + ")");

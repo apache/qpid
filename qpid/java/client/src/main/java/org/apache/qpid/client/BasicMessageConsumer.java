@@ -136,6 +136,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     private List<StackTraceElement> _closedStack = null;
 
     private boolean _isDurableSubscriber = false;
+    private int _addressType = AMQDestination.UNKNOWN_TYPE;
 
     protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination,
                                    String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
@@ -203,7 +204,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         }
 
         _arguments = ft;
-
+        _addressType = _destination.getAddressType();
     }
 
     public AMQDestination getDestination()
@@ -1065,5 +1066,15 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     protected void markAsDurableSubscriber()
     {
         _isDurableSubscriber = true;
+    }
+
+    void setAddressType(final int addressType)
+    {
+        _addressType = addressType;
+    }
+
+    int getAddressType()
+    {
+        return _addressType;
     }
 }

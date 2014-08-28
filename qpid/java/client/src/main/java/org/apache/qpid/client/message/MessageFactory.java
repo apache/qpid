@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.client.message;
 
+import java.util.List;
+
+import javax.jms.JMSException;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession_0_8;
@@ -29,16 +33,18 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.MessageProperties;
 
-import javax.jms.JMSException;
-import java.util.List;
-
 
 public interface MessageFactory
 {
-    AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
+    AbstractJMSMessage createMessage(long deliveryTag,
+                                     boolean redelivered,
                                      ContentHeaderBody contentHeader,
-                                     AMQShortString exchange, AMQShortString routingKey,
-                                     List bodies, AMQSession_0_8.DestinationCache<AMQQueue> queueDestinationCache, AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache)
+                                     AMQShortString exchange,
+                                     AMQShortString routingKey,
+                                     List bodies,
+                                     AMQSession_0_8.DestinationCache<AMQQueue> queueDestinationCache,
+                                     AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache,
+                                     final int addressType)
         throws JMSException, AMQException;
 
      AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,

@@ -1424,7 +1424,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         checkValidDestination(destination);
         Queue dest = validateQueue(destination);
         C consumer = (C) createConsumer(dest);
-
+        consumer.setAddressType(AMQDestination.QUEUE_TYPE);
         return new QueueReceiverAdaptor(dest, consumer);
     }
 
@@ -1443,7 +1443,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         checkValidDestination(destination);
         Queue dest = validateQueue(destination);
         C consumer = (C) createConsumer(dest, messageSelector);
-
+        consumer.setAddressType(AMQDestination.QUEUE_TYPE);
         return new QueueReceiverAdaptor(dest, consumer);
     }
 
@@ -1461,7 +1461,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         checkNotClosed();
         Queue dest = validateQueue(queue);
         C consumer = (C) createConsumer(dest);
-
+        consumer.setAddressType(AMQDestination.QUEUE_TYPE);
         return new QueueReceiverAdaptor(dest, consumer);
     }
 
@@ -1480,7 +1480,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         checkNotClosed();
         Queue dest = validateQueue(queue);
         C consumer = (C) createConsumer(dest, messageSelector);
-
+        consumer.setAddressType(AMQDestination.QUEUE_TYPE);
         return new QueueReceiverAdaptor(dest, consumer);
     }
 
@@ -2590,7 +2590,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 ("Cannot create a durable subscription with a temporary topic: " + topic);
         }
 
-        if (!(topic instanceof AMQDestination && topic instanceof javax.jms.Topic))
+        if (!(topic instanceof AMQDestination))
         {
             throw new javax.jms.InvalidDestinationException(
                     "Cannot create a subscription on topic created for another JMS Provider, class of topic provided is: "
