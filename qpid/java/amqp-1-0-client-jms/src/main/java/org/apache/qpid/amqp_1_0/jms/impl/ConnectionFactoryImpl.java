@@ -138,10 +138,6 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         _remoteHost = remoteHost;
         _ssl = ssl;
         _maxSessions = maxSessions;
-        if(! "".equals(System.getProperty("qpid.sync_publish","")))
-        {
-            _syncPublish = Boolean.getBoolean("qpid.sync_publish");
-        }
     }
 
     public ConnectionImpl createConnection() throws JMSException
@@ -243,7 +239,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         String remoteHost;
 
         boolean binaryMessageId = true;
-        Boolean syncPublish;
+        Boolean syncPublish = Boolean.getBoolean("qpid.sync_publish");
         int maxSessions;
         public boolean ssl;
         public int maxPrefetch;
