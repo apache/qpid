@@ -40,8 +40,7 @@ from qpidtoollibs import BrokerAgent
 #
 # BrokerTest can be configured to determine which protocol is used by default:
 #
-# -DPROTOCOL="amqpX": Use protocol "amqpX". Defaults to amqp1.0 if swig client
-#  is being used, amqp0-10 if native client is being used.
+# -DPROTOCOL="amqpX": Use protocol "amqpX". Defaults to amqp1.0 if available.
 #
 # The configured defaults can be over-ridden on BrokerTest.connect and some
 # other methods by specifying native=True|False and protocol="amqpX"
@@ -496,7 +495,7 @@ class BrokerTest(TestCase):
         os.makedirs(self.dir)
         os.chdir(self.dir)
         self.teardown_list = []                # things to tear down at end of test
-        if qpid_messaging: default_protocol="amqp1.0"
+        if qpid_messaging and self.amqp_lib: default_protocol="amqp1.0"
         else: default_protocol="amqp0-10"
         self.protocol = defs.get("PROTOCOL") or default_protocol
         self.tx_protocol = "amqp0-10" # Transactions not yet supported over 1.0
@@ -513,7 +512,9 @@ class BrokerTest(TestCase):
                     a = getattr(p, m, None)
                     if a: a(); break
                 else: raise Exception("Don't know how to tear down %s", p)
-            except Exception, e: err.append("%s: %s"%(e.__class__.__name__, str(e)))
+            except Exception, e:
+                if m != "close": # Ignore connection close errors.
+                    err.append("%s: %s"%(e.__class__.__name__, str(e)))
         self.teardown_list = []                # reset in case more processes start
         os.chdir(self.rootdir)
         if err: raise Exception("Unexpected process status:\n    "+"\n    ".join(err))
