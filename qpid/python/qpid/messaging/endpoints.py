@@ -732,8 +732,14 @@ class Session(Endpoint):
       raise NontransactionalSession()
     self.committing = True
     self._wakeup()
-    if not self._ecwait(lambda: not self.committing, timeout=timeout):
-      raise Timeout("commit timed out")
+    try:
+      if not self._ecwait(lambda: not self.committing, timeout=timeout):
+        raise Timeout("commit timed out")
+    except TransactionError:
+      raise
+    except Exception, e:
+      self.error = TransactionAborted(text="Transaction aborted: %s"%e)
+      raise self.error
     if self.aborted:
       raise TransactionAborted()
     assert self.committed

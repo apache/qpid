@@ -43,7 +43,9 @@
 using qpid::messaging::KeyError;
 using qpid::messaging::NoMessageAvailable;
 using qpid::messaging::MessagingException;
+using qpid::messaging::TransactionError;
 using qpid::messaging::TransactionAborted;
+using qpid::messaging::TransactionUnknown;
 using qpid::messaging::SessionError;
 using qpid::messaging::MessageImplAccess;
 using qpid::messaging::Sender;
@@ -56,37 +58,18 @@ namespace amqp0_10 {
 typedef qpid::sys::Mutex::ScopedLock ScopedLock;
 typedef qpid::sys::Mutex::ScopedUnlock ScopedUnlock;
 
-SessionImpl::SessionImpl(ConnectionImpl& c, bool t) : connection(&c), transactional(t), aborted(false) {}
+SessionImpl::SessionImpl(ConnectionImpl& c, bool t) :
+    connection(&c), transactional(t) {}
 
 bool SessionImpl::isTransactional() const
 {
     return transactional;
 }
 
-void SessionImpl::abortTransaction()
-{
-    ScopedLock l(lock);
-    aborted = true;
-    checkAbortedLH(l);
-}
-
-void SessionImpl::checkAborted()
-{
-    ScopedLock l(lock);
-    checkAbortedLH(l);
-}
-
-void SessionImpl::checkAbortedLH(const qpid::sys::Mutex::ScopedLock&)
-{
-    if (aborted) {
-        throw TransactionAborted("Transaction aborted due to transport failure");
-    }
-}
-
 void SessionImpl::checkError()
 {
     ScopedLock l(lock);
-    checkAbortedLH(l);
+    txError.raise();
     qpid::client::SessionBase_0_10Access s(session);
     try {
         s.get()->assertOpen();
@@ -120,9 +103,19 @@ void SessionImpl::sync(bool block)
 
 void SessionImpl::commit()
 {
-    if (!execute<Commit>()) {
-        throw TransactionAborted("Transaction aborted due to transport failure");
+    try {
+        checkError();
+        committing = true;
+        execute<Commit>();
     }
+    catch (const TransactionError&) {
+        assert(txError);        // Must be set by thrower of TransactionError
+    }
+    catch (const std::exception& e) {
+        txError = new TransactionAborted(Msg() << "Transaction aborted: " << e.what());
+    }
+    committing = false;
+    checkError();
 }
 
 void SessionImpl::rollback()
@@ -385,7 +378,7 @@ bool SessionImpl::get(ReceiverImpl& receiver, qpid::messaging::Message& message,
 bool SessionImpl::nextReceiver(qpid::messaging::Receiver& receiver, qpid::messaging::Duration timeout)
 {
     while (true) {
-        checkAborted();
+        txError.raise();
         try {
             std::string destination;
             if (incoming.getNextDestination(destination, adjust(timeout))) {
@@ -568,7 +561,13 @@ void SessionImpl::senderCancelled(const std::string& name)
 
 void SessionImpl::reconnect()
 {
-    if (transactional) abortTransaction();
+    if (transactional) {
+        if (committing)
+            txError = new TransactionUnknown("Transaction outcome unknown: transport failure");
+        else
+            txError = new TransactionAborted("Transaction aborted: transport failure");
+        txError.raise();
+    }
     connection->reopen();
 }
 

@@ -680,7 +680,10 @@ class Engine:
     # We could re-do transactional enqueues, but not dequeues.
     for ssn in self.connection.sessions.values():
       if ssn.transactional:
-        ssn.error = TransactionAborted("Transaction aborted due to transport failure")
+        if ssn.committing:
+          ssn.error = TransactionUnknown(text="Transaction outcome unknown due to transport failure")
+        else:
+          ssn.error = TransactionAborted(text="Transaction aborted due to transport failure")
         ssn.closed = True
     if e:
       self.connection.error = e

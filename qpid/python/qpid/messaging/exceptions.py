@@ -35,7 +35,6 @@ class MessagingError(Exception):
     if info:
       msg += " " + ", ".join(["%s=%r" % (k, v) for k, v in self.info.items()])
     Exception.__init__(self, msg)
-
 class InternalError(MessagingError):
   pass
 
@@ -86,9 +85,19 @@ class NontransactionalSession(SessionError):
   pass
 
 class TransactionError(SessionError):
+  """Base class for transactional errors"""
   pass
 
 class TransactionAborted(TransactionError):
+  """The transaction was automatically rolled back.  This could be due to an error
+  on the broker, such as a store failure, or a connection failure during the
+  transaction"""
+  pass
+
+class TransactionUnknown(TransactionError):
+  """ The outcome of the transaction on the broker (commit or roll-back) is not
+  known. This occurs when the connection fails after we sent the commit but
+  before we received a response."""
   pass
 
 class UnauthorizedAccess(SessionError):
