@@ -138,6 +138,10 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         _remoteHost = remoteHost;
         _ssl = ssl;
         _maxSessions = maxSessions;
+        if(System.getProperties().containsKey("qpid.sync_publish"))
+        {
+            _syncPublish = Boolean.getBoolean("qpid.sync_publish");
+        }
     }
 
     public ConnectionImpl createConnection() throws JMSException
@@ -399,7 +403,6 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         int port = url.getPort();
 
         final ConnectionOptions options = new ConnectionOptions();
-
         if (port == -1)
         {
             if ("amqps".equals(protocol))
@@ -436,6 +439,11 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
             {
                 options.password = URLDecoder.decode(components[1]);
             }
+        }
+
+        if(System.getProperties().containsKey("qpid.sync_publish"))
+        {
+            options.syncPublish = Boolean.getBoolean("qpid.sync_publish");
         }
 
         OptionSetter.parseOptions(url, options);
