@@ -24,8 +24,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
-import org.apache.qpid.transport.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -259,11 +257,6 @@ public class LocalTransaction implements ServerTransaction
 
             doPostTransactionActions();
         }
-        catch(RuntimeException e)
-        {
-            doRollbackActions();
-            throw e;
-        }
         finally
         {
             resetDetails();
@@ -282,11 +275,9 @@ public class LocalTransaction implements ServerTransaction
     {
         sync();
         StoreFuture future = StoreFuture.IMMEDIATE_FUTURE;
-        try
+        if(_transaction != null)
         {
-            if(_transaction != null)
-            {
-                future = new StoreFuture()
+            future = new StoreFuture()
                         {
                             private volatile boolean _completed = false;
                             private StoreFuture _underlying = _transaction.commitTranAsync();
@@ -325,21 +316,16 @@ public class LocalTransaction implements ServerTransaction
                                     doPostTransactionActions();
                                     deferred.run();
                                 }
-                                catch (RuntimeException e)
-                                {
-                                    handleUnexpectedException(e);
-                                }
                                 finally
                                 {
                                     resetDetails();
                                 }
                             }
-
-                };
-                _asyncTran = future;
-            }
-            else
-            {
+            };
+            _asyncTran = future;
+        }
+        else
+        {
                 try
                 {
                     doPostTransactionActions();
@@ -349,42 +335,8 @@ public class LocalTransaction implements ServerTransaction
                 {
                     resetDetails();
                 }
-            }
-
-        }
-        catch (RuntimeException e)
-        {
-            try
-            {
-                handleUnexpectedException(e);
-            }
-            finally
-            {
-                resetDetails();
-            }
         }
         return future;
-    }
-
-    private void handleUnexpectedException(RuntimeException e)
-    {
-        if(e instanceof ConnectionScopedRuntimeException || e instanceof TransportException)
-        {
-            throw e;
-        }
-        else
-        {
-            _logger.error("Unexpected exception on execution of post commit deferred actions", e);
-            boolean continueOnError = Boolean.getBoolean("qpid.broker.exceptionHandler.continue");
-            if (continueOnError)
-            {
-                throw e;
-            }
-            else
-            {
-                Runtime.getRuntime().halt(1);
-            }
-        }
     }
 
     private void doPostTransactionActions()

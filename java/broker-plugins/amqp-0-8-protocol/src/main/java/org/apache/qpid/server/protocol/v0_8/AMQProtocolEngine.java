@@ -318,7 +318,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                             }
                             break;
                         }
-                        catch (Exception e)
+                        catch (AMQException e)
                         {
                             _logger.error("Unexpected exception when processing datablock", e);
                             closeProtocolSession();
@@ -335,6 +335,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                 catch (AMQProtocolVersionException e)
                 {
                     _logger.error("Unexpected protocol version", e);
+                    closeProtocolSession();
+                }
+                catch (TransportException e)
+                {
+                    _logger.error("Unexpected transport exception", e);
                     closeProtocolSession();
                 }
                 catch (AMQFrameDecodingException e)
@@ -394,7 +399,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
      * the connection is already closed by the time the exception is thrown. If any other
      * type of exception is thrown, the connection is not already closed.
      */
-    private void dataBlockReceived(AMQDataBlock message) throws Exception
+    private void dataBlockReceived(AMQDataBlock message) throws AMQException
     {
         if (message instanceof ProtocolInitiation)
         {
