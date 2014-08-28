@@ -133,7 +133,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
                 }
             }
             dest = (AMQDestination) convertToAddressBasedDestination(_deliveryProps.getExchange(),
-                    _deliveryProps.getRoutingKey(), subject);
+                    _deliveryProps.getRoutingKey(), subject, false, AMQDestination.UNKNOWN_TYPE);
         }
         
         setJMSDestination(dest);        
@@ -280,56 +280,14 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
                 }
                 else
                 {
-                    dest = convertToAddressBasedDestination(exchange,routingKey,null);
+                    dest = convertToAddressBasedDestination(exchange,routingKey,null, false,
+                                                            AMQDestination.UNKNOWN_TYPE);
                 }
                 _destinationCache.put(replyTo, dest);
             }
 
             return dest;
         }
-    }
-    
-    private Destination convertToAddressBasedDestination(String exchange, String routingKey, String subject)
-    {
-        String addr;
-        boolean isQueue = true;
-        if ("".equals(exchange)) // type Queue
-        {
-            subject = (subject == null) ? "" : "/" + subject;
-            addr = routingKey + subject;
-        }
-        else
-        {
-            addr = exchange + "/" + routingKey;
-            isQueue = false;
-        }
-        
-        try
-        {
-            AMQDestination dest = (AMQDestination)AMQDestination.createDestination("ADDR:" + addr);
-            if (isQueue)
-            {
-                dest.setQueueName(new AMQShortString(routingKey));
-                dest.setRoutingKey(new AMQShortString(routingKey));
-                dest.setExchangeName(new AMQShortString(""));
-            }
-            else
-            {
-                dest.setRoutingKey(new AMQShortString(routingKey));
-                dest.setExchangeName(new AMQShortString(exchange));
-            }
-            return dest;
-        }
-        catch(Exception e)
-        {
-            // An exception is only thrown here if the address syntax is invalid.
-            // Logging the exception, but not throwing as this is only important to Qpid developers.
-            // An exception here means a bug in the code.
-            _logger.error("Exception when constructing an address string from the ReplyTo struct");
-            
-            // falling back to the old way of doing it to ensure the application continues.
-            return generateDestination(new AMQShortString(exchange), new AMQShortString(routingKey));
-        } 
     }
 
     public void setJMSReplyTo(Destination destination) throws JMSException

@@ -47,11 +47,14 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
 {
     private static final Logger _logger = LoggerFactory.getLogger(AbstractJMSMessageFactory.class);
 
-    protected AbstractJMSMessage create08MessageWithBody(long messageNbr, ContentHeaderBody contentHeader,
-                                                         AMQShortString exchange, AMQShortString routingKey,
+    protected AbstractJMSMessage create08MessageWithBody(long messageNbr,
+                                                         ContentHeaderBody contentHeader,
+                                                         AMQShortString exchange,
+                                                         AMQShortString routingKey,
                                                          List bodies,
                                                          AMQSession_0_8.DestinationCache<AMQQueue> queueDestinationCache,
-                                                         AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache) throws AMQException
+                                                         AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache,
+                                                         final int addressType) throws AMQException
     {
         ByteBuffer data;
         final boolean debug = _logger.isDebugEnabled();
@@ -117,7 +120,8 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
 
         AMQMessageDelegate delegate = new AMQMessageDelegate_0_8(messageNbr,
                                                                  contentHeader.getProperties(),
-                                                                 exchange, routingKey, queueDestinationCache, topicDestinationCache);
+                                                                 exchange, routingKey, queueDestinationCache,
+                                                                 topicDestinationCache, addressType);
 
         return createMessage(delegate, data);
     }
@@ -162,13 +166,15 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         return message;
     }
 
+    @Override
     public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered, ContentHeaderBody contentHeader,
                                             AMQShortString exchange, AMQShortString routingKey, List bodies,
                                                          AMQSession_0_8.DestinationCache<AMQQueue> queueDestinationCache,
-                                                         AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache)
+                                                         AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache,
+                                                         int addressType)
             throws JMSException, AMQException
     {
-        final AbstractJMSMessage msg = create08MessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies, queueDestinationCache, topicDestinationCache);
+        final AbstractJMSMessage msg = create08MessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies, queueDestinationCache, topicDestinationCache, addressType);
         msg.setJMSRedelivered(redelivered);
         msg.setReceivedFromServer();
         return msg;

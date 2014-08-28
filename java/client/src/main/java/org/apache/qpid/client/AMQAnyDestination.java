@@ -58,7 +58,7 @@ public class AMQAnyDestination extends AMQDestination implements Queue, Topic
         super(str);
     }
     
-    public AMQAnyDestination(Address addr) throws Exception
+    public AMQAnyDestination(Address addr)
     {
         super(addr);
     }

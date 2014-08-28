@@ -211,7 +211,7 @@ public abstract class AMQDestination implements Destination, Referenceable, Exte
     {
     }
 
-    protected AMQDestination(Address address) throws Exception
+    protected AMQDestination(Address address)
     {
         this._address = address;
         getInfoFromAddress();
@@ -749,7 +749,8 @@ public abstract class AMQDestination implements Destination, Referenceable, Exte
         }
     }
 
-    public static Destination createDestination(String str) throws Exception
+    public static Destination createDestination(String str, final boolean useNodeTypeForDestinationType)
+            throws URISyntaxException
     {
          DestSyntax syntax = getDestType(str);
          str = stripSyntaxPrefix(str);
@@ -760,7 +761,24 @@ public abstract class AMQDestination implements Destination, Referenceable, Exte
          else
          {
              Address address = createAddressFromString(str);
-             return new AMQAnyDestination(address);
+             if(useNodeTypeForDestinationType)
+             {
+                 AddressHelper helper = new AddressHelper(address);
+                 switch(helper.getNodeType())
+                 {
+                     case AMQDestination.QUEUE_TYPE:
+                         return new AMQQueue(address);
+                     case AMQDestination.TOPIC_TYPE:
+                         return new AMQTopic(address);
+                     default:
+                         return new AMQAnyDestination(address);
+                 }
+
+             }
+             else
+             {
+                 return new AMQAnyDestination(address);
+             }
          }
     }
 
@@ -912,7 +930,7 @@ public abstract class AMQDestination implements Destination, Referenceable, Exte
         return Address.parse(str);
     }
 
-    private void getInfoFromAddress() throws Exception
+    private void getInfoFromAddress()
     {
         _name = _address.getName();
         _subject = _address.getSubject();

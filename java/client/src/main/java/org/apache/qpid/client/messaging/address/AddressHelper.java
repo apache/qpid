@@ -159,7 +159,7 @@ public class AddressHelper
         }
     }
 
-    public int getNodeType() throws Exception
+    public int getNodeType()
     {
         if (_nodePropAccess == null || _nodePropAccess.getString(TYPE) == null)
         {
@@ -176,7 +176,7 @@ public class AddressHelper
         }
         else
         {
-            throw new Exception("unkown exchange type");
+            throw new IllegalArgumentException("unknown exchange type");
         }
     }
 
@@ -212,7 +212,7 @@ public class AddressHelper
         return (result == null) ? defaultValue : result.booleanValue();
     }
 
-    public Link getLink() throws Exception
+    public Link getLink()
     {
         Link link = new Link();
         link.setSubscription(new Subscription());
@@ -235,7 +235,7 @@ public class AddressHelper
                 }
                 else
                 {
-                    throw new Exception("The reliability mode '" + 
+                    throw new IllegalArgumentException("The reliability mode '" +
                             reliability + "' is not yet supported");
                 }
             }
