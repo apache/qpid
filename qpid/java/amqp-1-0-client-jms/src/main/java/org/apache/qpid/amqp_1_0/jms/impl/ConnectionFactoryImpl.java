@@ -138,7 +138,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         _remoteHost = remoteHost;
         _ssl = ssl;
         _maxSessions = maxSessions;
-        if(! "".equals(System.getProperty("qpid.sync_publish","")))
+        if(System.getProperties().containsKey("qpid.sync_publish"))
         {
             _syncPublish = Boolean.getBoolean("qpid.sync_publish");
         }
@@ -330,7 +330,14 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
             {
                 public void setOption(ConnectionOptions options, String value)
                 {
-                    options.syncPublish = Boolean.parseBoolean(value);
+                    if("".equals(value) || "default".equals(value))
+                    {
+                        options.syncPublish = null;
+                    }
+                    else
+                    {
+                        options.syncPublish = Boolean.parseBoolean(value);
+                    }
                 }
             },
             new OptionSetter("max-sessions", "set maximum number of sessions allowed")
@@ -403,7 +410,6 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         int port = url.getPort();
 
         final ConnectionOptions options = new ConnectionOptions();
-
         if (port == -1)
         {
             if ("amqps".equals(protocol))
@@ -440,6 +446,11 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
             {
                 options.password = URLDecoder.decode(components[1]);
             }
+        }
+
+        if(System.getProperties().containsKey("qpid.sync_publish"))
+        {
+            options.syncPublish = Boolean.getBoolean("qpid.sync_publish");
         }
 
         OptionSetter.parseOptions(url, options);
