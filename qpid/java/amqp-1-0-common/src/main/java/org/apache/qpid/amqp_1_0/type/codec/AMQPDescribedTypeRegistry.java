@@ -21,53 +21,49 @@
 
 package org.apache.qpid.amqp_1_0.type.codec;
 
-import org.apache.qpid.amqp_1_0.codec.BinaryWriter;
-import org.apache.qpid.amqp_1_0.codec.BooleanWriter;
-import org.apache.qpid.amqp_1_0.codec.ByteWriter;
-import org.apache.qpid.amqp_1_0.codec.CharWriter;
-import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructor;
-import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructorRegistry;
-import org.apache.qpid.amqp_1_0.codec.DoubleWriter;
-import org.apache.qpid.amqp_1_0.codec.FloatWriter;
-import org.apache.qpid.amqp_1_0.codec.IntegerWriter;
-import org.apache.qpid.amqp_1_0.codec.ListWriter;
-import org.apache.qpid.amqp_1_0.codec.LongWriter;
-import org.apache.qpid.amqp_1_0.codec.MapWriter;
-import org.apache.qpid.amqp_1_0.codec.NullWriter;
-import org.apache.qpid.amqp_1_0.codec.RestrictedTypeValueWriter;
-import org.apache.qpid.amqp_1_0.codec.ShortWriter;
-import org.apache.qpid.amqp_1_0.codec.StringWriter;
-import org.apache.qpid.amqp_1_0.codec.SymbolWriter;
-import org.apache.qpid.amqp_1_0.codec.SymbolArrayWriter;
-import org.apache.qpid.amqp_1_0.codec.TimestampWriter;
-import org.apache.qpid.amqp_1_0.codec.TypeConstructor;
-import org.apache.qpid.amqp_1_0.codec.UUIDWriter;
-import org.apache.qpid.amqp_1_0.codec.UnsignedByteWriter;
-import org.apache.qpid.amqp_1_0.codec.UnsignedIntegerWriter;
-import org.apache.qpid.amqp_1_0.codec.UnsignedLongWriter;
-import org.apache.qpid.amqp_1_0.codec.UnsignedShortWriter;
-import org.apache.qpid.amqp_1_0.codec.ValueWriter;
-
-
-import org.apache.qpid.amqp_1_0.type.Binary;
-import org.apache.qpid.amqp_1_0.type.RestrictedType;
-import org.apache.qpid.amqp_1_0.type.transport.*;
-import org.apache.qpid.amqp_1_0.type.transport.codec.*;
-
-import org.apache.qpid.amqp_1_0.type.messaging.*;
-import org.apache.qpid.amqp_1_0.type.messaging.codec.*;
-
-import org.apache.qpid.amqp_1_0.type.transaction.*;
-import org.apache.qpid.amqp_1_0.type.transaction.codec.*;
-
-import org.apache.qpid.amqp_1_0.type.security.*;
-import org.apache.qpid.amqp_1_0.type.security.codec.*;
-
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.qpid.amqp_1_0.codec.*;
+import org.apache.qpid.amqp_1_0.type.RestrictedType;
+import org.apache.qpid.amqp_1_0.type.messaging.StdDistMode;
+import org.apache.qpid.amqp_1_0.type.messaging.TerminusDurability;
+import org.apache.qpid.amqp_1_0.type.messaging.TerminusExpiryPolicy;
+import org.apache.qpid.amqp_1_0.type.messaging.codec.*;
+import org.apache.qpid.amqp_1_0.type.security.SaslCode;
+import org.apache.qpid.amqp_1_0.type.security.codec.SaslChallengeConstructor;
+import org.apache.qpid.amqp_1_0.type.security.codec.SaslChallengeWriter;
+import org.apache.qpid.amqp_1_0.type.security.codec.SaslInitConstructor;
+import org.apache.qpid.amqp_1_0.type.security.codec.SaslInitWriter;
+import org.apache.qpid.amqp_1_0.type.security.codec.SaslMechanismsConstructor;
+import org.apache.qpid.amqp_1_0.type.security.codec.SaslMechanismsWriter;
+import org.apache.qpid.amqp_1_0.type.security.codec.SaslOutcomeConstructor;
+import org.apache.qpid.amqp_1_0.type.security.codec.SaslOutcomeWriter;
+import org.apache.qpid.amqp_1_0.type.security.codec.SaslResponseConstructor;
+import org.apache.qpid.amqp_1_0.type.security.codec.SaslResponseWriter;
+import org.apache.qpid.amqp_1_0.type.transaction.TransactionErrors;
+import org.apache.qpid.amqp_1_0.type.transaction.TxnCapability;
+import org.apache.qpid.amqp_1_0.type.transaction.codec.CoordinatorConstructor;
+import org.apache.qpid.amqp_1_0.type.transaction.codec.CoordinatorWriter;
+import org.apache.qpid.amqp_1_0.type.transaction.codec.DeclareConstructor;
+import org.apache.qpid.amqp_1_0.type.transaction.codec.DeclareWriter;
+import org.apache.qpid.amqp_1_0.type.transaction.codec.DeclaredConstructor;
+import org.apache.qpid.amqp_1_0.type.transaction.codec.DeclaredWriter;
+import org.apache.qpid.amqp_1_0.type.transaction.codec.DischargeConstructor;
+import org.apache.qpid.amqp_1_0.type.transaction.codec.DischargeWriter;
+import org.apache.qpid.amqp_1_0.type.transaction.codec.TransactionalStateConstructor;
+import org.apache.qpid.amqp_1_0.type.transaction.codec.TransactionalStateWriter;
+import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
+import org.apache.qpid.amqp_1_0.type.transport.ConnectionError;
+import org.apache.qpid.amqp_1_0.type.transport.LinkError;
+import org.apache.qpid.amqp_1_0.type.transport.ReceiverSettleMode;
+import org.apache.qpid.amqp_1_0.type.transport.Role;
+import org.apache.qpid.amqp_1_0.type.transport.SenderSettleMode;
+import org.apache.qpid.amqp_1_0.type.transport.SessionError;
+import org.apache.qpid.amqp_1_0.type.transport.codec.*;
 
 public class AMQPDescribedTypeRegistry implements DescribedTypeConstructorRegistry, ValueWriter.Registry
 {
@@ -143,6 +139,7 @@ public class AMQPDescribedTypeRegistry implements DescribedTypeConstructorRegist
         StringWriter.register(registry);
         SymbolWriter.register(registry);
         BinaryWriter.register(registry);
+        ByteArrayWriter.register(registry);
         ListWriter.register(registry);
         MapWriter.register(registry);
 
@@ -375,4 +372,3 @@ public class AMQPDescribedTypeRegistry implements DescribedTypeConstructorRegist
 
 }
 
-    
