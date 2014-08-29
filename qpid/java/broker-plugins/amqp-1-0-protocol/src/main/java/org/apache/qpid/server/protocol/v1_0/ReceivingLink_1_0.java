@@ -71,6 +71,8 @@ public class ReceivingLink_1_0 implements ReceivingLinkListener, Link_1_0, Deliv
         _vhost = vhost;
         _destination = destination;
         _attachment = receivingLinkAttachment;
+        _receivingSettlementMode = receivingLinkAttachment.getEndpoint().getReceivingSettlementMode();
+
         receivingLinkAttachment.setDeliveryStateHandler(this);
 
         _durability = ((Target)receivingLinkAttachment.getTarget()).getDurable();
