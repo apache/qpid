@@ -1333,7 +1333,19 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                     data = new byte[0];
                 }
             }
-            return ByteBuffer.wrap(data,offsetInMessage,Math.min(size,data.length-offsetInMessage));
+            try
+            {
+                return ByteBuffer.wrap(data, offsetInMessage, Math.min(size, data.length - offsetInMessage));
+            }
+            catch (IndexOutOfBoundsException e)
+            {
+                IndexOutOfBoundsException indexOutOfBoundsException =
+                        new IndexOutOfBoundsException("Error wrapping data (data.length: " + data.length
+                                                      + " offsetInMessage: " + offsetInMessage
+                                                      + " size: " + size);
+                indexOutOfBoundsException.initCause(e);
+                throw indexOutOfBoundsException;
+            }
 
         }
 
