@@ -63,11 +63,12 @@ struct Options : public qpid::Options {
     qpid::log::Options log;
     uint port;
     bool quiet;
+    double fetchTimeout;
 
     Options() : help(false), init(true), transfer(true), check(true),
                 size(256), durable(true), queues(2),
                 base("tx"), msgsPerTx(1), txCount(5), totalMsgCount(10),
-                capacity(1000), url("localhost"), port(0), quiet(false)
+                capacity(1000), url("localhost"), port(0), quiet(false), fetchTimeout(5)
     {
         addOptions()
             ("init", qpid::optValue(init, "yes|no"), "Declare queues and populate one with the initial set of messages.")
@@ -85,6 +86,7 @@ struct Options : public qpid::Options {
             ("connection-options", qpid::optValue(connectionOptions, "OPTIONS"), "options for the connection")
             ("port,p", qpid::optValue(port, "PORT"), "(for test compatibility only, use broker option instead)")
             ("quiet", qpid::optValue(quiet), "reduce output from test")
+            ("fetch-timeout", qpid::optValue(fetchTimeout, "SECONDS"), "Timeout for transactional fetch")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
     }
@@ -199,7 +201,7 @@ struct Transfer : public TransactionalClient, public Runnable
                 id << source << ">" << target << ":" << t+1;
                 try {
                     for (uint m = 0; m < opts.msgsPerTx; m++) {
-                        Message msg = receiver.fetch(Duration::SECOND*30);
+                        Message msg = receiver.fetch(Duration::SECOND*opts.fetchTimeout);
                         if (msg.getContentSize() != opts.size) {
                             std::ostringstream oss;
                             oss << "Message size incorrect: size=" << msg.getContentSize() << "; expected " << opts.size;
