@@ -59,7 +59,7 @@ typedef qpid::sys::Mutex::ScopedLock ScopedLock;
 typedef qpid::sys::Mutex::ScopedUnlock ScopedUnlock;
 
 SessionImpl::SessionImpl(ConnectionImpl& c, bool t) :
-    connection(&c), transactional(t) {}
+    connection(&c), transactional(t), committing(false) {}
 
 bool SessionImpl::isTransactional() const
 {
@@ -101,11 +101,19 @@ void SessionImpl::sync(bool block)
     else execute<NonBlockingSync>();
 }
 
+namespace {
+struct ScopedSet {
+    bool& flag;
+    ScopedSet(bool& f) : flag(f) { flag = true; }
+    ~ScopedSet() { flag = false; }
+};
+}
+
 void SessionImpl::commit()
 {
     try {
         checkError();
-        committing = true;
+        ScopedSet s(committing);
         execute<Commit>();
     }
     catch (const TransactionError&) {
@@ -114,7 +122,6 @@ void SessionImpl::commit()
     catch (const std::exception& e) {
         txError = new TransactionAborted(Msg() << "Transaction aborted: " << e.what());
     }
-    committing = false;
     checkError();
 }
 

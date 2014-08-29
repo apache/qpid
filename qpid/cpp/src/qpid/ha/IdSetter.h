@@ -53,7 +53,6 @@ class IdSetter : public broker::MessageInterceptor
         // been enqueued or saved in a transaction buffer. This is when we normally want
         // to assign a replication-id.
         m.setReplicationId(nextId++);
-        QPID_LOG(trace, logPrefix << "Replication-ID set: " << logMessageId(queue, m.getReplicationId()));
     }
 
     void publish(broker::Message& m) {
@@ -63,7 +62,6 @@ class IdSetter : public broker::MessageInterceptor
         // store record() is not called, so set the ID now if not already set.
         if (!m.hasReplicationId()) {
             m.setReplicationId(nextId++);
-            QPID_LOG(trace, logPrefix << "Replication-ID set: " << logMessageId(queue, m));
         }
     }
 

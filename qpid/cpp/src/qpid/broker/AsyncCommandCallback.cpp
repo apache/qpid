@@ -58,9 +58,10 @@ void AsyncCommandCallback::complete() {
 void AsyncCommandCallback::doCommand() {
     SessionState* session = completerContext->getSession();
     if (session && session->isAttached()) {
-        // Complete now unless this is a syncPoint and there are incomplete commands.
+        std::string result = command(); // Execute the command now.
+        // Send completion now unless this is a syncPoint and there are incomplete commands.
         if (!(syncPoint && session->addPendingExecutionSync(id)))
-            session->completeCommand(id, false, requiresSync, command());
+            session->completeCommand(id, false, requiresSync, result);
     }
     else
         throw InternalErrorException("Cannot complete command, no session");

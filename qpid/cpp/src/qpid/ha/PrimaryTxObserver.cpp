@@ -207,6 +207,7 @@ bool PrimaryTxObserver::prepare() {
     Mutex::ScopedLock l(lock);
     checkState(SENDING, "Too late for prepare");
     state = PREPARING;
+    skip(l); // Tell local replicating subscriptions to skip tx enqueue/dequeue.
     txQueue->deliver(TxPrepareEvent().message());
     return true;
 }
@@ -216,7 +217,6 @@ void PrimaryTxObserver::commit() {
     Mutex::ScopedLock l(lock);
     checkState(PREPARING, "Cannot commit, not preparing");
     if (incomplete.size() == 0) {
-        skip(l); // Tell local replicating subscriptions to skip tx enqueue/dequeue.
         txQueue->deliver(TxCommitEvent().message());
         end(l);
     } else {
