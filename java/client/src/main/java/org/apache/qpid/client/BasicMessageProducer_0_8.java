@@ -217,6 +217,14 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
         AMQFrame contentHeaderFrame =
             ContentHeaderBody.createAMQFrame(getChannelId(),
                                              classIfForBasic, 0, contentHeaderProperties, size);
+        if(contentHeaderFrame.getSize() > getSession().getAMQConnection().getMaximumFrameSize())
+        {
+            throw new JMSException("Unable to send message as the headers are too large ("
+                                   + contentHeaderFrame.getSize()
+                                   + " bytes, but the maximum negotiated frame size is "
+                                   + getSession().getAMQConnection().getMaximumFrameSize()
+                                   + ").");
+        }
         if (getLogger().isDebugEnabled())
         {
             getLogger().debug("Sending content header frame to " + destination);
