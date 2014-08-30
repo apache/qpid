@@ -110,9 +110,15 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     session.setAuthorizedSubject(authResult.getSubject());
 
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
+                    int frameMax = broker.getContextValue(Integer.class, Broker.BROKER_FRAME_SIZE);
+
+                    if(frameMax <= 0)
+                    {
+                        frameMax = Integer.MAX_VALUE;
+                    }
 
                     ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody(broker.getConnection_sessionCountLimit(),
-                                                                                          broker.getContextValue(Long.class,Broker.BROKER_FRAME_SIZE),
+                                                                                          frameMax,
                                                                                           broker.getConnection_heartBeatDelay());
                     session.writeFrame(tuneBody.generateFrame(0));
                     break;

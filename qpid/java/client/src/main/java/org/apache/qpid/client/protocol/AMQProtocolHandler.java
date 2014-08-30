@@ -946,6 +946,6 @@ public class AMQProtocolHandler implements ProtocolEngine
 
     public void setMaxFrameSize(final long frameMax)
     {
-        _decoder.setMaxFrameSize(frameMax == 0l ? 0xffffffffl : frameMax);
+        _decoder.setMaxFrameSize(frameMax == 0l || frameMax > (long) Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) frameMax);
     }
 }

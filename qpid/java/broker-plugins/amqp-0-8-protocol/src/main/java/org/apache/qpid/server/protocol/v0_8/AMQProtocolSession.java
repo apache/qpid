@@ -46,7 +46,7 @@ public interface AMQProtocolSession<T extends AMQProtocolSession<T>>
 {
     long getSessionID();
 
-    void setMaxFrameSize(long frameMax);
+    void setMaxFrameSize(int frameMax);
 
     long getMaxFrameSize();
 

@@ -55,8 +55,13 @@ public class ConnectionTuneOkMethodHandler implements StateAwareMethodListener<C
 
         session.initHeartbeats(body.getHeartbeat());
 
-        long brokerFrameMax = stateManager.getBroker().getContextValue(Long.class,Broker.BROKER_FRAME_SIZE);
-        if(brokerFrameMax != 0 && body.getFrameMax() > brokerFrameMax)
+        int brokerFrameMax = stateManager.getBroker().getContextValue(Integer.class,Broker.BROKER_FRAME_SIZE);
+        if(brokerFrameMax <= 0)
+        {
+            brokerFrameMax = Integer.MAX_VALUE;
+        }
+
+        if(body.getFrameMax() > (long) brokerFrameMax)
         {
             throw new AMQConnectionException(AMQConstant.SYNTAX_ERROR,
                                              "Attempt to set max frame size to " + body.getFrameMax()
@@ -74,7 +79,8 @@ public class ConnectionTuneOkMethodHandler implements StateAwareMethodListener<C
                                              body.getClazz(), body.getMethod(),
                                              body.getMajor(), body.getMinor(),null);
         }
-        session.setMaxFrameSize(body.getFrameMax()== 0l ? (brokerFrameMax == 0l ? 0xFFFFFFFFl : brokerFrameMax) : body.getFrameMax());
+        int frameMax = body.getFrameMax() == 0 ? brokerFrameMax : (int) body.getFrameMax();
+        session.setMaxFrameSize(frameMax);
 
         long maxChannelNumber = body.getChannelMax();
         //0 means no implied limit, except that forced by protocol limitations (0xFFFF)

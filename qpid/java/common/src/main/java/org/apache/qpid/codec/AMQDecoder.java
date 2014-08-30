@@ -96,7 +96,7 @@ public class AMQDecoder
         _expectProtocolInitiation = expectProtocolInitiation;
     }
 
-    public void setMaxFrameSize(final long frameMax)
+    public void setMaxFrameSize(final int frameMax)
     {
         _dataBlockDecoder.setMaxFrameSize(frameMax);
     }

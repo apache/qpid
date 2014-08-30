@@ -83,7 +83,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         _localFQDN = localFQDN;
         _maxNoOfChannels = broker.getConnection_sessionCountLimit();
         _subjectCreator = subjectCreator;
-        _maximumFrameSize = (int) Math.min(0xffffl, broker.getContextValue(Long.class, Broker.BROKER_FRAME_SIZE));
+        _maximumFrameSize = (int) Math.min(0xffffl, broker.getContextValue(Integer.class, Broker.BROKER_FRAME_SIZE));
     }
 
     private static List<String> getFeatures(Broker<?> broker)

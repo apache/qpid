@@ -154,7 +154,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     private long _writtenBytes;
 
-    private long _maxFrameSize;
+    private int _maxFrameSize;
     private final AtomicBoolean _closing = new AtomicBoolean(false);
 
     private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
@@ -250,7 +250,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         return _connectionID;
     }
 
-    public void setMaxFrameSize(long frameMax)
+    public void setMaxFrameSize(int frameMax)
     {
         _maxFrameSize = frameMax;
         _decoder.setMaxFrameSize(frameMax);

@@ -55,7 +55,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         _broker = BrokerTestHelper.createBrokerMock();
         when(_broker.getAttribute(Broker.DEFAULT_VIRTUAL_HOST)).thenReturn("default");
         when(_broker.getDefaultVirtualHost()).thenReturn("default");
-        when(_broker.getContextValue(eq(Long.class), eq(Broker.BROKER_FRAME_SIZE))).thenReturn(0xffffl);
+        when(_broker.getContextValue(eq(Integer.class), eq(Broker.BROKER_FRAME_SIZE))).thenReturn(0xffff);
 
     }
 

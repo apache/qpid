@@ -41,7 +41,7 @@ public class AMQDataBlockDecoder
     }
 
     private Logger _logger = LoggerFactory.getLogger(AMQDataBlockDecoder.class);
-    private long _maxFrameSize = AMQConstant.FRAME_MIN_SIZE.getCode();
+    private int _maxFrameSize = AMQConstant.FRAME_MIN_SIZE.getCode();
 
     public AMQDataBlockDecoder()
     { }
@@ -113,7 +113,7 @@ public class AMQDataBlockDecoder
         return frame;
     }
 
-    public void setMaxFrameSize(final long maxFrameSize)
+    public void setMaxFrameSize(final int maxFrameSize)
     {
         _maxFrameSize = maxFrameSize;
     }

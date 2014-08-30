@@ -79,7 +79,7 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
 
     String BROKER_FRAME_SIZE = "qpid.broker_frame_size";
     @ManagedContextDefault(name = BROKER_FRAME_SIZE)
-    long DEFAULT_FRAME_SIZE = 65535;
+    int DEFAULT_FRAME_SIZE = 65535;
 
 
     @DerivedAttribute
