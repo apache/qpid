@@ -77,10 +77,46 @@ public class ExchangeDestination implements ReceivingDestination, SendingDestina
                     return null;
                 }};
 
+        String routingAddress;
+        MessageMetaData_1_0.MessageHeader_1_0 messageHeader = message.getMessageHeader();
+        if(_initialRoutingAddress == null)
+        {
+            routingAddress = messageHeader.getSubject();
+            if(routingAddress == null)
+            {
+                if (messageHeader.getHeader("routing-key") instanceof String)
+                {
+                    routingAddress = (String) messageHeader.getHeader("routing-key");
+                }
+                else if (messageHeader.getHeader("routing_key") instanceof String)
+                {
+                    routingAddress = (String) messageHeader.getHeader("routing_key");
+                }
+                else if (messageHeader.getTo() != null
+                        && messageHeader.getTo().startsWith(_exchange.getName() + "/"))
+                {
+                    routingAddress = messageHeader.getTo().substring(1+_exchange.getName().length());
+                }
+                else
+                {
+                    routingAddress = "";
+                }
+            }
+        }
+        else
+        {
+            if (messageHeader.getTo() != null
+                && messageHeader.getTo().startsWith(_exchange.getName() + "/" + _initialRoutingAddress + "/"))
+            {
+                routingAddress = messageHeader.getTo().substring(2+_exchange.getName().length()+_initialRoutingAddress.length());
+            }
+            else
+            {
+                routingAddress = _initialRoutingAddress;
+            }
+        }
         int enqueues = _exchange.send(message,
-                                      _initialRoutingAddress == null
-                                              ? message.getInitialRoutingAddress()
-                                              : _initialRoutingAddress,
+                                      routingAddress,
                                       instanceProperties,
                                       txn,
                                       null);
