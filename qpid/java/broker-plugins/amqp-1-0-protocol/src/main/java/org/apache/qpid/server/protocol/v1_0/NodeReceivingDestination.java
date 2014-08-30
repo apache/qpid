@@ -76,7 +76,31 @@ public class NodeReceivingDestination implements ReceivingDestination
                     return null;
                 }};
 
-        int enqueues = _destination.send(message, message.getInitialRoutingAddress(), instanceProperties, txn, null);
+        String routingAddress;
+        MessageMetaData_1_0.MessageHeader_1_0 messageHeader = message.getMessageHeader();
+        routingAddress = messageHeader.getSubject();
+        if(routingAddress == null)
+        {
+            if (messageHeader.getHeader("routing-key") instanceof String)
+            {
+                routingAddress = (String) messageHeader.getHeader("routing-key");
+            }
+            else if (messageHeader.getHeader("routing_key") instanceof String)
+            {
+                routingAddress = (String) messageHeader.getHeader("routing_key");
+            }
+            else if (messageHeader.getTo() != null
+                     && messageHeader.getTo().startsWith(_destination.getName() + "/"))
+            {
+                routingAddress = messageHeader.getTo().substring(1+_destination.getName().length());
+            }
+            else
+            {
+                routingAddress = "";
+            }
+        }
+
+        int enqueues = _destination.send(message, routingAddress, instanceProperties, txn, null);
 
 
         return enqueues == 0 ? REJECTED : ACCEPTED;
