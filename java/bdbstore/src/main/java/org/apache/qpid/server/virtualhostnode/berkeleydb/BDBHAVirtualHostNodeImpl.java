@@ -956,7 +956,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                     public Void execute()
                     {
                         State state = getState();
-                        if (state == State.ACTIVE)
+                        if (state != State.ERRORED)
                         {
                             try
                             {
