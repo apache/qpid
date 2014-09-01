@@ -42,7 +42,7 @@ public interface BDBHARemoteReplicationNode<X extends BDBHARemoteReplicationNode
     String getAddress();
 
     @ManagedAttribute(persist = false)
-    String getRole();
+    NodeRole getRole();
 
     @DerivedAttribute
     long getJoinTime();

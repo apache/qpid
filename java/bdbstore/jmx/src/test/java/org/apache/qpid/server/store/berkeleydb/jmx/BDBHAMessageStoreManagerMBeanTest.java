@@ -44,6 +44,7 @@ import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.NodeRole;
 
 public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 {
@@ -53,7 +54,7 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
     private static final String TEST_NODE_HOST_PORT = "host:1234";
     private static final String TEST_HELPER_HOST_PORT = "host:5678";
     private static final String TEST_DURABILITY = "sync,sync,all";
-    private static final String TEST_NODE_STATE = "MASTER";
+    private static final NodeRole TEST_NODE_ROLE = NodeRole.MASTER;
     private static final boolean TEST_DESIGNATED_PRIMARY_FLAG = false;
 
     private BDBHAVirtualHostNode<?> _virtualHostNode;
@@ -133,9 +134,9 @@ public class BDBHAMessageStoreManagerMBeanTest extends TestCase
 
     public void testNodeState() throws Exception
     {
-        when(_virtualHostNode.getRole()).thenReturn(TEST_NODE_STATE);
+        when(_virtualHostNode.getRole()).thenReturn(TEST_NODE_ROLE);
 
-        assertEquals(TEST_NODE_STATE, _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_NODE_STATE));
+        assertEquals(TEST_NODE_ROLE.name(), _mBean.getAttribute(ManagedBDBHAMessageStore.ATTR_NODE_STATE));
     }
 
     public void testDesignatedPrimaryFlag() throws Exception

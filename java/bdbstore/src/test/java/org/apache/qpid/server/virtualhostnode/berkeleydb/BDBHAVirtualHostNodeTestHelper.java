@@ -164,31 +164,31 @@ public class BDBHAVirtualHostNodeTestHelper
         assertEquals("Unexpected attribute " + name + " on " + object, expectedValue, object.getAttribute(name) );
     }
 
-    public BDBHAVirtualHostNode<?> awaitAndFindNodeInRole(String role) throws InterruptedException
+    public BDBHAVirtualHostNode<?> awaitAndFindNodeInRole(NodeRole desiredRole) throws InterruptedException
     {
         BDBHAVirtualHostNode<?> replica = null;
         int findReplicaCount = 0;
         while(replica == null)
         {
-            replica = findNodeInRole(role);
+            replica = findNodeInRole(desiredRole);
             if (replica == null)
             {
                 Thread.sleep(100);
             }
             if (findReplicaCount > 50)
             {
-                fail("Could not find a node in replica role");
+                fail("Could not find a node in role " + desiredRole);
             }
             findReplicaCount++;
         }
         return replica;
     }
 
-    public BDBHAVirtualHostNode<?> findNodeInRole(String role)
+    public BDBHAVirtualHostNode<?> findNodeInRole(NodeRole role)
     {
         for (BDBHAVirtualHostNode<?> node : _nodes)
         {
-            if (role.equals(node.getRole()))
+            if (role == node.getRole())
             {
                 return node;
             }
@@ -218,15 +218,15 @@ public class BDBHAVirtualHostNodeTestHelper
         return node;
     }
 
-    public void assertNodeRole(BDBHAVirtualHostNode<?> node, String... roleName) throws InterruptedException
+    public void assertNodeRole(BDBHAVirtualHostNode<?> node, NodeRole... roleName) throws InterruptedException
     {
         int iterationCounter = 0;
         boolean inRole =false;
         do
         {
-            for (String role : roleName)
+            for (NodeRole role : roleName)
             {
-                if (role.equals(node.getRole()))
+                if (role == node.getRole())
                 {
                     inRole = true;
                     break;
@@ -252,7 +252,7 @@ public class BDBHAVirtualHostNodeTestHelper
     public BDBHAVirtualHostNode<?> startNodeAndWait(BDBHAVirtualHostNode<?> node) throws InterruptedException
     {
         node.start();
-        assertNodeRole(node, "MASTER", "REPLICA");
+        assertNodeRole(node, NodeRole.MASTER, NodeRole.REPLICA);
         assertEquals("Unexpected node state", State.ACTIVE, node.getState());
         return node;
     }
@@ -273,7 +273,7 @@ public class BDBHAVirtualHostNodeTestHelper
     {
         Map<String, Object> node1Attributes = new HashMap<String, Object>();
         node1Attributes.put(BDBHAVirtualHostNode.ID, UUID.randomUUID());
-        node1Attributes.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        node1Attributes.put(BDBHAVirtualHostNode.TYPE, BDBHAVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE);
         node1Attributes.put(BDBHAVirtualHostNode.NAME, nodeName);
         node1Attributes.put(BDBHAVirtualHostNode.GROUP_NAME, groupName);
         node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, address);

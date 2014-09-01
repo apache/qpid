@@ -50,6 +50,7 @@ import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationN
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNodeImpl;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNodeTestHelper;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.NodeRole;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class BDBHAVirtualHostNodeTest extends QpidTestCase
@@ -91,7 +92,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         BDBHAVirtualHostNode<?> node = _helper.createHaVHN(attributes);
 
         node.start();
-        _helper.assertNodeRole(node, "MASTER", "REPLICA");
+        _helper.assertNodeRole(node, NodeRole.MASTER, NodeRole.REPLICA);
 
         assertEquals("Unexpected node state", State.ACTIVE, node.getState());
 
@@ -155,7 +156,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertEquals("Unexpected electable group override value after mutation", 1, environment.getRepMutableConfig().getElectableGroupSizeOverride());
 
         assertNotNull("Join time should be set", node.getJoinTime());
-        assertNotNull("Last known replication transaction idshould be set", node.getLastKnownReplicationTransactionId());
+        assertNotNull("Last known replication transaction id should be set", node.getLastKnownReplicationTransactionId());
     }
 
     public void testTransferMasterToSelf() throws Exception
@@ -177,11 +178,11 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         Map<String, Object> node3Attributes = _helper.createNodeAttributes("node3", groupName, "localhost:" + node3PortNumber, helperAddress, nodeName);
         _helper.createAndStartHaVHN(node3Attributes);
 
-        BDBHAVirtualHostNode<?> replica = _helper.awaitAndFindNodeInRole("REPLICA");
+        BDBHAVirtualHostNode<?> replica = _helper.awaitAndFindNodeInRole(NodeRole.REPLICA);
 
-        replica.setAttribute(BDBHAVirtualHostNode.ROLE, "REPLICA", "MASTER");
+        replica.setAttribute(BDBHAVirtualHostNode.ROLE, replica.getRole(), NodeRole.MASTER);
 
-        _helper.assertNodeRole(replica, "MASTER");
+        _helper.assertNodeRole(replica, NodeRole.MASTER);
     }
 
     public void testTransferMasterToRemoteReplica() throws Exception
@@ -222,12 +223,12 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertTrue("Replication nodes have not been seen during 5s", remoteNodeLatch.await(5, TimeUnit.SECONDS));
 
         BDBHARemoteReplicationNodeImpl replicaRemoteNode = (BDBHARemoteReplicationNodeImpl)lastSeenReplica.get();
-        _helper.awaitForAttributeChange(replicaRemoteNode, BDBHARemoteReplicationNodeImpl.ROLE, "REPLICA");
+        _helper.awaitForAttributeChange(replicaRemoteNode, BDBHARemoteReplicationNodeImpl.ROLE, NodeRole.REPLICA);
 
-        replicaRemoteNode.setAttributes(Collections.<String,Object>singletonMap(BDBHARemoteReplicationNode.ROLE, "MASTER"));
+        replicaRemoteNode.setAttributes(Collections.<String,Object>singletonMap(BDBHARemoteReplicationNode.ROLE, NodeRole.MASTER));
 
         BDBHAVirtualHostNode<?> replica = replicaRemoteNode.getName().equals(node2.getName())? node2 : node3;
-        _helper.assertNodeRole(replica, "MASTER");
+        _helper.assertNodeRole(replica, NodeRole.MASTER);
     }
 
     public void testMutatingRoleWhenNotReplica_IsDisallowed() throws Exception
@@ -239,11 +240,11 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
         Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, nodePortNumber);
         BDBHAVirtualHostNode<?> node = _helper.createAndStartHaVHN(node1Attributes);
-        _helper.assertNodeRole(node, "MASTER");
+        _helper.assertNodeRole(node, NodeRole.MASTER);
 
         try
         {
-            node.setAttributes(Collections.<String,Object>singletonMap(BDBHAVirtualHostNode.ROLE, "REPLICA"));
+            node.setAttributes(Collections.<String,Object>singletonMap(BDBHAVirtualHostNode.ROLE, NodeRole.REPLICA));
             fail("Role mutation should fail");
         }
         catch(IllegalStateException e)
@@ -272,10 +273,10 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         Map<String, Object> node3Attributes = _helper.createNodeAttributes("node3", groupName, "localhost:" + node3PortNumber, helperAddress, nodeName);
         _helper.createAndStartHaVHN(node3Attributes);
 
-        BDBHAVirtualHostNode<?> master = _helper.awaitAndFindNodeInRole("MASTER");
+        BDBHAVirtualHostNode<?> master = _helper.awaitAndFindNodeInRole(NodeRole.MASTER);
         _helper.awaitRemoteNodes(master, 2);
 
-        BDBHAVirtualHostNode<?> replica = _helper.awaitAndFindNodeInRole("REPLICA");
+        BDBHAVirtualHostNode<?> replica = _helper.awaitAndFindNodeInRole(NodeRole.REPLICA);
 
         assertNotNull("Remote node " + replica.getName() + " is not found", _helper.findRemoteNode(master, replica.getName()));
         replica.delete();
@@ -297,7 +298,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         BDBHAVirtualHostNode<?> node = _helper.createHaVHN(nodeAttributes);
 
         node.start();
-        _helper.assertNodeRole(node, "MASTER", "REPLICA");
+        _helper.assertNodeRole(node, NodeRole.MASTER, NodeRole.REPLICA);
         assertEquals("Unexpected node state", State.ACTIVE, node.getState());
 
         _helper.awaitForVirtualhost(node,30000);
@@ -324,7 +325,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         try
         {
             virtualHost.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHost.LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY, "INVALID"));
-            fail("Invalid syncronization policy is set");
+            fail("Invalid synchronization policy is set");
         }
         catch(IllegalArgumentException e)
         {
@@ -334,7 +335,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         try
         {
             virtualHost.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHost.REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY, "INVALID"));
-            fail("Invalid syncronization policy is set");
+            fail("Invalid synchronization policy is set");
         }
         catch(IllegalArgumentException e)
         {

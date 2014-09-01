@@ -76,7 +76,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
 
-        _helper.assertNodeRole(node1, "MASTER");
+        _helper.assertNodeRole(node1, NodeRole.MASTER);
 
         assertEquals("Unexpected VHN log subject", "[grp(/group)/vhn(/node1)] ", node1.getVirtualHostNodeLogSubject().getLogString());
         assertEquals("Unexpected group log subject", "[grp(/group)] ", node1.getGroupLogSubject().getLogString());
@@ -85,7 +85,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getVirtualHostNodeLogSubject())),
                 argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.CREATED_LOG_HIERARCHY)));
 
-        expectedMessage = HighAvailabilityMessages.ROLE_CHANGED(node1.getName(), node1.getAddress(), "UNKNOWN", "MASTER").toString();
+        expectedMessage = HighAvailabilityMessages.ROLE_CHANGED(node1.getName(), node1.getAddress(), NodeRole.WAITING.name(), NodeRole.MASTER.name()).toString();
         verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getGroupLogSubject())),
                 argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.ROLE_CHANGED_LOG_HIERARCHY)));
     }
@@ -99,7 +99,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
-        _helper.assertNodeRole(node1, "MASTER");
+        _helper.assertNodeRole(node1, NodeRole.MASTER);
 
         reset(_eventLogger);
 
@@ -120,7 +120,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
-        _helper.assertNodeRole(node1, "MASTER");
+        _helper.assertNodeRole(node1, NodeRole.MASTER);
 
         reset(_eventLogger);
 
@@ -143,7 +143,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
-        _helper.assertNodeRole(node1, "MASTER");
+        _helper.assertNodeRole(node1, NodeRole.MASTER);
 
         reset(_eventLogger);
 
@@ -166,7 +166,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
-        _helper.assertNodeRole(node1, "MASTER");
+        _helper.assertNodeRole(node1, NodeRole.MASTER);
 
         reset(_eventLogger);
 
@@ -190,7 +190,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
-        _helper.assertNodeRole(node1, "MASTER");
+        _helper.assertNodeRole(node1, NodeRole.MASTER);
 
         reset(_eventLogger);
 
@@ -219,7 +219,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber);
         node1Attributes.put(BDBHAVirtualHostNode.DESIGNATED_PRIMARY, true);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
-        _helper.assertNodeRole(node1, "MASTER");
+        _helper.assertNodeRole(node1, NodeRole.MASTER);
 
         resetEventLogger();
 
@@ -251,7 +251,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber);
         node1Attributes.put(BDBHAVirtualHostNode.DESIGNATED_PRIMARY, true);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
-        _helper.assertNodeRole(node1, "MASTER");
+        _helper.assertNodeRole(node1, NodeRole.MASTER);
 
         Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
         BDBHAVirtualHostNodeImpl node2 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node2Attributes);
@@ -284,7 +284,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber);
         node1Attributes.put(BDBHAVirtualHostNode.DESIGNATED_PRIMARY, true);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
-        _helper.assertNodeRole(node1, "MASTER");
+        _helper.assertNodeRole(node1, NodeRole.MASTER);
 
         resetEventLogger();
 
@@ -302,7 +302,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         node2Attributes.put(BDBHAVirtualHostNode.PERMITTED_NODES, node1Attributes.get(BDBHAVirtualHostNode.PERMITTED_NODES));
         node2 = (BDBHAVirtualHostNodeImpl)_helper.recoverHaVHN(node2.getId(), node2Attributes);
-        _helper.assertNodeRole(node2, "REPLICA", "MASTER");
+        _helper.assertNodeRole(node2, NodeRole.REPLICA, NodeRole.MASTER);
         waitForNodeDetachedField(remoteNode, false);
 
         final String expectedMessage = HighAvailabilityMessages.JOINED(node2.getName(), node2.getAddress()).toString();
