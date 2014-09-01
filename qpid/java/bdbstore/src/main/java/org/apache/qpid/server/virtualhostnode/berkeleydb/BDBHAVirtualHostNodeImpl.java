@@ -95,7 +95,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
     private final AtomicReference<ReplicatedEnvironmentFacade> _environmentFacade = new AtomicReference<>();
 
-    private final AtomicReference<ReplicatedEnvironment.State> _lastReplicatedEnvironmentState = new AtomicReference<>(ReplicatedEnvironment.State.UNKNOWN);
+    private final AtomicReference<NodeRole> _lastReplicatedEnvironmentState = new AtomicReference<>(NodeRole.WAITING);
     private BDBHAVirtualHostNodeLogSubject _virtualHostNodeLogSubject;
     private GroupLogSubject _groupLogSubject;
     private String _virtualHostNodePrincipalName;
@@ -123,7 +123,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     private int _quorumOverride;
 
     @ManagedAttributeField(afterSet="postSetRole")
-    private String _role;
+    private NodeRole _role;
 
     @ManagedAttributeField
     private String _helperNodeName;
@@ -145,15 +145,14 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
         if (changedAttributes.contains(ROLE))
         {
-            String currentRole = getRole();
-            if (!ReplicatedEnvironment.State.REPLICA.name().equals(currentRole))
+            NodeRole currentRole = getRole();
+            if (NodeRole.REPLICA != currentRole)
             {
-                throw new IllegalStateException("Cannot transfer mastership when not a replica, current role is " + currentRole);
+                throw new IllegalStateException("Cannot transfer mastership when not a " + NodeRole.REPLICA + ", current role is " + currentRole);
             }
-
-            if (!ReplicatedEnvironment.State.MASTER.name().equals(proposed.getRole()))
+            if (NodeRole.MASTER != proposed.getAttribute(ROLE))
             {
-                throw new IllegalArgumentException("Changing role to other value then " + ReplicatedEnvironment.State.MASTER.name() + " is unsupported");
+                throw new IllegalArgumentException("Changing role to other value then " + NodeRole.MASTER + " is unsupported");
             }
         }
 
@@ -206,9 +205,9 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     }
 
     @Override
-    public String getRole()
+    public NodeRole getRole()
     {
-        return _lastReplicatedEnvironmentState.get().name();
+        return _lastReplicatedEnvironmentState.get();
     }
 
     @Override
@@ -350,9 +349,8 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
             // closing the environment does not cause a state change.  Adjust the role
             // so that our observers will see DETACHED rather than our previous role in the group.
-            ReplicatedEnvironment.State detached = ReplicatedEnvironment.State.DETACHED;
-            _lastReplicatedEnvironmentState.set(detached);
-            attributeSet(ROLE, _role, detached);
+            _lastReplicatedEnvironmentState.set(NodeRole.DETACHED);
+            attributeSet(ROLE, _role, NodeRole.DETACHED);
         }
     }
 
@@ -576,7 +574,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             {
                 LOGGER.info("Received BDB event indicating transition to state " + state);
             }
-            String previousRole = getRole();
+            NodeRole previousRole = getRole();
             try
             {
                 switch (state)
@@ -598,10 +596,11 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             }
             finally
             {
-                _lastReplicatedEnvironmentState.set(state);
+                NodeRole newRole = NodeRole.fromJeState(state);
+                _lastReplicatedEnvironmentState.set(newRole);
                 attributeSet(ROLE, _role, state.name());
                 getEventLogger().message(getGroupLogSubject(),
-                        HighAvailabilityMessages.ROLE_CHANGED(getName(), getAddress(), previousRole, state.name()));
+                        HighAvailabilityMessages.ROLE_CHANGED(getName(), getAddress(), previousRole.name(), newRole.name()));
             }
         }
     }
@@ -868,10 +867,10 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             BDBHARemoteReplicationNodeImpl remoteNode = getChildByName(BDBHARemoteReplicationNodeImpl.class, node.getName());
             if (remoteNode != null)
             {
-                String currentRole = remoteNode.getRole();
+                NodeRole currentRole = remoteNode.getRole();
                 if (nodeState == null)
                 {
-                    remoteNode.setRole(ReplicatedEnvironment.State.UNKNOWN.name());
+                    remoteNode.setRole(NodeRole.UNREACHABLE);
                     remoteNode.setLastTransactionId(-1);
                     if (!remoteNode.isDetached())
                     {
@@ -883,7 +882,8 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                 {
                     remoteNode.setJoinTime(nodeState.getJoinTime());
                     remoteNode.setLastTransactionId(nodeState.getCurrentTxnEndVLSN());
-                    remoteNode.setRole(nodeState.getNodeState().name());
+                    ReplicatedEnvironment.State state = nodeState.getNodeState();
+                    remoteNode.setRole(NodeRole.fromJeState(state));
                     if (remoteNode.isDetached())
                     {
                         getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.JOINED(remoteNode.getName(), remoteNode.getAddress()));
@@ -908,10 +908,10 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                     }
                 }
 
-                String newRole = remoteNode.getRole();
-                if (!newRole.equals(currentRole))
+                NodeRole newRole = remoteNode.getRole();
+                if (newRole != currentRole)
                 {
-                    getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.ROLE_CHANGED(remoteNode.getName(), remoteNode.getAddress(), currentRole, newRole));
+                    getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.ROLE_CHANGED(remoteNode.getName(), remoteNode.getAddress(), currentRole.name(), newRole.name()));
                 }
             }
         }

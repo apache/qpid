@@ -96,8 +96,8 @@ define(["dojo/_base/xhr",
           findNode("groupMembers", containerNode),
           [
            { name: 'Name', field: 'name', width: '10%' },
-           { name: 'Role', field: 'role', width: '10%' },
-           { name: 'Address', field: 'address', width: '35%' },
+           { name: 'Role', field: 'role', width: '15%' },
+           { name: 'Address', field: 'address', width: '30%' },
            { name: 'Join Time', field: 'joinTime', width: '25%', formatter: function(value){ return value ? UserPreferences.formatDateTime(value) : "";} },
            { name: 'Replication Transaction ID', field: 'lastKnownReplicationTransactionId', width: '20%', formatter: function(value){ return value > 0 ? value : "N/A";} }
           ],

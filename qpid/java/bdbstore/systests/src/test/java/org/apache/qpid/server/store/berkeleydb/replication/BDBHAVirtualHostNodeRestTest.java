@@ -43,6 +43,7 @@ import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
+import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNodeImpl;
 import org.apache.qpid.systest.rest.Asserts;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -124,7 +125,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         assertEquals("Node 1 observed from node 2 is in the wrong state",
                 "UNAVAILABLE", remoteNode1.get(BDBHARemoteReplicationNode.STATE));
         assertEquals("Node 1 observed from node 2 has the wrong role",
-                     "UNKNOWN", remoteNode1.get(BDBHARemoteReplicationNode.ROLE));
+                     "UNREACHABLE", remoteNode1.get(BDBHARemoteReplicationNode.ROLE));
 
     }
 
@@ -170,8 +171,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         List<Map<String,Object>> data = getRestTestHelper().getJsonAsList("replicationnode/" + NODE1);
         assertEquals("Unexpected number of remote nodes on " + NODE1, 2, data.size());
 
-        int responseCode = getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE2, "DELETE");
-        assertEquals("Unexpected response code on deletion of virtual host node " + NODE2, 200, responseCode);
+        getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE2, "DELETE", HttpServletResponse.SC_OK);
 
         int counter = 0;
         while (data.size() != 1 && counter<50)
@@ -195,23 +195,23 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         assertNode(NODE1, _node1HaPort, _node1HaPort, NODE1);
         assertRemoteNodes(NODE1, NODE2, NODE3);
 
-        // change priority to make Node2 a master
-        int responseCode = getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE2, "PUT", Collections.<String,Object>singletonMap(BDBHAVirtualHostNode.PRIORITY, 100));
-        assertEquals("Unexpected response code on priority update of virtual host node " + NODE2, 200, responseCode);
+        // change priority to ensure that Node2 becomes a master
+        getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE2,
+                                          "PUT",
+                                          Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PRIORITY, 100),
+                                          HttpServletResponse.SC_OK);
 
         List<Map<String,Object>> data = getRestTestHelper().getJsonAsList("replicationnode/" + NODE2);
         assertEquals("Unexpected number of remote nodes on " + NODE2, 2, data.size());
 
         // delete master
-        responseCode = getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE1, "DELETE");
-        assertEquals("Unexpected response code on deletion of virtual host node " + NODE1, 200, responseCode);
+        getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE1, "DELETE", HttpServletResponse.SC_OK);
 
         // wait for new master
         waitForAttributeChanged(_baseNodeRestUrl + NODE2 + "?depth=0", BDBHAVirtualHostNode.ROLE, "MASTER");
 
         // delete remote node
-        responseCode = getRestTestHelper().submitRequest("replicationnode/" + NODE2 + "/" + NODE1, "DELETE");
-        assertEquals("Unexpected response code on deletion of remote node " + NODE1, 200, responseCode);
+        getRestTestHelper().submitRequest("replicationnode/" + NODE2 + "/" + NODE1, "DELETE", HttpServletResponse.SC_OK);
 
         int counter = 0;
         while (data.size() != 1 && counter<50)
@@ -233,7 +233,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
 
         // add permitted node
         Map<String, Object> node3Data = createNodeAttributeMap(NODE3, _node3HaPort, _node1HaPort);
-        getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE3, "PUT", node3Data, 201);
+        getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE3, "PUT", node3Data, HttpServletResponse.SC_CREATED);
         assertNode(NODE3, _node3HaPort, _node1HaPort, NODE1);
         assertRemoteNodes(NODE1, NODE3);
 
@@ -241,7 +241,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
 
         // try to add not permitted node
         Map<String, Object> nodeData = createNodeAttributeMap(NODE2, intruderPort, _node1HaPort);
-        getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE2, "PUT", nodeData, 409);
+        getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE2, "PUT", nodeData, HttpServletResponse.SC_CONFLICT);
 
         assertRemoteNodes(NODE1, NODE3);
     }
@@ -257,7 +257,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
 
         // add permitted node
         Map<String, Object> node3Data = createNodeAttributeMap(NODE3, _node3HaPort, _node1HaPort);
-        getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE3, "PUT", node3Data, 201);
+        getRestTestHelper().submitRequest(_baseNodeRestUrl + NODE3, "PUT", node3Data, HttpServletResponse.SC_CREATED);
         assertNode(NODE3, _node3HaPort, _node1HaPort, NODE1);
         assertRemoteNodes(NODE1, NODE3);
 
@@ -313,8 +313,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
     {
         Map<String, Object> nodeData = createNodeAttributeMap(nodeName, nodePort, helperPort);
 
-        int responseCode = getRestTestHelper().submitRequest(_baseNodeRestUrl + nodeName, "PUT", nodeData);
-        assertEquals("Unexpected response code for virtual host node " + nodeName + " creation request", 201, responseCode);
+        getRestTestHelper().submitRequest(_baseNodeRestUrl + nodeName, "PUT", nodeData, HttpServletResponse.SC_CREATED);
         String hostExpectedState = nodePort == helperPort ? State.ACTIVE.name(): State.UNAVAILABLE.name();
         waitForAttributeChanged("virtualhost/" + nodeName + "/" + _hostName, BDBHAVirtualHost.STATE, hostExpectedState);
     }
@@ -323,11 +322,12 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
     {
         Map<String, Object> nodeData = new HashMap<String, Object>();
         nodeData.put(BDBHAVirtualHostNode.NAME, nodeName);
-        nodeData.put(BDBHAVirtualHostNode.TYPE, "BDB_HA");
+        nodeData.put(BDBHAVirtualHostNode.TYPE, BDBHAVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE);
         nodeData.put(BDBHAVirtualHostNode.GROUP_NAME, _hostName);
         nodeData.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + nodePort);
         nodeData.put(BDBHAVirtualHostNode.HELPER_ADDRESS, "localhost:" + helperPort);
         nodeData.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, NODE1);
+
         Map<String,String> context = new HashMap<>();
         nodeData.put(BDBHAVirtualHostNode.CONTEXT, context);
         if (nodePort == helperPort)
@@ -347,7 +347,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
 
         Map<String, Object> nodeData = getRestTestHelper().getJsonAsSingletonList(_baseNodeRestUrl + nodeName + "?depth=0");
         assertEquals("Unexpected name", nodeName, nodeData.get(BDBHAVirtualHostNode.NAME));
-        assertEquals("Unexpected type", "BDB_HA", nodeData.get(BDBHAVirtualHostNode.TYPE));
+        assertEquals("Unexpected type", BDBHAVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, nodeData.get(BDBHAVirtualHostNode.TYPE));
         assertEquals("Unexpected address", "localhost:" + nodePort, nodeData.get(BDBHAVirtualHostNode.ADDRESS));
         assertEquals("Unexpected helper address", "localhost:" + nodeHelperPort, nodeData.get(BDBHAVirtualHostNode.HELPER_ADDRESS));
         assertEquals("Unexpected group name", _hostName, nodeData.get(BDBHAVirtualHostNode.GROUP_NAME));

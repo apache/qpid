@@ -149,7 +149,7 @@ public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements M
     {
         try
         {
-            return _virtualHostNode.getRole();
+            return _virtualHostNode.getRole().name();
         }
         catch (RuntimeException e)
         {

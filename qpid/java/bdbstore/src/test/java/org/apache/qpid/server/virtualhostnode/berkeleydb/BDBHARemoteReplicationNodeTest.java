@@ -82,7 +82,7 @@ public class BDBHARemoteReplicationNodeTest extends QpidTestCase
         String remoteReplicationName = getName();
         BDBHARemoteReplicationNode remoteReplicationNode = createRemoteReplicationNode(remoteReplicationName);
 
-        remoteReplicationNode.setAttribute(BDBHARemoteReplicationNode.ROLE, "UNKNOWN", "MASTER");
+        remoteReplicationNode.setAttribute(BDBHARemoteReplicationNode.ROLE, remoteReplicationNode.getRole(), NodeRole.MASTER);
 
         verify(_facade).transferMasterAsynchronously(remoteReplicationName);
     }
