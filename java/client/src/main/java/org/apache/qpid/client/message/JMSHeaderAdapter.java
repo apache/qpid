@@ -20,21 +20,48 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.AMQPInvalidClassException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.util.Enumeration;
+
+import org.apache.qpid.AMQPInvalidClassException;
+import org.apache.qpid.framing.FieldTable;
 
 
 public final class JMSHeaderAdapter
 {
+    private static final Map<String,String> AMQP_TO_JMS_HEADER_NAME_MAPPINGS;
+    private static final Map<String,String> JMS_TO_AMQP_HEADER_NAME_MAPPINGS;
+
+
+
+    static
+    {
+        String[][] mappings = {
+                { QpidMessageProperties.QPID_SUBJECT, QpidMessageProperties.QPID_SUBJECT_JMS_PROPERTY }
+        };
+
+        Map<String,String> amqpToJmsHeaderNameMappings = new HashMap<>();
+        Map<String,String> jmsToAmqpHeaderNameMappings = new HashMap<>();
+
+        for(String[] mapping : mappings)
+        {
+            amqpToJmsHeaderNameMappings.put(mapping[0], mapping[1]);
+            jmsToAmqpHeaderNameMappings.put(mapping[1], mapping[0]);
+        }
+
+        AMQP_TO_JMS_HEADER_NAME_MAPPINGS = Collections.unmodifiableMap(amqpToJmsHeaderNameMappings);
+        JMS_TO_AMQP_HEADER_NAME_MAPPINGS = Collections.unmodifiableMap(jmsToAmqpHeaderNameMappings);
+    }
+
+    private static final boolean STRICT_JMS = Boolean.getBoolean("strict-jms");
+
+
     private final FieldTable _headers;
 
     public JMSHeaderAdapter(FieldTable headers)
@@ -43,25 +70,26 @@ public final class JMSHeaderAdapter
     }
 
 
-    public FieldTable getHeaders()
+    private String mapJmsToAmqpName(String name)
     {
-        return _headers;
+        return JMS_TO_AMQP_HEADER_NAME_MAPPINGS.containsKey(name) ? JMS_TO_AMQP_HEADER_NAME_MAPPINGS.get(name) : name;
     }
 
-    public boolean getBoolean(String string) throws JMSException
+    public boolean getBoolean(String name) throws JMSException
     {
-        checkPropertyName(string);
-        Boolean b = getHeaders().getBoolean(string);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        Boolean b = _headers.getBoolean(amqpName);
 
         if (b == null)
         {
-            if (getHeaders().containsKey(string))
+            if (_headers.containsKey(amqpName))
             {
-                Object str = getHeaders().getObject(string);
+                Object str = _headers.getObject(amqpName);
 
                 if (!(str instanceof String))
                 {
-                    throw new MessageFormatException("getBoolean can't use " + string + " item.");
+                    throw new MessageFormatException("getBoolean can't use " + name + " item.");
                 }
                 else
                 {
@@ -77,71 +105,16 @@ public final class JMSHeaderAdapter
         return b;
     }
 
-    public boolean getBoolean(AMQShortString string) throws JMSException
+
+    public byte[] getBytes(String name) throws JMSException
     {
-        checkPropertyName(string);
-        Boolean b = getHeaders().getBoolean(string);
-
-        if (b == null)
-        {
-            if (getHeaders().containsKey(string))
-            {
-                Object str = getHeaders().getObject(string);
-
-                if (!(str instanceof String))
-                {
-                    throw new MessageFormatException("getBoolean can't use " + string + " item.");
-                }
-                else
-                {
-                    return Boolean.valueOf((String) str);
-                }
-            }
-            else
-            {
-                b = Boolean.valueOf(null);
-            }
-        }
-
-        return b;
-    }
-
-    public char getCharacter(String string) throws JMSException
-    {
-        checkPropertyName(string);
-        Character c = getHeaders().getCharacter(string);
-
-        if (c == null)
-        {
-            if (getHeaders().isNullStringValue(string))
-            {
-                throw new NullPointerException("Cannot convert null char");
-            }
-            else
-            {
-                throw new MessageFormatException("getChar can't use " + string + " item.");
-            }
-        }
-        else
-        {
-            return (char) c;
-        }
-    }
-
-    public byte[] getBytes(String string) throws JMSException
-    {
-        return getBytes(new AMQShortString(string));
-    }
-
-    public byte[] getBytes(AMQShortString string) throws JMSException
-    {
-        checkPropertyName(string);
-
-        byte[] bs = getHeaders().getBytes(string);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        byte[] bs = _headers.getBytes(amqpName);
 
         if (bs == null)
         {
-            throw new MessageFormatException("getBytes can't use " + string + " item.");
+            throw new MessageFormatException("getBytes can't use " + name + " item.");
         }
         else
         {
@@ -149,19 +122,20 @@ public final class JMSHeaderAdapter
         }
     }
 
-    public byte getByte(String string) throws JMSException
+    public byte getByte(String name) throws JMSException
     {
-        checkPropertyName(string);
-        Byte b = getHeaders().getByte(string);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        Byte b = _headers.getByte(amqpName);
         if (b == null)
         {
-            if (getHeaders().containsKey(string))
+            if (_headers.containsKey(amqpName))
             {
-                Object str = getHeaders().getObject(string);
+                Object str = _headers.getObject(amqpName);
 
                 if (!(str instanceof String))
                 {
-                    throw new MessageFormatException("getByte can't use " + string + " item.");
+                    throw new MessageFormatException("getByte can't use " + name + " item.");
                 }
                 else
                 {
@@ -177,59 +151,63 @@ public final class JMSHeaderAdapter
         return b;
     }
 
-    public short getShort(String string) throws JMSException
+    public short getShort(String name) throws JMSException
     {
-        checkPropertyName(string);
-        Short s = getHeaders().getShort(string);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        Short s = _headers.getShort(amqpName);
 
         if (s == null)
         {
-            s = Short.valueOf(getByte(string));
+            s = Short.valueOf(getByte(amqpName));
         }
 
         return s;
     }
 
-    public int getInteger(String string) throws JMSException
+    public int getInteger(String name) throws JMSException
     {
-        checkPropertyName(string);
-        Integer i = getHeaders().getInteger(string);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        Integer i = _headers.getInteger(amqpName);
 
         if (i == null)
         {
-            i = Integer.valueOf(getShort(string));
+            i = Integer.valueOf(getShort(amqpName));
         }
 
         return i;
     }
 
-    public long getLong(String string) throws JMSException
+    public long getLong(String name) throws JMSException
     {
-        checkPropertyName(string);
-        Long l = getHeaders().getLong(string);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        Long l = _headers.getLong(amqpName);
 
         if (l == null)
         {
-            l = Long.valueOf(getInteger(string));
+            l = Long.valueOf(getInteger(amqpName));
         }
 
         return l;
     }
 
-    public float getFloat(String string) throws JMSException
+    public float getFloat(String name) throws JMSException
     {
-        checkPropertyName(string);
-        Float f = getHeaders().getFloat(string);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        Float f = _headers.getFloat(amqpName);
 
         if (f == null)
         {
-            if (getHeaders().containsKey(string))
+            if (_headers.containsKey(amqpName))
             {
-                Object str = getHeaders().getObject(string);
+                Object str = _headers.getObject(amqpName);
 
                 if (!(str instanceof String))
                 {
-                    throw new MessageFormatException("getFloat can't use " + string + " item.");
+                    throw new MessageFormatException("getFloat can't use " + name + " item.");
                 }
                 else
                 {
@@ -238,7 +216,7 @@ public final class JMSHeaderAdapter
             }
             else
             {
-                throw new NullPointerException("No such property: " + string);
+                throw new NullPointerException("No such property: " + name);
             }
 
         }
@@ -246,32 +224,34 @@ public final class JMSHeaderAdapter
         return f;
     }
 
-    public double getDouble(String string) throws JMSException
+    public double getDouble(String name) throws JMSException
     {
-        checkPropertyName(string);
-        Double d = getHeaders().getDouble(string);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        Double d = _headers.getDouble(amqpName);
 
         if (d == null)
         {
-            d = Double.valueOf(getFloat(string));
+            d = Double.valueOf(getFloat(amqpName));
         }
 
         return d;
     }
 
-    public String getString(String string) throws JMSException
+    public String getString(String name) throws JMSException
     {
-        checkPropertyName(string);
-        String s = getHeaders().getString(string);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        String s = _headers.getString(amqpName);
 
         if (s == null)
         {
-            if (getHeaders().containsKey(string))
+            if (_headers.containsKey(amqpName))
             {
-                Object o = getHeaders().getObject(string);
+                Object o = _headers.getObject(amqpName);
                 if (o instanceof byte[])
                 {
-                    throw new MessageFormatException("getObject couldn't find " + string + " item.");
+                    throw new MessageFormatException("getObject couldn't find " + name + " item.");
                 }
                 else
                 {
@@ -290,115 +270,76 @@ public final class JMSHeaderAdapter
         return s;
     }
 
-    public Object getObject(String string) throws JMSException
+    public Object getObject(String name) throws JMSException
     {
-        checkPropertyName(string);
-        return getHeaders().getObject(string);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        return _headers.getObject(amqpName);
     }
 
-    public void setBoolean(AMQShortString string, boolean b) throws JMSException
+    public void setBoolean(String name, boolean b) throws JMSException
     {
-        checkPropertyName(string);
-        getHeaders().setBoolean(string, b);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        _headers.setBoolean(amqpName, b);
     }
 
-    public void setBoolean(String string, boolean b) throws JMSException
+    public void setByte(String name, byte b) throws JMSException
     {
-        checkPropertyName(string);
-        getHeaders().setBoolean(string, b);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        _headers.setByte(amqpName, b);
     }
 
-    public void setChar(String string, char c) throws JMSException
+    public void setShort(String name, short i) throws JMSException
     {
-        checkPropertyName(string);
-        getHeaders().setChar(string, c);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        _headers.setShort(amqpName, i);
     }
 
-    public Object setBytes(AMQShortString string, byte[] bytes)
+    public void setInteger(String name, int i) throws JMSException
     {
-        checkPropertyName(string);
-        return getHeaders().setBytes(string, bytes);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        _headers.setInteger(amqpName, i);
     }
 
-    public Object setBytes(String string, byte[] bytes)
+    public void setLong(String name, long l) throws JMSException
     {
-        checkPropertyName(string);
-        return getHeaders().setBytes(string, bytes);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        _headers.setLong(amqpName, l);
     }
 
-    public Object setBytes(String string, byte[] bytes, int start, int length)
+    public void setFloat(String name, float v) throws JMSException
     {
-        checkPropertyName(string);
-        return getHeaders().setBytes(string, bytes, start, length);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        _headers.setFloat(amqpName, v);
     }
 
-    public void setByte(String string, byte b) throws JMSException
+    public void setDouble(String name, double v) throws JMSException
     {
-        checkPropertyName(string);
-        getHeaders().setByte(string, b);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        _headers.setDouble(amqpName, v);
     }
 
-    public void setByte(AMQShortString string, byte b) throws JMSException
+    public void setString(String name, String value) throws JMSException
     {
-        checkPropertyName(string);
-        getHeaders().setByte(string, b);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
+        _headers.setString(amqpName, value);
     }
 
-
-    public void setShort(String string, short i) throws JMSException
+    public void setObject(String name, Object object) throws JMSException
     {
-        checkPropertyName(string);
-        getHeaders().setShort(string, i);
-    }
-
-    public void setInteger(String string, int i) throws JMSException
-    {
-        checkPropertyName(string);
-        getHeaders().setInteger(string, i);
-    }
-
-    public void setInteger(AMQShortString string, int i) throws JMSException
-    {
-        checkPropertyName(string);
-        getHeaders().setInteger(string, i);
-    }
-
-    public void setLong(String string, long l) throws JMSException
-    {
-        checkPropertyName(string);
-        getHeaders().setLong(string, l);
-    }
-
-    public void setFloat(String string, float v) throws JMSException
-    {
-        checkPropertyName(string);
-        getHeaders().setFloat(string, v);
-    }
-
-    public void setDouble(String string, double v) throws JMSException
-    {
-        checkPropertyName(string);
-        getHeaders().setDouble(string, v);
-    }
-
-    public void setString(String string, String string1) throws JMSException
-    {
-        checkPropertyName(string);
-        getHeaders().setString(string, string1);
-    }
-
-    public void setString(AMQShortString string, String string1) throws JMSException
-    {
-        checkPropertyName(string);
-        getHeaders().setString(string, string1);
-    }
-
-    public void setObject(String string, Object object) throws JMSException
-    {
-        checkPropertyName(string);
+        checkPropertyName(name);
+        String amqpName = mapJmsToAmqpName(name);
         try
         {
-            getHeaders().setObject(string, object);
+            _headers.setObject(amqpName, object);
         }
         catch (AMQPInvalidClassException aice)
         {
@@ -409,85 +350,45 @@ public final class JMSHeaderAdapter
         }
     }
 
-    public boolean itemExists(String string) throws JMSException
+    public Set<String> getPropertyNames()
     {
-        checkPropertyName(string);
-        return getHeaders().containsKey(string);
-    }
-
-    public Enumeration getPropertyNames()
-    {
-        return getHeaders().getPropertyNames();
+        Set<String> names = new LinkedHashSet<>(_headers.keys());
+        for(Map.Entry<String,String> entry : AMQP_TO_JMS_HEADER_NAME_MAPPINGS.entrySet())
+        {
+            if(names.contains(entry.getKey()))
+            {
+                names.add(entry.getValue());
+                if(STRICT_JMS)
+                {
+                    names.remove(entry.getKey());
+                }
+            }
+        }
+        return names;
     }
 
     public void clear()
     {
-        getHeaders().clear();
+        _headers.clear();
     }
 
-    public boolean propertyExists(AMQShortString propertyName)
+    public boolean propertyExists(String name)
     {
-        checkPropertyName(propertyName);
-        return getHeaders().propertyExists(propertyName);
+        checkPropertyName(name);
+        String propertyName = mapJmsToAmqpName(name);
+        return _headers.propertyExists(propertyName);
     }
 
-    public boolean propertyExists(String propertyName)
+    public Object remove(String name)
     {
-        checkPropertyName(propertyName);
-        return getHeaders().propertyExists(propertyName);
-    }
-
-    public Object put(Object key, Object value)
-    {
-        checkPropertyName(key.toString());
-        return getHeaders().setObject(key.toString(), value);
-    }
-
-    public Object remove(AMQShortString propertyName)
-    {
-        checkPropertyName(propertyName);
-        return getHeaders().remove(propertyName);
-    }
-
-    public Object remove(String propertyName)
-    {
-        checkPropertyName(propertyName);
-        return getHeaders().remove(propertyName);
+        checkPropertyName(name);
+        String propertyName = mapJmsToAmqpName(name);
+        return _headers.remove(propertyName);
     }
 
     public boolean isEmpty()
     {
-        return getHeaders().isEmpty();
-    }
-
-    public void writeToBuffer(final ByteBuffer data)
-    {
-        try
-        {
-            getHeaders().writeToBuffer(new DataOutputStream(new OutputStream()
-            {
-                @Override
-                public void write(final int b)
-                {
-                    data.put((byte)b);
-                }
-
-                @Override
-                public void write(final byte[] b, final int off, final int len)
-                {
-                    data.put(b, off, len);
-                }
-            }));
-        }
-        catch (IOException e)
-        {
-            throw new IllegalArgumentException("Unexpected IO Exception - should never happen", e);
-        }
-    }
-
-    public Enumeration getMapNames()
-    {
-        return getPropertyNames();
+        return _headers.isEmpty();
     }
 
     protected void checkPropertyName(CharSequence propertyName)
@@ -501,10 +402,10 @@ public final class JMSHeaderAdapter
             throw new IllegalArgumentException("Property name must not be the empty string");
         }
 
-        checkIdentiferFormat(propertyName);
+        checkIdentifierFormat(propertyName);
     }
 
-    protected void checkIdentiferFormat(CharSequence propertyName)
+    protected void checkIdentifierFormat(CharSequence propertyName)
     {
 //        JMS requirements 3.5.1 Property Names
 //        Identifiers:
@@ -536,7 +437,7 @@ public final class JMSHeaderAdapter
 //          JMSType. JMSMessageID, JMSCorrelationID, and JMSType values may be
 //          null and if so are treated as a NULL value.
 
-        if (Boolean.getBoolean("strict-jms"))
+        if (STRICT_JMS)
         {
             // JMS start character
             if (!(Character.isJavaIdentifierStart(propertyName.charAt(0))))

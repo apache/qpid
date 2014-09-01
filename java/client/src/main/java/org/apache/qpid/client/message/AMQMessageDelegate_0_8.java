@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.jms.Destination;
@@ -135,16 +136,9 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         {
             String subject = null;
             if (contentHeader.getHeaders() != null
-                && contentHeader.getHeaders().containsKey(QpidMessageProperties.QPID_SUBJECT)
-                    && STRICT_JMS)
+                && contentHeader.getHeaders().containsKey(QpidMessageProperties.QPID_SUBJECT))
             {
                 subject = contentHeader.getHeaders().getString(QpidMessageProperties.QPID_SUBJECT);
-                if (subject != null)
-                {
-                    contentHeader.getHeaders().remove(QpidMessageProperties.QPID_SUBJECT);
-                    contentHeader.getHeaders().setString("JMS_" + QpidMessageProperties.QPID_SUBJECT_JMS_PROPER,
-                                                         subject);
-                }
             }
             if(type == null)
             {
@@ -512,7 +506,8 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
 
     public Enumeration getPropertyNames() throws JMSException
     {
-        return getJmsHeaders().getPropertyNames();
+        Set<String> keys = getJmsHeaders().getPropertyNames();
+        return Collections.enumeration(keys);
     }
 
     public void setBooleanProperty(String propertyName, boolean b) throws JMSException
@@ -584,7 +579,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         }
 
         checkWritableProperties();
-        getJmsHeaders().setDouble(propertyName, new Double(v));
+        getJmsHeaders().setDouble(propertyName, v);
     }
 
     public void setStringProperty(String propertyName, String value) throws JMSException
