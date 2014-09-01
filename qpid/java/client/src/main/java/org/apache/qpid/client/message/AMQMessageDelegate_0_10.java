@@ -129,7 +129,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
                 if (subject != null)
                 {
                     messageProps.getApplicationHeaders().remove(QpidMessageProperties.QPID_SUBJECT);
-                    messageProps.getApplicationHeaders().put("JMS_" + QpidMessageProperties.QPID_SUBJECT_JMS_PROPER,subject);
+                    messageProps.getApplicationHeaders().put(QpidMessageProperties.QPID_SUBJECT_JMS_PROPERTY,subject);
                 }
             }
             dest = (AMQDestination) convertToAddressBasedDestination(_deliveryProps.getExchange(),
@@ -705,7 +705,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         }
         else if (isStrictJMS && QpidMessageProperties.QPID_SUBJECT.equals(propertyName))
         {
-            return (String)getApplicationHeaders().get("JMS_" + QpidMessageProperties.QPID_SUBJECT_JMS_PROPER);
+            return (String)getApplicationHeaders().get(QpidMessageProperties.QPID_SUBJECT_JMS_PROPERTY);
         }
         else
         {
