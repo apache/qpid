@@ -243,9 +243,8 @@ QueryCmd()
 
 def print_usage(prog):
     print "usage: %s <command> [<arguments>]\n\nCommands are:\n"%prog
-    for name, command in Command.commands.iteritems():
-        help = command.help
-        print "  %-12s %s."%(name, help.split(".")[0])
+    for cmd in Command.commands:
+        print "  %-12s %s."%(cmd.name, cmd.help.split(".")[0])
     print "\nFor help with a command type: %s <command> --help\n"%prog
 
 def find_command(args, commands):
