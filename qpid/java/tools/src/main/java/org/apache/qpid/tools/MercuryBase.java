@@ -30,7 +30,6 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.messaging.Address;
@@ -107,7 +106,7 @@ public class MercuryBase
         controllerSession = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         dest = createDestination();
-        controllerQueue = AMQDestination.createDestination(CONTROLLER_ADDR);
+        controllerQueue = AMQDestination.createDestination(CONTROLLER_ADDR, false);
         myControlQueue = session.createQueue(myControlQueueAddr);
         msgType = MessageType.getType(config.getMessageType());
         _logger.debug("Using " + msgType + " messages");
@@ -122,7 +121,7 @@ public class MercuryBase
         {
             _logger.debug("Prefix : " + prefix);
             Address addr = Address.parse(config.getAddress());
-            AMQDestination temp = (AMQDestination) AMQDestination.createDestination(config.getAddress());
+            AMQDestination temp = (AMQDestination) AMQDestination.createDestination(config.getAddress(), false);
             int type = ((AMQSession_0_10)session).resolveAddressType(temp);
 
             if ( type == AMQDestination.TOPIC_TYPE)
@@ -136,11 +135,11 @@ public class MercuryBase
                 System.out.println("Setting name : " + addr);
             }
 
-            return AMQDestination.createDestination(addr.toString());
+            return AMQDestination.createDestination(addr.toString(), false);
         }
         else
         {
-            return AMQDestination.createDestination(config.getAddress());
+            return AMQDestination.createDestination(config.getAddress(), false);
         }
     }
 

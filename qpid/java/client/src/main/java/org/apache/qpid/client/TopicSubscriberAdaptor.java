@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.AMQException;
-
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.Topic;
 import javax.jms.TopicSubscriber;
+
+import org.apache.qpid.AMQException;
 
 /**
  * Wraps a MessageConsumer to fulfill the extended TopicSubscriber contract
@@ -43,6 +43,7 @@ class TopicSubscriberAdaptor<C extends BasicMessageConsumer> implements TopicSub
         _topic = topic;
         _consumer = consumer;
         _noLocal = noLocal;
+        consumer.setAddressType(AMQDestination.TOPIC_TYPE);
     }
     
     TopicSubscriberAdaptor(Topic topic, C consumer)

@@ -305,7 +305,7 @@ public abstract class QpidExceptionHandler implements ExceptionListener
        }
        else
        {
-          _destination = (AMQDestination)AMQDestination.createDestination(_spec.getDestination());
+          _destination = (AMQDestination)AMQDestination.createDestination(_spec.getDestination(), false);
           
           if (destinationTypeString != null && !destinationTypeString.trim().equals(""))
           {

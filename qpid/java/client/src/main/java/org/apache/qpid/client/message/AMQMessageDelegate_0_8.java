@@ -21,6 +21,19 @@
 
 package org.apache.qpid.client.message;
 
+import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageNotWriteableException;
+import javax.jms.Queue;
+
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
@@ -31,17 +44,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
-
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageNotWriteableException;
-import javax.jms.Queue;
-import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.UUID;
 
 
 public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
@@ -63,6 +65,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     });
 
     public static final String JMS_TYPE = "x-jms-type";
+    public static final boolean STRICT_JMS = Boolean.getBoolean("strict-jms");
 
 
     private boolean _readableProperties = false;
@@ -96,7 +99,8 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     // Used when generating a received message object
     protected AMQMessageDelegate_0_8(long deliveryTag, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
                                      AMQShortString routingKey, AMQSession_0_8.DestinationCache<AMQQueue> queueDestinationCache,
-                                                         AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache)
+                                                         AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache,
+                                    int addressType)
     {
         this(contentHeader, deliveryTag);
 
@@ -104,28 +108,46 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
 
         AMQDestination dest = null;
 
-        // If we have a type set the attempt to use that.
-        if (type != null)
+        if(AMQDestination.getDefaultDestSyntax() == AMQDestination.DestSyntax.BURL)
         {
-            switch (type.intValue())
+            // If we have a type set the attempt to use that.
+            if (type != null)
             {
-                case AMQDestination.QUEUE_TYPE:
-                    dest = queueDestinationCache.getDestination(exchange, routingKey);
-                    break;
-                case AMQDestination.TOPIC_TYPE:
-                    dest = topicDestinationCache.getDestination(exchange, routingKey);
-                    break;
-                default:
-                    // Use the generateDestination method
-                    dest = null;
+                switch (type.intValue())
+                {
+                    case AMQDestination.QUEUE_TYPE:
+                        dest = queueDestinationCache.getDestination(exchange, routingKey);
+                        break;
+                    case AMQDestination.TOPIC_TYPE:
+                        dest = topicDestinationCache.getDestination(exchange, routingKey);
+                        break;
+                    default:
+                        // Use the generateDestination method
+                        dest = null;
+                }
+            }
+
+            if (dest == null)
+            {
+                dest = generateDestination(exchange, routingKey);
             }
         }
-
-        if (dest == null)
+        else
         {
-            dest = generateDestination(exchange, routingKey);
+            String subject = null;
+            if (contentHeader.getHeaders() != null
+                && contentHeader.getHeaders().containsKey(QpidMessageProperties.QPID_SUBJECT))
+            {
+                subject = contentHeader.getHeaders().getString(QpidMessageProperties.QPID_SUBJECT);
+            }
+            if(type == null)
+            {
+                type = addressType;
+            }
+            dest = (AMQDestination) convertToAddressBasedDestination(AMQShortString.toString(exchange),
+                                                                     AMQShortString.toString(routingKey), subject,
+                                                                     true, type);
         }
-
         setJMSDestination(dest);
     }
 
@@ -484,7 +506,8 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
 
     public Enumeration getPropertyNames() throws JMSException
     {
-        return getJmsHeaders().getPropertyNames();
+        Set<String> keys = getJmsHeaders().getPropertyNames();
+        return Collections.enumeration(keys);
     }
 
     public void setBooleanProperty(String propertyName, boolean b) throws JMSException
@@ -556,7 +579,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         }
 
         checkWritableProperties();
-        getJmsHeaders().setDouble(propertyName, new Double(v));
+        getJmsHeaders().setDouble(propertyName, v);
     }
 
     public void setStringProperty(String propertyName, String value) throws JMSException

@@ -20,12 +20,14 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.url.BindingURL;
+import java.net.URISyntaxException;
 
 import javax.jms.Queue;
-import java.net.URISyntaxException;
+
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.messaging.Address;
+import org.apache.qpid.url.BindingURL;
 
 public class AMQQueue extends AMQDestination implements Queue
 {
@@ -34,6 +36,11 @@ public class AMQQueue extends AMQDestination implements Queue
     public AMQQueue()
     {
         super();
+    }
+
+    public AMQQueue(Address address)
+    {
+        super(address);
     }
 
     public AMQQueue(String address) throws URISyntaxException

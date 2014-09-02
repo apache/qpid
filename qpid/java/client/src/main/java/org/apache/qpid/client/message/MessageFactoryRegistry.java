@@ -20,6 +20,12 @@
  */
 package org.apache.qpid.client.message;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.jms.JMSException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,11 +39,6 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
-
-import javax.jms.JMSException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class MessageFactoryRegistry
 {
@@ -95,19 +96,24 @@ public class MessageFactoryRegistry
      * Create a message. This looks up the MIME type from the content header and instantiates the appropriate
      * concrete message type.
      *
-     *
-     * @param deliveryTag   the AMQ message id
+     *  @param deliveryTag   the AMQ message id
      * @param redelivered   true if redelivered
      * @param contentHeader the content header that was received
      * @param bodies        a list of ContentBody instances @return the message.
      * @param queueDestinationCache
-     *@param topicDestinationCache @throws AMQException
+     * @param topicDestinationCache @throws AMQException
+     * @param addressType
      * @throws JMSException
      */
-    public AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered, AMQShortString exchange,
-                                            AMQShortString routingKey, ContentHeaderBody contentHeader, List bodies,
+    public AbstractJMSMessage createMessage(long deliveryTag,
+                                            boolean redelivered,
+                                            AMQShortString exchange,
+                                            AMQShortString routingKey,
+                                            ContentHeaderBody contentHeader,
+                                            List bodies,
                                             AMQSession_0_8.DestinationCache<AMQQueue> queueDestinationCache,
-                                            AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache)
+                                            AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache,
+                                            final int addressType)
             throws AMQException, JMSException
     {
         BasicContentHeaderProperties properties = contentHeader.getProperties();
@@ -124,7 +130,7 @@ public class MessageFactoryRegistry
             mf = _default;
         }
 
-        return mf.createMessage(deliveryTag, redelivered, contentHeader, exchange, routingKey, bodies, queueDestinationCache, topicDestinationCache);
+        return mf.createMessage(deliveryTag, redelivered, contentHeader, exchange, routingKey, bodies, queueDestinationCache, topicDestinationCache, addressType);
     }
 
     public AbstractJMSMessage createMessage(MessageTransfer transfer) throws AMQException, JMSException

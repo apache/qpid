@@ -255,7 +255,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
     {
         try
         {
-            return AMQDestination.createDestination(str);
+            return AMQDestination.createDestination(str, false);
         }
         catch (Exception e)
         {

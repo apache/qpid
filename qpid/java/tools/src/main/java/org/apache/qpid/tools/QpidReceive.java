@@ -34,10 +34,8 @@ import javax.jms.TextMessage;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.tools.TestConfiguration.MessageType;
 import org.apache.qpid.tools.report.BasicReporter;
 import org.apache.qpid.tools.report.Reporter;
-import org.apache.qpid.tools.report.Statistics.Throughput;
 import org.apache.qpid.tools.report.Statistics.ThroughputAndLatency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,7 +105,7 @@ public class QpidReceive implements MessageListener
 		if (config.getReadyAddress() != null)
 		{
 			MessageProducer prod = session.createProducer(AMQDestination
-					.createDestination(config.getReadyAddress()));
+					.createDestination(config.getReadyAddress(), false));
 			prod.send(session.createMessage());
 			if (_logger.isDebugEnabled())
 			{
@@ -193,7 +191,7 @@ public class QpidReceive implements MessageListener
 				System.out,
 				config.reportEvery(),
 				config.isReportHeader());
-		Destination dest = AMQDestination.createDestination(config.getAddress());
+		Destination dest = AMQDestination.createDestination(config.getAddress(), false);
 		QpidReceive receiver = new QpidReceive(reporter,config, config.createConnection(),dest);
 		receiver.setUp();
 		receiver.waitforCompletion(config.getMsgCount() + config.getSendEOS());
