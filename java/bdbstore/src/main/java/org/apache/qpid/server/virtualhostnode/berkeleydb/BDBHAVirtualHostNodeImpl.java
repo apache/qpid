@@ -118,7 +118,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     @ManagedAttributeField(afterSet="postSetPriority")
     private int _priority;
 
-
     @ManagedAttributeField(afterSet="postSetQuorumOverride")
     private int _quorumOverride;
 
@@ -867,15 +866,16 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             BDBHARemoteReplicationNodeImpl remoteNode = getChildByName(BDBHARemoteReplicationNodeImpl.class, node.getName());
             if (remoteNode != null)
             {
-                NodeRole currentRole = remoteNode.getRole();
+                final NodeRole previousRole = remoteNode.getRole();
+                final NodeRole newRole;
                 if (nodeState == null)
                 {
-                    remoteNode.setRole(NodeRole.UNREACHABLE);
+                    newRole = NodeRole.UNREACHABLE;
+                    remoteNode.setRole(newRole);
                     remoteNode.setLastTransactionId(-1);
-                    if (!remoteNode.isDetached())
+                    if (previousRole != NodeRole.UNREACHABLE)
                     {
                         getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.LEFT(remoteNode.getName(), remoteNode.getAddress()));
-                        remoteNode.setDetached(true);
                     }
                 }
                 else
@@ -883,13 +883,15 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                     remoteNode.setJoinTime(nodeState.getJoinTime());
                     remoteNode.setLastTransactionId(nodeState.getCurrentTxnEndVLSN());
                     ReplicatedEnvironment.State state = nodeState.getNodeState();
-                    remoteNode.setRole(NodeRole.fromJeState(state));
-                    if (remoteNode.isDetached())
+                    newRole = NodeRole.fromJeState(state);
+                    remoteNode.setRole(newRole);
+
+                    if (previousRole == NodeRole.UNREACHABLE)
                     {
                         getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.JOINED(remoteNode.getName(), remoteNode.getAddress()));
-                        remoteNode.setDetached(false);
                     }
-                    if (ReplicatedEnvironment.State.MASTER.name().equals(remoteNode.getRole()))
+
+                    if (NodeRole.MASTER == newRole)
                     {
                         byte[] applicationState = nodeState.getAppState();
                         Set<String> permittedNodes = ReplicatedEnvironmentFacade.convertApplicationStateBytesToPermittedNodeList(applicationState);
@@ -908,10 +910,12 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                     }
                 }
 
-                NodeRole newRole = remoteNode.getRole();
-                if (newRole != currentRole)
+                if (newRole != previousRole)
                 {
-                    getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.ROLE_CHANGED(remoteNode.getName(), remoteNode.getAddress(), currentRole.name(), newRole.name()));
+                    getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.ROLE_CHANGED(remoteNode.getName(),
+                                                                                                         remoteNode.getAddress(),
+                                                                                                         previousRole.name(),
+                                                                                                         newRole.name()));
                 }
             }
         }
