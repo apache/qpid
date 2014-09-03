@@ -270,6 +270,16 @@ public class ClientProperties
     public static final String ADDR_SYNTAX_SUPPORTED_IN_0_8 = "qpid.addr_syntax_supported";
     public static final boolean DEFAULT_ADDR_SYNTAX_0_8_SUPPORT = true;
 
+    /**
+     * Before 0.30, when using AMQP 0-8..0-9-1 requesting queue depth (AMQSession#getQueueDepth) for a queue that
+     * did not exist resulted in AMQChannelException.  From 0.30 forward, 0 is returned in common with 0-10
+     * behaviour.
+     *
+     * Setting this system property true restores the old behaviour.  It also avoids the isBound with a null exchange
+     * that causes an error in the Java Broker (0.28 and earlier).
+     */
+    public static final String QPID_USE_LEGACY_GETQUEUEDEPTH_BEHAVIOUR = "qpid.use_legacy_getqueuedepth_behavior";
+
     private ClientProperties()
     {
         //No instances
