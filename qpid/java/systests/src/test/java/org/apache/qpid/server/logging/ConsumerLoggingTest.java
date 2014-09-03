@@ -22,6 +22,8 @@ package org.apache.qpid.server.logging;
 
 import javax.jms.QueueBrowser;
 import junit.framework.AssertionFailedError;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQConnection;
 
@@ -295,8 +297,17 @@ public class ConsumerLoggingTest extends AbstractTestLogging
      */
     public void testSubscriptionSuspend() throws Exception, IOException
     {
+        // Temporary code to better understand a failure in a CI environment.
+        Logger subscriptionLogger = Logger.getLogger("qpid.message.subscription.state");
+        getLogger().debug("Subscription Logger: level " + subscriptionLogger.getLevel() + " effective level " + subscriptionLogger.getEffectiveLevel());
+        if (subscriptionLogger.getEffectiveLevel() == Level.OFF)
+        {
+            getLogger().debug("Resetting subscription logger level to INFO");
+            subscriptionLogger.setLevel(Level.INFO);
+        }
+
         //Close session with large prefetch
-        _connection.createSession(false, Session.AUTO_ACKNOWLEDGE).close();
+        _session.close();
 
         int PREFETCH = 15;
 
@@ -321,7 +332,7 @@ public class ConsumerLoggingTest extends AbstractTestLogging
         _session.commit();
         // Retreive the first message, and start the flow of messages
         Message msg = consumer.receive(1000);
-        assertNotNull("First message not retreived", msg);
+        assertNotNull("First message not retrieved", msg);
         _session.commit();
         
         // Drain the queue to ensure there is time for the ACTIVE log message
@@ -349,7 +360,7 @@ public class ConsumerLoggingTest extends AbstractTestLogging
             // Validation expects three messages.
             // The Actor can be any one of the following depending on the exactly what is going on on the broker.
             // Ideally we would test that we can get all of them but setting up
-            // the timing to do this in a consistent way is not benefitial.
+            // the timing to do this in a consistent way is not beneficial.
             // Ensuring the State is as expected is sufficient.
 // INFO - MESSAGE [vh(/test)/qu(example.queue)] [sub:6(qu(example.queue))] SUB-1003 : State :
 // INFO - MESSAGE [con:6(guest@anonymous(26562441)/test)/ch:3] [sub:6(qu(example.queue))] SUB-1003 : State :
