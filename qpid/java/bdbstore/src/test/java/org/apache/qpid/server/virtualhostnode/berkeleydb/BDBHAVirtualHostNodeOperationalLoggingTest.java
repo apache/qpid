@@ -24,6 +24,7 @@ import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.*;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Map;
 
 import org.apache.qpid.server.logging.EventLogger;
@@ -264,7 +265,7 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         // close remote node
         node2.close();
 
-        waitForNodeDetachedField(remoteNode, true);
+        waitForRemoteNodeToAttainRole(remoteNode, EnumSet.of(NodeRole.DETACHED));
 
         // verify that remaining node issues the DETACHED operational logging for remote node
         String expectedMessage = HighAvailabilityMessages.LEFT(node2.getName(), node2.getAddress()).toString();
@@ -296,23 +297,25 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         node2.close();
 
-        waitForNodeDetachedField(remoteNode, true);
+        waitForRemoteNodeToAttainRole(remoteNode, EnumSet.of(NodeRole.DETACHED));
 
         reset(_eventLogger);
 
-        node2Attributes.put(BDBHAVirtualHostNode.PERMITTED_NODES, node1Attributes.get(BDBHAVirtualHostNode.PERMITTED_NODES));
+        node2Attributes.put(BDBHAVirtualHostNode.PERMITTED_NODES,
+                            node1Attributes.get(BDBHAVirtualHostNode.PERMITTED_NODES));
         node2 = (BDBHAVirtualHostNodeImpl)_helper.recoverHaVHN(node2.getId(), node2Attributes);
         _helper.assertNodeRole(node2, NodeRole.REPLICA, NodeRole.MASTER);
-        waitForNodeDetachedField(remoteNode, false);
+        waitForRemoteNodeToAttainRole(remoteNode, EnumSet.of(NodeRole.REPLICA, NodeRole.MASTER));
 
         final String expectedMessage = HighAvailabilityMessages.JOINED(node2.getName(), node2.getAddress()).toString();
         verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getGroupLogSubject())),
                 argThat(new LogMessageMatcher(expectedMessage, HighAvailabilityMessages.JOINED_LOG_HIERARCHY)));
     }
 
-    private void waitForNodeDetachedField(BDBHARemoteReplicationNodeImpl remoteNode, boolean expectedDetached) throws InterruptedException {
+    private void waitForRemoteNodeToAttainRole(BDBHARemoteReplicationNode remoteNode, EnumSet<NodeRole> desiredRoles) throws Exception
+    {
         int counter = 0;
-        while (expectedDetached != remoteNode.isDetached() && counter<50)
+        while (!desiredRoles.contains(remoteNode.getRole())  && counter<50)
         {
             Thread.sleep(100);
             counter++;

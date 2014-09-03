@@ -62,7 +62,6 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
 
     private final AtomicReference<State> _state;
     private final boolean _isMonitor;
-    private boolean _detached;
     private BDBHAVirtualHostNodeLogSubject _virtualHostNodeLogSubject;
     private GroupLogSubject _groupLogSubject;
     private volatile NodeRole _lastKnownRole;
@@ -252,16 +251,6 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
 
         boolean isActive = NodeRole.MASTER == role || NodeRole.REPLICA == role;
         _state.compareAndSet(currentState, isActive ? State.ACTIVE : State.UNAVAILABLE);
-    }
-
-    public boolean isDetached()
-    {
-        return _detached;
-    }
-
-    public void setDetached(boolean detached)
-    {
-        _detached = detached;
     }
 
     @Override
