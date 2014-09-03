@@ -58,6 +58,7 @@ import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
 import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
@@ -76,6 +77,9 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
     private final boolean _syncAfterClientAck =
             Boolean.parseBoolean(System.getProperty(QPID_SYNC_AFTER_CLIENT_ACK, "true"));
+
+    private final boolean _useLegacyQueueDepthBehaviour =
+            Boolean.parseBoolean(System.getProperty(ClientProperties.QPID_USE_LEGACY_GETQUEUEDEPTH_BEHAVIOUR, "false"));
 
     /**
      * The period to wait while flow controlled before sending a log message confirming that the session is still
@@ -878,7 +882,8 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
     protected Long requestQueueDepth(AMQDestination amqd, boolean sync) throws AMQException, FailoverException
     {
-        if(isBound(null, amqd.getAMQQueueName(), null))
+
+        if(_useLegacyQueueDepthBehaviour || isBound(null, amqd.getAMQQueueName(), null))
         {
             AMQFrame queueDeclare =
                     getMethodRegistry().createQueueDeclareBody(getTicket(),
