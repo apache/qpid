@@ -201,7 +201,7 @@ struct Transfer : public TransactionalClient, public Runnable
                 id << source << ">" << target << ":" << t+1;
                 try {
                     for (uint m = 0; m < opts.msgsPerTx; m++) {
-                        Message msg = receiver.fetch(Duration::SECOND*opts.fetchTimeout);
+                        Message msg = receiver.fetch(Duration::SECOND*uint64_t(opts.fetchTimeout));
                         if (msg.getContentSize() != opts.size) {
                             std::ostringstream oss;
                             oss << "Message size incorrect: size=" << msg.getContentSize() << "; expected " << opts.size;
