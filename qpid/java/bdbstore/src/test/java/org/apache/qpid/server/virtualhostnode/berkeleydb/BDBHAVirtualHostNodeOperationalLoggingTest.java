@@ -26,12 +26,16 @@ import static org.mockito.Mockito.*;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.HighAvailabilityMessages;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.SystemConfig;
+import org.apache.qpid.server.store.berkeleydb.NoopConfigurationChangeListener;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.hamcrest.Description;
 import org.mockito.ArgumentMatcher;
@@ -252,20 +256,39 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber);
         node1Attributes.put(BDBHAVirtualHostNode.DESIGNATED_PRIMARY, true);
         BDBHAVirtualHostNodeImpl node1 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node1Attributes);
-        _helper.assertNodeRole(node1, NodeRole.MASTER);
 
+        final CountDownLatch remoteNodeAdded = new CountDownLatch(1);
+        node1.addChangeListener(new NoopConfigurationChangeListener()
+        {
+            @Override
+            public void childAdded(ConfiguredObject<?> object, ConfiguredObject<?> child)
+            {
+                if (child instanceof BDBHARemoteReplicationNode)
+                {
+                    remoteNodeAdded.countDown();
+                }
+            }
+        });
         Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
         BDBHAVirtualHostNodeImpl node2 = (BDBHAVirtualHostNodeImpl)_helper.createHaVHN(node2Attributes);
-        _helper.awaitRemoteNodes(node1, 1);
 
-        reset(_eventLogger);
+        assertTrue("Remote node was not added during expected period of time", remoteNodeAdded.await(10, TimeUnit.SECONDS));
+
 
         BDBHARemoteReplicationNodeImpl remoteNode = (BDBHARemoteReplicationNodeImpl)node1.getRemoteReplicationNodes().iterator().next();
+        waitForRemoteNodeToAttainRole(remoteNode, EnumSet.of(NodeRole.REPLICA));
+
+
+        reset(_eventLogger);
 
         // close remote node
         node2.close();
 
-        waitForRemoteNodeToAttainRole(remoteNode, EnumSet.of(NodeRole.DETACHED));
+
+        waitForRemoteNodeToAttainRole(remoteNode, EnumSet.of(NodeRole.UNREACHABLE));
+
+        // make sure that task executor thread finishes all scheduled tasks
+        node1.stop();
 
         // verify that remaining node issues the DETACHED operational logging for remote node
         String expectedMessage = HighAvailabilityMessages.LEFT(node2.getName(), node2.getAddress()).toString();
@@ -294,10 +317,11 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         _helper.awaitRemoteNodes(node1, 1);
 
         BDBHARemoteReplicationNodeImpl remoteNode = (BDBHARemoteReplicationNodeImpl)node1.getRemoteReplicationNodes().iterator().next();
+        waitForRemoteNodeToAttainRole(remoteNode, EnumSet.of(NodeRole.REPLICA));
 
         node2.close();
 
-        waitForRemoteNodeToAttainRole(remoteNode, EnumSet.of(NodeRole.DETACHED));
+        waitForRemoteNodeToAttainRole(remoteNode, EnumSet.of(NodeRole.UNREACHABLE));
 
         reset(_eventLogger);
 
@@ -306,6 +330,9 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
         node2 = (BDBHAVirtualHostNodeImpl)_helper.recoverHaVHN(node2.getId(), node2Attributes);
         _helper.assertNodeRole(node2, NodeRole.REPLICA, NodeRole.MASTER);
         waitForRemoteNodeToAttainRole(remoteNode, EnumSet.of(NodeRole.REPLICA, NodeRole.MASTER));
+
+        // make sure that task executor thread finishes all scheduled tasks
+        node1.stop();
 
         final String expectedMessage = HighAvailabilityMessages.JOINED(node2.getName(), node2.getAddress()).toString();
         verify(_eventLogger).message(argThat(new LogSubjectMatcher(node1.getGroupLogSubject())),
