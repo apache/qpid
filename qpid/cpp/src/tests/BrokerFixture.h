@@ -102,8 +102,8 @@ struct  BrokerFixture : private boost::noncopyable {
 
         // Argument parsing
         std::vector<const char*> argv(args.size());
-        std::transform(args.begin(), args.end(), argv.begin(),
-                       boost::bind(&std::string::c_str, _1));
+        for (size_t i = 0; i<args.size(); ++i)
+            argv.push_back(args[i].c_str());
         Plugin::addOptions(opts);
         opts.parse(argv.size(), &argv[0]);
         broker = Broker::create(opts);
