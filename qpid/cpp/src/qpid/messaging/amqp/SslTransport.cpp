@@ -63,6 +63,7 @@ struct StaticInit
 SslTransport::SslTransport(TransportContext& c, boost::shared_ptr<Poller> p) : context(c), connector(0), aio(0), poller(p)
 {
     const ConnectionOptions* options = context.getOptions();
+    options->configureSocket(socket);
     if (options->sslCertName != "") {
         QPID_LOG(debug, "ssl-cert-name = " << options->sslCertName);
         socket.setCertName(options->sslCertName);

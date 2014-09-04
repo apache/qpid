@@ -20,6 +20,7 @@
  */
 #include "TcpTransport.h"
 #include "ConnectionContext.h"
+#include "qpid/messaging/ConnectionOptions.h"
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/ConnectionCodec.h"
 #include "qpid/sys/Poller.h"
@@ -54,6 +55,7 @@ void TcpTransport::connect(const std::string& host, const std::string& port)
 {
     assert(!connector);
     assert(!aio);
+    context.getOptions()->configureSocket(*socket);
     connector = AsynchConnector::create(
         *socket,
         host, port,
