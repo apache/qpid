@@ -1527,7 +1527,7 @@ class TransactionTests(HaBrokerTest):
             t = CommitThread()
             t.start()            # Commit in progress
             t.join(timeout=0.01)
-            self.assertTrue(t.is_alive())
+            self.assertTrue(t.isAlive())
             cluster.bounce(0)
             os.kill(cluster[2].pid, signal.SIGCONT)
             t.join()
