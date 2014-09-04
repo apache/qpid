@@ -95,7 +95,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
     private final AtomicReference<ReplicatedEnvironmentFacade> _environmentFacade = new AtomicReference<>();
 
-    private final AtomicReference<NodeRole> _lastReplicatedEnvironmentState = new AtomicReference<>(NodeRole.WAITING);
+    private final AtomicReference<NodeRole> _lastRole = new AtomicReference<>(NodeRole.DETACHED);
     private BDBHAVirtualHostNodeLogSubject _virtualHostNodeLogSubject;
     private GroupLogSubject _groupLogSubject;
     private String _virtualHostNodePrincipalName;
@@ -206,7 +206,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     @Override
     public NodeRole getRole()
     {
-        return _lastReplicatedEnvironmentState.get();
+        return _lastRole.get();
     }
 
     @Override
@@ -316,6 +316,12 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             LOGGER.debug("Activating virtualhost node " + this);
         }
 
+        // activating the environment does not cause a state change.  Adjust the role
+        // so that our observers will see WAITING rather than our previous role in the group.
+        // the role will change again after the election at which point it will become master or replica.
+        _lastRole.set(NodeRole.WAITING);
+        attributeSet(ROLE, _role, NodeRole.WAITING);
+
         getConfigurationStore().openConfigurationStore(this, false);
 
         getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.CREATED());
@@ -348,7 +354,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
             // closing the environment does not cause a state change.  Adjust the role
             // so that our observers will see DETACHED rather than our previous role in the group.
-            _lastReplicatedEnvironmentState.set(NodeRole.DETACHED);
+            _lastRole.set(NodeRole.DETACHED);
             attributeSet(ROLE, _role, NodeRole.DETACHED);
         }
     }
@@ -596,8 +602,8 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             finally
             {
                 NodeRole newRole = NodeRole.fromJeState(state);
-                _lastReplicatedEnvironmentState.set(newRole);
-                attributeSet(ROLE, _role, state.name());
+                _lastRole.set(newRole);
+                attributeSet(ROLE, _role, newRole);
                 getEventLogger().message(getGroupLogSubject(),
                         HighAvailabilityMessages.ROLE_CHANGED(getName(), getAddress(), previousRole.name(), newRole.name()));
             }
@@ -951,8 +957,13 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             }
             else
             {
-                LOGGER.error(String.format("Intruder node '%s' from '%s' detected. Shutting down virtual host node '%s' based on permitted nodes '%s'",
-                        node.getName(), hostAndPort, BDBHAVirtualHostNodeImpl.this.getName(), String.valueOf(BDBHAVirtualHostNodeImpl.this.getPermittedNodes()) ));
+                LOGGER.error(String.format("Intruder node '%s' from '%s' detected. Shutting down virtual host node " +
+                                           "'%s' (last role %s) owing to the presence of a node not in permitted nodes '%s'",
+                                           node.getName(),
+                                           hostAndPort,
+                                           BDBHAVirtualHostNodeImpl.this.getName(),
+                                           _lastRole.get(),
+                                           String.valueOf(BDBHAVirtualHostNodeImpl.this.getPermittedNodes()) ));
 
                 getTaskExecutor().submit(new Task<Void>()
                 {
@@ -973,6 +984,9 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                             finally
                             {
                                 closeEnvironment();
+
+                                _lastRole.set(NodeRole.DETACHED);
+                                attributeSet(ROLE, _role, NodeRole.DETACHED);
                             }
                             notifyStateChanged(state, State.ERRORED);
                         }
