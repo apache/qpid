@@ -1052,11 +1052,12 @@ class Engine:
     type = props.get("type", "queue")
     declare = props.get("x-declare", {})
 
+    cmd = None
     if type == "topic":
-      cmd = ExchangeDeclare(exchange=name, durable=durable) if create_node else None
+      if create_node: cmd = ExchangeDeclare(exchange=name, durable=durable)
       bindings = get_bindings(props, exchange=name)
     elif type == "queue":
-      cmd = QueueDeclare(queue=name, durable=durable) if create_node else None
+      if create_node: cmd = QueueDeclare(queue=name, durable=durable)
       bindings = get_bindings(props, queue=name)
     else:
       raise ValueError(type)
