@@ -201,7 +201,7 @@ public:
         }
         operator bool() const
         {
-            return value;
+            return !!value;
         }
     };
 
