@@ -72,3 +72,5 @@ org.apache.qpid.server.queue.QueueBindTest#testQueueCanBeReboundOnTopicExchange
 
 // Java 0-10 exclusive queues are owned by sessions not by the client-id, so the owner is not meaningful from JMX
 org.apache.qpid.systest.management.jmx.QueueManagementTest#testExclusiveQueueHasJmsClientIdAsOwner
+
+org.apache.qpid.test.unit.client.AMQSessionTest#testQueueDepthForQueueThatDoesNotExistLegacyBehaviour_08_091

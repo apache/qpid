@@ -20,19 +20,23 @@
  */
 package org.apache.qpid.test.unit.client;
 
+import org.apache.qpid.AMQChannelClosedException;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.AMQSession_0_8;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.JMSException;
 import javax.jms.QueueReceiver;
 import javax.jms.TopicSubscriber;
 
-/**
- * Tests for QueueReceiver and TopicSubscriber creation methods on AMQSession
- */
+
 public class AMQSessionTest extends QpidBrokerTestCase
 {
 
@@ -44,23 +48,10 @@ public class AMQSessionTest extends QpidBrokerTestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _connection = (AMQConnection) getConnection("guest", "guest");
-        _topic = new AMQTopic(_connection,"mytopic");
-        _queue = new AMQQueue(_connection,"myqueue");
-        _session = (AMQSession) _connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
-    }
-
-    protected void tearDown() throws Exception
-    {
-        try
-        {
-            _connection.close();
-        }
-        catch (JMSException e)
-        {
-            //just close
-        }
-        super.tearDown();
+        _connection = (AMQConnection) getConnection();
+        _topic = new AMQTopic(_connection, "mytopic");
+        _queue = new AMQQueue(_connection, "myqueue");
+        _session = (AMQSession) _connection.createSession(true, AMQSession.SESSION_TRANSACTED);
     }
 
     public void testCreateSubscriber() throws JMSException
@@ -69,7 +60,9 @@ public class AMQSessionTest extends QpidBrokerTestCase
         assertEquals("Topic names should match from TopicSubscriber", _topic.getTopicName(), subscriber.getTopic().getTopicName());
 
         subscriber = _session.createSubscriber(_topic, "abc", false);
-        assertEquals("Topic names should match from TopicSubscriber with selector", _topic.getTopicName(), subscriber.getTopic().getTopicName());
+        assertEquals("Topic names should match from TopicSubscriber with selector",
+                     _topic.getTopicName(),
+                     subscriber.getTopic().getTopicName());
     }
 
     public void testCreateDurableSubscriber() throws JMSException
@@ -99,6 +92,48 @@ public class AMQSessionTest extends QpidBrokerTestCase
 
         receiver = _session.createReceiver(_queue, "abc");
         assertEquals("Queue names should match from QueueReceiver with selector", _queue.getQueueName(), receiver.getQueue().getQueueName());
+    }
+
+    public void testQueueDepthForQueueWithDepth() throws Exception
+    {
+        AMQDestination dest = (AMQDestination) _session.createQueue(getTestQueueName());
+        _session.createConsumer(dest).close();
+
+        long depth = _session.getQueueDepth(dest);
+        assertEquals("Unexpected queue depth for empty queue", 0 , depth);
+
+        sendMessage(_session, dest, 1);
+
+        depth = _session.getQueueDepth(dest);
+        assertEquals("Unexpected queue depth for empty queue", 1, depth);
+    }
+
+    public void testQueueDepthForQueueThatDoesNotExist() throws Exception
+    {
+        AMQDestination dest = (AMQDestination) _session.createQueue(getTestQueueName());
+
+        long depth = _session.getQueueDepth(dest);
+        assertEquals("Unexpected queue depth for non-existent queue", 0 , depth);
+    }
+
+    public void testQueueDepthForQueueThatDoesNotExistLegacyBehaviour_08_091() throws Exception
+    {
+        _session.close();
+
+        setTestClientSystemProperty(ClientProperties.QPID_USE_LEGACY_GETQUEUEDEPTH_BEHAVIOUR, "true");
+        _session = (AMQSession) _connection.createSession(true, AMQSession.SESSION_TRANSACTED);
+
+        AMQDestination dest = (AMQDestination) _session.createQueue(getTestQueueName());
+
+        try
+        {
+            _session.getQueueDepth(dest);
+            fail("Exception not thrown");
+        }
+        catch(AMQChannelClosedException cce)
+        {
+            assertEquals(AMQConstant.NOT_FOUND, cce.getErrorCode());
+        }
     }
 
 }
