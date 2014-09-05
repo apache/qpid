@@ -32,7 +32,7 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 @ManagedObject( category = false, type = "AMQP")
-public interface AmqpPort<X extends AmqpPort<X>> extends Port<X>
+public interface AmqpPort<X extends AmqpPort<X>> extends ClientAuthCapablePort<X>
 {
     String DEFAULT_AMQP_SEND_BUFFER_SIZE = "262144";
     String DEFAULT_AMQP_RECEIVE_BUFFER_SIZE = "262144";
