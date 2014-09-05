@@ -25,7 +25,6 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
-import org.apache.qpid.server.model.Transport;
 
 abstract public class AbstractClientAuthCapablePortWithAuthProvider<X extends AbstractClientAuthCapablePortWithAuthProvider<X>> extends AbstractPortWithAuthProvider<X>
         implements ClientAuthCapablePort<X>
@@ -68,7 +67,7 @@ abstract public class AbstractClientAuthCapablePortWithAuthProvider<X extends Ab
             throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but has no trust stores configured.");
         }
 
-        boolean useTLSTransport = getTransports().contains(Transport.SSL) || getTransports().contains(Transport.WSS);
+        boolean useTLSTransport = isUsingTLSTransport();
         if(useClientAuth && !useTLSTransport)
         {
             throw new IllegalConfigurationException(
@@ -84,7 +83,7 @@ abstract public class AbstractClientAuthCapablePortWithAuthProvider<X extends Ab
 
         boolean requiresCertificate = updated.getNeedClientAuth() || updated.getWantClientAuth();
 
-        boolean usesSsl = updated.getTransports().contains(Transport.SSL);
+        boolean usesSsl = isUsingTLSTransport(updated.getTransports());
         if (usesSsl)
         {
             if ((updated.getTrustStores() == null || updated.getTrustStores().isEmpty() ) && requiresCertificate)
