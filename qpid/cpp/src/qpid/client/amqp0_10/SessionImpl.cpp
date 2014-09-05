@@ -36,6 +36,7 @@
 #include "qpid/messaging/Sender.h"
 #include "qpid/messaging/Receiver.h"
 #include "qpid/messaging/Session.h"
+#include "qpid/framing/enum.h"
 #include <boost/format.hpp>
 #include <boost/function.hpp>
 #include <boost/intrusive_ptr.hpp>
@@ -79,6 +80,10 @@ void SessionImpl::checkError()
         throw qpid::messaging::TargetCapacityExceeded(e.what());
     } catch (const qpid::framing::UnauthorizedAccessException& e) {
         throw qpid::messaging::UnauthorizedAccess(e.what());
+    } catch (const qpid::framing::NotFoundException& e) {
+        throw qpid::messaging::NotFound(e.what());
+    } catch (const qpid::framing::ResourceDeletedException& e) {
+        throw qpid::messaging::NotFound(e.what());
     } catch (const qpid::SessionException& e) {
         throw qpid::messaging::SessionError(e.what());
     } catch (const qpid::ConnectionException& e) {
@@ -405,10 +410,8 @@ bool SessionImpl::nextReceiver(qpid::messaging::Receiver& receiver, qpid::messag
         } catch (const qpid::framing::ResourceLimitExceededException& e) {
             if (backoff()) return false;
             else throw qpid::messaging::TargetCapacityExceeded(e.what());
-        } catch (const qpid::framing::UnauthorizedAccessException& e) {
-            throw qpid::messaging::UnauthorizedAccess(e.what());
         } catch (const qpid::SessionException& e) {
-            throw qpid::messaging::SessionError(e.what());
+            rethrow(e);
         } catch (const qpid::ClosedException&) {
             throw qpid::messaging::SessionClosed();
         } catch (const qpid::ConnectionException& e) {
@@ -586,6 +589,18 @@ bool SessionImpl::backoff()
 qpid::messaging::Connection SessionImpl::getConnection() const
 {
     return qpid::messaging::Connection(connection.get());
+}
+
+void SessionImpl::rethrow(const qpid::SessionException& e) {
+    switch (e.code) {
+      case framing::execution::ERROR_CODE_NOT_ALLOWED:
+      case framing::execution::ERROR_CODE_UNAUTHORIZED_ACCESS: throw messaging::UnauthorizedAccess(e.what());
+
+      case framing::execution::ERROR_CODE_NOT_FOUND:
+      case framing::execution::ERROR_CODE_RESOURCE_DELETED: throw messaging::NotFound(e.what());
+
+      default: throw SessionError(e.what());
+    }
 }
 
 }}} // namespace qpid::client::amqp0_10
