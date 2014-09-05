@@ -26,7 +26,7 @@ trap stop_broker INT TERM QUIT
 export PATH=$PWD:$srcdir:$PYTHON_COMMANDS:$PATH
 
 start_broker() {
-    QPID_PORT=$($QPIDD_EXEC --daemon --port 0 --interface 127.0.0.1 --no-data-dir --paging-dir=$PWD/pqtest_data $MODULES --auth no) || fail "Could not start broker"
+    QPID_PORT=$($QPIDD_EXEC --daemon --port 0 --interface 127.0.0.1 --no-data-dir --paging-dir=$PWD/pqtest_data $MODULES --auth no) || { echo "Could not start broker"; exit 1; }
 }
 
 stop_broker() {
