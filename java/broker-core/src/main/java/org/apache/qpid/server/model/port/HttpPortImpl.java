@@ -20,17 +20,14 @@
  */
 package org.apache.qpid.server.model.port;
 
-import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
 
-public class HttpPortImpl extends AbstractPortWithAuthProvider<HttpPortImpl> implements HttpPort<HttpPortImpl>
+public class HttpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<HttpPortImpl> implements HttpPort<HttpPortImpl>
 {
     private PortManager _portManager;
 

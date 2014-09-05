@@ -90,6 +90,12 @@ define(["dojo/_base/xhr",
 
         };
 
+        addPort._isSecure = function(currentTransport)
+        {
+          return currentTransport == "SSL" || (lang.isArray(currentTransport) && array.indexOf(currentTransport, "SSL")>=0)
+            || currentTransport == "WSS" || (lang.isArray(currentTransport) && array.indexOf(currentTransport, "WSS")>=0);
+        }
+
         addPort._convertToPort = function(formValues)
             {
                 var newPort = {};
@@ -155,7 +161,7 @@ define(["dojo/_base/xhr",
 
                     var initialTransport = transportWidget.initialValue;
                     var currentTransport = transportWidget.value;
-                    if (currentTransport == "SSL" || (lang.isArray(currentTransport) && array.indexOf(currentTransport, "SSL")>=0))
+                    if (addPort._isSecure(currentTransport))
                     {
                       newPort.needClientAuth = needClientAuth.checked;
                       newPort.wantClientAuth = wantClientAuth.checked
@@ -191,7 +197,7 @@ define(["dojo/_base/xhr",
                 var clientAuthPanel = dojo.byId("formAddPort:fieldsClientAuth");
                 var transportSSLPanelNode = dom.byId("formAddPort:fieldsTransportSSL");
 
-                if (transportType == "SSL" || (lang.isArray(transportType) && array.indexOf(transportType, "SSL")>=0))
+                if (addPort._isSecure(transportType))
                 {
                     var typeMetaData = metadata.getMetaData("Port", portType);
                     var clientAuth = "needClientAuth" in typeMetaData.attributes || "wantClientAuth" in typeMetaData.attributes;
