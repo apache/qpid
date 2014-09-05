@@ -88,9 +88,7 @@ abstract public class AbstractPortWithAuthProvider<X extends AbstractPortWithAut
             throw new IllegalConfigurationException(
                     "Can't create port which requests SSL client certificates but doesn't use SSL transport.");
         }
-
     }
-
 
     @Override
     protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
@@ -98,8 +96,8 @@ abstract public class AbstractPortWithAuthProvider<X extends AbstractPortWithAut
         super.validateChange(proxyForValidation, changedAttributes);
         Port<?> updated = (Port<?>)proxyForValidation;
 
-        boolean needClientCertificate = (Boolean) updated.getAttribute(NEED_CLIENT_AUTH);
-        boolean wantClientCertificate = (Boolean) updated.getAttribute(WANT_CLIENT_AUTH);
+        boolean needClientCertificate = updated.getAttribute(NEED_CLIENT_AUTH) == null ? false : (Boolean) updated.getAttribute(NEED_CLIENT_AUTH);
+        boolean wantClientCertificate = updated.getAttribute(WANT_CLIENT_AUTH) == null ? false : (Boolean) updated.getAttribute(WANT_CLIENT_AUTH);
         boolean requiresCertificate = needClientCertificate || wantClientCertificate;
 
         boolean usesSsl = updated.getTransports().contains(Transport.SSL);
@@ -117,8 +115,5 @@ abstract public class AbstractPortWithAuthProvider<X extends AbstractPortWithAut
                 throw new IllegalConfigurationException("Can't create port which requests SSL client certificates but doesn't use SSL transport.");
             }
         }
-
-
-
     }
 }

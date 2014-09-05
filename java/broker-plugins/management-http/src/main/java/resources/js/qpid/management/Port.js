@@ -137,6 +137,7 @@ define(["dojo/dom",
                            "needClientAuthValue",
                            "wantClientAuthValue",
                            "trustStoresValue",
+                           "authenticationProvider",
                            "bindingAddress",
                            "keyStore",
                            "needClientAuth",
@@ -183,6 +184,7 @@ define(["dojo/dom",
 
               var typeMetaData = metadata.getMetaData("Port", this.portData["type"]);
 
+              this.authenticationProvider.style.display = "authenticationProvider" in typeMetaData.attributes ? "block" : "none";
               this.bindingAddress.style.display = "bindingAddress" in typeMetaData.attributes ? "block" : "none";
               this.keyStore.style.display = "keyStore" in typeMetaData.attributes ? "block" : "none";
               this.needClientAuth.style.display = "needClientAuth" in typeMetaData.attributes ? "block" : "none";
