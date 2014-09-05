@@ -82,7 +82,7 @@ class ReplicationTests(HaBrokerTest):
         def verify(b, prefix, p):
             """Verify setup was replicated to backup b"""
             # Wait for configuration to replicate.
-            wait_address(b, prefix+"x");
+            wait_address(b.connection, prefix+"x");
             self.assert_browse_retry(b, prefix+"q1", ["b", "1", "4"])
 
             self.assertEqual(p.receiver(prefix+"q1").fetch(timeout=0).content, "b")
@@ -90,7 +90,7 @@ class ReplicationTests(HaBrokerTest):
             self.assert_browse_retry(b, prefix+"q1", ["1", "4"])
 
             self.assert_browse_retry(b, prefix+"q2", []) # configuration only
-            assert not valid_address(b, prefix+"q3")
+            assert not valid_address(b.connection, prefix+"q3")
 
             # Verify exchange with replicate=all
             b.sender(prefix+"e1/key1").send(qm.Message(prefix+"e1"))
@@ -104,8 +104,8 @@ class ReplicationTests(HaBrokerTest):
             self.assert_browse_retry(b, prefix+"q4", ["6","7"])
 
             # Verify deletes
-            assert not valid_address(b, prefix+"dq")
-            assert not valid_address(b, prefix+"de")
+            assert not valid_address(b.connection, prefix+"dq")
+            assert not valid_address(b.connection, prefix+"de")
 
         l = LogLevel(ERROR) # Hide expected WARNING log messages from failover.
         try:
@@ -130,7 +130,7 @@ class ReplicationTests(HaBrokerTest):
             # Test a series of messages, enqueue all then dequeue all.
             primary.agent.addQueue("foo")
             s = p.sender("foo")
-            wait_address(b, "foo")
+            wait_address(b.connection, "foo")
             msgs = [str(i) for i in range(10)]
             for m in msgs: s.send(qm.Message(m))
             self.assert_browse_retry(p, "foo", msgs)
@@ -168,11 +168,8 @@ class ReplicationTests(HaBrokerTest):
 
         msgs = [str(i) for i in range(30)]
         b1 = backup1.connect_admin().session()
-        wait_address(b1, "q");
-        self.assert_browse_retry(b1, "q", msgs)
-        b2 = backup2.connect_admin().session()
-        wait_address(b2, "q");
-        self.assert_browse_retry(b2, "q", msgs)
+        backup1.assert_browse_backup("q", msgs)
+        backup2.assert_browse_backup("q", msgs)
 
     def test_send_receive(self):
         """Verify sequence numbers of messages sent by qpid-send"""
@@ -556,16 +553,16 @@ class ReplicationTests(HaBrokerTest):
 
         s1 = cluster[1].connect_admin().session()
         cluster[1].wait_backup("q")
-        assert not valid_address(s1, "exad")
-        assert valid_address(s1, "ex")
-        assert valid_address(s1, "ad")
-        assert valid_address(s1, "time")
+        assert not valid_address(s1.connection, "exad")
+        assert valid_address(s1.connection, "ex")
+        assert valid_address(s1.connection, "ad")
+        assert valid_address(s1.connection, "time")
 
         # Verify that auto-delete queues are not kept alive by
         # replicating subscriptions
         ad.close()
         s0.sync()
-        assert not valid_address(s0, "ad")
+        assert not valid_address(s0.connection, "ad")
 
     def test_broker_info(self):
         """Check that broker information is correctly published via management"""

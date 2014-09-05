@@ -241,11 +241,11 @@ acl allow all all
 
     def wait_address(self, address):
         """Wait for address to become valid on the broker."""
-        bs = self.connect_admin().session()
-        try: wait_address(bs, address)
-        finally: bs.connection.close()
+        c = self.connect_admin()
+        try: wait_address(c, address)
+        finally: c.close()
 
-    def wait_backup(self, address): self.wait_address(address)
+    wait_backup = wait_address
 
     def browse(self, queue, timeout=0, transform=lambda m: m.content):
         c = self.connect_admin()
@@ -253,21 +253,15 @@ acl allow all all
             return browse(c.session(), queue, timeout, transform)
         finally: c.close()
 
-    def assert_browse(self, queue, expected, **kwargs):
-        """Verify queue contents by browsing."""
-        bs = self.connect().session()
-        try:
-            wait_address(bs, queue)
-            assert_browse_retry(bs, queue, expected, **kwargs)
-        finally: bs.connection.close()
-
     def assert_browse_backup(self, queue, expected, **kwargs):
         """Combines wait_backup and assert_browse_retry."""
-        bs = self.connect_admin().session()
+        c = self.connect_admin()
         try:
-            wait_address(bs, queue)
-            assert_browse_retry(bs, queue, expected, **kwargs)
-        finally: bs.connection.close()
+            wait_address(c, queue)
+            assert_browse_retry(c.session(), queue, expected, **kwargs)
+        finally: c.close()
+
+    assert_browse = assert_browse_backup
 
     def assert_connect_fail(self):
         try:
@@ -384,18 +378,17 @@ class HaCluster(object):
     def __iter__(self): return self._brokers.__iter__()
 
 
-def wait_address(session, address):
+def wait_address(connection, address):
     """Wait for an address to become valid."""
-    def check():
-        try: session.sender(address); return True
-        except  qm.NotFound: return False
-    assert retry(check), "Timed out waiting for address %s"%(address)
+    assert retry(lambda: valid_address(connection, address)), "Timed out waiting for address %s"%(address)
 
-def valid_address(session, address):
+def valid_address(connection, address):
     """Test if an address is valid"""
     try:
-        session.receiver(address)
+        s = connection.session().receiver(address)
+        s.session.close()
         return True
-    except qm.NotFound: return False
+    except qm.NotFound:
+        return False
 
 

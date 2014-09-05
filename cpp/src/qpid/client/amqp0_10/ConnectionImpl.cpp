@@ -237,7 +237,7 @@ qpid::messaging::Session ConnectionImpl::newSession(bool transactional, const st
         } catch (const qpid::TransportFailure&) {
             reopen();
         } catch (const qpid::SessionException& e) {
-            throw qpid::messaging::SessionError(e.what());
+            SessionImpl::rethrow(e);
         } catch (const std::exception& e) {
             throw qpid::messaging::MessagingException(e.what());
         }

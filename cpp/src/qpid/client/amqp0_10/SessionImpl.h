@@ -109,8 +109,13 @@ class SessionImpl : public qpid::messaging::SessionImpl
             else throw qpid::messaging::TargetCapacityExceeded(e.what());
         } catch (const qpid::framing::UnauthorizedAccessException& e) {
             throw qpid::messaging::UnauthorizedAccess(e.what());
+        } catch (const qpid::framing::NotFoundException& e) {
+            throw qpid::messaging::NotFound(e.what());
+        } catch (const qpid::framing::ResourceDeletedException& e) {
+            throw qpid::messaging::NotFound(e.what());
         } catch (const qpid::SessionException& e) {
-            throw qpid::messaging::SessionError(e.what());
+            rethrow(e);
+            return false;       // Keep the compiler happy
         } catch (const qpid::ConnectionException& e) {
             throw qpid::messaging::ConnectionError(e.what());
         } catch (const qpid::ChannelException& e) {
@@ -119,6 +124,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     }
 
     static SessionImpl& convert(qpid::messaging::Session&);
+    static void rethrow(const qpid::SessionException&);
 
   private:
     typedef std::map<std::string, qpid::messaging::Receiver> Receivers;
