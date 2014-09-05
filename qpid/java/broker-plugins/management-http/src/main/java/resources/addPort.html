@@ -78,7 +78,7 @@
             <div id="formAddPort:fieldsProtocols">
                 <div class="clear">
                     <div class="formLabel-labelCell">
-                        <label for="formAddPort.protocols">Protocols*:</label>
+                        <label for="formAddPort.protocols">Protocols:</label>
                     </div>
                     <div class="formLabel-controlCell">
                         <select id="formAddPort.protocols"
@@ -86,11 +86,15 @@
                                 data-dojo-props="
                                     name: 'protocols',
                                     value: '',
-                                    label: 'protocol*:',
-                                    promptMessage: 'Protocol to be associated with this port',
-                                    title: 'Enter protocol to be associated with this port'">
+                                    title: 'Select protocol(s) to be associated with this port'">
                         </select>
                     </div>
+                    <div id="formAddPort.protocols.tooltip"
+                         data-dojo-type="dijit.Tooltip"
+                         data-dojo-props="connectId: 'formAddPort.protocols',
+                                          label: 'Protocol(s) to be associated with the port'">
+                    </div>
+
                 </div>
             </div>
 
@@ -144,9 +148,13 @@
                                     placeHolder: 'TCP',
                                     value: '',
                                     multiple: true,
-                                    promptMessage: 'Transport(s)',
-                                    title: 'Select transports'">
+                                    title: 'Select transport(s) to be associated with the port'">
                         </select>
+                        <div id="formAddPort.transports.tooltip"
+                             data-dojo-type="dijit.Tooltip"
+                             data-dojo-props="connectId: 'formAddPort.transports',
+                                              label: 'Transport(s) to be associated with the port'">
+                        </div>
                     </div>
                 </div>
             </div>
