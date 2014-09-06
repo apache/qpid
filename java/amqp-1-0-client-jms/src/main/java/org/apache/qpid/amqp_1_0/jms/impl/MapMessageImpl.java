@@ -19,31 +19,49 @@
 
 package org.apache.qpid.amqp_1_0.jms.impl;
 
-import org.apache.qpid.amqp_1_0.jms.MapMessage;
-import org.apache.qpid.amqp_1_0.type.Binary;
-import org.apache.qpid.amqp_1_0.type.Section;
-import org.apache.qpid.amqp_1_0.type.messaging.*;
-import org.apache.qpid.amqp_1_0.type.messaging.Properties;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
-import java.util.*;
+
+import org.apache.qpid.amqp_1_0.jms.MapMessage;
+import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.Section;
+import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
+import org.apache.qpid.amqp_1_0.type.messaging.ApplicationProperties;
+import org.apache.qpid.amqp_1_0.type.messaging.DeliveryAnnotations;
+import org.apache.qpid.amqp_1_0.type.messaging.Footer;
+import org.apache.qpid.amqp_1_0.type.messaging.Header;
+import org.apache.qpid.amqp_1_0.type.messaging.MessageAnnotations;
+import org.apache.qpid.amqp_1_0.type.messaging.Properties;
 
 public class MapMessageImpl extends MessageImpl implements MapMessage
 {
     private Map _map;
 
-    public MapMessageImpl(Header header, MessageAnnotations messageAnnotations, Properties properties, ApplicationProperties appProperties, Map map,
+    public MapMessageImpl(Header header,
+                          DeliveryAnnotations deliveryAnnotations,
+                          MessageAnnotations messageAnnotations,
+                          Properties properties,
+                          ApplicationProperties appProperties,
+                          Map map,
                           Footer footer,
                           SessionImpl session)
     {
-        super(header, messageAnnotations, properties, appProperties, footer, session);
+        super(header, deliveryAnnotations, messageAnnotations, properties, appProperties, footer, session);
         _map = map;
     }
 
     MapMessageImpl(final SessionImpl session)
     {
-        super(new Header(), new MessageAnnotations(new HashMap()),
+        super(new Header(), new DeliveryAnnotations(new HashMap()), new MessageAnnotations(new HashMap()),
               new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
               session);
         _map = new HashMap();
@@ -431,6 +449,10 @@ public class MapMessageImpl extends MessageImpl implements MapMessage
     {
         List<Section> sections = new ArrayList<Section>();
         sections.add(getHeader());
+        if(getDeliveryAnnotations() != null && getDeliveryAnnotations().getValue() != null && !getDeliveryAnnotations().getValue().isEmpty())
+        {
+            sections.add(getDeliveryAnnotations());
+        }
         if(getMessageAnnotations() != null && getMessageAnnotations().getValue() != null && !getMessageAnnotations().getValue().isEmpty())
         {
             sections.add(getMessageAnnotations());

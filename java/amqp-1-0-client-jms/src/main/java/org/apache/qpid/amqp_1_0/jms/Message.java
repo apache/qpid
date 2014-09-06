@@ -21,18 +21,18 @@
 
 package org.apache.qpid.amqp_1_0.jms;
 
-import org.apache.qpid.amqp_1_0.messaging.MessageAttributes;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import javax.jms.JMSException;
+
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.UnsignedByte;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.UnsignedLong;
 import org.apache.qpid.amqp_1_0.type.UnsignedShort;
-
-import javax.jms.JMSException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
 
 
 public interface Message extends javax.jms.Message
@@ -117,14 +117,6 @@ public interface Message extends javax.jms.Message
     UnsignedInteger getDeliveryFailures();
 
     void setDeliveryFailures(UnsignedInteger failures);
-
-    MessageAttributes getHeaderMessageAttrs();
-
-    void setHeaderMessageAttrs(MessageAttributes messageAttrs);
-
-    MessageAttributes getHeaderDeliveryAttrs();
-
-    void setHeaderDeliveryAttrs(MessageAttributes deliveryAttrs);
 
     Boolean getDurable();
 
