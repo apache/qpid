@@ -68,7 +68,8 @@ class Resolver:
 def xml_parse(filename, path=()):
   if sys.version_info[0:2] == (2,3):
     # XXX: this is for older versions of python
-    source = "file://%s" % os.path.abspath(filename)
+    from urllib import pathname2url
+    source = "file:%s" % pathname2url( os.path.abspath( filename ) )
   else:
     source = filename
   h = parsers.XMLParser()
