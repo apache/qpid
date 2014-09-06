@@ -763,12 +763,22 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         _state = State.ACTIVE;
     }
 
+
+    @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.DELETED)
+    private void doDeleteBeforeInitialize()
+    {
+        preSetAlternateExchange();
+        _state = State.DELETED;
+    }
+
+
     @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
     private void doDelete()
     {
         try
         {
             _virtualHost.removeExchange(this,true);
+            preSetAlternateExchange();
             _state = State.DELETED;
         }
         catch (ExchangeIsAlternateException | RequiredExchangeException e)
