@@ -33,3 +33,29 @@ class MessageHeaderTests(TestBase):
         self.queue_declare(queue="q")
         q = self.consume("q")
         self.assertPublishGet(q, routing_key="q", properties=props)
+
+    def test_message_with_boolean_header(self):
+        """The AMQP boolean type is not officially supported until 0-91 but the 0-8/9 Java client use its field value typecode.
+           Note: If you run this test with QPID_CODEC_DISABLE_0_91_BOOLEAN set, this test will still pass as the booleans are
+           coerced into integer."""
+
+        props={"headers":{"trueHeader":True, "falseHeader":False}}
+        self.queue_declare(queue="q")
+        q = self.consume("q")
+        self.assertPublishGet(q, routing_key="q", properties=props)
+
+    def test_message_with_negatives_longints_floats_and_None(self):
+        """ Tests sending and then receiving negative integers, longs, the None (void) value, and doubles."""
+        props={"headers":{"myIntMin": -2147483648,
+                          "myIntMax": 2147483647,
+                          "myLongMax": 9223372036854775807,
+                          "myLongMin": -9223372036854775808,
+                          "myNullString": None,
+                          "myDouble1.1": 1.1,
+                          "myDoubleMin": 4.9E-324,
+                          "myDoubleMax": 1.7976931348623157E308}}
+
+        self.queue_declare(queue="q")
+        q = self.consume("q")
+        self.assertPublishGet(q, routing_key="q", properties=props)
+

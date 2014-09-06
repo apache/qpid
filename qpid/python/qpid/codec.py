@@ -26,14 +26,18 @@ fields.
 The unit test for this module is located in tests/codec.py
 """
 
-import re, qpid, spec08
+import re, qpid, spec08, os
 from cStringIO import StringIO
 from struct import *
 from reference import ReferenceId
+from logging import getLogger
+
+log = getLogger("qpid.codec")
 
 class EOF(Exception):
   pass
 
+# This code appears to be dead
 TYPE_ALIASES = {
   "long_string": "longstr",
   "unsigned_int": "long"
@@ -56,36 +60,81 @@ class Codec:
     self.incoming_bits = []
     self.outgoing_bits = []
 
+    # Before 0-91, the AMQP's set of types did not include the boolean type. However,
+    # the 0-8 and 0-9 Java client uses this type so we encode/decode it too. However, this
+    # can be turned off by setting the followng environment value.
+    if "QPID_CODEC_DISABLE_0_91_BOOLEAN" in os.environ:
+      self.understand_boolean = False
+    else:
+      self.understand_boolean = True
+
+    log.debug("AMQP 0-91 boolean supported : %r", self.understand_boolean)
+
     self.types = {}
     self.codes = {}
+    self.integertypes = [int, long]
     self.encodings = {
+      float: "double", # python uses 64bit floats, send them as doubles
       basestring: "longstr",
-      int: "long",
-      long: "long",
       None.__class__:"void",
       list: "sequence",
       tuple: "sequence",
       dict: "table"
       }
 
+    if self.understand_boolean:
+      self.encodings[bool] = "boolean"
+
     for constant in self.spec.constants:
+      # This code appears to be dead
       if constant.klass == "field-table-type":
         type = constant.name.replace("field_table_", "")
         self.typecode(constant.id, TYPE_ALIASES.get(type, type))
 
     if not self.types:
+      # long-string 'S'
       self.typecode(ord('S'), "longstr")
-      self.typecode(ord('I'), "long")
+      # void 'V'
+      self.typecode(ord('V'), "void")
+      # long-int 'I' (32bit signed)
+      self.typecode(ord('I'), "signed_int")
+      # long-long-int 'l' (64bit signed)
+      # This is a long standing pre-0-91-spec type used by the Java
+      # client, 0-9-1 says it should be unsigned or use 'L')
+      self.typecode(ord('l'), "signed_long")
+      # double 'd'
+      self.typecode(ord('d'), "double")
+      # float 'f'
+      self.typecode(ord('f'), "float")
+
+      if self.understand_boolean:
+        self.typecode(ord('t'), "boolean")
+
+      ## The following are supported for decoding only ##
+
+      # short-short-uint 'b' (8bit signed)
+      self.types[ord('b')] = "signed_octet"
+      # short-int 's' (16bit signed)
+      # This is a long standing pre-0-91-spec type code used by the Java
+      # client to send shorts, it should really be a short-string, or for 0-9-1 use 'U'
+      self.types[ord('s')] = "signed_short"
 
   def typecode(self, code, type):
     self.types[code] = type
     self.codes[type] = code
 
-  def resolve(self, klass):
+  def resolve(self, klass, value):
+    if(klass in self.integertypes):
+      if (value >= -2147483648 and value <= 2147483647):
+        return "signed_int"
+      elif (value >= -9223372036854775808 and value <= 9223372036854775807):
+        return "signed_long"
+      else:
+        raise ValueError('Integer value is outwith the supported 64bit signed range')
     if self.encodings.has_key(klass):
       return self.encodings[klass]
     for base in klass.__bases__:
-      result = self.resolve(base)
+      result = self.resolve(base, value)
       if result != None:
         return result
 
@@ -168,6 +217,7 @@ class Codec:
     if isinstance(type, spec08.Struct):
       return self.decode_struct(type)
     else:
+      log.debug("Decoding using method: decode_" + type)
       return getattr(self, "decode_" + type)()
 
   def encode_bit(self, o):
@@ -191,7 +241,7 @@ class Codec:
 
   def encode_octet(self, o):
     """
-    encodes octet (8 bits) data 'o' in network byte order
+    encodes an UNSIGNED octet (8 bits) data 'o' in network byte order
     """
 
     # octet's valid range is [0,255]
@@ -202,13 +252,20 @@ class Codec:
 
   def decode_octet(self):
     """
-    decodes a octet (8 bits) encoded in network byte order
+    decodes an UNSIGNED octet (8 bits) encoded in network byte order
     """
     return self.unpack("!B")
 
+  def decode_signed_octet(self):
+    """
+    decodes a signed octet (8 bits) encoded in network byte order
+    """
+    return self.unpack("!b")
+
   def encode_short(self, o):
     """
-    encodes short (16 bits) data 'o' in network byte order
+    encodes an UNSIGNED short (16 bits) data 'o' in network byte order
+    AMQP 0-9-1 type: short-uint
     """
 
     # short int's valid range is [0,65535]
@@ -219,13 +276,22 @@ class Codec:
 
   def decode_short(self):
     """
-    decodes a short (16 bits) in network byte order
+    decodes an UNSIGNED short (16 bits) in network byte order
+    AMQP 0-9-1 type: short-uint
     """
     return self.unpack("!H")
 
+  def decode_signed_short(self):
+    """
+    decodes a signed short (16 bits) in network byte order
+    AMQP 0-9-1 type: short-int
+    """
+    return self.unpack("!h")
+
   def encode_long(self, o):
     """
-    encodes long (32 bits) data 'o' in network byte order
+    encodes an UNSIGNED long (32 bits) data 'o' in network byte order
+    AMQP 0-9-1 type: long-uint
     """
 
     # we need to check both bounds because on 64 bit platforms
@@ -237,31 +303,50 @@ class Codec:
 
   def decode_long(self):
     """
-    decodes a long (32 bits) in network byte order
+    decodes an UNSIGNED long (32 bits) in network byte order
+    AMQP 0-9-1 type: long-uint
     """
     return self.unpack("!L")
 
   def encode_signed_long(self, o):
+    """
+    encodes a signed long (64 bits) in network byte order
+    AMQP 0-9-1 type: long-long-int
+    """
     self.pack("!q", o)
 
   def decode_signed_long(self):
+    """
+    decodes a signed long (64 bits) in network byte order
+    AMQP 0-9-1 type: long-long-int
+    """
     return self.unpack("!q")
 
   def encode_signed_int(self, o):
+    """
+    encodes a signed int (32 bits) in network byte order
+    AMQP 0-9-1 type: long-int
+    """
     self.pack("!l", o)
 
   def decode_signed_int(self):
+    """
+    decodes a signed int (32 bits) in network byte order
+    AMQP 0-9-1 type: long-int
+    """
     return self.unpack("!l")
 
   def encode_longlong(self, o):
     """
-    encodes long long (64 bits) data 'o' in network byte order
+    encodes an UNSIGNED long long (64 bits) data 'o' in network byte order
+    AMQP 0-9-1 type: long-long-uint
     """
     self.pack("!Q", o)
 
   def decode_longlong(self):
     """
-    decodes a long long (64 bits) in network byte order
+    decodes an UNSIGNED long long (64 bits) in network byte order
+    AMQP 0-9-1 type: long-long-uint
     """
     return self.unpack("!Q")
 
@@ -354,9 +439,9 @@ class Codec:
       for key, value in tbl.items():
         if self.spec.major == 8 and self.spec.minor == 0 and len(key) > 128:
           raise ValueError("field table key too long: '%s'" % key)
-        type = self.resolve(value.__class__)
+        type = self.resolve(value.__class__, value)
         if type == None:
-          raise ValueError("no encoding for: " + value.__class__)
+          raise ValueError("no encoding for: " + str(value.__class__))
         codec.encode_shortstr(key)
         codec.encode_octet(self.codes[type])
         codec.encode(type, value)
@@ -373,7 +458,9 @@ class Codec:
     result = {}
     while self.nread - start < size:
       key = self.decode_shortstr()
+      log.debug("Field table entry key: %r", key)
       code = self.decode_octet()
+      log.debug("Field table entry type code: %r", code)
       if self.types.has_key(code):
         value = self.decode(self.types[code])
       else:
@@ -383,6 +470,7 @@ class Codec:
         else:
           value = self.read(self.dec_num(w))
       result[key] = value
+      log.debug("Field table entry value: %r", value)
     return result
 
   def encode_timestamp(self, t):
@@ -450,6 +538,13 @@ class Codec:
 
   def decode_uuid(self):
     return self.unpack("16s")
+
+  def encode_void(self,o):
+    #NO-OP, value is implicit in the type.
+    return
+
+  def decode_void(self):
+    return None
 
   def enc_num(self, width, n):
     if width == 1:
@@ -564,6 +659,22 @@ class Codec:
           value = self.read(self.dec_num(w))
       result.append(value)
     return result
+
+  def encode_boolean(self, s):
+    if (s):
+      self.pack("!c", "\x01")
+    else:
+      self.pack("!c", "\x00")
+
+  def decode_boolean(self):
+    b = self.unpack("!c")
+    if b == "\x00":
+      return False
+    else:
+      # AMQP spec says anything else is True
+      return True
+
+
 
 def fixed(code):
   return (code >> 6) != 2

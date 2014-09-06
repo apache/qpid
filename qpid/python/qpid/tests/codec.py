@@ -487,6 +487,134 @@ class ContentTestCase(BaseDataTypes):
         """
         self.failUnlessEqual(self.readFunc('decode_content', '\x01\x00\x00\x00\x07dummyId').id, 'dummyId', 'reference content decode FAILED...')
 
+# -----------------------------------
+# -----------------------------------
+class BooleanTestCase(BaseDataTypes):
+
+    # -------------------
+    def test_true_encode(self):
+        self.failUnlessEqual(self.callFunc('encode_boolean', True), '\x01', 'True encoding FAILED...')
+
+    # -------------------
+    def test_true_decode(self):
+        self.failUnlessEqual(self.readFunc('decode_boolean', '\x01'), True, 'True decoding FAILED...')
+        self.failUnlessEqual(self.readFunc('decode_boolean', '\x02'), True, 'True decoding FAILED...')
+        self.failUnlessEqual(self.readFunc('decode_boolean', '\xFF'), True, 'True decoding FAILED...')
+
+    # -------------------
+    def test_false_encode(self):
+        self.failUnlessEqual(self.callFunc('encode_boolean', False), '\x00', 'False encoding FAILED...')
+
+    # -------------------
+    def test_false_decode(self):
+        self.failUnlessEqual(self.readFunc('decode_boolean', '\x00'), False, 'False decoding FAILED...')
+
+# -----------------------------------
+# -----------------------------------
+class ResolveTestCase(BaseDataTypes):
+
+    # -------------------
+    # Test resolving the value 1, which should implicitly be a python int
+    def test_resolve_int_1(self):
+        value = 1
+        expected = "signed_int"
+        resolved = self.codec.resolve(value.__class__, value)
+        self.failUnlessEqual(resolved, expected, "resolve FAILED...expected %s got %s" % (expected, resolved))
+    # -------------------
+    # Test resolving the value -1, which should implicitly be a python int
+    def test_resolve_int_negative_1(self):
+        value = -1
+        expected = "signed_int"
+        resolved = self.codec.resolve(value.__class__, value)
+        self.failUnlessEqual(resolved, expected, "resolve FAILED...expected %s got %s" % (expected, resolved))
+    # -------------------
+    # Test resolving the min signed 32bit integer value, -2^31
+    def test_resolve_int_min(self):
+        value = -2147483648 #-2^31
+        expected = "signed_int"
+        resolved = self.codec.resolve(value.__class__, value)
+        self.failUnlessEqual(resolved, expected, "resolve FAILED...expected %s got %s" % (expected, resolved))
+    # -------------------
+    # Test resolving the max signed 32bit integer value, 2^31 -1
+    def test_resolve_int_max(self):
+        value = 2147483647 #2^31 -1
+        expected = "signed_int"
+        resolved = self.codec.resolve(value.__class__, value)
+        self.failUnlessEqual(resolved, expected, "resolve FAILED...expected %s got %s" % (expected, resolved))
+    # -------------------
+    # Test resolving above the max signed 32bit integer value of 2^31 -1
+    # Should be a python long, but should be classed as a signed 64bit long on the wire either way
+    def test_resolve_int_above_signed_32bit_max(self):
+        value = 2147483648 #2^31, i.e 1 above the 32bit signed max
+        expected = "signed_long"
+        resolved = self.codec.resolve(value.__class__, value)
+        self.failUnlessEqual(resolved, expected, "resolve FAILED...expected %s got %s" % (expected, resolved))
+    # -------------------
+    # Test resolving above the max signed 32bit integer value of 2^31 -1
+    # As above except use an explicitly cast python long
+    def test_resolve_long_above_signed_32bit_max(self):
+        value = 2147483648L #2^31, i.e 1 above the 32bit signed max
+        expected = "signed_long"
+        resolved = self.codec.resolve(value.__class__, value)
+        self.failUnlessEqual(resolved, expected, "resolve FAILED...expected %s got %s" % (expected, resolved))
+    # -------------------
+    # Test resolving an explicitly cast python long of value 1, i.e less than the max signed 32bit integer value
+    # Should be encoded as a 32bit signed int on the wire
+    def test_resolve_long_1(self):
+        value = 1L
+        expected = "signed_int"
+        resolved = self.codec.resolve(value.__class__, value)
+        self.failUnlessEqual(resolved, expected, "resolve FAILED...expected %s got %s" % (expected, resolved))
+    # -------------------
+    # Test resolving the max signed 64bit integer value of 2^63 -1
+    # Should be a python long, but should be classed as a signed 64bit long on the wire either way
+    def test_resolve_64bit_signed_max(self):
+        value = 9223372036854775807 #2^63 -1
+        expected = "signed_long"
+        resolved = self.codec.resolve(value.__class__, value)
+        self.failUnlessEqual(resolved, expected, "resolve FAILED...expected %s got %s" % (expected, resolved))
+    # -------------------
+    # Test resolving the min signed 64bit integer value of -2^63
+    # Should be a python long, but should be classed as a signed 64bit long on the wire either way
+    def test_resolve_64bit_signed_min(self):
+        value = -9223372036854775808 # -2^63
+        expected = "signed_long"
+        resolved = self.codec.resolve(value.__class__, value)
+        self.failUnlessEqual(resolved, expected, "resolve FAILED...expected %s got %s" % (expected, resolved))
+    # -------------------
+    # Test resolving a value of 2^63, i.e more than the max a signed 64bit integer value can hold.
+    # Should throw an exception indicating the value can't be encoded.
+    def test_resolve_above_64bit_signed_max(self):
+        value = 9223372036854775808L #2^63
+        self.failUnlessRaises(Exception, self.codec.resolve, value.__class__, value)
+    # -------------------
+    # Test resolving a value of -2^63 -1, i.e less than the min a signed 64bit integer value can hold.
+    # Should throw an exception indicating the value can't be encoded.
+    def test_resolve_below_64bit_signed_min(self):
+        value = 9223372036854775808L # -2^63 -1
+        self.failUnlessRaises(Exception, self.codec.resolve, value.__class__, value)
+    # -------------------
+    # Test resolving a float. Should indicate use of double as python uses 64bit floats
+    def test_resolve_float(self):
+        value = 1.1
+        expected = "double"
+        resolved = self.codec.resolve(value.__class__, value)
+        self.failUnlessEqual(resolved, expected, "resolve FAILED...expected %s got %s" % (expected, resolved))
+    # -------------------
+    # Test resolving a string. Should indicate use of long string encoding
+    def test_resolve_string(self):
+        value = "myString"
+        expected = "longstr"
+        resolved = self.codec.resolve(value.__class__, value)
+        self.failUnlessEqual(resolved, expected, "resolve FAILED...expected %s got %s" % (expected, resolved))
+    # -------------------
+    # Test resolving None. Should indicate use of a void encoding.
+    def test_resolve_None(self):
+        value = None
+        expected = "void"
+        resolved = self.codec.resolve(value.__class__, value)
+        self.failUnlessEqual(resolved, expected, "resolve FAILED...expected %s got %s" % (expected, resolved))
+
 # ------------------------ #
 # Pre - existing test code #
 # ------------------------ #
