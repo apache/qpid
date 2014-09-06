@@ -357,12 +357,12 @@ def read_content(queue):
   for i in range(header.weight):
     children.append(read_content(queue))
   buf = StringIO()
-  eof = header.eof
-  while not eof:
+  readbytes = 0
+  while readbytes < header.size:
     body = queue.get()
-    eof = body.eof
     content = body.content
     buf.write(content)
+    readbytes += len(content)
   return Content(buf.getvalue(), children, header.properties.copy())
 
 class Future:
