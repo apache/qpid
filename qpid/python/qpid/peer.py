@@ -183,6 +183,7 @@ class Channel:
     self.incoming = Queue(0)
     self.responses = Queue(0)
     self.queue = None
+    self.content_queue = None
     self._closed = False
     self.reason = None
 
@@ -233,6 +234,11 @@ class Channel:
 
   def receive(self, frame, work):
     if isinstance(frame, Method):
+      if frame.method_type.content:
+        if frame.method.response:
+          self.content_queue = self.responses
+        else:
+          self.content_queue = self.incoming
       if frame.method.response:
         self.queue = self.responses
       else:
@@ -246,6 +252,8 @@ class Channel:
       if frame.method_type.content:
         self.queue = self.responses
       return
+    elif isinstance(frame, Body) or isinstance(frame, Header):
+      self.queue = self.content_queue
     self.queue.put(frame)
 
   def queue_response(self, channel, frame):
