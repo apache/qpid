@@ -901,7 +901,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    protected void childAdded(ConfiguredObject child)
+    protected void childAdded(ConfiguredObject<?> child)
     {
         synchronized (_changeListeners)
         {
@@ -1213,6 +1213,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         {
             if (_childrenByName.get(categoryClass).containsKey(name))
             {
+                child.delete();
                 throw new DuplicateNameException(child);
             }
             _childrenByName.get(categoryClass).put(name, child);
@@ -1229,6 +1230,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public final void delete()
     {
+        if(getState() == State.UNINITIALIZED)
+        {
+            _desiredState = State.DELETED;
+        }
         setDesiredState(State.DELETED);
     }
 
