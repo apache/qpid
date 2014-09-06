@@ -50,11 +50,15 @@ public class DefaultDestination implements MessageDestination
 
 
     public final  <M extends ServerMessage<? extends StorableMessageMetaData>> int send(final M message,
-                                                                                        final String routingAddress,
+                                                                                        String routingAddress,
                                                                                         final InstanceProperties instanceProperties,
                                                                                         final ServerTransaction txn,
                                                                                         final Action<? super MessageInstance> postEnqueueAction)
     {
+        if(routingAddress == null)
+        {
+            routingAddress = "";
+        }
         final AMQQueue q = _virtualHost.getQueue(routingAddress);
         if(q == null)
         {
