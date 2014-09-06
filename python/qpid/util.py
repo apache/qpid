@@ -52,7 +52,7 @@ def get_client_properties_with_defaults(provided_client_properties={}):
   client_properties = {"product": "qpid python client",
                        "version": "development",
                        "platform": os.name,
-                       "qpid.client_process": os.path.basename(sys.argv[0]),
+                       "qpid.client_process": os.path.basename(sys.argv and sys.argv[0] or ''),
                        "qpid.client_pid": os.getpid(),
                        "qpid.client_ppid": ppid}
 
