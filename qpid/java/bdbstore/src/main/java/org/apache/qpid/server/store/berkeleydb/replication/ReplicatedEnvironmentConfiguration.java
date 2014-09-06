@@ -35,4 +35,5 @@ public interface ReplicatedEnvironmentConfiguration extends StandardEnvironmentC
     int getQuorumOverride();
     Map<String, String> getReplicationParameters();
     String getHelperNodeName();
+    int getFacadeParameter(String parameterName, int defaultValue);
 }
