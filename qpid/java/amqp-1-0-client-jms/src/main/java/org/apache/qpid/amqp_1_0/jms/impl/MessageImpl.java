@@ -21,8 +21,30 @@
 
 package org.apache.qpid.amqp_1_0.jms.impl;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.jms.DeliveryMode;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
+import javax.jms.MessageNotReadableException;
+import javax.jms.MessageNotWriteableException;
+
 import org.apache.qpid.amqp_1_0.jms.Message;
-import org.apache.qpid.amqp_1_0.messaging.MessageAttributes;
+import org.apache.qpid.amqp_1_0.jms.impl.util.AnnotationDecoder;
+import org.apache.qpid.amqp_1_0.jms.impl.util.AnnotationEncoder;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Section;
 import org.apache.qpid.amqp_1_0.type.Symbol;
@@ -31,27 +53,23 @@ import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.UnsignedLong;
 import org.apache.qpid.amqp_1_0.type.UnsignedShort;
 import org.apache.qpid.amqp_1_0.type.messaging.ApplicationProperties;
+import org.apache.qpid.amqp_1_0.type.messaging.DeliveryAnnotations;
 import org.apache.qpid.amqp_1_0.type.messaging.Footer;
 import org.apache.qpid.amqp_1_0.type.messaging.Header;
 import org.apache.qpid.amqp_1_0.type.messaging.MessageAnnotations;
 import org.apache.qpid.amqp_1_0.type.messaging.Properties;
-
-import javax.jms.DeliveryMode;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
-import javax.jms.MessageNotReadableException;
-import javax.jms.MessageNotWriteableException;
-import java.util.*;
 
 public abstract class MessageImpl implements Message
 {
     static final Set<Class> _supportedClasses =
                 new HashSet<Class>(Arrays.asList(Boolean.class, Byte.class, Short.class, Integer.class, Long.class,
                                                  Float.class, Double.class, Character.class, String.class, byte[].class));
+
     static final Symbol JMS_TYPE = Symbol.valueOf("x-opt-jms-type");
     static final Symbol TO_TYPE = Symbol.valueOf("x-opt-to-type");
     static final Symbol REPLY_TO_TYPE = Symbol.valueOf("x-opt-reply-type");
+
+    static final Collection<Symbol> SYSTEM_MESSAGE_ANNOTATIONS = Arrays.asList(JMS_TYPE, TO_TYPE, REPLY_TO_TYPE);
 
     static final String QUEUE_ATTRIBUTE = "queue";
     static final String TOPIC_ATTRIBUTE = "topic";
@@ -63,6 +81,8 @@ public abstract class MessageImpl implements Message
     static final Set<String> JMS_TEMP_TOPIC_ATTRIBUTES = set(TOPIC_ATTRIBUTE, TEMPORARY_ATTRIBUTE);
 
     private static final String JMSXGROUP_ID = "JMSXGroupID";
+    public static final String JMS_AMQP_MESSAGE_ANNOTATIONS = "JMS_AMQP_MESSAGE_ANNOTATIONS";
+    public static final String JMS_AMQP_DELIVERY_ANNOTATIONS = "JMS_AMQP_DELIVERY_ANNOTATIONS";
 
     private Header _header;
     private Properties _properties;
@@ -70,6 +90,7 @@ public abstract class MessageImpl implements Message
     private Footer _footer;
     private final SessionImpl _sessionImpl;
     private boolean _readOnly;
+    private DeliveryAnnotations _deliveryAnnotations;
     private MessageAnnotations _messageAnnotations;
 
     private boolean _isFromQueue;
@@ -78,6 +99,7 @@ public abstract class MessageImpl implements Message
     private DestinationImpl _replyTo;
 
     protected MessageImpl(Header header,
+                          DeliveryAnnotations deliveryAnnotations,
                           MessageAnnotations messageAnnotations,
                           Properties properties,
                           ApplicationProperties appProperties,
@@ -87,6 +109,8 @@ public abstract class MessageImpl implements Message
         _header = header == null ? new Header() : header;
         _properties = properties == null ? new Properties() : properties;
         _messageAnnotations = messageAnnotations == null ? new MessageAnnotations(new HashMap()) : messageAnnotations;
+        _deliveryAnnotations = deliveryAnnotations == null ? new DeliveryAnnotations(new HashMap()) : deliveryAnnotations;
+
         _footer = footer == null ? new Footer(Collections.EMPTY_MAP) : footer;
         _applicationProperties = appProperties == null ? new ApplicationProperties(new HashMap()) : appProperties;
         _sessionImpl = session;
@@ -470,6 +494,49 @@ public abstract class MessageImpl implements Message
         {
             return _properties.getGroupId();
         }
+        else if(JMS_AMQP_DELIVERY_ANNOTATIONS.equals(name))
+        {
+            Map annotationsMap = deliveryAnnotationsMap();
+            if(annotationsMap.isEmpty())
+            {
+                return null;
+            }
+            else
+            {
+                try
+                {
+                    return new AnnotationEncoder().encode(annotationsMap);
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalArgumentException(e);
+                }
+            }
+        }
+        else if(JMS_AMQP_MESSAGE_ANNOTATIONS.equals(name))
+        {
+            Map annotationsMap = new LinkedHashMap(messageAnnotationMap());
+            for(Symbol s : SYSTEM_MESSAGE_ANNOTATIONS)
+            {
+                annotationsMap.remove(s);
+            }
+
+            if(annotationsMap.isEmpty())
+            {
+                return null;
+            }
+            else
+            {
+                try
+                {
+                    return new AnnotationEncoder().encode(annotationsMap);
+                }
+                catch (IOException e)
+                {
+                    throw new IllegalArgumentException(e);
+                }
+            }
+        }
         return _applicationProperties.getValue().get(name);
     }
 
@@ -740,6 +807,27 @@ public abstract class MessageImpl implements Message
         {
             names.add(JMSXGROUP_ID);
         }
+        if(!deliveryAnnotationsMap().isEmpty())
+        {
+            names.add(JMS_AMQP_DELIVERY_ANNOTATIONS);
+        }
+        if(!messageAnnotationMap().isEmpty())
+        {
+            boolean nonDefaultAnnotation = false;
+            for(Object key : messageAnnotationMap().keySet())
+            {
+                if(!SYSTEM_MESSAGE_ANNOTATIONS.contains(key))
+                {
+                    nonDefaultAnnotation = true;
+                    break;
+                }
+            }
+
+            if(nonDefaultAnnotation)
+            {
+                names.add(JMS_AMQP_MESSAGE_ANNOTATIONS);
+            }
+        }
         return Collections.enumeration(names);
     }
 
@@ -952,6 +1040,44 @@ public abstract class MessageImpl implements Message
         {
             _properties.setGroupId(value == null ? null : value.toString());
         }
+        else if(JMS_AMQP_MESSAGE_ANNOTATIONS.equals(name))
+        {
+            try
+            {
+                Map<Symbol, Object> annotationMap = new AnnotationDecoder().decode((String) value);
+                Map messageAnnotations = messageAnnotationMap();
+                Map tmp = new LinkedHashMap();
+                for(Symbol key : SYSTEM_MESSAGE_ANNOTATIONS)
+                {
+                    if(messageAnnotations.containsKey(key))
+                    {
+                        tmp.put(key, messageAnnotations.get(key));
+                    }
+                }
+                messageAnnotations.clear();
+                messageAnnotations.putAll(annotationMap);
+                messageAnnotations.putAll(tmp);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalArgumentException(e);
+            }
+
+        }
+        else if(JMS_AMQP_DELIVERY_ANNOTATIONS.equals(name))
+        {
+            try
+            {
+                Map<Symbol, Object> annotationMap = new AnnotationDecoder().decode((String) value);
+                Map deliveryAnnotations = deliveryAnnotationsMap();
+                deliveryAnnotations.clear();
+                deliveryAnnotations.putAll(annotationMap);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalArgumentException(e);
+            }
+        }
         else
         {
             _applicationProperties.getValue().put(name, value);
@@ -996,28 +1122,6 @@ public abstract class MessageImpl implements Message
     public void setDeliveryFailures(UnsignedInteger failures)
     {
         _header.setDeliveryCount(failures);
-    }
-
-    public MessageAttributes getHeaderMessageAttrs()
-    {
-        // TODO
-        return null ; // _header.getMessageAttrs();
-    }
-
-    public void setHeaderMessageAttrs(final MessageAttributes messageAttrs)
-    {
-        // TODO
-        }
-
-    public MessageAttributes getHeaderDeliveryAttrs()
-    {
-        //  TODO
-        return null ; //_header.getDeliveryAttrs();
-    }
-
-    public void setHeaderDeliveryAttrs(final MessageAttributes deliveryAttrs)
-    {
-        //TODO
     }
 
     public Boolean getDurable()
@@ -1224,6 +1328,12 @@ public abstract class MessageImpl implements Message
         return _messageAnnotations;
     }
 
+
+    DeliveryAnnotations getDeliveryAnnotations()
+    {
+        return _deliveryAnnotations;
+    }
+
     public ApplicationProperties getApplicationProperties()
     {
         return _applicationProperties;
@@ -1317,6 +1427,17 @@ public abstract class MessageImpl implements Message
             _messageAnnotations = new MessageAnnotations(messageAttrs);
         }
         return messageAttrs;
+    }
+
+    private Map deliveryAnnotationsMap()
+    {
+        Map deliveryAttrs = _deliveryAnnotations == null ? null : _deliveryAnnotations.getValue();
+        if(deliveryAttrs == null)
+        {
+            deliveryAttrs = new HashMap();
+            _deliveryAnnotations = new DeliveryAnnotations(deliveryAttrs);
+        }
+        return deliveryAttrs;
     }
 
     Set<String> splitCommaSeparateSet(String value)

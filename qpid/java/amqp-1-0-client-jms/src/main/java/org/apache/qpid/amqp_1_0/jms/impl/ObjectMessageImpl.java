@@ -19,22 +19,32 @@
 
 package org.apache.qpid.amqp_1_0.jms.impl;
 
-import org.apache.qpid.amqp_1_0.jms.ObjectMessage;
-import org.apache.qpid.amqp_1_0.type.Binary;
-import org.apache.qpid.amqp_1_0.type.Section;
-import org.apache.qpid.amqp_1_0.type.Symbol;
-import org.apache.qpid.amqp_1_0.type.messaging.*;
-import org.apache.qpid.amqp_1_0.type.messaging.Properties;
-
-import javax.jms.JMSException;
-import javax.jms.MessageNotWriteableException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.jms.JMSException;
+import javax.jms.MessageNotWriteableException;
+
+import org.apache.qpid.amqp_1_0.jms.ObjectMessage;
+import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.Section;
+import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.messaging.ApplicationProperties;
+import org.apache.qpid.amqp_1_0.type.messaging.Data;
+import org.apache.qpid.amqp_1_0.type.messaging.DeliveryAnnotations;
+import org.apache.qpid.amqp_1_0.type.messaging.Footer;
+import org.apache.qpid.amqp_1_0.type.messaging.Header;
+import org.apache.qpid.amqp_1_0.type.messaging.MessageAnnotations;
+import org.apache.qpid.amqp_1_0.type.messaging.Properties;
 
 public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
 {
@@ -61,6 +71,7 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
     private Data _objectData = NULL_OBJECT_DATA;
 
     protected ObjectMessageImpl(Header header,
+                                DeliveryAnnotations deliveryAnnotations,
                                 MessageAnnotations messageAnnotations,
                                 Properties properties,
                                 ApplicationProperties appProperties,
@@ -68,7 +79,7 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
                                 Footer footer,
                                 SessionImpl session)
     {
-        super(header, messageAnnotations, properties, appProperties, footer, session);
+        super(header, deliveryAnnotations, messageAnnotations, properties, appProperties, footer, session);
         getProperties().setContentType(CONTENT_TYPE);
         Serializable serializable = null;
         _objectData = dataSection;
@@ -77,7 +88,7 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
 
     protected ObjectMessageImpl(final SessionImpl session)
     {
-        super(new Header(), new MessageAnnotations(new HashMap()),
+        super(new Header(), new DeliveryAnnotations(new HashMap()), new MessageAnnotations(new HashMap()),
               new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
               session);
         getProperties().setContentType(CONTENT_TYPE);
@@ -146,6 +157,10 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
     {
         List<Section> sections = new ArrayList<Section>();
         sections.add(getHeader());
+        if(getDeliveryAnnotations() != null && getDeliveryAnnotations().getValue() != null && !getDeliveryAnnotations().getValue().isEmpty())
+        {
+            sections.add(getDeliveryAnnotations());
+        }
         if(getMessageAnnotations() != null && getMessageAnnotations().getValue() != null && !getMessageAnnotations().getValue().isEmpty())
         {
             sections.add(getMessageAnnotations());
