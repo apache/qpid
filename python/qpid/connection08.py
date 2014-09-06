@@ -63,8 +63,29 @@ class SockIO:
     self.sock.shutdown(SHUT_RDWR)
     self.sock.close()
 
-def connect(host, port):
+def connect(host, port, options = None):
   sock = socket.socket()
+
+  if options and options.get("ssl", False):
+    log.debug("Wrapping socket for SSL")
+    from ssl import wrap_socket, CERT_REQUIRED, CERT_NONE
+
+    ssl_certfile = options.get("ssl_certfile", None)
+    ssl_keyfile = options.get("ssl_keyfile", ssl_certfile)
+    ssl_trustfile = options.get("ssl_trustfile", None)
+    ssl_require_trust = options.get("ssl_require_trust", True)
+
+    if ssl_require_trust:
+      validate = CERT_REQUIRED
+    else:
+      validate = CERT_NONE
+
+    sock = wrap_socket(sock,
+                       keyfile = ssl_keyfile,
+                       certfile = ssl_certfile,
+                       ca_certs = ssl_trustfile,
+                       cert_reqs = validate)
+
   sock.connect((host, port))
   sock.setblocking(1)
   return SockIO(sock)
