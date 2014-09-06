@@ -107,6 +107,20 @@ public class ReplicatedEnvironmentFacadeFactory implements EnvironmentFacadeFact
             {
                 return settings.getGroupName();
             }
+
+            @Override
+            public int getFacadeParameter(final String parameterName, final int defaultValue)
+            {
+                if (parent.getContextKeys(false).contains(parameterName))
+                {
+                    return parent.getContextValue(Integer.class, parameterName);
+                }
+                else
+                {
+                    return defaultValue;
+                }
+            }
+
         };
         return new ReplicatedEnvironmentFacade(configuration);
 

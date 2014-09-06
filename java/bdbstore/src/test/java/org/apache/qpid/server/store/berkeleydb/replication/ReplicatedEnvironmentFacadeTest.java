@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.store.berkeleydb.replication;
 
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -656,7 +658,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         firstNode.setPermittedNodes(permittedNodes);
 
         ReplicatedEnvironmentFacade.ReplicationNodeImpl replicationNode = new ReplicatedEnvironmentFacade.ReplicationNodeImpl(TEST_NODE_NAME, TEST_NODE_HOST_PORT);
-        NodeState nodeState = ReplicatedEnvironmentFacade.getRemoteNodeState(TEST_GROUP_NAME, replicationNode);
+        NodeState nodeState = ReplicatedEnvironmentFacade.getRemoteNodeState(TEST_GROUP_NAME, replicationNode, 5000);
 
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -803,6 +805,12 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         when(node.getGroupName()).thenReturn(TEST_GROUP_NAME);
         when(node.getHelperHostPort()).thenReturn(TEST_NODE_HELPER_HOST_PORT);
         when(node.getHelperNodeName()).thenReturn(TEST_NODE_NAME);
+
+        when(node.getFacadeParameter(eq(ReplicatedEnvironmentFacade.MASTER_TRANSFER_TIMEOUT_PROPERTY_NAME), anyInt())).thenReturn(60000);
+        when(node.getFacadeParameter(eq(ReplicatedEnvironmentFacade.DB_PING_SOCKET_TIMEOUT_PROPERTY_NAME), anyInt())).thenReturn(10000);
+        when(node.getFacadeParameter(eq(ReplicatedEnvironmentFacade.REMOTE_NODE_MONITOR_INTERVAL_PROPERTY_NAME), anyInt())).thenReturn(1000);
+        when(node.getFacadeParameter(eq(ReplicatedEnvironmentFacade.ENVIRONMENT_RESTART_RETRY_LIMIT_PROPERTY_NAME), anyInt())).thenReturn(3);
+        when(node.getFacadeParameter(eq(ReplicatedEnvironmentFacade.EXECUTOR_SHUTDOWN_TIMEOUT_PROPERTY_NAME), anyInt())).thenReturn(10000);
 
         Map<String, String> repConfig = new HashMap<String, String>();
         repConfig.put(ReplicationConfig.REPLICA_ACK_TIMEOUT, "2 s");
