@@ -29,9 +29,12 @@ import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Transaction;
+import org.apache.log4j.Logger;
 
 public class DatabasePinger
 {
+    private static final Logger LOGGER = Logger.getLogger(DatabasePinger.class);
+
     public static final String PING_DATABASE_NAME = "PINGDB";
     private static final DatabaseConfig DATABASE_CONFIG =
             DatabaseConfig.DEFAULT.setAllowCreate(true).setTransactional(true);
@@ -41,6 +44,11 @@ public class DatabasePinger
     {
         try
         {
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Beginning ping transaction");
+            }
+
             final Database db = facade.openDatabase(PING_DATABASE_NAME,
                                                     DATABASE_CONFIG);
 
@@ -55,10 +63,16 @@ public class DatabasePinger
                 txn = facade.beginTransaction();
                 db.put(txn, key, value);
                 txn.commit();
+
                 txn = null;
             }
             finally
             {
+                if (LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Ping transaction completed");
+                }
+
                 if (txn != null)
                 {
                     txn.abort();
