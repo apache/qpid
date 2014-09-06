@@ -77,13 +77,13 @@ class Client:
       self.lock.release()
     return q
 
-  def start(self, response, mechanism="AMQPLAIN", locale="en_US", tune_params=None, client_properties=None):
+  def start(self, response, mechanism="AMQPLAIN", locale="en_US", tune_params=None, client_properties=None, connection_options=None):
     self.mechanism = mechanism
     self.response = response
     self.locale = locale
     self.tune_params = tune_params
     self.client_properties=get_client_properties_with_defaults(provided_client_properties=client_properties)
-    self.socket = connect(self.host, self.port)
+    self.socket = connect(self.host, self.port, connection_options)
     self.conn = Connection(self.socket, self.spec)
     self.peer = Peer(self.conn, ClientDelegate(self), Session)
 
