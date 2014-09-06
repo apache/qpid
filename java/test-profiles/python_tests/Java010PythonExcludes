@@ -29,6 +29,13 @@ qpid_tests.broker_0_10.msg_groups.MultiConsumerMsgGroupTests.test_purge_*
 qpid_tests.broker_0_10.msg_groups.MultiConsumerMsgGroupTests.test_query
 qpid_tests.broker_0_10.msg_groups.MultiConsumerMsgGroupTests.test_reroute
 
+qpid_tests.broker_0_10.new_api.GeneralTests.test_ambiguous_create_1
+qpid_tests.broker_0_10.new_api.GeneralTests.test_ambiguous_create_2
+qpid_tests.broker_0_10.new_api.GeneralTests.test_ambiguous_delete_1
+qpid_tests.broker_0_10.new_api.GeneralTests.test_ambiguous_delete_2
+qpid_tests.broker_0_10.new_api.GeneralTests.test_node_disambiguation_1
+qpid_tests.broker_0_10.new_api.GeneralTests.test_node_disambiguation_2
+
 #The broker does not support the Queue Sequence Number feature from QPID-4591
 qpid_tests.broker_0_10.new_api.SequenceNumberTests.test_get_sequence_number
 qpid_tests.broker_0_10.new_api.SequenceNumberTests.test_sequence_number_gap
