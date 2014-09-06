@@ -1493,7 +1493,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                         {
                             nodeStateObject = getRemoteNodeState((String)_configuration.getGroupName(), node);
                         }
-                        catch (IOException | ServiceConnectFailedException e )
+                        catch (IOException | ServiceConnectFailedException | com.sleepycat.je.rep.utilint.BinaryProtocol.ProtocolException e )
                         {
                             // Cannot discover node states. The node state should be treated as UNKNOWN
                         }
