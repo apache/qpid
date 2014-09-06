@@ -21,12 +21,23 @@
 
 package org.apache.qpid.amqp_1_0.transport;
 
-import org.apache.qpid.amqp_1_0.type.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.DeliveryState;
+import org.apache.qpid.amqp_1_0.type.Outcome;
+import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.transaction.TransactionalState;
-import org.apache.qpid.amqp_1_0.type.transport.*;
-
-
-import java.util.*;
+import org.apache.qpid.amqp_1_0.type.transport.Attach;
+import org.apache.qpid.amqp_1_0.type.transport.Flow;
+import org.apache.qpid.amqp_1_0.type.transport.Role;
+import org.apache.qpid.amqp_1_0.type.transport.Transfer;
 
 public class ReceivingLinkEndpoint extends LinkEndpoint<ReceivingLinkListener>
 {
@@ -428,6 +439,8 @@ public class ReceivingLinkEndpoint extends LinkEndpoint<ReceivingLinkListener>
     public void settle(Binary deliveryTag)
     {
         super.settle(deliveryTag);
+        _unsettledIds.remove(deliveryTag);
+        _unsettledMap.remove(deliveryTag);
         if(_creditWindow)
         {
              sendFlowConditional();
