@@ -1561,7 +1561,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
                 }
                 else
                 {
-                    data = new byte[0];
+                    return null;
                 }
             }
             return ByteBuffer.wrap(data,offsetInMessage,Math.min(size,data.length-offsetInMessage));

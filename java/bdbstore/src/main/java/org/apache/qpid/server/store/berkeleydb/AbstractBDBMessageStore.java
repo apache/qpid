@@ -1330,7 +1330,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                 }
                 else
                 {
-                    data = new byte[0];
+                    return null;
                 }
             }
             try
