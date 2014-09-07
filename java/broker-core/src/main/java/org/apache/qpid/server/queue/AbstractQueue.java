@@ -1791,8 +1791,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             txn.commit();
 
             preSetAlternateExchange();
-            _alternateExchange = null;
-
 
             for (Action<? super AMQQueue> task : _deleteTaskList)
             {
