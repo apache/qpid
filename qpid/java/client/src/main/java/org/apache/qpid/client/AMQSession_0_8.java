@@ -32,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -93,6 +94,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
      */
     private final long _flowControlWaitFailure = Long.getLong(QPID_FLOW_CONTROL_WAIT_FAILURE,
                                                                   DEFAULT_FLOW_CONTROL_WAIT_FAILURE);
+    private AtomicInteger _currentPrefetch = new AtomicInteger();
 
     /** Flow control */
     private FlowControlIndicator _flowControl = new FlowControlIndicator();
@@ -112,7 +114,8 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                              MessageFactoryRegistry messageFactoryRegistry, int defaultPrefetchHighMark, int defaultPrefetchLowMark)
     {
 
-         super(con,channelId,transacted,acknowledgeMode,messageFactoryRegistry,defaultPrefetchHighMark,defaultPrefetchLowMark);
+        super(con,channelId,transacted,acknowledgeMode,messageFactoryRegistry,defaultPrefetchHighMark,defaultPrefetchLowMark);
+        _currentPrefetch.set(0);
     }
 
     /**
@@ -140,6 +143,14 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
     protected void acknowledgeImpl() throws JMSException
     {
         boolean syncRequired = false;
+        try
+        {
+            reduceCreditAfterAcknowledge();
+        }
+        catch (AMQException e)
+        {
+            throw new JMSAMQException(e);
+        }
         while (true)
         {
             Long tag = getUnacknowledgedMessageTags().poll();
@@ -151,7 +162,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
             acknowledgeMessage(tag, false);
             syncRequired = true;
         }
-
+        _currentPrefetch.set(0);
         try
         {
             if (syncRequired && _syncAfterClientAck)
@@ -262,8 +273,9 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         }
 
         final AMQProtocolHandler handler = getProtocolHandler();
-
+        reduceCreditAfterAcknowledge();
         handler.syncWrite(getProtocolHandler().getMethodRegistry().createTxCommitBody().generateFrame(getChannelId()), TxCommitOkBody.class);
+        _currentPrefetch.set(0);
     }
 
     public void sendCreateQueue(AMQShortString name, final boolean autoDelete, final boolean durable, final boolean exclusive, final Map<String, Object> arguments) throws AMQException,
@@ -817,24 +829,76 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         getProtocolHandler().syncWrite(frame, TxRollbackOkBody.class);
     }
 
-    public void setPrefetchLimits(final int messagePrefetch, final long sizePrefetch) throws AMQException
+    public void setPrefetchLimits(final int messagePrefetch, final long sizePrefetch)
+            throws AMQException, FailoverException
     {
-        new FailoverRetrySupport<Object, AMQException>(
-                new FailoverProtectedOperation<Object, AMQException>()
-                {
-                    public Object execute() throws AMQException, FailoverException
-                    {
+        _currentPrefetch.set(0);
+        BasicQosBody basicQosBody = getProtocolHandler().getMethodRegistry().createBasicQosBody(sizePrefetch, messagePrefetch, false);
 
-                        BasicQosBody basicQosBody = getProtocolHandler().getMethodRegistry().createBasicQosBody(sizePrefetch, messagePrefetch, false);
+        // todo send low water mark when protocol allows.
+        // todo Be aware of possible changes to parameter order as versions change.
+        getProtocolHandler().syncWrite(basicQosBody.generateFrame(getChannelId()), BasicQosOkBody.class);
 
-                        // todo send low water mark when protocol allows.
-                        // todo Be aware of possible changes to parameter order as versions change.
-                        getProtocolHandler().syncWrite(basicQosBody.generateFrame(getChannelId()), BasicQosOkBody.class);
-
-                        return null;
-                    }
-                 }, getAMQConnection()).execute();
     }
+
+
+
+    protected boolean ensureCreditForReceive() throws AMQException
+    {
+        return new FailoverNoopSupport<>(
+                new FailoverProtectedOperation<Boolean, AMQException>()
+                {
+                    public Boolean execute() throws AMQException, FailoverException
+                    {
+                        int currentPrefetch = _currentPrefetch.get();
+                        if (currentPrefetch >= getPrefetch())
+                        {
+                            BasicQosBody basicQosBody = getProtocolHandler().getMethodRegistry()
+                                    .createBasicQosBody(0, currentPrefetch + 1, false);
+
+                            getProtocolHandler().syncWrite(basicQosBody.generateFrame(getChannelId()),
+                                                           BasicQosOkBody.class);
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                }, getProtocolHandler().getConnection()).execute();
+
+    }
+
+    protected void reduceCreditAfterAcknowledge() throws AMQException
+    {
+        int acknowledgeMode = getAcknowledgeMode();
+        boolean manageCredit = acknowledgeMode == javax.jms.Session.CLIENT_ACKNOWLEDGE || acknowledgeMode == javax.jms.Session.SESSION_TRANSACTED;
+
+        if(manageCredit)
+        {
+            new FailoverNoopSupport<>(
+                    new FailoverProtectedOperation<Void, AMQException>()
+                    {
+                        public Void execute() throws AMQException, FailoverException
+                        {
+                            BasicQosBody basicQosBody =
+                                    getProtocolHandler().getMethodRegistry()
+                                            .createBasicQosBody(0, getPrefetch(), false);
+
+                            getProtocolHandler().syncWrite(basicQosBody.generateFrame(getChannelId()),
+                                                           BasicQosOkBody.class);
+                            return null;
+                        }
+                    }, getProtocolHandler().getConnection()).execute();
+        }
+    }
+
+    protected void updateCurrentPrefetch(int delta)
+    {
+        _currentPrefetch.addAndGet(delta);
+    }
+
+
 
     public DestinationCache<AMQQueue> getQueueDestinationCache()
     {
