@@ -30,9 +30,8 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 
 @ManagedObject( category = false, type = "HTTP")
-public interface HttpPort<X extends HttpPort<X>> extends Port<X>
+public interface HttpPort<X extends HttpPort<X>> extends ClientAuthCapablePort<X>
 {
-
     String DEFAULT_AMQP_NEED_CLIENT_AUTH = "false";
     String DEFAULT_AMQP_WANT_CLIENT_AUTH = "false";
 

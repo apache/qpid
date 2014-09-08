@@ -23,12 +23,13 @@ define(["dojo/_base/xhr",
         "dojo/dom",
         "dojo/dom-construct",
         "dojo/dom-attr",
+        "dijit/registry",
         "qpid/common/properties",
         "qpid/common/metadata",
         "dojo/text!strings.html",
         "dojo/domReady!"
         ],
-  function (xhr, string, query, dom, domConstruct, domAttr, properties, metadata, template)
+  function (xhr, string, query, dom, domConstruct, domAttr, registry, properties, metadata, template)
   {
    var widgetconfigurer =
    {
@@ -66,6 +67,32 @@ define(["dojo/_base/xhr",
                    widget.set("promptMessage", newPromptMessage);
                }
            }
+       }
+       else if  (widget instanceof dijit.Tooltip)
+       {
+         // If it is a tooltop, find the connected widget and use its name to lookup the default from the metadata.
+         if (typeof widget.get("qpid.originalLabel") == "undefined")
+         {
+           widget.set("qpid.originalLabel", widget.get("label"));
+         }
+
+         var message = widget.get("qpid.originalLabel");
+         var connectId = widget.get("connectId")[0];
+         var connectWidget = registry.byId(connectId);
+         if (connectWidget)
+         {
+           var connectWidgetName = connectWidget.get("name");
+           var defaultValue = metadata.getDefaultValueForAttribute(category, type, connectWidgetName);
+           if (defaultValue)
+           {
+             var newMessage = string.substitute(this.promptTemplateWithDefault, { 'default': defaultValue, 'prompt': message });
+
+             if (message != newMessage)
+             {
+               widget.set("label", newMessage);
+             }
+           }
+         }
        }
      },
      _processWidgetValue: function (widget, category, type)

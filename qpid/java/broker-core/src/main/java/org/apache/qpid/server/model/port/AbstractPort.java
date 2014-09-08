@@ -149,7 +149,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     {
         super.onValidate();
 
-        boolean useTLSTransport = getTransports().contains(Transport.SSL) || getTransports().contains(Transport.WSS);
+        boolean useTLSTransport = isUsingTLSTransport();
 
         if(useTLSTransport && getKeyStore() == null)
         {
@@ -173,6 +173,28 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
                                                         + p.getName());
             }
         }
+    }
+
+    protected final boolean isUsingTLSTransport()
+    {
+        return isUsingTLSTransport(getTransports());
+    }
+
+    protected final boolean isUsingTLSTransport(final Collection<Transport> transports)
+    {
+        boolean usesTLS = false;
+        if(transports != null)
+        {
+            for (Transport transport : transports)
+            {
+                if (transport.isSecure())
+                {
+                    usesTLS = true;
+                    break;
+                }
+            }
+        }
+        return usesTLS;
     }
 
     @Override
@@ -215,7 +237,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         Collection<Protocol> protocols = updated.getProtocols();
 
 
-        boolean usesSsl = transports != null && transports.contains(Transport.SSL);
+        boolean usesSsl = isUsingTLSTransport(transports);
         if (usesSsl)
         {
             if (updated.getKeyStore() == null)
