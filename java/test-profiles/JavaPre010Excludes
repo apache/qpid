@@ -87,3 +87,4 @@ org.apache.qpid.systest.management.jmx.QueueManagementTest#testAlternateExchange
 // QPID-3396
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testExceptionWhenUserPassIsRequired
 
+org.apache.qpid.server.logging.ConsumerLoggingTest#testSubscriptionSuspend
