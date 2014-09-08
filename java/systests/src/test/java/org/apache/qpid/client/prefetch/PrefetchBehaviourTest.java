@@ -20,11 +20,9 @@
 */
 package org.apache.qpid.client.prefetch;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -35,9 +33,12 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 
 public class PrefetchBehaviourTest extends QpidBrokerTestCase
@@ -231,5 +232,62 @@ public class PrefetchBehaviourTest extends QpidBrokerTestCase
            assertNotNull("The second consumer should get 9 messages, but received only " + i,m);
         }
     }
+
+    public void testPrefetchWindowExpandsOnReceiveTransaction() throws Exception
+    {
+
+        _normalConnection.start();
+
+        //create a second connection with prefetch set to 1
+
+        setTestClientSystemProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, new Integer(1).toString());
+        Connection prefetch1Connection = getConnection();
+        Session consumerSession = prefetch1Connection.createSession(true, Session.SESSION_TRANSACTED);
+        MessageConsumer consumer = consumerSession.createConsumer(consumerSession.createQueue(getTestQueueName()));
+
+
+        Session producerSession = _normalConnection.createSession(true, Session.SESSION_TRANSACTED);
+        Queue queue = producerSession.createQueue(getTestQueueName());
+        MessageProducer producer = producerSession.createProducer(queue);
+
+        for (int i = 0; i < 5; i++)
+        {
+            producer.send(producerSession.createTextMessage("test"));
+        }
+        producerSession.commit();
+
+
+        prefetch1Connection.start();
+
+
+
+        Message message = consumer.receive(1000l);
+        assertNotNull(message);
+        message = consumer.receive(1000l);
+        assertNotNull(message);
+        message = consumer.receive(1000l);
+        assertNotNull(message);
+
+
+        Connection secondConsumerConnection = getConnection();
+        Session secondConsumerSession = secondConsumerConnection.createSession(true, Session.SESSION_TRANSACTED);
+        MessageConsumer secondConsumer = secondConsumerSession.createConsumer(consumerSession.createQueue(getTestQueueName()));
+        secondConsumerConnection.start();
+
+        message = secondConsumer.receive(1000l);
+        assertNotNull(message);
+
+        message = secondConsumer.receive(1000l);
+        assertNotNull(message);
+
+        consumerSession.commit();
+        secondConsumerSession.commit();
+
+        message = consumer.receive(1000l);
+        assertNull(message);
+
+    }
+
+
 }
 

@@ -22,6 +22,7 @@ package org.apache.qpid.client;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.Session;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -166,4 +167,65 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
     }
 
 
+    @Override
+    public Message receive(final long l) throws JMSException
+    {
+        int acknowledgeMode = getSession().getAcknowledgeMode();
+        boolean manageCredit = acknowledgeMode == Session.CLIENT_ACKNOWLEDGE || acknowledgeMode == Session.SESSION_TRANSACTED;
+        boolean creditModified = false;
+        try
+        {
+            if (manageCredit)
+            {
+                creditModified = getSession().ensureCreditForReceive();
+            }
+            Message message = super.receive(l);
+            if (creditModified && message == null)
+            {
+                getSession().reduceCreditAfterAcknowledge();
+            }
+            if (manageCredit && message != null)
+            {
+                getSession().updateCurrentPrefetch(1);
+            }
+            return message;
+        }
+        catch (AMQException e)
+        {
+            throw new JMSAMQException(e);
+        }
+    }
+
+    @Override
+    public Message receiveNoWait() throws JMSException
+    {
+        int acknowledgeMode = getSession().getAcknowledgeMode();
+        boolean manageCredit = acknowledgeMode == Session.CLIENT_ACKNOWLEDGE || acknowledgeMode == Session.SESSION_TRANSACTED;
+        boolean creditModified = false;
+        try
+        {
+            if (manageCredit)
+            {
+                creditModified = getSession().ensureCreditForReceive();
+                if (creditModified)
+                {
+                    getSession().sync();
+                }
+            }
+            Message message = super.receiveNoWait();
+            if (creditModified && message == null)
+            {
+                getSession().reduceCreditAfterAcknowledge();
+            }
+            if (manageCredit && message != null)
+            {
+                getSession().updateCurrentPrefetch(1);
+            }
+            return message;
+        }
+        catch (AMQException e)
+        {
+            throw new JMSAMQException(e);
+        }
+    }
 }

@@ -44,8 +44,6 @@ import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.StateWaiter;
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.framing.BasicQosBody;
-import org.apache.qpid.framing.BasicQosOkBody;
 import org.apache.qpid.framing.ChannelOpenBody;
 import org.apache.qpid.framing.ChannelOpenOkBody;
 import org.apache.qpid.framing.FieldTable;
@@ -55,6 +53,7 @@ import org.apache.qpid.framing.TxSelectOkBody;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
 import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.jms.Session;
 import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -182,10 +181,10 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             throw new ChannelLimitReachedException(_conn.getMaximumChannelCount());
         }
 
-        return new FailoverRetrySupport<org.apache.qpid.jms.Session, JMSException>(
-                new FailoverProtectedOperation<org.apache.qpid.jms.Session, JMSException>()
+        return new FailoverRetrySupport<Session, JMSException>(
+                new FailoverProtectedOperation<Session, JMSException>()
                 {
-                    public org.apache.qpid.jms.Session execute() throws JMSException, FailoverException
+                    public Session execute() throws JMSException, FailoverException
                     {
                         int channelId = _conn.getNextChannelID();
 
@@ -197,7 +196,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                         // We must create the session and register it before actually sending the frame to the server to
                         // open it, so that there is no window where we could receive data on the channel and not be set
                         // up to handle it appropriately.
-                        AMQSession session =
+                        AMQSession_0_8 session =
                                 new AMQSession_0_8(_conn, channelId, transacted, acknowledgeMode, prefetchHigh,
                                                prefetchLow);
                         _conn.registerSession(channelId, session);
@@ -205,7 +204,8 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                         boolean success = false;
                         try
                         {
-                            createChannelOverWire(channelId, prefetchHigh, prefetchLow, transacted);
+                            createChannelOverWire(channelId, transacted);
+                            session.setPrefetchLimits(prefetchHigh, 0);
                             success = true;
                         }
                         catch (AMQException e)
@@ -252,17 +252,11 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         return createXASession((int) _conn.getMaxPrefetch(), (int) _conn.getMaxPrefetch() / 2);
     }
 
-    private void createChannelOverWire(int channelId, int prefetchHigh, int prefetchLow, boolean transacted)
+    private void createChannelOverWire(int channelId, boolean transacted)
             throws AMQException, FailoverException
     {
         ChannelOpenBody channelOpenBody = _conn.getProtocolHandler().getMethodRegistry().createChannelOpenBody(null);
-        // TODO: Be aware of possible changes to parameter order as versions change.
         _conn.getProtocolHandler().syncWrite(channelOpenBody.generateFrame(channelId),  ChannelOpenOkBody.class);
-
-        // todo send low water mark when protocol allows.
-        // todo Be aware of possible changes to parameter order as versions change.
-        BasicQosBody basicQosBody = _conn.getProtocolHandler().getMethodRegistry().createBasicQosBody(0,prefetchHigh,false);
-        _conn.getProtocolHandler().syncWrite(basicQosBody.generateFrame(channelId),BasicQosOkBody.class);
 
         if (transacted)
         {
@@ -292,7 +286,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         _logger.info(MessageFormat.format("Resubscribing sessions = {0} sessions.size={1}", sessions, sessions.size())); // FIXME: removeKey?
         for (Iterator it = sessions.iterator(); it.hasNext();)
         {
-            AMQSession s = (AMQSession) it.next();
+            AMQSession_0_8 s = (AMQSession_0_8) it.next();
 
             // reset the flow control flag
             // on opening channel, broker sends flow blocked if virtual host is blocked
@@ -300,7 +294,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             // that's why we need to reset the flow control flag
             s.setFlowControl(true);
             reopenChannel(s.getChannelId(), s.getDefaultPrefetchHigh(), s.getDefaultPrefetchLow(), s.isTransacted());
-
+            s.setPrefetchLimits(s.getDefaultPrefetchHigh(), 0);
             s.resubscribe();
         }
     }
@@ -310,7 +304,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     {
         try
         {
-            createChannelOverWire(channelId, prefetchHigh, prefetchLow, transacted);
+            createChannelOverWire(channelId, transacted);
         }
         catch (AMQException e)
         {
