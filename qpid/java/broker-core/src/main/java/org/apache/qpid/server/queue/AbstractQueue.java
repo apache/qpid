@@ -1792,7 +1792,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
             preSetAlternateExchange();
 
-
             for (Action<? super AMQQueue> task : _deleteTaskList)
             {
                 task.performAction(this);
@@ -2818,10 +2817,18 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         _state = State.ACTIVE;
     }
 
+    @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.DELETED)
+    private void doDeleteBeforeInitialize()
+    {
+        preSetAlternateExchange();
+        _state = State.DELETED;
+    }
+
     @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
     private void doDelete()
     {
         _virtualHost.removeQueue(this);
+        preSetAlternateExchange();
         _state = State.DELETED;
     }
 
