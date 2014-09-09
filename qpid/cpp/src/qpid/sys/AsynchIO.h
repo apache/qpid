@@ -144,10 +144,9 @@ public:
     const static uint32_t MaxBufferSize = 65536;
 
     /*
-     * Number of IO buffers allocated - I think the code can only use 2 -
-     * 1 for reading and 1 for writing, allocate 4 for safety
+     * Number of IO buffers allocated - 1 for reading and 1 for writing.
      */
-    const static uint32_t BufferCount = 4;
+    const static uint32_t BufferCount = 2;
 
     virtual void queueForDeletion() = 0;
 

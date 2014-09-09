@@ -38,6 +38,7 @@
 
 #include <queue>
 #include <boost/bind.hpp>
+#include "AsynchIO.h"
 
 namespace qpid {
 namespace sys {
@@ -143,6 +144,9 @@ void SslAsynchIO::start(qpid::sys::Poller::shared_ptr poller) {
 }
 
 void SslAsynchIO::createBuffers(uint32_t size) {
+    // Reserve an extra buffer to hold unread plaintext or trailing encrypted input.
+    windows::AsynchIO *waio = dynamic_cast<windows::AsynchIO*>(aio);
+    waio->setBufferCount(waio->getBufferCount() + 1);
     aio->createBuffers(size);
 }
 
@@ -298,7 +302,7 @@ void SslAsynchIO::sslDataIn(qpid::sys::AsynchIO& a, BufferBase *buff) {
         return;
     }
 
-    // Decrypt the buffer; if there's legit data, pass it on through.
+    // Decrypt one block; if there's legit data, pass it on through.
     // However, it's also possible that the peer hasn't supplied enough
     // data yet, or the session needs to be renegotiated, or the session
     // is ending.
@@ -344,6 +348,8 @@ void SslAsynchIO::sslDataIn(qpid::sys::AsynchIO& a, BufferBase *buff) {
     // actual decrypted data.
     // If there's extra data, copy that out to a new buffer and run through
     // this method again.
+    char *extraBytes = 0;
+    int32_t extraLength = 0;
     BufferBase *extraBuff = 0;
     for (int i = 0; i < 4; i++) {
         switch (recvBuffs[i].BufferType) {
@@ -354,18 +360,8 @@ void SslAsynchIO::sslDataIn(qpid::sys::AsynchIO& a, BufferBase *buff) {
             buff->dataCount -= recvBuffs[i].cbBuffer;
             break;
         case SECBUFFER_EXTRA:
-            // Very important to get this buffer from the downstream aio.
-            // The ones constructed from the local getQueuedBuffer() are
-            // restricted size for encrypting. However, data coming up from
-            // TCP may have a bunch of SSL segments coalesced and be much
-            // larger than the maximum single SSL segment.
-            extraBuff = a.getQueuedBuffer();
-            if (0 == extraBuff)
-                throw QPID_WINDOWS_ERROR(WSAENOBUFS);
-            memmove(extraBuff->bytes,
-                    recvBuffs[i].pvBuffer,
-                    recvBuffs[i].cbBuffer);
-            extraBuff->dataCount = recvBuffs[i].cbBuffer;
+            extraBytes = (char *) recvBuffs[i].pvBuffer;
+            extraLength = recvBuffs[i].cbBuffer;
             break;
         default:
             break;
@@ -381,34 +377,59 @@ void SslAsynchIO::sslDataIn(qpid::sys::AsynchIO& a, BufferBase *buff) {
     // (so we can count on more bytes being on the way via aio).
     do {
         BufferBase *temp = 0;
-        // Now that buff reflects only decrypted data, see if there was any
-        // partial data left over from last time. If so, append this new
+        // See if there was partial data left over from last time. If so, append this new
         // data to that and release the current buff back to aio. Assume that
         // leftoverPlaintext was squished so the data starts at 0.
         if (leftoverPlaintext != 0) {
             // There is leftover data; append all the new data that will fit.
             int32_t count = buff->dataCount;
-            if (leftoverPlaintext->dataCount + count > leftoverPlaintext->byteCount)
-                count = (leftoverPlaintext->byteCount - leftoverPlaintext->dataCount);
-            ::memmove(&leftoverPlaintext->bytes[leftoverPlaintext->dataCount],
-                      &buff->bytes[buff->dataStart],
-                      count);
-            leftoverPlaintext->dataCount += count;
-            buff->dataCount -= count;
-            buff->dataStart += count;
-            if (buff->dataCount == 0) {
-                a.queueReadBuffer(buff);
-                buff = 0;
+            if (count) {
+                if (leftoverPlaintext->dataCount + count > leftoverPlaintext->byteCount)
+                    count = (leftoverPlaintext->byteCount - leftoverPlaintext->dataCount);
+                ::memmove(&leftoverPlaintext->bytes[leftoverPlaintext->dataCount],
+                          &buff->bytes[buff->dataStart], count);
+                leftoverPlaintext->dataCount += count;
+                buff->dataCount -= count;
+                buff->dataStart += count;
+                // Prepare to pass the buffer up. Beware that the read callback
+                // may do an unread(), so move the leftoverPlaintext pointer
+                // out of the way. It also may release the buffer back to aio,
+                // so in either event, the pointer passed to the callback is not
+                // valid on return.
+                temp = leftoverPlaintext;
+                leftoverPlaintext = 0;
             }
-            // Prepare to pass the buffer up. Beware that the read callback
-            // may do an unread(), so move the leftoverPlaintext pointer
-            // out of the way. It also may release the buffer back to aio,
-            // so in either event, the pointer passed to the callback is not
-            // valid on return.
-            temp = leftoverPlaintext;
-            leftoverPlaintext = 0;
+            else {
+                // All decrypted data used up, decrypt some more or get more from the aio
+                if (extraLength) {
+                    buff->dataStart = extraBytes - buff->bytes;
+                    buff->dataCount = extraLength;
+                    sslDataIn(a, buff);
+                    return;
+                }
+                else {
+                    a.queueReadBuffer(buff);
+                    return;
+                }
+            }
         }
         else {
+            // Use buff, but first offload data not yet encrypted
+            if (extraLength) {
+                // Very important to get this buffer from the downstream aio.
+                // The ones constructed from the local getQueuedBuffer() are
+                // restricted size for encrypting. However, data coming up from
+                // TCP may have a bunch of SSL segments coalesced and be much
+                // larger than the maximum single SSL segment.
+                extraBuff = a.getQueuedBuffer();
+                if (0 == extraBuff) {
+                    // No leftoverPlaintext, so a spare buffer should be available
+                    throw QPID_WINDOWS_ERROR(WSAENOBUFS);
+                }
+                memmove(extraBuff->bytes, extraBytes, extraLength);
+                extraBuff->dataCount = extraLength;
+                extraLength = 0;
+            }
             temp = buff;
             buff = 0;
         }
@@ -423,8 +444,9 @@ void SslAsynchIO::sslDataIn(qpid::sys::AsynchIO& a, BufferBase *buff) {
 
     // Ok, the current decrypted data is done. If there was any extra data,
     // go back and handle that.
-    if (extraBuff != 0)
+    if (extraBuff != 0) {
         sslDataIn(a, extraBuff);
+    }
 }
 
 void SslAsynchIO::idle(qpid::sys::AsynchIO&) {
