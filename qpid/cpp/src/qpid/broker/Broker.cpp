@@ -1316,6 +1316,7 @@ void Broker::disableListening(std::string transport) {
 
 void Broker::registerTransport(const std::string& name, boost::shared_ptr<TransportAcceptor> a, boost::shared_ptr<TransportConnector> c, uint16_t p) {
     transportMap[name] = TransportInfo(a, c, p);
+    Url::addProtocol(name);
 }
 
 void Broker::accept() {
