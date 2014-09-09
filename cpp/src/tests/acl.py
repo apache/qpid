@@ -920,64 +920,64 @@ class ACLTests(TestBase010):
             broker_agent.queueMoveMessages("q7", "q8", 0)
             self.fail("ACL should deny queue move request from q7 to q8");
         except Exception, e:
-            self.assertTrue("'error_code': 7," in e.args[0])
+            self.assertTrue("'error_code': 7" in e.args[0])
             broker_agent = BrokerAgent(self.get_messaging_connection('bob','bob'))
 
         try:
             broker_agent.queueMoveMessages("q8", "q9", 0)
         except Exception, e:
-            if ("'error_code': 7," in e.args[0]):
+            if ("'error_code': 7" in e.args[0]):
                 self.fail("ACL should allow queue move request from q8 to q9");
 
         try:
             broker_agent.queueMoveMessages("q9", "q8", 0)
         except Exception, e:
-            if ("'error_code': 7," in e.args[0]):
+            if ("'error_code': 7" in e.args[0]):
                 self.fail("ACL should allow queue move request from q9 to q8");
 
         try:
             broker_agent.Redirect("q7", "q8")
             self.fail("ACL should deny queue redirect request from q7 to q8");
         except Exception, e:
-            self.assertTrue("'error_code': 7," in e.args[0])
+            self.assertTrue("'error_code': 7" in e.args[0])
             broker_agent = BrokerAgent(self.get_messaging_connection('bob','bob'))
 
         try:
             broker_agent.Redirect("q8", "q9")
         except Exception, e:
-            if ("'error_code': 7," in e.args[0]):
+            if ("'error_code': 7" in e.args[0]):
                 self.fail("ACL should allow queue redirect request from q8 to q9");
 
         try:
             broker_agent.Redirect("q9", "q8")
         except Exception, e:
-            if ("'error_code': 7," in e.args[0]):
+            if ("'error_code': 7" in e.args[0]):
                 self.fail("ACL should allow queue redirect request from q9 to q8");
 
         try:
             broker_agent.getQueue('q7').reroute(0, False, "amq.fanout")
             self.fail("ACL should deny queue reroute request from q7 to amq.fanout");
         except Exception, e:
-            self.assertTrue("'error_code': 7," in e.args[0])
+            self.assertTrue("'error_code': 7" in e.args[0])
             broker_agent = BrokerAgent(self.get_messaging_connection('bob','bob'))
 
         try:
             broker_agent.getQueue('q8').reroute(0, False, "amq.fanout")
             self.fail("ACL should deny queue reroute request from q8 to amq.fanout");
         except Exception, e:
-            self.assertTrue("'error_code': 7," in e.args[0])
+            self.assertTrue("'error_code': 7" in e.args[0])
             broker_agent = BrokerAgent(self.get_messaging_connection('bob','bob'))
 
         try:
             broker_agent.getQueue('q8').reroute(0, False, "amq.direct")
         except Exception, e:
-            if ("'error_code': 7," in e.args[0]):
+            if ("'error_code': 7" in e.args[0]):
                 self.fail("ACL should allow queue reroute request from q8 to amq.direct");
 
         try:
             broker_agent.getQueue('q9').reroute(0, False, "amq.fanout")
         except Exception, e:
-            if ("'error_code': 7," in e.args[0]):
+            if ("'error_code': 7" in e.args[0]):
                 self.fail("ACL should allow queue reroute request from q9 to amq.fanout");
 
         try:
