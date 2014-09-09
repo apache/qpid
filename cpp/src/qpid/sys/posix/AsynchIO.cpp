@@ -414,13 +414,14 @@ void AsynchIO::requestedCall(RequestCallback callback) {
  * to spare
  */
 AsynchIO::BufferBase* AsynchIO::getQueuedBuffer() {
-    // Always keep at least one buffer (it might have data that was "unread" in it)
-    if (bufferQueue.size()<=1)
+    BufferBase* buff = bufferQueue.empty() ? 0 : bufferQueue.back();
+    // An "unread" buffer is reserved for future read operations (which
+    // take from the front of the queue).
+    if (!buff || (buff->dataCount && bufferQueue.size() == 1)) {
+        QPID_LOG(error, "No IO buffers available");
         return 0;
-    BufferBase* buff = bufferQueue.back();
-    assert(buff);
-    buff->dataStart = 0;
-    buff->dataCount = 0;
+    }
+    assert(buff->dataCount == 0);
     bufferQueue.pop_back();
     return buff;
 }

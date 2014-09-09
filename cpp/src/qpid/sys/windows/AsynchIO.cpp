@@ -44,6 +44,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/shared_array.hpp>
+#include "qpid/sys/windows/AsynchIO.h"
 
 namespace {
 
@@ -82,24 +83,6 @@ namespace windows {
  * Asynch Acceptor
  *
  */
-class AsynchAcceptor : public qpid::sys::AsynchAcceptor {
-
-    friend class AsynchAcceptResult;
-
-public:
-    AsynchAcceptor(const Socket& s, AsynchAcceptor::Callback callback);
-    ~AsynchAcceptor();
-    void start(Poller::shared_ptr poller);
-
-private:
-    void restart(void);
-
-    AsynchAcceptor::Callback acceptedCallback;
-    const Socket& socket;
-    const SOCKET wSocket;
-    const LPFN_ACCEPTEX fnAcceptEx;
-};
-
 AsynchAcceptor::AsynchAcceptor(const Socket& s, Callback callback)
   : acceptedCallback(callback),
     socket(s),
@@ -184,24 +167,6 @@ void AsynchAcceptResult::failure(int /*status*/) {
  * event handle to associate with the connecting handle. But there's no
  * time for that right now...
  */
-class AsynchConnector : public qpid::sys::AsynchConnector {
-private:
-    ConnectedCallback connCallback;
-    FailedCallback failCallback;
-    const Socket& socket;
-    const std::string hostname;
-    const std::string port;
-
-public:
-    AsynchConnector(const Socket& socket,
-                    const std::string& hostname,
-                    const std::string& port,
-                    ConnectedCallback connCb,
-                    FailedCallback failCb = 0);
-    void start(Poller::shared_ptr poller);
-    void requestCallback(RequestCallback rCb);
-};
-
 AsynchConnector::AsynchConnector(const Socket& sock,
                                  const std::string& hname,
                                  const std::string& p,
@@ -260,136 +225,6 @@ AsynchConnector* qpid::sys::AsynchConnector::create(const Socket& s,
 
 namespace windows {
 
-class AsynchIO : public qpid::sys::AsynchIO {
-public:
-    AsynchIO(const Socket& s,
-             ReadCallback rCb,
-             EofCallback eofCb,
-             DisconnectCallback disCb,
-             ClosedCallback cCb = 0,
-             BuffersEmptyCallback eCb = 0,
-             IdleCallback iCb = 0);
-    ~AsynchIO();
-
-    // Methods inherited from qpid::sys::AsynchIO
-
-    /**
-     * Notify the object is should delete itself as soon as possible.
-     */
-    virtual void queueForDeletion();
-
-    /// Take any actions needed to prepare for working with the poller.
-    virtual void start(Poller::shared_ptr poller);
-    virtual void createBuffers(uint32_t size);
-    virtual void queueReadBuffer(BufferBase* buff);
-    virtual void unread(BufferBase* buff);
-    virtual void queueWrite(BufferBase* buff);
-    virtual void notifyPendingWrite();
-    virtual void queueWriteClose();
-    virtual bool writeQueueEmpty();
-    virtual void requestCallback(RequestCallback);
-
-    /**
-     * getQueuedBuffer returns a buffer from the buffer queue, if one is
-     * available.
-     *
-     * @retval Pointer to BufferBase buffer; 0 if none is available.
-     */
-    virtual BufferBase* getQueuedBuffer();
-
-    virtual SecuritySettings getSecuritySettings(void);
-
-private:
-    ReadCallback readCallback;
-    EofCallback eofCallback;
-    DisconnectCallback disCallback;
-    ClosedCallback closedCallback;
-    BuffersEmptyCallback emptyCallback;
-    IdleCallback idleCallback;
-    const Socket& socket;
-    Poller::shared_ptr poller;
-
-    std::deque<BufferBase*> bufferQueue;
-    std::deque<BufferBase*> writeQueue;
-    /* The MSVC-supplied deque is not thread-safe; keep locks to serialize
-     * access to the buffer queue and write queue.
-     */
-    Mutex bufferQueueLock;
-    std::vector<BufferBase> buffers;
-    boost::shared_array<char> bufferMemory;
-
-    // Number of outstanding I/O operations.
-    volatile LONG opsInProgress;
-    // Is there a write in progress?
-    volatile bool writeInProgress;
-    // Or a read?
-    volatile bool readInProgress;
-    // Deletion requested, but there are callbacks in progress.
-    volatile bool queuedDelete;
-    // Socket close requested, but there are operations in progress.
-    volatile bool queuedClose;
-
-private:
-    // Dispatch events that have completed.
-    void notifyEof(void);
-    void notifyDisconnect(void);
-    void notifyClosed(void);
-    void notifyBuffersEmpty(void);
-    void notifyIdle(void);
-
-    /**
-     * Initiate a write of the specified buffer. There's no callback for
-     * write completion to the AsynchIO object.
-     */
-    void startWrite(AsynchIO::BufferBase* buff);
-
-    void close(void);
-
-    /**
-     * startReading initiates reading, readComplete() is
-     * called when the read completes.
-     */
-    void startReading();
-
-    /**
-     * readComplete is called when a read request is complete.
-     *
-     * @param result Results of the operation.
-     */
-    void readComplete(AsynchReadResult *result);
-
-    /**
-     * writeComplete is called when a write request is complete.
-     *
-     * @param result Results of the operation.
-     */
-    void writeComplete(AsynchWriteResult *result);
-
-    /**
-     * Queue of completions to run. This queue enforces the requirement
-     * from upper layers that only one thread at a time is allowed to act
-     * on any given connection. Once a thread is busy processing a completion
-     * on this object, other threads that dispatch completions queue the
-     * completions here for the in-progress thread to handle when done.
-     * Thus, any threads can dispatch a completion from the IocpPoller, but
-     * this class ensures that actual processing at the connection level is
-     * only on one thread at a time.
-     */
-    std::queue<AsynchIoResult *> completionQueue;
-    volatile bool working;
-    Mutex completionLock;
-
-    /**
-     * Called when there's a completion to process.
-     */
-    void completion(AsynchIoResult *result);
-
-    /**
-     * Helper function to facilitate the close operation
-     */
-    void cancelRead();
-};
-
 // This is used to encapsulate pure callbacks into a handle
 class CallbackHandle : public IOHandle {
 public:
@@ -414,6 +249,7 @@ AsynchIO::AsynchIO(const Socket& s,
     emptyCallback(eCb),
     idleCallback(iCb),
     socket(s),
+    bufferCount(BufferCount),
     opsInProgress(0),
     writeInProgress(false),
     readInProgress(false),
@@ -455,14 +291,19 @@ void AsynchIO::start(Poller::shared_ptr poller0) {
     startReading();
 }
 
+uint32_t AsynchIO::getBufferCount(void) { return bufferCount; }
+
+void AsynchIO::setBufferCount(uint32_t count) { bufferCount = count; }
+
+
 void AsynchIO::createBuffers(uint32_t size) {
     // Allocate all the buffer memory at once
-    bufferMemory.reset(new char[size*BufferCount]);
+    bufferMemory.reset(new char[size*bufferCount]);
 
     // Create the Buffer structs in a vector
     // And push into the buffer queue
-    buffers.reserve(BufferCount);
-    for (uint32_t i = 0; i < BufferCount; i++) {
+    buffers.reserve(bufferCount);
+    for (uint32_t i = 0; i < bufferCount; i++) {
         buffers.push_back(BufferBase(&bufferMemory[i*size], size));
         queueReadBuffer(&buffers[i]);
     }
@@ -538,6 +379,9 @@ void AsynchIO::startReading() {
             assert(buff);
             bufferQueue.pop_front();
         }
+        else {
+            logNoBuffers("startReading");
+        }
     }
     if (buff != 0) {
         int readCount = buff->byteCount - buff->dataCount;
@@ -590,12 +434,17 @@ void AsynchIO::requestCallback(RequestCallback callback) {
  */
 AsynchIO::BufferBase* AsynchIO::getQueuedBuffer() {
     QLock l(bufferQueueLock);
-    // Always keep at least one buffer (it might have data that was
-    // "unread" in it).
-    if (bufferQueue.size() <= 1)
+    BufferBase* buff = bufferQueue.empty() ? 0 : bufferQueue.back();
+    // An "unread" buffer is reserved for future read operations (which
+    // take from the front of the queue).
+    if (!buff || (buff->dataCount && bufferQueue.size() == 1)) {
+        if (buff)
+            logNoBuffers("getQueuedBuffer with unread data");
+        else
+            logNoBuffers("getQueuedBuffer with empty queue");
         return 0;
-    BufferBase* buff = bufferQueue.back();
-    assert(buff);
+    }
+    assert(buff->dataCount == 0);
     bufferQueue.pop_back();
     return buff;
 }
@@ -832,6 +681,21 @@ void AsynchIO::cancelRead() {
     // XP, so we make do with closesocket().
     socket.close();
 }
+
+/*
+ * Track down cause of unavailable buffer if it recurs: QPID-5033
+ */
+void AsynchIO::logNoBuffers(const char *context) {
+    QPID_LOG(error, "No IO buffers available: " << context <<
+             ". Debug data: " << bufferQueue.size() <<
+             ' ' << writeQueue.size() <<
+             ' ' << completionQueue.size() <<
+             ' ' << opsInProgress <<
+             ' ' << writeInProgress <<
+             ' ' << readInProgress <<
+             ' ' << working);
+}
+
 
 } // namespace windows
 
