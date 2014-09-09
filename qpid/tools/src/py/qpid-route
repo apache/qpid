@@ -509,7 +509,11 @@ def main(argv=None):
         return(-1)
 
     if nargs == 2:
-        localBroker = socket.gethostname()
+        try:
+            socket.gethostbyname(socket.gethostname())
+            localBroker = socket.gethostname()
+        except socket.gaierror:
+            localBroker = "localhost"
     else:
         if config._srclocal:
             localBroker = args[3]
