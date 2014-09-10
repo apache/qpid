@@ -372,6 +372,47 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         }
     }
 
+    public void testCurrentNodeCannotBeRemovedFromPermittedNodeList() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+        int node2PortNumber = getNextAvailable(node1PortNumber+1);
+        int node3PortNumber = getNextAvailable(node2PortNumber+1);
+
+        String node1Address = "localhost:" + node1PortNumber;
+        String node2Address = "localhost:" + node2PortNumber;
+        String node3Address = "localhost:" + node3PortNumber;
+
+        String groupName = "group";
+        String node1Name = "node1";
+
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(node1Name, groupName, node1Address, node1Address, node1Name, node1PortNumber, node2PortNumber, node3PortNumber);
+        BDBHAVirtualHostNode<?> node1 = _helper.createAndStartHaVHN(node1Attributes);
+
+        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, node2Address, node1Address, node1Name);
+        BDBHAVirtualHostNode<?> node2 = _helper.createAndStartHaVHN(node2Attributes);
+
+        Map<String, Object> node3Attributes = _helper.createNodeAttributes("node3", groupName, node3Address, node1Address, node1Name);
+        BDBHAVirtualHostNode<?> node3 = _helper.createAndStartHaVHN(node3Attributes);
+
+        _helper.awaitRemoteNodes(node1, 2);
+
+        // Create new "proposed" permitted nodes list with a current node missing
+        List<String> amendedPermittedNodes = new ArrayList<String>();
+        amendedPermittedNodes.add(node1Address);
+        amendedPermittedNodes.add(node2Address);
+
+        // Try to update the permitted nodes attributes using the new list
+        try
+        {
+            node1.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, amendedPermittedNodes));
+            fail("Operation to remove current group node from permitted nodes should have failed");
+        }
+        catch(IllegalArgumentException e)
+        {
+            assertEquals("Unexpected exception message", String.format("The current group node '%s' cannot be removed from '%s' as its already a group member", node3Address, BDBHAVirtualHostNode.PERMITTED_NODES), e.getMessage());
+        }
+    }
+
     public void testIntruderProtectionInManagementMode() throws Exception
     {
         int node1PortNumber = findFreePort();
