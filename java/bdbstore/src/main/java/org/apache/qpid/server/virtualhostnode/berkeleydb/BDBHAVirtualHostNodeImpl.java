@@ -761,13 +761,38 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
     }
 
-    private void validatePermittedNodes(List<String> permittedNodes)
+    private void validatePermittedNodes(List<String> proposedPermittedNodes)
     {
-        if (permittedNodes == null || permittedNodes.isEmpty())
+        if (proposedPermittedNodes == null || proposedPermittedNodes.isEmpty())
         {
             throw new IllegalArgumentException(String.format("Attribute '%s' is mandatory and must be set", PERMITTED_NODES));
         }
-        for (String permittedNode: permittedNodes)
+
+        String missingNodeAddress = null;
+        if (!proposedPermittedNodes.contains(getAddress()))
+        {
+            missingNodeAddress = getAddress();
+        }
+        else
+        {
+            for (final RemoteReplicationNode<?> node : getRemoteReplicationNodes())
+            {
+                final BDBHARemoteReplicationNode<?> bdbHaRemoteReplicationNode = (BDBHARemoteReplicationNode<?>) node;
+                final String remoteNodeAddress = bdbHaRemoteReplicationNode.getAddress();
+                if (!proposedPermittedNodes.contains(remoteNodeAddress))
+                {
+                    missingNodeAddress = remoteNodeAddress;
+                    break;
+                }
+            }
+        }
+
+        if (missingNodeAddress != null)
+        {
+            throw new IllegalArgumentException(String.format("The current group node '%s' cannot be removed from '%s' as its already a group member", missingNodeAddress, PERMITTED_NODES));
+        }
+
+        for (String permittedNode: proposedPermittedNodes)
         {
             String[] tokens = permittedNode.split(":");
             if (tokens.length != 2)
