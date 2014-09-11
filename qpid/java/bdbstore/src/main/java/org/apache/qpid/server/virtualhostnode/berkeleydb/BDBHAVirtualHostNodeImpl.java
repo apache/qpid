@@ -769,7 +769,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
 
         String missingNodeAddress = null;
-        if (!proposedPermittedNodes.contains(getAddress()))
+        if (getPermittedNodes().contains(getAddress()) && !proposedPermittedNodes.contains(getAddress()))
         {
             missingNodeAddress = getAddress();
         }
@@ -779,7 +779,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             {
                 final BDBHARemoteReplicationNode<?> bdbHaRemoteReplicationNode = (BDBHARemoteReplicationNode<?>) node;
                 final String remoteNodeAddress = bdbHaRemoteReplicationNode.getAddress();
-                if (!proposedPermittedNodes.contains(remoteNodeAddress))
+                if (getPermittedNodes().contains(remoteNodeAddress) && !proposedPermittedNodes.contains(remoteNodeAddress))
                 {
                     missingNodeAddress = remoteNodeAddress;
                     break;
