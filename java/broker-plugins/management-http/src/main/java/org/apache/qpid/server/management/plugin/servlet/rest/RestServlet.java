@@ -59,6 +59,7 @@ public class RestServlet extends AbstractServlet
     public static final String ACTUALS_PARAM = "actuals";
     public static final String SORT_PARAM = "sort";
     public static final String INCLUDE_SYS_CONTEXT_PARAM = "includeSysContext";
+    public static final String INHERITED_ACTUALS_PARAM = "inheritedActuals";
     public static final String EXTRACT_INITIAL_CONFIG_PARAM = "extractInitialConfig";
 
     public static final Set<String> RESERVED_PARAMS =
@@ -66,7 +67,8 @@ public class RestServlet extends AbstractServlet
                                         SORT_PARAM,
                                         ACTUALS_PARAM,
                                         INCLUDE_SYS_CONTEXT_PARAM,
-                                        EXTRACT_INITIAL_CONFIG_PARAM));
+                                        EXTRACT_INITIAL_CONFIG_PARAM,
+                                        INHERITED_ACTUALS_PARAM));
 
     private Class<? extends ConfiguredObject>[] _hierarchy;
 
@@ -326,25 +328,27 @@ public class RestServlet extends AbstractServlet
         int depth;
         boolean actuals;
         boolean includeSystemContext;
-
+        boolean inheritedActuals;
         if(extractInitialConfig)
         {
             depth = Integer.MAX_VALUE;
             actuals = true;
             includeSystemContext = false;
+            inheritedActuals = false;
         }
         else
         {
             depth = getDepthParameterFromRequest(request);
             actuals = getBooleanParameterFromRequest(request, ACTUALS_PARAM);
             includeSystemContext = getBooleanParameterFromRequest(request, INCLUDE_SYS_CONTEXT_PARAM);
+            inheritedActuals = getBooleanParameterFromRequest(request, INHERITED_ACTUALS_PARAM);
         }
 
         List<Map<String, Object>> output = new ArrayList<Map<String, Object>>();
         for(ConfiguredObject configuredObject : allObjects)
         {
             output.add(_objectConverter.convertObjectToMap(configuredObject, getConfiguredClass(),
-                    depth, actuals, includeSystemContext, extractInitialConfig));
+                    depth, actuals, inheritedActuals, includeSystemContext, extractInitialConfig));
         }
 
         Writer writer = getOutputWriter(request, response);

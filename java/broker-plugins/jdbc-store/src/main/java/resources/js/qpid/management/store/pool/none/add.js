@@ -33,24 +33,9 @@ define(["dojo/_base/xhr",
         "dojo/domReady!"],
     function (xhr, dom, construct, win, registry, parser, array, event, json, string, Memory, FilteringSelect) {
         return {
-            show: function(poolSpecificDivId, formFieldPrefix, htmlUrl) {
-                var node = dom.byId(poolSpecificDivId);
-                var that = this;
-
-                array.forEach(registry.toArray(),
-                              function(item) {
-                                  if(item.id.substr(0,formFieldPrefix.length) == formFieldPrefix) {
-                                      item.destroyRecursive();
-                                  }
-                              });
-
-                xhr.get({url: htmlUrl,
-                     sync: true,
-                     load:  function(data) {
-                                node.innerHTML = data;
-                                parser.parse(node);
-
-                     }});
+            show: function(data)
+            {
+                data.context.removeDynamicallyAddedInheritedContext();
             }
         };
     });

@@ -32,34 +32,13 @@ define(["dojo/_base/xhr",
         "dijit/form/FilteringSelect",
         "dojo/domReady!"],
     function (xhr, dom, construct, win, registry, parser, array, event, json, string, Memory, FilteringSelect) {
-        var fieldNames = ["maxConnectionsPerPartition", "minConnectionsPerPartition", "partitionCount"];
         return {
-            show: function(poolSpecificDivId, formFieldPrefix, htmlUrl) {
-                var node = dom.byId(poolSpecificDivId);
-                var that = this;
-
-                array.forEach(registry.toArray(),
-                              function(item) {
-                                  if(item.id.substr(0,formFieldPrefix.length) == formFieldPrefix) {
-                                      item.destroyRecursive();
-                                  }
-                              });
-
-                xhr.get({url: htmlUrl,
-                     sync: true,
-                     load:  function(data) {
-
-                       node.innerHTML = data;
-                       parser.parse(node);
-
-                       for ( var i = 0 ; i < fieldNames.length; i++ )
-                       {
-                         var widgetName = fieldNames[i];
-                         var widget = registry.byId(formFieldPrefix + widgetName);
-                         widget.set("regExpGen", util.numericOrContextVarRegexp);
-                       }
-
-                     }});
+            show: function(data) {
+                data.context.addInheritedContext({
+                    "qpid.jdbcstore.bonecp.partitionCount": "4",
+                    "qpid.jdbcstore.bonecp.minConnectionsPerPartition": "5",
+                    "qpid.jdbcstore.bonecp.maxConnectionsPerPartition": "10"
+                    });
             }
         };
     });

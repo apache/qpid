@@ -36,6 +36,7 @@ define(["dojo/_base/xhr",
         "qpid/management/addKeystore",
         "qpid/management/addGroupProvider",
         "qpid/management/addAccessControlProvider",
+        "qpid/management/editBroker",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dijit/layout/AccordionContainer",
@@ -49,7 +50,8 @@ define(["dojo/_base/xhr",
         "dijit/Menu",
         "dijit/MenuItem",
         "dojo/domReady!"],
-       function (xhr, parser, query, json, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, entities, addAuthenticationProvider, addVirtualHostNodeAndVirtualHost, addPort, addKeystore, addGroupProvider, addAccessControlProvider) {
+       function (xhr, parser, query, json, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, entities,
+        addAuthenticationProvider, addVirtualHostNodeAndVirtualHost, addPort, addKeystore, addGroupProvider, addAccessControlProvider, editBroker) {
 
            function Broker(name, parent, controller) {
                this.name = name;
@@ -60,95 +62,6 @@ define(["dojo/_base/xhr",
                     this.modelObj.parent = {};
                     this.modelObj.parent[ parent.type] = parent;
                }
-               this.attributeWidgetFactories = [{
-                     name: "name",
-                     createWidget: function(brokerData) {
-                        return new dijit.form.ValidationTextBox({
-                          required: true,
-                          trim: true,
-                          regExpGen: util.nameOrContextVarRegexp,
-                          value: brokerData.name,
-                          label: "Name*:",
-                          name: "name",
-                          promptMessage: "Identifies the broker instance."})
-                    }
-               }, {
-                       name: "defaultVirtualHost",
-                       createWidget: function(brokerData) {
-                         var nodes = brokerData.virtualhostnodes;
-                         var data = [];
-                         if (nodes) {
-                           for (var i=0; i< nodes.length; i++) {
-                               if (nodes[i].virtualhosts)
-                               {
-                                   data.push({id: nodes[i].virtualhosts[0].name, name: nodes[i].virtualhosts[0].name});
-                               }
-                           }
-                         }
-                         var hostsStore = new dojo.store.Memory({ data: data });
-                         return new dijit.form.FilteringSelect({
-                           required: true, store: hostsStore,
-                           value: brokerData.defaultVirtualHost,
-                           label: "Default Virtual Host*:",
-                           name: "defaultVirtualHost",
-                           promptMessage: "Default virtual host used for clients that don't specify one when connecting."})
-                       }
-               }, {
-                       name: "statisticsReportingPeriod",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regExpGen: util.numericOrContextVarRegexp,
-                           required: false,
-                           value: brokerData.statisticsReportingPeriod,
-                           placeholder: "Time in ms",
-                           label: "Statistics reporting period (ms):",
-                           name: "statisticsReportingPeriod",
-                           promptMessage: "Frequency with which statistics are reported to broker log."
-                         });
-                       }
-               }, {
-                       name: "statisticsReportingResetEnabled",
-                       createWidget: function(brokerData)
-                       {
-                         return new dijit.form.CheckBox({
-                           required: false, checked: brokerData.statisticsReportingResetEnabled, value: "true",
-                           label: "Statistics reporting period enabled:",
-                           name: "statisticsReportingResetEnabled"
-                         });
-                       }
-               }, {
-                       name: "connection.sessionCountLimit",
-                       groupName: "Global Connection Defaults",
-                       createWidget: function(brokerData)
-                       {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regExpGen: util.numericOrContextVarRegexp,
-                           required: false,
-                           value: brokerData["connection.sessionCountLimit"],
-                           placeholder: "Number of sessions",
-                           label: "Maximum number of sessions:",
-                           name: "connection.sessionCountLimit",
-                           promptMessage: "Maximum number of sessions per connection"
-                         });
-                       }
-               }, {
-                       name: "connection.heartBeatDelay",
-                       createWidget: function(brokerData) {
-                         return new dijit.form.ValidationTextBox({
-                           trim: "true",
-                           regExpGen: util.numericOrContextVarRegexp,
-                           invalidMessage: "Invalid value",
-                           required: false,
-                           value: brokerData["connection.heartBeatDelay"],
-                           placeholder: "Time in ms",
-                           label: "Heart beat delay (ms):",
-                           name: "connection.heartBeatDelay",
-                           promptMessage: "Interval between heart beat messages exchanged between broker and clients"
-                         });
-                       }
-               } ];
            }
 
            Broker.prototype.getTitle = function()
@@ -227,20 +140,9 @@ define(["dojo/_base/xhr",
 
                             var editButton = query(".editBroker", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(editButton), "onClick",
-                                function(evt){
-                                  var query = "api/latest/broker";
-
-                                  xhr.get({url: query, sync: properties.useSyncGet, handleAs: "json", content: { actuals: true, depth: 2 }})
-                                      .then(function(data)
-                                      {
-                                        var brokerData = data[0];
-
-                                        util.showSetAttributesDialog(
-                                          that.attributeWidgetFactories,
-                                          brokerData,
-                                          query,
-                                          "Set broker attributes", "Broker", "broker");
-                                      });
+                                function(evt)
+                                {
+                                  editBroker.show(that.brokerUpdater.brokerData);
                                 }
                             );
 

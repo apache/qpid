@@ -40,7 +40,7 @@ define(["qpid/common/util", "dojo/query", "dojo/_base/array", "dojo/dom-construc
       util.updateUI(data, fieldNames, this);
 
       this.usernameAttributeContainer.style.display = data.username ? "block" : "none";
-      if (!this.poolDetails || previousConnectionPoolType != data.connectionPoolType)
+      if (data.connectionPoolType && (!this.poolDetails || previousConnectionPoolType != data.connectionPoolType))
       {
         var that = this;
         require(["qpid/management/store/pool/" + data.connectionPoolType.toLowerCase() + "/show"],

@@ -67,7 +67,7 @@ define(["dojo/_base/xhr",
                           require(["qpid/management/store/pool/"+type.toLowerCase()+"/add"],
                           function(poolType)
                           {
-                              poolType.show("addVirtualHostNode.poolSpecificDiv", "formAddVirtualHostNode.qpid.jdbcstore.bonecp", "virtualhostnode/store/pool/" + type.toLowerCase() + "/add.html");
+                            poolType.show({containerNode:poolTypeFieldsDiv, context: data.parent.virtualHostNodeContext});
                           });
                       }
                     }

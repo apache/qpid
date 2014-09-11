@@ -35,6 +35,7 @@ import java.util.TreeMap;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectAttribute;
+import org.apache.qpid.server.model.Model;
 
 public class ConfiguredObjectToMapConverter
 {
@@ -56,9 +57,20 @@ public class ConfiguredObjectToMapConverter
                                                   final boolean includeSystemContext,
                                                   final boolean extractAsConfig)
     {
+        return convertObjectToMap(confObject, clazz, depth, useActualValues, false, includeSystemContext, extractAsConfig);
+    }
+
+    public Map<String, Object> convertObjectToMap(final ConfiguredObject<?> confObject,
+                                                  Class<? extends ConfiguredObject> clazz,
+                                                  int depth,
+                                                  final boolean useActualValues,
+                                                  final boolean inheritedActuals,
+                                                  final boolean includeSystemContext,
+                                                  final boolean extractAsConfig)
+    {
         Map<String, Object> object = new LinkedHashMap<>();
 
-        incorporateAttributesIntoMap(confObject, object, useActualValues, includeSystemContext, extractAsConfig);
+        incorporateAttributesIntoMap(confObject, object, useActualValues, inheritedActuals, includeSystemContext, extractAsConfig);
         if(!extractAsConfig)
         {
             incorporateStatisticsIntoMap(confObject, object);
@@ -66,7 +78,7 @@ public class ConfiguredObjectToMapConverter
 
         if(depth > 0)
         {
-            incorporateChildrenIntoMap(confObject, clazz, depth, object, useActualValues, includeSystemContext, extractAsConfig);
+            incorporateChildrenIntoMap(confObject, clazz, depth, object, useActualValues, inheritedActuals, includeSystemContext, extractAsConfig);
         }
         return object;
     }
@@ -76,6 +88,7 @@ public class ConfiguredObjectToMapConverter
             final ConfiguredObject<?> confObject,
             Map<String, Object> object,
             final boolean useActualValues,
+            final boolean inheritedActuals,
             final boolean includeSystemContext,
             final boolean extractAsConfig)
     {
@@ -115,7 +128,7 @@ public class ConfiguredObjectToMapConverter
                     Map<String, Object> contextValues = new HashMap<>();
                     if (useActualValues)
                     {
-                        contextValues.putAll(confObject.getContext());
+                        collectContext(contextValues, confObject.getModel(), confObject, inheritedActuals);
                     }
                     else
                     {
@@ -165,6 +178,27 @@ public class ConfiguredObjectToMapConverter
         }
     }
 
+    private void collectContext(Map<String, Object> contextValues, Model model, ConfiguredObject<?> confObject, boolean inheritedContext)
+    {
+        Object value = confObject.getActualAttributes().get(ConfiguredObject.CONTEXT);
+        if (inheritedContext)
+        {
+            Collection<Class<? extends ConfiguredObject>> parents = model.getParentTypes(confObject.getCategoryClass());
+            if(parents != null && !parents.isEmpty())
+            {
+                ConfiguredObject parent = confObject.getParent(parents.iterator().next());
+                if(parent != null)
+                {
+                    collectContext(contextValues, model, parent, inheritedContext);
+                }
+            }
+        }
+        if (value instanceof Map)
+        {
+            contextValues.putAll((Map<String,String>)value);
+        }
+    }
+
     private void incorporateStatisticsIntoMap(
             final ConfiguredObject<?> confObject, Map<String, Object> object)
     {
@@ -184,6 +218,7 @@ public class ConfiguredObjectToMapConverter
             int depth,
             Map<String, Object> object,
             final boolean useActualValues,
+            final boolean inheritedActuals,
             final boolean includeSystemContext,
             final boolean extractAsConfig)
     {
@@ -225,6 +260,7 @@ public class ConfiguredObjectToMapConverter
                                                                 childClass,
                                                                 depth - 1,
                                                                 useActualValues,
+                                                                inheritedActuals,
                                                                 includeSystemContext,
                                                                 extractAsConfig));
                         }

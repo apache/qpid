@@ -1,0 +1,118 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+<div class="dijitHidden">
+  <div data-dojo-type="dijit/Dialog" data-dojo-props="title:'Edit Broker'" id="editBrokerDialog">
+      <form id="editBrokerForm" method="post" data-dojo-type="dijit/form/Form">
+          <div id="editBroker.allFields">
+              <div class="clear">
+                  <div class="formLabel-labelCell tableContainer-labelCell">Name*:</div>
+                  <div class="formLabel-controlCell tableContainer-valueCell">
+                      <input type="text" id="editBroker.name"
+                             data-dojo-type="dijit/form/ValidationTextBox"
+                             data-dojo-props="
+                              name: 'name',
+                              placeHolder: 'name',
+                              required: true,
+                              disabled: false,
+                              trim: true,
+                              promptMessage: 'Identifies the broker instance.',
+                              title: 'Enter broker name'" />
+                  </div>
+              </div>
+              <div class="clear">
+                  <div class="formLabel-labelCell tableContainer-labelCell">Default Virtual Host*:</div>
+                  <div class="formLabel-controlCell tableContainer-valueCell">
+                      <input type="text" id="editBroker.defaultVirtualHost"
+                             data-dojo-type="dijit/form/FilteringSelect"
+                             data-dojo-props="
+                              name: 'defaultVirtualHost',
+                              required: true,
+                              promptMessage: 'Default virtual host used for clients that do not specify one when connecting.',
+                              title: 'Select default virtual host' " />
+                  </div>
+              </div>
+              <div class="clear">
+                  <div class="formLabel-labelCell tableContainer-labelCell">Statistics reporting period (ms):</div>
+                  <div class="formLabel-controlCell tableContainer-valueCell">
+                      <input type="text" id="editBroker.statisticsReportingPeriod"
+                             data-dojo-type="dijit/form/ValidationTextBox"
+                             data-dojo-props="
+                              name: 'statisticsReportingPeriod',
+                              trim: true,
+                              placeholder: 'Time in ms',
+                              label: 'Statistics reporting period (ms):',
+                              promptMessage: 'Frequency with which statistics are reported to broker log.'" />
+                  </div>
+              </div>
+              <div class="clear">
+                  <div class="formLabel-labelCell tableContainer-labelCell">Statistics reporting period enabled:</div>
+                  <div class="formLabel-controlCell tableContainer-valueCell">
+                      <input type="text" id="editBroker.statisticsReportingResetEnabled"
+                             data-dojo-type="dijit/form/CheckBox"
+                             data-dojo-props=" name: 'statisticsReportingResetEnabled' " />
+                  </div>
+              </div>
+
+              <div class="clear formBox">
+                  <fieldset>
+                      <legend>Global Connection Defaults</legend>
+                      <div class="clear">
+                          <div class="formLabel-labelCell tableContainer-labelCell">Maximum number of sessions:</div>
+                          <div class="tableContainer-valueCell formLabel-controlCell">
+                              <input data-dojo-type="dijit/form/ValidationTextBox"
+                                     id="editBroker.connection.sessionCountLimit"
+                                     data-dojo-props="
+                                     name: 'connection.sessionCountLimit',
+                                     placeHolder: 'Number of sessions',
+                                     trim: true,
+                                     promptMessage: 'Maximum number of sessions per connection' "/>
+                          </div>
+                      </div>
+                      <div class="clear">
+                          <div class="formLabel-labelCell tableContainer-labelCell">Heart beat delay (ms)::</div>
+                          <div class="tableContainer-valueCell formLabel-controlCell">
+                              <input data-dojo-type="dijit/form/ValidationTextBox"
+                                     id="editBroker.connection.heartBeatDelay"
+                                     data-dojo-props="
+                                     name: 'connection.heartBeatDelay',
+                                     trim: true,
+                                     invalidMessage: 'Invalid value',
+                                     placeHolder: 'Time in ms',
+                                     promptMessage: 'Interval between heart beat messages exchanged between broker and clients'"/>
+                          </div>
+                      </div>
+                  </fieldset>
+              </div>
+
+              <div data-dojo-type="dijit/TitlePane" data-dojo-props="title: 'Context variables',  open: false">
+                  <div id="editBroker.context"
+                       data-dojo-type="qpid/common/ContextVariablesEditor"
+                       data-dojo-props="name: 'context', title: 'Context variables'" ></div>
+              </div>
+
+              <div class="clear"></div>
+
+              <div class="dijitDialogPaneActionBar">
+                  <button data-dojo-type="dijit/form/Button" id="editBroker.saveButton" data-dojo-props="label: 'Save'">Save</button>
+                  <button data-dojo-type="dijit/form/Button" id="editBroker.cancelButton" data-dojo-props="label: 'Cancel'" ></button>
+              </div>
+          </div>
+      </form>
+  </div>
+</div>

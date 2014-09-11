@@ -139,6 +139,7 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
         when(_configuredObject.getContextValue(eq(String.class),eq("inheritedkey"))).thenReturn("foo");
         when(_configuredObject.getContextKeys(anyBoolean())).thenReturn(inheritedKeys);
         when(_configuredObject.getContext()).thenReturn(actualContext);
+        when(_configuredObject.getActualAttributes()).thenReturn(Collections.singletonMap(ConfiguredObject.CONTEXT, actualContext));
         when(mockChild.getAttributeNames()).thenReturn(Arrays.asList(childAttributeName, ConfiguredObject.CONTEXT));
         when(mockChild.getAttribute(childAttributeName)).thenReturn(childAttributeValue);
         when(mockChild.getActualAttributes()).thenReturn(Collections.singletonMap(childAttributeName, childActualAttributeValue));

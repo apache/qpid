@@ -34,6 +34,7 @@ define(["dojo/_base/xhr",
         "dojo/data/ObjectStore",
         "qpid/common/util",
         "dojo/text!editVirtualHostNode.html",
+        "qpid/common/ContextVariablesEditor",
         "dijit/Dialog",
         "dijit/form/CheckBox",
         "dijit/form/FilteringSelect",
@@ -61,11 +62,16 @@ define(["dojo/_base/xhr",
         this.name = registry.byId("editVirtualHostNode.name");
         this.form = registry.byId("editVirtualHostNodeForm");
       },
-      show: function(nodeName)
+      show: function(effectiveData)
       {
         var that=this;
-        this.query = "api/latest/virtualhostnode/" + encodeURIComponent(nodeName);
-        this.dialog.set("title", "Edit Virtual Host Node - " + entities.encode(String(nodeName)));
+        if (!this.context)
+        {
+         this.context = new qpid.common.ContextVariablesEditor({name: 'context', title: 'Context variables'});
+         this.context.placeAt(dom.byId("editVirtualHostNode.context"));
+        }
+        this.query = "api/latest/virtualhostnode/" + encodeURIComponent(effectiveData.name);
+        this.dialog.set("title", "Edit Virtual Host Node - " + entities.encode(String(effectiveData.name)));
         xhr.get(
             {
               url: this.query,
@@ -74,7 +80,7 @@ define(["dojo/_base/xhr",
               handleAs: "json",
               load: function(data)
               {
-                that._show(data[0]);
+                that._show(data[0], effectiveData);
               }
             }
         );
@@ -103,7 +109,11 @@ define(["dojo/_base/xhr",
           if(this.form.validate())
           {
               var data = util.getFormWidgetValues(this.form, this.initialData);
-
+              var context = this.context.get("value");
+              if (context && !util.equals(context, this.initialData.context))
+              {
+                data["context"] = context;
+              }
               var success = false,failureReason=null;
               xhr.put({
                   url: this.query,
@@ -129,10 +139,11 @@ define(["dojo/_base/xhr",
               alert('Form contains invalid data.  Please correct first');
           }
       },
-      _show:function(nodeData)
+      _show:function(actualData, effectiveData)
       {
-          this.initialData = nodeData;
-          this.name.set("value", nodeData.name);
+          this.initialData = actualData;
+          this.name.set("value", actualData.name);
+          this.context.load( this.query, {actualValues: actualData.context, effectiveValues: effectiveData.context});
 
           var that = this;
 
@@ -140,15 +151,15 @@ define(["dojo/_base/xhr",
           array.forEach(widgets, function(item) { item.destroyRecursive();});
           domConstruct.empty(this.typeFieldsContainer);
 
-          require(["qpid/management/virtualhostnode/" + nodeData.type.toLowerCase() + "/edit"],
+          require(["qpid/management/virtualhostnode/" + actualData.type.toLowerCase() + "/edit"],
              function(TypeUI)
              {
                 try
                 {
-                    TypeUI.show({containerNode:that.typeFieldsContainer, parent: that, data: nodeData});
+                    TypeUI.show({containerNode:that.typeFieldsContainer, parent: that, data: actualData});
                     that.form.connectChildren();
 
-                    util.applyMetadataToWidgets(that.allFieldsContainer, "VirtualHostNode", nodeData.type);
+                    util.applyMetadataToWidgets(that.allFieldsContainer, "VirtualHostNode", actualData.type);
                 }
                 catch(e)
                 {

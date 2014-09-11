@@ -283,3 +283,26 @@ div .messages {
 .dijitMultiSelect {
     width : 14.75em;
 }
+
+.highlightedText
+{
+    font-weight: bold;
+}
+
+.normalText
+{
+    font-weight: normal;
+}
+
+.contextEditor
+{
+    margin-left:5px;
+    margin-right:5px;
+}
+
+.contextGrid
+{
+    width:100%;
+    max-height: 140px;
+    overflow: auto;
+}
