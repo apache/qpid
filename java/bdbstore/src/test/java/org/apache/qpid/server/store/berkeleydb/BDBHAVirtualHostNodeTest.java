@@ -413,6 +413,63 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         }
     }
 
+    public void testPermittedNodesAttributeModificationConditions() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+        int node2PortNumber = getNextAvailable(node1PortNumber+1);
+        int node3PortNumber = getNextAvailable(node2PortNumber+1);
+        int node4PortNumber = getNextAvailable(node3PortNumber+1);
+        int node5PortNumber = getNextAvailable(node4PortNumber+1);
+
+        String node1Address = "localhost:" + node1PortNumber;
+        String node2Address = "localhost:" + node2PortNumber;
+        String node3Address = "localhost:" + node3PortNumber;
+        String node4Address = "localhost:" + node4PortNumber;
+        String node5Address = "localhost:" + node5PortNumber;
+
+        String groupName = "group";
+        String node1Name = "node1";
+
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(node1Name, groupName, node1Address, node1Address, node1Name, node1PortNumber, node2PortNumber, node3PortNumber);
+        BDBHAVirtualHostNode<?> node1 = _helper.createAndStartHaVHN(node1Attributes);
+
+        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, node2Address, node1Address, node1Name);
+        BDBHAVirtualHostNode<?> node2 = _helper.createAndStartHaVHN(node2Attributes);
+
+        Map<String, Object> node3Attributes = _helper.createNodeAttributes("node3", groupName, node3Address, node1Address, node1Name);
+        BDBHAVirtualHostNode<?> node3 = _helper.createAndStartHaVHN(node3Attributes);
+
+        _helper.awaitRemoteNodes(node1, 2);
+
+        // Create new "proposed" permitted nodes list for update
+        List<String> amendedPermittedNodes = new ArrayList<String>();
+        amendedPermittedNodes.add(node1Address);
+        amendedPermittedNodes.add(node2Address);
+        amendedPermittedNodes.add(node3Address);
+        amendedPermittedNodes.add(node4Address);
+
+        // Try to update the permitted nodes attributes using the new list on REPLICA - should fail
+        BDBHAVirtualHostNode<?> nonMasterNode = _helper.findNodeInRole(NodeRole.REPLICA);
+        try
+        {
+            nonMasterNode.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, amendedPermittedNodes));
+            fail("Operation to update permitted nodes should have failed from non MASTER node");
+        }
+        catch(IllegalArgumentException e)
+        {
+            assertEquals("Unexpected exception message", String.format("Attribute '%s' can only be set on '%s' node or node in '%s' or '%s' state", BDBHAVirtualHostNode.PERMITTED_NODES, NodeRole.MASTER, State.STOPPED, State.ERRORED), e.getMessage());
+        }
+
+        // Try to update the permitted nodes attributes using the new list on MASTER - should succeed
+        BDBHAVirtualHostNode<?> masterNode = _helper.findNodeInRole(NodeRole.MASTER);
+        masterNode.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, amendedPermittedNodes));
+
+        // Try to update the permitted nodes attributes using the new list on a STOPPED node - should succeed
+        nonMasterNode.stop();
+        amendedPermittedNodes.add(node5Address);
+        nonMasterNode.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, amendedPermittedNodes));
+    }
+
     public void testIntruderProtectionInManagementMode() throws Exception
     {
         int node1PortNumber = findFreePort();

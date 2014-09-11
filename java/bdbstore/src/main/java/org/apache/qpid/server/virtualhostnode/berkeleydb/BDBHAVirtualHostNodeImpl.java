@@ -763,7 +763,11 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
     private void validatePermittedNodes(List<String> proposedPermittedNodes)
     {
-        if (proposedPermittedNodes == null || proposedPermittedNodes.isEmpty())
+        if (getRemoteReplicationNodes().size() > 0 && getRole() != NodeRole.MASTER && !(getState() == State.STOPPED || getState() == State.ERRORED))
+        {
+            throw new IllegalArgumentException(String.format("Attribute '%s' can only be set on '%s' node or node in '%s' or '%s' state", PERMITTED_NODES, NodeRole.MASTER, State.STOPPED, State.ERRORED));
+        }
+        else if (proposedPermittedNodes == null || proposedPermittedNodes.isEmpty())
         {
             throw new IllegalArgumentException(String.format("Attribute '%s' is mandatory and must be set", PERMITTED_NODES));
         }
