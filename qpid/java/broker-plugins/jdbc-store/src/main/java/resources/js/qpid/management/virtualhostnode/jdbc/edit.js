@@ -67,7 +67,7 @@ define(["qpid/common/util",
                               require(["qpid/management/store/pool/"+type.toLowerCase()+"/edit"],
                               function(poolType)
                               {
-                                  poolType.show({containerNode:poolTypeFieldsDiv, data: data.data})
+                                  poolType.show({containerNode:poolTypeFieldsDiv, data: data.data, context: data.parent.context})
 
                                   if (!(data.data.state == "STOPPED" || data.data.state == "ERRORED"))
                                   {

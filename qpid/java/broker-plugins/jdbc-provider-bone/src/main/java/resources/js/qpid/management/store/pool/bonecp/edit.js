@@ -27,32 +27,7 @@ define(["dojo/_base/xhr",
         "qpid/common/util",
         "dojo/domReady!"],
     function (xhr, dom, construct, win, registry, parser, util) {
-        var fieldNames = ["maxConnectionsPerPartition", "minConnectionsPerPartition", "partitionCount"];
         return {
-            show: function(data) {
-                var that = this;
-                xhr.get({url: "virtualhost/store/pool/bonecp/add.html",
-                     sync: true,
-                     load:  function(template) {
-                        for ( var i = 0 ; i < fieldNames.length; i++ )
-                        {
-                          var widgetName = fieldNames[i];
-                          var widget = registry.byId("formAddVirtualHost.qpid.jdbcstore.bonecp." + widgetName);
-                          if (widget)
-                          {
-                             widget.destroyRecursive();
-                          }
-                        }
-                        data.containerNode.innerHTML = template;
-                        parser.parse(data.containerNode);
-                        for ( var i = 0 ; i < fieldNames.length; i++ )
-                        {
-                          var widgetName = fieldNames[i];
-                          var widget = registry.byId("formAddVirtualHost.qpid.jdbcstore.bonecp." + widgetName);
-                          widget.set("value", data.data.context["qpid.jdbcstore.bonecp." + widgetName]);
-                          widget.set("regExpGen", util.numericOrContextVarRegexp);
-                        }
-                     }});
-            }
+            show: function(data) { }
         };
     });

@@ -33,7 +33,7 @@ define(["dojo/_base/xhr",
         "dojo/store/Memory",
         "dojo/data/ObjectStore",
         "qpid/common/util",
-        "dojo/text!editVirtualHost.html",
+        "dojo/text!editBroker.html",
         "qpid/common/ContextVariablesEditor",
         "dijit/Dialog",
         "dijit/form/CheckBox",
@@ -46,41 +46,41 @@ define(["dojo/_base/xhr",
         "dojo/domReady!"],
   function (xhr, entities, array, event, lang, win, dom, domConstruct, registry, parser, json, query, Memory, ObjectStore, util, template)
   {
-    var fields = [ "name", "queue.deadLetterQueueEnabled", "storeTransactionIdleTimeoutWarn", "storeTransactionIdleTimeoutClose", "storeTransactionOpenTimeoutWarn", "storeTransactionOpenTimeoutClose", "housekeepingCheckPeriod", "housekeepingThreadCount"];
-    var numericFieldNames = ["storeTransactionIdleTimeoutWarn", "storeTransactionIdleTimeoutClose", "storeTransactionOpenTimeoutWarn", "storeTransactionOpenTimeoutClose", "housekeepingCheckPeriod", "housekeepingThreadCount"];
+    var fields = [ "name", "defaultVirtualHost", "statisticsReportingPeriod", "statisticsReportingResetEnabled", "connection.sessionCountLimit", "connection.heartBeatDelay"];
+    var numericFieldNames = ["statisticsReportingPeriod", "connection.sessionCountLimit", "connection.heartBeatDelay"];
 
-
-    var virtualHostEditor =
+    var brokerEditor =
     {
       init: function()
       {
         var that=this;
         this.containerNode = domConstruct.create("div", {innerHTML: template});
         parser.parse(this.containerNode);
-        this.allFieldsContainer = dom.byId("editVirtualHost.allFields");
-        this.typeFieldsContainer = dom.byId("editVirtualHost.typeFields");
-        this.dialog = registry.byId("editVirtualHostDialog");
-        this.saveButton = registry.byId("editVirtualHost.saveButton");
-        this.cancelButton = registry.byId("editVirtualHost.cancelButton");
+
+        this.dialog = registry.byId("editBrokerDialog");
+        this.saveButton = registry.byId("editBroker.saveButton");
+        this.cancelButton = registry.byId("editBroker.cancelButton");
         this.cancelButton.on("click", function(e){that._cancel(e);});
         this.saveButton.on("click", function(e){that._save(e);});
         for(var i = 0; i < fields.length; i++)
         {
             var fieldName = fields[i];
-            this[fieldName] = registry.byId("editVirtualHost." + fieldName);
+            this[fieldName] = registry.byId("editBroker." + fieldName);
         }
-        this.form = registry.byId("editVirtualHostForm");
+        this.form = registry.byId("editBrokerForm");
+        this.context = registry.byId("editBroker.context");
+        util.applyMetadataToWidgets(this.containerNode, "Broker", "broker");
+
+        for(var i = 0; i < numericFieldNames.length; i++)
+        {
+            this[numericFieldNames[i]].set("regExpGen", util.numericOrContextVarRegexp);
+        }
       },
-      show: function(hostData)
+      show: function(brokerData)
       {
         var that=this;
-        if (!this.context)
-        {
-         this.context = new qpid.common.ContextVariablesEditor({name: 'context', title: 'Context variables'});
-         this.context.placeAt(dom.byId("editVirtualHost.context"));
-        }
-        this.query = "api/latest/virtualhost/" + encodeURIComponent(hostData.nodeName) + "/" + encodeURIComponent(hostData.hostName);
-        this.dialog.set("title", "Edit Virtual Host - " + entities.encode(String(hostData.hostName)));
+        this.query = "api/latest/broker";
+        this.dialog.set("title", "Edit Broker - " + entities.encode(String(brokerData.name)));
         xhr.get(
             {
               url: this.query,
@@ -89,7 +89,7 @@ define(["dojo/_base/xhr",
               handleAs: "json",
               load: function(data)
               {
-                that._show(data[0], hostData);
+                that._show(data[0], brokerData);
               }
             }
         );
@@ -123,6 +123,7 @@ define(["dojo/_base/xhr",
               {
                 data["context"] = context;
               }
+
               var success = false,failureReason=null;
               xhr.put({
                   url: this.query,
@@ -150,8 +151,23 @@ define(["dojo/_base/xhr",
       },
       _show:function(actualData, effectiveData)
       {
-
           this.initialData = actualData;
+          var nodes = effectiveData.virtualhostnodes
+          var data = [];
+          if (nodes)
+          {
+             for (var i=0; i< nodes.length; i++)
+             {
+                 if (nodes[i].virtualhosts)
+                 {
+                     data.push({id: nodes[i].virtualhosts[0].name, name: nodes[i].virtualhosts[0].name});
+                 }
+             }
+          }
+          var hostsStore = new dojo.store.Memory({ data: data });
+          this["defaultVirtualHost"].set("store", hostsStore);
+
+
           for(var i = 0; i < fields.length; i++)
           {
             var fieldName = fields[i];
@@ -167,48 +183,14 @@ define(["dojo/_base/xhr",
               widget.set("value", actualData[fieldName]);
             }
           }
-
-          this.context.load(this.query, {actualValues:actualData.context, effectiveValues:effectiveData.context});
-
-          // Add regexp to the numeric fields
-          for(var i = 0; i < numericFieldNames.length; i++)
-          {
-            this[numericFieldNames[i]].set("regExpGen", util.numericOrContextVarRegexp);
-          }
-
-          var that = this;
-
-          var widgets = registry.findWidgets(this.typeFieldsContainer);
-          array.forEach(widgets, function(item) { item.destroyRecursive();});
-          domConstruct.empty(this.typeFieldsContainer);
-
-          require(["qpid/management/virtualhost/" + actualData.type.toLowerCase() + "/edit"],
-             function(TypeUI)
-             {
-                try
-                {
-                    TypeUI.show({containerNode:that.typeFieldsContainer, parent: that, data: actualData});
-                    that.form.connectChildren();
-
-                    util.applyMetadataToWidgets(that.allFieldsContainer, "VirtualHost", actualData.type);
-                }
-                catch(e)
-                {
-                    if (console && console.warn )
-                    {
-                        console.warn(e);
-                    }
-                }
-             }
-          );
-
+          this.context.load(this.query, {actualValues: actualData.context, effectiveValues: effectiveData.context});
           this.dialog.startup();
           this.dialog.show();
       }
     };
 
-    virtualHostEditor.init();
+    brokerEditor.init();
 
-    return virtualHostEditor;
+    return brokerEditor;
   }
 );

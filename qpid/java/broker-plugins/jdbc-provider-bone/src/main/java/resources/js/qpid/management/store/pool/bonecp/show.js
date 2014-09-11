@@ -51,10 +51,11 @@ define(["dojo/_base/xhr",
 
     BoneCP.prototype.update=function(data)
     {
+
       for(var i=0; i<fieldNames.length;i++)
       {
         var fieldName = fieldNames[i];
-        var value = data.context["qpid.jdbcstore.bonecp."+fieldName];
+        var value = data && data.context ? data.context["qpid.jdbcstore.bonecp."+fieldName] : "";
         this[fieldName].innerHTML= value?entities.encode(String(value)):"";
       }
     };

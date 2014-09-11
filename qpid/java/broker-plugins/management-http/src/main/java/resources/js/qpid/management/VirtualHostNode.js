@@ -107,7 +107,7 @@ define(["dojo/_base/xhr",
                this.editNodeButton.on("click",
                 function(event)
                 {
-                    editVirtualHostNode.show(that.name);
+                    editVirtualHostNode.show(that.vhostNodeUpdater.nodeData);
                 }
                );
 
@@ -179,6 +179,7 @@ define(["dojo/_base/xhr",
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(
                    function(data)
                    {
+                     that.nodeData = data[0];
                      that.updateUI(data[0]);
                    }
                );

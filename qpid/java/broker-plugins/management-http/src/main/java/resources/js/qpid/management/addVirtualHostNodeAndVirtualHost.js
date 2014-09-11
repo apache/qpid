@@ -36,6 +36,9 @@ define(["dojo/_base/xhr",
         "qpid/common/util",
         "qpid/common/metadata",
         "dojo/text!addVirtualHostNodeAndVirtualHost.html",
+        "qpid/common/ContextVariablesEditor",
+        "dijit/TitlePane",
+        "dijit/layout/ContentPane",
         "dijit/form/Form",
         "dijit/form/CheckBox",
         "dijit/form/RadioButton",
@@ -100,7 +103,65 @@ define(["dojo/_base/xhr",
 
         this.virtualHostForm.reset();
         this.virtualHostType.set("value", null);
+        if (!this.virtualHostNodeContext)
+        {
+                this.virtualHostNodeContext = new qpid.common.ContextVariablesEditor({name: 'context', title: 'Context variables'});
+                this.virtualHostNodeContext.placeAt(dom.byId("addVirtualHostNode.context"));
+                var that = this;
+                this.virtualHostNodeContext.on("change", function(value){
+                    var inherited = that.virtualHostContext.inheritedActualValues;
+                    var effective = that.virtualHostContext.effectiveValues;
+                    var actuals = that.virtualHostContext.value;
+                    for(var key in value)
+                    {
+                        var val = value[key];
+                        if (!(key in actuals))
+                        {
+                            inherited[key] = val;
+                            if (!(key in effective))
+                            {
+                                effective[key] = val.indexOf("${") == -1 ? val : "";
+                            }
+                        }
+                    }
+                    that.virtualHostContext.setData(that.virtualHostContext.value,effective,inherited);
+                });
+        }
+        if (!this.virtualHostContext)
+        {
+                this.virtualHostContext = new qpid.common.ContextVariablesEditor({name: 'context', title: 'Context variables'});
+                this.virtualHostContext.placeAt(dom.byId("addVirtualHost.context"));
 
+        }
+        var inheritedActualValues = null;
+        xhr.get(
+            {
+              url: "api/latest/broker",
+              sync: true,
+              content: { actuals: true, inheritedActuals: true},
+              handleAs: "json",
+              load: function(data)
+              {
+                inheritedActualValues = data[0].context;
+              }
+            }
+        );
+
+        var effectiveValues = null;
+        xhr.get(
+            {
+              url: "api/latest/broker",
+              sync: true,
+              handleAs: "json",
+              load: function(data)
+              {
+                effectiveValues = data[0].context;
+              }
+            }
+        );
+
+        this.virtualHostNodeContext.setData({},effectiveValues,inheritedActualValues);
+        this.virtualHostContext.setData({},effectiveValues,inheritedActualValues);
         this.dialog.show();
       },
       destroy: function()
@@ -133,7 +194,14 @@ define(["dojo/_base/xhr",
           var widgets = registry.findWidgets(typeFieldsContainer);
           array.forEach(widgets, function(item) { item.destroyRecursive();});
           domConstruct.empty(typeFieldsContainer);
-
+          if (category)
+          {
+              var context = this["v" + category.substring(1) + "Context"];
+              if (context)
+              {
+                context.removeDynamicallyAddedInheritedContext();
+              }
+          }
           if (type)
           {
             var that = this;
@@ -214,7 +282,17 @@ define(["dojo/_base/xhr",
           var success = false,failureReason=null;
 
           var virtualHostNodeData = this._getValues(this.virtualHostNodeForm);
+          var virtualHostNodeContext = this.virtualHostNodeContext.get("value");
+          if (virtualHostNodeContext)
+          {
+            virtualHostNodeData["context"] = virtualHostNodeContext;
+          }
           var virtualHostData = this._getValues(this.virtualHostForm);
+          var virtualHostContext = this.virtualHostContext.get("value");
+          if (virtualHostContext)
+          {
+            virtualHostData["context"] = virtualHostContext;
+          }
 
           //Default the VH name to be the same as the VHN name.
           virtualHostData["name"] = virtualHostNodeData["name"];
