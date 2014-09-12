@@ -21,6 +21,9 @@
 # Support library for qpid python tests.
 #
 
+import string
+import random
+
 import unittest, traceback, socket
 import qpid.client, qmf.console
 import Queue
@@ -77,8 +80,8 @@ class TestBase(unittest.TestCase):
         """Create a new connction, return the Client object"""
         host = host or self.config.broker.host
         port = port or self.config.broker.port or 5672
-        user = user or "guest"
-        password = password or "guest"
+        user = user or self.config.broker.user or "guest"
+        password = password or self.config.broker.password or "guest"
         client = qpid.client.Client(host, port)
         try:
             if client.spec.major == 8 and client.spec.minor == 0:
@@ -114,9 +117,14 @@ class TestBase(unittest.TestCase):
         if not "uniqueCounter" in dir(self): self.uniqueCounter = 1;
         return "Test Message " + str(self.uniqueCounter)
 
-    def consume(self, queueName):
+    def randomLongString(self, length=65535):
+      body = ''.join(random.choice(string.ascii_uppercase) for _ in range(length))
+      return body
+
+    def consume(self, queueName, no_ack=True):
         """Consume from named queue returns the Queue object."""
-        reply = self.channel.basic_consume(queue=queueName, no_ack=True)
+
+        reply = self.channel.basic_consume(queue=queueName, no_ack=no_ack)
         return self.client.queue(reply.consumer_tag)
 
     def subscribe(self, channel=None, **keys):

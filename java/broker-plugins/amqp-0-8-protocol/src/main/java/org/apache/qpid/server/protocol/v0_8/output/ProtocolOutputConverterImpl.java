@@ -225,9 +225,9 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     private class MessageContentSourceBody implements AMQBody
     {
         public static final byte TYPE = 3;
-        private int _length;
-        private MessageContentSource _message;
-        private int _offset;
+        private final int _length;
+        private final MessageContentSource _message;
+        private final int _offset;
 
         public MessageContentSourceBody(MessageContentSource message, int offset, int length)
         {
@@ -269,6 +269,13 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public String toString()
+        {
+            return "[" + getClass().getSimpleName() + " offset: " + _offset + ", length: " + _length + "]";
+        }
+
     }
 
     public long writeGetOk(final ServerMessage msg,
