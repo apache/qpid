@@ -22,9 +22,15 @@
 # It builds a single SDK.zip file.
 # The environment for the build has been set up externally so
 # that 'devenv' runs the right version of Visual Studio (2008
-# or 2010) and the right architecture (x86 or x64), typically:
-# C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\vcvars32.bat or
-# C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\amd64\vcvarsamd64.bat
+# 2010 2012) and the right architecture (x86 or x64), typically:
+#    call "%VS90COMNTOOLS%..\..\VC\vcvarsall.bat" x86
+#    call "%VS90COMNTOOLS%..\..\VC\vcvarsall.bat" amd64
+# or
+#    call "%VS100COMNTOOLS%..\..\VC\vcvarsall.bat" x86
+#    call "%VS100COMNTOOLS%..\..\VC\vcvarsall.bat" amd64
+# or
+#    call "%VS110COMNTOOLS%..\..\VC\vcvarsall.bat" x86
+#    call "%VS110COMNTOOLS%..\..\VC\vcvarsall.bat" amd64
 #
 # On entry:
 #  1. Args[0] holds the BOOST_ROOT directory.            "c:\boost"
@@ -33,7 +39,7 @@
 #     The version number embedded in the built executables and libraries
 #     comes from qpid/cpp/src/CMakeWinVersions.cmake.
 #  3. Args[2] holds the Visual Studio version handle     "VS2010"
-#     Either VS2008 or VS2010. Defaults to VS2008.
+#     Pick VS2008, VS2010, or VS2012. Defaults to VS2008.
 #  4. Args[3] holds the architecture handle              "x86"
 #     Either x86 or x64. Defaults to x86.
 #  5. This file exists in directory kitroot/qpid/cpp.
@@ -127,6 +133,7 @@ function BuildAPlatform
     [string] $platform_dir  = "$global:currentDirectory/$platform-$vsName"
     [string] $qpid_cpp_src  = "$global:currentDirectory/$qpid_cpp_dir"
     [string] $msvcVer       = ""
+    [string] $msvcVerX      = ""
     
     Write-Host "BuildAPlatform"
     Write-Host " qpid_cpp_dir   : $qpid_cpp_dir"
@@ -143,12 +150,19 @@ function BuildAPlatform
     #
     if ($vsName -eq "VS2008") {
         $msvcVer = "msvc9"
+        $msvcVerX = "msvc9"
     } else {
         if ($vsName -eq "VS2010") {
             $msvcVer = "msvc10"
+            $msvcVerX = "msvcx"
         } else {
-            Write-Host "illegal vsName parameter: $vsName Choose VS2008 or VS2010"
-            exit
+            if ($vsName -eq "VS2012") {
+                $msvcVer = "msvc11"
+                $msvcVerX = "msvcx"
+            } else {
+                Write-Host "illegal vsName parameter: $vsName Choose VS2008, VS2010, or VS2012"
+                exit
+            }
         }
     }
     
@@ -189,7 +203,7 @@ function BuildAPlatform
     devenv qpid-cpp.sln /build "$vsTargetDebug"   /project INSTALL
     devenv qpid-cpp.sln /build "$vsTargetRelease" /project INSTALL
 
-    $bindingSln = Resolve-Path $qpid_cpp_src\bindings\qpid\dotnet\$msvcVer\org.apache.qpid.messaging.sln
+    $bindingSln = Resolve-Path $platform_dir\bindings\qpid\dotnet\$msvcVerX\org.apache.qpid.messaging.sln
     
     # Build the .NET binding
     if ("x86" -eq $platform) {
@@ -304,7 +318,7 @@ function BuildAPlatform
     cmd /c "rd /s /q ""$install_dir/dotnet_examples/examples/msvc10"""
     
     # TODO: Fix up the .NET binding example solution/projects before including them.
-    $src = Resolve-Path "$qpid_cpp_src/bindings/qpid/dotnet/winsdk_sources/$msvcVer"
+    $src = Resolve-Path "$platform_dir/bindings/qpid/dotnet/winsdk_sources/$msvcVerX"
     $dst = Resolve-Path "$install_dir/dotnet_examples"
     Copy-Item "$src\*" -destination "$dst\" -recurse -force
 
@@ -368,8 +382,12 @@ if ( !($global:vsVersion -eq $null) ) {
         if ($global:vsVersion -eq "VS2010") {
             $generator = "Visual Studio 10"
         } else {
-            Write-Host "Visual Studio Version must be VS2008 or VS2010"
-            exit
+            if ($global:vsVersion -eq "VS2012") {
+                $generator = "Visual Studio 11"
+            } else {
+                Write-Host "Visual Studio Version must be VS2008, VS2010, or VS2012"
+                exit
+            }
         }
     }
 } else {

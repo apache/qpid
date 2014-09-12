@@ -19,7 +19,7 @@
 
 // Microsoft Visual C++ generated resource script.
 //
-#include "..\resource1.h"
+#include "${DOTNET_relPathToResource}"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -48,7 +48,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 1 TEXTINCLUDE 
 BEGIN
-    "resource1.h\0"
+    "${DOTNET_relPathToResource}\0"
 END
 
 2 TEXTINCLUDE 
