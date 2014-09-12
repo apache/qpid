@@ -144,4 +144,16 @@ if (SWIG_FOUND)
   endif (BUILD_BINDING_PERL)
 endif (SWIG_FOUND)
 
+if (MSVC)
+    set (dotnet_binding_default ON)
+else (MSVC)
+    set (dotnet_binding_default OFF)
+endif (MSVC)
+option(BUILD_BINDING_DOTNET "Build DOTNET bindings" ${dotnet_binding_default})
+
+if (BUILD_BINDING_DOTNET)
+    message(STATUS "Building Dotnet bindings")
+    add_subdirectory(qpid/dotnet)
+endif (BUILD_BINDING_DOTNET)
+
 add_subdirectory(qmf2/examples/cpp)

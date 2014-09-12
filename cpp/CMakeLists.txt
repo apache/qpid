@@ -212,6 +212,9 @@ if (MSVC)
 
   if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/bindings/qpid/dotnet/src)
     # Set the windows version for the .NET Binding cpp project
+    file(TO_CMAKE_PATH "${CMAKE_CURRENT_BINARY_DIR}/src/windows/resources" DOTNET_src)
+    file(TO_CMAKE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/bindings/qpid/dotnet/src/resource1.h" DOTNET_tgt)
+    file(RELATIVE_PATH DOTNET_relPathToResource ${DOTNET_src} ${DOTNET_tgt})
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bindings/qpid/dotnet/src/org.apache.qpid.messaging.template.rc
                    ${CMAKE_CURRENT_BINARY_DIR}/src/windows/resources/org.apache.qpid.messaging.rc)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bindings/qpid/dotnet/src/AssemblyInfo-template.cpp

@@ -126,6 +126,7 @@ $global:vsVersion = ''       # "Visual Studio 2010"
 $global:vsShortName = ''     # "2010"
 $global:cmakeGenerator = ''  # "Visual Studio 10"
 $global:vsSubdir = ''        # "msvc10"
+$global:vsSubdirX = ''       # "msvc9" or "msvcx"
 $global:cmakeCompiler = ''   # "-vc100"
 $global:build32or64 = ''     # "32" or "64"
 $global:buildPathSizeId = '' # "x86" or "x64"
@@ -261,7 +262,7 @@ function WriteDotnetBindingSlnLauncherPs1
 $global:txtPath  = ""$boostRoot\lib;$global:txtPath""
 $global:txtQR    = ""$buildRoot""
 $global:txtWH      ""Launch $slnName in $studioVersion $vsPlatform ($nBits-bit) environment.""
-$cppDir\bindings\qpid\dotnet\$vsSubdir\$slnName
+$buildRoot\bindings\qpid\dotnet\$vsSubdirX\$slnName
 ")
     Write-Host "        $buildRoot\$outfileName"
     $out | Out-File "$buildRoot\$outfileName" -encoding ASCII
@@ -414,6 +415,7 @@ function ParseStudioSelection
         $global:vsVersion = "Visual Studio 2012"
         $global:cmakeGenerator = "Visual Studio 11"
         $global:vsSubdir = "msvc11"
+        $global:vsSubdirX = "msvcx"
         $global:cmakeCompiler = "-vc110"
         $global:vsShortName = "2012"
         $global:vsEnvironment = """%VS110COMNTOOLS%..\..\VC\vcvarsall.bat"""
@@ -421,6 +423,7 @@ function ParseStudioSelection
         $global:vsVersion = "Visual Studio 2010"
         $global:cmakeGenerator = "Visual Studio 10"
         $global:vsSubdir = "msvc10"
+        $global:vsSubdirX = "msvcx"
         $global:cmakeCompiler = "-vc100"
         $global:vsShortName = "2010"
         $global:vsEnvironment = """%VS100COMNTOOLS%..\..\VC\vcvarsall.bat"""
@@ -428,6 +431,7 @@ function ParseStudioSelection
         $global:vsVersion = "Visual Studio 2008"
         $global:cmakeGenerator = "Visual Studio 9 2008"
         $global:vsSubdir = "msvc9"
+        $global:vsSubdirX = "msvc9"
         $global:cmakeCompiler = "-vc90"
         $global:vsShortName = "2008"
         $global:vsEnvironment = """%VS90COMNTOOLS%..\..\VC\vcvarsall.bat"""
@@ -667,5 +671,5 @@ WriteMakeInstallBat             -buildRoot "$build" `
 # an error then the window closes and the user never sees the error. This pause
 # gives him a chance to figure it out.
 #
-Write-Host "Press any key to continue ..."
-[void] $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+#Write-Host "Press any key to continue ..."
+#[void] $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
