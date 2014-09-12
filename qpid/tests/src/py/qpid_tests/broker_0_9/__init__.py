@@ -19,4 +19,4 @@
 # under the License.
 #
 
-import query, queue, messageheader
+import query, queue, messageheader, echo
