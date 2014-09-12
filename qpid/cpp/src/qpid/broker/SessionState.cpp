@@ -69,7 +69,7 @@ void SessionState::addManagementObject() {
     if (parent != 0) {
         ManagementAgent* agent = getBroker().getManagementAgent();
         if (agent != 0) {
-            std::string name(getId().getName());
+            std::string name(getId().str());
             std::string fullName(name);
             if (name.length() >= std::numeric_limits<uint8_t>::max())
                 name.resize(std::numeric_limits<uint8_t>::max()-1);
