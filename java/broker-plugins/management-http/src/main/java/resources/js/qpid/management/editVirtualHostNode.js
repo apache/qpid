@@ -156,7 +156,7 @@ define(["dojo/_base/xhr",
              {
                 try
                 {
-                    TypeUI.show({containerNode:that.typeFieldsContainer, parent: that, data: actualData});
+                    TypeUI.show({containerNode:that.typeFieldsContainer, parent: that, data: actualData, effectiveData: effectiveData});
                     that.form.connectChildren();
 
                     util.applyMetadataToWidgets(that.allFieldsContainer, "VirtualHostNode", actualData.type);

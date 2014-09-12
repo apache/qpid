@@ -38,7 +38,10 @@ define(["qpid/common/util",
               {
                   registry.byId("editVirtualHostNode.storePath").set("disabled", true);
               }
-
+              if (!( data.effectiveData.role == "MASTER" || data.data.state == "ERRORED" || data.data.state == "STOPPED"))
+              {
+                  registry.byId("editVirtualHostNode.permittedNodesList").set("disabled", true);
+              }
               var overrideData = [{id: '0', name: 'Majority', selected: '1'}];
               if (node.remotereplicationnodes && node.remotereplicationnodes.length>1)
               {
