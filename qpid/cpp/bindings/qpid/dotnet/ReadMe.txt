@@ -88,7 +88,4 @@ A. TBD
 6. Notes
 ========
 
-A. Directory cpp\bindings\qpid\dotnet\bld holds a solution file and two
-   project files that are executed during automated winsdk builds. 
-   These are not meant to be run interactively.
-   
+TBD   
