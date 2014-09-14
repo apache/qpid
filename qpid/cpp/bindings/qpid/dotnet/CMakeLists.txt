@@ -150,8 +150,12 @@ if (MSVC)
     file(TO_NATIVE_PATH ${PROJECT_SOURCE_DIR}       DOTNET_projectSourceDir)
 
     # relative path from top-level binary back to top-level source
-    file(RELATIVE_PATH DOTNET_relPathToSrc "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
-    file(TO_NATIVE_PATH ${DOTNET_relPathToSrc} DOTNET_relPathToSrc)
+    if (${CMAKE_CURRENT_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+        set (DOTNET_relPathToSrc ".\\")
+    else()
+        file(RELATIVE_PATH DOTNET_relPathToSrc "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}")
+        file(TO_NATIVE_PATH ${DOTNET_relPathToSrc} DOTNET_relPathToSrc)
+    endif()
 
     if((${CMAKE_GENERATOR} STREQUAL "Visual Studio 9 2008") OR
        (${CMAKE_GENERATOR} STREQUAL "Visual Studio 9 2008 Win64"))
