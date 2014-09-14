@@ -19,14 +19,22 @@
 
 package org.apache.qpid.amqp_1_0.jms.impl;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.qpid.amqp_1_0.client.Message;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Section;
+import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.messaging.AmqpSequence;
 import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
 import org.apache.qpid.amqp_1_0.type.messaging.ApplicationProperties;
@@ -133,23 +141,76 @@ class MessageFactory
             }
             else if(bodySection instanceof Data)
             {
-                if(properties != null && ObjectMessageImpl.CONTENT_TYPE.equals(properties.getContentType()))
+                Data dataSection = (Data) bodySection;
+
+                Symbol contentType = properties == null ? null : properties.getContentType();
+
+                if(ObjectMessageImpl.CONTENT_TYPE.equals(contentType))
                 {
 
 
                     message = new ObjectMessageImpl(header,
                                                     deliveryAnnotations,
                                                     messageAnnotations, properties, appProperties,
-                                                    (Data) bodySection,
+                                                    dataSection,
                                                     footer,
                                                     _session);
+                }
+                else if(contentType != null)
+                {
+                    ContentType contentTypeObj = parseContentType(contentType.toString());
+                    // todo : content encoding - e.g. gzip
+                    String contentTypeType = contentTypeObj.getType();
+                    String contentTypeSubType = contentTypeObj.getSubType();
+                    if ("text".equals(contentTypeType)
+                        || ("application".equals(contentTypeType)
+                            && contentTypeSubType != null
+                            && ("xml".equals(contentTypeSubType)
+                                || "json".equals(contentTypeSubType)
+                                || "xml-dtd".equals(contentTypeSubType)
+                                || "javascript".equals(contentTypeSubType)
+                                || contentTypeSubType.endsWith("+xml")
+                                || contentTypeSubType.endsWith("+json"))))
+                    {
+                        Charset charset;
+                        if (contentTypeObj.getParameterNames().contains("charset"))
+                        {
+                            charset = Charset.forName(contentTypeObj.getParameter("charset").toUpperCase());
+                        }
+                        else
+                        {
+                            charset = StandardCharsets.US_ASCII;
+                        }
+                        Binary binary = dataSection.getValue();
+                        String data =
+                                new String(binary.getArray(), binary.getArrayOffset(), binary.getLength(), charset);
+                        message = new TextMessageImpl(header, deliveryAnnotations, messageAnnotations, properties,
+                                                      appProperties, data, footer, _session);
+                    }
+                    else
+                    {
+                        message = new BytesMessageImpl(header,
+                                                       deliveryAnnotations,
+                                                       messageAnnotations,
+                                                       properties,
+                                                       appProperties,
+                                                       dataSection,
+                                                       footer,
+                                                       _session);
+                    }
                 }
                 else
                 {
                     message = new BytesMessageImpl(header,
                                                    deliveryAnnotations,
-                                                   messageAnnotations, properties, appProperties, (Data) bodySection, footer, _session);
+                                                   messageAnnotations,
+                                                   properties,
+                                                   appProperties,
+                                                   dataSection,
+                                                   footer,
+                                                   _session);
                 }
+
             }
             else if(bodySection instanceof AmqpSequence)
             {
@@ -158,47 +219,6 @@ class MessageFactory
                                                 messageAnnotations, properties, appProperties, ((AmqpSequence) bodySection).getValue(), footer, _session
                 );
             }
-
-            /*else if(bodySection instanceof AmqpDataSection)
-            {
-                AmqpDataSection dataSection = (AmqpDataSection) bodySection;
-
-                List<Object> data = new ArrayList<Object>();
-
-                ListIterator<Object> dataIter = dataSection.iterator();
-
-                while(dataIter.hasNext())
-                {
-                    data.add(dataIter.next());
-                }
-
-                if(data.size() == 1)
-                {
-                    final Object obj = data.get(0);
-                    if( obj instanceof String)
-                    {
-                        message = new TextMessageImpl(header,properties,appProperties,(String) data.get(0),footer, _session);
-                    }
-                    else if(obj instanceof JavaSerializable)
-                    {
-                        // TODO - ObjectMessage
-                        message = new AmqpMessageImpl(header,properties,appProperties,body,footer, _session);
-                    }
-                    else if(obj instanceof Serializable)
-                    {
-                        message = new ObjectMessageImpl(header,properties,footer,appProperties,(Serializable)obj, _session);
-                    }
-                    else
-                    {
-                        message = new AmqpMessageImpl(header,properties,appProperties,body,footer, _session);
-                    }
-                }
-                else
-                {
-                    // not a text message
-                    message = new AmqpMessageImpl(header,properties,appProperties,body,footer, _session);
-                }
-            }*/
             else
             {
                 message = new AmqpMessageImpl(header,
@@ -217,4 +237,108 @@ class MessageFactory
 
         return message;
     }
+
+
+    static interface ContentType
+    {
+        String getType();
+        String getSubType();
+        Set<String> getParameterNames();
+        String getParameter(String name);
+    }
+
+    static ContentType parseContentType(String contentType)
+    {
+        int subTypeSeparator = contentType.indexOf("/");
+        final String type = contentType.substring(0, subTypeSeparator).toLowerCase().trim();
+        String subTypePart = contentType.substring(subTypeSeparator +1).toLowerCase().trim();
+        if(subTypePart.contains(";"))
+        {
+            subTypePart = subTypePart.substring(0,subTypePart.indexOf(";")).trim();
+        }
+        if(subTypePart.contains("("))
+        {
+            subTypePart = subTypePart.substring(0,subTypePart.indexOf("(")).trim();
+        }
+        final String subType = subTypePart;
+        final Map<String,String> parameters = new HashMap<>();
+
+        if(contentType.substring(subTypeSeparator +1).contains(";"))
+        {
+            parseContentTypeParameters(contentType.substring(contentType.indexOf(";",subTypeSeparator +1)+1), parameters);
+        }
+        return  new ContentType()
+                {
+                    @Override
+                    public String getType()
+                    {
+                        return type;
+                    }
+
+                    @Override
+                    public String getSubType()
+                    {
+                        return subType;
+                    }
+
+                    @Override
+                    public Set<String> getParameterNames()
+                    {
+                        return Collections.unmodifiableMap(parameters).keySet();
+                    }
+
+                    @Override
+                    public String getParameter(final String name)
+                    {
+                        return parameters.get(name);
+                    }
+                };
+    }
+
+    private static void parseContentTypeParameters(final String parameterString, final Map<String, String> parameters)
+    {
+        int equalsIndex = parameterString.indexOf("=");
+        if(equalsIndex != -1)
+        {
+            String paramName = parameterString.substring(0,equalsIndex).trim();
+            String valuePart = equalsIndex == parameterString.length() - 1 ? "" : parameterString.substring(equalsIndex+1).trim();
+            String remainder;
+            if(valuePart.startsWith("\""))
+            {
+                int closeQuoteIndex = valuePart.indexOf("\"", 1);
+                if(closeQuoteIndex != -1)
+                {
+                    parameters.put(paramName, valuePart.substring(1, closeQuoteIndex));
+                    remainder = (closeQuoteIndex == valuePart.length()-1) ? "" : valuePart.substring(closeQuoteIndex+1);
+                }
+                else
+                {
+                    remainder = "";
+                }
+            }
+            else
+            {
+                Pattern pattern = Pattern.compile("\\s|;|\\(");
+                Matcher matcher = pattern.matcher(valuePart);
+                if(matcher.matches())
+                {
+                    parameters.put(paramName, valuePart.substring(0,matcher.start()));
+                    remainder = valuePart.substring(matcher.start());
+                }
+                else
+                {
+                    parameters.put(paramName, valuePart);
+                    remainder = "";
+                }
+            }
+
+            int paramSep = remainder.indexOf(";");
+            if(paramSep != -1 && paramSep != remainder.length()-1)
+            {
+                parseContentTypeParameters(remainder.substring(paramSep+1),parameters);
+            }
+        }
+
+    }
+
 }
