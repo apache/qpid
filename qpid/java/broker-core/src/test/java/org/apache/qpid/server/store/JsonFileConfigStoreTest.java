@@ -351,14 +351,11 @@ public class JsonFileConfigStoreTest extends QpidTestCase
     public void testStoreFileLifecycle()
     {
         File expectedJsonFile = new File(_storeLocation, _parent.getName() + ".json");
-        File expectedJsonFileBak = new File(_storeLocation, _parent.getName() + ".bak");
 
         assertFalse("JSON store should not exist", expectedJsonFile.exists());
-        assertFalse("JSON backup should not exist", expectedJsonFileBak.exists());
 
         _store.openConfigurationStore(_parent, false);
         assertTrue("JSON store should exist after open", expectedJsonFile.exists());
-        assertFalse("JSON backup should not exist after open", expectedJsonFileBak.exists());
 
         _store.closeConfigurationStore();
         assertTrue("JSON store should exist after close", expectedJsonFile.exists());
