@@ -33,7 +33,10 @@
     <generated-amqp-0-8-dir>${basedir}/src/main/java</generated-amqp-0-8-dir>
     <generated-amqp-0-10-dir>${basedir}/src/main/java</generated-amqp-0-10-dir>
     <selector.output.dir>${basedir}/src/main/java/org/apache/qpid/filter/selector</selector.output.dir>
-    <version.file>${project.build.directory}/classes/qpidversion.properties</version.file>
+    <qpid.name>qpid</qpid.name>
+    <qpid.version>${project.version}</qpid.version>
+    <qpid.version.suffix></qpid.version.suffix>
+    <buildNumber>Unversioned directory</buildNumber>
   </properties>
 
   <dependencies>
@@ -54,6 +57,14 @@
   </dependencies>
    
   <build>
+
+    <resources>
+        <resource>
+            <directory>src/main/resources</directory>
+            <filtering>true</filtering>
+        </resource>
+    </resources>
+
     <testResources>
         <testResource>
             <directory>${basedir}/src/test/java</directory>
@@ -67,6 +78,24 @@
     </testResources>
 
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+        <version>1.3</version>
+        <executions>
+            <execution>
+                <phase>validate</phase>
+                <goals>
+                    <goal>create</goal>
+                </goals>
+            </execution>
+        </executions>
+        <configuration>
+            <doCheck>false</doCheck>
+            <doUpdate>false</doUpdate>
+        </configuration>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
