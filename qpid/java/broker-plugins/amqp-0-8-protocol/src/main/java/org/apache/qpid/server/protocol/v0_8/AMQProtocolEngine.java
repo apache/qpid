@@ -1353,7 +1353,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
 
                 MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(getProtocolVersion());
-                ConnectionCloseBody closeBody = methodRegistry.createConnectionCloseBody(200,new AMQShortString(throwable.getMessage()),0,0);
+                ConnectionCloseBody closeBody = methodRegistry.createConnectionCloseBody(200, AMQShortString.validValueOf(throwable.getMessage()),0,0);
 
                 writeFrame(closeBody.generateFrame(0));
 
@@ -1469,7 +1469,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         ChannelCloseBody responseBody =
                 methodRegistry.createChannelCloseBody(
                         cause.getCode(),
-                        new AMQShortString(message),
+                        AMQShortString.validValueOf(message),
                         0,0);
 
         writeFrame(responseBody.generateFrame(channelId));
