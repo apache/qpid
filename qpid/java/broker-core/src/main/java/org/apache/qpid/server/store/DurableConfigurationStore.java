@@ -93,5 +93,5 @@ public interface DurableConfigurationStore
      * has not be opened, then this call will be ignored.  The store should be closed
      * before making this call.
      */
-    void onDelete();
+    void onDelete(ConfiguredObject<?> parent);
 }

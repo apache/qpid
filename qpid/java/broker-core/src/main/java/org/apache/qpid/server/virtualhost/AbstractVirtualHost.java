@@ -1175,7 +1175,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             {
                 try
                 {
-                    ms.onDelete();
+                    ms.onDelete(this);
                 }
                 catch (Exception e)
                 {

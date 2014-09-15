@@ -57,7 +57,10 @@ public class DerbyMessageStoreTest extends MessageStoreTestCase
         getStore().closeMessageStore();
         assertTrue("Store does not exist at " + _storeLocation, location.exists());
 
-        getStore().onDelete();
+        DerbyVirtualHost mockVH = mock(DerbyVirtualHost.class);
+        when(mockVH.getStorePath()).thenReturn(_storeLocation);
+
+        getStore().onDelete(mockVH);
         assertFalse("Store exists at " + _storeLocation, location.exists());
     }
 

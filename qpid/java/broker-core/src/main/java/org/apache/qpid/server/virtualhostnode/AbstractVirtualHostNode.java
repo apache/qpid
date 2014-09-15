@@ -191,7 +191,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         deleteVirtualHostIfExists();
         close();
         deleted();
-        getConfigurationStore().onDelete();
+        getConfigurationStore().onDelete(this);
     }
 
     protected void deleteVirtualHostIfExists()

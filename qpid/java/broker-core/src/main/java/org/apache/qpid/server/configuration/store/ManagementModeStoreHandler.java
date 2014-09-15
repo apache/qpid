@@ -254,7 +254,7 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
     }
 
     @Override
-    public void onDelete()
+    public void onDelete(ConfiguredObject<?> parent)
     {
     }
 

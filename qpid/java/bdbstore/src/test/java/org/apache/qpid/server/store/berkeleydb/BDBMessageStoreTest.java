@@ -402,7 +402,11 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
         getStore().closeMessageStore();
         assertTrue("Store does not exist at " + storeLocation, location.exists());
 
-        getStore().onDelete();
+        BDBVirtualHost mockVH = mock(BDBVirtualHost.class);
+        when(mockVH.getStorePath()).thenReturn(getStore().getStoreLocation());
+
+        getStore().onDelete(mockVH);
+
         assertFalse("Store exists at " + storeLocation, location.exists());
     }
 

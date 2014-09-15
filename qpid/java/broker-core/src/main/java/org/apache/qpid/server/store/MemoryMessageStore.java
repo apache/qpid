@@ -260,7 +260,7 @@ public class MemoryMessageStore implements MessageStore
     }
 
     @Override
-    public void onDelete()
+    public void onDelete(ConfiguredObject<?> parent)
     {
     }
 

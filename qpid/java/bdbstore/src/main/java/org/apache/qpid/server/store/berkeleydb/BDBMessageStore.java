@@ -27,6 +27,7 @@ import com.sleepycat.je.DatabaseException;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.store.FileBasedSettings;
 import org.apache.qpid.server.store.SizeMonitoringSettings;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.util.FileUtils;
@@ -102,27 +103,26 @@ public class BDBMessageStore extends AbstractBDBMessageStore
     }
 
     @Override
-    public void onDelete()
+    public void onDelete(ConfiguredObject<?> parent)
     {
-        if (!_messageStoreOpen.get())
+        if (LOGGER.isDebugEnabled())
         {
-            if (_storeLocation != null)
-            {
-                if (LOGGER.isDebugEnabled())
-                {
-                    LOGGER.debug("Deleting store " + _storeLocation);
-                }
+            LOGGER.debug("Deleting store " + _storeLocation);
+        }
 
-                File location = new File(_storeLocation);
-                if (location.exists())
-                {
-                    if (!FileUtils.delete(location, true))
-                    {
-                        LOGGER.error("Cannot delete " + _storeLocation);
-                    }
-                }
+        FileBasedSettings fileBasedSettings = (FileBasedSettings)parent;
+        String storePath = fileBasedSettings.getStorePath();
+
+        if (storePath != null)
+        {
+            File configFile = new File(storePath);
+            if (!FileUtils.delete(configFile, true))
+            {
+                LOGGER.info("Failed to delete the store at location " + storePath);
             }
         }
+
+        _storeLocation = null;
     }
 
     @Override

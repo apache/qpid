@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store.derby;
 
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -31,6 +32,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.*;
+import org.apache.qpid.util.FileUtils;
 
 /**
  * Implementation of a DurableConfigurationStore backed by Apache Derby
@@ -139,7 +141,7 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
     }
 
     @Override
-    public void onDelete()
+    public void onDelete(ConfiguredObject<?> parent)
     {
         if (_providedMessageStore.isMessageStoreOpen())
         {
@@ -151,18 +153,19 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
             LOGGER.debug("Deleting store " + _storeLocation);
         }
 
-        try
+        FileBasedSettings fileBasedSettings = (FileBasedSettings)parent;
+        String storePath = fileBasedSettings.getStorePath();
+
+        if (storePath != null)
         {
-            DerbyUtils.deleteDatabaseLocation(_storeLocation);
+            File configFile = new File(storePath);
+            if (!FileUtils.delete(configFile, true))
+            {
+                LOGGER.info("Failed to delete the store at location " + storePath);
+            }
         }
-        catch (StoreException se)
-        {
-            LOGGER.debug("Failed to delete the store at location " + _storeLocation);
-        }
-        finally
-        {
-            _storeLocation = null;
-        }
+
+        _storeLocation = null;
     }
 
     @Override
