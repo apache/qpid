@@ -130,7 +130,7 @@ public abstract class AbstractMemoryStore implements DurableConfigurationStore, 
     }
 
     @Override
-    public void onDelete()
+    public void onDelete(ConfiguredObject<?> parent)
     {
     }
 

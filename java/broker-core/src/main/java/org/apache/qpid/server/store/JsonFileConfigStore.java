@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.util.FileUtils;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.Version;
@@ -388,7 +389,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         {
             File tmpFile = File.createTempFile("cfg","tmp", new File(_directoryName));
             tmpFile.deleteOnExit();
-            _objectMapper.writeValue(tmpFile,data);
+            _objectMapper.writeValue(tmpFile, data);
             renameFile(tmpFile.getName(),_configFileName);
             tmpFile.delete();
         }
@@ -565,17 +566,22 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     }
 
     @Override
-    public void onDelete()
+    public void onDelete(ConfiguredObject<?> parent)
     {
-        if (_configFileName != null)
+        FileBasedSettings fileBasedSettings = (FileBasedSettings)parent;
+        String storePath = fileBasedSettings.getStorePath();
+
+        if (storePath != null)
         {
-            File configFile = new File(_directoryName, _configFileName);
-            if (!configFile.delete())
+            File configFile = new File(storePath);
+            if (!FileUtils.delete(configFile, true))
             {
-                _logger.info("Failed to delete JSON file config store: " + _configFileName);
+                _logger.info("Failed to delete the store at location " + storePath);
             }
-            _configFileName = null;
         }
+
+        _configFileName = null;
+        _directoryName = null;
     }
 
     private void releaseFileLock()

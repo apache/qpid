@@ -912,7 +912,7 @@ public abstract class AbstractJDBCConfigurationStore implements MessageStoreProv
     protected abstract String getBlobAsString(ResultSet rs, int col) throws SQLException;
 
     @Override
-    public void onDelete()
+    public void onDelete(ConfiguredObject<?> parent)
     {
         // TODO should probably check we are closed
         try

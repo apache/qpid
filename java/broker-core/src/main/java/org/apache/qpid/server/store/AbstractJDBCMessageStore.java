@@ -1964,7 +1964,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
     protected abstract void storedSizeChange(int storeSizeIncrease);
 
     @Override
-    public void onDelete()
+    public void onDelete(ConfiguredObject<?> parent)
     {
         // TODO should probably check we are closed
         try

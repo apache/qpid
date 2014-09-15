@@ -44,6 +44,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.FileBasedSettings;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreProvider;
 import org.apache.qpid.server.store.SizeMonitoringSettings;
@@ -479,27 +480,26 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
     }
 
     @Override
-    public void onDelete()
+    public void onDelete(ConfiguredObject<?> parent)
     {
-        if (!isConfigurationStoreOpen() && !_providedMessageStore.isMessageStoreOpen())
+        if (LOGGER.isDebugEnabled())
         {
-            if (_storeLocation != null)
-            {
-                if (LOGGER.isDebugEnabled())
-                {
-                    LOGGER.debug("Deleting store " + _storeLocation);
-                }
+            LOGGER.debug("Deleting store " + _storeLocation);
+        }
 
-                File location = new File(_storeLocation);
-                if (location.exists())
-                {
-                    if (!FileUtils.delete(location, true))
-                    {
-                        LOGGER.error("Cannot delete " + _storeLocation);
-                    }
-                }
+        FileBasedSettings fileBasedSettings = (FileBasedSettings)parent;
+        String storePath = fileBasedSettings.getStorePath();
+
+        if (storePath != null)
+        {
+            File configFile = new File(storePath);
+            if (!FileUtils.delete(configFile, true))
+            {
+                LOGGER.info("Failed to delete the store at location " + storePath);
             }
         }
+
+        _storeLocation = null;
     }
 
     private boolean isConfigurationStoreOpen()
@@ -562,7 +562,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         }
 
         @Override
-        public void onDelete()
+        public void onDelete(ConfiguredObject<?> parent)
         {
             // Nothing to do, message store will be deleted when configuration store is deleted
         }

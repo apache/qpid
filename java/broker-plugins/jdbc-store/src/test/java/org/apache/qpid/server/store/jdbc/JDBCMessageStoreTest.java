@@ -59,7 +59,7 @@ public class JDBCMessageStoreTest extends MessageStoreTestCase
         assertTablesExist(expectedTables, true);
         getStore().closeMessageStore();
         assertTablesExist(expectedTables, true);
-        getStore().onDelete();
+        getStore().onDelete(mock(JDBCVirtualHost.class));
         assertTablesExist(expectedTables, false);
     }
 

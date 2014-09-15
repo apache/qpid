@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
 
@@ -360,7 +361,7 @@ public class JsonFileConfigStoreTest extends QpidTestCase
         _store.closeConfigurationStore();
         assertTrue("JSON store should exist after close", expectedJsonFile.exists());
 
-        _store.onDelete();
+        _store.onDelete(_parent);
         assertFalse("JSON store should not exist after delete", expectedJsonFile.exists());
 
     }

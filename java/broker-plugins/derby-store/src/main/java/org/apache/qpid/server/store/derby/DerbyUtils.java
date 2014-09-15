@@ -101,26 +101,6 @@ public class DerbyUtils
         }
     }
 
-    public static void deleteDatabaseLocation(String storeLocation)
-    {
-        if (MEMORY_STORE_LOCATION.equals(storeLocation))
-        {
-            return;
-        }
-
-        if (storeLocation != null)
-        {
-            File location = new File(storeLocation);
-            if (location.exists())
-            {
-                if (!FileUtils.delete(location, true))
-                {
-                    throw new StoreException("Failed to delete the store at location : " + storeLocation);
-                }
-            }
-        }
-    }
-
     public static String getBlobAsString(ResultSet rs, int col) throws SQLException
     {
         Blob blob = rs.getBlob(col);

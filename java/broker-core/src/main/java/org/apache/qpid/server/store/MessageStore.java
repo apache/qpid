@@ -79,5 +79,5 @@ public interface MessageStore
      */
     void closeMessageStore();
 
-    void onDelete();
+    void onDelete(ConfiguredObject<?> parent);
 }

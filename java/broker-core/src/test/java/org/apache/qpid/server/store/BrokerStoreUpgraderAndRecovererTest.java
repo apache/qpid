@@ -351,7 +351,7 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         }
 
         @Override
-        public void onDelete()
+        public void onDelete(ConfiguredObject<?> parent)
         {
         }
 
