@@ -18,23 +18,34 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+
+import javax.jms.ConnectionConsumer;
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
+import javax.jms.Queue;
+import javax.jms.QueueConnection;
+import javax.jms.QueueSession;
+import javax.jms.ServerSessionPool;
+import javax.jms.Topic;
+import javax.jms.TopicConnection;
+import javax.jms.TopicSession;
+import javax.net.ssl.SSLContext;
+
 import org.apache.qpid.amqp_1_0.client.ConnectionErrorException;
 import org.apache.qpid.amqp_1_0.client.ConnectionException;
 import org.apache.qpid.amqp_1_0.jms.Connection;
 import org.apache.qpid.amqp_1_0.jms.ConnectionMetaData;
 import org.apache.qpid.amqp_1_0.jms.Session;
 import org.apache.qpid.amqp_1_0.transport.Container;
-
-import javax.jms.*;
-import javax.jms.IllegalStateException;
-import javax.jms.Queue;
-import javax.net.ssl.SSLContext;
-
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
-
 import org.apache.qpid.amqp_1_0.type.Symbol;
-import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.transport.ConnectionError;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 
 public class ConnectionImpl implements Connection, QueueConnection, TopicConnection
@@ -167,6 +178,16 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                     _conn.setConnectionErrorTask(new ConnectionErrorTask());
                     // TODO - retrieve negotiated AMQP version
                     _connectionMetaData = new ConnectionMetaDataImpl(1,0,0);
+                    Error connectionError = _conn.getConnectionError();
+                    if(connectionError != null)
+                    {
+                        throw new JMSException(connectionError.getDescription(),
+                                               connectionError.getCondition().toString());
+                    }
+                    else if(_conn.getEndpoint().requiresSASL() && !_conn.getEndpoint().isAuthenticated())
+                    {
+                        throw new JMSException("Authentication Failed");
+                    }
                 }
                 catch (ConnectionException e)
                 {
