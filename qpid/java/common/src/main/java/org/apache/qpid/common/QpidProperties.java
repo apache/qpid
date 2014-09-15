@@ -58,6 +58,9 @@ public class QpidProperties
     /** Defines the name of the version property. */
     public static final String RELEASE_VERSION_PROPERTY = "qpid.version";
 
+    /** Defines the name of the version suffix property. */
+    public static final String RELEASE_VERSION_SUFFIX = "qpid.version.suffix";
+
     /** Defines the name of the source code revision property. */
     public static final String BUILD_VERSION_PROPERTY = "qpid.svnversion";
 
@@ -101,7 +104,9 @@ public class QpidProperties
                 }
 
                 productName = readPropertyValue(props, PRODUCT_NAME_PROPERTY);
-                releaseVersion = readPropertyValue(props, RELEASE_VERSION_PROPERTY);
+                String versionSuffix = (String) props.get(RELEASE_VERSION_SUFFIX);
+                String version = readPropertyValue(props, RELEASE_VERSION_PROPERTY);
+                releaseVersion = versionSuffix == null || "".equals(versionSuffix) ? version : version + ";" + versionSuffix;
                 buildVersion = readPropertyValue(props, BUILD_VERSION_PROPERTY);
             }
         }

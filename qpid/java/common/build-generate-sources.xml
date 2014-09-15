@@ -27,7 +27,6 @@
           <isset property="generated-amqp-0-8-dir"/>
           <isset property="generated-amqp-0-10-dir"/>
           <isset property="gentools.classes"/>
-          <isset property="version.file"/>
         </and>
       </not>
     </condition>
@@ -50,29 +49,6 @@
   <property name="gentools.src" value="${basedir}/gentools/src"/>
   <property name="generated.package" value="org/apache/qpid/framing" />
 
-  <property file="${version.file}" prefix="old."/>
-
-  <target name="check-version">
-    <exec executable="svnversion" spawn="false" failifexecutionfails="false"
-        dir="${basedir}" outputproperty="svnversion.output">
-      <arg line="."/>
-    </exec>
-    <condition property="version.stale">
-      <not>
-        <equals arg1="${svnversion.output}" arg2="${old.qpid.svnversion}"/>
-      </not>
-    </condition>
-  </target>
-
-  <target name="create-version" depends="check-version" if="version.stale">
-    <echo message="Writing new qpidversion.properties file with svnversion: '${svnversion.output}'"/>
-    <!-- Write the version.properties out.-->
-    <!-- Echos exactly as shown, so leave no spaces before/after lines -->
-    <echo file="${version.file}" append="false">qpid.version=${project.version}
-qpid.svnversion=${svnversion.output}
-qpid.name=qpid
-</echo>
-  </target>
 
   <target name="amqp-0-10-generation" if="generate.protocol.sources">
       <mkdir dir="${generated-amqp-0-10-dir}"/>
@@ -110,6 +86,6 @@ qpid.name=qpid
     </java>
   </target>
 
-  <target name="generate-sources" depends="amqp-0-8-generation, amqp-0-10-generation, create-version"/>
+  <target name="generate-sources" depends="amqp-0-8-generation, amqp-0-10-generation"/>
 
 </project>
