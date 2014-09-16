@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+source ${QPID_TEST_COMMON}
+
+ensure_python_tests
+
+#Add our directory to the python path
+export PYTHONPATH=$srcdir/linearstore:${PYTHONPATH}
+
+MODULENAME=python_tests
+
+echo "Running Python tests in module ${MODULENAME}..."
+
+QPID_PORT=${QPID_PORT:-5672}
+FAILING=${FAILING:-/dev/null}
+PYTHON_TESTS=${PYTHON_TESTS:-$*}
+
+OUTDIR=${MODULENAME}.tmp
+rm -rf ${OUTDIR}
+
+# To debug a test, add the following options to the end of the following line:
+# -v DEBUG -c qpid.messaging.io.ops [*.testName]
+${QPID_PYTHON_TEST} -m ${MODULENAME} -I ${FAILING} -DOUTDIR=${OUTDIR} ${PYTHON_TEST} || exit 1
+
