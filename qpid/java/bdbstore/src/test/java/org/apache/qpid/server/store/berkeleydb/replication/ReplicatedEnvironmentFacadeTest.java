@@ -374,7 +374,10 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
     public void testRemoveNodeFromGroup() throws Exception
     {
-        ReplicatedEnvironmentFacade environmentFacade = createMaster();
+        TestStateChangeListener stateChangeListener = new TestStateChangeListener(State.MASTER);
+        ReplicatedEnvironmentFacade environmentFacade = addNode(TEST_NODE_NAME, TEST_NODE_HOST_PORT, true, stateChangeListener, new NoopReplicationGroupListener());
+        assertTrue("Environment was not created", stateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
+
 
         String node2Name = TEST_NODE_NAME + "_2";
         String node2NodeHostPort = "localhost:" + getNextAvailable(TEST_NODE_PORT + 1);
