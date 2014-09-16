@@ -772,10 +772,13 @@ public class SessionEndpoint
     }
     public void sendFlow(final Flow flow)
     {
-        final int nextIncomingId = _nextIncomingTransferId.intValue();
-        flow.setNextIncomingId(UnsignedInteger.valueOf(nextIncomingId));
+        if(_nextIncomingTransferId != null)
+        {
+            final int nextIncomingId = _nextIncomingTransferId.intValue();
+            flow.setNextIncomingId(UnsignedInteger.valueOf(nextIncomingId));
+            _lastSentIncomingLimit = UnsignedInteger.valueOf(nextIncomingId + _availableIncomingCredit);
+        }
         flow.setIncomingWindow(UnsignedInteger.valueOf(_availableIncomingCredit));
-        _lastSentIncomingLimit = UnsignedInteger.valueOf(nextIncomingId + _availableIncomingCredit);
 
         flow.setNextOutgoingId(UnsignedInteger.valueOf(_nextOutgoingTransferId.intValue()));
         flow.setOutgoingWindow(UnsignedInteger.valueOf(_availableOutgoingCredit));
@@ -784,11 +787,15 @@ public class SessionEndpoint
 
     public void sendFlowConditional()
     {
-        UnsignedInteger clientsCredit = _lastSentIncomingLimit.subtract(UnsignedInteger.valueOf(_nextIncomingTransferId.intValue()));
-        int i = UnsignedInteger.valueOf(_availableIncomingCredit).subtract(clientsCredit).compareTo(clientsCredit);
-        if(i >=0)
+        if(_nextIncomingTransferId != null)
         {
-            sendFlow();
+            UnsignedInteger clientsCredit =
+                    _lastSentIncomingLimit.subtract(UnsignedInteger.valueOf(_nextIncomingTransferId.intValue()));
+            int i = UnsignedInteger.valueOf(_availableIncomingCredit).subtract(clientsCredit).compareTo(clientsCredit);
+            if (i >= 0)
+            {
+                sendFlow();
+            }
         }
 
     }
