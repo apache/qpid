@@ -30,6 +30,8 @@ define(["dojo/_base/xhr",
         "dojo/query",
         "dojo/parser",
         "dojo/store/Memory",
+        "dojo/window",
+        "dojo/on",
         "dojox/html/entities",
         "qpid/common/metadata",
         "qpid/common/widgetconfigurer",
@@ -48,7 +50,7 @@ define(["dojo/_base/xhr",
         "dojox/validate/web",
         "dojo/domReady!"
         ],
-       function (xhr, array, event, lang, json, dom, geometry, domStyle, win, query, parser, Memory, entities, metadata, widgetconfigurer, registry) {
+       function (xhr, array, event, lang, json, dom, geometry, domStyle, win, query, parser, Memory, w, on, entities, metadata, widgetconfigurer, registry) {
            var util = {};
            if (Array.isArray) {
                util.isArray = function (object) {
@@ -733,6 +735,40 @@ define(["dojo/_base/xhr",
            util.nodeAddressOrContextVarRegexp = function(constraints)
            {
              return "^(([0-9a-zA-Z.-_]|::)+:[0-9]{1,5})|" + singleContextVarRegexp + "$";
+           }
+
+           util.resizeContentAreaAndRepositionDialog = function(contentNode, dialog)
+           {
+                var viewport = w.getBox();
+                var contentDimension =dojo.position(contentNode);
+                var dialogDimension = dojo.position(dialog.domNode);
+                var dialogTitleAndFooterHeight = dialogDimension.h - contentDimension.h;
+                var dialogLeftRightSpaces = dialogDimension.w - contentDimension.w;
+
+                var resize = function()
+                {
+                    var viewport = w.getBox();
+                    var width = viewport.w * dialog.maxRatio;
+                    var height  = viewport.h * dialog.maxRatio;
+                    var dialogDimension = dojo.position(dialog.domNode);
+
+                    var maxContentHeight = height - dialogTitleAndFooterHeight;
+
+                    // if width style is set on a dialog node, use dialog width
+                    if (dialog.domNode.style && dialog.domNode.style.width)
+                    {
+                        width = dialogDimension.w;
+                    }
+                    var maxContentWidth = width - dialogLeftRightSpaces;
+                    domStyle.set(contentNode, {"overflow": "auto", maxHeight: maxContentHeight  + "px",  maxWidth: maxContentWidth + "px"});
+
+                    var dialogX = viewport.w/2 - dialogDimension.w/2;
+                    var dialogY = viewport.h/2 - dialogDimension.h/2;
+                    domStyle.set(dialog.domNode, {top: dialogY + "px", left: dialogX + "px"});
+                    dialog.resize();
+                };
+                resize();
+                on(window, "resize", resize);
            }
 
            return util;

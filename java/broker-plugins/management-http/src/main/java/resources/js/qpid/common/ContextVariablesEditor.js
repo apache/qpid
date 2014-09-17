@@ -77,8 +77,8 @@ function (util, xhr, declare, array, connect, lang, domConstruct, parser, query,
         var addButton = registry.byNode(addButtonNode);
         var deleteButton = registry.byNode(deleteButtonNode);
         var layout = [[
-                      { name: "Name", field: "name", width: "40%", editable: true },
-                      { name: 'Actual Value', field: 'actualValue', width: '30%', editable: true},
+                      { name: "Name", field: "name", width: "40%", editable: true, selectOnClick: false, type: dojox.grid.cells._Widget, widgetClass: dijit.form.TextBox },
+                      { name: 'Actual Value', field: 'actualValue', width: '30%', editable: true, selectOnClick: false, type: dojox.grid.cells._Widget, widgetClass: dijit.form.TextBox},
                       { name: 'Effective Value', field: 'effectiveValue', width: '30%', editable: false}
                     ]];
         var data = [];

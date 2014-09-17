@@ -61,6 +61,7 @@ define(["dojo/_base/xhr",
         this.saveButton.on("click", function(e){that._save(e);});
         this.name = registry.byId("editVirtualHostNode.name");
         this.form = registry.byId("editVirtualHostNodeForm");
+        this.form.on("submit", function(){return false;});
       },
       show: function(effectiveData)
       {
@@ -173,6 +174,11 @@ define(["dojo/_base/xhr",
 
           this.dialog.startup();
           this.dialog.show();
+          if (!this.resizeEventRegistered)
+          {
+            this.resizeEventRegistered = true;
+            util.resizeContentAreaAndRepositionDialog(dom.byId("editVirtualHostNode.contentPane"), this.dialog);
+          }
       }
     };
 

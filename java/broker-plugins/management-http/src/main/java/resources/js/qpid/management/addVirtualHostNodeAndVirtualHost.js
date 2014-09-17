@@ -27,6 +27,8 @@ define(["dojo/_base/xhr",
         "dojo/json",
         "dojo/parser",
         "dojo/store/Memory",
+        "dojo/window",
+        "dojo/on",
         "dojox/lang/functional/object",
         "dijit/registry",
         "dijit/Dialog",
@@ -45,7 +47,7 @@ define(["dojo/_base/xhr",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"],
-  function (xhr, event, lang, array, dom, domConstruct, json, parser, Memory, fobject, registry, Dialog, Button, FilteringSelect, properties, util, metadata, template)
+  function (xhr, event, lang, array, dom, domConstruct, json, parser, Memory, win, on, fobject, registry, Dialog, Button, FilteringSelect, properties, util, metadata, template)
   {
 
     var addVirtualHostNodeAndVirtualHost =
@@ -94,7 +96,6 @@ define(["dojo/_base/xhr",
         this.virtualHostType.set("store", this.virtualHostTypeStore);
         this.virtualHostType.set("disabled", false);
         this.virtualHostType.on("change", function(type){that._vhTypeChanged(type, that.virtualHostTypeFieldsContainer, "qpid/management/virtualhost/");});
-
       },
       show: function()
       {
@@ -163,6 +164,11 @@ define(["dojo/_base/xhr",
         this.virtualHostNodeContext.setData({},effectiveValues,inheritedActualValues);
         this.virtualHostContext.setData({},effectiveValues,inheritedActualValues);
         this.dialog.show();
+        if (!this.resizeEventRegistered)
+        {
+            this.resizeEventRegistered = true;
+            util.resizeContentAreaAndRepositionDialog(dom.byId("addVirtualHostNodeAndVirtualHost.contentPane"), this.dialog);
+        }
       },
       destroy: function()
       {
