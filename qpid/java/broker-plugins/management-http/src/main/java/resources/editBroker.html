@@ -20,6 +20,7 @@
   <div data-dojo-type="dijit/Dialog" data-dojo-props="title:'Edit Broker'" id="editBrokerDialog">
       <form id="editBrokerForm" method="post" data-dojo-type="dijit/form/Form">
           <div id="editBroker.allFields">
+            <div id="editBroker.contentPane">
               <div class="clear">
                   <div class="formLabel-labelCell tableContainer-labelCell">Name*:</div>
                   <div class="formLabel-controlCell tableContainer-valueCell">
@@ -107,11 +108,11 @@
               </div>
 
               <div class="clear"></div>
-
-              <div class="dijitDialogPaneActionBar">
+            </div>
+            <div class="dijitDialogPaneActionBar">
                   <button data-dojo-type="dijit/form/Button" id="editBroker.saveButton" data-dojo-props="label: 'Save'">Save</button>
                   <button data-dojo-type="dijit/form/Button" id="editBroker.cancelButton" data-dojo-props="label: 'Cancel'" ></button>
-              </div>
+            </div>
           </div>
       </form>
   </div>

@@ -68,8 +68,9 @@ define(["dojo/_base/xhr",
             this[fieldName] = registry.byId("editBroker." + fieldName);
         }
         this.form = registry.byId("editBrokerForm");
+        this.form.on("submit", function(){return false;});
         this.context = registry.byId("editBroker.context");
-        util.applyMetadataToWidgets(this.containerNode, "Broker", "broker");
+        util.applyMetadataToWidgets(dom.byId("editBroker.allFields"), "Broker", "broker");
 
         for(var i = 0; i < numericFieldNames.length; i++)
         {
@@ -186,6 +187,11 @@ define(["dojo/_base/xhr",
           this.context.load(this.query, {actualValues: actualData.context, effectiveValues: effectiveData.context});
           this.dialog.startup();
           this.dialog.show();
+          if (!this.resizeEventRegistered)
+          {
+              this.resizeEventRegistered = true;
+              util.resizeContentAreaAndRepositionDialog(dom.byId("editBroker.contentPane"), this.dialog);
+          }
       }
     };
 

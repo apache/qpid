@@ -19,6 +19,7 @@
 <div class="dijitHidden">
   <div data-dojo-type="dijit/Dialog" data-dojo-props="title:'Edit Virtual Host'" id="editVirtualHostNodeDialog">
       <form id="editVirtualHostNodeForm" method="post" data-dojo-type="dijit/form/Form">
+        <div id="editVirtualHostNode.contentPane">
           <div class="editNoteBanner">NOTE: All changes will only take effect after Virtual Host Node restart.</div>
           <div class="clear">
               <div class="formLabel-labelCell tableContainer-labelCell">Name*:</div>
@@ -42,11 +43,11 @@
           <div data-dojo-type="dijit/TitlePane" data-dojo-props="title: 'Context variables',  open: false">
                   <div id="editVirtualHostNode.context" ></div>
           </div>
-
-          <div class="dijitDialogPaneActionBar">
+        </div>
+        <div class="dijitDialogPaneActionBar">
               <button data-dojo-type="dijit/form/Button" id="editVirtualHostNode.saveButton" data-dojo-props="label: 'Save'">Save</button>
               <button data-dojo-type="dijit/form/Button" id="editVirtualHostNode.cancelButton" data-dojo-props="label: 'Cancel'" ></button>
-          </div>
+        </div>
       </form>
   </div>
 </div>
