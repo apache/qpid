@@ -46,7 +46,6 @@ public class BDBMessageStore extends AbstractBDBMessageStore
     private EnvironmentFacade _environmentFacade;
 
     private ConfiguredObject<?> _parent;
-    private String _storeLocation;
 
     private long _persistentSizeLowThreshold;
     private long _persistentSizeHighThreshold;
@@ -78,7 +77,6 @@ public class BDBMessageStore extends AbstractBDBMessageStore
             }
 
             _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(parent);
-            _storeLocation = _environmentFacade.getStoreLocation();
         }
     }
 
@@ -105,24 +103,22 @@ public class BDBMessageStore extends AbstractBDBMessageStore
     @Override
     public void onDelete(ConfiguredObject<?> parent)
     {
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug("Deleting store " + _storeLocation);
-        }
-
         FileBasedSettings fileBasedSettings = (FileBasedSettings)parent;
         String storePath = fileBasedSettings.getStorePath();
 
         if (storePath != null)
         {
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Deleting store " + storePath);
+            }
+
             File configFile = new File(storePath);
             if (!FileUtils.delete(configFile, true))
             {
                 LOGGER.info("Failed to delete the store at location " + storePath);
             }
         }
-
-        _storeLocation = null;
     }
 
     @Override
@@ -167,6 +163,6 @@ public class BDBMessageStore extends AbstractBDBMessageStore
     @Override
     public String getStoreLocation()
     {
-        return _storeLocation;
+        return ((FileBasedSettings)_parent).getStorePath();
     }
 }

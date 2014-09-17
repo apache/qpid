@@ -77,7 +77,6 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
 
     private EnvironmentFacade _environmentFacade;
 
-    private String _storeLocation;
     private ConfiguredObject<?> _parent;
     private final Class<? extends ConfiguredObject> _rootClass;
     private boolean _overwrite;
@@ -106,7 +105,6 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             if (_environmentFacade == null)
             {
                 _environmentFacade = _environmentFacadeFactory.createEnvironmentFacade(parent);
-                _storeLocation = _environmentFacade.getStoreLocation();
                 _overwrite = overwrite;
                 _initialRecords = initialRecords;
             }
@@ -482,24 +480,22 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
     @Override
     public void onDelete(ConfiguredObject<?> parent)
     {
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug("Deleting store " + _storeLocation);
-        }
-
         FileBasedSettings fileBasedSettings = (FileBasedSettings)parent;
         String storePath = fileBasedSettings.getStorePath();
 
         if (storePath != null)
         {
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Deleting store " + storePath);
+            }
+
             File configFile = new File(storePath);
             if (!FileUtils.delete(configFile, true))
             {
                 LOGGER.info("Failed to delete the store at location " + storePath);
             }
         }
-
-        _storeLocation = null;
     }
 
     private boolean isConfigurationStoreOpen()
@@ -570,7 +566,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         @Override
         public String getStoreLocation()
         {
-            return BDBConfigurationStore.this._storeLocation;
+            return ((FileBasedSettings)_parent).getStorePath();
         }
 
         @Override
