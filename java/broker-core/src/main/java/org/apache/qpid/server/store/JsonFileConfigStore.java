@@ -586,6 +586,11 @@ public class JsonFileConfigStore implements DurableConfigurationStore
 
         if (storePath != null)
         {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Deleting store " + storePath);
+            }
+
             File configFile = new File(storePath);
             if (!FileUtils.delete(configFile, true))
             {

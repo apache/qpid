@@ -47,7 +47,6 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
     private final ProvidedMessageStore _providedMessageStore = new ProvidedMessageStore();
 
     private String _connectionURL;
-    private String _storeLocation;
 
     private ConfiguredObject<?> _parent;
     private final Class<? extends ConfiguredObject> _rootClass;
@@ -68,9 +67,7 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
             _parent = parent;
             DerbyUtils.loadDerbyDriver();
 
-            final FileBasedSettings settings = (FileBasedSettings)parent;
-            _storeLocation = settings.getStorePath();
-            _connectionURL = DerbyUtils.createConnectionUrl(parent.getName(), _storeLocation);
+            _connectionURL = DerbyUtils.createConnectionUrl(parent.getName(), ((FileBasedSettings)_parent).getStorePath());
 
             createOrOpenConfigurationStoreDatabase(overwrite);
 
@@ -148,24 +145,25 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
             throw new IllegalStateException("Cannot delete the store as the provided message store is still open");
         }
 
-        if (LOGGER.isDebugEnabled())
-        {
-            LOGGER.debug("Deleting store " + _storeLocation);
-        }
-
-        FileBasedSettings fileBasedSettings = (FileBasedSettings)parent;
+        FileBasedSettings fileBasedSettings = (FileBasedSettings) parent;
         String storePath = fileBasedSettings.getStorePath();
 
-        if (storePath != null)
+        if (!DerbyUtils.MEMORY_STORE_LOCATION.equals(storePath))
         {
-            File configFile = new File(storePath);
-            if (!FileUtils.delete(configFile, true))
+            if (storePath != null)
             {
-                LOGGER.info("Failed to delete the store at location " + storePath);
+                if (LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Deleting store " + storePath);
+                }
+
+                File configFile = new File(storePath);
+                if (!FileUtils.delete(configFile, true))
+                {
+                    LOGGER.info("Failed to delete the store at location " + storePath);
+                }
             }
         }
-
-        _storeLocation = null;
     }
 
     @Override
@@ -219,7 +217,7 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
         @Override
         public String getStoreLocation()
         {
-            return DerbyConfigurationStore.this._storeLocation;
+            return ((FileBasedSettings)_parent).getStorePath();
         }
 
         @Override
