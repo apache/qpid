@@ -333,7 +333,7 @@ define(["dojo/_base/xhr",
 
            util.xhrErrorHandler = function(error)
            {
-             const fallback = "Unexpected error - see server logs";
+             var fallback = "Unexpected error - see server logs";
              var statusCodeNode = dojo.byId("errorDialog.statusCode");
              var errorMessageNode = dojo.byId("errorDialog.errorMessage");
              var userMustReauth = false;
