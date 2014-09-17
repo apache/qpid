@@ -352,18 +352,25 @@ public class JsonFileConfigStoreTest extends QpidTestCase
     public void testStoreFileLifecycle()
     {
         File expectedJsonFile = new File(_storeLocation, _parent.getName() + ".json");
+        File expectedJsonFileBak = new File(_storeLocation, _parent.getName() + ".bak");
+        File expectedJsonFileLck = new File(_storeLocation, _parent.getName() + ".lck");
 
         assertFalse("JSON store should not exist", expectedJsonFile.exists());
+        assertFalse("JSON backup should not exist", expectedJsonFileBak.exists());
+        assertFalse("JSON lock should not exist", expectedJsonFileLck.exists());
 
         _store.openConfigurationStore(_parent, false);
         assertTrue("JSON store should exist after open", expectedJsonFile.exists());
+        assertFalse("JSON backup should not exist after open", expectedJsonFileBak.exists());
+        assertTrue("JSON lock should exist", expectedJsonFileLck.exists());
 
         _store.closeConfigurationStore();
         assertTrue("JSON store should exist after close", expectedJsonFile.exists());
 
         _store.onDelete(_parent);
         assertFalse("JSON store should not exist after delete", expectedJsonFile.exists());
-
+        assertFalse("JSON backup should not exist after delete", expectedJsonFileBak.exists());
+        assertFalse("JSON lock should not exist after delete", expectedJsonFileLck.exists());
     }
 
     public void testCreatedNestedObjects() throws Exception

@@ -91,6 +91,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     private String _name;
     private FileLock _fileLock;
     private String _configFileName;
+    private String _backupFileName;
     private String _lockFileName;
 
     private static final Module _module;
@@ -170,12 +171,14 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         {
             _directoryName = fileFromSettings.getParent();
             _configFileName = fileFromSettings.getName();
+            _backupFileName = fileFromSettings.getName() + ".bak";
             _lockFileName = fileFromSettings.getName() + ".lck";
         }
         else
         {
             _directoryName = configurationStoreSettings.getStorePath();
             _configFileName = _name + ".json";
+            _backupFileName = _name + ".bak";
             _lockFileName = _name + ".lck";
         }
 
@@ -185,14 +188,21 @@ public class JsonFileConfigStore implements DurableConfigurationStore
 
         if(!fileExists(_configFileName))
         {
-            File newFile = new File(_directoryName, _configFileName);
-            try
+            if(!fileExists(_backupFileName))
             {
-                _objectMapper.writeValue(newFile, Collections.emptyMap());
+                File newFile = new File(_directoryName, _configFileName);
+                try
+                {
+                    _objectMapper.writeValue(newFile, Collections.emptyMap());
+                }
+                catch (IOException e)
+                {
+                    throw new StoreException("Could not write configuration file " + newFile, e);
+                }
             }
-            catch (IOException e)
+            else
             {
-                throw new StoreException("Could not write configuration file " + newFile, e);
+                renameFile(_backupFileName, _configFileName);
             }
         }
     }
@@ -390,8 +400,11 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             File tmpFile = File.createTempFile("cfg","tmp", new File(_directoryName));
             tmpFile.deleteOnExit();
             _objectMapper.writeValue(tmpFile, data);
+            renameFile(_configFileName, _backupFileName);
             renameFile(tmpFile.getName(),_configFileName);
             tmpFile.delete();
+            File backupFile = new File(_directoryName, _backupFileName);
+            backupFile.delete();
         }
         catch (IOException e)
         {
@@ -619,5 +632,4 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         }
         return map;
     }
-
 }
