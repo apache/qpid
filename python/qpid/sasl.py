@@ -88,7 +88,7 @@ class PlainClient:
 
   def start(self, mechanisms):
     mechs = mechanisms.split()
-    if self.attrs.get("username") and self.attrs.get("password") and "PLAIN" in mechs:
+    if self.attrs.get("username") and "PLAIN" in mechs:
       return "PLAIN", "\0%s\0%s" % (self.attrs.get("username"), self.attrs.get("password"))
     elif "ANONYMOUS" in mechs:
       return "ANONYMOUS", "%s@%s" % (self.attrs.get("username"), socket.gethostname())
