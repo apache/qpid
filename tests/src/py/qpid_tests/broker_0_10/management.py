@@ -113,7 +113,7 @@ class ManagementTest (TestBase010):
 
         found = False
         for bs in brokerSessions:
-            if bs.name == sessionId:
+            if bs.name.endswith(sessionId):
                 found = True
         self.assertEqual (found, True)
 
@@ -507,7 +507,7 @@ class ManagementTest (TestBase010):
         session = conn.session("my-named-session")
 
         #using qmf find named session and close the corresponding connection:
-        qmf_ssn_object = self.qmf.getObjects(_class="session", name="my-named-session")[0]
+        qmf_ssn_object = [s for s in self.qmf.getObjects(_class="session") if s.name.endswith("my-named-session")][0]
         qmf_ssn_object._connectionRef_.close()
 
         #check that connection is closed
@@ -515,7 +515,7 @@ class ManagementTest (TestBase010):
             conn.session("another-session")
             self.fail("Expected failure from closed connection")
         except: None
-        
+
         #make sure that the named session has been closed and the name can be re-used
         conn = self.connect()
         session = conn.session("my-named-session")
@@ -635,7 +635,7 @@ class ManagementTest (TestBase010):
         conn_qmf = None
         sessions = agent.getAllSessions()
         for s in sessions:
-            if s.name == "stats-session":
+            if s.name.endswith("stats-session"):
                 conn_qmf = agent.getConnection(s.connectionRef)
 
         assert(conn_qmf)
