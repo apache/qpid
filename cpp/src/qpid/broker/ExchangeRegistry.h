@@ -37,8 +37,20 @@
 
 namespace qpid {
 namespace broker {
+namespace {
+const std::string UNKNOWN_EXCHANGE_TYPE("Unknown exchange type: ");
+}
 
-struct UnknownExchangeTypeException{};
+struct UnknownExchangeTypeException : std::exception
+{
+    const std::string message;
+    UnknownExchangeTypeException(const std::string& type) throw() : message(UNKNOWN_EXCHANGE_TYPE + type) {}
+    ~UnknownExchangeTypeException() throw() {}
+    const char* what() const throw()
+    {
+        return message.c_str();
+    }
+};
 
 class ExchangeRegistry{
   public:
@@ -88,6 +100,8 @@ class ExchangeRegistry{
     QPID_BROKER_EXTERN bool registerExchange(const Exchange::shared_ptr&);
 
     QPID_BROKER_EXTERN void registerType(const std::string& type, FactoryFunction);
+
+    QPID_BROKER_EXTERN void checkType(const std::string& type);
 
     /** Call f for each exchange in the registry. */
     template <class F> void eachExchange(F f) const {
