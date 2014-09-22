@@ -24,7 +24,7 @@ under the License.
   <title>Replicating Queues with the HA module</title>
   <para>
     As well as support for an active-passive cluster, the
-    <filename>HA</filename> module allows you to replicate individual queues,
+    HA module allows you to replicate individual queues,
     even if the brokers are not in a cluster. The <firstterm>original</firstterm>
     queue is used as normal.  The <firstterm>replica</firstterm> queue is
     updated automatically as messages are added to or removed from the original
@@ -36,7 +36,7 @@ under the License.
       other than via the automatic updates from the original. Adding or removing
       messages on the replica queue will make replication inconsistent and may
       cause message loss.
-      The <filename>HA</filename> module does <emphasis>not</emphasis> enforce
+      The HA module does <emphasis>not</emphasis> enforce
       restricted access to the replica queue (as it does in the case of a cluster)
       so it is up to the application to ensure the replica is not used until it has
       been disconnected from the original.
@@ -45,7 +45,7 @@ under the License.
   <section>
     <title>Replicating queues</title>
     <para>
-      To create a replica queue, the <filename>HA</filename> module must be
+      To create a replica queue, the HA module must be
       loaded on both the original and replica brokers (it is loaded by default.)
       You also need to set the configuration option:
       <programlisting>
