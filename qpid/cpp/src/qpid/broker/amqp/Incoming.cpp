@@ -126,6 +126,7 @@ void DecodingIncoming::readable(pn_delivery_t* delivery)
         QPID_LOG(debug, "Message incomplete: received " << pending << " bytes, now have " << received->getSize());
         partial = received;
     } else {
+	incomingMessageReceived();
         if (offset) {
             QPID_LOG(debug, "Message complete: received " << pending << " bytes, " << received->getSize() << " in total");
         } else {
