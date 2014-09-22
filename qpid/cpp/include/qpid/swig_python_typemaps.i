@@ -88,6 +88,7 @@ typedef int Py_ssize_t;
             switch (v->getType()) {
             case qpid::types::VAR_VOID: {
                 result = Py_None;
+                Py_INCREF(result);
                 break;
             }
             case qpid::types::VAR_BOOL : {
