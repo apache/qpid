@@ -86,13 +86,6 @@ ReplicatingSubscription::Factory::create(
     return rs;
 }
 
-namespace {
-void copyIf(boost::shared_ptr<MessageInterceptor> from, boost::shared_ptr<IdSetter>& to) {
-    boost::shared_ptr<IdSetter> result = boost::dynamic_pointer_cast<IdSetter>(from);
-    if (result) to = result;
-}
-} // namespace
-
 ReplicatingSubscription::ReplicatingSubscription(
     HaBroker& hb,
     SemanticState* parent,
