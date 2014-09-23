@@ -242,22 +242,17 @@ public class AddressHelper
             
             if (((Map) _address.getOptions().get(LINK)).get(CAPACITY) instanceof Map)
             {
-                MapAccessor capacityProps = new MapAccessor(
-                        (Map) ((Map) _address.getOptions().get(LINK))
-                                .get(CAPACITY));
-                link
-                        .setConsumerCapacity(capacityProps
-                                .getInt(CAPACITY_SOURCE) == null ? 0
-                                : capacityProps.getInt(CAPACITY_SOURCE));
-                link
-                        .setProducerCapacity(capacityProps
-                                .getInt(CAPACITY_TARGET) == null ? 0
-                                : capacityProps.getInt(CAPACITY_TARGET));
+                MapAccessor capacityProps = new MapAccessor((Map) ((Map) _address.getOptions().get(LINK)).get(CAPACITY));
+
+                Integer sourceCapacity = capacityProps.getInt(CAPACITY_SOURCE);
+                link.setConsumerCapacity(sourceCapacity == null ? -1 : sourceCapacity);
+
+                Integer targetCapacity = capacityProps.getInt(CAPACITY_TARGET);
+                link.setProducerCapacity(targetCapacity == null ? -1 : targetCapacity);
             } 
             else
             {
-                int cap = _linkPropAccess.getInt(CAPACITY) == null ? 0 : _linkPropAccess
-                        .getInt(CAPACITY);
+                int cap = _linkPropAccess.getInt(CAPACITY) == null ? -1 : _linkPropAccess.getInt(CAPACITY);
                 link.setConsumerCapacity(cap);
                 link.setProducerCapacity(cap);
             }

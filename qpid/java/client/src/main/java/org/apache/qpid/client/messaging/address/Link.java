@@ -38,8 +38,8 @@ public class Link
     private FilterType _filterType = FilterType.SUBJECT;
     private boolean _isNoLocal;
     private boolean _isDurable;
-    private int _consumerCapacity = 0;
-    private int _producerCapacity = 0;
+    private int _consumerCapacity = -1;
+    private int _producerCapacity = -1;
     private Subscription subscription;
     private Reliability reliability = Reliability.AT_LEAST_ONCE;
     private List<Binding> _bindings = Collections.emptyList();

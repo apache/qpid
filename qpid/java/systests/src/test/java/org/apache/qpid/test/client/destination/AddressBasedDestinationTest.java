@@ -454,6 +454,45 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         checkQueueForBindings(jmsSession,dest2,headersBinding);
     }
 
+    public void testZeroCapacityForSynchronousReceive() throws Exception
+    {
+        Session session1 = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session session2 = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        String addressString = "ADDR:my-queue; {create: always, link:{capacity: 0}}";
+        Queue session1queue = session1.createQueue(addressString);
+        Queue session2queue = session1.createQueue(addressString);
+        MessageConsumer consumer1 = session1.createConsumer(session1queue);
+        MessageConsumer consumer1withSelector = session1.createConsumer(session1queue, "key1 = 1");
+        MessageConsumer consumer2withSelector = session2.createConsumer(session2queue, "key2 = 2");
+
+        _connection.start();
+
+        MessageProducer producer = session1.createProducer(session1queue);
+
+        Message m = session1.createMessage();
+        m.setIntProperty("key1", 1);
+        m.setIntProperty("key2", 2);
+        producer.send(m);
+
+        m = session1.createMessage();
+        m.setIntProperty("key1", 1);
+        producer.send(m);
+
+        m = session1.createMessage();
+        producer.send(m);
+
+        m = session1.createMessage();
+        m.setIntProperty("key2", 2);
+        producer.send(m);
+
+        assertNotNull("First message from queue should be received",consumer1withSelector.receive(1000l));
+        assertNotNull("Last message on queue should be received", consumer2withSelector.receive(1000l));
+        assertNotNull("Second message from queue should be received", consumer1.receive(1000l));
+        assertNull("Only message remaining shouldn't match selector",consumer1withSelector.receive(500l));
+        assertNotNull("Should have been one message remaining on queue",consumer1.receive(1000l));
+        assertNull("No messages should be remaining on queue",consumer1.receive(500l));
+    }
+
     /**
      * Test goal: Verifies the capacity property in address string is handled properly.
      * Test strategy:
