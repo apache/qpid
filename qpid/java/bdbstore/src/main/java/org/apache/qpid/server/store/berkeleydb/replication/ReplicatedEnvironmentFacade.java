@@ -90,6 +90,7 @@ import org.apache.qpid.server.store.berkeleydb.CoalescingCommiter;
 import org.apache.qpid.server.store.berkeleydb.EnvHomeRegistry;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.LoggingAsyncExceptionListener;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.DaemonThreadFactory;
 
 public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChangeListener
@@ -384,6 +385,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         if (restart)
         {
             tryToRestartEnvironment(dbe);
+            throw new ConnectionScopedRuntimeException(noMajority ? "Required number of nodes not reachable" : "Underlying JE environment is being restarted", dbe);
         }
         return dbe;
     }

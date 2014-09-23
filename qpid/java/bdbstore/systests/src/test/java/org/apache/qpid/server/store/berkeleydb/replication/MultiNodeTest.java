@@ -25,13 +25,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
 import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.jms.TransactionRolledBackException;
 
 import com.sleepycat.je.Durability;
 import com.sleepycat.je.EnvironmentConfig;
@@ -260,6 +265,112 @@ public class MultiNodeTest extends QpidBrokerTestCase
         assertProducingConsuming(connection);
 
         _groupCreator.awaitNodeToAttainRole(activeBrokerPort, "REPLICA");
+    }
+
+    public void testTransferMasterWhilstMessagesInFlight() throws Exception
+    {
+        final Connection connection = getConnection(_positiveFailoverUrl);
+        connection.start();
+        ((AMQConnection) connection).setConnectionListener(_failoverListener);
+
+        final AtomicBoolean masterTransfered = new AtomicBoolean(false);
+        final AtomicBoolean keepRunning = new AtomicBoolean(true);
+        final AtomicReference<Exception> workerException = new AtomicReference<>();
+        final CountDownLatch producedOneBefore = new CountDownLatch(1);
+        final CountDownLatch producedOneAfter = new CountDownLatch(1);
+        final CountDownLatch workerShutdown = new CountDownLatch(1);
+
+
+        Runnable producer = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    int count = 0;
+                    Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+                    Destination destination = session.createQueue(getTestQueueName());
+                    MessageProducer producer = session.createProducer(destination);
+                    session.createConsumer(destination).close();
+
+                    while (keepRunning.get())
+                    {
+                        String messageText = "message" + count;
+                        try
+                        {
+                            Message message = session.createTextMessage(messageText);
+                            producer.send(message);
+                            session.commit();
+                            LOGGER.debug("Sent message " + count);
+                        }
+                        catch (TransactionRolledBackException trbe)
+                        {
+
+                        }
+                        catch(JMSException je)
+                        {
+
+                        }
+
+                        producedOneBefore.countDown();
+
+                        if (masterTransfered.get())
+                        {
+                            producedOneAfter.countDown();
+                        }
+                        count++;
+                    }
+                }
+                catch (Exception e)
+                {
+                    workerException.set(e);
+                }
+                finally
+                {
+                    workerShutdown.countDown();
+                }
+            }
+
+        };
+
+        Thread backgroundWorker = new Thread(producer);
+        backgroundWorker.start();
+
+        boolean workerRunning = producedOneBefore.await(5000, TimeUnit.MILLISECONDS);
+        assertTrue(workerRunning);
+
+        final int activeBrokerPort = _groupCreator.getBrokerPortNumberFromConnection(connection);
+        LOGGER.info("Active connection port " + activeBrokerPort);
+
+        final int inactiveBrokerPort = _groupCreator.getPortNumberOfAnInactiveBroker(connection);
+        LOGGER.info("Update role attribute on inactive broker on port " + inactiveBrokerPort);
+
+        _groupCreator.awaitNodeToAttainRole(activeBrokerPort, inactiveBrokerPort, "REPLICA");
+        Map<String, Object> attributes = _groupCreator.getNodeAttributes(activeBrokerPort, inactiveBrokerPort);
+        assertEquals("Inactive broker has unexpected role", "REPLICA", attributes.get(BDBHAVirtualHostNode.ROLE));
+
+        _groupCreator.setNodeAttributes(activeBrokerPort, inactiveBrokerPort, Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.ROLE, "MASTER"));
+        masterTransfered.set(true);
+
+        _failoverListener.awaitFailoverCompletion(20000);
+        LOGGER.info("Failover has finished");
+
+        attributes = _groupCreator.getNodeAttributes(inactiveBrokerPort);
+        assertEquals("Inactive broker has unexpected role", "MASTER", attributes.get(BDBHAVirtualHostNode.ROLE));
+
+        _groupCreator.awaitNodeToAttainRole(activeBrokerPort, "REPLICA");
+
+        boolean producedMore = producedOneAfter.await(5000, TimeUnit.MILLISECONDS);
+        assertTrue("Should have successfully produced at least one message after transfer complete", producedMore);
+
+        keepRunning.set(false);
+        boolean shutdown = workerShutdown.await(5000, TimeUnit.MILLISECONDS);
+        assertTrue("Worker thread should have shutdown", shutdown);
+
+        backgroundWorker.join(5000);
+        assertNull(workerException.get());
+
     }
 
     public void testQuorumOverride() throws Exception
