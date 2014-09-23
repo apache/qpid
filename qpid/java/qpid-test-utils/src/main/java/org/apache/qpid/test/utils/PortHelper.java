@@ -21,6 +21,8 @@ package org.apache.qpid.test.utils;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.util.HashSet;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -29,9 +31,71 @@ public class PortHelper
 {
     private static final Logger _logger = Logger.getLogger(PortHelper.class);
 
+    public static final int START_PORT_NUMBER = 10000;
+
     private static final int DEFAULT_TIMEOUT_MILLIS = 5000;
 
+    public static final int MIN_PORT_NUMBER = 1;
+    public static final int MAX_PORT_NUMBER = 49151;
+
     private int _timeout = DEFAULT_TIMEOUT_MILLIS;
+
+
+    private final Set<Integer> _allocatedPorts = new HashSet<>();
+    private int _highestIssuedPort = -1;
+
+    /**
+     * Gets the next available port starting from given point.
+     *
+     * @param fromPort the port to scan for availability
+     * @throws java.util.NoSuchElementException if there are no ports available
+     */
+    public int getNextAvailable(int fromPort)
+    {
+        if ((fromPort < MIN_PORT_NUMBER) || (fromPort > MAX_PORT_NUMBER))
+        {
+            throw new IllegalArgumentException("Invalid start port: " + fromPort);
+        }
+
+        for (int i = fromPort; i <= MAX_PORT_NUMBER; i++)
+        {
+            if (isPortAvailable(i))
+            {
+                _allocatedPorts.add(i);
+                _highestIssuedPort = Math.max(_highestIssuedPort, i);
+                return i;
+            }
+        }
+
+        throw new NoSuchElementException("Could not find an available port above " + fromPort);
+    }
+
+    /**
+     * Gets the next available port that is higher than all other port numbers issued
+     * thus far.  If no port numbers have been issued, a default is used.
+     *
+     * @throws java.util.NoSuchElementException if there are no ports available
+     */
+    public int getNextAvailable()
+    {
+
+        if (_highestIssuedPort < 0)
+        {
+            return getNextAvailable(START_PORT_NUMBER);
+        }
+        else
+        {
+            return getNextAvailable(_highestIssuedPort + 1);
+        }
+    }
+
+    /**
+     * Tests that all ports allocated by getNextAvailable are free.
+     */
+    public void waitUntilAllocatedPortsAreFree()
+    {
+        waitUntilPortsAreFree(_allocatedPorts);
+    }
 
     public void waitUntilPortsAreFree(Set<Integer> ports)
     {

@@ -102,10 +102,10 @@ public class BDBHAVirtualHostNodeTestHelper
                         firstException = e;
                     }
                 }
-                if (firstException != null)
-                {
-                    throw firstException;
-                }
+            }
+            if (firstException != null)
+            {
+                throw firstException;
             }
         }
         finally

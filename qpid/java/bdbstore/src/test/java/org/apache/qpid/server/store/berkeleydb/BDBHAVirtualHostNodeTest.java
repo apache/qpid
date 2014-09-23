@@ -51,11 +51,14 @@ import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationN
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNodeTestHelper;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.NodeRole;
+import org.apache.qpid.test.utils.PortHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class BDBHAVirtualHostNodeTest extends QpidTestCase
 {
     private BDBHAVirtualHostNodeTestHelper _helper;
+    private PortHelper _portHelper = new PortHelper();
+
     @Override
     protected void setUp() throws Exception
     {
@@ -75,11 +78,13 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         {
             super.tearDown();
         }
+
+        _portHelper.waitUntilAllocatedPortsAreFree();
     }
 
     public void testCreateAndActivateVirtualHostNode() throws Exception
     {
-        int node1PortNumber = findFreePort();
+        int node1PortNumber = _portHelper.getNextAvailable();
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
         String nodeName = "node1";
@@ -132,7 +137,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     public void testMutableAttributes() throws Exception
     {
-        int node1PortNumber = findFreePort();
+        int node1PortNumber = _portHelper.getNextAvailable();
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
         String nodeName = "node1";
@@ -161,9 +166,9 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     public void testTransferMasterToSelf() throws Exception
     {
-        int node1PortNumber = findFreePort();
-        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
-        int node3PortNumber = getNextAvailable(node2PortNumber + 1);
+        int node1PortNumber = _portHelper.getNextAvailable();
+        int node2PortNumber = _portHelper.getNextAvailable();
+        int node3PortNumber = _portHelper.getNextAvailable();
 
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
@@ -187,9 +192,9 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     public void testTransferMasterToRemoteReplica() throws Exception
     {
-        int node1PortNumber = findFreePort();
-        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
-        int node3PortNumber = getNextAvailable(node2PortNumber + 1);
+        int node1PortNumber = _portHelper.getNextAvailable();
+        int node2PortNumber = _portHelper.getNextAvailable();
+        int node3PortNumber = _portHelper.getNextAvailable();
 
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
@@ -233,7 +238,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     public void testMutatingRoleWhenNotReplica_IsDisallowed() throws Exception
     {
-        int nodePortNumber = findFreePort();
+        int nodePortNumber = _portHelper.getNextAvailable();
         String helperAddress = "localhost:" + nodePortNumber;
         String groupName = "group";
         String nodeName = "node1";
@@ -256,22 +261,29 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     public void testRemoveReplicaNode() throws Exception
     {
-        int node1PortNumber = findFreePort();
-        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
-        int node3PortNumber = getNextAvailable(node2PortNumber + 1);
+        int node1PortNumber = _portHelper.getNextAvailable();
+        int node2PortNumber = _portHelper.getNextAvailable();
+        int node3PortNumber = _portHelper.getNextAvailable();
 
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
         String nodeName = "node1";
 
+        assertTrue(_portHelper.isPortAvailable(node1PortNumber));
+
         Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber, node3PortNumber);
         _helper.createAndStartHaVHN(node1Attributes);
+
+        assertTrue(_portHelper.isPortAvailable(node2PortNumber));
 
         Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
         _helper.createAndStartHaVHN(node2Attributes);
 
+        assertTrue(_portHelper.isPortAvailable(node3PortNumber));
+
         Map<String, Object> node3Attributes = _helper.createNodeAttributes("node3", groupName, "localhost:" + node3PortNumber, helperAddress, nodeName);
         _helper.createAndStartHaVHN(node3Attributes);
+
 
         BDBHAVirtualHostNode<?> master = _helper.awaitAndFindNodeInRole(NodeRole.MASTER);
         _helper.awaitRemoteNodes(master, 2);
@@ -286,10 +298,9 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertNull("Remote node " + replica.getName() + " is not found", _helper.findRemoteNode(master, replica.getName()));
     }
 
-
     public void testSetSynchronizationPolicyAttributesOnVirtualHost() throws Exception
     {
-        int node1PortNumber = findFreePort();
+        int node1PortNumber = _portHelper.getNextAvailable();
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
         String nodeName = "node1";
@@ -346,9 +357,9 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     public void testNotPermittedNodeIsNotAllowedToConnect() throws Exception
     {
-        int node1PortNumber = findFreePort();
-        int node2PortNumber = getNextAvailable(node1PortNumber+1);
-        int node3PortNumber = getNextAvailable(node2PortNumber+1);
+        int node1PortNumber = _portHelper.getNextAvailable();
+        int node2PortNumber = _portHelper.getNextAvailable();
+        int node3PortNumber = _portHelper.getNextAvailable();
 
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
@@ -374,9 +385,9 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     public void testCurrentNodeCannotBeRemovedFromPermittedNodeList() throws Exception
     {
-        int node1PortNumber = findFreePort();
-        int node2PortNumber = getNextAvailable(node1PortNumber+1);
-        int node3PortNumber = getNextAvailable(node2PortNumber+1);
+        int node1PortNumber = _portHelper.getNextAvailable();
+        int node2PortNumber = _portHelper.getNextAvailable();
+        int node3PortNumber = _portHelper.getNextAvailable();
 
         String node1Address = "localhost:" + node1PortNumber;
         String node2Address = "localhost:" + node2PortNumber;
@@ -415,11 +426,11 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     public void testPermittedNodesAttributeModificationConditions() throws Exception
     {
-        int node1PortNumber = findFreePort();
-        int node2PortNumber = getNextAvailable(node1PortNumber+1);
-        int node3PortNumber = getNextAvailable(node2PortNumber+1);
-        int node4PortNumber = getNextAvailable(node3PortNumber+1);
-        int node5PortNumber = getNextAvailable(node4PortNumber+1);
+        int node1PortNumber = _portHelper.getNextAvailable();
+        int node2PortNumber = _portHelper.getNextAvailable();
+        int node3PortNumber = _portHelper.getNextAvailable();
+        int node4PortNumber = _portHelper.getNextAvailable();
+        int node5PortNumber = _portHelper.getNextAvailable();
 
         String node1Address = "localhost:" + node1PortNumber;
         String node2Address = "localhost:" + node2PortNumber;
@@ -472,8 +483,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     public void testIntruderProtectionInManagementMode() throws Exception
     {
-        int node1PortNumber = findFreePort();
-        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
+        int node1PortNumber = _portHelper.getNextAvailable();
+        int node2PortNumber = _portHelper.getNextAvailable();
 
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
@@ -517,8 +528,8 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
     public void testIntruderConnected() throws Exception
     {
-        int node1PortNumber = findFreePort();
-        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
+        int node1PortNumber = _portHelper.getNextAvailable();
+        int node2PortNumber = _portHelper.getNextAvailable();
 
         String helperAddress = "localhost:" + node1PortNumber;
         String groupName = "group";
@@ -553,13 +564,24 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         envConfig.setDurability(Durability.parse((String) node1Attributes.get(BDBHAVirtualHostNode.DURABILITY)));
 
         ReplicatedEnvironment intruder = null;
+        String originalThreadName = Thread.currentThread().getName();
         try
         {
             intruder = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
         }
         finally
         {
-            intruder.close();
+            try
+            {
+                if (intruder != null)
+                {
+                    intruder.close();
+                }
+            }
+            finally
+            {
+                Thread.currentThread().setName(originalThreadName);
+            }
         }
 
         assertTrue("Intruder protection was not triggered during expected timeout", stopLatch.await(20, TimeUnit.SECONDS));

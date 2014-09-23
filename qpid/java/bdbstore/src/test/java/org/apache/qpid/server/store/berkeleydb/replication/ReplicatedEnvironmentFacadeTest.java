@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
+import org.apache.qpid.test.utils.PortHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
 import org.apache.qpid.util.FileUtils;
@@ -57,17 +58,20 @@ import org.codehaus.jackson.map.ObjectMapper;
 public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 {
     private static final Logger LOGGER = Logger.getLogger(ReplicatedEnvironmentFacadeTest.class);
-    private static final int TEST_NODE_PORT = new QpidTestCase().findFreePort();
     private static final int LISTENER_TIMEOUT = 5;
     private static final int WAIT_STATE_CHANGE_TIMEOUT = 30;
-    private static final String TEST_GROUP_NAME = "testGroupName";
-    private static final String TEST_NODE_NAME = "testNodeName";
-    private static final String TEST_NODE_HOST_PORT = "localhost:" + TEST_NODE_PORT;
-    private static final String TEST_NODE_HELPER_HOST_PORT = TEST_NODE_HOST_PORT;
-    private static final Durability TEST_DURABILITY = Durability.parse("SYNC,NO_SYNC,SIMPLE_MAJORITY");
-    private static final boolean TEST_DESIGNATED_PRIMARY = false;
-    private static final int TEST_PRIORITY = 1;
-    private static final int TEST_ELECTABLE_GROUP_OVERRIDE = 0;
+
+    private final PortHelper _portHelper = new PortHelper();
+
+    private final String TEST_GROUP_NAME = "testGroupName";
+    private final String TEST_NODE_NAME = "testNodeName";
+    private final int TEST_NODE_PORT = _portHelper.getNextAvailable();
+    private final String TEST_NODE_HOST_PORT = "localhost:" + TEST_NODE_PORT;
+    private final String TEST_NODE_HELPER_HOST_PORT = TEST_NODE_HOST_PORT;
+    private final Durability TEST_DURABILITY = Durability.parse("SYNC,NO_SYNC,SIMPLE_MAJORITY");
+    private final boolean TEST_DESIGNATED_PRIMARY = false;
+    private final int TEST_PRIORITY = 1;
+    private final int TEST_ELECTABLE_GROUP_OVERRIDE = 0;
 
     private File _storePath;
     private final Map<String, ReplicatedEnvironmentFacade> _nodes = new HashMap<String, ReplicatedEnvironmentFacade>();
@@ -105,6 +109,8 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
                 super.tearDown();
             }
         }
+
+        _portHelper.waitUntilAllocatedPortsAreFree();
     }
     public void testEnvironmentFacade() throws Exception
     {
@@ -220,7 +226,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         ReplicatedEnvironmentFacade master = createMaster();
         String nodeName2 = TEST_NODE_NAME + "_2";
         String host = "localhost";
-        int port = getNextAvailable(TEST_NODE_PORT + 1);
+        int port = _portHelper.getNextAvailable();
         String node2NodeHostPort = host + ":" + port;
 
         final AtomicInteger invocationCount = new AtomicInteger();
@@ -264,7 +270,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertEquals("Unexpected number of nodes at start of test", 1, replicatedEnvironmentFacade.getNumberOfElectableGroupMembers());
 
         String node2Name = TEST_NODE_NAME + "_2";
-        String node2NodeHostPort = "localhost" + ":" + getNextAvailable(TEST_NODE_PORT + 1);
+        String node2NodeHostPort = "localhost" + ":" + _portHelper.getNextAvailable();
         replicatedEnvironmentFacade.setPermittedNodes(Arrays.asList(replicatedEnvironmentFacade.getHostPort(), node2NodeHostPort));
         createReplica(node2Name, node2NodeHostPort, new NoopReplicationGroupListener());
 
@@ -307,7 +313,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         assertTrue("Master was not started", stateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
 
         String node2Name = TEST_NODE_NAME + "_2";
-        String node2NodeHostPort = "localhost" + ":" + getNextAvailable(TEST_NODE_PORT + 1);
+        String node2NodeHostPort = "localhost" + ":" + _portHelper.getNextAvailable();
         replicatedEnvironmentFacade.setPermittedNodes(Arrays.asList(replicatedEnvironmentFacade.getHostPort(), node2NodeHostPort));
         createReplica(node2Name, node2NodeHostPort, new NoopReplicationGroupListener());
 
@@ -357,7 +363,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         ReplicatedEnvironmentFacade replicatedEnvironmentFacade = addNode(stateChangeListener, listener);
         assertTrue("Master was not started", stateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
 
-        String node2NodeHostPort = "localhost" + ":" + getNextAvailable(TEST_NODE_PORT + 1);
+        String node2NodeHostPort = "localhost" + ":" + _portHelper.getNextAvailable();
         replicatedEnvironmentFacade.setPermittedNodes(Arrays.asList(replicatedEnvironmentFacade.getHostPort(), node2NodeHostPort));
         createReplica(node2Name, node2NodeHostPort, new NoopReplicationGroupListener());
 
@@ -380,7 +386,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
 
         String node2Name = TEST_NODE_NAME + "_2";
-        String node2NodeHostPort = "localhost:" + getNextAvailable(TEST_NODE_PORT + 1);
+        String node2NodeHostPort = "localhost:" + _portHelper.getNextAvailable();
         ReplicatedEnvironmentFacade ref2 = createReplica(node2Name, node2NodeHostPort, new NoopReplicationGroupListener());
 
         assertEquals("Unexpected group members count", 2, environmentFacade.getNumberOfElectableGroupMembers());
@@ -436,7 +442,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
         masterEnvironment.setDesignatedPrimary(true);
 
-        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        int replica1Port = _portHelper.getNextAvailable();
         String node1NodeHostPort = "localhost:" + replica1Port;
         masterEnvironment.setPermittedNodes(Arrays.asList(masterEnvironment.getHostPort(), node1NodeHostPort));
         ReplicatedEnvironmentFacade replica = createReplica(replicaName, node1NodeHostPort, new NoopReplicationGroupListener());
@@ -493,9 +499,9 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         addNode(stateChangeListener, new NoopReplicationGroupListener());
         assertTrue("Master was not started", masterLatch.await(LISTENER_TIMEOUT, TimeUnit.SECONDS));
 
-        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        int replica1Port = _portHelper.getNextAvailable();
         String node1NodeHostPort = "localhost:" + replica1Port;
-        int replica2Port = getNextAvailable(replica1Port + 1);
+        int replica2Port = _portHelper.getNextAvailable();
         String node2NodeHostPort = "localhost:" + replica2Port;
 
         ReplicatedEnvironmentFacade replica1 = createReplica(TEST_NODE_NAME + "_1", node1NodeHostPort, new NoopReplicationGroupListener());
@@ -535,12 +541,12 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         ReplicatedEnvironmentFacade firstNode = addNode(stateChangeListener, new NoopReplicationGroupListener());
         assertTrue("Environment did not become a master", firstNodeMasterStateLatch.await(10, TimeUnit.SECONDS));
 
-        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        int replica1Port = _portHelper.getNextAvailable();
         String node1NodeHostPort = "localhost:" + replica1Port;
         ReplicatedEnvironmentFacade secondNode = createReplica(TEST_NODE_NAME + "_1", node1NodeHostPort, new NoopReplicationGroupListener());
         assertEquals("Unexpected state", ReplicatedEnvironment.State.REPLICA.name(), secondNode.getNodeState());
 
-        int replica2Port = getNextAvailable(replica1Port + 1);
+        int replica2Port = _portHelper.getNextAvailable();
         String node2NodeHostPort = "localhost:" + replica2Port;
         final CountDownLatch replicaStateLatch = new CountDownLatch(1);
         final CountDownLatch masterStateLatch = new CountDownLatch(1);
@@ -594,12 +600,12 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         ReplicatedEnvironmentFacade firstNode = addNode(stateChangeListener, new NoopReplicationGroupListener());
         assertTrue("Environment did not become a master", firstNodeMasterStateLatch.await(10, TimeUnit.SECONDS));
 
-        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        int replica1Port = _portHelper.getNextAvailable();
         String node1NodeHostPort = "localhost:" + replica1Port;
         ReplicatedEnvironmentFacade secondNode = createReplica(TEST_NODE_NAME + "_1", node1NodeHostPort, new NoopReplicationGroupListener());
         assertEquals("Unexpected state", ReplicatedEnvironment.State.REPLICA.name(), secondNode.getNodeState());
 
-        int replica2Port = getNextAvailable(replica1Port + 1);
+        int replica2Port = _portHelper.getNextAvailable();
         String node2NodeHostPort = "localhost:" + replica2Port;
         final CountDownLatch replicaStateLatch = new CountDownLatch(1);
         final CountDownLatch masterStateLatch = new CountDownLatch(1);
@@ -657,7 +663,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
         Set<String> permittedNodes = new HashSet<String>();
         permittedNodes.add("localhost:" + TEST_NODE_PORT);
-        permittedNodes.add("localhost:" + getNextAvailable(TEST_NODE_PORT + 1));
+        permittedNodes.add("localhost:" + _portHelper.getNextAvailable());
         firstNode.setPermittedNodes(permittedNodes);
 
         ReplicatedEnvironmentFacade.ReplicationNodeImpl replicationNode = new ReplicatedEnvironmentFacade.ReplicationNodeImpl(TEST_NODE_NAME, TEST_NODE_HOST_PORT);
@@ -674,7 +680,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
     {
         ReplicatedEnvironmentFacade firstNode = createMaster();
 
-        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        int replica1Port = _portHelper.getNextAvailable();
         String node1NodeHostPort = "localhost:" + replica1Port;
 
         Set<String> permittedNodes = new HashSet<String>();
@@ -705,7 +711,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
             }
         };
         ReplicatedEnvironmentFacade firstNode = createMaster(listener);
-        int replica1Port = getNextAvailable(TEST_NODE_PORT + 1);
+        int replica1Port = _portHelper.getNextAvailable();
         String node1NodeHostPort = "localhost:" + replica1Port;
 
         Set<String> permittedNodes = new HashSet<String>();
