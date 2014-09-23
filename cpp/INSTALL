@@ -126,12 +126,20 @@ norm under Linux). There seems to be a bug in boost::lexical_cast which exhibits
 under C++03 with libc++ but not C++11 with libc++. This means that you have to compile Qpid as C++11
 under FreeBSD 10.
 
- # cmake -DCMAKE_CXX_FLAGS=-std=c++ ..
+ # cmake -DCMAKE_CXX_FLAGS=-std=c++11 -DBUILD_BINDING_PERL=no ..
 
 It is not necessary to specify CXX=clang++ because it is the system compiler under FreeBSD 10;
 similarly we don't try to build the probe code on FreeBSD at this point because it doesn't work
 there yet, so it doesn't need to be explicitly turned off.
 
+We turn building the PERL bindings off because the perl header file is incompatible with C++11 currently.
+
+If you want to use the ports version of cyrus-sasl then you should also add:
+
+ -DCMAKE_REQUIRED_FLAGS=-L/usr/local/lib -DCMAKE_REQUIRED_INCLUDES=/usr/local/include
+
+Which will allow cmake to find libraries installed in /usr/local (which is where cyrus-sasl gets
+installed by ports).
 
 3. Building a Repository Working Copy
 =====================================
