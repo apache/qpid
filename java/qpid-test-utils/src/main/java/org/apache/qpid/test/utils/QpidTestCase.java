@@ -166,9 +166,6 @@ public class QpidTestCase extends TestCase
         return System.getProperty(VIRTUAL_HOST_NODE_CONTEXT_BLUEPRINT);
     }
 
-    public static final int MIN_PORT_NUMBER = 1;
-    public static final int MAX_PORT_NUMBER = 49151;
-
 
     /**
      * Gets the next available port starting at a port.
@@ -178,25 +175,12 @@ public class QpidTestCase extends TestCase
      */
     public int getNextAvailable(int fromPort)
     {
-        if ((fromPort < MIN_PORT_NUMBER) || (fromPort > MAX_PORT_NUMBER))
-        {
-            throw new IllegalArgumentException("Invalid start port: " + fromPort);
-        }
-
-        PortHelper portHelper = new PortHelper();
-        for (int i = fromPort; i <= MAX_PORT_NUMBER; i++)
-        {
-            if (portHelper.isPortAvailable(i)) {
-                return i;
-            }
-        }
-
-        throw new NoSuchElementException("Could not find an available port above " + fromPort);
+        return new PortHelper().getNextAvailable(fromPort);
     }
 
     public int findFreePort()
     {
-        return getNextAvailable(10000);
+        return new PortHelper().getNextAvailable();
     }
 
     /**
