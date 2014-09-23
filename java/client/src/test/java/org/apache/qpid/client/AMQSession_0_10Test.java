@@ -18,12 +18,8 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.client.message.AMQPEncodedListMessage;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.test.utils.QpidTestCase;
-import org.apache.qpid.transport.*;
-import org.apache.qpid.transport.Connection.SessionFactory;
-import org.apache.qpid.transport.Connection.State;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -31,8 +27,12 @@ import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.StreamMessage;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.qpid.client.message.AMQPEncodedListMessage;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.transport.*;
+import org.apache.qpid.transport.Connection.SessionFactory;
+import org.apache.qpid.transport.Connection.State;
 
 /**
  * Tests AMQSession_0_10 methods.
@@ -174,7 +174,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         catch (Exception e)
         {
-            fail("Unexpected exception is cought:" + e.getMessage());
+            fail("Unexpected exception is caught:" + e.getMessage());
         }
         ProtocolEvent event = findSentProtocolEventOfClass(session, TxCommit.class, false);
         assertNotNull("TxCommit was not sent", event);
@@ -189,7 +189,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         catch (Exception e)
         {
-            fail("Unexpected exception is cought:" + e.getMessage());
+            fail("Unexpected exception is caught:" + e.getMessage());
         }
         ProtocolEvent event = findSentProtocolEventOfClass(session, TxRollback.class, false);
         assertNotNull("TxRollback was not sent", event);
@@ -204,7 +204,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         catch (Exception e)
         {
-            fail("Unexpected exception is cought:" + e.getMessage());
+            fail("Unexpected exception is caught:" + e.getMessage());
         }
         ProtocolEvent event = findSentProtocolEventOfClass(session, MessageRelease.class, false);
         assertNotNull("MessageRelease was not sent", event);
@@ -219,7 +219,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         catch (Exception e)
         {
-            fail("Unexpected exception is cought:" + e.getMessage());
+            fail("Unexpected exception is caught:" + e.getMessage());
         }
         ProtocolEvent event = findSentProtocolEventOfClass(session, ExchangeDeclare.class, false);
         assertNotNull("ExchangeDeclare was not sent", event);
@@ -234,7 +234,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         catch (Exception e)
         {
-            fail("Unexpected exception is cought:" + e.getMessage());
+            fail("Unexpected exception is caught:" + e.getMessage());
         }
         ProtocolEvent event = findSentProtocolEventOfClass(session, MessageSubscribe.class, false);
         assertNotNull("MessageSubscribe was not sent", event);
@@ -249,7 +249,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         catch (Exception e)
         {
-            fail("Unexpected exception is cought:" + e.getMessage());
+            fail("Unexpected exception is caught:" + e.getMessage());
         }
         ProtocolEvent event = findSentProtocolEventOfClass(session, ExecutionSync.class, false);
         assertNotNull("ExecutionSync was not sent", event);
@@ -264,7 +264,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         catch (Exception e)
         {
-            fail("Unexpected exception is cought:" + e.getMessage());
+            fail("Unexpected exception is caught:" + e.getMessage());
         }
         ProtocolEvent event = findSentProtocolEventOfClass(session, QueueDelete.class, false);
         assertNotNull("QueueDelete event was not sent", event);
@@ -283,7 +283,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         catch (Exception e)
         {
-            fail("Unexpected exception is cought:" + e.getMessage());
+            fail("Unexpected exception is caught:" + e.getMessage());
         }
         ProtocolEvent event = findSentProtocolEventOfClass(session, MessageSubscribe.class, false);
         assertNotNull("MessageSubscribe event was not sent", event);
@@ -298,7 +298,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         catch (Exception e)
         {
-            fail("Unexpected exception is cought:" + e.getMessage());
+            fail("Unexpected exception is caught:" + e.getMessage());
         }
         ProtocolEvent event = findSentProtocolEventOfClass(session, ExchangeDeclare.class, false);
         assertNotNull("ExchangeDeclare event was not sent", event);
@@ -313,7 +313,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         catch (Exception e)
         {
-            fail("Unexpected exception is cought:" + e.getMessage());
+            fail("Unexpected exception is caught:" + e.getMessage());
         }
         ProtocolEvent event = findSentProtocolEventOfClass(session, ExchangeDelete.class, false);
         assertNotNull("ExchangeDelete event was not sent", event);
@@ -351,7 +351,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         catch (Exception e)
         {
-            fail("Unexpected exception is cought:" + e.getMessage());
+            fail("Unexpected exception is caught:" + e.getMessage());
         }
         ProtocolEvent event = findSentProtocolEventOfClass(session, MessageFlow.class, false);
         assertNotNull("MessageFlow event was not sent", event);
@@ -375,40 +375,6 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
     }
 
-    public void testExceptionOnMessageConsumerSetMessageListener()
-    {
-        AMQSession_0_10 session = createThrowingExceptionAMQSession_0_10();
-        try
-        {
-            BasicMessageConsumer_0_10 consumer = session.createMessageConsumer(createDestination(), 1, 1, true, false,
-                    null, null, false, true);
-            consumer.setMessageListener(new MockMessageListener());
-            fail("JMSException should be thrown");
-        }
-        catch (Exception e)
-        {
-            assertTrue("JMSException is expected", e instanceof JMSException);
-            assertEquals("541 error code is expected", "541", ((JMSException) e).getErrorCode());
-        }
-    }
-
-    public void testMessageConsumerSetMessageListener()
-    {
-        AMQSession_0_10 session = createAMQSession_0_10();
-        try
-        {
-            BasicMessageConsumer_0_10 consumer = session.createMessageConsumer(createDestination(), 1, 1, true, false,
-                    null, null, false, true);
-            consumer.setMessageListener(new MockMessageListener());
-        }
-        catch (Exception e)
-        {
-            fail("Unexpected exception is cought:" + e.getMessage());
-        }
-        ProtocolEvent event = findSentProtocolEventOfClass(session, MessageFlow.class, false);
-        assertNotNull("MessageFlow event was not sent", event);
-    }
-
     public void testMessageConsumerClose()
     {
         AMQSession_0_10 session = createAMQSession_0_10();
@@ -420,7 +386,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         catch (Exception e)
         {
-            fail("Unexpected exception is cought:" + e.getMessage());
+            fail("Unexpected exception is caught:" + e.getMessage());
         }
         ProtocolEvent event = findSentProtocolEventOfClass(session, MessageCancel.class, false);
         assertNotNull("MessageCancel event was not sent", event);
@@ -454,7 +420,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         catch (Exception e)
         {
-            fail("Unexpected exception is cought:" + e.getMessage());
+            fail("Unexpected exception is caught:" + e.getMessage());
         }
         ProtocolEvent event = findSentProtocolEventOfClass(session, MessageTransfer.class, false);
         assertNotNull("MessageTransfer event was not sent", event);
@@ -481,7 +447,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         catch (Exception e)
         {
-            fail("Unexpected exception is cought:" + e.getMessage());
+            fail("Unexpected exception is caught:" + e.getMessage());
         }
         ProtocolEvent command = findSentProtocolEventOfClass(session, MessageAccept.class, false);
         assertNotNull("MessageAccept command was not sent", command);
@@ -585,7 +551,7 @@ public class AMQSession_0_10Test extends QpidTestCase
         }
         boolean isTransacted = acknowledgeMode == javax.jms.Session.SESSION_TRANSACTED ? true : false;
         AMQSession_0_10 session = new AMQSession_0_10(createConnection(throwException), amqConnection, 1, isTransacted, acknowledgeMode,
-                 0, 0, "test");
+                 10, 10, "test");
         return session;
     }
 
