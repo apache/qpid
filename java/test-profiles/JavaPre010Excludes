@@ -30,6 +30,8 @@ org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testBrowseMo
 //QPID-3392: the Java broker does not yet implement exchange creation arguments
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateExchangeWithArgs
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testSessionCreateTopicWithExchangeArgs
+//QPID-3678: zero capacity not supported in 0-9-1
+org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testZeroCapacityForSynchronousReceive
 //QPID-6037: the 0-9-1 client takes the view that if you don't specify the node type but you ask for a JMS Topic
 //           you want a topic behaviour.  The 0-10 client thinks you must want a queue.
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testJMSTopicIsTreatedAsQueueIn0_10

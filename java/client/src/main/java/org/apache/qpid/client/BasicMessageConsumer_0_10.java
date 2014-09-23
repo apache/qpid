@@ -389,7 +389,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         {
             _syncReceive.set(true);
         }
-        if (_0_10session.isStarted() && _capacity == 0 && getSynchronousQueue().isEmpty())
+        if (_0_10session.isStarted() && isMessageListenerSet() && _capacity == 0 && getSynchronousQueue().isEmpty())
         {
             messageFlow();
         }
@@ -536,7 +536,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     private long evaluateCapacity(AMQDestination destination)
     {
         long capacity = 0;
-        if (destination.getLink() != null && destination.getLink().getConsumerCapacity() > 0)
+        if (destination.getLink() != null && destination.getLink().getConsumerCapacity() >= 0)
         {
             capacity = destination.getLink().getConsumerCapacity();
         }
@@ -547,4 +547,75 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         return capacity;
     }
 
+    @Override
+    public Message receive(final long l) throws JMSException
+    {
+        long capacity = getCapacity();
+        try
+        {
+            AMQSession_0_10 session = (AMQSession_0_10) getSession();
+
+            if (capacity == 0 && getMessageListener() == null)
+            {
+                session.getQpidSession().messageFlow(getConsumerTagString(),
+                                                     MessageCreditUnit.MESSAGE, 1,
+                                                     Option.UNRELIABLE);
+
+                session.sync();
+
+            }
+
+            Message message = super.receive(l);
+
+            if (message == null && capacity == 0 && getMessageListener() == null)
+            {
+                session.getQpidSession().messageFlow(getConsumerTagString(),
+                                                     MessageCreditUnit.MESSAGE, 0,
+                                                     Option.UNRELIABLE);
+                session.sync();
+
+                message = super.receiveNoWait();
+            }
+            return message;
+        }
+        catch (AMQException e)
+        {
+            throw new JMSAMQException(e);
+        }
+    }
+
+    @Override
+    public Message receiveNoWait() throws JMSException
+    {
+        long capacity = getCapacity();
+        try
+        {
+            AMQSession_0_10 session = (AMQSession_0_10) getSession();
+
+            if (capacity == 0 && getMessageListener() == null)
+            {
+                session.getQpidSession().messageFlow(getConsumerTagString(),
+                                                     MessageCreditUnit.MESSAGE, 1,
+                                                     Option.UNRELIABLE);
+
+                session.sync();
+            }
+            Message message = super.receiveNoWait();
+            if (message == null && capacity == 0 && getMessageListener() == null)
+            {
+                session.getQpidSession().messageFlow(getConsumerTagString(),
+                                                     MessageCreditUnit.MESSAGE, 0,
+                                                     Option.UNRELIABLE);
+                session.sync();
+
+                message = super.receiveNoWait();
+            }
+            return message;
+        }
+        catch (AMQException e)
+        {
+            throw new JMSAMQException(e);
+        }
+
+    }
 }
