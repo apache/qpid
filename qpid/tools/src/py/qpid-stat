@@ -213,10 +213,13 @@ class BrokerManager:
         for conn in connections:
             row = []
             row.append(conn.address)
-            row.append(conn.remoteProcessName)
+            if conn.remoteProcessName: row.append(conn.remoteProcessName)
+            else: row.append("-")
             row.append(conn.remotePid)
-            row.append(conn.saslMechanism)
-            row.append(conn.authIdentity)
+            if conn.saslMechanism: row.append(conn.saslMechanism)
+            else: row.append("-")
+            if conn.authIdentity: row.append(conn.authIdentity)
+            else: row.append("-")
             row.append(broker.getUpdateTime() - conn.getCreateTime())
             row.append(broker.getUpdateTime() - conn.getUpdateTime())
             row.append(conn.msgsFromClient)
@@ -395,7 +398,8 @@ class BrokerManager:
                 session = sessions[s.sessionRef]
                 connection = connections[session.connectionRef]
                 row.append(connection.address)
-                row.append(connection.remoteProcessName)
+                if connection.remoteProcessName: row.append(connection.remoteProcessName)
+                else: row.append("-")
                 row.append(connection.remotePid)
                 row.append(s.browsing)
                 row.append(s.acknowledged)
