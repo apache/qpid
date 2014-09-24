@@ -52,14 +52,6 @@ public class TestChildCategoryImpl
     }
 
     @Override
-    public State getState()
-    {
-        return null;
-    }
-
-
-
-    @Override
     public String getValidValueNotInterpolated()
     {
         return _validValueNotInterpolated;

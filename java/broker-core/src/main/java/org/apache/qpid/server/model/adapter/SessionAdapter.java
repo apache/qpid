@@ -42,8 +42,6 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
 {
     // Attributes
     private final AMQSessionModel _session;
-    private State _state = State.ACTIVE;
-
 
     public SessionAdapter(final ConnectionAdapter connectionAdapter,
                           final AMQSessionModel session)
@@ -75,7 +73,7 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
                 deleted();
             }
         });
-
+        setState(State.ACTIVE);
     }
 
     private static Map<String, Object> createAttributes(final AMQSessionModel session)
@@ -108,11 +106,6 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
     public Collection<Publisher> getPublishers()
     {
         return Collections.emptySet();  //TODO
-    }
-
-    public State getState()
-    {
-        return _state;
     }
 
     @Override
@@ -188,8 +181,8 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
     @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
     private void doDelete()
     {
-        _state = State.DELETED;
         deleted();
+        setState(State.DELETED);
     }
 
 }

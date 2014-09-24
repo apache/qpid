@@ -74,12 +74,6 @@ public class Test2RootCategoryImpl extends AbstractConfiguredObject<Test2RootCat
     }
 
     @Override
-    protected boolean setState(final State desiredState)
-    {
-        return false;
-    }
-
-    @Override
     public String getAutomatedPersistedValue()
     {
         return _automatedPersistedValue;
@@ -119,12 +113,6 @@ public class Test2RootCategoryImpl extends AbstractConfiguredObject<Test2RootCat
     public Map<String, String> getMapValue()
     {
         return _mapValue;
-    }
-
-    @Override
-    public State getState()
-    {
-        return null;
     }
 
     public static Collection<String> functionGeneratedValidValues()

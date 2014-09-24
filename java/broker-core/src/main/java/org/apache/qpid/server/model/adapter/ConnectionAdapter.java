@@ -52,8 +52,6 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     private final AtomicBoolean _underlyingClosed = new AtomicBoolean(false);
     private AMQConnectionModel _underlyingConnection;
 
-    private State _state = State.ACTIVE;
-
     public ConnectionAdapter(final AMQConnectionModel conn)
     {
         super(parentsMap(conn.getVirtualHost()),createAttributes(conn));
@@ -73,6 +71,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
         conn.addDeleteTask(_underlyingConnectionDeleteTask);
 
         conn.addSessionListener(this);
+        setState(State.ACTIVE);
     }
 
     private static Map<String, Object> createAttributes(final AMQConnectionModel _connection)
@@ -161,18 +160,13 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     {
         closeUnderlyingConnection();
         deleted();
-        _state = State.DELETED;
+        setState(State.DELETED);
     }
 
     @Override
     protected void onClose()
     {
         closeUnderlyingConnection();
-    }
-
-    public State getState()
-    {
-        return _state;
     }
 
     @Override

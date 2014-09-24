@@ -94,6 +94,7 @@ public class BDBHAReplicaVirtualHost extends AbstractConfiguredObject<BDBHARepli
         _dataDelivered = new StatisticsCounter("bytes-delivered-" + getName());
         _messagesReceived = new StatisticsCounter("messages-received-" + getName());
         _dataReceived = new StatisticsCounter("bytes-received-" + getName());
+        setState(State.UNAVAILABLE);
     }
 
     @Override
@@ -148,12 +149,6 @@ public class BDBHAReplicaVirtualHost extends AbstractConfiguredObject<BDBHARepli
     public void executeTransaction(final TransactionalOperation op)
     {
         throwUnsupportedForReplica();
-    }
-
-    @Override
-    public State getState()
-    {
-        return State.UNAVAILABLE;
     }
 
     @Override

@@ -44,6 +44,7 @@ import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationManager;
@@ -85,60 +86,56 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
         }
     }
 
-    @Override
-    public State getState()
+    @StateTransition(currentState = {State.ACTIVE, State.ERRORED}, desiredState = State.DELETED)
+    protected void doDelete()
     {
-        return State.ACTIVE;
-    }
+        // verify that it is not in use
+        String storeName = getName();
 
-    @Override
-    protected boolean setState(State desiredState)
-    {
-        if(desiredState == State.DELETED)
+        Collection<Port<?>> ports = new ArrayList<Port<?>>(_broker.getPorts());
+        for (Port port : ports)
         {
-            // verify that it is not in use
-            String storeName = getName();
-
-            Collection<Port<?>> ports = new ArrayList<Port<?>>(_broker.getPorts());
-            for (Port port : ports)
+            Collection<TrustStore> trustStores = port.getTrustStores();
+            if(trustStores != null)
             {
-                Collection<TrustStore> trustStores = port.getTrustStores();
-                if(trustStores != null)
+                for (TrustStore store : trustStores)
                 {
-                    for (TrustStore store : trustStores)
-                    {
-                        if(storeName.equals(store.getAttribute(TrustStore.NAME)))
-                        {
-                            throw new IntegrityViolationException("Trust store '"
-                                                                  + storeName
-                                                                  + "' can't be deleted as it is in use by a port: "
-                                                                  + port.getName());
-                        }
-                    }
-                }
-            }
-
-            Collection<AuthenticationProvider> authenticationProviders = new ArrayList<AuthenticationProvider>(_broker.getAuthenticationProviders());
-            for (AuthenticationProvider authProvider : authenticationProviders)
-            {
-                if(authProvider.getAttributeNames().contains(SimpleLDAPAuthenticationManager.TRUST_STORE))
-                {
-                    Object attributeType = authProvider.getAttribute(AuthenticationProvider.TYPE);
-                    Object attributeValue = authProvider.getAttribute(SimpleLDAPAuthenticationManager.TRUST_STORE);
-                    if (SimpleLDAPAuthenticationManager.PROVIDER_TYPE.equals(attributeType)
-                        && storeName.equals(attributeValue))
+                    if(storeName.equals(store.getAttribute(TrustStore.NAME)))
                     {
                         throw new IntegrityViolationException("Trust store '"
-                                                              + storeName
-                                                              + "' can't be deleted as it is in use by an authentication manager: "
-                                                              + authProvider.getName());
+                                + storeName
+                                + "' can't be deleted as it is in use by a port: "
+                                + port.getName());
                     }
                 }
             }
-            deleted();
-            return true;
         }
-        return false;
+
+        Collection<AuthenticationProvider> authenticationProviders = new ArrayList<AuthenticationProvider>(_broker.getAuthenticationProviders());
+        for (AuthenticationProvider authProvider : authenticationProviders)
+        {
+            if(authProvider.getAttributeNames().contains(SimpleLDAPAuthenticationManager.TRUST_STORE))
+            {
+                Object attributeType = authProvider.getAttribute(AuthenticationProvider.TYPE);
+                Object attributeValue = authProvider.getAttribute(SimpleLDAPAuthenticationManager.TRUST_STORE);
+                if (SimpleLDAPAuthenticationManager.PROVIDER_TYPE.equals(attributeType)
+                        && storeName.equals(attributeValue))
+                {
+                    throw new IntegrityViolationException("Trust store '"
+                            + storeName
+                            + "' can't be deleted as it is in use by an authentication manager: "
+                            + authProvider.getName());
+                }
+            }
+        }
+        deleted();
+        setState(State.DELETED);
+    }
+
+    @StateTransition(currentState = {State.UNINITIALIZED, State.ERRORED}, desiredState = State.ACTIVE)
+    protected void doActivate()
+    {
+        setState(State.ACTIVE);
     }
 
     @Override

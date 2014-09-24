@@ -59,7 +59,7 @@ class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements U
         {
             throw new IllegalArgumentException("Scram SHA1 user names are restricted to characters in the ASCII charset");
         }
-
+        setState(State.ACTIVE);
     }
 
     @Override
@@ -165,12 +165,6 @@ class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements U
         {
             throw new IllegalArgumentException(e);
         }
-    }
-
-    @Override
-    public State getState()
-    {
-        return State.ACTIVE;
     }
 
     @Override

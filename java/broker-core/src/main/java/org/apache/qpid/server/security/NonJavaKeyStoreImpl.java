@@ -70,6 +70,7 @@ import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
 
@@ -183,12 +184,6 @@ public class NonJavaKeyStoreImpl extends AbstractConfiguredObject<NonJavaKeyStor
     }
 
     @Override
-    public State getState()
-    {
-        return State.ACTIVE;
-    }
-
-    @Override
     public Object getAttribute(String name)
     {
         if (KeyStore.STATE.equals(name))
@@ -199,30 +194,31 @@ public class NonJavaKeyStoreImpl extends AbstractConfiguredObject<NonJavaKeyStor
         return super.getAttribute(name);
     }
 
-    @Override
-    protected boolean setState(State desiredState)
+    @StateTransition(currentState = {State.ACTIVE, State.ERRORED}, desiredState = State.DELETED)
+    protected void doDelete()
     {
-        if (desiredState == State.DELETED)
+        // verify that it is not in use
+        String storeName = getName();
+
+        Collection<Port> ports = new ArrayList<Port>(_broker.getPorts());
+        for (Port port : ports)
         {
-            // verify that it is not in use
-            String storeName = getName();
-
-            Collection<Port> ports = new ArrayList<Port>(_broker.getPorts());
-            for (Port port : ports)
+            if (port.getKeyStore() == this)
             {
-                if (port.getKeyStore() == this)
-                {
-                    throw new IntegrityViolationException("Key store '"
-                                                          + storeName
-                                                          + "' can't be deleted as it is in use by a port:"
-                                                          + port.getName());
-                }
+                throw new IntegrityViolationException("Key store '"
+                        + storeName
+                        + "' can't be deleted as it is in use by a port:"
+                        + port.getName());
             }
-            deleted();
-            return true;
         }
+        deleted();
+        setState(State.DELETED);
+    }
 
-        return false;
+    @StateTransition(currentState = {State.UNINITIALIZED, State.ERRORED}, desiredState = State.ACTIVE)
+    protected void doActivate()
+    {
+        setState(State.ACTIVE);
     }
 
     @Override

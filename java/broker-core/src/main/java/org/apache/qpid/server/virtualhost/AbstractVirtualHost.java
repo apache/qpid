@@ -114,8 +114,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private final SystemNodeRegistry _systemNodeRegistry = new SystemNodeRegistry();
 
-    private final AtomicReference<State> _state = new AtomicReference<>(State.UNINITIALIZED);
-
     private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     private final Map<String, LinkRegistry> _linkRegistry = new HashMap<String, LinkRegistry>();
@@ -263,9 +261,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private void checkVHostStateIsActive()
     {
-        if (_state.get() != State.ACTIVE)
+        if (getState() != State.ACTIVE)
         {
-            throw new IllegalStateException("The virtual host state of " + _state.get()
+            throw new IllegalStateException("The virtual host state of " + getState()
                                             + " does not permit this operation.");
         }
     }
@@ -348,16 +346,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     public Collection<Connection> getConnections()
     {
         return getChildren(Connection.class);
-    }
-
-    @Override
-    public State getState()
-    {
-        if(_deleted.get())
-        {
-            return State.DELETED;
-        }
-        return _state.get();
     }
 
     @Override
@@ -1157,8 +1145,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         closeChildren();
         shutdownHouseKeeping();
         closeMessageStore();
-        _state.set(State.STOPPED);
-
+        setState(State.STOPPED);
     }
 
     @StateTransition( currentState = { State.ACTIVE, State.ERRORED }, desiredState = State.DELETED )
@@ -1183,6 +1170,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                 }
             }
             deleted();
+            setState(State.DELETED);
         }
     }
 
@@ -1419,8 +1407,8 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
         finally
         {
-            _state.set(finalState);
-            reportIfError(_state.get());
+            setState(finalState);
+            reportIfError(getState());
         }
     }
 

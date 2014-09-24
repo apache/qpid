@@ -63,8 +63,6 @@ public class BindingImpl
     final CopyOnWriteArrayList<StateChangeListener<BindingImpl,State>> _stateChangeListeners =
             new CopyOnWriteArrayList<StateChangeListener<BindingImpl, State>>();
 
-    private State _state = State.UNINITIALIZED;
-
     public BindingImpl(Map<String, Object> attributes, AMQQueue queue, ExchangeImpl exchange)
     {
         super(parentsMap(queue,exchange),stripEmptyArguments(enhanceWithDurable(attributes, queue, exchange)));
@@ -227,18 +225,13 @@ public class BindingImpl
             }
             getEventLogger().message(_logSubject, BindingMessages.DELETED());
         }
-        _state = State.DELETED;
+        setState(State.DELETED);
     }
 
     @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
     private void activate()
     {
-        _state = State.ACTIVE;
-    }
-
-    public State getState()
-    {
-        return _state;
+        setState(State.ACTIVE);
     }
 
     public void addStateChangeListener(StateChangeListener<BindingImpl,State> listener)

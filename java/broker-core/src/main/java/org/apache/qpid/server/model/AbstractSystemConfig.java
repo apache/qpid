@@ -75,7 +75,7 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
     }
 
     @Override
-    protected boolean setState(final State desiredState)
+    protected void setState(final State desiredState)
     {
         throw new IllegalArgumentException("Cannot change the state of the SystemContext object");
     }

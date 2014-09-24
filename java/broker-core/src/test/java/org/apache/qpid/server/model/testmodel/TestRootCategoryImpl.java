@@ -72,11 +72,6 @@ public class TestRootCategoryImpl extends AbstractConfiguredObject<TestRootCateg
         super(parentsMap(), attributes, taskExecutor);
     }
 
-    @Override
-    protected boolean setState(final State desiredState)
-    {
-        return false;
-    }
 
     @Override
     public String getAutomatedPersistedValue()
@@ -106,12 +101,6 @@ public class TestRootCategoryImpl extends AbstractConfiguredObject<TestRootCateg
     public Map<String, String> getMapValue()
     {
         return _mapValue;
-    }
-
-    @Override
-    public State getState()
-    {
-        return null;
     }
 
     @Override
