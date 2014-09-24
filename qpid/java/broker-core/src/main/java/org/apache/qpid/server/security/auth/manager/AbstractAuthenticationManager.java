@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 
@@ -56,7 +55,6 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
 
     private final Broker _broker;
     private PreferencesProvider _preferencesProvider;
-    private AtomicReference<State> _state = new AtomicReference<State>(State.UNINITIALIZED);
 
     @ManagedAttributeField
     private List<String> _secureOnlyMechanisms;
@@ -139,12 +137,6 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         throw new IllegalConfigurationException("Cannot associate  " + user + " with authentication provider " + this);
     }
 
-    @Override
-    public State getState()
-    {
-        return _state.get();
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
@@ -185,7 +177,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.QUIESCED )
     protected void startQuiesced()
     {
-        _state.set(State.QUIESCED);
+        setState(State.QUIESCED);
     }
 
     @StateTransition( currentState = { State.UNINITIALIZED, State.QUIESCED, State.QUIESCED }, desiredState = State.ACTIVE )
@@ -193,11 +185,11 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     {
         try
         {
-            _state.set(State.ACTIVE);
+            setState(State.ACTIVE);
         }
         catch(RuntimeException e)
         {
-            _state.set(State.ERRORED);
+            setState(State.ERRORED);
             if (_broker.isManagementMode())
             {
                 LOGGER.warn("Failed to activate authentication provider: " + getName(), e);
@@ -234,14 +226,8 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
         }
         deleted();
 
-        _state.set(State.DELETED);
+        setState(State.DELETED);
 
-    }
-
-
-    protected boolean updateState(State from, State to)
-    {
-        return _state.compareAndSet(from, to);
     }
 
     @Override

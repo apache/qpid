@@ -107,7 +107,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     private final ConcurrentMap<BindingIdentifier, BindingImpl> _bindingsMap = new ConcurrentHashMap<BindingIdentifier, BindingImpl>();
 
     private StateChangeListener<BindingImpl, State> _bindingListener;
-    private State _state = State.UNINITIALIZED;
 
     public AbstractExchange(Map<String, Object> attributes, VirtualHostImpl vhost)
     {
@@ -760,7 +759,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
     private void activate()
     {
-        _state = State.ACTIVE;
+        setState(State.ACTIVE);
     }
 
 
@@ -768,7 +767,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     private void doDeleteBeforeInitialize()
     {
         preSetAlternateExchange();
-        _state = State.DELETED;
+        setState(State.DELETED);
     }
 
 
@@ -779,18 +778,12 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         {
             _virtualHost.removeExchange(this,true);
             preSetAlternateExchange();
-            _state = State.DELETED;
+            setState(State.DELETED);
         }
         catch (ExchangeIsAlternateException | RequiredExchangeException e)
         {
             return;
         }
-    }
-
-    @Override
-    public State getState()
-    {
-        return _state;
     }
 
     @Override

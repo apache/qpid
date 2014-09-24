@@ -49,6 +49,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IntegrityViolationException;
@@ -58,7 +59,10 @@ import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.StateTransition;
+import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationManager;
 import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
 
 @ManagedObject( category = false )
@@ -168,12 +172,6 @@ public class NonJavaTrustStoreImpl
     }
 
     @Override
-    public State getState()
-    {
-        return State.ACTIVE;
-    }
-
-    @Override
     public Object getAttribute(String name)
     {
         if (KeyStore.STATE.equals(name))
@@ -184,30 +182,56 @@ public class NonJavaTrustStoreImpl
         return super.getAttribute(name);
     }
 
-    @Override
-    protected boolean setState(State desiredState)
+    @StateTransition(currentState = {State.ACTIVE, State.ERRORED}, desiredState = State.DELETED)
+    protected void doDelete()
     {
-        if (desiredState == State.DELETED)
-        {
-            // verify that it is not in use
-            String storeName = getName();
+        // verify that it is not in use
+        String storeName = getName();
 
-            Collection<Port> ports = new ArrayList<Port>(_broker.getPorts());
-            for (Port port : ports)
+        Collection<Port<?>> ports = new ArrayList<Port<?>>(_broker.getPorts());
+        for (Port port : ports)
+        {
+            Collection<TrustStore> trustStores = port.getTrustStores();
+            if(trustStores != null)
             {
-                if (port.getKeyStore() == this)
+                for (TrustStore store : trustStores)
                 {
-                    throw new IntegrityViolationException("Key store '"
-                                                          + storeName
-                                                          + "' can't be deleted as it is in use by a port:"
-                                                          + port.getName());
+                    if(storeName.equals(store.getAttribute(TrustStore.NAME)))
+                    {
+                        throw new IntegrityViolationException("Trust store '"
+                                + storeName
+                                + "' can't be deleted as it is in use by a port: "
+                                + port.getName());
+                    }
                 }
             }
-            deleted();
-            return true;
         }
 
-        return false;
+        Collection<AuthenticationProvider> authenticationProviders = new ArrayList<AuthenticationProvider>(_broker.getAuthenticationProviders());
+        for (AuthenticationProvider authProvider : authenticationProviders)
+        {
+            if(authProvider.getAttributeNames().contains(SimpleLDAPAuthenticationManager.TRUST_STORE))
+            {
+                Object attributeType = authProvider.getAttribute(AuthenticationProvider.TYPE);
+                Object attributeValue = authProvider.getAttribute(SimpleLDAPAuthenticationManager.TRUST_STORE);
+                if (SimpleLDAPAuthenticationManager.PROVIDER_TYPE.equals(attributeType)
+                        && storeName.equals(attributeValue))
+                {
+                    throw new IntegrityViolationException("Trust store '"
+                            + storeName
+                            + "' can't be deleted as it is in use by an authentication manager: "
+                            + authProvider.getName());
+                }
+            }
+        }
+        deleted();
+        setState(State.DELETED);
+    }
+
+    @StateTransition(currentState = {State.UNINITIALIZED, State.ERRORED}, desiredState = State.ACTIVE)
+    protected void doActivate()
+    {
+        setState(State.ACTIVE);
     }
 
     @Override

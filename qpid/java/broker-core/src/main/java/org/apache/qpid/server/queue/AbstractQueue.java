@@ -241,8 +241,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     @ManagedAttributeField
     private long _maximumMessageTtl;
 
-
-    private State _state = State.UNINITIALIZED;
     private final AtomicBoolean _recovering = new AtomicBoolean(true);
     private final ConcurrentLinkedQueue<EnqueueRequest> _postRecoveryQueue = new ConcurrentLinkedQueue<>();
 
@@ -2814,14 +2812,14 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
     private void activate()
     {
-        _state = State.ACTIVE;
+        setState(State.ACTIVE);
     }
 
     @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.DELETED)
     private void doDeleteBeforeInitialize()
     {
         preSetAlternateExchange();
-        _state = State.DELETED;
+        setState(State.DELETED);
     }
 
     @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
@@ -2829,7 +2827,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     {
         _virtualHost.removeQueue(this);
         preSetAlternateExchange();
-        _state = State.DELETED;
+        setState(State.DELETED);
     }
 
 
@@ -2873,12 +2871,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     public boolean isQueueFlowStopped()
     {
         return _overfull.get();
-    }
-
-    @Override
-    public State getState()
-    {
-        return _state;
     }
 
     @Override

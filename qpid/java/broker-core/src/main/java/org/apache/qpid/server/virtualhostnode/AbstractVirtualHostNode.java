@@ -76,7 +76,6 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     }
 
     private final Broker<?> _broker;
-    private final AtomicReference<State> _state = new AtomicReference<State>(State.UNINITIALIZED);
     private final EventLogger _eventLogger;
 
     private DurableConfigurationStore _durableConfigurationStore;
@@ -106,12 +105,6 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     }
 
     @Override
-    public State getState()
-    {
-        return _state.get();
-    }
-
-    @Override
     public LifetimePolicy getLifetimePolicy()
     {
         return LifetimePolicy.PERMANENT;
@@ -124,11 +117,11 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         try
         {
             activate();
-            _state.set(State.ACTIVE);
+            setState(State.ACTIVE);
         }
         catch(RuntimeException e)
         {
-            _state.set(State.ERRORED);
+            setState(State.ERRORED);
             if (_broker.isManagementMode())
             {
                 LOGGER.warn("Failed to make " + this + " active.", e);
@@ -187,7 +180,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     @StateTransition( currentState = { State.ACTIVE, State.STOPPED, State.ERRORED}, desiredState = State.DELETED )
     protected void doDelete()
     {
-        _state.set(State.DELETED);
+        setState(State.DELETED);
         deleteVirtualHostIfExists();
         close();
         deleted();
@@ -213,7 +206,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     {
         closeChildren();
         closeConfigurationStore();
-        _state.set(stoppedState);
+        setState(stoppedState);
     }
 
     @Override

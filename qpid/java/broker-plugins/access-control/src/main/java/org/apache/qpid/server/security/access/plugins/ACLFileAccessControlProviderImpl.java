@@ -49,8 +49,6 @@ public class ACLFileAccessControlProviderImpl
     protected DefaultAccessControl _accessControl;
     protected final Broker _broker;
 
-    private AtomicReference<State> _state = new AtomicReference<>(State.UNINITIALIZED);
-
     @ManagedAttributeField
     private String _path;
 
@@ -98,12 +96,6 @@ public class ACLFileAccessControlProviderImpl
     }
 
     @Override
-    public State getState()
-    {
-        return _state.get();
-    }
-
-    @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         return Collections.emptySet();
@@ -116,18 +108,18 @@ public class ACLFileAccessControlProviderImpl
         if(_broker.isManagementMode())
         {
 
-            _state.set(_accessControl.validate() ? State.QUIESCED : State.ERRORED);
+            setState(_accessControl.validate() ? State.QUIESCED : State.ERRORED);
         }
         else
         {
             try
             {
                 _accessControl.open();
-                _state.set(State.ACTIVE);
+                setState(State.ACTIVE);
             }
             catch (RuntimeException e)
             {
-                _state.set(State.ERRORED);
+                setState(State.ERRORED);
                 if (_broker.isManagementMode())
                 {
                     LOGGER.warn("Failed to activate ACL provider: " + getName(), e);
@@ -150,14 +142,14 @@ public class ACLFileAccessControlProviderImpl
     @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.QUIESCED)
     private void startQuiesced()
     {
-        _state.set(State.QUIESCED);
+        setState(State.QUIESCED);
     }
 
     @StateTransition(currentState = {State.ACTIVE, State.QUIESCED, State.ERRORED}, desiredState = State.DELETED)
     private void doDelete()
     {
         close();
-        _state.set(State.DELETED);
+        setState(State.DELETED);
         deleted();
     }
 

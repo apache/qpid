@@ -45,6 +45,7 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
         super(parentsMap(virtualHost,port), createAttributes(virtualHost, port));
         _vhost = virtualHost;
         _port = port;
+        setState(State.ACTIVE);
     }
 
     private static Map<String, Object> createAttributes(final VirtualHost virtualHost, final Port port)
@@ -72,12 +73,6 @@ public class VirtualHostAliasAdapter extends AbstractConfiguredObject<VirtualHos
     public Collection<AuthenticationMethod> getAuthenticationMethods()
     {
         return Collections.emptySet();  // TODO - Implement
-    }
-
-    @Override
-    public State getState()
-    {
-        return State.ACTIVE;  // TODO - Implement
     }
 
     @Override

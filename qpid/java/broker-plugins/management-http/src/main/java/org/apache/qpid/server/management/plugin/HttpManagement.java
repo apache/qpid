@@ -140,7 +140,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         }
 
         getBroker().getEventLogger().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
-        setCurrentState(State.ACTIVE);
+        setState(State.ACTIVE);
     }
 
     @Override

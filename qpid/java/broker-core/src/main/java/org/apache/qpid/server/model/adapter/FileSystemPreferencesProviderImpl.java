@@ -60,7 +60,6 @@ public class FileSystemPreferencesProviderImpl
     private static final Logger LOGGER = Logger.getLogger(FileSystemPreferencesProviderImpl.class);
 
     private final AuthenticationProvider<? extends AuthenticationProvider> _authenticationProvider;
-    private State _state = State.UNINITIALIZED;
 
     private FileSystemPreferencesStore _store;
 
@@ -86,11 +85,11 @@ public class FileSystemPreferencesProviderImpl
             createStoreIfNotExist();
             _store.open();
             _open = true;
-            _state = State.ACTIVE;
+            setState(State.ACTIVE);
         }
         catch( RuntimeException e )
         {
-            _state = State.ERRORED;
+            setState(State.ERRORED);
         }
     }
 
@@ -108,12 +107,6 @@ public class FileSystemPreferencesProviderImpl
     public String getPath()
     {
         return _path;
-    }
-
-    @Override
-    public State getState()
-    {
-        return _state;
     }
 
     @Override
@@ -147,7 +140,7 @@ public class FileSystemPreferencesProviderImpl
         {
             _store.close();
         }
-        _state = State.QUIESCED;
+        setState(State.QUIESCED);
     }
 
     @StateTransition(currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED }, desiredState = State.DELETED )
@@ -162,14 +155,14 @@ public class FileSystemPreferencesProviderImpl
             _authenticationProvider.setPreferencesProvider(null);
 
         }
-        _state = State.DELETED;
+        setState(State.DELETED);
     }
 
     @StateTransition(currentState = { State.QUIESCED, State.ERRORED }, desiredState = State.ACTIVE )
     private void restart()
     {
         _store.open();
-        _state = State.ACTIVE;
+        setState(State.ACTIVE);
     }
 
     @Override
@@ -210,7 +203,7 @@ public class FileSystemPreferencesProviderImpl
         super.changeAttributes(attributes);
 
         // if provider was previously in ERRORED state then set its state to ACTIVE
-        if(_state == State.ERRORED)
+        if(getState() == State.ERRORED)
         {
             onOpen();
         }

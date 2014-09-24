@@ -117,7 +117,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         }
         catch(IllegalConfigurationException e)
         {
-            updateState(getState(), State.ERRORED);
+            setState(State.ERRORED);
 
         }
     }
@@ -378,7 +378,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
             {
                 initialise();
                 // if provider was previously in ERRORED state then set its state to ACTIVE
-                updateState(State.ERRORED, State.ACTIVE);
+                setState(State.ACTIVE);
             }
             catch(RuntimeException e)
             {
@@ -395,8 +395,6 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     private class PrincipalAdapter extends AbstractConfiguredObject<PrincipalAdapter> implements User<PrincipalAdapter>
     {
         private final Principal _user;
-
-        private State _state = State.UNINITIALIZED;
 
         @ManagedAttributeField
         private String _password;
@@ -447,13 +445,6 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
             }
         }
 
-
-        @Override
-        public State getState()
-        {
-            return _state;
-        }
-
         @Override
         public boolean changeAttribute(String name, Object expected, Object desired)
                 throws IllegalStateException, AccessControlException, IllegalArgumentException
@@ -469,7 +460,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
         private void activate()
         {
-            _state = State.ACTIVE;
+            setState(State.ACTIVE);
         }
 
         @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
@@ -485,7 +476,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
                     preferencesProvider.deletePreferences(userName);
                 }
                 deleted();
-                _state = State.DELETED;
+                setState(State.DELETED);
             }
             catch (AccountNotFoundException e)
             {

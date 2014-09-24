@@ -289,6 +289,7 @@ class QueueConsumerImpl
         _target.queueEmpty();
     }
 
+    @Override
     public State getState()
     {
         return STATE_MAP.get(_target.getState());

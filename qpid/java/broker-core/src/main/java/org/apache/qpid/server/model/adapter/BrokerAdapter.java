@@ -99,8 +99,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @ManagedAttributeField
     private String _confidentialConfigurationEncryptionProvider;
 
-    private State _state = State.UNINITIALIZED;
-
     @ManagedObjectFactoryConstructor
     public BrokerAdapter(Map<String, Object> attributes,
                          SystemConfig parent)
@@ -273,7 +271,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             _eventLogger.message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME,
                                                                 _brokerOptions.getManagementModePassword()));
         }
-        _state = State.ACTIVE;
+        setState(State.ACTIVE);
     }
 
     private void initialiseStatisticsReporting()
@@ -498,11 +496,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                                 }
                             });
         return virtualHostNode;
-    }
-
-    public State getState()
-    {
-        return _state;
     }
 
     @Override

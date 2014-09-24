@@ -159,6 +159,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @ManagedAttributeField( afterSet = "attainStateIfResolved" )
     private State _desiredState;
     private boolean _openComplete;
+    private State _state = State.UNINITIALIZED;
 
     protected static Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap(ConfiguredObject<?>... parents)
     {
@@ -839,7 +840,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                     setAttributes(Collections.<String, Object>singletonMap(DESIRED_STATE,
                                                                                            desiredState));
 
-                                    if (setState(desiredState))
+                                    if (getState() == desiredState)
                                     {
                                         notifyStateChanged(state, desiredState);
                                         return desiredState;
@@ -853,12 +854,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                         });
     }
 
-    /**
-     * @return true when the state has been successfully updated to desiredState or false otherwise
-     */
-    protected boolean setState(State desiredState)
+    @Override
+    public State getState()
     {
-        return getState() == desiredState;
+        return _state;
+    }
+
+    protected void setState(State state)
+    {
+        _state = state;
     }
 
 

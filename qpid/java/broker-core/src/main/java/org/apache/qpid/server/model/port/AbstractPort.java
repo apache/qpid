@@ -118,7 +118,6 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     }
 
     private final Broker<?> _broker;
-    private State _state = State.UNINITIALIZED;
 
     @ManagedAttributeField
     private int _port;
@@ -299,13 +298,6 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     }
 
     @Override
-    public State getState()
-    {
-        return _state;
-    }
-
-
-    @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         if(clazz == Connection.class)
@@ -332,7 +324,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     private void doDelete()
     {
         close();
-        _state = State.DELETED;
+        setState(State.DELETED);
     }
 
     @StateTransition( currentState = {State.UNINITIALIZED, State.QUIESCED}, desiredState = State.ACTIVE )
@@ -340,11 +332,11 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     {
         try
         {
-            _state = onActivate();
+            setState(onActivate());
         }
         catch (RuntimeException e)
         {
-            _state = State.ERRORED;
+            setState(State.ERRORED);
             LOGGER.error("Unable to active port '" + getName() + "'of type " + getType() + " on port " + getPort(),
                          e);
         }
@@ -353,7 +345,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.QUIESCED)
     private void startQuiesced()
     {
-        _state = State.QUIESCED;
+        setState(State.QUIESCED);
     }
 
 

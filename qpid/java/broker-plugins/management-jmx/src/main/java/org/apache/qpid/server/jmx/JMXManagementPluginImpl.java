@@ -172,7 +172,7 @@ public class JMXManagementPluginImpl
             new LoggingManagementMBean(LoggingManagementFacade.getCurrentInstance(), _objectRegistry);
         }
         _objectRegistry.start();
-        setCurrentState(State.ACTIVE);
+        setState(State.ACTIVE);
         _allowPortActivation = false;
     }
 

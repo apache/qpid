@@ -61,7 +61,6 @@ public class FileBasedGroupProviderImpl
     private static Logger LOGGER = Logger.getLogger(FileBasedGroupProviderImpl.class);
 
     private final Broker<?> _broker;
-    private AtomicReference<State> _state;
 
     private FileGroupDatabase _groupDatabase;
 
@@ -76,9 +75,6 @@ public class FileBasedGroupProviderImpl
 
 
         _broker = broker;
-
-        State state = MapValueConverter.getEnumAttribute(State.class, STATE, attributes, State.UNINITIALIZED);
-        _state = new AtomicReference<State>(state);
     }
 
     public void onValidate()
@@ -202,13 +198,6 @@ public class FileBasedGroupProviderImpl
     }
 
     @Override
-    public State getState()
-    {
-        return _state.get();
-    }
-
-
-    @Override
     public Object getAttribute(String name)
     {
         if (STATE.equals(name))
@@ -277,11 +266,11 @@ public class FileBasedGroupProviderImpl
         try
         {
             _groupDatabase.setGroupFile(getPath());
-            _state.set(State.ACTIVE);
+            setState(State.ACTIVE);
         }
         catch(IOException | RuntimeException e)
         {
-            _state.set(State.ERRORED);
+            setState(State.ERRORED);
             if (_broker.isManagementMode())
             {
                 LOGGER.warn("Failed to activate group provider: " + getName(), e);
@@ -302,13 +291,13 @@ public class FileBasedGroupProviderImpl
         }
 
         deleted();
-        _state.set(State.DELETED);
+        setState(State.DELETED);
     }
 
     @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.QUIESCED)
     private void startQuiesced()
     {
-        _state.set(State.QUIESCED);
+        setState(State.QUIESCED);
     }
 
     public Set<Principal> getGroupPrincipalsForUser(String username)
@@ -364,20 +353,11 @@ public class FileBasedGroupProviderImpl
 
     private class GroupAdapter extends AbstractConfiguredObject<GroupAdapter> implements Group<GroupAdapter>
     {
-        private State _state = State.UNINITIALIZED;
 
         public GroupAdapter(Map<String, Object> attributes)
         {
             super(parentsMap(FileBasedGroupProviderImpl.this), attributes);
         }
-
-
-        @Override
-        public State getState()
-        {
-            return _state;
-        }
-
 
         @Override
         public void onValidate()
@@ -392,7 +372,7 @@ public class FileBasedGroupProviderImpl
         @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.ACTIVE )
         private void activate()
         {
-            _state = State.ACTIVE;
+            setState(State.ACTIVE);
         }
 
         @Override
@@ -476,14 +456,12 @@ public class FileBasedGroupProviderImpl
             getSecurityManager().authoriseGroupOperation(Operation.DELETE, getName());
             _groupDatabase.removeGroup(getName());
             deleted();
-            _state = State.DELETED;
+            setState(State.DELETED);
         }
 
         private class GroupMemberAdapter extends AbstractConfiguredObject<GroupMemberAdapter> implements
                 GroupMember<GroupMemberAdapter>
         {
-
-            private State _state = State.UNINITIALIZED;
 
             public GroupMemberAdapter(Map<String, Object> attrMap)
             {
@@ -513,12 +491,6 @@ public class FileBasedGroupProviderImpl
             }
 
             @Override
-            public State getState()
-            {
-                return _state;
-            }
-
-            @Override
             public <C extends ConfiguredObject> Collection<C> getChildren(
                     Class<C> clazz)
             {
@@ -528,7 +500,7 @@ public class FileBasedGroupProviderImpl
             @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
             private void activate()
             {
-                _state = State.ACTIVE;
+                setState(State.ACTIVE);
             }
 
             @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
@@ -538,7 +510,7 @@ public class FileBasedGroupProviderImpl
 
                 _groupDatabase.removeUserFromGroup(getName(), GroupAdapter.this.getName());
                 deleted();
-                _state = State.DELETED;
+                setState(State.DELETED);
             }
 
         }

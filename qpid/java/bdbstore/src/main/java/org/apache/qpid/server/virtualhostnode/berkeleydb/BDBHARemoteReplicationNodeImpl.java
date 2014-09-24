@@ -60,7 +60,6 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
     @ManagedAttributeField(afterSet="afterSetRole")
     private volatile NodeRole _role;
 
-    private final AtomicReference<State> _state;
     private final boolean _isMonitor;
     private BDBHAVirtualHostNodeLogSubject _virtualHostNodeLogSubject;
     private GroupLogSubject _groupLogSubject;
@@ -72,18 +71,12 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
         _broker = virtualHostNode.getParent(Broker.class);
         _address = (String)attributes.get(ADDRESS);
         _replicatedEnvironmentFacade = replicatedEnvironmentFacade;
-        _state = new AtomicReference<>(State.ACTIVE);
+        setState(State.ACTIVE);
 
         _role = NodeRole.UNREACHABLE;
         _lastKnownRole = NodeRole.UNREACHABLE;
 
         _isMonitor = (Boolean)attributes.get(MONITOR);
-    }
-
-    @Override
-    public State getState()
-    {
-        return _state.get();
     }
 
     @Override
@@ -166,7 +159,7 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
         try
         {
             _replicatedEnvironmentFacade.removeNodeFromGroup(nodeName);
-            _state.set(State.DELETED);
+            setState(State.DELETED);
             deleted();
         }
         catch(MasterStateException e)
@@ -243,14 +236,14 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
 
     private void updateModelStateFromRole(NodeRole role)
     {
-        State currentState = _state.get();
+        State currentState = getState();
         if (currentState == State.DELETED)
         {
             return;
         }
 
         boolean isActive = NodeRole.MASTER == role || NodeRole.REPLICA == role;
-        _state.compareAndSet(currentState, isActive ? State.ACTIVE : State.UNAVAILABLE);
+        setState(isActive ? State.ACTIVE : State.UNAVAILABLE);
     }
 
     @Override
