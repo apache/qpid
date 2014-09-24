@@ -157,7 +157,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         /**
          * Parameter decreased as the 10 h default may cause user confusion.
          */
-        put(ReplicationConfig.ENV_SETUP_TIMEOUT, "15 min");
+        put(ReplicationConfig.ENV_SETUP_TIMEOUT, "180 s");
         /**
          * Parameter changed from default (off) to allow the Environment to start in the
          * UNKNOWN state when the majority is not available.
@@ -306,7 +306,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                     LOGGER.debug("Closing replicated environment facade for " + _prettyGroupNodeName + " current state is " + _state.get());
                 }
 
-                long timeout = Math.min(_executorShutdownTimeout, _envSetupTimeoutMillis);
+                long timeout = Math.max(_executorShutdownTimeout, _envSetupTimeoutMillis);
                 shutdownAndAwaitExecutorService(_environmentJobExecutor,
                                                 timeout,
                                                 TimeUnit.MILLISECONDS);
@@ -407,23 +407,32 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 @Override
                 public void run()
                 {
-                    for (int i = 0; i < _environmentRestartRetryLimit; i++)
+                    int attemptNumber = 1;
+                    boolean restarted = false;
+                    while(_state.get() == State.RESTARTING && attemptNumber <= _environmentRestartRetryLimit)
                     {
                         try
                         {
                             restartEnvironment();
+                            restarted = true;
                             break;
                         }
                         catch(EnvironmentFailureException e)
                         {
-                            // log exception and try again
-                            LOGGER.warn("Unexpected failure on environment restart. Restart iteration: " + i, e);
+                            LOGGER.warn("Failure whilst trying to restart environment (attempt number "
+                                    + attemptNumber + " of " + _environmentRestartRetryLimit + ")", e);
                         }
                         catch (Exception e)
                         {
-                            LOGGER.error("Exception on environment restart", e);
+                            LOGGER.error("Fatal failure whilst trying to restart environment", e);
                             break;
                         }
+                        attemptNumber++;
+                    }
+
+                    if (!restarted)
+                    {
+                        LOGGER.warn("Failed to restart environment.");
                     }
                 }
             });
@@ -565,8 +574,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             if (LOGGER.isDebugEnabled())
             {
-                LOGGER.debug("Ignoring the state environment change event as the environment facade for node '" + _prettyGroupNodeName
-                        + "' is in state " + _state.get());
+                LOGGER.debug("Ignoring the state environment change event as the environment facade for node '"
+                             + _prettyGroupNodeName
+                             + "' is in state "
+                             + _state.get());
             }
         }
     }
@@ -1106,10 +1117,29 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 return createEnvironment(environmentPathFile, envConfig, replicationConfig);
             }});
 
-        long setUpTimeOutMillis = extractEnvSetupTimeoutMillis(replicationConfig);
+        final long setUpTimeOutMillis = extractEnvSetupTimeoutMillis(replicationConfig);
+        final long initialTimeOutMillis = Math.max(setUpTimeOutMillis / 4, 1000);
+        final long remainingTimeOutMillis = setUpTimeOutMillis - initialTimeOutMillis;
         try
         {
-            return environmentFuture.get(setUpTimeOutMillis, TimeUnit.MILLISECONDS);
+            try
+            {
+                return environmentFuture.get(initialTimeOutMillis, TimeUnit.MILLISECONDS);
+            }
+            catch (TimeoutException te)
+            {
+                if (remainingTimeOutMillis > 0)
+                {
+                    LOGGER.warn("Slow replicated environment creation for " + _prettyGroupNodeName
+                                + ". Will continue to wait for further " + remainingTimeOutMillis
+                                + "ms. for environment creation to complete.");
+                    return environmentFuture.get(remainingTimeOutMillis, TimeUnit.MILLISECONDS);
+                }
+                else
+                {
+                    throw te;
+                }
+            }
         }
         catch (InterruptedException e)
         {
