@@ -86,17 +86,6 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
         validateKeyStoreAttributes(this);
     }
 
-    @Override
-    public Object getAttribute(String name)
-    {
-        if(KeyStore.STATE.equals(name))
-        {
-            return getState();
-        }
-
-        return super.getAttribute(name);
-    }
-
     @StateTransition(currentState = {State.ACTIVE, State.ERRORED}, desiredState = State.DELETED)
     protected void doDelete()
     {

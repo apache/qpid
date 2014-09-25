@@ -1032,17 +1032,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         txn.commit();
     }
 
-
-    @Override
-    public Object getAttribute(String name)
-    {
-        if(STATE.equals(name))
-        {
-            return getState();
-        }
-        return super.getAttribute(name);
-    }
-
     @Override
     public Collection<String> getSupportedExchangeTypes()
     {

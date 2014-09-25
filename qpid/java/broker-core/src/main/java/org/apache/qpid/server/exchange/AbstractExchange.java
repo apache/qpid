@@ -895,16 +895,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     }
 
     @Override
-    public Object getAttribute(final String name)
-    {
-        if(ConfiguredObject.STATE.equals(name))
-        {
-            return getState();
-        }
-        return super.getAttribute(name);
-    }
-
-    @Override
     protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
     {
         _virtualHost.getSecurityManager().authoriseUpdate(this);

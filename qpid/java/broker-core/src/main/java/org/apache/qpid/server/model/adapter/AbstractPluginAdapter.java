@@ -71,16 +71,6 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
     }
 
     @Override
-    public Object getAttribute(String name)
-    {
-        if (STATE.equals(name))
-        {
-            return getState();
-        }
-        return super.getAttribute(name);
-    }
-
-    @Override
     protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
     {
         if(desiredState == State.DELETED)

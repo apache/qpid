@@ -573,17 +573,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         return new ArrayList<String>(_arguments.keySet());
     }
 
-    @Override
-    public Object getAttribute(String name)
-    {
-        if(STATE.equals(name))
-        {
-            return State.ACTIVE; // TODO
-        }
-
-        return super.getAttribute(name);
-    }
-
     public String getOwner()
     {
         if(_exclusiveOwner != null)
