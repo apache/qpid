@@ -90,7 +90,7 @@ class EchoTests(TestBase):
         # the content in order to send it to us.
         consuming_client = qpid.client.Client(self.config.broker.host, self.config.broker.port)
         tune_params = { "channel_max" : 256, "frame_max" : 4096 }
-        consuming_client.start("\x00" + self.config.broker.user + "\x00" + self.config.broker.password, mechanism="PLAIN", tune_params = tune_params)
+        consuming_client.start(username = self.config.broker.user, password = self.config.broker.password, tune_params = tune_params)
 
         consuming_channel = consuming_client.channel(1)
         consuming_channel.channel_open()

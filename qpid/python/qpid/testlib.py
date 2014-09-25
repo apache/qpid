@@ -84,10 +84,7 @@ class TestBase(unittest.TestCase):
         password = password or self.config.broker.password or "guest"
         client = qpid.client.Client(host, port)
         try:
-            if client.spec.major == 8 and client.spec.minor == 0:
-                client.start({"LOGIN": user, "PASSWORD": password}, tune_params=tune_params, client_properties=client_properties)
-            else:
-                client.start("\x00" + user + "\x00" + password, mechanism="PLAIN", tune_params=tune_params, client_properties=client_properties)
+          client.start(username = user, password=password, tune_params=tune_params, client_properties=client_properties)
         except qpid.client.Closed, e:
             if isinstance(e.args[0], VersionError):
                 raise Skipped(e.args[0])

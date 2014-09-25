@@ -30,6 +30,8 @@ from connection08 import Connection, Frame, connect
 from spec08 import load
 from queue import Queue
 from reference import ReferenceId, References
+from saslmech.finder import get_sasl_mechanism
+from saslmech.sasl import SaslException
 
 
 class Client:
@@ -48,6 +50,7 @@ class Client:
     self.mechanism = None
     self.response = None
     self.locale = None
+    self.sasl = None
 
     self.vhost = vhost
     if self.vhost == None:
@@ -77,12 +80,17 @@ class Client:
       self.lock.release()
     return q
 
-  def start(self, response, mechanism="AMQPLAIN", locale="en_US", tune_params=None, client_properties=None, connection_options=None):
+  def start(self, response=None, mechanism=None, locale="en_US", tune_params=None,
+            username=None, password=None,
+            client_properties=None, connection_options=None, sasl_options = None):
     self.mechanism = mechanism
     self.response = response
+    self.username = username
+    self.password = password
     self.locale = locale
     self.tune_params = tune_params
     self.client_properties=get_client_properties_with_defaults(provided_client_properties=client_properties)
+    self.sasl_options = sasl_options
     self.socket = connect(self.host, self.port, connection_options)
     self.conn = Connection(self.socket, self.spec)
     self.peer = Peer(self.conn, ClientDelegate(self), Session)
@@ -127,10 +135,31 @@ class ClientDelegate(Delegate):
     self.client = client
 
   def connection_start(self, ch, msg):
+
+    if self.client.mechanism is None:
+      if self.client.response is not None:
+        # Supports users passing the response argument alon
+        self.client.mechanism = "AMQPLAIN"
+      else:
+        supportedMechs = msg.frame.args[3].split()
+
+        self.client.sasl = get_sasl_mechanism(supportedMechs, self.client.username, self.client.password, sasl_options=self.client.sasl_options)
+
+        if self.client.sasl == None:
+          raise SaslException("sasl negotiation failed: no mechanism agreed.  Server supports: %s " % supportedMechs)
+
+        self.client.mechanism = self.client.sasl.mechanismName()
+
+    if self.client.response is None:
+      self.client.response = self.client.sasl.initialResponse()
+
     msg.start_ok(mechanism=self.client.mechanism,
-                 response=self.client.response,
+                 response=self.client.response or "",
                  locale=self.client.locale,
                  client_properties=self.client.client_properties)
+
+  def connection_secure(self, ch, msg):
+    msg.secure_ok(response=self.client.sasl.response(msg.challenge))
 
   def connection_tune(self, ch, msg):
     if self.client.tune_params:
