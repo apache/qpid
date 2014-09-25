@@ -82,6 +82,16 @@ public class ConnectionManagementTest extends QpidBrokerTestCase
         assertEquals("Expected one managed connection", 1, getManagedConnections().size());
 
         _connection.close();
+
+        // On the 0-10 path, the connection close ok is sent *before* the model is updated, so we need poll
+        // to reliable detect the state change.
+        int counter = 0;
+        while(getManagedConnections().size() > 0 && counter < 50)
+        {
+            sleep();
+            counter++;
+        }
+
         assertEquals("Expected no managed connections after client connection closed", 0, getManagedConnections().size());
     }
 
