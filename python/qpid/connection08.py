@@ -23,7 +23,7 @@ to read and write Frame objects. This could be used by a client,
 server, or even a proxy implementation.
 """
 
-import socket, codec, logging, qpid
+import socket, codec, errno, qpid
 from cStringIO import StringIO
 from codec import EOF
 from compat import SHUT_RDWR
@@ -60,8 +60,15 @@ class SockIO:
     pass
 
   def close(self):
-    self.sock.shutdown(SHUT_RDWR)
-    self.sock.close()
+    try:
+      self.sock.shutdown(SHUT_RDWR)
+    except socket.error, e:
+      if (e.errno == errno.ENOTCONN):
+        pass
+      else:
+        raise
+    finally:
+      self.sock.close()
 
 def connect(host, port, options = None):
   sock = socket.socket()
