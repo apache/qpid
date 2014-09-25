@@ -38,6 +38,7 @@ import qpid.tests.connection
 import qpid.tests.spec010
 import qpid.tests.codec010
 import qpid.tests.util
+import qpid.tests.saslmech.finder
 
 class TestTestsXXX(Test):
 
