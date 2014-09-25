@@ -310,16 +310,6 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         }
     }
 
-    @Override
-    public Object getAttribute(String name)
-    {
-        if(STATE.equals(name))
-        {
-            return getState();
-        }
-        return super.getAttribute(name);
-    }
-
     @StateTransition(currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED}, desiredState = State.DELETED )
     private void doDelete()
     {

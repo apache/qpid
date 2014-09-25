@@ -31,7 +31,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 
@@ -51,7 +50,6 @@ import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.group.FileGroupDatabase;
 import org.apache.qpid.server.security.group.GroupPrincipal;
-import org.apache.qpid.server.util.MapValueConverter;
 
 public class FileBasedGroupProviderImpl
         extends AbstractConfiguredObject<FileBasedGroupProviderImpl> implements FileBasedGroupProvider<FileBasedGroupProviderImpl>
@@ -195,17 +193,6 @@ public class FileBasedGroupProviderImpl
     public String getPath()
     {
         return _path;
-    }
-
-    @Override
-    public Object getAttribute(String name)
-    {
-        if (STATE.equals(name))
-        {
-            return getState();
-        }
-
-        return super.getAttribute(name);
     }
 
     @Override

@@ -140,12 +140,6 @@ class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements U
     }
 
     @Override
-    public Object getAttribute(final String name)
-    {
-        return super.getAttribute(name);
-    }
-
-    @Override
     public String getPassword()
     {
         return _password;

@@ -231,16 +231,6 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     }
 
     @Override
-    public Object getAttribute(final String name)
-    {
-        if(STATE.equals(name))
-        {
-            return getState();
-        }
-        return super.getAttribute(name);
-    }
-
-    @Override
     public final List<String> getSecureOnlyMechanisms()
     {
         return _secureOnlyMechanisms;

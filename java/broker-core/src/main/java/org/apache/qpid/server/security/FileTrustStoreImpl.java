@@ -203,16 +203,6 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     }
 
     @Override
-    public Object getAttribute(String name)
-    {
-        if(STATE.equals(name))
-        {
-            return getState();
-        }
-
-        return super.getAttribute(name);
-    }
-    @Override
     public String getPath()
     {
         return _path;

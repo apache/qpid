@@ -109,16 +109,6 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
     }
 
     @Override
-    public Object getAttribute(String name)
-    {
-        if(name.equals(PRODUCER_FLOW_BLOCKED))
-        {
-            return _session.getBlocking();
-        }
-        return super.getAttribute(name);    //TODO - Implement
-    }
-
-    @Override
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         if(clazz == org.apache.qpid.server.model.Consumer.class)

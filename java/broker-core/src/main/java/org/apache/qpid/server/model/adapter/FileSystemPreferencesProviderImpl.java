@@ -115,16 +115,6 @@ public class FileSystemPreferencesProviderImpl
         return Collections.emptySet();
     }
 
-    @Override
-    public Object getAttribute(String name)
-    {
-        if (STATE.equals(name))
-        {
-            return getState();
-        }
-        return super.getAttribute(name);
-    }
-
     protected void onClose()
     {
         if(_store != null)

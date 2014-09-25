@@ -159,7 +159,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @ManagedAttributeField( afterSet = "attainStateIfResolved" )
     private State _desiredState;
     private boolean _openComplete;
-    private State _state = State.UNINITIALIZED;
+    private volatile State _state = State.UNINITIALIZED;
 
     protected static Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap(ConfiguredObject<?>... parents)
     {
@@ -953,7 +953,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
     @Override
-    public Object getAttribute(String name)
+    public final Object getAttribute(String name)
     {
         ConfiguredObjectAttribute<X,?> attr = (ConfiguredObjectAttribute<X, ?>) _attributeTypes.get(name);
         if(attr != null && (attr.isAutomated() || attr.isDerived()))

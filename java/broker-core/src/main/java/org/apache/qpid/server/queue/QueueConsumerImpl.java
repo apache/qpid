@@ -514,12 +514,6 @@ class QueueConsumerImpl
     }
 
     @Override
-    public Object getAttribute(final String name)
-    {
-        return super.getAttribute(name);
-    }
-
-    @Override
     public String toLogString()
     {
         String logString;
