@@ -194,6 +194,9 @@
         <arg name="targetQueue" dir="I" type="sstr"   desc="Redirect target queue. Blank disables redirect."/>
     </method>
 
+    <method name="shutdown" desc="Shutdown the broker">
+    </method>
+
   </class>
 
   <!--

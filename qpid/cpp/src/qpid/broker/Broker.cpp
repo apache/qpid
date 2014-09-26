@@ -689,6 +689,11 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         status =  queueRedirect(srcQueue, tgtQueue, getCurrentPublisher());
         break;
     }
+    case _qmf::Broker::METHOD_SHUTDOWN :
+    {
+        QPID_LOG (info, "Broker received shutdown command");
+        shutdown();
+    }
     default:
         QPID_LOG (debug, "Broker ManagementMethod not implemented: id=" << methodId << "]");
         status = Manageable::STATUS_NOT_IMPLEMENTED;
@@ -1288,7 +1293,6 @@ void Broker::queueRedirectDestroy(Queue::shared_ptr srcQ,
         managementAgent->raiseEvent(_qmf::EventQueueRedirectCancelled(srcQ->getName(), tgtQ->getName()));
     }
 }
-
 
 const Broker::TransportInfo& Broker::getTransportInfo(const std::string& name) const {
     static TransportInfo nullTransportInfo;
