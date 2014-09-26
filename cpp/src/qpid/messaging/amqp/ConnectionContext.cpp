@@ -72,6 +72,29 @@ void set_tracer(pn_transport_t*, void*)
 {
 }
 #endif
+
+#ifdef USE_PROTON_TRANSPORT_CONDITION
+std::string get_error(pn_connection_t* connection, pn_transport_t* transport)
+{
+    std::stringstream text;
+    pn_error_t* cerror = pn_connection_error(connection);
+    if (cerror) text << "connection error " << pn_error_text(cerror) << " [" << cerror << "]";
+    pn_condition_t* tcondition = pn_transport_condition(transport);
+    if (pn_condition_is_set(tcondition)) text << "transport error: " << pn_condition_get_name(tcondition) << ", " << pn_condition_get_description(tcondition);
+    return text.str();
+}
+#else
+std::string get_error(pn_connection_t* connection, pn_transport_t* transport)
+{
+    std::stringstream text;
+    pn_error_t* cerror = pn_connection_error(connection);
+    if (cerror) text << "connection error " << pn_error_text(cerror) << " [" << cerror << "]";
+    pn_error_t* terror = pn_transport_error(transport);
+    if (terror) text << "transport error " << pn_error_text(terror) << " [" << terror << "]";
+    return text.str();
+}
+#endif
+
 }
 
 void ConnectionContext::trace(const char* message) const
@@ -805,12 +828,7 @@ qpid::framing::ProtocolVersion AMQP_1_0_PLAIN(1,0,qpid::framing::ProtocolVersion
 
 std::string ConnectionContext::getError()
 {
-    std::stringstream text;
-    pn_error_t* cerror = pn_connection_error(connection);
-    if (cerror) text << "connection error " << pn_error_text(cerror);
-    pn_error_t* terror = pn_transport_error(engine);
-    if (terror) text << "transport error " << pn_error_text(terror);
-    return text.str();
+    return get_error(connection, engine);
 }
 
 framing::ProtocolVersion ConnectionContext::getVersion() const
