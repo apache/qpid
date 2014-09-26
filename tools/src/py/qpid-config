@@ -28,7 +28,7 @@ import locale
 home = os.environ.get("QPID_TOOLS_HOME", os.path.normpath("/usr/share/qpid-tools"))
 sys.path.append(os.path.join(home, "python"))
 
-from qpid.messaging import Connection
+from qpid.messaging import Connection, ConnectionError
 from qpidtoollibs import BrokerAgent
 from qpidtoollibs import Display, Header
 
@@ -47,7 +47,8 @@ Usage:  qpid-config [OPTIONS]
         qpid-config [OPTIONS] reload-acl
         qpid-config [OPTIONS] add <type> <name> [--argument <property-name>=<property-value>]
         qpid-config [OPTIONS] del <type> <name>
-        qpid-config [OPTIONS] list <type> [--show-property <property-name>]"""
+        qpid-config [OPTIONS] list <type> [--show-property <property-name>]
+        qpid-config [OPTIONS] shutdown"""
 
 description = """
 Examples:
@@ -813,7 +814,12 @@ def main(argv=None):
                 headers = [Header(a) for a in desired]
                 rows = [tuple([_clean_ref(o.get(a, "n/a")) for a in desired]) for o in objects]
                 display.formattedTable("Objects of type '%s'" % modifier, headers, rows)
-
+            elif cmd == "shutdown":
+                try:
+                    bm.broker._method("shutdown", {})
+                except ConnectionError:
+                    pass        # Normal, the broker has been shut down!
+                bm.conn = None  # Don't try to close again
             else:
                 Usage()
     except KeyboardInterrupt:
@@ -846,5 +852,5 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-        sys.exit(main())
+    sys.exit(main())
 
