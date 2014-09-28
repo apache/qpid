@@ -34,7 +34,7 @@ import java.io.IOException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQException;
 
-public class ConnectionRedirectBodyImpl extends AMQMethodBody_8_0 implements ConnectionRedirectBody
+public class ConnectionRedirectBodyImpl extends AMQMethodBodyImpl implements ConnectionRedirectBody
 {
     private static final AMQMethodBodyInstanceFactory FACTORY_INSTANCE = new AMQMethodBodyInstanceFactory()
     {

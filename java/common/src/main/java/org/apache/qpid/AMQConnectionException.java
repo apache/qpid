@@ -22,6 +22,7 @@
 package org.apache.qpid;
 
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolVersion;
@@ -35,32 +36,36 @@ public class AMQConnectionException extends AMQException
     private final int _classId;
     private final int _methodId;
 
-    /** AMQP version for which exception ocurred, major code. */
-    private final byte major;
-
-    /** AMQP version for which exception ocurred, minor code. */
-    private final byte minor;
-
-    private boolean _closeConnetion;
+    private final MethodRegistry _methodRegistry;
 
     public AMQConnectionException(AMQConstant errorCode, String msg, int classId, int methodId, byte major, byte minor,
         Throwable cause)
     {
+        this(errorCode, msg, classId, methodId, MethodRegistry.getMethodRegistry(new ProtocolVersion(major,minor)), cause);
+    }
+
+    public AMQConnectionException(AMQConstant errorCode, String msg, AMQMethodBody body, MethodRegistry methodRegistry)
+    {
+        this(errorCode, msg, body.getClazz(), body.getMethod(), methodRegistry, null);
+    }
+
+    public AMQConnectionException(AMQConstant errorCode, String msg, int classId, int methodId, MethodRegistry methodRegistry,
+                                  Throwable cause)
+    {
         super(errorCode, msg, cause);
         _classId = classId;
         _methodId = methodId;
-        this.major = major;
-        this.minor = minor;
+        _methodRegistry = methodRegistry;
+
     }
 
-    public AMQFrame getCloseFrame(int channel)
+    public AMQFrame getCloseFrame()
     {
-        MethodRegistry reg = MethodRegistry.getMethodRegistry(new ProtocolVersion(major,minor));
         return new AMQFrame(0,
-                            reg.createConnectionCloseBody(getErrorCode().getCode(),
-                                    AMQShortString.validValueOf(getMessage()),
-                                                          _classId,
-                                                          _methodId));
+                            _methodRegistry.createConnectionCloseBody(getErrorCode().getCode(),
+                                                                      AMQShortString.validValueOf(getMessage()),
+                                                                      _classId,
+                                                                      _methodId));
 
     }
 

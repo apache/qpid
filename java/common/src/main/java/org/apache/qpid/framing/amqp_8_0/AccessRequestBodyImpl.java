@@ -27,14 +27,20 @@
 
 package org.apache.qpid.framing.amqp_8_0;
 
-import org.apache.qpid.codec.MarkableDataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.codec.MarkableDataInput;
+import org.apache.qpid.framing.AMQFrameDecodingException;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
+import org.apache.qpid.framing.AMQMethodBodyInstanceFactory;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.AccessRequestBody;
+import org.apache.qpid.framing.MethodDispatcher;
 
-public class AccessRequestBodyImpl extends AMQMethodBody_8_0 implements AccessRequestBody
+public class AccessRequestBodyImpl extends AMQMethodBodyImpl implements AccessRequestBody
 {
     private static final AMQMethodBodyInstanceFactory FACTORY_INSTANCE = new AMQMethodBodyInstanceFactory()
     {

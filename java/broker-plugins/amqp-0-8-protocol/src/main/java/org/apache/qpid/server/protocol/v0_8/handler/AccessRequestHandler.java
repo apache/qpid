@@ -30,7 +30,6 @@ import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 
 /**
@@ -52,16 +51,17 @@ public class AccessRequestHandler implements StateAwareMethodListener<AccessRequ
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AccessRequestBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               AccessRequestBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
-        final AMQChannel channel = session.getChannel(channelId);
+        final AMQChannel channel = connection.getChannel(channelId);
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
 
-        MethodRegistry methodRegistry = session.getMethodRegistry();
+        MethodRegistry methodRegistry = connection.getMethodRegistry();
 
         // We don't implement access control class, but to keep clients happy that expect it
         // always use the "0" ticket.
@@ -80,6 +80,6 @@ public class AccessRequestHandler implements StateAwareMethodListener<AccessRequ
         }
 
         channel.sync();
-        session.writeFrame(response.generateFrame(channelId));
+        connection.writeFrame(response.generateFrame(channelId));
     }
 }

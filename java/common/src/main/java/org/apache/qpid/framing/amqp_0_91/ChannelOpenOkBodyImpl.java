@@ -34,7 +34,7 @@ import java.io.IOException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQException;
 
-public class ChannelOpenOkBodyImpl extends AMQMethodBody_0_91 implements ChannelOpenOkBody
+public class ChannelOpenOkBodyImpl extends AMQMethodBodyImpl implements ChannelOpenOkBody
 {
     private static final AMQMethodBodyInstanceFactory FACTORY_INSTANCE = new AMQMethodBodyInstanceFactory()
     {

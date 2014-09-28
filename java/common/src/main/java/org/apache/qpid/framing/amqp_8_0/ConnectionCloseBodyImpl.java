@@ -34,7 +34,7 @@ import java.io.IOException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQException;
 
-public class ConnectionCloseBodyImpl extends AMQMethodBody_8_0 implements ConnectionCloseBody
+public class ConnectionCloseBodyImpl extends AMQMethodBodyImpl implements ConnectionCloseBody
 {
     private static final AMQMethodBodyInstanceFactory FACTORY_INSTANCE = new AMQMethodBodyInstanceFactory()
     {

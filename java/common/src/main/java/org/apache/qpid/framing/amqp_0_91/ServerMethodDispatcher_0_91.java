@@ -34,36 +34,7 @@ import org.apache.qpid.framing.*;
 public interface ServerMethodDispatcher_0_91 extends ServerMethodDispatcher
 {
 
-    public boolean dispatchBasicAck(BasicAckBody body, int channelId) throws AMQException;
-    public boolean dispatchBasicCancel(BasicCancelBody body, int channelId) throws AMQException;
-    public boolean dispatchBasicConsume(BasicConsumeBody body, int channelId) throws AMQException;
-    public boolean dispatchBasicGet(BasicGetBody body, int channelId) throws AMQException;
-    public boolean dispatchBasicPublish(BasicPublishBody body, int channelId) throws AMQException;
-    public boolean dispatchBasicQos(BasicQosBody body, int channelId) throws AMQException;
-    public boolean dispatchBasicRecover(BasicRecoverBody body, int channelId) throws AMQException;
     public boolean dispatchBasicRecoverSync(BasicRecoverSyncBody body, int channelId) throws AMQException;
-    public boolean dispatchBasicReject(BasicRejectBody body, int channelId) throws AMQException;
-    public boolean dispatchChannelClose(ChannelCloseBody body, int channelId) throws AMQException;
-    public boolean dispatchChannelCloseOk(ChannelCloseOkBody body, int channelId) throws AMQException;
-    public boolean dispatchChannelFlow(ChannelFlowBody body, int channelId) throws AMQException;
-    public boolean dispatchChannelFlowOk(ChannelFlowOkBody body, int channelId) throws AMQException;
-    public boolean dispatchChannelOpen(ChannelOpenBody body, int channelId) throws AMQException;
-    public boolean dispatchConnectionClose(ConnectionCloseBody body, int channelId) throws AMQException;
-    public boolean dispatchConnectionCloseOk(ConnectionCloseOkBody body, int channelId) throws AMQException;
-    public boolean dispatchConnectionOpen(ConnectionOpenBody body, int channelId) throws AMQException;
-    public boolean dispatchConnectionSecureOk(ConnectionSecureOkBody body, int channelId) throws AMQException;
-    public boolean dispatchConnectionStartOk(ConnectionStartOkBody body, int channelId) throws AMQException;
-    public boolean dispatchConnectionTuneOk(ConnectionTuneOkBody body, int channelId) throws AMQException;
-    public boolean dispatchExchangeBound(ExchangeBoundBody body, int channelId) throws AMQException;
-    public boolean dispatchExchangeDeclare(ExchangeDeclareBody body, int channelId) throws AMQException;
-    public boolean dispatchExchangeDelete(ExchangeDeleteBody body, int channelId) throws AMQException;
-    public boolean dispatchQueueBind(QueueBindBody body, int channelId) throws AMQException;
-    public boolean dispatchQueueDeclare(QueueDeclareBody body, int channelId) throws AMQException;
-    public boolean dispatchQueueDelete(QueueDeleteBody body, int channelId) throws AMQException;
-    public boolean dispatchQueuePurge(QueuePurgeBody body, int channelId) throws AMQException;
     public boolean dispatchQueueUnbind(QueueUnbindBody body, int channelId) throws AMQException;
-    public boolean dispatchTxCommit(TxCommitBody body, int channelId) throws AMQException;
-    public boolean dispatchTxRollback(TxRollbackBody body, int channelId) throws AMQException;
-    public boolean dispatchTxSelect(TxSelectBody body, int channelId) throws AMQException;
 
 }

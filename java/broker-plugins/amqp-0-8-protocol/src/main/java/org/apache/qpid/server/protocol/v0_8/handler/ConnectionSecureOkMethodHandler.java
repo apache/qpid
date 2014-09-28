@@ -36,7 +36,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
@@ -56,19 +55,20 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, ConnectionSecureOkBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               ConnectionSecureOkBody body,
+                               int channelId) throws AMQException
     {
-        Broker<?> broker = stateManager.getBroker();
-        AMQProtocolSession session = stateManager.getProtocolSession();
+        Broker<?> broker = connection.getBroker();
 
-        SubjectCreator subjectCreator = stateManager.getSubjectCreator();
+        SubjectCreator subjectCreator = connection.getSubjectCreator();
 
-        SaslServer ss = session.getSaslServer();
+        SaslServer ss = connection.getSaslServer();
         if (ss == null)
         {
             throw new AMQException("No SASL context set up in session");
         }
-        MethodRegistry methodRegistry = session.getMethodRegistry();
+        MethodRegistry methodRegistry = connection.getMethodRegistry();
         SubjectAuthenticationResult authResult = subjectCreator.authenticate(ss, body.getResponse());
         switch (authResult.getStatus())
         {
@@ -78,7 +78,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                 _logger.info("Authentication failed:" + (cause == null ? "" : cause.getMessage()));
 
                 // This should be abstracted
-                stateManager.changeState(AMQState.CONNECTION_CLOSING);
+                connection.changeState(AMQState.CONNECTION_CLOSING);
 
                 ConnectionCloseBody connectionCloseBody =
                         methodRegistry.createConnectionCloseBody(AMQConstant.NOT_ALLOWED.getCode(),
@@ -86,15 +86,15 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                                                                  body.getClazz(),
                                                                  body.getMethod());
 
-                session.writeFrame(connectionCloseBody.generateFrame(0));
-                disposeSaslServer(session);
+                connection.writeFrame(connectionCloseBody.generateFrame(0));
+                disposeSaslServer(connection);
                 break;
             case SUCCESS:
                 if (_logger.isInfoEnabled())
                 {
                     _logger.info("Connected as: " + authResult.getSubject());
                 }
-                stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
+                connection.changeState(AMQState.CONNECTION_NOT_TUNED);
 
                 int frameMax = broker.getContextValue(Integer.class, Broker.BROKER_FRAME_SIZE);
 
@@ -107,15 +107,15 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                         methodRegistry.createConnectionTuneBody(broker.getConnection_sessionCountLimit(),
                                                                 frameMax,
                                                                 broker.getConnection_heartBeatDelay());
-                session.writeFrame(tuneBody.generateFrame(0));
-                session.setAuthorizedSubject(authResult.getSubject());
-                disposeSaslServer(session);
+                connection.writeFrame(tuneBody.generateFrame(0));
+                connection.setAuthorizedSubject(authResult.getSubject());
+                disposeSaslServer(connection);
                 break;
             case CONTINUE:
-                stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
+                connection.changeState(AMQState.CONNECTION_NOT_AUTH);
 
                 ConnectionSecureBody secureBody = methodRegistry.createConnectionSecureBody(authResult.getChallenge());
-                session.writeFrame(secureBody.generateFrame(0));
+                connection.writeFrame(secureBody.generateFrame(0));
         }
     }
 

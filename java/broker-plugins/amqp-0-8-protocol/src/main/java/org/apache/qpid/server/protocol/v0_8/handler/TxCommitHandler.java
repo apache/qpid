@@ -28,7 +28,6 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.TxCommitBody;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 
 public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
@@ -46,21 +45,21 @@ public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, TxCommitBody body, final int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               TxCommitBody body,
+                               final int channelId) throws AMQException
     {
-        final AMQProtocolSession session = stateManager.getProtocolSession();
-
         try
         {
             if (_log.isDebugEnabled())
             {
                 _log.debug("Commit received on channel " + channelId);
             }
-            AMQChannel channel = session.getChannel(channelId);
+            AMQChannel channel = connection.getChannel(channelId);
 
             if (channel == null)
             {
-                throw body.getChannelNotFoundException(channelId);
+                throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
             }
             channel.commit(new Runnable()
             {
@@ -68,9 +67,9 @@ public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
                 @Override
                 public void run()
                 {
-                    MethodRegistry methodRegistry = session.getMethodRegistry();
+                    MethodRegistry methodRegistry = connection.getMethodRegistry();
                     AMQMethodBody responseBody = methodRegistry.createTxCommitOkBody();
-                    session.writeFrame(responseBody.generateFrame(channelId));
+                    connection.writeFrame(responseBody.generateFrame(channelId));
                 }
             }, true);
 
@@ -79,7 +78,8 @@ public class TxCommitHandler implements StateAwareMethodListener<TxCommitBody>
         }
         catch (AMQException e)
         {
-            throw body.getChannelException(e.getErrorCode(), "Failed to commit: " + e.getMessage());
+            throw body.getChannelException(e.getErrorCode(), "Failed to commit: " + e.getMessage(),
+                                           connection.getMethodRegistry());
         }
     }
 }

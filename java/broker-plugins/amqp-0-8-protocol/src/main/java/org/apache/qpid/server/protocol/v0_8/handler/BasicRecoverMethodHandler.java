@@ -29,7 +29,6 @@ import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 
 public class BasicRecoverMethodHandler implements StateAwareMethodListener<BasicRecoverBody>
@@ -43,29 +42,29 @@ public class BasicRecoverMethodHandler implements StateAwareMethodListener<Basic
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, BasicRecoverBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               BasicRecoverBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
-
-        _logger.debug("Recover received on protocol session " + session + " and channel " + channelId);
-        AMQChannel channel = session.getChannel(channelId);
+        _logger.debug("Recover received on protocol session " + connection + " and channel " + channelId);
+        AMQChannel channel = connection.getChannel(channelId);
 
 
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
 
         channel.resend();
 
         // Qpid 0-8 hacks a synchronous -ok onto recover.
         // In Qpid 0-9 we create a separate sync-recover, sync-recover-ok pair to be "more" compliant
-        if(session.getProtocolVersion().equals(ProtocolVersion.v8_0))
+        if(connection.getProtocolVersion().equals(ProtocolVersion.v8_0))
         {
-            MethodRegistry_8_0 methodRegistry = (MethodRegistry_8_0) session.getMethodRegistry();
+            MethodRegistry_8_0 methodRegistry = (MethodRegistry_8_0) connection.getMethodRegistry();
             AMQMethodBody recoverOk = methodRegistry.createBasicRecoverOkBody();
             channel.sync();
-            session.writeFrame(recoverOk.generateFrame(channelId));
+            connection.writeFrame(recoverOk.generateFrame(channelId));
 
         }
 

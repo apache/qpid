@@ -26,7 +26,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ConnectionCloseOkBody;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 
 public class ConnectionCloseOkMethodHandler implements StateAwareMethodListener<ConnectionCloseOkBody>
@@ -44,16 +43,17 @@ public class ConnectionCloseOkMethodHandler implements StateAwareMethodListener<
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, ConnectionCloseOkBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               ConnectionCloseOkBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
         //todo should this not do more than just log the method?
         _logger.info("Received Connection-close-ok");
 
         try
         {
-            stateManager.changeState(AMQState.CONNECTION_CLOSED);
-            session.closeSession();
+            connection.changeState(AMQState.CONNECTION_CLOSED);
+            connection.closeSession();
         }
         catch (Exception e)
         {

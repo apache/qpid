@@ -21,6 +21,8 @@
 
 package org.apache.qpid.server.protocol.v0_8.handler;
 
+import java.security.AccessControlException;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.MethodRegistry;
@@ -28,12 +30,9 @@ import org.apache.qpid.framing.QueuePurgeBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import java.security.AccessControlException;
 
 public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBody>
 {
@@ -56,15 +55,16 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         _failIfNotFound = failIfNotFound;
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueuePurgeBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               QueuePurgeBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
-        VirtualHostImpl virtualHost = protocolConnection.getVirtualHost();
+        VirtualHostImpl virtualHost = connection.getVirtualHost();
 
-        AMQChannel channel = protocolConnection.getChannel(channelId);
+        AMQChannel channel = connection.getChannel(channelId);
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
         AMQQueue queue;
         if(body.getQueue() == null)
@@ -77,7 +77,7 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
             {
                 if(_failIfNotFound)
                 {
-                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,"No queue specified.");
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,"No queue specified.", connection.getMethodRegistry());
                 }
             }
         }
@@ -90,7 +90,8 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         {
             if(_failIfNotFound)
             {
-                throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
+                throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.",
+                                               connection.getMethodRegistry());
             }
         }
         else
@@ -98,7 +99,7 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
                 if (!queue.verifySessionAccess(channel))
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Queue is exclusive, but not created on this Connection.");
+                                                      "Queue is exclusive, but not created on this Connection.", connection.getMethodRegistry());
                 }
 
             long purged = 0;
@@ -108,16 +109,16 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
             }
             catch (AccessControlException e)
             {
-                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage(), connection.getMethodRegistry());
             }
 
 
             if(!body.getNowait())
                 {
                     channel.sync();
-                    MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
+                    MethodRegistry methodRegistry = connection.getMethodRegistry();
                     AMQMethodBody responseBody = methodRegistry.createQueuePurgeOkBody(purged);
-                    protocolConnection.writeFrame(responseBody.generateFrame(channelId));
+                    connection.writeFrame(responseBody.generateFrame(channelId));
 
                 }
         }

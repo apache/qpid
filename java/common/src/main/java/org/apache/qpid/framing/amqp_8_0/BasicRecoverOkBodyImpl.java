@@ -27,14 +27,19 @@
 
 package org.apache.qpid.framing.amqp_8_0;
 
-import org.apache.qpid.codec.MarkableDataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.codec.MarkableDataInput;
+import org.apache.qpid.framing.AMQFrameDecodingException;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
+import org.apache.qpid.framing.AMQMethodBodyInstanceFactory;
+import org.apache.qpid.framing.BasicRecoverOkBody;
+import org.apache.qpid.framing.MethodDispatcher;
 
-public class BasicRecoverOkBodyImpl extends AMQMethodBody_8_0 implements BasicRecoverOkBody
+public class BasicRecoverOkBodyImpl extends AMQMethodBodyImpl implements BasicRecoverOkBody
 {
     private static final AMQMethodBodyInstanceFactory FACTORY_INSTANCE = new AMQMethodBodyInstanceFactory()
     {

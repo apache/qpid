@@ -29,7 +29,6 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 
 public class ChannelCloseHandler implements StateAwareMethodListener<ChannelCloseBody>
@@ -47,9 +46,10 @@ public class ChannelCloseHandler implements StateAwareMethodListener<ChannelClos
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, ChannelCloseBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               ChannelCloseBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
 
         if (_logger.isInfoEnabled())
         {
@@ -58,19 +58,19 @@ public class ChannelCloseHandler implements StateAwareMethodListener<ChannelClos
         }
 
 
-        AMQChannel channel = session.getChannel(channelId);
+        AMQChannel channel = connection.getChannel(channelId);
 
         if (channel == null)
         {
-            throw body.getConnectionException(AMQConstant.CHANNEL_ERROR, "Trying to close unknown channel");
+            throw body.getConnectionException(AMQConstant.CHANNEL_ERROR, "Trying to close unknown channel", connection.getMethodRegistry());
         }
         channel.sync();
-        session.closeChannel(channelId);
+        connection.closeChannel(channelId);
         // Client requested closure so we don't wait for ok we send it
-        stateManager.getProtocolSession().closeChannelOk(channelId);
+        connection.closeChannelOk(channelId);
 
-        MethodRegistry methodRegistry = session.getMethodRegistry();
+        MethodRegistry methodRegistry = connection.getMethodRegistry();
         ChannelCloseOkBody responseBody = methodRegistry.createChannelCloseOkBody();
-        session.writeFrame(responseBody.generateFrame(channelId));
+        connection.writeFrame(responseBody.generateFrame(channelId));
     }
 }

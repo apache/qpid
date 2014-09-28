@@ -34,7 +34,7 @@ import java.io.IOException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQException;
 
-public class QueueUnbindBodyImpl extends AMQMethodBody_0_91 implements QueueUnbindBody
+public class QueueUnbindBodyImpl extends AMQMethodBodyImpl implements QueueUnbindBody
 {
     private static final AMQMethodBodyInstanceFactory FACTORY_INSTANCE = new AMQMethodBodyInstanceFactory()
     {

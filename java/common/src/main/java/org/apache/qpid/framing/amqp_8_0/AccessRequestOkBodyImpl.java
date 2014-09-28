@@ -34,7 +34,7 @@ import java.io.IOException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQException;
 
-public class AccessRequestOkBodyImpl extends AMQMethodBody_8_0 implements AccessRequestOkBody
+public class AccessRequestOkBodyImpl extends AMQMethodBodyImpl implements AccessRequestOkBody
 {
     private static final AMQMethodBodyInstanceFactory FACTORY_INSTANCE = new AMQMethodBodyInstanceFactory()
     {

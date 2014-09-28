@@ -36,7 +36,6 @@ import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -56,16 +55,16 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, BasicConsumeBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               BasicConsumeBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
-
-        AMQChannel channel = protocolConnection.getChannel(channelId);
-        VirtualHostImpl<?,?,?> vHost = protocolConnection.getVirtualHost();
+        AMQChannel channel = connection.getChannel(channelId);
+        VirtualHostImpl<?,?,?> vHost = connection.getVirtualHost();
 
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
         else
         {
@@ -119,12 +118,12 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 if (queueName != null)
                 {
                     String msg = "No such queue, '" + queueName + "'";
-                    throw body.getChannelException(AMQConstant.NOT_FOUND, msg);
+                    throw body.getChannelException(AMQConstant.NOT_FOUND, msg, connection.getMethodRegistry());
                 }
                 else
                 {
                     String msg = "No queue name provided, no default queue defined.";
-                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED, msg);
+                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED, msg, connection.getMethodRegistry());
                 }
             }
             else
@@ -153,9 +152,9 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                                                                                body.getNoLocal());
                         if (!body.getNowait())
                         {
-                            MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
+                            MethodRegistry methodRegistry = connection.getMethodRegistry();
                             AMQMethodBody responseBody = methodRegistry.createBasicConsumeOkBody(consumerTag);
-                            protocolConnection.writeFrame(responseBody.generateFrame(channelId));
+                            connection.writeFrame(responseBody.generateFrame(channelId));
 
                         }
                     }
@@ -163,12 +162,12 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                     {
                         AMQShortString msg = AMQShortString.validValueOf("Non-unique consumer tag, '" + body.getConsumerTag() + "'");
 
-                        MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
+                        MethodRegistry methodRegistry = connection.getMethodRegistry();
                         AMQMethodBody responseBody = methodRegistry.createConnectionCloseBody(AMQConstant.NOT_ALLOWED.getCode(),    // replyCode
                                                                  msg,               // replytext
                                                                  body.getClazz(),
                                                                  body.getMethod());
-                        protocolConnection.writeFrame(responseBody.generateFrame(0));
+                        connection.writeFrame(responseBody.generateFrame(0));
                     }
 
                 }
@@ -176,12 +175,12 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 {
                     _logger.debug("Closing connection due to invalid selector");
 
-                    MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
+                    MethodRegistry methodRegistry = connection.getMethodRegistry();
                     AMQMethodBody responseBody = methodRegistry.createChannelCloseBody(AMQConstant.ARGUMENT_INVALID.getCode(),
                                                                                        AMQShortString.validValueOf(ise.getMessage()),
                                                                                        body.getClazz(),
                                                                                        body.getMethod());
-                    protocolConnection.writeFrame(responseBody.generateFrame(channelId));
+                    connection.writeFrame(responseBody.generateFrame(channelId));
 
 
                 }
@@ -190,28 +189,28 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
                                                       "Cannot subscribe to queue "
                                                       + queue.getName()
-                                                      + " as it already has an existing exclusive consumer");
+                                                      + " as it already has an existing exclusive consumer", connection.getMethodRegistry());
                 }
                 catch (AMQQueue.ExistingConsumerPreventsExclusive e)
                 {
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
                                                       "Cannot subscribe to queue "
                                                       + queue.getName()
-                                                      + " exclusively as it already has a consumer");
+                                                      + " exclusively as it already has a consumer", connection.getMethodRegistry());
                 }
                 catch (AccessControlException e)
                 {
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
                                                       "Cannot subscribe to queue "
                                                       + queue.getName()
-                                                      + " permission denied");
+                                                      + " permission denied", connection.getMethodRegistry());
                 }
                 catch (MessageSource.ConsumerAccessRefused consumerAccessRefused)
                 {
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
                                                       "Cannot subscribe to queue "
                                                       + queue.getName()
-                                                      + " as it already has an incompatible exclusivity policy");
+                                                      + " as it already has an incompatible exclusivity policy", connection.getMethodRegistry());
                 }
 
             }

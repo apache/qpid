@@ -34,7 +34,6 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
@@ -58,9 +57,10 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
         return new AMQShortString(Long.toString(System.currentTimeMillis()));
     }
 
-    public void methodReceived(AMQStateManager stateManager, ConnectionOpenBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               ConnectionOpenBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
 
         //ignore leading '/'
         String virtualHostName;
@@ -73,42 +73,44 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
             virtualHostName = body.getVirtualHost() == null ? null : String.valueOf(body.getVirtualHost());
         }
 
-        VirtualHostImpl virtualHost = ((AmqpPort)stateManager.getProtocolSession().getPort()).getVirtualHost(virtualHostName);
+        VirtualHostImpl virtualHost = ((AmqpPort)connection.getPort()).getVirtualHost(virtualHostName);
 
         if (virtualHost == null)
         {
-            throw body.getConnectionException(AMQConstant.NOT_FOUND, "Unknown virtual host: '" + virtualHostName + "'");
+            throw body.getConnectionException(AMQConstant.NOT_FOUND, "Unknown virtual host: '" + virtualHostName + "'",
+                                              connection.getMethodRegistry());
         }
         else
         {
             // Check virtualhost access
             if (virtualHost.getState() != State.ACTIVE)
             {
-                throw body.getConnectionException(AMQConstant.CONNECTION_FORCED, "Virtual host '" + virtualHost.getName() + "' is not active");
+                throw body.getConnectionException(AMQConstant.CONNECTION_FORCED, "Virtual host '" + virtualHost.getName() + "' is not active",
+                                                  connection.getMethodRegistry());
             }
 
-            session.setVirtualHost(virtualHost);
+            connection.setVirtualHost(virtualHost);
             try
             {
-                virtualHost.getSecurityManager().authoriseCreateConnection(session);
+                virtualHost.getSecurityManager().authoriseCreateConnection(connection);
             }
             catch (AccessControlException e)
             {
-                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage(), connection.getMethodRegistry());
             }
 
             // See Spec (0.8.2). Section  3.1.2 Virtual Hosts
-            if (session.getContextKey() == null)
+            if (connection.getContextKey() == null)
             {
-                session.setContextKey(generateClientID());
+                connection.setContextKey(generateClientID());
             }
 
-            MethodRegistry methodRegistry = session.getMethodRegistry();
+            MethodRegistry methodRegistry = connection.getMethodRegistry();
             AMQMethodBody responseBody =  methodRegistry.createConnectionOpenOkBody(body.getVirtualHost());
 
-            stateManager.changeState(AMQState.CONNECTION_OPEN);
+            connection.changeState(AMQState.CONNECTION_OPEN);
 
-            session.writeFrame(responseBody.generateFrame(channelId));
+            connection.writeFrame(responseBody.generateFrame(channelId));
         }
     }
 }

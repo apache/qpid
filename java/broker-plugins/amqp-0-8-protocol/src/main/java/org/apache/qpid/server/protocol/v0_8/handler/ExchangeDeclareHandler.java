@@ -41,7 +41,6 @@ import org.apache.qpid.server.model.NoFactoryForTypeException;
 import org.apache.qpid.server.model.UnknownConfiguredObjectException;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
@@ -62,14 +61,15 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, ExchangeDeclareBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               ExchangeDeclareBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
-        VirtualHostImpl virtualHost = session.getVirtualHost();
-        final AMQChannel channel = session.getChannel(channelId);
+        VirtualHostImpl virtualHost = connection.getVirtualHost();
+        final AMQChannel channel = connection.getChannel(channelId);
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
 
         final AMQShortString exchangeName = body.getExchange();
@@ -89,7 +89,7 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                                                                           + ExchangeDefaults.DIRECT_EXCHANGE_CLASS
                                                                           + " to " + body.getType() +".",
                                                  body.getClazz(), body.getMethod(),
-                                                 body.getMajor(), body.getMinor(),null);
+                                                 connection.getMethodRegistry(),null);
             }
         }
         else
@@ -99,14 +99,15 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                 exchange = virtualHost.getExchange(exchangeName.toString());
                 if(exchange == null)
                 {
-                    throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange: " + exchangeName);
+                    throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange: " + exchangeName,
+                                                   connection.getMethodRegistry());
                 }
                 else if (!(body.getType() == null || body.getType().length() ==0) && !exchange.getType().equals(body.getType().asString()))
                 {
 
                     throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: " +
                                       exchangeName + " of type " + exchange.getType()
-                                      + " to " + body.getType() +".",body.getClazz(), body.getMethod(),body.getMajor(),body.getMinor(),null);
+                                      + " to " + body.getType() +".",body.getClazz(), body.getMethod(),connection.getMethodRegistry(),null);
                 }
 
             }
@@ -139,7 +140,7 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
                                               "Attempt to declare exchange: " + exchangeName +
-                                              " which begins with reserved prefix.");
+                                              " which begins with reserved prefix.", connection.getMethodRegistry());
 
                 }
                 catch(ExchangeExistsException e)
@@ -147,40 +148,44 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                     exchange = e.getExistingExchange();
                     if(!new AMQShortString(exchange.getType()).equals(body.getType()))
                     {
-                        throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: "
-                                                                                  + exchangeName + " of type "
-                                                                                  + exchange.getType()
-                                                                                  + " to " + body.getType() +".",
-                                                         body.getClazz(), body.getMethod(),
-                                                         body.getMajor(), body.getMinor(),null);
+                        throw body.getConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: "
+                                                                                   + exchangeName + " of type "
+                                                                                   + exchange.getType()
+                                                                                   + " to " + body.getType() + ".",
+                                                          connection.getMethodRegistry());
                     }
                 }
                 catch(NoFactoryForTypeException e)
                 {
-                    throw body.getConnectionException(AMQConstant.COMMAND_INVALID, "Unknown exchange: " + exchangeName,e);
+                    throw body.getConnectionException(AMQConstant.COMMAND_INVALID, "Unknown exchange type '"+e.getType()+"' for exchange '" + exchangeName + "'", connection.getMethodRegistry());
                 }
                 catch (AccessControlException e)
                 {
-                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage(), connection.getMethodRegistry());
                 }
                 catch (UnknownConfiguredObjectException e)
                 {
                     // note - since 0-8/9/9-1 can't set the alt. exchange this exception should never occur
-                    throw body.getConnectionException(AMQConstant.NOT_FOUND, "Unknown alternate exchange",e);
+                    throw body.getConnectionException(AMQConstant.NOT_FOUND,
+                                                      "Unknown alternate exchange "
+                                                        + (e.getName() != null
+                                                              ? "name: \"" + e.getName() + "\""
+                                                              : "id: " + e.getId()),
+                                                      connection.getMethodRegistry());
                 }
                 catch (IllegalArgumentException e)
                 {
-                    throw body.getConnectionException(AMQConstant.COMMAND_INVALID, "Error creating exchange",e);
+                    throw body.getConnectionException(AMQConstant.COMMAND_INVALID, "Error creating exchange '"+exchangeName+"': " + e.getMessage(),connection.getMethodRegistry());
                 }
             }
         }
 
         if(!body.getNowait())
         {
-            MethodRegistry methodRegistry = session.getMethodRegistry();
+            MethodRegistry methodRegistry = connection.getMethodRegistry();
             AMQMethodBody responseBody = methodRegistry.createExchangeDeclareOkBody();
             channel.sync();
-            session.writeFrame(responseBody.generateFrame(channelId));
+            connection.writeFrame(responseBody.generateFrame(channelId));
         }
     }
 

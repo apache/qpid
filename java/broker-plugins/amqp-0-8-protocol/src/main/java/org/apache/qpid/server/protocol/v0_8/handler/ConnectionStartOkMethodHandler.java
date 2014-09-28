@@ -35,7 +35,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
@@ -56,32 +55,36 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, ConnectionStartOkBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               ConnectionStartOkBody body,
+                               int channelId) throws AMQException
     {
-        Broker<?> broker = stateManager.getBroker();
-        AMQProtocolSession session = stateManager.getProtocolSession();
+        Broker<?> broker = connection.getBroker();
 
         _logger.info("SASL Mechanism selected: " + body.getMechanism());
         _logger.info("Locale selected: " + body.getLocale());
 
-        SubjectCreator subjectCreator = stateManager.getSubjectCreator();
+        SubjectCreator subjectCreator = connection.getSubjectCreator();
         SaslServer ss = null;
         try
         {
-            ss = subjectCreator.createSaslServer(String.valueOf(body.getMechanism()), session.getLocalFQDN(), session.getPeerPrincipal());
+            ss = subjectCreator.createSaslServer(String.valueOf(body.getMechanism()),
+                                                 connection.getLocalFQDN(),
+                                                 connection.getPeerPrincipal());
 
             if (ss == null)
             {
-                throw body.getConnectionException(AMQConstant.RESOURCE_ERROR, "Unable to create SASL Server:" + body.getMechanism());
+                throw body.getConnectionException(AMQConstant.RESOURCE_ERROR, "Unable to create SASL Server:" + body.getMechanism(),
+                                                  connection.getMethodRegistry());
             }
 
-            session.setSaslServer(ss);
+            connection.setSaslServer(ss);
 
             final SubjectAuthenticationResult authResult = subjectCreator.authenticate(ss, body.getResponse());
             //save clientProperties
-            session.setClientProperties(body.getClientProperties());
+            connection.setClientProperties(body.getClientProperties());
 
-            MethodRegistry methodRegistry = session.getMethodRegistry();
+            MethodRegistry methodRegistry = connection.getMethodRegistry();
 
             switch (authResult.getStatus())
             {
@@ -90,7 +93,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
                     _logger.info("Authentication failed:" + (cause == null ? "" : cause.getMessage()));
 
-                    stateManager.changeState(AMQState.CONNECTION_CLOSING);
+                    connection.changeState(AMQState.CONNECTION_CLOSING);
 
                     ConnectionCloseBody closeBody =
                             methodRegistry.createConnectionCloseBody(AMQConstant.NOT_ALLOWED.getCode(),    // replyCode
@@ -98,8 +101,8 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                                                                      body.getClazz(),
                                                                      body.getMethod());
 
-                    session.writeFrame(closeBody.generateFrame(0));
-                    disposeSaslServer(session);
+                    connection.writeFrame(closeBody.generateFrame(0));
+                    disposeSaslServer(connection);
                     break;
 
                 case SUCCESS:
@@ -107,9 +110,9 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     {
                         _logger.info("Connected as: " + authResult.getSubject());
                     }
-                    session.setAuthorizedSubject(authResult.getSubject());
+                    connection.setAuthorizedSubject(authResult.getSubject());
 
-                    stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
+                    connection.changeState(AMQState.CONNECTION_NOT_TUNED);
                     int frameMax = broker.getContextValue(Integer.class, Broker.BROKER_FRAME_SIZE);
 
                     if(frameMax <= 0)
@@ -120,18 +123,18 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody(broker.getConnection_sessionCountLimit(),
                                                                                           frameMax,
                                                                                           broker.getConnection_heartBeatDelay());
-                    session.writeFrame(tuneBody.generateFrame(0));
+                    connection.writeFrame(tuneBody.generateFrame(0));
                     break;
                 case CONTINUE:
-                    stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
+                    connection.changeState(AMQState.CONNECTION_NOT_AUTH);
 
                     ConnectionSecureBody secureBody = methodRegistry.createConnectionSecureBody(authResult.getChallenge());
-                    session.writeFrame(secureBody.generateFrame(0));
+                    connection.writeFrame(secureBody.generateFrame(0));
             }
         }
         catch (SaslException e)
         {
-            disposeSaslServer(session);
+            disposeSaslServer(connection);
             throw new AMQException("SASL error: " + e, e);
         }
     }

@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.protocol.v0_8.handler;
 
+import java.security.AccessControlException;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
@@ -33,12 +35,9 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import java.security.AccessControlException;
 
 public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindBody>
 {
@@ -55,19 +54,20 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueUnbindBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               QueueUnbindBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
-        VirtualHostImpl virtualHost = session.getVirtualHost();
+        VirtualHostImpl virtualHost = connection.getVirtualHost();
 
         final AMQQueue queue;
         final AMQShortString routingKey;
 
 
-        AMQChannel channel = session.getChannel(channelId);
+        AMQChannel channel = connection.getChannel(channelId);
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
 
         if (body.getQueue() == null)
@@ -77,7 +77,8 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
 
             if (queue == null)
             {
-                throw body.getChannelException(AMQConstant.NOT_FOUND, "No default queue defined on channel and queue was null");
+                throw body.getChannelException(AMQConstant.NOT_FOUND, "No default queue defined on channel and queue was null",
+                                               connection.getMethodRegistry());
             }
 
             routingKey = body.getRoutingKey() == null ? null : body.getRoutingKey().intern(false);
@@ -91,23 +92,28 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
 
         if (queue == null)
         {
-            throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
+            throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.",
+                                           connection.getMethodRegistry());
         }
 
         if(isDefaultExchange(body.getExchange()))
         {
-            throw body.getConnectionException(AMQConstant.NOT_ALLOWED, "Cannot unbind the queue " + queue.getName() + " from the default exchange");
+            throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
+                                              "Cannot unbind the queue "
+                                              + queue.getName()
+                                              + " from the default exchange", connection.getMethodRegistry());
         }
 
         final ExchangeImpl exch = virtualHost.getExchange(body.getExchange() == null ? null : body.getExchange().toString());
         if (exch == null)
         {
-            throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + body.getExchange() + " does not exist.");
+            throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + body.getExchange() + " does not exist.",
+                                           connection.getMethodRegistry());
         }
 
         if(!exch.hasBinding(String.valueOf(routingKey), queue))
         {
-            throw body.getChannelException(AMQConstant.NOT_FOUND,"No such binding");
+            throw body.getChannelException(AMQConstant.NOT_FOUND,"No such binding", connection.getMethodRegistry());
         }
         else
         {
@@ -117,7 +123,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
             }
             catch (AccessControlException e)
             {
-                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage(), connection.getMethodRegistry());
             }
         }
 
@@ -127,7 +133,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
             _log.info("Binding queue " + queue + " to exchange " + exch + " with routing key " + routingKey);
         }
 
-        final MethodRegistry registry = session.getMethodRegistry();
+        final MethodRegistry registry = connection.getMethodRegistry();
         final AMQMethodBody responseBody;
         if (registry instanceof MethodRegistry_0_9)
         {
@@ -140,10 +146,10 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
         else
         {
             // 0-8 does not support QueueUnbind
-            throw new AMQException(AMQConstant.COMMAND_INVALID, "QueueUnbind not present in AMQP version: " + session.getProtocolVersion(), null);
+            throw new AMQException(AMQConstant.COMMAND_INVALID, "QueueUnbind not present in AMQP version: " + connection.getProtocolVersion(), null);
         }
         channel.sync();
-        session.writeFrame(responseBody.generateFrame(channelId));
+        connection.writeFrame(responseBody.generateFrame(channelId));
     }
 
     protected boolean isDefaultExchange(final AMQShortString exchangeName)

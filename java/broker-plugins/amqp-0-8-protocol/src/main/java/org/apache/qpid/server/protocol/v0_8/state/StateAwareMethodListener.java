@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol.v0_8.state;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 
 /**
  * A frame listener that is informed of the protocol state when invoked and has
@@ -30,5 +31,5 @@ import org.apache.qpid.framing.AMQMethodBody;
  */
 public interface StateAwareMethodListener<B extends AMQMethodBody>
 {
-    void methodReceived(AMQStateManager stateManager,  B evt, int channelId) throws AMQException;
+    void methodReceived(final AMQProtocolSession<?> connection, B evt, int channelId) throws AMQException;
 }

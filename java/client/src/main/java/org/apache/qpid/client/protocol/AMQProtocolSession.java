@@ -47,6 +47,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.HeartbeatBody;
 import org.apache.qpid.framing.MethodDispatcher;
 import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.MethodRegistrySource;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQConstant;
@@ -60,7 +61,7 @@ import org.apache.qpid.transport.TransportException;
  * <p>
  * The underlying protocol session is still available but clients should not use it to obtain session attributes.
  */
-public class AMQProtocolSession implements AMQVersionAwareProtocolSession
+public class AMQProtocolSession implements AMQVersionAwareProtocolSession, MethodRegistrySource
 {
     protected static final int LAST_WRITE_FUTURE_JOIN_TIMEOUT = 1000 * 60 * 2;
 

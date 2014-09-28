@@ -34,7 +34,7 @@ import java.io.IOException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQException;
 
-public class BasicRecoverSyncOkBodyImpl extends AMQMethodBody_0_9 implements BasicRecoverSyncOkBody
+public class BasicRecoverSyncOkBodyImpl extends AMQMethodBodyImpl implements BasicRecoverSyncOkBody
 {
     private static final AMQMethodBodyInstanceFactory FACTORY_INSTANCE = new AMQMethodBodyInstanceFactory()
     {

@@ -20,20 +20,20 @@
  */
 package org.apache.qpid.server.protocol.v0_8.handler;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
-
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.*;
+import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
+
 public class ServerMethodDispatcherImpl implements MethodDispatcher
 {
-    private final AMQStateManager _stateManager;
+    private final AMQProtocolSession<?> _connection;
 
     private static interface DispatcherFactory
         {
-            public MethodDispatcher createMethodDispatcher(AMQStateManager stateManager);
+            public MethodDispatcher createMethodDispatcher(AMQProtocolSession<?> connection);
         }
 
         private static final Map<ProtocolVersion, DispatcherFactory> _dispatcherFactories =
@@ -45,26 +45,26 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
             _dispatcherFactories.put(ProtocolVersion.v8_0,
                                      new DispatcherFactory()
                                      {
-                                         public MethodDispatcher createMethodDispatcher(AMQStateManager stateManager)
+                                         public MethodDispatcher createMethodDispatcher(AMQProtocolSession<?> connection)
                                          {
-                                             return new ServerMethodDispatcherImpl_8_0(stateManager);
+                                             return new ServerMethodDispatcherImpl_8_0(connection);
                                          }
                                      });
 
             _dispatcherFactories.put(ProtocolVersion.v0_9,
                                      new DispatcherFactory()
                                      {
-                                         public MethodDispatcher createMethodDispatcher(AMQStateManager stateManager)
+                                         public MethodDispatcher createMethodDispatcher(AMQProtocolSession<?> connection)
                                          {
-                                             return new ServerMethodDispatcherImpl_0_9(stateManager);
+                                             return new ServerMethodDispatcherImpl_0_9(connection);
                                          }
                                      });
             _dispatcherFactories.put(ProtocolVersion.v0_91,
                          new DispatcherFactory()
                          {
-                             public MethodDispatcher createMethodDispatcher(AMQStateManager stateManager)
+                             public MethodDispatcher createMethodDispatcher(AMQProtocolSession<?> connection)
                              {
-                                 return new ServerMethodDispatcherImpl_0_91(stateManager);
+                                 return new ServerMethodDispatcherImpl_0_91(connection);
                              }
                          });
 
@@ -103,82 +103,80 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
 
 
 
-    public static MethodDispatcher createMethodDispatcher(AMQStateManager stateManager, ProtocolVersion protocolVersion)
+    public static MethodDispatcher createMethodDispatcher(AMQProtocolSession<?> connection)
     {
-        return _dispatcherFactories.get(protocolVersion).createMethodDispatcher(stateManager);
+        return _dispatcherFactories.get(connection.getProtocolVersion()).createMethodDispatcher(connection);
     }
 
 
-    public ServerMethodDispatcherImpl(AMQStateManager stateManager)
+    public ServerMethodDispatcherImpl(AMQProtocolSession<?> connection)
     {
-        _stateManager = stateManager;
+        _connection = connection;
     }
 
 
-    protected AMQStateManager getStateManager()
+    protected final AMQProtocolSession<?> getConnection()
     {
-        return _stateManager;
+        return _connection;
     }
-
-
 
     public boolean dispatchAccessRequest(AccessRequestBody body, int channelId) throws AMQException
     {
-        _accessRequestHandler.methodReceived(_stateManager, body, channelId);
+        _accessRequestHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchBasicAck(BasicAckBody body, int channelId) throws AMQException
     {
-        _basicAckMethodHandler.methodReceived(_stateManager, body, channelId);
+        _basicAckMethodHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchBasicCancel(BasicCancelBody body, int channelId) throws AMQException
     {
-        _basicCancelMethodHandler.methodReceived(_stateManager, body, channelId);
+        _basicCancelMethodHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchBasicConsume(BasicConsumeBody body, int channelId) throws AMQException
     {
-        _basicConsumeMethodHandler.methodReceived(_stateManager, body, channelId);
+        _basicConsumeMethodHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchBasicGet(BasicGetBody body, int channelId) throws AMQException
     {
-        _basicGetMethodHandler.methodReceived(_stateManager, body, channelId);
+        _basicGetMethodHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchBasicPublish(BasicPublishBody body, int channelId) throws AMQException
     {
-        _basicPublishMethodHandler.methodReceived(_stateManager, body, channelId);
+        _basicPublishMethodHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchBasicQos(BasicQosBody body, int channelId) throws AMQException
     {
-        _basicQosHandler.methodReceived(_stateManager, body, channelId);
+        _basicQosHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchBasicRecover(BasicRecoverBody body, int channelId) throws AMQException
     {
-        _basicRecoverMethodHandler.methodReceived(_stateManager, body, channelId);
+        _basicRecoverMethodHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchBasicReject(BasicRejectBody body, int channelId) throws AMQException
     {
-        _basicRejectMethodHandler.methodReceived(_stateManager, body, channelId);
+        _basicRejectMethodHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchChannelOpen(ChannelOpenBody body, int channelId) throws AMQException
     {
-        _channelOpenHandler.methodReceived(_stateManager, body, channelId);
+        _channelOpenHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
@@ -225,21 +223,21 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
 
     public boolean dispatchChannelClose(ChannelCloseBody body, int channelId) throws AMQException
     {
-        _channelCloseHandler.methodReceived(_stateManager, body, channelId);
+        _channelCloseHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
 
     public boolean dispatchChannelCloseOk(ChannelCloseOkBody body, int channelId) throws AMQException
     {
-        _channelCloseOkHandler.methodReceived(_stateManager, body, channelId);
+        _channelCloseOkHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
 
     public boolean dispatchChannelFlow(ChannelFlowBody body, int channelId) throws AMQException
     {
-        _channelFlowHandler.methodReceived(_stateManager, body, channelId);
+        _channelFlowHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
@@ -256,21 +254,23 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
 
     public boolean dispatchConnectionOpen(ConnectionOpenBody body, int channelId) throws AMQException
     {
-        _connectionOpenMethodHandler.methodReceived(_stateManager, body, channelId);
+        _connectionOpenMethodHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
 
     public boolean dispatchConnectionClose(ConnectionCloseBody body, int channelId) throws AMQException
     {
-        _connectionCloseMethodHandler.methodReceived(_stateManager, body, channelId);
+        _connectionCloseMethodHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
 
     public boolean dispatchConnectionCloseOk(ConnectionCloseOkBody body, int channelId) throws AMQException
     {
-        _connectionCloseOkMethodHandler.methodReceived(_stateManager, body, channelId);
+        _connectionCloseOkMethodHandler.methodReceived(
+                getConnection(),
+                                                       body, channelId);
         return true;
     }
 
@@ -299,15 +299,6 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
         throw new UnexpectedMethodException(body);
     }
 
-    public boolean dispatchDtxSelectOk(DtxSelectOkBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
-
-    public boolean dispatchDtxStartOk(DtxStartOkBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
 
     public boolean dispatchExchangeBoundOk(ExchangeBoundOkBody body, int channelId) throws AMQException
     {
@@ -320,46 +311,6 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
     }
 
     public boolean dispatchExchangeDeleteOk(ExchangeDeleteOkBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
-
-    public boolean dispatchFileCancelOk(FileCancelOkBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
-
-    public boolean dispatchFileConsumeOk(FileConsumeOkBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
-
-    public boolean dispatchFileDeliver(FileDeliverBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
-
-    public boolean dispatchFileOpen(FileOpenBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
-
-    public boolean dispatchFileOpenOk(FileOpenOkBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
-
-    public boolean dispatchFileQosOk(FileQosOkBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
-
-    public boolean dispatchFileReturn(FileReturnBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
-
-    public boolean dispatchFileStage(FileStageBody body, int channelId) throws AMQException
     {
         throw new UnexpectedMethodException(body);
     }
@@ -384,31 +335,6 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
         throw new UnexpectedMethodException(body);
     }
 
-    public boolean dispatchStreamCancelOk(StreamCancelOkBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
-
-    public boolean dispatchStreamConsumeOk(StreamConsumeOkBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
-
-    public boolean dispatchStreamDeliver(StreamDeliverBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
-
-    public boolean dispatchStreamQosOk(StreamQosOkBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
-
-    public boolean dispatchStreamReturn(StreamReturnBody body, int channelId) throws AMQException
-    {
-        throw new UnexpectedMethodException(body);
-    }
-
     public boolean dispatchTxCommitOk(TxCommitOkBody body, int channelId) throws AMQException
     {
         throw new UnexpectedMethodException(body);
@@ -427,144 +353,84 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
 
     public boolean dispatchConnectionSecureOk(ConnectionSecureOkBody body, int channelId) throws AMQException
     {
-        _connectionSecureOkMethodHandler.methodReceived(_stateManager, body, channelId);
+        _connectionSecureOkMethodHandler.methodReceived(
+                getConnection(),
+                                                        body, channelId);
         return true;
     }
 
     public boolean dispatchConnectionStartOk(ConnectionStartOkBody body, int channelId) throws AMQException
     {
-        _connectionStartOkMethodHandler.methodReceived(_stateManager, body, channelId);
+        _connectionStartOkMethodHandler.methodReceived(
+                getConnection(),
+                                                       body, channelId);
         return true;
     }
 
     public boolean dispatchConnectionTuneOk(ConnectionTuneOkBody body, int channelId) throws AMQException
     {
-        _connectionTuneOkMethodHandler.methodReceived(_stateManager, body, channelId);
+        _connectionTuneOkMethodHandler.methodReceived(getConnection(), body, channelId);
         return true;
-    }
-
-    public boolean dispatchDtxSelect(DtxSelectBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchDtxStart(DtxStartBody body, int channelId) throws AMQException
-    {
-        return false;
     }
 
     public boolean dispatchExchangeBound(ExchangeBoundBody body, int channelId) throws AMQException
     {
-        _exchangeBoundHandler.methodReceived(_stateManager, body, channelId);
+        _exchangeBoundHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchExchangeDeclare(ExchangeDeclareBody body, int channelId) throws AMQException
     {
-        _exchangeDeclareHandler.methodReceived(_stateManager, body, channelId);
+        _exchangeDeclareHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchExchangeDelete(ExchangeDeleteBody body, int channelId) throws AMQException
     {
-        _exchangeDeleteHandler.methodReceived(_stateManager, body, channelId);
+        _exchangeDeleteHandler.methodReceived(getConnection(), body, channelId);
         return true;
-    }
-
-    public boolean dispatchFileAck(FileAckBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchFileCancel(FileCancelBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchFileConsume(FileConsumeBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchFilePublish(FilePublishBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchFileQos(FileQosBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchFileReject(FileRejectBody body, int channelId) throws AMQException
-    {
-        return false;
     }
 
     public boolean dispatchQueueBind(QueueBindBody body, int channelId) throws AMQException
     {
-        _queueBindHandler.methodReceived(_stateManager, body, channelId);
+        _queueBindHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchQueueDeclare(QueueDeclareBody body, int channelId) throws AMQException
     {
-        _queueDeclareHandler.methodReceived(_stateManager, body, channelId);
+        _queueDeclareHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchQueueDelete(QueueDeleteBody body, int channelId) throws AMQException
     {
-        _queueDeleteHandler.methodReceived(_stateManager, body, channelId);
+        _queueDeleteHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchQueuePurge(QueuePurgeBody body, int channelId) throws AMQException
     {
-        _queuePurgeHandler.methodReceived(_stateManager, body, channelId);
+        _queuePurgeHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
-    public boolean dispatchStreamCancel(StreamCancelBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchStreamConsume(StreamConsumeBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchStreamPublish(StreamPublishBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchStreamQos(StreamQosBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchTunnelRequest(TunnelRequestBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
 
     public boolean dispatchTxCommit(TxCommitBody body, int channelId) throws AMQException
     {
-        _txCommitHandler.methodReceived(_stateManager, body, channelId);
+        _txCommitHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchTxRollback(TxRollbackBody body, int channelId) throws AMQException
     {
-        _txRollbackHandler.methodReceived(_stateManager, body, channelId);
+        _txRollbackHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchTxSelect(TxSelectBody body, int channelId) throws AMQException
     {
-        _txSelectHandler.methodReceived(_stateManager, body, channelId);
+        _txSelectHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 

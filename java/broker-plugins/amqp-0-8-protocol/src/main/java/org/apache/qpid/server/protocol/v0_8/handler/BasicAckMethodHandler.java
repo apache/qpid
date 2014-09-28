@@ -26,7 +26,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicAckBody;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 
 public class BasicAckMethodHandler implements StateAwareMethodListener<BasicAckBody>
@@ -44,21 +43,21 @@ public class BasicAckMethodHandler implements StateAwareMethodListener<BasicAckB
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, BasicAckBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               BasicAckBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession protocolSession = stateManager.getProtocolSession();
-
 
         if (_log.isDebugEnabled())
         {
             _log.debug("Ack(Tag:" + body.getDeliveryTag() + ":Mult:" + body.getMultiple() + ") received on channel " + channelId);
         }
 
-        final AMQChannel channel = protocolSession.getChannel(channelId);
+        final AMQChannel channel = connection.getChannel(channelId);
 
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
 
         // this method throws an AMQException if the delivery tag is not known

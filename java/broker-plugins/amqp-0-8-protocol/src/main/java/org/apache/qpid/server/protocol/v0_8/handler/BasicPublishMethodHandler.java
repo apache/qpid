@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.protocol.v0_8.handler;
 
+import java.security.AccessControlException;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
@@ -30,11 +32,8 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import java.security.AccessControlException;
 
 public class BasicPublishMethodHandler implements StateAwareMethodListener<BasicPublishBody>
 {
@@ -52,16 +51,17 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, BasicPublishBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               BasicPublishBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Publish received on channel " + channelId);
         }
 
         AMQShortString exchangeName = body.getExchange();
-        VirtualHostImpl vHost = session.getVirtualHost();
+        VirtualHostImpl vHost = connection.getVirtualHost();
 
         // TODO: check the delivery tag field details - is it unique across the broker or per subscriber?
 
@@ -79,21 +79,22 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
         // if the exchange does not exist we raise a channel exception
         if (destination == null)
         {
-            throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange name");
+            throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange name",
+                                           connection.getMethodRegistry());
         }
         else
         {
             // The partially populated BasicDeliver frame plus the received route body
             // is stored in the channel. Once the final body frame has been received
             // it is routed to the exchange.
-            AMQChannel channel = session.getChannel(channelId);
+            AMQChannel channel = connection.getChannel(channelId);
 
             if (channel == null)
             {
-                throw body.getChannelNotFoundException(channelId);
+                throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
             }
 
-            MessagePublishInfo info = session.getMethodRegistry().getProtocolVersionMethodConverter().convertToInfo(body);
+            MessagePublishInfo info = connection.getMethodRegistry().getProtocolVersionMethodConverter().convertToInfo(body);
             info.setExchange(exchangeName);
             try
             {
@@ -101,7 +102,7 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
             }
             catch (AccessControlException e)
             {
-                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage(), connection.getMethodRegistry());
             }
         }
     }

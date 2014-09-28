@@ -28,7 +28,6 @@ import org.apache.qpid.framing.ChannelFlowBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 
 public class ChannelFlowHandler implements StateAwareMethodListener<ChannelFlowBody>
@@ -46,23 +45,24 @@ public class ChannelFlowHandler implements StateAwareMethodListener<ChannelFlowB
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, ChannelFlowBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               ChannelFlowBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
 
 
-        AMQChannel channel = session.getChannel(channelId);
+        AMQChannel channel = connection.getChannel(channelId);
 
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
         channel.sync();
         channel.setSuspended(!body.getActive());
         _logger.debug("Channel.Flow for channel " + channelId + ", active=" + body.getActive());
 
-        MethodRegistry methodRegistry = session.getMethodRegistry();
+        MethodRegistry methodRegistry = connection.getMethodRegistry();
         AMQMethodBody responseBody = methodRegistry.createChannelFlowOkBody(body.getActive());
-        session.writeFrame(responseBody.generateFrame(channelId));
+        connection.writeFrame(responseBody.generateFrame(channelId));
     }
 }

@@ -45,7 +45,6 @@ import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.ClientDeliveryMethod;
 import org.apache.qpid.server.protocol.v0_8.ConsumerTarget_0_8;
 import org.apache.qpid.server.protocol.v0_8.RecordDeliveryMethod;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -65,17 +64,17 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, BasicGetBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               BasicGetBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
 
+        VirtualHostImpl vHost = connection.getVirtualHost();
 
-        VirtualHostImpl vHost = protocolConnection.getVirtualHost();
-
-        AMQChannel channel = protocolConnection.getChannel(channelId);
+        AMQChannel channel = connection.getChannel(channelId);
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
         else
         {
@@ -87,12 +86,12 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                 if(body.getQueue()!=null)
                 {
                     throw body.getConnectionException(AMQConstant.NOT_FOUND,
-                                                      "No such queue, '" + body.getQueue()+ "'");
+                                                      "No such queue, '" + body.getQueue()+ "'", connection.getMethodRegistry());
                 }
                 else
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "No queue name provided, no default queue defined.");
+                                                      "No queue name provided, no default queue defined.", connection.getMethodRegistry());
                 }
             }
             else
@@ -100,36 +99,37 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
 
                 try
                 {
-                    if (!performGet(queue,protocolConnection, channel, !body.getNoAck()))
+                    if (!performGet(queue,connection, channel, !body.getNoAck()))
                     {
-                        MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
+                        MethodRegistry methodRegistry = connection.getMethodRegistry();
                         // TODO - set clusterId
                         BasicGetEmptyBody responseBody = methodRegistry.createBasicGetEmptyBody(null);
 
 
-                        protocolConnection.writeFrame(responseBody.generateFrame(channelId));
+                        connection.writeFrame(responseBody.generateFrame(channelId));
                     }
                 }
                 catch (AccessControlException e)
                 {
                     throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
-                                                      e.getMessage());
+                                                      e.getMessage(), connection.getMethodRegistry());
                 }
                 catch (MessageSource.ExistingExclusiveConsumer e)
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Queue has an exclusive consumer");
+                                                      "Queue has an exclusive consumer", connection.getMethodRegistry());
                 }
                 catch (MessageSource.ExistingConsumerPreventsExclusive e)
                 {
                     throw body.getConnectionException(AMQConstant.INTERNAL_ERROR,
                                                       "The GET request has been evaluated as an exclusive consumer, " +
-                                                      "this is likely due to a programming error in the Qpid broker");
+                                                      "this is likely due to a programming error in the Qpid broker",
+                                                      connection.getMethodRegistry());
                 }
                 catch (MessageSource.ConsumerAccessRefused consumerAccessRefused)
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Queue has an incompatible exclusivit policy");
+                                                      "Queue has an incompatible exclusivit policy", connection.getMethodRegistry());
                 }
             }
         }

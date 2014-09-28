@@ -26,7 +26,6 @@ import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.TxRollbackBody;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 
 public class TxRollbackHandler implements StateAwareMethodListener<TxRollbackBody>
@@ -42,22 +41,22 @@ public class TxRollbackHandler implements StateAwareMethodListener<TxRollbackBod
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, TxRollbackBody body, final int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               TxRollbackBody body,
+                               final int channelId) throws AMQException
     {
-        final AMQProtocolSession session = stateManager.getProtocolSession();
-
         try
         {
-            AMQChannel channel = session.getChannel(channelId);
+            AMQChannel channel = connection.getChannel(channelId);
 
             if (channel == null)
             {
-                throw body.getChannelNotFoundException(channelId);
+                throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
             }
 
 
 
-            final MethodRegistry methodRegistry = session.getMethodRegistry();
+            final MethodRegistry methodRegistry = connection.getMethodRegistry();
             final AMQMethodBody responseBody = methodRegistry.createTxRollbackOkBody();
 
             Runnable task = new Runnable()
@@ -65,7 +64,7 @@ public class TxRollbackHandler implements StateAwareMethodListener<TxRollbackBod
 
                 public void run()
                 {
-                    session.writeFrame(responseBody.generateFrame(channelId));
+                    connection.writeFrame(responseBody.generateFrame(channelId));
                 }
             };
 
@@ -79,7 +78,8 @@ public class TxRollbackHandler implements StateAwareMethodListener<TxRollbackBod
         }
         catch (AMQException e)
         {
-            throw body.getChannelException(e.getErrorCode(), "Failed to rollback: " + e.getMessage());
+            throw body.getChannelException(e.getErrorCode(), "Failed to rollback: " + e.getMessage(),
+                                           connection.getMethodRegistry());
         }
     }
 }

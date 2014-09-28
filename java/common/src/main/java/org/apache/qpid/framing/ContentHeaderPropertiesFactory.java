@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
-
 import java.io.DataInput;
 import java.io.IOException;
 

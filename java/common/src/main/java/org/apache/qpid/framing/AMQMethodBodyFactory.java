@@ -20,27 +20,26 @@
  */
 package org.apache.qpid.framing;
 
+import java.io.IOException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.codec.MarkableDataInput;
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-
-import java.io.IOException;
 
 public class AMQMethodBodyFactory implements BodyFactory
 {
     private static final Logger _log = LoggerFactory.getLogger(AMQMethodBodyFactory.class);
 
-    private final AMQVersionAwareProtocolSession _protocolSession;
+    private final MethodRegistrySource _registrySource;
 
-    public AMQMethodBodyFactory(AMQVersionAwareProtocolSession protocolSession)
+    public AMQMethodBodyFactory(MethodRegistrySource registrySource)
     {
-        _protocolSession = protocolSession;
+        _registrySource = registrySource;
     }
 
     public AMQBody createBody(MarkableDataInput in, long bodySize) throws AMQFrameDecodingException, IOException
     {
-        return _protocolSession.getMethodRegistry().convertToBody(in, bodySize);
+        return _registrySource.getMethodRegistry().convertToBody(in, bodySize);
     }
 }

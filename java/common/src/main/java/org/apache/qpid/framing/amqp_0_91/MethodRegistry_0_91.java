@@ -27,17 +27,15 @@
 
 package org.apache.qpid.framing.amqp_0_91;
 
-import org.apache.qpid.framing.*;
-import org.apache.qpid.protocol.AMQConstant;
-
+import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-
-import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 import org.apache.qpid.codec.MarkableDataInput;
+import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
+import org.apache.qpid.protocol.AMQConstant;
 
 
 public class MethodRegistry_0_91 extends MethodRegistry

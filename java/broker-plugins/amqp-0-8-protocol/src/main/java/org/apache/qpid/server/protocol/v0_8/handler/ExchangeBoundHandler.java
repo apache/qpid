@@ -29,7 +29,6 @@ import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
@@ -65,16 +64,17 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, ExchangeBoundBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               ExchangeBoundBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
-        VirtualHostImpl virtualHost = session.getVirtualHost();
-        MethodRegistry methodRegistry = session.getMethodRegistry();
+        VirtualHostImpl virtualHost = connection.getVirtualHost();
+        MethodRegistry methodRegistry = connection.getMethodRegistry();
 
-        final AMQChannel channel = session.getChannel(channelId);
+        final AMQChannel channel = connection.getChannel(channelId);
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
         channel.sync();
 
@@ -227,7 +227,7 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
                 }
             }
         }
-        session.writeFrame(response.generateFrame(channelId));
+        connection.writeFrame(response.generateFrame(channelId));
     }
 
     protected boolean isDefaultExchange(final AMQShortString exchangeName)

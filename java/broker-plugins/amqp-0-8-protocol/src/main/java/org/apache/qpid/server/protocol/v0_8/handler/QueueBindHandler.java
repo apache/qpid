@@ -36,7 +36,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -56,15 +55,16 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueBindBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               QueueBindBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
-        VirtualHostImpl virtualHost = protocolConnection.getVirtualHost();
-        AMQChannel channel = protocolConnection.getChannel(channelId);
+        VirtualHostImpl virtualHost = connection.getVirtualHost();
+        AMQChannel channel = connection.getChannel(channelId);
 
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
 
         final AMQQueue queue;
@@ -79,7 +79,8 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 
             if (queue == null)
             {
-                throw body.getChannelException(AMQConstant.NOT_FOUND, "No default queue defined on channel and queue was null");
+                throw body.getChannelException(AMQConstant.NOT_FOUND, "No default queue defined on channel and queue was null",
+                                               connection.getMethodRegistry());
             }
 
             if (body.getRoutingKey() == null)
@@ -99,12 +100,14 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 
         if (queue == null)
         {
-            throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + queueName + " does not exist.");
+            throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + queueName + " does not exist.",
+                                           connection.getMethodRegistry());
         }
 
         if(isDefaultExchange(body.getExchange()))
         {
-            throw body.getConnectionException(AMQConstant.NOT_ALLOWED, "Cannot bind the queue " + queueName + " to the default exchange");
+            throw body.getConnectionException(AMQConstant.NOT_ALLOWED, "Cannot bind the queue " + queueName + " to the default exchange",
+                                              connection.getMethodRegistry());
         }
 
         final String exchangeName = body.getExchange().toString();
@@ -112,7 +115,8 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         final ExchangeImpl exch = virtualHost.getExchange(exchangeName);
         if (exch == null)
         {
-            throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + exchangeName + " does not exist.");
+            throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + exchangeName + " does not exist.",
+                                           connection.getMethodRegistry());
         }
 
 
@@ -133,7 +137,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         }
         catch (AccessControlException e)
         {
-            throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+            throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage(), connection.getMethodRegistry());
         }
 
         if (_log.isInfoEnabled())
@@ -143,9 +147,9 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         if (!body.getNowait())
         {
             channel.sync();
-            MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
+            MethodRegistry methodRegistry = connection.getMethodRegistry();
             AMQMethodBody responseBody = methodRegistry.createQueueBindOkBody();
-            protocolConnection.writeFrame(responseBody.generateFrame(channelId));
+            connection.writeFrame(responseBody.generateFrame(channelId));
 
         }
     }

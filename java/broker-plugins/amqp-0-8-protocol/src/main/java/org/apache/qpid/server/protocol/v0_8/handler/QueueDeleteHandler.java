@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.protocol.v0_8.handler;
 
+import java.security.AccessControlException;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.QueueDeleteBody;
@@ -27,13 +29,9 @@ import org.apache.qpid.framing.QueueDeleteOkBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
-import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import java.security.AccessControlException;
 
 public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteBody>
 {
@@ -57,18 +55,17 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
 
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueDeleteBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               QueueDeleteBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
-        VirtualHostImpl virtualHost = protocolConnection.getVirtualHost();
-        DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
+        VirtualHostImpl virtualHost = connection.getVirtualHost();
 
-
-        AMQChannel channel = protocolConnection.getChannel(channelId);
+        AMQChannel channel = connection.getChannel(channelId);
 
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
         channel.sync();
         AMQQueue queue;
@@ -87,26 +84,30 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
         {
             if (_failIfNotFound)
             {
-                throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
+                throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.",
+                                               connection.getMethodRegistry());
             }
         }
         else
         {
             if (body.getIfEmpty() && !queue.isEmpty())
             {
-                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.getQueue() + " is not empty.");
+                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.getQueue() + " is not empty.",
+                                               connection.getMethodRegistry());
             }
             else if (body.getIfUnused() && !queue.isUnused())
             {
                 // TODO - Error code
-                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.getQueue() + " is still used.");
+                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.getQueue() + " is still used.",
+                                               connection.getMethodRegistry());
             }
             else
             {
                 if (!queue.verifySessionAccess(channel))
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
+                                                      "Queue " + queue.getName() + " is exclusive, but not created on this Connection.",
+                                                      connection.getMethodRegistry());
                 }
 
                 int purged = 0;
@@ -116,12 +117,12 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
                 }
                 catch (AccessControlException e)
                 {
-                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage(), connection.getMethodRegistry());
                 }
 
-                MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
+                MethodRegistry methodRegistry = connection.getMethodRegistry();
                 QueueDeleteOkBody responseBody = methodRegistry.createQueueDeleteOkBody(purged);
-                protocolConnection.writeFrame(responseBody.generateFrame(channelId));
+                connection.writeFrame(responseBody.generateFrame(channelId));
             }
         }
     }

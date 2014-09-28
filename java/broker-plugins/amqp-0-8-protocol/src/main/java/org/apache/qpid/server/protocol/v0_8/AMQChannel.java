@@ -464,8 +464,7 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
                     AMQConstant.NO_ROUTE,
                     "No route for message " + currentMessageDescription(),
                     0, 0, // default class and method ids
-                    getProtocolSession().getProtocolVersion().getMajorVersion(),
-                    getProtocolSession().getProtocolVersion().getMinorVersion(),
+                    getProtocolSession().getMethodRegistry(),
                     (Throwable) null);
         }
 

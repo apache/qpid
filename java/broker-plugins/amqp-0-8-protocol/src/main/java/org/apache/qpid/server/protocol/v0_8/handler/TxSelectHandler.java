@@ -26,7 +26,6 @@ import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxSelectOkBody;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 
 public class TxSelectHandler implements StateAwareMethodListener<TxSelectBody>
@@ -42,21 +41,21 @@ public class TxSelectHandler implements StateAwareMethodListener<TxSelectBody>
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, TxSelectBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               TxSelectBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
-
-        AMQChannel channel = session.getChannel(channelId);
+        AMQChannel channel = connection.getChannel(channelId);
 
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
 
         channel.setLocalTransactional();
 
-        MethodRegistry methodRegistry = session.getMethodRegistry();
+        MethodRegistry methodRegistry = connection.getMethodRegistry();
         TxSelectOkBody responseBody = methodRegistry.createTxSelectOkBody();
-        session.writeFrame(responseBody.generateFrame(channelId));
+        connection.writeFrame(responseBody.generateFrame(channelId));
     }
 }

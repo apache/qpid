@@ -28,7 +28,6 @@ import org.apache.qpid.framing.BasicCancelOkBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 
 public class BasicCancelMethodHandler implements StateAwareMethodListener<BasicCancelBody>
@@ -46,16 +45,16 @@ public class BasicCancelMethodHandler implements StateAwareMethodListener<BasicC
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, BasicCancelBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               BasicCancelBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
-
-        final AMQChannel channel = session.getChannel(channelId);
+        final AMQChannel channel = connection.getChannel(channelId);
 
 
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
 
         if (_log.isDebugEnabled())
@@ -67,10 +66,10 @@ public class BasicCancelMethodHandler implements StateAwareMethodListener<BasicC
         channel.unsubscribeConsumer(body.getConsumerTag());
         if (!body.getNowait())
         {
-            MethodRegistry methodRegistry = session.getMethodRegistry();
+            MethodRegistry methodRegistry = connection.getMethodRegistry();
             BasicCancelOkBody cancelOkBody = methodRegistry.createBasicCancelOkBody(body.getConsumerTag());
             channel.sync();
-            session.writeFrame(cancelOkBody.generateFrame(channelId));
+            connection.writeFrame(cancelOkBody.generateFrame(channelId));
         }
     }
 }

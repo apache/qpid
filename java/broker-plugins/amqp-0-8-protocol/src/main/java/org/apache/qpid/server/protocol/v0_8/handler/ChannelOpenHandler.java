@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.server.protocol.v0_8.handler;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.UUID;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
@@ -33,15 +38,9 @@ import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.UUID;
 
 public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenBody>
 {
@@ -58,10 +57,11 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, ChannelOpenBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               ChannelOpenBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
-        VirtualHostImpl virtualHost = session.getVirtualHost();
+        VirtualHostImpl virtualHost = connection.getVirtualHost();
 
         // Protect the broker against out of order frame request.
         if (virtualHost == null)
@@ -70,13 +70,13 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
         }
         _logger.info("Connecting to: " + virtualHost.getName());
 
-        final AMQChannel channel = new AMQChannel(session,channelId, virtualHost.getMessageStore());
+        final AMQChannel channel = new AMQChannel(connection,channelId, virtualHost.getMessageStore());
 
-        session.addChannel(channel);
+        connection.addChannel(channel);
 
         ChannelOpenOkBody response;
 
-        ProtocolVersion pv = session.getProtocolVersion();
+        ProtocolVersion pv = connection.getProtocolVersion();
 
         if(pv.equals(ProtocolVersion.v8_0))
         {
@@ -138,6 +138,6 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
         }
 
 
-        session.writeFrame(response.generateFrame(channelId));
+        connection.writeFrame(response.generateFrame(channelId));
     }
 }

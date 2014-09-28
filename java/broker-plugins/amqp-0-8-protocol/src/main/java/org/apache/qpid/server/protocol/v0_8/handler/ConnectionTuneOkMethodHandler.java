@@ -29,7 +29,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 
 public class ConnectionTuneOkMethodHandler implements StateAwareMethodListener<ConnectionTuneOkBody>
@@ -43,19 +42,20 @@ public class ConnectionTuneOkMethodHandler implements StateAwareMethodListener<C
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, ConnectionTuneOkBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               ConnectionTuneOkBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
 
         if (_logger.isDebugEnabled())
         {
             _logger.debug(body);
         }
-        stateManager.changeState(AMQState.CONNECTION_NOT_OPENED);
+        connection.changeState(AMQState.CONNECTION_NOT_OPENED);
 
-        session.initHeartbeats(body.getHeartbeat());
+        connection.initHeartbeats(body.getHeartbeat());
 
-        int brokerFrameMax = stateManager.getBroker().getContextValue(Integer.class,Broker.BROKER_FRAME_SIZE);
+        int brokerFrameMax = connection.getBroker().getContextValue(Integer.class,Broker.BROKER_FRAME_SIZE);
         if(brokerFrameMax <= 0)
         {
             brokerFrameMax = Integer.MAX_VALUE;
@@ -68,7 +68,7 @@ public class ConnectionTuneOkMethodHandler implements StateAwareMethodListener<C
                                              + "greater than the broker will allow: "
                                              + brokerFrameMax,
                                              body.getClazz(), body.getMethod(),
-                                             body.getMajor(), body.getMinor(),null);
+                                             connection.getMethodRegistry(),null);
         }
         else if(body.getFrameMax() > 0 && body.getFrameMax() < AMQConstant.FRAME_MIN_SIZE.getCode())
         {
@@ -77,13 +77,13 @@ public class ConnectionTuneOkMethodHandler implements StateAwareMethodListener<C
                                              + "which is smaller than the specification definined minimum: "
                                              + AMQConstant.FRAME_MIN_SIZE.getCode(),
                                              body.getClazz(), body.getMethod(),
-                                             body.getMajor(), body.getMinor(),null);
+                                             connection.getMethodRegistry(),null);
         }
         int frameMax = body.getFrameMax() == 0 ? brokerFrameMax : (int) body.getFrameMax();
-        session.setMaxFrameSize(frameMax);
+        connection.setMaxFrameSize(frameMax);
 
         long maxChannelNumber = body.getChannelMax();
         //0 means no implied limit, except that forced by protocol limitations (0xFFFF)
-        session.setMaximumNumberOfChannels( maxChannelNumber == 0 ? 0xFFFFL : maxChannelNumber);
+        connection.setMaximumNumberOfChannels(maxChannelNumber == 0 ? 0xFFFFL : maxChannelNumber);
     }
 }

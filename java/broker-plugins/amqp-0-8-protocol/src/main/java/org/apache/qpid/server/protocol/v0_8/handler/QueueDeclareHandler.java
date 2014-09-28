@@ -39,7 +39,6 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
@@ -57,11 +56,12 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, QueueDeclareBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               QueueDeclareBody body,
+                               int channelId) throws AMQException
     {
-        final AMQProtocolSession protocolConnection = stateManager.getProtocolSession();
-        final AMQSessionModel session = protocolConnection.getChannel(channelId);
-        VirtualHostImpl virtualHost = protocolConnection.getVirtualHost();
+        final AMQSessionModel session = connection.getChannel(channelId);
+        VirtualHostImpl virtualHost = connection.getVirtualHost();
 
         final AMQShortString queueName;
 
@@ -79,11 +79,11 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
 
         //TODO: do we need to check that the queue already exists with exactly the same "configuration"?
 
-        AMQChannel channel = protocolConnection.getChannel(channelId);
+        AMQChannel channel = connection.getChannel(channelId);
 
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
 
         if(body.getPassive())
@@ -92,14 +92,15 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             if (queue == null)
             {
                 String msg = "Queue: " + queueName + " not found on VirtualHost(" + virtualHost + ").";
-                throw body.getChannelException(AMQConstant.NOT_FOUND, msg);
+                throw body.getChannelException(AMQConstant.NOT_FOUND, msg, connection.getMethodRegistry());
             }
             else
             {
                 if (!queue.verifySessionAccess(channel))
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
+                                                      "Queue " + queue.getName() + " is exclusive, but not created on this Connection.",
+                                                      connection.getMethodRegistry());
                 }
 
                 //set this as the default queue on the channel:
@@ -112,7 +113,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             try
             {
 
-                queue = createQueue(channel, queueName, body, virtualHost, protocolConnection);
+                queue = createQueue(channel, queueName, body, virtualHost, connection);
 
             }
             catch(QueueExistsException qe)
@@ -123,33 +124,37 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 if (!queue.verifySessionAccess(channel))
                 {
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Queue " + queue.getName() + " is exclusive, but not created on this Connection.");
+                                                      "Queue " + queue.getName() + " is exclusive, but not created on this Connection.",
+                                                      connection.getMethodRegistry());
                 }
                 else if(queue.isExclusive() != body.getExclusive())
                 {
 
                     throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
                             "Cannot re-declare queue '" + queue.getName() + "' with different exclusivity (was: "
-                            + queue.isExclusive() + " requested " + body.getExclusive() + ")");
+                            + queue.isExclusive() + " requested " + body.getExclusive() + ")",
+                            connection.getMethodRegistry());
                 }
                 else if((body.getAutoDelete() && queue.getLifetimePolicy() != LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS)
                     || (!body.getAutoDelete() && queue.getLifetimePolicy() != ((body.getExclusive() && !body.getDurable()) ? LifetimePolicy.DELETE_ON_CONNECTION_CLOSE : LifetimePolicy.PERMANENT)))
                 {
                     throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
                                                       "Cannot re-declare queue '" + queue.getName() + "' with different lifetime policy (was: "
-                                                        + queue.getLifetimePolicy() + " requested autodelete: " + body.getAutoDelete() + ")");
+                                                        + queue.getLifetimePolicy() + " requested autodelete: " + body.getAutoDelete() + ")",
+                                                      connection.getMethodRegistry());
                 }
                 else if(queue.isDurable() != body.getDurable())
                 {
                     throw body.getChannelException(AMQConstant.ALREADY_EXISTS,
                                                       "Cannot re-declare queue '" + queue.getName() + "' with different durability (was: "
-                                                        + queue.isDurable() + " requested " + body.getDurable() + ")");
+                                                        + queue.isDurable() + " requested " + body.getDurable() + ")",
+                                                      connection.getMethodRegistry());
                 }
 
             }
             catch (AccessControlException e)
             {
-                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage(), connection.getMethodRegistry());
             }
 
             //set this as the default queue on the channel:
@@ -159,12 +164,12 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         if (!body.getNowait())
         {
             channel.sync();
-            MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
+            MethodRegistry methodRegistry = connection.getMethodRegistry();
             QueueDeclareOkBody responseBody =
                     methodRegistry.createQueueDeclareOkBody(queueName,
                                                             queue.getQueueDepthMessages(),
                                                             queue.getConsumerCount());
-            protocolConnection.writeFrame(responseBody.generateFrame(channelId));
+            connection.writeFrame(responseBody.generateFrame(channelId));
 
             _logger.info("Queue " + queueName + " declared successfully");
         }

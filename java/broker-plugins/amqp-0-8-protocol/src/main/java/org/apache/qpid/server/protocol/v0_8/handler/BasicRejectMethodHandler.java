@@ -27,8 +27,6 @@ import org.apache.qpid.framing.BasicRejectBody;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 
 public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicRejectBody>
@@ -46,15 +44,16 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, BasicRejectBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               BasicRejectBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
 
-        AMQChannel channel = session.getChannel(channelId);
+        AMQChannel channel = connection.getChannel(channelId);
 
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
 
         if (_logger.isDebugEnabled())

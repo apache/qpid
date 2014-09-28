@@ -38,8 +38,8 @@ import org.apache.qpid.framing.AMQProtocolVersionException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ByteArrayDataInput;
 import org.apache.qpid.framing.EncodingUtils;
+import org.apache.qpid.framing.MethodRegistrySource;
 import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 /**
  * AMQDecoder delegates the decoding of AMQP either to a data block decoder, or in the case of new connections, to a
@@ -74,14 +74,13 @@ public class AMQDecoder
      * Creates a new AMQP decoder.
      *
      * @param expectProtocolInitiation <tt>true</tt> if this decoder needs to handle protocol initiation.
-     * @param session protocol session (connection)
+     * @param registrySource method registry source
      */
-    public AMQDecoder(boolean expectProtocolInitiation, AMQVersionAwareProtocolSession session)
+    public AMQDecoder(boolean expectProtocolInitiation, MethodRegistrySource registrySource)
     {
         _expectProtocolInitiation = expectProtocolInitiation;
-        _bodyFactory = new AMQMethodBodyFactory(session);
+        _bodyFactory = new AMQMethodBodyFactory(registrySource);
     }
-
 
 
     /**

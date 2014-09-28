@@ -24,7 +24,7 @@ package org.apache.qpid.server.protocol.v0_8.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.amqp_0_91.MethodDispatcher_0_91;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
+import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 
 
 public class ServerMethodDispatcherImpl_0_91
@@ -39,120 +39,20 @@ public class ServerMethodDispatcherImpl_0_91
             QueueUnbindHandler.getInstance();
 
 
-    public ServerMethodDispatcherImpl_0_91(AMQStateManager stateManager)
+    public ServerMethodDispatcherImpl_0_91(AMQProtocolSession<?> connection)
     {
-        super(stateManager);
+        super(connection);
     }
 
     public boolean dispatchBasicRecoverSync(BasicRecoverSyncBody body, int channelId) throws AMQException
     {
-        _basicRecoverSyncMethodHandler.methodReceived(getStateManager(), body, channelId);
+        _basicRecoverSyncMethodHandler.methodReceived(getConnection(), body, channelId);
         return true;
     }
 
     public boolean dispatchBasicRecoverSyncOk(BasicRecoverSyncOkBody body, int channelId) throws AMQException
     {
         throw new UnexpectedMethodException(body);
-    }
-
-    public boolean dispatchChannelOk(ChannelOkBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchChannelPing(ChannelPingBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchChannelPong(ChannelPongBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchChannelResume(ChannelResumeBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageAppend(MessageAppendBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageCancel(MessageCancelBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageCheckpoint(MessageCheckpointBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageClose(MessageCloseBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageConsume(MessageConsumeBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageEmpty(MessageEmptyBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageGet(MessageGetBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageOffset(MessageOffsetBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageOk(MessageOkBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageOpen(MessageOpenBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageQos(MessageQosBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageRecover(MessageRecoverBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageReject(MessageRejectBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageResume(MessageResumeBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchMessageTransfer(MessageTransferBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchBasicRecoverOk(BasicRecoverOkBody body, int channelId) throws AMQException
-    {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public boolean dispatchQueueUnbindOk(QueueUnbindOkBody body, int channelId) throws AMQException
@@ -162,7 +62,7 @@ public class ServerMethodDispatcherImpl_0_91
 
     public boolean dispatchQueueUnbind(QueueUnbindBody body, int channelId) throws AMQException
     {
-        _queueUnbindHandler.methodReceived(getStateManager(),body,channelId);
+        _queueUnbindHandler.methodReceived(getConnection(), body,channelId);
         return true;
     }
 }

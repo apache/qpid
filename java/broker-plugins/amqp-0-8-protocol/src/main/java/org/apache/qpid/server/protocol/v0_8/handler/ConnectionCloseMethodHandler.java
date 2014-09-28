@@ -27,7 +27,6 @@ import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionCloseOkBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 
 public class ConnectionCloseMethodHandler implements StateAwareMethodListener<ConnectionCloseBody>
@@ -45,28 +44,29 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, ConnectionCloseBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               ConnectionCloseBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
         if (_logger.isInfoEnabled())
         {
             _logger.info("ConnectionClose received with reply code/reply text " + body.getReplyCode() + "/" +
-                         body.getReplyText() + " for " + session);
+                         body.getReplyText() + " for " + connection);
         }
         try
         {
-            session.closeSession();
+            connection.closeSession();
         }
         catch (Exception e)
         {
             _logger.error("Error closing protocol session: " + e, e);
         }
 
-        MethodRegistry methodRegistry = session.getMethodRegistry();
+        MethodRegistry methodRegistry = connection.getMethodRegistry();
         ConnectionCloseOkBody responseBody = methodRegistry.createConnectionCloseOkBody();
-        session.writeFrame(responseBody.generateFrame(channelId));
+        connection.writeFrame(responseBody.generateFrame(channelId));
 
-        session.closeProtocolSession();
+        connection.closeProtocolSession();
 
     }
 }

@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.protocol.v0_8.handler;
 
+import java.security.AccessControlException;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeleteBody;
@@ -28,13 +30,10 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import java.security.AccessControlException;
 
 public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeDeleteBody>
 {
@@ -49,14 +48,15 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, ExchangeDeleteBody body, int channelId) throws AMQException
+    public void methodReceived(final AMQProtocolSession<?> connection,
+                               ExchangeDeleteBody body,
+                               int channelId) throws AMQException
     {
-        AMQProtocolSession session = stateManager.getProtocolSession();
-        VirtualHostImpl virtualHost = session.getVirtualHost();
-        final AMQChannel channel = session.getChannel(channelId);
+        VirtualHostImpl virtualHost = connection.getVirtualHost();
+        final AMQChannel channel = connection.getChannel(channelId);
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
         }
         channel.sync();
         try
@@ -64,7 +64,7 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
 
             if(isDefaultExchange(body.getExchange()))
             {
-                throw body.getConnectionException(AMQConstant.NOT_ALLOWED, "Default Exchange cannot be deleted");
+                throw body.getConnectionException(AMQConstant.NOT_ALLOWED, "Default Exchange cannot be deleted", connection.getMethodRegistry());
             }
 
             final String exchangeName = body.getExchange().toString();
@@ -72,28 +72,31 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
             final ExchangeImpl exchange = virtualHost.getExchange(exchangeName);
             if(exchange == null)
             {
-                throw body.getChannelException(AMQConstant.NOT_FOUND, "No such exchange: " + body.getExchange());
+                throw body.getChannelException(AMQConstant.NOT_FOUND, "No such exchange: " + body.getExchange(),
+                                               connection.getMethodRegistry());
             }
 
             virtualHost.removeExchange(exchange, !body.getIfUnused());
 
-            ExchangeDeleteOkBody responseBody = session.getMethodRegistry().createExchangeDeleteOkBody();
+            ExchangeDeleteOkBody responseBody = connection.getMethodRegistry().createExchangeDeleteOkBody();
 
-            session.writeFrame(responseBody.generateFrame(channelId));
+            connection.writeFrame(responseBody.generateFrame(channelId));
         }
 
         catch (ExchangeIsAlternateException e)
         {
-            throw body.getChannelException(AMQConstant.NOT_ALLOWED, "Exchange in use as an alternate exchange");
+            throw body.getChannelException(AMQConstant.NOT_ALLOWED, "Exchange in use as an alternate exchange",
+                                           connection.getMethodRegistry());
 
         }
         catch (RequiredExchangeException e)
         {
-            throw body.getChannelException(AMQConstant.NOT_ALLOWED, "Exchange '"+body.getExchange()+"' cannot be deleted");
+            throw body.getChannelException(AMQConstant.NOT_ALLOWED, "Exchange '"+body.getExchange()+"' cannot be deleted",
+                                           connection.getMethodRegistry());
         }
         catch (AccessControlException e)
         {
-            throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage());
+            throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage(), connection.getMethodRegistry());
         }
     }
 

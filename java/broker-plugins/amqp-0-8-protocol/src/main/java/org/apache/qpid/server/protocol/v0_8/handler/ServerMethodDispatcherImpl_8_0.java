@@ -23,24 +23,16 @@ package org.apache.qpid.server.protocol.v0_8.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicRecoverOkBody;
 import org.apache.qpid.framing.ChannelAlertBody;
-import org.apache.qpid.framing.TestContentBody;
-import org.apache.qpid.framing.TestContentOkBody;
-import org.apache.qpid.framing.TestIntegerBody;
-import org.apache.qpid.framing.TestIntegerOkBody;
-import org.apache.qpid.framing.TestStringBody;
-import org.apache.qpid.framing.TestStringOkBody;
-import org.apache.qpid.framing.TestTableBody;
-import org.apache.qpid.framing.TestTableOkBody;
 import org.apache.qpid.framing.amqp_8_0.MethodDispatcher_8_0;
-import org.apache.qpid.server.protocol.v0_8.state.AMQStateManager;
+import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 
 public class ServerMethodDispatcherImpl_8_0
         extends ServerMethodDispatcherImpl
         implements MethodDispatcher_8_0
 {
-    public ServerMethodDispatcherImpl_8_0(AMQStateManager stateManager)
+    public ServerMethodDispatcherImpl_8_0(AMQProtocolSession<?> connection)
     {
-        super(stateManager);
+        super(connection);
     }
 
     public boolean dispatchBasicRecoverOk(BasicRecoverOkBody body, int channelId) throws AMQException
@@ -53,43 +45,4 @@ public class ServerMethodDispatcherImpl_8_0
         throw new UnexpectedMethodException(body);
     }
 
-    public boolean dispatchTestContent(TestContentBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchTestContentOk(TestContentOkBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchTestInteger(TestIntegerBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchTestIntegerOk(TestIntegerOkBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchTestString(TestStringBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchTestStringOk(TestStringOkBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchTestTable(TestTableBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchTestTableOk(TestTableOkBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
 }
