@@ -54,8 +54,6 @@ import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.ConnectionTuneOkBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.ConnectionStartOkBodyImpl;
-import org.apache.qpid.framing.ConnectionTuneOkBodyImpl;
 import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -220,12 +218,12 @@ public class MaxFrameSizeTest extends QpidBrokerTestCase
             response[i++] = b;
         }
 
-        ConnectionStartOkBody startOK = new ConnectionStartOkBodyImpl(new FieldTable(), AMQShortString.valueOf("PLAIN"), response, AMQShortString.valueOf("en_US"));
+        ConnectionStartOkBody startOK = new ConnectionStartOkBody(new FieldTable(), AMQShortString.valueOf("PLAIN"), response, AMQShortString.valueOf("en_US"));
 
         DataOutputStream dos = new DataOutputStream(os);
         new AMQFrame(0, startOK).writePayload(dos);
         dos.flush();
-        ConnectionTuneOkBody tuneOk = new ConnectionTuneOkBodyImpl(256, frameSize, 0);
+        ConnectionTuneOkBody tuneOk = new ConnectionTuneOkBody(256, frameSize, 0);
         new AMQFrame(0, tuneOk).writePayload(dos);
         dos.flush();
         socket.setSoTimeout(5000);

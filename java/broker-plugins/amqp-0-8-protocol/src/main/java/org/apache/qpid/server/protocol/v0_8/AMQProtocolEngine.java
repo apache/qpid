@@ -1524,7 +1524,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                 methodRegistry.createChannelCloseBody(
                         cause.getCode(),
                         AMQShortString.validValueOf(message),
-                        0,0);
+                        0, 0);
 
         writeFrame(responseBody.generateFrame(channelId));
     }

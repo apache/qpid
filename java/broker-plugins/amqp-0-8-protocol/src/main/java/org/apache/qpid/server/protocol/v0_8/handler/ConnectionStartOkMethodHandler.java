@@ -120,15 +120,17 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                         frameMax = Integer.MAX_VALUE;
                     }
 
-                    ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody(broker.getConnection_sessionCountLimit(),
-                                                                                          frameMax,
-                                                                                          broker.getConnection_heartBeatDelay());
+                    ConnectionTuneBody
+                            tuneBody = methodRegistry.createConnectionTuneBody(broker.getConnection_sessionCountLimit(),
+                                                                               frameMax,
+                                                                               broker.getConnection_heartBeatDelay());
                     connection.writeFrame(tuneBody.generateFrame(0));
                     break;
                 case CONTINUE:
                     connection.changeState(AMQState.CONNECTION_NOT_AUTH);
 
-                    ConnectionSecureBody secureBody = methodRegistry.createConnectionSecureBody(authResult.getChallenge());
+                    ConnectionSecureBody
+                            secureBody = methodRegistry.createConnectionSecureBody(authResult.getChallenge());
                     connection.writeFrame(secureBody.generateFrame(0));
             }
         }

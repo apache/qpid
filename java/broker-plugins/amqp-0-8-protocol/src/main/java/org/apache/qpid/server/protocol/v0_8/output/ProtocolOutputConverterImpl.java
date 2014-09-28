@@ -383,10 +383,10 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
         BasicGetOkBody getOkBody =
                 _methodRegistry.createBasicGetOkBody(deliveryTag,
-                                                    isRedelivered,
-                                                    exchangeName,
-                                                    routingKey,
-                                                    queueSize);
+                                                     isRedelivered,
+                                                     exchangeName,
+                                                     routingKey,
+                                                     queueSize);
 
         return getOkBody;
     }
@@ -408,9 +408,9 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
         BasicReturnBody basicReturnBody =
                 _methodRegistry.createBasicReturnBody(replyCode,
-                                                     replyText,
-                                                     messagePublishInfo.getExchange(),
-                                                     messagePublishInfo.getRoutingKey());
+                                                      replyText,
+                                                      messagePublishInfo.getExchange(),
+                                                      messagePublishInfo.getRoutingKey());
 
 
         return basicReturnBody;

@@ -74,115 +74,115 @@ public abstract class MethodRegistry
 
 
     public abstract BasicAckBody createBasicAckBody(
-                                final long deliveryTag,
-                                final boolean multiple
-                                );
+            final long deliveryTag,
+            final boolean multiple
+                                                       );
 
     public abstract BasicCancelBody createBasicCancelBody(
-                                final AMQShortString consumerTag,
-                                final boolean nowait
-                                );
+            final AMQShortString consumerTag,
+            final boolean nowait
+                                                             );
 
     public abstract BasicCancelOkBody createBasicCancelOkBody(
-                                final AMQShortString consumerTag
-                                );
+            final AMQShortString consumerTag
+                                                                 );
 
     public abstract BasicConsumeBody createBasicConsumeBody(
-                                final int ticket,
-                                final AMQShortString queue,
-                                final AMQShortString consumerTag,
-                                final boolean noLocal,
-                                final boolean noAck,
-                                final boolean exclusive,
-                                final boolean nowait,
-                                final FieldTable arguments
-                                );
+            final int ticket,
+            final AMQShortString queue,
+            final AMQShortString consumerTag,
+            final boolean noLocal,
+            final boolean noAck,
+            final boolean exclusive,
+            final boolean nowait,
+            final FieldTable arguments
+                                                               );
 
     public abstract BasicConsumeOkBody createBasicConsumeOkBody(
-                                final AMQShortString consumerTag
-                                );
+            final AMQShortString consumerTag
+                                                                   );
 
     public abstract BasicDeliverBody createBasicDeliverBody(
-                                final AMQShortString consumerTag,
-                                final long deliveryTag,
-                                final boolean redelivered,
-                                final AMQShortString exchange,
-                                final AMQShortString routingKey
-                                );
+            final AMQShortString consumerTag,
+            final long deliveryTag,
+            final boolean redelivered,
+            final AMQShortString exchange,
+            final AMQShortString routingKey
+                                                               );
 
     public abstract BasicGetBody createBasicGetBody(
-                                final int ticket,
-                                final AMQShortString queue,
-                                final boolean noAck
-                                );
+            final int ticket,
+            final AMQShortString queue,
+            final boolean noAck
+                                                       );
 
     public abstract BasicGetEmptyBody createBasicGetEmptyBody(
-                                final AMQShortString clusterId
-                                );
+            final AMQShortString clusterId
+                                                                 );
 
     public abstract BasicGetOkBody createBasicGetOkBody(
-                                final long deliveryTag,
-                                final boolean redelivered,
-                                final AMQShortString exchange,
-                                final AMQShortString routingKey,
-                                final long messageCount
-                                );
+            final long deliveryTag,
+            final boolean redelivered,
+            final AMQShortString exchange,
+            final AMQShortString routingKey,
+            final long messageCount
+                                                           );
 
     public abstract BasicPublishBody createBasicPublishBody(
-                                final int ticket,
-                                final AMQShortString exchange,
-                                final AMQShortString routingKey,
-                                final boolean mandatory,
-                                final boolean immediate
-                                );
+            final int ticket,
+            final AMQShortString exchange,
+            final AMQShortString routingKey,
+            final boolean mandatory,
+            final boolean immediate
+                                                               );
 
     public abstract BasicQosBody createBasicQosBody(
-                                final long prefetchSize,
-                                final int prefetchCount,
-                                final boolean global
-                                );
+            final long prefetchSize,
+            final int prefetchCount,
+            final boolean global
+                                                       );
 
     public abstract BasicQosOkBody createBasicQosOkBody(
-                                );
+                                                           );
 
     public abstract BasicRecoverBody createBasicRecoverBody(
-                                final boolean requeue
-                                );
+            final boolean requeue
+                                                               );
 
     public abstract BasicRejectBody createBasicRejectBody(
-                                final long deliveryTag,
-                                final boolean requeue
-                                );
+            final long deliveryTag,
+            final boolean requeue
+                                                             );
 
     public abstract BasicReturnBody createBasicReturnBody(
-                                final int replyCode,
-                                final AMQShortString replyText,
-                                final AMQShortString exchange,
-                                final AMQShortString routingKey
-                                );
+            final int replyCode,
+            final AMQShortString replyText,
+            final AMQShortString exchange,
+            final AMQShortString routingKey
+                                                             );
 
 
     public abstract ChannelCloseBody createChannelCloseBody(
-                                final int replyCode,
-                                final AMQShortString replyText,
-                                final int classId,
-                                final int methodId
-                                );
+            final int replyCode,
+            final AMQShortString replyText,
+            final int classId,
+            final int methodId
+                                                               );
 
     public abstract ChannelCloseOkBody createChannelCloseOkBody(
-                                );
+                                                                   );
 
     public abstract ChannelFlowBody createChannelFlowBody(
-                                final boolean active
-                                );
+            final boolean active
+                                                             );
 
     public abstract ChannelFlowOkBody createChannelFlowOkBody(
-                                final boolean active
-                                );
+            final boolean active
+                                                                 );
 
     public abstract ChannelOpenBody createChannelOpenBody(
-                                final AMQShortString outOfBand
-                                );
+            final AMQShortString outOfBand
+                                                             );
 
 
     public abstract ConnectionCloseBody createConnectionCloseBody(
@@ -196,163 +196,163 @@ public abstract class MethodRegistry
                                 );
 
     public abstract ConnectionOpenBody createConnectionOpenBody(
-                                final AMQShortString virtualHost,
-                                final AMQShortString capabilities,
-                                final boolean insist
-                                );
+            final AMQShortString virtualHost,
+            final AMQShortString capabilities,
+            final boolean insist
+                                                                   );
 
     public abstract ConnectionOpenOkBody createConnectionOpenOkBody(
-                                final AMQShortString knownHosts
-                                );
+            final AMQShortString knownHosts
+                                                                       );
 
     public abstract ConnectionSecureBody createConnectionSecureBody(
-                                final byte[] challenge
-                                );
+            final byte[] challenge
+                                                                       );
 
     public abstract ConnectionSecureOkBody createConnectionSecureOkBody(
-                                final byte[] response
-                                );
+            final byte[] response
+                                                                           );
 
     public abstract ConnectionStartBody createConnectionStartBody(
-                                final short versionMajor,
-                                final short versionMinor,
-                                final FieldTable serverProperties,
-                                final byte[] mechanisms,
-                                final byte[] locales
-                                );
+            final short versionMajor,
+            final short versionMinor,
+            final FieldTable serverProperties,
+            final byte[] mechanisms,
+            final byte[] locales
+                                                                     );
 
     public abstract ConnectionStartOkBody createConnectionStartOkBody(
-                                final FieldTable clientProperties,
-                                final AMQShortString mechanism,
-                                final byte[] response,
-                                final AMQShortString locale
-                                );
+            final FieldTable clientProperties,
+            final AMQShortString mechanism,
+            final byte[] response,
+            final AMQShortString locale
+                                                                         );
 
     public abstract ConnectionTuneBody createConnectionTuneBody(
-                                final int channelMax,
-                                final long frameMax,
-                                final int heartbeat
-                                );
+            final int channelMax,
+            final long frameMax,
+            final int heartbeat
+                                                                   );
 
     public abstract ConnectionTuneOkBody createConnectionTuneOkBody(
-                                final int channelMax,
-                                final long frameMax,
-                                final int heartbeat
-                                );
+            final int channelMax,
+            final long frameMax,
+            final int heartbeat
+                                                                       );
 
 
 
     public abstract ExchangeBoundBody createExchangeBoundBody(
-                                final AMQShortString exchange,
-                                final AMQShortString routingKey,
-                                final AMQShortString queue
-                                );
+            final AMQShortString exchange,
+            final AMQShortString routingKey,
+            final AMQShortString queue
+                                                                 );
 
     public abstract ExchangeBoundOkBody createExchangeBoundOkBody(
-                                final int replyCode,
-                                final AMQShortString replyText
-                                );
+            final int replyCode,
+            final AMQShortString replyText
+                                                                     );
 
     public abstract ExchangeDeclareBody createExchangeDeclareBody(
-                                final int ticket,
-                                final AMQShortString exchange,
-                                final AMQShortString type,
-                                final boolean passive,
-                                final boolean durable,
-                                final boolean autoDelete,
-                                final boolean internal,
-                                final boolean nowait,
-                                final FieldTable arguments
-                                );
+            final int ticket,
+            final AMQShortString exchange,
+            final AMQShortString type,
+            final boolean passive,
+            final boolean durable,
+            final boolean autoDelete,
+            final boolean internal,
+            final boolean nowait,
+            final FieldTable arguments
+                                                                     );
 
     public abstract ExchangeDeclareOkBody createExchangeDeclareOkBody(
-                                );
+                                                                         );
 
     public abstract ExchangeDeleteBody createExchangeDeleteBody(
-                                final int ticket,
-                                final AMQShortString exchange,
-                                final boolean ifUnused,
-                                final boolean nowait
-                                );
+            final int ticket,
+            final AMQShortString exchange,
+            final boolean ifUnused,
+            final boolean nowait
+                                                                   );
 
     public abstract ExchangeDeleteOkBody createExchangeDeleteOkBody(
-                                );
+                                                                       );
 
 
 
 
     public abstract QueueBindBody createQueueBindBody(
-                                final int ticket,
-                                final AMQShortString queue,
-                                final AMQShortString exchange,
-                                final AMQShortString routingKey,
-                                final boolean nowait,
-                                final FieldTable arguments
-                                );
+            final int ticket,
+            final AMQShortString queue,
+            final AMQShortString exchange,
+            final AMQShortString routingKey,
+            final boolean nowait,
+            final FieldTable arguments
+                                                         );
 
     public abstract QueueBindOkBody createQueueBindOkBody(
-                                );
+                                                             );
 
     public abstract QueueDeclareBody createQueueDeclareBody(
-                                final int ticket,
-                                final AMQShortString queue,
-                                final boolean passive,
-                                final boolean durable,
-                                final boolean exclusive,
-                                final boolean autoDelete,
-                                final boolean nowait,
-                                final FieldTable arguments
-                                );
+            final int ticket,
+            final AMQShortString queue,
+            final boolean passive,
+            final boolean durable,
+            final boolean exclusive,
+            final boolean autoDelete,
+            final boolean nowait,
+            final FieldTable arguments
+                                                               );
 
     public abstract QueueDeclareOkBody createQueueDeclareOkBody(
-                                final AMQShortString queue,
-                                final long messageCount,
-                                final long consumerCount
-                                );
+            final AMQShortString queue,
+            final long messageCount,
+            final long consumerCount
+                                                                   );
 
     public abstract QueueDeleteBody createQueueDeleteBody(
-                                final int ticket,
-                                final AMQShortString queue,
-                                final boolean ifUnused,
-                                final boolean ifEmpty,
-                                final boolean nowait
-                                );
+            final int ticket,
+            final AMQShortString queue,
+            final boolean ifUnused,
+            final boolean ifEmpty,
+            final boolean nowait
+                                                             );
 
     public abstract QueueDeleteOkBody createQueueDeleteOkBody(
-                                final long messageCount
-                                );
+            final long messageCount
+                                                                 );
 
     public abstract QueuePurgeBody createQueuePurgeBody(
-                                final int ticket,
-                                final AMQShortString queue,
-                                final boolean nowait
-                                );
+            final int ticket,
+            final AMQShortString queue,
+            final boolean nowait
+                                                           );
 
     public abstract QueuePurgeOkBody createQueuePurgeOkBody(
-                                final long messageCount
-                                );
+            final long messageCount
+                                                               );
 
 
 
 
 
     public abstract TxCommitBody createTxCommitBody(
-                                );
+                                                       );
 
     public abstract TxCommitOkBody createTxCommitOkBody(
-                                );
+                                                           );
 
     public abstract TxRollbackBody createTxRollbackBody(
-                                );
+                                                           );
 
     public abstract TxRollbackOkBody createTxRollbackOkBody(
-                                );
+                                                               );
 
     public abstract TxSelectBody createTxSelectBody(
-                                );
+                                                       );
 
     public abstract TxSelectOkBody createTxSelectOkBody(
-                                );
+                                                           );
 
     public abstract ProtocolVersionMethodConverter getProtocolVersionMethodConverter();
 }

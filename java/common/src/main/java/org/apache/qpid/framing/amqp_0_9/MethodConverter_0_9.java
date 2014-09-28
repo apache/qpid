@@ -24,7 +24,6 @@ package org.apache.qpid.framing.amqp_0_9;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.BasicPublishBodyImpl;
 import org.apache.qpid.framing.abstraction.AbstractMethodConverter;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
@@ -57,7 +56,7 @@ public class MethodConverter_0_9 extends AbstractMethodConverter implements Prot
     public AMQMethodBody convertToBody(MessagePublishInfo info)
     {
 
-        return new BasicPublishBodyImpl(0,
+        return new BasicPublishBody(0,
                                     info.getExchange(),
                                     info.getRoutingKey(),
                                     info.isMandatory(),

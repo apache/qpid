@@ -114,7 +114,8 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
             case CONTINUE:
                 connection.changeState(AMQState.CONNECTION_NOT_AUTH);
 
-                ConnectionSecureBody secureBody = methodRegistry.createConnectionSecureBody(authResult.getChallenge());
+                ConnectionSecureBody
+                        secureBody = methodRegistry.createConnectionSecureBody(authResult.getChallenge());
                 connection.writeFrame(secureBody.generateFrame(0));
         }
     }

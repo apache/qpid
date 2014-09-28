@@ -38,11 +38,11 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicConsumeBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.framing.BasicConsumeBodyImpl;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
 import org.apache.qpid.server.connection.SessionPrincipal;
@@ -599,7 +599,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
 
         MessagePublishInfo messageInfo = new TestMessagePublishInfo(exchange, false, false, routingKey);
 
-        ContentHeaderBody headerBody = new ContentHeaderBody(BasicConsumeBodyImpl.CLASS_ID,0,properties,0l);
+        ContentHeaderBody headerBody = new ContentHeaderBody(BasicConsumeBody.CLASS_ID,0,properties,0l);
 
         MessageMetaData mmd = new MessageMetaData(messageInfo, headerBody, System.currentTimeMillis());
 

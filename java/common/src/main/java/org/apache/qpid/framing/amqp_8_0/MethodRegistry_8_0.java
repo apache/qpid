@@ -62,14 +62,14 @@ public class MethodRegistry_8_0 extends MethodRegistry
 
         _factories[10] = new AMQMethodBodyInstanceFactory[62];
 
-        _factories[10][10] = ConnectionStartBodyImpl.getFactory();
-        _factories[10][11] = ConnectionStartOkBodyImpl.getFactory();
-        _factories[10][20] = ConnectionSecureBodyImpl.getFactory();
-        _factories[10][21] = ConnectionSecureOkBodyImpl.getFactory();
-        _factories[10][30] = ConnectionTuneBodyImpl.getFactory();
-        _factories[10][31] = ConnectionTuneOkBodyImpl.getFactory();
-        _factories[10][40] = ConnectionOpenBodyImpl.getFactory();
-        _factories[10][41] = ConnectionOpenOkBodyImpl.getFactory();
+        _factories[10][10] = ConnectionStartBody.getFactory();
+        _factories[10][11] = ConnectionStartOkBody.getFactory();
+        _factories[10][20] = ConnectionSecureBody.getFactory();
+        _factories[10][21] = ConnectionSecureOkBody.getFactory();
+        _factories[10][30] = ConnectionTuneBody.getFactory();
+        _factories[10][31] = ConnectionTuneOkBody.getFactory();
+        _factories[10][40] = ConnectionOpenBody.getFactory();
+        _factories[10][41] = ConnectionOpenOkBody.getFactory();
         _factories[10][50] = ConnectionRedirectBodyImpl.getFactory();
         _factories[10][60] = ConnectionCloseBodyImpl.getFactory();
         _factories[10][61] = ConnectionCloseOkBodyImpl.getFactory();
@@ -80,13 +80,13 @@ public class MethodRegistry_8_0 extends MethodRegistry
 
         _factories[20] = new AMQMethodBodyInstanceFactory[42];
 
-        _factories[20][10] = ChannelOpenBodyImpl.getFactory();
+        _factories[20][10] = ChannelOpenBody.getFactory();
         _factories[20][11] = ChannelOpenOkBodyImpl.getFactory();
-        _factories[20][20] = ChannelFlowBodyImpl.getFactory();
-        _factories[20][21] = ChannelFlowOkBodyImpl.getFactory();
+        _factories[20][20] = ChannelFlowBody.getFactory();
+        _factories[20][21] = ChannelFlowOkBody.getFactory();
         _factories[20][30] = ChannelAlertBodyImpl.getFactory();
-        _factories[20][40] = ChannelCloseBodyImpl.getFactory();
-        _factories[20][41] = ChannelCloseOkBodyImpl.getFactory();
+        _factories[20][40] = ChannelCloseBody.getFactory();
+        _factories[20][41] = ChannelCloseOkBody.getFactory();
 
 
 
@@ -103,12 +103,12 @@ public class MethodRegistry_8_0 extends MethodRegistry
 
         _factories[40] = new AMQMethodBodyInstanceFactory[24];
 
-        _factories[40][10] = ExchangeDeclareBodyImpl.getFactory();
-        _factories[40][11] = ExchangeDeclareOkBodyImpl.getFactory();
-        _factories[40][20] = ExchangeDeleteBodyImpl.getFactory();
-        _factories[40][21] = ExchangeDeleteOkBodyImpl.getFactory();
-        _factories[40][22] = ExchangeBoundBodyImpl.getFactory();
-        _factories[40][23] = ExchangeBoundOkBodyImpl.getFactory();
+        _factories[40][10] = ExchangeDeclareBody.getFactory();
+        _factories[40][11] = ExchangeDeclareOkBody.getFactory();
+        _factories[40][20] = ExchangeDeleteBody.getFactory();
+        _factories[40][21] = ExchangeDeleteOkBody.getFactory();
+        _factories[40][22] = ExchangeBoundBody.getFactory();
+        _factories[40][23] = ExchangeBoundOkBody.getFactory();
 
 
 
@@ -116,14 +116,14 @@ public class MethodRegistry_8_0 extends MethodRegistry
 
         _factories[50] = new AMQMethodBodyInstanceFactory[42];
 
-        _factories[50][10] = QueueDeclareBodyImpl.getFactory();
-        _factories[50][11] = QueueDeclareOkBodyImpl.getFactory();
-        _factories[50][20] = QueueBindBodyImpl.getFactory();
-        _factories[50][21] = QueueBindOkBodyImpl.getFactory();
-        _factories[50][30] = QueuePurgeBodyImpl.getFactory();
-        _factories[50][31] = QueuePurgeOkBodyImpl.getFactory();
-        _factories[50][40] = QueueDeleteBodyImpl.getFactory();
-        _factories[50][41] = QueueDeleteOkBodyImpl.getFactory();
+        _factories[50][10] = QueueDeclareBody.getFactory();
+        _factories[50][11] = QueueDeclareOkBody.getFactory();
+        _factories[50][20] = QueueBindBody.getFactory();
+        _factories[50][21] = QueueBindOkBody.getFactory();
+        _factories[50][30] = QueuePurgeBody.getFactory();
+        _factories[50][31] = QueuePurgeOkBody.getFactory();
+        _factories[50][40] = QueueDeleteBody.getFactory();
+        _factories[50][41] = QueueDeleteOkBody.getFactory();
 
 
 
@@ -131,21 +131,21 @@ public class MethodRegistry_8_0 extends MethodRegistry
 
         _factories[60] = new AMQMethodBodyInstanceFactory[102];
 
-        _factories[60][10] = BasicQosBodyImpl.getFactory();
-        _factories[60][11] = BasicQosOkBodyImpl.getFactory();
-        _factories[60][20] = BasicConsumeBodyImpl.getFactory();
-        _factories[60][21] = BasicConsumeOkBodyImpl.getFactory();
-        _factories[60][30] = BasicCancelBodyImpl.getFactory();
-        _factories[60][31] = BasicCancelOkBodyImpl.getFactory();
-        _factories[60][40] = BasicPublishBodyImpl.getFactory();
-        _factories[60][50] = BasicReturnBodyImpl.getFactory();
-        _factories[60][60] = BasicDeliverBodyImpl.getFactory();
-        _factories[60][70] = BasicGetBodyImpl.getFactory();
-        _factories[60][71] = BasicGetOkBodyImpl.getFactory();
-        _factories[60][72] = BasicGetEmptyBodyImpl.getFactory();
-        _factories[60][80] = BasicAckBodyImpl.getFactory();
-        _factories[60][90] = BasicRejectBodyImpl.getFactory();
-        _factories[60][100] = BasicRecoverBodyImpl.getFactory();
+        _factories[60][10] = BasicQosBody.getFactory();
+        _factories[60][11] = BasicQosOkBody.getFactory();
+        _factories[60][20] = BasicConsumeBody.getFactory();
+        _factories[60][21] = BasicConsumeOkBody.getFactory();
+        _factories[60][30] = BasicCancelBody.getFactory();
+        _factories[60][31] = BasicCancelOkBody.getFactory();
+        _factories[60][40] = BasicPublishBody.getFactory();
+        _factories[60][50] = BasicReturnBody.getFactory();
+        _factories[60][60] = BasicDeliverBody.getFactory();
+        _factories[60][70] = BasicGetBody.getFactory();
+        _factories[60][71] = BasicGetOkBody.getFactory();
+        _factories[60][72] = BasicGetEmptyBody.getFactory();
+        _factories[60][80] = BasicAckBody.getFactory();
+        _factories[60][90] = BasicRejectBody.getFactory();
+        _factories[60][100] = BasicRecoverBody.getFactory();
         _factories[60][101] = BasicRecoverOkBodyImpl.getFactory();
 
 
@@ -154,12 +154,12 @@ public class MethodRegistry_8_0 extends MethodRegistry
 
         _factories[90] = new AMQMethodBodyInstanceFactory[32];
 
-        _factories[90][10] = TxSelectBodyImpl.getFactory();
-        _factories[90][11] = TxSelectOkBodyImpl.getFactory();
-        _factories[90][20] = TxCommitBodyImpl.getFactory();
-        _factories[90][21] = TxCommitOkBodyImpl.getFactory();
-        _factories[90][30] = TxRollbackBodyImpl.getFactory();
-        _factories[90][31] = TxRollbackOkBodyImpl.getFactory();
+        _factories[90][10] = TxSelectBody.getFactory();
+        _factories[90][11] = TxSelectOkBody.getFactory();
+        _factories[90][20] = TxCommitBody.getFactory();
+        _factories[90][21] = TxCommitOkBody.getFactory();
+        _factories[90][30] = TxRollbackBody.getFactory();
+        _factories[90][31] = TxRollbackOkBody.getFactory();
 
     }
 
@@ -221,14 +221,14 @@ public class MethodRegistry_8_0 extends MethodRegistry
 
 
     public ConnectionStartBody createConnectionStartBody(
-                                final short versionMajor,
-                                final short versionMinor,
-                                final FieldTable serverProperties,
-                                final byte[] mechanisms,
-                                final byte[] locales
-                                )
+            final short versionMajor,
+            final short versionMinor,
+            final FieldTable serverProperties,
+            final byte[] mechanisms,
+            final byte[] locales
+                                                            )
     {
-        return new ConnectionStartBodyImpl(
+        return new ConnectionStartBody(
                                 versionMajor,
                                 versionMinor,
                                 serverProperties,
@@ -238,13 +238,13 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public ConnectionStartOkBody createConnectionStartOkBody(
-                                final FieldTable clientProperties,
-                                final AMQShortString mechanism,
-                                final byte[] response,
-                                final AMQShortString locale
-                                )
+            final FieldTable clientProperties,
+            final AMQShortString mechanism,
+            final byte[] response,
+            final AMQShortString locale
+                                                                )
     {
-        return new ConnectionStartOkBodyImpl(
+        return new ConnectionStartOkBody(
                                 clientProperties,
                                 mechanism,
                                 response,
@@ -253,30 +253,30 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public ConnectionSecureBody createConnectionSecureBody(
-                                final byte[] challenge
-                                )
+            final byte[] challenge
+                                                              )
     {
-        return new ConnectionSecureBodyImpl(
+        return new ConnectionSecureBody(
                                 challenge
                                 );
     }
 
     public ConnectionSecureOkBody createConnectionSecureOkBody(
-                                final byte[] response
-                                )
+            final byte[] response
+                                                                  )
     {
-        return new ConnectionSecureOkBodyImpl(
+        return new ConnectionSecureOkBody(
                                 response
                                 );
     }
 
     public ConnectionTuneBody createConnectionTuneBody(
-                                final int channelMax,
-                                final long frameMax,
-                                final int heartbeat
-                                )
+            final int channelMax,
+            final long frameMax,
+            final int heartbeat
+                                                          )
     {
-        return new ConnectionTuneBodyImpl(
+        return new ConnectionTuneBody(
                                 channelMax,
                                 frameMax,
                                 heartbeat
@@ -284,12 +284,12 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public ConnectionTuneOkBody createConnectionTuneOkBody(
-                                final int channelMax,
-                                final long frameMax,
-                                final int heartbeat
-                                )
+            final int channelMax,
+            final long frameMax,
+            final int heartbeat
+                                                              )
     {
-        return new ConnectionTuneOkBodyImpl(
+        return new ConnectionTuneOkBody(
                                 channelMax,
                                 frameMax,
                                 heartbeat
@@ -297,12 +297,12 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public ConnectionOpenBody createConnectionOpenBody(
-                                final AMQShortString virtualHost,
-                                final AMQShortString capabilities,
-                                final boolean insist
-                                )
+            final AMQShortString virtualHost,
+            final AMQShortString capabilities,
+            final boolean insist
+                                                          )
     {
-        return new ConnectionOpenBodyImpl(
+        return new ConnectionOpenBody(
                                 virtualHost,
                                 capabilities,
                                 insist
@@ -310,10 +310,10 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public ConnectionOpenOkBody createConnectionOpenOkBody(
-                                final AMQShortString knownHosts
-                                )
+            final AMQShortString knownHosts
+                                                              )
     {
-        return new ConnectionOpenOkBodyImpl(
+        return new ConnectionOpenOkBody(
                                 knownHosts
                                 );
     }
@@ -355,10 +355,10 @@ public class MethodRegistry_8_0 extends MethodRegistry
 
 
     public ChannelOpenBody createChannelOpenBody(
-                                final AMQShortString outOfBand
-                                )
+            final AMQShortString outOfBand
+                                                    )
     {
-        return new ChannelOpenBodyImpl(
+        return new ChannelOpenBody(
                                 outOfBand
                                 );
     }
@@ -371,19 +371,19 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public ChannelFlowBody createChannelFlowBody(
-                                final boolean active
-                                )
+            final boolean active
+                                                    )
     {
-        return new ChannelFlowBodyImpl(
+        return new ChannelFlowBody(
                                 active
                                 );
     }
 
     public ChannelFlowOkBody createChannelFlowOkBody(
-                                final boolean active
-                                )
+            final boolean active
+                                                        )
     {
-        return new ChannelFlowOkBodyImpl(
+        return new ChannelFlowOkBody(
                                 active
                                 );
     }
@@ -402,13 +402,13 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public ChannelCloseBody createChannelCloseBody(
-                                final int replyCode,
-                                final AMQShortString replyText,
-                                final int classId,
-                                final int methodId
-                                )
+            final int replyCode,
+            final AMQShortString replyText,
+            final int classId,
+            final int methodId
+                                                      )
     {
-        return new ChannelCloseBodyImpl(
+        return new ChannelCloseBody(
                                 replyCode,
                                 replyText,
                                 classId,
@@ -417,9 +417,9 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public ChannelCloseOkBody createChannelCloseOkBody(
-                                )
+                                                          )
     {
-        return new ChannelCloseOkBodyImpl(
+        return new ChannelCloseOkBody(
                                 );
     }
 
@@ -458,18 +458,18 @@ public class MethodRegistry_8_0 extends MethodRegistry
 
 
     public ExchangeDeclareBody createExchangeDeclareBody(
-                                final int ticket,
-                                final AMQShortString exchange,
-                                final AMQShortString type,
-                                final boolean passive,
-                                final boolean durable,
-                                final boolean autoDelete,
-                                final boolean internal,
-                                final boolean nowait,
-                                final FieldTable arguments
-                                )
+            final int ticket,
+            final AMQShortString exchange,
+            final AMQShortString type,
+            final boolean passive,
+            final boolean durable,
+            final boolean autoDelete,
+            final boolean internal,
+            final boolean nowait,
+            final FieldTable arguments
+                                                            )
     {
-        return new ExchangeDeclareBodyImpl(
+        return new ExchangeDeclareBody(
                                 ticket,
                                 exchange,
                                 type,
@@ -483,20 +483,20 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public ExchangeDeclareOkBody createExchangeDeclareOkBody(
-                                )
+                                                                )
     {
-        return new ExchangeDeclareOkBodyImpl(
+        return new ExchangeDeclareOkBody(
                                 );
     }
 
     public ExchangeDeleteBody createExchangeDeleteBody(
-                                final int ticket,
-                                final AMQShortString exchange,
-                                final boolean ifUnused,
-                                final boolean nowait
-                                )
+            final int ticket,
+            final AMQShortString exchange,
+            final boolean ifUnused,
+            final boolean nowait
+                                                          )
     {
-        return new ExchangeDeleteBodyImpl(
+        return new ExchangeDeleteBody(
                                 ticket,
                                 exchange,
                                 ifUnused,
@@ -505,19 +505,19 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public ExchangeDeleteOkBody createExchangeDeleteOkBody(
-                                )
+                                                              )
     {
-        return new ExchangeDeleteOkBodyImpl(
+        return new ExchangeDeleteOkBody(
                                 );
     }
 
     public ExchangeBoundBody createExchangeBoundBody(
-                                final AMQShortString exchange,
-                                final AMQShortString routingKey,
-                                final AMQShortString queue
-                                )
+            final AMQShortString exchange,
+            final AMQShortString routingKey,
+            final AMQShortString queue
+                                                        )
     {
-        return new ExchangeBoundBodyImpl(
+        return new ExchangeBoundBody(
                                 exchange,
                                 routingKey,
                                 queue
@@ -525,11 +525,11 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public ExchangeBoundOkBody createExchangeBoundOkBody(
-                                final int replyCode,
-                                final AMQShortString replyText
-                                )
+            final int replyCode,
+            final AMQShortString replyText
+                                                            )
     {
-        return new ExchangeBoundOkBodyImpl(
+        return new ExchangeBoundOkBody(
                                 replyCode,
                                 replyText
                                 );
@@ -539,17 +539,17 @@ public class MethodRegistry_8_0 extends MethodRegistry
 
 
     public QueueDeclareBody createQueueDeclareBody(
-                                final int ticket,
-                                final AMQShortString queue,
-                                final boolean passive,
-                                final boolean durable,
-                                final boolean exclusive,
-                                final boolean autoDelete,
-                                final boolean nowait,
-                                final FieldTable arguments
-                                )
+            final int ticket,
+            final AMQShortString queue,
+            final boolean passive,
+            final boolean durable,
+            final boolean exclusive,
+            final boolean autoDelete,
+            final boolean nowait,
+            final FieldTable arguments
+                                                      )
     {
-        return new QueueDeclareBodyImpl(
+        return new QueueDeclareBody(
                                 ticket,
                                 queue,
                                 passive,
@@ -562,12 +562,12 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public QueueDeclareOkBody createQueueDeclareOkBody(
-                                final AMQShortString queue,
-                                final long messageCount,
-                                final long consumerCount
-                                )
+            final AMQShortString queue,
+            final long messageCount,
+            final long consumerCount
+                                                          )
     {
-        return new QueueDeclareOkBodyImpl(
+        return new QueueDeclareOkBody(
                                 queue,
                                 messageCount,
                                 consumerCount
@@ -575,15 +575,15 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public QueueBindBody createQueueBindBody(
-                                final int ticket,
-                                final AMQShortString queue,
-                                final AMQShortString exchange,
-                                final AMQShortString routingKey,
-                                final boolean nowait,
-                                final FieldTable arguments
-                                )
+            final int ticket,
+            final AMQShortString queue,
+            final AMQShortString exchange,
+            final AMQShortString routingKey,
+            final boolean nowait,
+            final FieldTable arguments
+                                                )
     {
-        return new QueueBindBodyImpl(
+        return new QueueBindBody(
                                 ticket,
                                 queue,
                                 exchange,
@@ -594,19 +594,19 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public QueueBindOkBody createQueueBindOkBody(
-                                )
+                                                    )
     {
-        return new QueueBindOkBodyImpl(
+        return new QueueBindOkBody(
                                 );
     }
 
     public QueuePurgeBody createQueuePurgeBody(
-                                final int ticket,
-                                final AMQShortString queue,
-                                final boolean nowait
-                                )
+            final int ticket,
+            final AMQShortString queue,
+            final boolean nowait
+                                                  )
     {
-        return new QueuePurgeBodyImpl(
+        return new QueuePurgeBody(
                                 ticket,
                                 queue,
                                 nowait
@@ -614,23 +614,23 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public QueuePurgeOkBody createQueuePurgeOkBody(
-                                final long messageCount
-                                )
+            final long messageCount
+                                                      )
     {
-        return new QueuePurgeOkBodyImpl(
+        return new QueuePurgeOkBody(
                                 messageCount
                                 );
     }
 
     public QueueDeleteBody createQueueDeleteBody(
-                                final int ticket,
-                                final AMQShortString queue,
-                                final boolean ifUnused,
-                                final boolean ifEmpty,
-                                final boolean nowait
-                                )
+            final int ticket,
+            final AMQShortString queue,
+            final boolean ifUnused,
+            final boolean ifEmpty,
+            final boolean nowait
+                                                    )
     {
-        return new QueueDeleteBodyImpl(
+        return new QueueDeleteBody(
                                 ticket,
                                 queue,
                                 ifUnused,
@@ -640,10 +640,10 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public QueueDeleteOkBody createQueueDeleteOkBody(
-                                final long messageCount
-                                )
+            final long messageCount
+                                                        )
     {
-        return new QueueDeleteOkBodyImpl(
+        return new QueueDeleteOkBody(
                                 messageCount
                                 );
     }
@@ -652,12 +652,12 @@ public class MethodRegistry_8_0 extends MethodRegistry
 
 
     public BasicQosBody createBasicQosBody(
-                                final long prefetchSize,
-                                final int prefetchCount,
-                                final boolean global
-                                )
+            final long prefetchSize,
+            final int prefetchCount,
+            final boolean global
+                                              )
     {
-        return new BasicQosBodyImpl(
+        return new BasicQosBody(
                                 prefetchSize,
                                 prefetchCount,
                                 global
@@ -665,24 +665,24 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public BasicQosOkBody createBasicQosOkBody(
-                                )
+                                                  )
     {
-        return new BasicQosOkBodyImpl(
+        return new BasicQosOkBody(
                                 );
     }
 
     public BasicConsumeBody createBasicConsumeBody(
-                                final int ticket,
-                                final AMQShortString queue,
-                                final AMQShortString consumerTag,
-                                final boolean noLocal,
-                                final boolean noAck,
-                                final boolean exclusive,
-                                final boolean nowait,
-                                final FieldTable arguments
-                                )
+            final int ticket,
+            final AMQShortString queue,
+            final AMQShortString consumerTag,
+            final boolean noLocal,
+            final boolean noAck,
+            final boolean exclusive,
+            final boolean nowait,
+            final FieldTable arguments
+                                                      )
     {
-        return new BasicConsumeBodyImpl(
+        return new BasicConsumeBody(
                                 ticket,
                                 queue,
                                 consumerTag,
@@ -695,43 +695,43 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public BasicConsumeOkBody createBasicConsumeOkBody(
-                                final AMQShortString consumerTag
-                                )
+            final AMQShortString consumerTag
+                                                          )
     {
-        return new BasicConsumeOkBodyImpl(
+        return new BasicConsumeOkBody(
                                 consumerTag
                                 );
     }
 
     public BasicCancelBody createBasicCancelBody(
-                                final AMQShortString consumerTag,
-                                final boolean nowait
-                                )
+            final AMQShortString consumerTag,
+            final boolean nowait
+                                                    )
     {
-        return new BasicCancelBodyImpl(
+        return new BasicCancelBody(
                                 consumerTag,
                                 nowait
                                 );
     }
 
     public BasicCancelOkBody createBasicCancelOkBody(
-                                final AMQShortString consumerTag
-                                )
+            final AMQShortString consumerTag
+                                                        )
     {
-        return new BasicCancelOkBodyImpl(
+        return new BasicCancelOkBody(
                                 consumerTag
                                 );
     }
 
     public BasicPublishBody createBasicPublishBody(
-                                final int ticket,
-                                final AMQShortString exchange,
-                                final AMQShortString routingKey,
-                                final boolean mandatory,
-                                final boolean immediate
-                                )
+            final int ticket,
+            final AMQShortString exchange,
+            final AMQShortString routingKey,
+            final boolean mandatory,
+            final boolean immediate
+                                                      )
     {
-        return new BasicPublishBodyImpl(
+        return new BasicPublishBody(
                                 ticket,
                                 exchange,
                                 routingKey,
@@ -741,13 +741,13 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public BasicReturnBody createBasicReturnBody(
-                                final int replyCode,
-                                final AMQShortString replyText,
-                                final AMQShortString exchange,
-                                final AMQShortString routingKey
-                                )
+            final int replyCode,
+            final AMQShortString replyText,
+            final AMQShortString exchange,
+            final AMQShortString routingKey
+                                                    )
     {
-        return new BasicReturnBodyImpl(
+        return new BasicReturnBody(
                                 replyCode,
                                 replyText,
                                 exchange,
@@ -756,14 +756,14 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public BasicDeliverBody createBasicDeliverBody(
-                                final AMQShortString consumerTag,
-                                final long deliveryTag,
-                                final boolean redelivered,
-                                final AMQShortString exchange,
-                                final AMQShortString routingKey
-                                )
+            final AMQShortString consumerTag,
+            final long deliveryTag,
+            final boolean redelivered,
+            final AMQShortString exchange,
+            final AMQShortString routingKey
+                                                      )
     {
-        return new BasicDeliverBodyImpl(
+        return new BasicDeliverBody(
                                 consumerTag,
                                 deliveryTag,
                                 redelivered,
@@ -773,12 +773,12 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public BasicGetBody createBasicGetBody(
-                                final int ticket,
-                                final AMQShortString queue,
-                                final boolean noAck
-                                )
+            final int ticket,
+            final AMQShortString queue,
+            final boolean noAck
+                                              )
     {
-        return new BasicGetBodyImpl(
+        return new BasicGetBody(
                                 ticket,
                                 queue,
                                 noAck
@@ -786,14 +786,14 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public BasicGetOkBody createBasicGetOkBody(
-                                final long deliveryTag,
-                                final boolean redelivered,
-                                final AMQShortString exchange,
-                                final AMQShortString routingKey,
-                                final long messageCount
-                                )
+            final long deliveryTag,
+            final boolean redelivered,
+            final AMQShortString exchange,
+            final AMQShortString routingKey,
+            final long messageCount
+                                                  )
     {
-        return new BasicGetOkBodyImpl(
+        return new BasicGetOkBody(
                                 deliveryTag,
                                 redelivered,
                                 exchange,
@@ -803,41 +803,41 @@ public class MethodRegistry_8_0 extends MethodRegistry
     }
 
     public BasicGetEmptyBody createBasicGetEmptyBody(
-                                final AMQShortString clusterId
-                                )
+            final AMQShortString clusterId
+                                                        )
     {
-        return new BasicGetEmptyBodyImpl(
+        return new BasicGetEmptyBody(
                                 clusterId
                                 );
     }
 
     public BasicAckBody createBasicAckBody(
-                                final long deliveryTag,
-                                final boolean multiple
-                                )
+            final long deliveryTag,
+            final boolean multiple
+                                              )
     {
-        return new BasicAckBodyImpl(
+        return new BasicAckBody(
                                 deliveryTag,
                                 multiple
                                 );
     }
 
     public BasicRejectBody createBasicRejectBody(
-                                final long deliveryTag,
-                                final boolean requeue
-                                )
+            final long deliveryTag,
+            final boolean requeue
+                                                    )
     {
-        return new BasicRejectBodyImpl(
+        return new BasicRejectBody(
                                 deliveryTag,
                                 requeue
                                 );
     }
 
     public BasicRecoverBody createBasicRecoverBody(
-                                final boolean requeue
-                                )
+            final boolean requeue
+                                                      )
     {
-        return new BasicRecoverBodyImpl(
+        return new BasicRecoverBody(
                                 requeue
                                 );
     }
@@ -851,44 +851,44 @@ public class MethodRegistry_8_0 extends MethodRegistry
 
 
     public TxSelectBody createTxSelectBody(
-                                )
+                                              )
     {
-        return new TxSelectBodyImpl(
+        return new TxSelectBody(
                                 );
     }
 
     public TxSelectOkBody createTxSelectOkBody(
-                                )
+                                                  )
     {
-        return new TxSelectOkBodyImpl(
+        return new TxSelectOkBody(
                                 );
     }
 
     public TxCommitBody createTxCommitBody(
-                                )
+                                              )
     {
-        return new TxCommitBodyImpl(
+        return new TxCommitBody(
                                 );
     }
 
     public TxCommitOkBody createTxCommitOkBody(
-                                )
+                                                  )
     {
-        return new TxCommitOkBodyImpl(
+        return new TxCommitOkBody(
                                 );
     }
 
     public TxRollbackBody createTxRollbackBody(
-                                )
+                                                  )
     {
-        return new TxRollbackBodyImpl(
+        return new TxRollbackBody(
                                 );
     }
 
     public TxRollbackOkBody createTxRollbackOkBody(
-                                )
+                                                      )
     {
-        return new TxRollbackOkBodyImpl(
+        return new TxRollbackOkBody(
                                 );
     }
 
