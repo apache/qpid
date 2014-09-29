@@ -26,9 +26,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.BasicRecoverSyncBody;
-import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
-import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
@@ -60,22 +58,9 @@ public class BasicRecoverSyncMethodHandler implements StateAwareMethodListener<B
         channel.sync();
         channel.resend();
 
-        // Qpid 0-8 hacks a synchronous -ok onto recover.
-        // In Qpid 0-9 we create a separate sync-recover, sync-recover-ok pair to be "more" compliant
-        if(connection.getProtocolVersion().equals(ProtocolVersion.v0_9))
-        {
-            MethodRegistry_0_9 methodRegistry = (MethodRegistry_0_9) connection.getMethodRegistry();
-            AMQMethodBody recoverOk = methodRegistry.createBasicRecoverSyncOkBody();
-            connection.writeFrame(recoverOk.generateFrame(channelId));
-
-        }
-        else if(connection.getProtocolVersion().equals(ProtocolVersion.v0_91))
-        {
-            MethodRegistry_0_91 methodRegistry = (MethodRegistry_0_91) connection.getMethodRegistry();
-            AMQMethodBody recoverOk = methodRegistry.createBasicRecoverSyncOkBody();
-            connection.writeFrame(recoverOk.generateFrame(channelId));
-
-        }
+        MethodRegistry methodRegistry = connection.getMethodRegistry();
+        AMQMethodBody recoverOk = methodRegistry.createBasicRecoverSyncOkBody();
+        connection.writeFrame(recoverOk.generateFrame(channelId));
 
     }
 }

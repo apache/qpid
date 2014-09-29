@@ -25,8 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AccessRequestBody;
 import org.apache.qpid.framing.AccessRequestOkBody;
 import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
-import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
@@ -63,22 +62,14 @@ public class AccessRequestHandler implements StateAwareMethodListener<AccessRequ
 
         MethodRegistry methodRegistry = connection.getMethodRegistry();
 
-        // We don't implement access control class, but to keep clients happy that expect it
-        // always use the "0" ticket.
-        AccessRequestOkBody response;
-        if(methodRegistry instanceof MethodRegistry_0_9)
-        {
-            response = ((MethodRegistry_0_9)methodRegistry).createAccessRequestOkBody(0);
-        }
-        else if(methodRegistry instanceof MethodRegistry_8_0)
-        {
-            response = ((MethodRegistry_8_0)methodRegistry).createAccessRequestOkBody(0);
-        }
-        else
+        if(ProtocolVersion.v0_91.equals(connection.getProtocolVersion()) )
         {
             throw new AMQException(AMQConstant.COMMAND_INVALID, "AccessRequest not present in AMQP versions other than 0-8, 0-9");
         }
 
+        // We don't implement access control class, but to keep clients happy that expect it
+        // always use the "0" ticket.
+        AccessRequestOkBody response = methodRegistry.createAccessRequestOkBody(0);
         channel.sync();
         connection.writeFrame(response.generateFrame(channelId));
     }

@@ -34,7 +34,6 @@ public interface ClientMethodDispatcher_8_0 extends ClientMethodDispatcher
 {
 
     public boolean dispatchAccessRequestOk(AccessRequestOkBody body, int channelId) throws AMQException;
-    public boolean dispatchBasicRecoverOk(BasicRecoverOkBody body, int channelId) throws AMQException;
     public boolean dispatchChannelAlert(ChannelAlertBody body, int channelId) throws AMQException;
     public boolean dispatchConnectionRedirect(ConnectionRedirectBody body, int channelId) throws AMQException;
 

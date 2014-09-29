@@ -54,7 +54,7 @@ import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.ConnectionTuneOkBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
@@ -238,7 +238,7 @@ public class MaxFrameSizeTest extends QpidBrokerTestCase
         byte[] serverData = baos.toByteArray();
         ByteArrayDataInput badi = new ByteArrayDataInput(serverData);
         AMQDataBlockDecoder datablockDecoder = new AMQDataBlockDecoder();
-        final MethodRegistry_0_91 methodRegistry_0_91 = new MethodRegistry_0_91();
+        final MethodRegistry methodRegistry_0_91 = MethodRegistry.registry_0_91;
         BodyFactory methodBodyFactory = new BodyFactory()
         {
             @Override

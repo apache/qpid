@@ -186,6 +186,21 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
         throw new UnexpectedMethodException(body);
     }
 
+    @Override
+    public boolean dispatchQueueUnbindOk(final QueueUnbindOkBody body, final int channelId)
+            throws AMQException
+    {
+        throw new UnexpectedMethodException(body);
+    }
+
+    @Override
+    public boolean dispatchBasicRecoverSyncOk(final BasicRecoverSyncOkBody body,
+                                              final int channelId)
+            throws AMQException
+    {
+        throw new UnexpectedMethodException(body);
+    }
+
     public boolean dispatchBasicCancelOk(BasicCancelOkBody body, int channelId) throws AMQException
     {
         throw new UnexpectedMethodException(body);
@@ -434,7 +449,11 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
         return true;
     }
 
-
+    @Override
+    public boolean dispatchQueueUnbind(final QueueUnbindBody queueUnbindBody, final int channelId) throws AMQException
+    {
+        return false;
+    }
 
 
 }

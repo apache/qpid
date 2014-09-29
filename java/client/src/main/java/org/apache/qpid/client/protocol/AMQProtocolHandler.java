@@ -753,8 +753,12 @@ public class AMQProtocolHandler implements ProtocolEngine
             // Connection is already closed then don't do a syncWrite
             try
             {
-                final ConnectionCloseBody body = _protocolSession.getMethodRegistry().createConnectionCloseBody(AMQConstant.REPLY_SUCCESS.getCode(), // replyCode
-                        new AMQShortString("JMS client is closing the connection."), 0, 0);
+                final ConnectionCloseBody body = _protocolSession.getMethodRegistry().createConnectionCloseBody(
+                        AMQConstant.REPLY_SUCCESS.getCode(),
+                        // replyCode
+                        new AMQShortString("JMS client is closing the connection."),
+                        0,
+                        0);
                 final AMQFrame frame = body.generateFrame(0);
 
                 syncWrite(frame, ConnectionCloseOkBody.class, timeout);

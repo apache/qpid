@@ -31,35 +31,20 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.codec.MarkableDataInput;
 
 public class TxSelectBody extends AMQMethodBodyImpl implements EncodableAMQDataBlock, AMQMethodBody
 {
-    private static final AMQMethodBodyInstanceFactory FACTORY_INSTANCE = new AMQMethodBodyInstanceFactory()
-    {
-        public AMQMethodBody newInstance(MarkableDataInput in, long size) throws AMQFrameDecodingException, IOException
-        {
-            return new TxSelectBody(in);
-        }
-    };
-
-    public static AMQMethodBodyInstanceFactory getFactory()
-    {
-        return FACTORY_INSTANCE;
-    }
 
     public static final int CLASS_ID =  90;
     public static final int METHOD_ID = 10;
 
+    public static final TxSelectBody INSTANCE = new TxSelectBody();
+
     // Fields declared in specification
 
     // Constructor
-    public TxSelectBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
-    {
-    }
 
-    public TxSelectBody(
-                       )
+    private TxSelectBody()
     {
     }
 
@@ -76,8 +61,7 @@ public class TxSelectBody extends AMQMethodBodyImpl implements EncodableAMQDataB
 
     protected int getBodySize()
     {
-        int size = 0;
-        return size;
+        return 0;
     }
 
     public void writeMethodPayload(DataOutput buffer) throws IOException
@@ -91,9 +75,7 @@ public class TxSelectBody extends AMQMethodBodyImpl implements EncodableAMQDataB
 
     public String toString()
     {
-        StringBuilder buf = new StringBuilder("[TxSelectBodyImpl: ");
-        buf.append("]");
-        return buf.toString();
+        return "[TxSelectBody]";
     }
 
 }

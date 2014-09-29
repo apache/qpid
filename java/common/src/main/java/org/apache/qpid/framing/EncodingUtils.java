@@ -938,7 +938,6 @@ public class EncodingUtils
         }
         else
         {                                                    
-            // really writing out unsigned byte
             writeUnsignedInteger(buffer, 0L);
         }
     }

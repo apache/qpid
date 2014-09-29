@@ -25,8 +25,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.BasicRecoverBody;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.server.protocol.v0_8.state.StateAwareMethodListener;
@@ -61,8 +61,8 @@ public class BasicRecoverMethodHandler implements StateAwareMethodListener<Basic
         // In Qpid 0-9 we create a separate sync-recover, sync-recover-ok pair to be "more" compliant
         if(connection.getProtocolVersion().equals(ProtocolVersion.v8_0))
         {
-            MethodRegistry_8_0 methodRegistry = (MethodRegistry_8_0) connection.getMethodRegistry();
-            AMQMethodBody recoverOk = methodRegistry.createBasicRecoverOkBody();
+            MethodRegistry methodRegistry = connection.getMethodRegistry();
+            AMQMethodBody recoverOk = methodRegistry.createBasicRecoverSyncOkBody();
             channel.sync();
             connection.writeFrame(recoverOk.generateFrame(channelId));
 

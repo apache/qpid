@@ -30,39 +30,293 @@
 package org.apache.qpid.framing;
 
 import java.io.IOException;
-
-import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
-import org.apache.qpid.codec.MarkableDataInput;
-
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.qpid.codec.MarkableDataInput;
+import org.apache.qpid.protocol.AMQConstant;
 
 
-public abstract class MethodRegistry
+public final class MethodRegistry
 {
-    private static final Map<ProtocolVersion, MethodRegistry> _registries =
-            new HashMap<ProtocolVersion, MethodRegistry>();
+    private static final Map<ProtocolVersion, MethodRegistry> _registries = new HashMap<>();
 
 
     public static final MethodRegistry registry_0_9 =
-        new org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9();
+        new MethodRegistry(ProtocolVersion.v0_9);
 
     public static final MethodRegistry registry_0_91 =
-        new org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91();
+            new MethodRegistry(ProtocolVersion.v0_91);
 
     public static final MethodRegistry registry_8_0 =
-        new org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0();
+            new MethodRegistry(ProtocolVersion.v8_0);
 
-    public abstract AMQMethodBody convertToBody(MarkableDataInput in, long size)
-        throws AMQFrameDecodingException, IOException;
+    private final ProtocolVersion _protocolVersion;
 
-    public abstract int getMaxClassId();
+    public final AMQMethodBody convertToBody(MarkableDataInput in, long size)
+        throws AMQFrameDecodingException, IOException
+    {
+        final int classAndMethod = in.readInt();
 
-    public abstract int getMaxMethodId(int classId);
+        AMQMethodBody methodBody;
+        switch(classAndMethod)
+        {
+            //CONNECTION_CLASS:
+                    case 0x000a000a:
+                        methodBody = new ConnectionStartBody(in);
+                        break;
+                    case 0x000a000b:
+                        methodBody = new ConnectionStartOkBody(in);
+                        break;
+                    case 0x000a0014:
+                        methodBody = new ConnectionSecureBody(in);
+                        break;
+                    case 0x000a0015:
+                        methodBody = new ConnectionSecureOkBody(in);
+                        break;
+                    case 0x000a001e:
+                        methodBody = new ConnectionTuneBody(in);
+                        break;
+                    case 0x000a001f:
+                        methodBody = new ConnectionTuneOkBody(in);
+                        break;
+                    case 0x000a0028:
+                        methodBody = new ConnectionOpenBody(in);
+                        break;
+                    case 0x000a0029:
+                        methodBody = new ConnectionOpenOkBody(in);
+                        break;
+                    case 0x000a002a:
+                        methodBody = new ConnectionRedirectBody(in, _protocolVersion);
+                        break;
+                    case 0x000a0032:
+                        if(_protocolVersion.equals(ProtocolVersion.v8_0))
+                        {
+                            methodBody = new ConnectionRedirectBody(in, _protocolVersion);
+                        }
+                        else
+                        {
+                            methodBody = new ConnectionCloseBody(in, _protocolVersion);
+                        }
+                        break;
+                    case 0x000a0033:
+                        if(_protocolVersion.equals(ProtocolVersion.v8_0))
+                        {
+                            throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF));
+                        }
+                        else
+                        {
+                            methodBody = ConnectionCloseOkBody.CONNECTION_CLOSE_OK_0_9;
+                        }
+                        break;
+                    case 0x000a003c:
+                        if(_protocolVersion.equals(ProtocolVersion.v8_0))
+                        {
+                            methodBody = new ConnectionCloseBody(in, _protocolVersion);
+                        }
+                        else
+                        {
+                            throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF));
+                        }
+                        break;
+                    case 0x000a003d:
+                        if(_protocolVersion.equals(ProtocolVersion.v8_0))
+                        {
+                            methodBody = ConnectionCloseOkBody.CONNECTION_CLOSE_OK_0_8;
+                        }
+                        else
+                        {
+                            throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF));
+                        }
+                        break;
 
-    protected MethodRegistry(ProtocolVersion pv)
+            // CHANNEL_CLASS:
+
+                    case 0x0014000a:
+                        methodBody = new ChannelOpenBody(in);
+                        break;
+                    case 0x0014000b:
+                        methodBody = ChannelOpenOkBody.getInstance(_protocolVersion, in);
+                        break;
+                    case 0x00140014:
+                        methodBody = new ChannelFlowBody(in);
+                        break;
+                    case 0x00140015:
+                        methodBody = new ChannelFlowOkBody(in);
+                        break;
+                    case 0x0014001e:
+                        methodBody = new ChannelAlertBody(in);
+                        break;
+                    case 0x00140028:
+                        methodBody = new ChannelCloseBody(in);
+                        break;
+                    case 0x00140029:
+                        methodBody = new ChannelCloseOkBody(in);
+                        break;
+            // ACCESS_CLASS:
+
+                    case 0x001e000a:
+                        methodBody = new AccessRequestBody(in);
+                        break;
+                    case 0x001e000b:
+                        methodBody = new AccessRequestOkBody(in);
+                        break;
+
+            // EXCHANGE_CLASS:
+
+                    case 0x0028000a:
+                        methodBody = new ExchangeDeclareBody(in);
+                        break;
+                    case 0x0028000b:
+                        methodBody = new ExchangeDeclareOkBody(in);
+                        break;
+                    case 0x00280014:
+                        methodBody = new ExchangeDeleteBody(in);
+                        break;
+                    case 0x00280015:
+                        methodBody = new ExchangeDeleteOkBody(in);
+                        break;
+                    case 0x00280016:
+                        methodBody = new ExchangeBoundBody(in);
+                        break;
+                    case 0x00280017:
+                        methodBody = new ExchangeBoundOkBody(in);
+                        break;
+
+
+            // QUEUE_CLASS:
+
+                    case 0x0032000a:
+                        methodBody = new QueueDeclareBody(in);
+                        break;
+                    case 0x0032000b:
+                        methodBody = new QueueDeclareOkBody(in);
+                        break;
+                    case 0x00320014:
+                        methodBody = new QueueBindBody(in);
+                        break;
+                    case 0x00320015:
+                        methodBody = new QueueBindOkBody(in);
+                        break;
+                    case 0x0032001e:
+                        methodBody = new QueuePurgeBody(in);
+                        break;
+                    case 0x0032001f:
+                        methodBody = new QueuePurgeOkBody(in);
+                        break;
+                    case 0x00320028:
+                        methodBody = new QueueDeleteBody(in);
+                        break;
+                    case 0x00320029:
+                        methodBody = new QueueDeleteOkBody(in);
+                        break;
+                    case 0x00320032:
+                        methodBody = new QueueUnbindBody(in);
+                        break;
+                    case 0x00320033:
+                        methodBody = new QueueUnbindOkBody(in);
+                        break;
+
+
+            // BASIC_CLASS:
+
+                    case 0x003c000a:
+                        methodBody = new BasicQosBody(in);
+                        break;
+                    case 0x003c000b:
+                        methodBody = new BasicQosOkBody(in);
+                        break;
+                    case 0x003c0014:
+                        methodBody = new BasicConsumeBody(in);
+                        break;
+                    case 0x003c0015:
+                        methodBody = new BasicConsumeOkBody(in);
+                        break;
+                    case 0x003c001e:
+                        methodBody = new BasicCancelBody(in);
+                        break;
+                    case 0x003c001f:
+                        methodBody = new BasicCancelOkBody(in);
+                        break;
+                    case 0x003c0028:
+                        methodBody = new BasicPublishBody(in);
+                        break;
+                    case 0x003c0032:
+                        methodBody = new BasicReturnBody(in);
+                        break;
+                    case 0x003c003c:
+                        methodBody = new BasicDeliverBody(in);
+                        break;
+                    case 0x003c0046:
+                        methodBody = new BasicGetBody(in);
+                        break;
+                    case 0x003c0047:
+                        methodBody = new BasicGetOkBody(in);
+                        break;
+                    case 0x003c0048:
+                        methodBody = new BasicGetEmptyBody(in);
+                        break;
+                    case 0x003c0050:
+                        methodBody = new BasicAckBody(in);
+                        break;
+                    case 0x003c005a:
+                        methodBody = new BasicRejectBody(in);
+                        break;
+                    case 0x003c0064:
+                        methodBody = new BasicRecoverBody(in);
+                        break;
+                    case 0x003c0065:
+                        methodBody = new BasicRecoverSyncOkBody(_protocolVersion);
+                        break;
+                    case 0x003c0066:
+                        methodBody = new BasicRecoverSyncBody(in, _protocolVersion);
+                        break;
+                    case 0x003c006e:
+                        methodBody = new BasicRecoverSyncBody(in, _protocolVersion);
+                        break;
+                    case 0x003c006f:
+                        methodBody = new BasicRecoverSyncOkBody(_protocolVersion);
+                        break;
+
+            // TX_CLASS:
+
+                    case 0x005a000a:
+                        methodBody = TxSelectBody.INSTANCE;
+                        break;
+                    case 0x005a000b:
+                        methodBody = TxSelectOkBody.INSTANCE;
+                        break;
+                    case 0x005a0014:
+                        methodBody = TxCommitBody.INSTANCE;
+                        break;
+                    case 0x005a0015:
+                        methodBody = TxCommitOkBody.INSTANCE;
+                        break;
+                    case 0x005a001e:
+                        methodBody = TxRollbackBody.INSTANCE;
+                        break;
+                    case 0x005a001f:
+                        methodBody = TxRollbackOkBody.INSTANCE;
+                        break;
+
+                    default:
+                        throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF));
+
+        }
+        return methodBody;
+    }
+
+    private AMQFrameDecodingException newUnknownMethodException(final int classId, final int methodId)
+    {
+        return new AMQFrameDecodingException(AMQConstant.COMMAND_INVALID,
+                                            "Method " + methodId + " unknown in AMQP version " + _protocolVersion
+                                            + " (while trying to decode class " + classId + " method " + methodId + ".");
+    }
+
+    private MethodRegistry(ProtocolVersion pv)
     {
         _registries.put(pv, this);
+        _protocolVersion = pv;
     }
 
     public static MethodRegistry getMethodRegistry(ProtocolVersion pv)
@@ -71,288 +325,508 @@ public abstract class MethodRegistry
     }
 
 
+    public final AccessRequestBody createAccessRequestBody(final AMQShortString realm,
+                                                           final boolean exclusive,
+                                                           final boolean passive,
+                                                           final boolean active,
+                                                           final boolean write,
+                                                           final boolean read)
+    {
+        return new AccessRequestBody(realm,
+                                     exclusive,
+                                     passive,
+                                     active,
+                                     write,
+                                     read);
+    }
+
+    public final AccessRequestOkBody createAccessRequestOkBody(final int ticket)
+    {
+        return new AccessRequestOkBody(ticket);
+    }
 
 
-    public abstract BasicAckBody createBasicAckBody(
-            final long deliveryTag,
-            final boolean multiple
-                                                       );
+    public final BasicQosBody createBasicQosBody(final long prefetchSize,
+                                                 final int prefetchCount,
+                                                 final boolean global)
+    {
+        return new BasicQosBody(prefetchSize,
+                                prefetchCount,
+                                global);
+    }
 
-    public abstract BasicCancelBody createBasicCancelBody(
-            final AMQShortString consumerTag,
-            final boolean nowait
-                                                             );
+    public final BasicQosOkBody createBasicQosOkBody()
+    {
+        return new BasicQosOkBody();
+    }
 
-    public abstract BasicCancelOkBody createBasicCancelOkBody(
-            final AMQShortString consumerTag
-                                                                 );
+    public final BasicConsumeBody createBasicConsumeBody(final int ticket,
+                                                         final AMQShortString queue,
+                                                         final AMQShortString consumerTag,
+                                                         final boolean noLocal,
+                                                         final boolean noAck,
+                                                         final boolean exclusive,
+                                                         final boolean nowait,
+                                                         final FieldTable arguments)
+    {
+        return new BasicConsumeBody(ticket,
+                                    queue,
+                                    consumerTag,
+                                    noLocal,
+                                    noAck,
+                                    exclusive,
+                                    nowait,
+                                    arguments);
+    }
 
-    public abstract BasicConsumeBody createBasicConsumeBody(
-            final int ticket,
-            final AMQShortString queue,
-            final AMQShortString consumerTag,
-            final boolean noLocal,
-            final boolean noAck,
-            final boolean exclusive,
-            final boolean nowait,
-            final FieldTable arguments
-                                                               );
+    public final BasicConsumeOkBody createBasicConsumeOkBody(final AMQShortString consumerTag)
+    {
+        return new BasicConsumeOkBody(consumerTag);
+    }
 
-    public abstract BasicConsumeOkBody createBasicConsumeOkBody(
-            final AMQShortString consumerTag
-                                                                   );
+    public final BasicCancelBody createBasicCancelBody(final AMQShortString consumerTag,
+                                                       final boolean nowait)
+    {
+        return new BasicCancelBody(consumerTag,
+                                   nowait);
+    }
 
-    public abstract BasicDeliverBody createBasicDeliverBody(
-            final AMQShortString consumerTag,
-            final long deliveryTag,
-            final boolean redelivered,
-            final AMQShortString exchange,
-            final AMQShortString routingKey
-                                                               );
+    public final BasicCancelOkBody createBasicCancelOkBody(final AMQShortString consumerTag)
+    {
+        return new BasicCancelOkBody(consumerTag);
+    }
 
-    public abstract BasicGetBody createBasicGetBody(
-            final int ticket,
-            final AMQShortString queue,
-            final boolean noAck
-                                                       );
+    public final BasicPublishBody createBasicPublishBody(final int ticket,
+                                                         final AMQShortString exchange,
+                                                         final AMQShortString routingKey,
+                                                         final boolean mandatory,
+                                                         final boolean immediate)
+    {
+        return new BasicPublishBody(ticket,
+                                    exchange,
+                                    routingKey,
+                                    mandatory,
+                                    immediate);
+    }
 
-    public abstract BasicGetEmptyBody createBasicGetEmptyBody(
-            final AMQShortString clusterId
-                                                                 );
+    public final BasicReturnBody createBasicReturnBody(final int replyCode,
+                                                       final AMQShortString replyText,
+                                                       final AMQShortString exchange,
+                                                       final AMQShortString routingKey)
+    {
+        return new BasicReturnBody(replyCode,
+                                   replyText,
+                                   exchange,
+                                   routingKey);
+    }
 
-    public abstract BasicGetOkBody createBasicGetOkBody(
-            final long deliveryTag,
-            final boolean redelivered,
-            final AMQShortString exchange,
-            final AMQShortString routingKey,
-            final long messageCount
-                                                           );
+    public final BasicDeliverBody createBasicDeliverBody(final AMQShortString consumerTag,
+                                                         final long deliveryTag,
+                                                         final boolean redelivered,
+                                                         final AMQShortString exchange,
+                                                         final AMQShortString routingKey)
+    {
+        return new BasicDeliverBody(consumerTag,
+                                    deliveryTag,
+                                    redelivered,
+                                    exchange,
+                                    routingKey);
+    }
 
-    public abstract BasicPublishBody createBasicPublishBody(
-            final int ticket,
-            final AMQShortString exchange,
-            final AMQShortString routingKey,
-            final boolean mandatory,
-            final boolean immediate
-                                                               );
+    public final BasicGetBody createBasicGetBody(final int ticket,
+                                                 final AMQShortString queue,
+                                                 final boolean noAck)
+    {
+        return new BasicGetBody(ticket,
+                                queue,
+                                noAck);
+    }
 
-    public abstract BasicQosBody createBasicQosBody(
-            final long prefetchSize,
-            final int prefetchCount,
-            final boolean global
-                                                       );
+    public final BasicGetOkBody createBasicGetOkBody(final long deliveryTag,
+                                                     final boolean redelivered,
+                                                     final AMQShortString exchange,
+                                                     final AMQShortString routingKey,
+                                                     final long messageCount)
+    {
+        return new BasicGetOkBody(deliveryTag,
+                                  redelivered,
+                                  exchange,
+                                  routingKey,
+                                  messageCount);
+    }
 
-    public abstract BasicQosOkBody createBasicQosOkBody(
-                                                           );
+    public final BasicGetEmptyBody createBasicGetEmptyBody(final AMQShortString clusterId)
+    {
+        return new BasicGetEmptyBody(clusterId);
+    }
 
-    public abstract BasicRecoverBody createBasicRecoverBody(
-            final boolean requeue
-                                                               );
+    public final BasicAckBody createBasicAckBody(final long deliveryTag,
+                                                 final boolean multiple)
+    {
+        return new BasicAckBody(deliveryTag,
+                                multiple);
+    }
 
-    public abstract BasicRejectBody createBasicRejectBody(
-            final long deliveryTag,
-            final boolean requeue
-                                                             );
+    public final BasicRejectBody createBasicRejectBody(final long deliveryTag,
+                                                       final boolean requeue)
+    {
+        return new BasicRejectBody(deliveryTag,
+                                   requeue);
+    }
 
-    public abstract BasicReturnBody createBasicReturnBody(
-            final int replyCode,
-            final AMQShortString replyText,
-            final AMQShortString exchange,
-            final AMQShortString routingKey
-                                                             );
-
-
-    public abstract ChannelCloseBody createChannelCloseBody(
-            final int replyCode,
-            final AMQShortString replyText,
-            final int classId,
-            final int methodId
-                                                               );
-
-    public abstract ChannelCloseOkBody createChannelCloseOkBody(
-                                                                   );
-
-    public abstract ChannelFlowBody createChannelFlowBody(
-            final boolean active
-                                                             );
-
-    public abstract ChannelFlowOkBody createChannelFlowOkBody(
-            final boolean active
-                                                                 );
-
-    public abstract ChannelOpenBody createChannelOpenBody(
-            final AMQShortString outOfBand
-                                                             );
-
-
-    public abstract ConnectionCloseBody createConnectionCloseBody(
-                                final int replyCode,
-                                final AMQShortString replyText,
-                                final int classId,
-                                final int methodId
-                                );
-
-    public abstract ConnectionCloseOkBody createConnectionCloseOkBody(
-                                );
-
-    public abstract ConnectionOpenBody createConnectionOpenBody(
-            final AMQShortString virtualHost,
-            final AMQShortString capabilities,
-            final boolean insist
-                                                                   );
-
-    public abstract ConnectionOpenOkBody createConnectionOpenOkBody(
-            final AMQShortString knownHosts
-                                                                       );
-
-    public abstract ConnectionSecureBody createConnectionSecureBody(
-            final byte[] challenge
-                                                                       );
-
-    public abstract ConnectionSecureOkBody createConnectionSecureOkBody(
-            final byte[] response
-                                                                           );
-
-    public abstract ConnectionStartBody createConnectionStartBody(
-            final short versionMajor,
-            final short versionMinor,
-            final FieldTable serverProperties,
-            final byte[] mechanisms,
-            final byte[] locales
-                                                                     );
-
-    public abstract ConnectionStartOkBody createConnectionStartOkBody(
-            final FieldTable clientProperties,
-            final AMQShortString mechanism,
-            final byte[] response,
-            final AMQShortString locale
-                                                                         );
-
-    public abstract ConnectionTuneBody createConnectionTuneBody(
-            final int channelMax,
-            final long frameMax,
-            final int heartbeat
-                                                                   );
-
-    public abstract ConnectionTuneOkBody createConnectionTuneOkBody(
-            final int channelMax,
-            final long frameMax,
-            final int heartbeat
-                                                                       );
+    public final BasicRecoverBody createBasicRecoverBody(final boolean requeue)
+    {
+        return new BasicRecoverBody(requeue);
+    }
 
 
-
-    public abstract ExchangeBoundBody createExchangeBoundBody(
-            final AMQShortString exchange,
-            final AMQShortString routingKey,
-            final AMQShortString queue
-                                                                 );
-
-    public abstract ExchangeBoundOkBody createExchangeBoundOkBody(
-            final int replyCode,
-            final AMQShortString replyText
-                                                                     );
-
-    public abstract ExchangeDeclareBody createExchangeDeclareBody(
-            final int ticket,
-            final AMQShortString exchange,
-            final AMQShortString type,
-            final boolean passive,
-            final boolean durable,
-            final boolean autoDelete,
-            final boolean internal,
-            final boolean nowait,
-            final FieldTable arguments
-                                                                     );
-
-    public abstract ExchangeDeclareOkBody createExchangeDeclareOkBody(
-                                                                         );
-
-    public abstract ExchangeDeleteBody createExchangeDeleteBody(
-            final int ticket,
-            final AMQShortString exchange,
-            final boolean ifUnused,
-            final boolean nowait
-                                                                   );
-
-    public abstract ExchangeDeleteOkBody createExchangeDeleteOkBody(
-                                                                       );
+    public final BasicRecoverSyncOkBody createBasicRecoverSyncOkBody()
+    {
+        return new BasicRecoverSyncOkBody(_protocolVersion);
+    }
 
 
+    public final BasicRecoverSyncBody createBasicRecoverSyncBody(final boolean requeue)
+    {
+        return new BasicRecoverSyncBody(_protocolVersion, requeue);
+    }
 
+    public final ChannelAlertBody createChannelAlertBody(final int replyCode,
+                                                         final AMQShortString replyText,
+                                                         final FieldTable details)
+    {
+        return new ChannelAlertBody(replyCode,
+                                    replyText,
+                                    details);
+    }
 
-    public abstract QueueBindBody createQueueBindBody(
-            final int ticket,
-            final AMQShortString queue,
-            final AMQShortString exchange,
-            final AMQShortString routingKey,
-            final boolean nowait,
-            final FieldTable arguments
-                                                         );
+    public final ChannelOpenBody createChannelOpenBody(final AMQShortString outOfBand)
+    {
+        return new ChannelOpenBody(outOfBand);
+    }
 
-    public abstract QueueBindOkBody createQueueBindOkBody(
-                                                             );
+    public final ChannelOpenOkBody createChannelOpenOkBody(byte[] channelId)
+    {
+        return createChannelOpenOkBody();
+    }
 
-    public abstract QueueDeclareBody createQueueDeclareBody(
-            final int ticket,
-            final AMQShortString queue,
-            final boolean passive,
-            final boolean durable,
-            final boolean exclusive,
-            final boolean autoDelete,
-            final boolean nowait,
-            final FieldTable arguments
-                                                               );
+    public final ChannelOpenOkBody createChannelOpenOkBody()
+    {
+        return _protocolVersion.equals(ProtocolVersion.v8_0)
+                ? ChannelOpenOkBody.INSTANCE_0_8
+                : ChannelOpenOkBody.INSTANCE_0_9;
+    }
 
-    public abstract QueueDeclareOkBody createQueueDeclareOkBody(
-            final AMQShortString queue,
-            final long messageCount,
-            final long consumerCount
-                                                                   );
+    public final ChannelFlowBody createChannelFlowBody(final boolean active)
+    {
+        return new ChannelFlowBody(active);
+    }
 
-    public abstract QueueDeleteBody createQueueDeleteBody(
-            final int ticket,
-            final AMQShortString queue,
-            final boolean ifUnused,
-            final boolean ifEmpty,
-            final boolean nowait
-                                                             );
+    public final ChannelFlowOkBody createChannelFlowOkBody(final boolean active)
+    {
+        return new ChannelFlowOkBody(active);
+    }
 
-    public abstract QueueDeleteOkBody createQueueDeleteOkBody(
-            final long messageCount
-                                                                 );
+    public final ChannelCloseBody createChannelCloseBody(final int replyCode, final AMQShortString replyText,
+                                                         final int classId,
+                                                         final int methodId
+                                                        )
+    {
+        return new ChannelCloseBody(replyCode,
+                                    replyText,
+                                    classId,
+                                    methodId);
+    }
 
-    public abstract QueuePurgeBody createQueuePurgeBody(
-            final int ticket,
-            final AMQShortString queue,
-            final boolean nowait
-                                                           );
-
-    public abstract QueuePurgeOkBody createQueuePurgeOkBody(
-            final long messageCount
-                                                               );
+    public final ChannelCloseOkBody createChannelCloseOkBody()
+    {
+        return new ChannelCloseOkBody();
+    }
 
 
 
 
+    public final ConnectionStartBody createConnectionStartBody(final short versionMajor,
+                                                               final short versionMinor,
+                                                               final FieldTable serverProperties,
+                                                               final byte[] mechanisms,
+                                                               final byte[] locales)
+    {
+        return new ConnectionStartBody(versionMajor,
+                                       versionMinor,
+                                       serverProperties,
+                                       mechanisms,
+                                       locales);
+    }
 
-    public abstract TxCommitBody createTxCommitBody(
-                                                       );
+    public final ConnectionStartOkBody createConnectionStartOkBody(final FieldTable clientProperties,
+                                                                   final AMQShortString mechanism,
+                                                                   final byte[] response,
+                                                                   final AMQShortString locale)
+    {
+        return new ConnectionStartOkBody(clientProperties,
+                                         mechanism,
+                                         response,
+                                         locale);
+    }
 
-    public abstract TxCommitOkBody createTxCommitOkBody(
-                                                           );
+    public final ConnectionSecureBody createConnectionSecureBody(final byte[] challenge)
+    {
+        return new ConnectionSecureBody(challenge);
+    }
 
-    public abstract TxRollbackBody createTxRollbackBody(
-                                                           );
+    public final ConnectionSecureOkBody createConnectionSecureOkBody(final byte[] response)
+    {
+        return new ConnectionSecureOkBody(response);
+    }
 
-    public abstract TxRollbackOkBody createTxRollbackOkBody(
-                                                               );
+    public final ConnectionTuneBody createConnectionTuneBody(final int channelMax,
+                                                             final long frameMax,
+                                                             final int heartbeat)
+    {
+        return new ConnectionTuneBody(channelMax,
+                                      frameMax,
+                                      heartbeat);
+    }
 
-    public abstract TxSelectBody createTxSelectBody(
-                                                       );
+    public final ConnectionTuneOkBody createConnectionTuneOkBody(final int channelMax,
+                                                                 final long frameMax,
+                                                                 final int heartbeat)
+    {
+        return new ConnectionTuneOkBody(channelMax,
+                                        frameMax,
+                                        heartbeat);
+    }
 
-    public abstract TxSelectOkBody createTxSelectOkBody(
-                                                           );
+    public final ConnectionOpenBody createConnectionOpenBody(final AMQShortString virtualHost,
+                                                             final AMQShortString capabilities,
+                                                             final boolean insist)
+    {
+        return new ConnectionOpenBody(virtualHost,
+                                      capabilities,
+                                      insist);
+    }
 
-    public abstract ProtocolVersionMethodConverter getProtocolVersionMethodConverter();
+    public final ConnectionOpenOkBody createConnectionOpenOkBody(final AMQShortString knownHosts)
+    {
+        return new ConnectionOpenOkBody(knownHosts);
+    }
+
+    public final ConnectionRedirectBody createConnectionRedirectBody(final AMQShortString host,
+                                                                         final AMQShortString knownHosts)
+    {
+        return new ConnectionRedirectBody(_protocolVersion,
+                                              host,
+                                              knownHosts);
+    }
+
+    public final ConnectionCloseBody createConnectionCloseBody(final int replyCode,
+                                                                   final AMQShortString replyText,
+                                                                   final int classId,
+                                                                   final int methodId)
+    {
+        return new ConnectionCloseBody(_protocolVersion,
+                                           replyCode,
+                                           replyText,
+                                           classId,
+                                           methodId);
+    }
+
+    public final ConnectionCloseOkBody createConnectionCloseOkBody()
+    {
+        return ProtocolVersion.v8_0 == _protocolVersion
+                ? ConnectionCloseOkBody.CONNECTION_CLOSE_OK_0_8
+                : ConnectionCloseOkBody.CONNECTION_CLOSE_OK_0_9;
+    }
+
+
+    public final ExchangeDeclareBody createExchangeDeclareBody(final int ticket,
+                                                         final AMQShortString exchange,
+                                                         final AMQShortString type,
+                                                         final boolean passive,
+                                                         final boolean durable,
+                                                         final boolean autoDelete,
+                                                         final boolean internal,
+                                                         final boolean nowait,
+                                                         final FieldTable arguments)
+    {
+        return new ExchangeDeclareBody(ticket,
+                                       exchange,
+                                       type,
+                                       passive,
+                                       durable,
+                                       autoDelete,
+                                       internal,
+                                       nowait,
+                                       arguments);
+    }
+
+    public final ExchangeDeclareOkBody createExchangeDeclareOkBody()
+    {
+        return new ExchangeDeclareOkBody();
+    }
+
+    public final ExchangeDeleteBody createExchangeDeleteBody(final int ticket,
+                                                       final AMQShortString exchange,
+                                                       final boolean ifUnused,
+                                                       final boolean nowait)
+    {
+        return new ExchangeDeleteBody(ticket,
+                                      exchange,
+                                      ifUnused,
+                                      nowait
+        );
+    }
+
+    public final ExchangeDeleteOkBody createExchangeDeleteOkBody()
+    {
+        return new ExchangeDeleteOkBody();
+    }
+
+    public final ExchangeBoundBody createExchangeBoundBody(final AMQShortString exchange,
+                                                     final AMQShortString routingKey,
+                                                     final AMQShortString queue)
+    {
+        return new ExchangeBoundBody(exchange,
+                                     routingKey,
+                                     queue);
+    }
+
+    public final ExchangeBoundOkBody createExchangeBoundOkBody(final int replyCode,
+                                                         final AMQShortString replyText)
+    {
+        return new ExchangeBoundOkBody(replyCode,
+                                       replyText);
+    }
+
+
+    public final QueueDeclareBody createQueueDeclareBody(final int ticket,
+                                                   final AMQShortString queue,
+                                                   final boolean passive,
+                                                   final boolean durable,
+                                                   final boolean exclusive,
+                                                   final boolean autoDelete,
+                                                   final boolean nowait,
+                                                   final FieldTable arguments)
+    {
+        return new QueueDeclareBody(ticket,
+                                    queue,
+                                    passive,
+                                    durable,
+                                    exclusive,
+                                    autoDelete,
+                                    nowait,
+                                    arguments);
+    }
+
+    public final QueueDeclareOkBody createQueueDeclareOkBody(final AMQShortString queue,
+                                                       final long messageCount,
+                                                       final long consumerCount)
+    {
+        return new QueueDeclareOkBody(queue,
+                                      messageCount,
+                                      consumerCount);
+    }
+
+    public final QueueBindBody createQueueBindBody(final int ticket,
+                                             final AMQShortString queue,
+                                             final AMQShortString exchange,
+                                             final AMQShortString routingKey,
+                                             final boolean nowait,
+                                             final FieldTable arguments)
+    {
+        return new QueueBindBody(ticket,
+                                 queue,
+                                 exchange,
+                                 routingKey,
+                                 nowait,
+                                 arguments);
+    }
+
+    public final QueueBindOkBody createQueueBindOkBody()
+    {
+        return new QueueBindOkBody();
+    }
+
+    public final QueuePurgeBody createQueuePurgeBody(final int ticket,
+                                               final AMQShortString queue,
+                                               final boolean nowait)
+    {
+        return new QueuePurgeBody(ticket,
+                                  queue,
+                                  nowait);
+    }
+
+    public final QueuePurgeOkBody createQueuePurgeOkBody(final long messageCount)
+    {
+        return new QueuePurgeOkBody(messageCount);
+    }
+
+    public final QueueDeleteBody createQueueDeleteBody(final int ticket,
+                                                 final AMQShortString queue,
+                                                 final boolean ifUnused,
+                                                 final boolean ifEmpty,
+                                                 final boolean nowait)
+    {
+        return new QueueDeleteBody(ticket,
+                                   queue,
+                                   ifUnused,
+                                   ifEmpty,
+                                   nowait);
+    }
+
+    public final QueueDeleteOkBody createQueueDeleteOkBody(final long messageCount)
+    {
+        return new QueueDeleteOkBody(messageCount);
+    }
+
+    public final QueueUnbindBody createQueueUnbindBody(final int ticket,
+                                                           final AMQShortString queue,
+                                                           final AMQShortString exchange,
+                                                           final AMQShortString routingKey,
+                                                           final FieldTable arguments)
+    {
+        return new QueueUnbindBody(ticket,
+                                       queue,
+                                       exchange,
+                                       routingKey,
+                                       arguments);
+    }
+
+    public final QueueUnbindOkBody createQueueUnbindOkBody()
+    {
+        return new QueueUnbindOkBody();
+    }
+
+
+    public final TxSelectBody createTxSelectBody()
+    {
+        return TxSelectBody.INSTANCE;
+    }
+
+    public final TxSelectOkBody createTxSelectOkBody()
+    {
+        return TxSelectOkBody.INSTANCE;
+    }
+
+    public final TxCommitBody createTxCommitBody()
+    {
+        return TxCommitBody.INSTANCE;
+    }
+
+    public final TxCommitOkBody createTxCommitOkBody()
+    {
+        return TxCommitOkBody.INSTANCE;
+    }
+
+    public final TxRollbackBody createTxRollbackBody()
+    {
+        return TxRollbackBody.INSTANCE;
+    }
+
+    public final TxRollbackOkBody createTxRollbackOkBody()
+    {
+        return TxRollbackOkBody.INSTANCE;
+    }
+
 }

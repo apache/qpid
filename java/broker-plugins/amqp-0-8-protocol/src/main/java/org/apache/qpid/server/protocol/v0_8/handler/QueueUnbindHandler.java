@@ -27,10 +27,8 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.QueueUnbindBody;
-import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
-import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
@@ -58,6 +56,13 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
                                QueueUnbindBody body,
                                int channelId) throws AMQException
     {
+
+        if (ProtocolVersion.v8_0.equals(connection.getProtocolVersion()))
+        {
+            // 0-8 does not support QueueUnbind
+            throw new AMQException(AMQConstant.COMMAND_INVALID, "QueueUnbind not present in AMQP version: " + connection.getProtocolVersion(), null);
+        }
+
         VirtualHostImpl virtualHost = connection.getVirtualHost();
 
         final AMQQueue queue;
@@ -133,21 +138,8 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
             _log.info("Binding queue " + queue + " to exchange " + exch + " with routing key " + routingKey);
         }
 
-        final MethodRegistry registry = connection.getMethodRegistry();
-        final AMQMethodBody responseBody;
-        if (registry instanceof MethodRegistry_0_9)
-        {
-            responseBody = ((MethodRegistry_0_9)registry).createQueueUnbindOkBody();
-        }
-        else if (registry instanceof MethodRegistry_0_91)
-        {
-            responseBody = ((MethodRegistry_0_91)registry).createQueueUnbindOkBody();
-        }
-        else
-        {
-            // 0-8 does not support QueueUnbind
-            throw new AMQException(AMQConstant.COMMAND_INVALID, "QueueUnbind not present in AMQP version: " + connection.getProtocolVersion(), null);
-        }
+
+        final AMQMethodBody responseBody = connection.getMethodRegistry().createQueueUnbindOkBody();
         channel.sync();
         connection.writeFrame(responseBody.generateFrame(channelId));
     }

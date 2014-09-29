@@ -125,6 +125,21 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
         return false;
     }
 
+    @Override
+    public boolean dispatchQueueUnbindOk(final QueueUnbindOkBody body, final int channelId)
+            throws AMQException
+    {
+        throw new AMQMethodNotImplementedException(body);
+    }
+
+    @Override
+    public boolean dispatchBasicRecoverSyncOk(final BasicRecoverSyncOkBody basicRecoverSyncOkBody,
+                                              final int channelId)
+            throws AMQException
+    {
+        return false;
+    }
+
     public boolean dispatchBasicCancelOk(BasicCancelOkBody body, int channelId) throws AMQException
     {
         _basicCancelOkMethodHandler.methodReceived(_session, body, channelId);
@@ -363,6 +378,12 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
     public boolean dispatchTxSelect(TxSelectBody body, int channelId) throws AMQException
     {
         throw new AMQMethodNotImplementedException(body);
+    }
+
+    @Override
+    public boolean dispatchQueueUnbind(final QueueUnbindBody queueUnbindBody, final int channelId) throws AMQException
+    {
+        return false;
     }
 
     public boolean dispatchExchangeBoundOk(ExchangeBoundOkBody body, int channelId) throws AMQException

@@ -31,35 +31,17 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.codec.MarkableDataInput;
 
 public class TxCommitOkBody extends AMQMethodBodyImpl implements EncodableAMQDataBlock, AMQMethodBody
 {
-    private static final AMQMethodBodyInstanceFactory FACTORY_INSTANCE = new AMQMethodBodyInstanceFactory()
-    {
-        public AMQMethodBody newInstance(MarkableDataInput in, long size) throws AMQFrameDecodingException, IOException
-        {
-            return new TxCommitOkBody(in);
-        }
-    };
-
-    public static AMQMethodBodyInstanceFactory getFactory()
-    {
-        return FACTORY_INSTANCE;
-    }
 
     public static final int CLASS_ID =  90;
     public static final int METHOD_ID = 21;
 
-    // Fields declared in specification
+    public static final TxCommitOkBody INSTANCE = new TxCommitOkBody();
 
     // Constructor
-    public TxCommitOkBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
-    {
-    }
-
-    public TxCommitOkBody(
-                         )
+    private TxCommitOkBody()
     {
     }
 
@@ -76,8 +58,7 @@ public class TxCommitOkBody extends AMQMethodBodyImpl implements EncodableAMQDat
 
     protected int getBodySize()
     {
-        int size = 0;
-        return size;
+        return 0;
     }
 
     public void writeMethodPayload(DataOutput buffer) throws IOException
@@ -91,9 +72,7 @@ public class TxCommitOkBody extends AMQMethodBodyImpl implements EncodableAMQDat
 
     public String toString()
     {
-        StringBuilder buf = new StringBuilder("[TxCommitOkBodyImpl: ");
-        buf.append("]");
-        return buf.toString();
+        return "[TxCommitOkBody]";
     }
 
 }

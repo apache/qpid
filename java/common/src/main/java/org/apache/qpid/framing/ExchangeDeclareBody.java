@@ -35,18 +35,6 @@ import org.apache.qpid.codec.MarkableDataInput;
 
 public class ExchangeDeclareBody extends AMQMethodBodyImpl implements EncodableAMQDataBlock, AMQMethodBody
 {
-    private static final AMQMethodBodyInstanceFactory FACTORY_INSTANCE = new AMQMethodBodyInstanceFactory()
-    {
-        public AMQMethodBody newInstance(MarkableDataInput in, long size) throws AMQFrameDecodingException, IOException
-        {
-            return new ExchangeDeclareBody(in);
-        }
-    };
-
-    public static AMQMethodBodyInstanceFactory getFactory()
-    {
-        return FACTORY_INSTANCE;
-    }
 
     public static final int CLASS_ID =  40;
     public static final int METHOD_ID = 10;
