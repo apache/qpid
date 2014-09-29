@@ -106,6 +106,7 @@ define(["dojo/_base/xhr",
         _changeAddress: function(address, virtualHostNodeHelperAddress)
         {
           virtualHostNodeHelperAddress.set("value", address);
+          this._updatePermittedNodesJson();
         },
         _clickAddPermittedNodeButton: function(e)
         {
