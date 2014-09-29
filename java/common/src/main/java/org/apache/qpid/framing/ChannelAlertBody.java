@@ -27,12 +27,11 @@
 
 package org.apache.qpid.framing;
 
-import org.apache.qpid.codec.MarkableDataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.amqp_8_0.MethodDispatcher_8_0;
+import org.apache.qpid.codec.MarkableDataInput;
 
 public class ChannelAlertBody extends AMQMethodBodyImpl implements EncodableAMQDataBlock, AMQMethodBody
 {
@@ -104,7 +103,7 @@ public class ChannelAlertBody extends AMQMethodBodyImpl implements EncodableAMQD
 
     public boolean execute(MethodDispatcher dispatcher, int channelId) throws AMQException
 	{
-    return ((MethodDispatcher_8_0)dispatcher).dispatchChannelAlert(this, channelId);
+    return dispatcher.dispatchChannelAlert(this, channelId);
 	}
 
     public String toString()

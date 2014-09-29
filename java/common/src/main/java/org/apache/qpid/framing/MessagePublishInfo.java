@@ -18,23 +18,23 @@
  * under the License.
  *
  */
-package org.apache.qpid.framing.abstraction;
+package org.apache.qpid.framing;
 
 import org.apache.qpid.framing.AMQShortString;
 
-public class MessagePublishInfoImpl implements MessagePublishInfo
+public final class MessagePublishInfo
 {
     private AMQShortString _exchange;
     private boolean _immediate;
     private boolean _mandatory;
     private AMQShortString _routingKey;
 
-    public MessagePublishInfoImpl()
+    public MessagePublishInfo()
     {
     }
 
-    public MessagePublishInfoImpl(AMQShortString exchange, boolean immediate, boolean mandatory,
-                                  AMQShortString routingKey)
+    public MessagePublishInfo(AMQShortString exchange, boolean immediate, boolean mandatory,
+                              AMQShortString routingKey)
     {
         _exchange = exchange;
         _immediate = immediate;
@@ -69,7 +69,7 @@ public class MessagePublishInfoImpl implements MessagePublishInfo
 
     public void setMandatory(boolean mandatory)
     {
-        _mandatory = mandatory;        
+        _mandatory = mandatory;
     }
 
     public AMQShortString getRoutingKey()
@@ -81,4 +81,5 @@ public class MessagePublishInfoImpl implements MessagePublishInfo
     {
         _routingKey = routingKey;
     }
+
 }

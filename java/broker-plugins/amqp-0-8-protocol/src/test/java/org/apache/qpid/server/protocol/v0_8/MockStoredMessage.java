@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.server.store.StoredMessage;
 
 public class MockStoredMessage implements StoredMessage<MessageMetaData>

@@ -32,7 +32,6 @@ import java.io.IOException;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.MarkableDataInput;
-import org.apache.qpid.framing.amqp_0_91.MethodDispatcher_0_91;
 
 public class BasicRecoverSyncBody extends AMQMethodBodyImpl implements EncodableAMQDataBlock, AMQMethodBody
 {
@@ -92,7 +91,7 @@ public class BasicRecoverSyncBody extends AMQMethodBodyImpl implements Encodable
 
     public boolean execute(MethodDispatcher dispatcher, int channelId) throws AMQException
 	{
-    return ((MethodDispatcher_0_91)dispatcher).dispatchBasicRecoverSync(this, channelId);
+        return dispatcher.dispatchBasicRecoverSync(this, channelId);
 	}
 
     public String toString()

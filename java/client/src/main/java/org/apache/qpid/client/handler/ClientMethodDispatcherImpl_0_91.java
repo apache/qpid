@@ -23,10 +23,14 @@ package org.apache.qpid.client.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQMethodNotImplementedException;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.framing.amqp_0_91.MethodDispatcher_0_91;
+import org.apache.qpid.framing.BasicRecoverSyncBody;
+import org.apache.qpid.framing.BasicRecoverSyncOkBody;
+import org.apache.qpid.framing.ChannelAlertBody;
+import org.apache.qpid.framing.MethodDispatcher;
+import org.apache.qpid.framing.QueueUnbindBody;
+import org.apache.qpid.framing.QueueUnbindOkBody;
 
-public class ClientMethodDispatcherImpl_0_91 extends ClientMethodDispatcherImpl implements MethodDispatcher_0_91
+public class ClientMethodDispatcherImpl_0_91 extends ClientMethodDispatcherImpl implements MethodDispatcher
 {
     public ClientMethodDispatcherImpl_0_91(AMQProtocolSession session)
     {
@@ -36,6 +40,13 @@ public class ClientMethodDispatcherImpl_0_91 extends ClientMethodDispatcherImpl 
     public boolean dispatchBasicRecoverSyncOk(BasicRecoverSyncOkBody body, int channelId) throws AMQException
     {
         return false;
+    }
+
+    @Override
+    public boolean dispatchChannelAlert(final ChannelAlertBody body, final int channelId)
+            throws AMQException
+    {
+        throw new AMQMethodNotImplementedException(body);
     }
 
     public boolean dispatchBasicRecoverSync(BasicRecoverSyncBody body, int channelId) throws AMQException

@@ -70,4 +70,6 @@ public interface ClientMethodDispatcher
 
     boolean dispatchBasicRecoverSyncOk(BasicRecoverSyncOkBody basicRecoverSyncOkBody, int channelId)
             throws AMQException;
+
+    boolean dispatchChannelAlert(ChannelAlertBody channelAlertBody, int channelId) throws AMQException;
 }

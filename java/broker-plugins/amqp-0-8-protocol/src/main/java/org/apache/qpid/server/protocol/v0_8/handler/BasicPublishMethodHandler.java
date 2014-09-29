@@ -27,8 +27,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
+import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.protocol.v0_8.AMQChannel;
@@ -95,10 +94,10 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
                 throw body.getChannelNotFoundException(channelId, connection.getMethodRegistry());
             }
 
-            MessagePublishInfo info = new MessagePublishInfoImpl(body.getExchange(),
-                                                                 body.getImmediate(),
-                                                                 body.getMandatory(),
-                                                                 body.getRoutingKey());
+            MessagePublishInfo info = new MessagePublishInfo(body.getExchange(),
+                                                             body.getImmediate(),
+                                                             body.getMandatory(),
+                                                             body.getRoutingKey());
             info.setExchange(exchangeName);
             try
             {
@@ -106,7 +105,9 @@ public class BasicPublishMethodHandler implements StateAwareMethodListener<Basic
             }
             catch (AccessControlException e)
             {
-                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, e.getMessage(), connection.getMethodRegistry());
+                throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
+                                                  e.getMessage(),
+                                                  connection.getMethodRegistry());
             }
         }
     }

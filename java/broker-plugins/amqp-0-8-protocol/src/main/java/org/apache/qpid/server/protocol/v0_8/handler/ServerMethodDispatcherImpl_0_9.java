@@ -22,15 +22,19 @@ package org.apache.qpid.server.protocol.v0_8.handler;
 
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.framing.amqp_0_9.MethodDispatcher_0_9;
+import org.apache.qpid.framing.BasicRecoverSyncBody;
+import org.apache.qpid.framing.BasicRecoverSyncOkBody;
+import org.apache.qpid.framing.ChannelAlertBody;
+import org.apache.qpid.framing.MethodDispatcher;
+import org.apache.qpid.framing.QueueUnbindBody;
+import org.apache.qpid.framing.QueueUnbindOkBody;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 
 
 
 public class ServerMethodDispatcherImpl_0_9
         extends ServerMethodDispatcherImpl
-        implements MethodDispatcher_0_9
+        implements MethodDispatcher
 
 {
 
@@ -52,6 +56,13 @@ public class ServerMethodDispatcherImpl_0_9
     }
 
     public boolean dispatchBasicRecoverSyncOk(BasicRecoverSyncOkBody body, int channelId) throws AMQException
+    {
+        throw new UnexpectedMethodException(body);
+    }
+
+    @Override
+    public boolean dispatchChannelAlert(final ChannelAlertBody body, final int channelId)
+            throws AMQException
     {
         throw new UnexpectedMethodException(body);
     }

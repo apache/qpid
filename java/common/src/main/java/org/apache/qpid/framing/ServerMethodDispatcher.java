@@ -66,4 +66,6 @@ public interface ServerMethodDispatcher
     public boolean dispatchTxSelect(TxSelectBody body, int channelId) throws AMQException;
 
     boolean dispatchQueueUnbind(QueueUnbindBody queueUnbindBody, int channelId) throws AMQException;
+
+    boolean dispatchBasicRecoverSync(BasicRecoverSyncBody basicRecoverSyncBody, int channelId) throws AMQException;
 }
