@@ -61,12 +61,13 @@ class SockIO:
 
   def close(self):
     try:
-      self.sock.shutdown(SHUT_RDWR)
-    except socket.error, e:
-      if (e.errno == errno.ENOTCONN):
-        pass
-      else:
-        raise
+      try:
+        self.sock.shutdown(SHUT_RDWR)
+      except socket.error, e:
+        if (e.errno == errno.ENOTCONN):
+          pass
+        else:
+          raise
     finally:
       self.sock.close()
 
