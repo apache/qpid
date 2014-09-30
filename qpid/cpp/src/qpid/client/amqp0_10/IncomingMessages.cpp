@@ -34,6 +34,7 @@
 #include "qpid/framing/MessageProperties.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/enum.h"
+#include <algorithm>
 
 namespace qpid {
 namespace client {
@@ -131,15 +132,8 @@ qpid::sys::Duration get_duration(qpid::sys::Duration timeout, qpid::sys::AbsTime
 {
     if (timeout == qpid::sys::TIME_INFINITE) {
         return qpid::sys::TIME_INFINITE;
-    } else if (timeout == 0) {
-        return 0;
     } else {
-        qpid::sys::AbsTime n = AbsTime::now();
-        if (n < deadline) {
-            return qpid::sys::Duration(n, deadline);
-        } else {
-            return 0;
-        }
+        return std::max(qpid::sys::Duration(0), qpid::sys::Duration(AbsTime::now(), deadline));
     }
 }
 }
