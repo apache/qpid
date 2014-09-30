@@ -41,7 +41,7 @@ public class MockStoredMessage implements StoredMessage<MessageMetaData>
 
     public MockStoredMessage(long messageId, String headerName, Object headerValue)
     {
-        this(messageId, new MockMessagePublishInfo(), new ContentHeaderBody(new BasicContentHeaderProperties(), 60), headerName, headerValue);
+        this(messageId, new MessagePublishInfo(null, false, false, null), new ContentHeaderBody(new BasicContentHeaderProperties(), 60), headerName, headerValue);
     }
 
     public MockStoredMessage(long messageId, MessagePublishInfo info, ContentHeaderBody chb)

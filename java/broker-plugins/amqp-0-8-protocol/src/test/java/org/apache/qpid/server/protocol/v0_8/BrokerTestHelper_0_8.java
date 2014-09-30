@@ -29,9 +29,6 @@ import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 public class BrokerTestHelper_0_8 extends BrokerTestHelper
 {
 
@@ -69,9 +66,7 @@ public class BrokerTestHelper_0_8 extends BrokerTestHelper
     {
         AMQShortString routingKey = new AMQShortString(queueName);
         AMQShortString exchangeNameAsShortString = new AMQShortString(exchangeName);
-        MessagePublishInfo info = mock(MessagePublishInfo.class);
-        when(info.getExchange()).thenReturn(exchangeNameAsShortString);
-        when(info.getRoutingKey()).thenReturn(routingKey);
+        MessagePublishInfo info = new MessagePublishInfo(exchangeNameAsShortString, false, false, routingKey);
 
         MessageDestination destination;
         if(exchangeName == null || "".equals(exchangeName))

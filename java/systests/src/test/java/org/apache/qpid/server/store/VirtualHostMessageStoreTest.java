@@ -597,7 +597,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         headers.setString("Test", "MST");
         properties.setHeaders(headers);
 
-        MessagePublishInfo messageInfo = new TestMessagePublishInfo(exchange, false, false, routingKey);
+        MessagePublishInfo messageInfo = new MessagePublishInfo(new AMQShortString(exchange.getName()), false, false, new AMQShortString(routingKey));
 
         ContentHeaderBody headerBody = new ContentHeaderBody(BasicConsumeBody.CLASS_ID,0,properties,0l);
 
@@ -824,52 +824,4 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
 
         assertEquals("Incorrect Message count on queue:" + queueName, messageCount, queue.getQueueDepthMessages());
     }
-
-    private class TestMessagePublishInfo implements MessagePublishInfo
-    {
-
-        ExchangeImpl<?> _exchange;
-        boolean _immediate;
-        boolean _mandatory;
-        String _routingKey;
-
-        TestMessagePublishInfo(ExchangeImpl<?> exchange, boolean immediate, boolean mandatory, String routingKey)
-        {
-            _exchange = exchange;
-            _immediate = immediate;
-            _mandatory = mandatory;
-            _routingKey = routingKey;
-        }
-
-        @Override
-        public AMQShortString getExchange()
-        {
-            return new AMQShortString(_exchange.getName());
-        }
-
-        @Override
-        public void setExchange(AMQShortString exchange)
-        {
-            //no-op
-        }
-
-        @Override
-        public boolean isImmediate()
-        {
-            return _immediate;
-        }
-
-        @Override
-        public boolean isMandatory()
-        {
-            return _mandatory;
-        }
-
-        @Override
-        public AMQShortString getRoutingKey()
-        {
-            return new AMQShortString(_routingKey);
-        }
-    }
-
 }

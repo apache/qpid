@@ -135,38 +135,10 @@ public class MessageConverter_Internal_to_v0_8 implements MessageConverter<Inter
     private MessageMetaData convertMetaData(final InternalMessage serverMsg, final String bodyMimeType, final int size)
     {
 
-        MessagePublishInfo publishInfo = new MessagePublishInfo()
-                                            {
-                                                @Override
-                                                public AMQShortString getExchange()
-                                                {
-                                                    return AMQShortString.EMPTY_STRING;
-                                                }
-
-                                                @Override
-                                                public void setExchange(final AMQShortString amqShortString)
-                                                {
-                                                    throw new UnsupportedOperationException();
-                                                }
-
-                                                @Override
-                                                public boolean isImmediate()
-                                                {
-                                                    return false;
-                                                }
-
-                                                @Override
-                                                public boolean isMandatory()
-                                                {
-                                                    return false;
-                                                }
-
-                                                @Override
-                                                public AMQShortString getRoutingKey()
-                                                {
-                                                    return AMQShortString.valueOf(serverMsg.getInitialRoutingAddress());
-                                                }
-                                            };
+        MessagePublishInfo publishInfo = new MessagePublishInfo(AMQShortString.EMPTY_STRING,
+                                                                false,
+                                                                false,
+                                                                AMQShortString.valueOf(serverMsg.getInitialRoutingAddress()));
 
 
         final BasicContentHeaderProperties props = new BasicContentHeaderProperties();

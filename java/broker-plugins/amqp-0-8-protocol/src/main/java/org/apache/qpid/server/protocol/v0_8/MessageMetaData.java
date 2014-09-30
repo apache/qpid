@@ -20,7 +20,12 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.Set;
 
 import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.AMQProtocolVersionException;
@@ -36,12 +41,6 @@ import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.util.ByteBufferOutputStream;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.util.ByteBufferInputStream;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Set;
 
 /**
  * Encapsulates a publish body and a content header. In the context of the message store these are treated as a
@@ -170,33 +169,11 @@ public class MessageMetaData implements StorableMessageMetaData
                 long arrivalTime = EncodingUtils.readLong(dais);
 
                 MessagePublishInfo publishBody =
-                        new MessagePublishInfo()
-                        {
+                        new MessagePublishInfo(exchange,
+                                               (flags & IMMEDIATE_FLAG) != 0,
+                                               (flags & MANDATORY_FLAG) != 0,
+                                               routingKey);
 
-                            public AMQShortString getExchange()
-                            {
-                                return exchange;
-                            }
-
-                            public void setExchange(AMQShortString exchange)
-                            {
-                            }
-
-                            public boolean isImmediate()
-                            {
-                                return (flags & IMMEDIATE_FLAG) != 0;
-                            }
-
-                            public boolean isMandatory()
-                            {
-                                return (flags & MANDATORY_FLAG) != 0;
-                            }
-
-                            public AMQShortString getRoutingKey()
-                            {
-                                return routingKey;
-                            }
-                        };
                 return new MessageMetaData(publishBody, chb, arrivalTime);
             }
             catch (IOException e)

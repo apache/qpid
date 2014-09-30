@@ -98,13 +98,12 @@ public class AMQChannelTest extends QpidTestCase
         AMQChannel channel = new AMQChannel(_protocolSession, 1, _virtualHost.getMessageStore());
         channel.setLocalTransactional();
 
-        MessagePublishInfo info = mock(MessagePublishInfo.class);
+        MessagePublishInfo info = new MessagePublishInfo(new AMQShortString("test"), false, false, null);
         ExchangeImpl e = mock(ExchangeImpl.class);
         ContentHeaderBody contentHeaderBody= mock(ContentHeaderBody.class);
         BasicContentHeaderProperties properties = mock(BasicContentHeaderProperties.class);
 
         when(contentHeaderBody.getProperties()).thenReturn(properties);
-        when(info.getExchange()).thenReturn(new AMQShortString("test"));
         when(properties.getUserId()).thenReturn(new AMQShortString(_protocolSession.getAuthorizedPrincipal().getName() + "_incorrect"));
 
         channel.setPublishFrame(info, e);
@@ -121,13 +120,12 @@ public class AMQChannelTest extends QpidTestCase
         AMQChannel channel = new AMQChannel(_protocolSession, 1, _virtualHost.getMessageStore());
         channel.setLocalTransactional();
 
-        MessagePublishInfo info = mock(MessagePublishInfo.class);
+        MessagePublishInfo info = new MessagePublishInfo(new AMQShortString("test"), false, false, null);
         ExchangeImpl e = mock(ExchangeImpl.class);
         ContentHeaderBody contentHeaderBody= mock(ContentHeaderBody.class);
         BasicContentHeaderProperties properties = mock(BasicContentHeaderProperties.class);
 
         when(contentHeaderBody.getProperties()).thenReturn(properties);
-        when(info.getExchange()).thenReturn(new AMQShortString("test"));
         when(properties.getUserId()).thenReturn(new AMQShortString(_protocolSession.getAuthorizedPrincipal().getName()));
 
         channel.setPublishFrame(info, e);

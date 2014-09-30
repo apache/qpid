@@ -35,7 +35,6 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicGetOkBody;
 import org.apache.qpid.framing.BasicReturnBody;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.message.InstanceProperties;
@@ -47,25 +46,18 @@ import org.apache.qpid.server.protocol.v0_8.AMQMessage;
 import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
 import org.apache.qpid.util.GZIPUtils;
 
-class ProtocolOutputConverterImpl implements ProtocolOutputConverter
+public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 {
     private static final int BASIC_CLASS_ID = 60;
 
-    private final MethodRegistry _methodRegistry;
     private final AMQProtocolSession _protocolSession;
     private static final AMQShortString GZIP_ENCODING = AMQShortString.valueOf(GZIPUtils.GZIP_CONTENT_ENCODING);
 
-    ProtocolOutputConverterImpl(AMQProtocolSession session, MethodRegistry methodRegistry)
+    public ProtocolOutputConverterImpl(AMQProtocolSession session)
     {
         _protocolSession = session;
-        _methodRegistry = methodRegistry;
     }
 
-
-    public AMQProtocolSession getProtocolSession()
-    {
-        return _protocolSession;
-    }
 
     public long writeDeliver(final ServerMessage m,
                              final InstanceProperties props, int channelId,
@@ -192,7 +184,7 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         }
         else
         {
-            int maxBodySize = (int) getProtocolSession().getMaxFrameSize() - AMQFrame.getFrameOverhead();
+            int maxBodySize = (int) _protocolSession.getMaxFrameSize() - AMQFrame.getFrameOverhead();
 
 
             int capacity = bodySize > maxBodySize ? maxBodySize : bodySize;
@@ -326,11 +318,11 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
         public AMQBody createAMQBody()
         {
-            return _methodRegistry.createBasicDeliverBody(_consumerTag,
-                                                          _deliveryTag,
-                                                          _isRedelivered,
-                                                          _exchangeName,
-                                                          _routingKey);
+            return _protocolSession.getMethodRegistry().createBasicDeliverBody(_consumerTag,
+                                                                               _deliveryTag,
+                                                                               _isRedelivered,
+                                                                               _exchangeName,
+                                                                               _routingKey);
         }
 
         public byte getFrameType()
@@ -382,23 +374,13 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         final boolean isRedelivered = Boolean.TRUE.equals(props.getProperty(InstanceProperties.Property.REDELIVERED));
 
         BasicGetOkBody getOkBody =
-                _methodRegistry.createBasicGetOkBody(deliveryTag,
-                                                     isRedelivered,
-                                                     exchangeName,
-                                                     routingKey,
-                                                     queueSize);
+                _protocolSession.getMethodRegistry().createBasicGetOkBody(deliveryTag,
+                                                                          isRedelivered,
+                                                                          exchangeName,
+                                                                          routingKey,
+                                                                          queueSize);
 
         return getOkBody;
-    }
-
-    public byte getProtocolMinorVersion()
-    {
-        return _protocolSession.getProtocolMinorVersion();
-    }
-
-    public byte getProtocolMajorVersion()
-    {
-        return getProtocolSession().getProtocolMajorVersion();
     }
 
     private AMQBody createEncodedReturnFrame(MessagePublishInfo messagePublishInfo,
@@ -407,10 +389,10 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     {
 
         BasicReturnBody basicReturnBody =
-                _methodRegistry.createBasicReturnBody(replyCode,
-                                                      replyText,
-                                                      messagePublishInfo.getExchange(),
-                                                      messagePublishInfo.getRoutingKey());
+                _protocolSession.getMethodRegistry().createBasicReturnBody(replyCode,
+                                                                           replyText,
+                                                                           messagePublishInfo.getExchange(),
+                                                                           messagePublishInfo.getRoutingKey());
 
 
         return basicReturnBody;
@@ -427,14 +409,14 @@ class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
     public void writeFrame(AMQDataBlock block)
     {
-        getProtocolSession().writeFrame(block);
+        _protocolSession.writeFrame(block);
     }
 
 
     public void confirmConsumerAutoClose(int channelId, AMQShortString consumerTag)
     {
 
-        BasicCancelOkBody basicCancelOkBody = _methodRegistry.createBasicCancelOkBody(consumerTag);
+        BasicCancelOkBody basicCancelOkBody = _protocolSession.getMethodRegistry().createBasicCancelOkBody(consumerTag);
         writeFrame(basicCancelOkBody.generateFrame(channelId));
 
     }

@@ -140,6 +140,13 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
         return false;
     }
 
+    @Override
+    public boolean dispatchChannelAlert(final ChannelAlertBody channelAlertBody, final int channelId)
+            throws AMQException
+    {
+        return false;
+    }
+
     public boolean dispatchBasicCancelOk(BasicCancelOkBody body, int channelId) throws AMQException
     {
         _basicCancelOkMethodHandler.methodReceived(_session, body, channelId);
@@ -382,6 +389,13 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     @Override
     public boolean dispatchQueueUnbind(final QueueUnbindBody queueUnbindBody, final int channelId) throws AMQException
+    {
+        return false;
+    }
+
+    @Override
+    public boolean dispatchBasicRecoverSync(final BasicRecoverSyncBody basicRecoverSyncBody, final int channelId)
+            throws AMQException
     {
         return false;
     }

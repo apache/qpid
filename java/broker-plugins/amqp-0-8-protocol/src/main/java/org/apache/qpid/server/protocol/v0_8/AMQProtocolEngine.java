@@ -74,7 +74,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.SessionModelListener;
 import org.apache.qpid.server.protocol.v0_8.handler.ServerMethodDispatcherImpl;
 import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
-import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverterRegistry;
+import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverterImpl;
 import org.apache.qpid.server.protocol.v0_8.state.AMQState;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
@@ -1229,7 +1229,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     {
         _protocolVersion = pv;
         _methodRegistry = MethodRegistry.getMethodRegistry(_protocolVersion);
-        _protocolOutputConverter = ProtocolOutputConverterRegistry.getConverter(this);
+        _protocolOutputConverter = new ProtocolOutputConverterImpl(this);
         _dispatcher = ServerMethodDispatcherImpl.createMethodDispatcher(this);
     }
 

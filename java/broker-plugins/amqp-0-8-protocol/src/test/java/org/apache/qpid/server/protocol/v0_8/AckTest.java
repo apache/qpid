@@ -90,34 +90,8 @@ public class AckTest extends QpidTestCase
     {
         for (int i = 1; i <= count; i++)
         {
-            MessagePublishInfo publishBody = new MessagePublishInfo()
-            {
-
-                public AMQShortString getExchange()
-                {
-                    return new AMQShortString("someExchange");
-                }
-
-                public void setExchange(AMQShortString exchange)
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                public boolean isImmediate()
-                {
-                    return false;
-                }
-
-                public boolean isMandatory()
-                {
-                    return false;
-                }
-
-                public AMQShortString getRoutingKey()
-                {
-                    return new AMQShortString("rk");
-                }
-            };
+            MessagePublishInfo publishBody = new MessagePublishInfo(new AMQShortString("someExchange"), false, false,
+                                                                    new AMQShortString("rk"));
             BasicContentHeaderProperties b = new BasicContentHeaderProperties();
             ContentHeaderBody cb = new ContentHeaderBody();
             cb.setProperties(b);

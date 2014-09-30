@@ -256,38 +256,7 @@ public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTra
         final boolean immediate = delvProps != null && delvProps.getImmediate();
         final boolean mandatory = delvProps != null && !delvProps.getDiscardUnroutable();
 
-        return new MessagePublishInfo()
-        {
-            @Override
-            public AMQShortString getExchange()
-            {
-                return exchangeName;
-            }
-
-            @Override
-            public void setExchange(AMQShortString exchange)
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isImmediate()
-            {
-                return immediate;
-            }
-
-            @Override
-            public boolean isMandatory()
-            {
-                return mandatory;
-            }
-
-            @Override
-            public AMQShortString getRoutingKey()
-            {
-                return routingKey;
-            }
-        };
+        return new MessagePublishInfo(exchangeName, immediate, mandatory, routingKey);
     }
 
     @Override

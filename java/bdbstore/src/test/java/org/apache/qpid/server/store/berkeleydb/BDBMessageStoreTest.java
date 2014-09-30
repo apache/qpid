@@ -234,36 +234,8 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
 
     private MessagePublishInfo createPublishInfoBody_0_8()
     {
-        return new MessagePublishInfo()
-        {
-            public AMQShortString getExchange()
-            {
-                return new AMQShortString("exchange12345");
-            }
-
-            @Override
-            public void setExchange(AMQShortString exchange)
-            {
-            }
-
-            @Override
-            public boolean isImmediate()
-            {
-                return false;
-            }
-
-            @Override
-            public boolean isMandatory()
-            {
-                return true;
-            }
-
-            @Override
-            public AMQShortString getRoutingKey()
-            {
-                return new AMQShortString("routingKey12345");
-            }
-        };
+        return new MessagePublishInfo(new AMQShortString("exchange12345"), false, true,
+                                      new AMQShortString("routingKey12345"));
 
     }
 
