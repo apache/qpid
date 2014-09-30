@@ -126,6 +126,24 @@ void IncomingMessages::setSession(qpid::client::AsyncSession s)
     acceptTracker.reset();
 }
 
+namespace {
+qpid::sys::Duration get_duration(qpid::sys::Duration timeout, qpid::sys::AbsTime deadline)
+{
+    if (timeout == qpid::sys::TIME_INFINITE) {
+        return qpid::sys::TIME_INFINITE;
+    } else if (timeout == 0) {
+        return 0;
+    } else {
+        qpid::sys::AbsTime n = AbsTime::now();
+        if (n < deadline) {
+            return qpid::sys::Duration(n, deadline);
+        } else {
+            return 0;
+        }
+    }
+}
+}
+
 bool IncomingMessages::get(Handler& handler, qpid::sys::Duration timeout)
 {
     sys::Mutex::ScopedLock l(lock);
@@ -152,7 +170,7 @@ bool IncomingMessages::get(Handler& handler, qpid::sys::Duration timeout)
             ScopedRelease release(inUse, lock);
             sys::Mutex::ScopedUnlock l(lock);
             //wait for suitable new message to arrive
-            if (process(&handler, timeout == qpid::sys::TIME_INFINITE ? qpid::sys::TIME_INFINITE : qpid::sys::Duration(AbsTime::now(), deadline))) {
+            if (process(&handler, get_duration(timeout, deadline))) {
                 return true;
             }
         }
@@ -184,7 +202,7 @@ bool IncomingMessages::getNextDestination(std::string& destination, qpid::sys::D
             ScopedRelease release(inUse, lock);
             sys::Mutex::ScopedUnlock l(lock);
             //wait for an incoming message
-            wait(timeout == qpid::sys::TIME_INFINITE ? qpid::sys::TIME_INFINITE : qpid::sys::Duration(AbsTime::now(), deadline));
+            wait(get_duration(timeout, deadline));
         }
         if (!(AbsTime::now() < deadline)) break;
     }
