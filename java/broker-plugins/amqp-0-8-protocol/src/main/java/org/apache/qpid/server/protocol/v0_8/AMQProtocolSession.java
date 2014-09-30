@@ -37,8 +37,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
-import org.apache.qpid.server.protocol.v0_8.state.AMQState;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -217,8 +215,6 @@ public interface AMQProtocolSession<T extends AMQProtocolSession<T>>
     boolean isCompressionSupported();
 
     int getMessageCompressionThreshold();
-
-    void changeState(AMQState state);
 
     Broker<?> getBroker();
 

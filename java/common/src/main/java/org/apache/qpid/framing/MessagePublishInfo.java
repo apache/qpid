@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.qpid.framing.AMQShortString;
-
 public final class MessagePublishInfo
 {
     private AMQShortString _exchange;

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.protocol.v0_8.handler;
+package org.apache.qpid.server.protocol.v0_8;
 
 
 import org.apache.qpid.AMQException;

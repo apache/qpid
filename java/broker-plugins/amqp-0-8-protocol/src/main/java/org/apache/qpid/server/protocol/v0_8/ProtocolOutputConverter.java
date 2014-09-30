@@ -24,7 +24,7 @@
  * Supported AMQP versions:
  *   8-0
  */
-package org.apache.qpid.server.protocol.v0_8.output;
+package org.apache.qpid.server.protocol.v0_8;
 
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQShortString;

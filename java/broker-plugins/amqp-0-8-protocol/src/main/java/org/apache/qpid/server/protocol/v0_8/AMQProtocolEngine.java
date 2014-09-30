@@ -72,10 +72,6 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.SessionModelListener;
-import org.apache.qpid.server.protocol.v0_8.handler.ServerMethodDispatcherImpl;
-import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
-import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverterImpl;
-import org.apache.qpid.server.protocol.v0_8.state.AMQState;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -124,9 +120,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
      */
     private final Set<AMQChannel<AMQProtocolEngine>> _channelsForCurrentMessage =
             new HashSet<AMQChannel<AMQProtocolEngine>>();
-
-    /** The current state */
-    private AMQState _currentState;
 
     private AMQDecoder _decoder;
 
@@ -1110,7 +1103,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         {
             try
             {
-                changeState(AMQState.CONNECTION_CLOSING);
                 writeFrame(e.getCloseFrame());
             }
             finally
@@ -1126,19 +1118,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     public void closeProtocolSession()
     {
         _network.close();
-
-        try
-        {
-            changeState(AMQState.CONNECTION_CLOSED);
-        }
-        catch (ConnectionScopedRuntimeException e)
-        {
-            _logger.info(e.getMessage());
-        }
-        catch (TransportException e)
-        {
-            _logger.info(e.getMessage());
-        }
     }
 
     public String toString()
@@ -1729,13 +1708,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     public int getMessageCompressionThreshold()
     {
         return _messageCompressionThreshold;
-    }
-
-    @Override
-    public void changeState(AMQState newState)
-    {
-        _logger.debug("State changing to " + newState + " from old state " + _currentState);
-        _currentState = newState;
     }
 
     @Override

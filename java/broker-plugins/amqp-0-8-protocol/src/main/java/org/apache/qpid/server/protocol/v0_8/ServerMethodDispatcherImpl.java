@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.protocol.v0_8.handler;
+package org.apache.qpid.server.protocol.v0_8;
 
 import java.security.AccessControlException;
 import java.util.Collection;
@@ -57,13 +57,6 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UnknownConfiguredObjectException;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.protocol.v0_8.AMQChannel;
-import org.apache.qpid.server.protocol.v0_8.AMQMessage;
-import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.ClientDeliveryMethod;
-import org.apache.qpid.server.protocol.v0_8.ConsumerTarget_0_8;
-import org.apache.qpid.server.protocol.v0_8.RecordDeliveryMethod;
-import org.apache.qpid.server.protocol.v0_8.state.AMQState;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -884,8 +877,6 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
             MethodRegistry methodRegistry = _connection.getMethodRegistry();
             AMQMethodBody responseBody =  methodRegistry.createConnectionOpenOkBody(body.getVirtualHost());
 
-            _connection.changeState(AMQState.CONNECTION_OPEN);
-
             _connection.writeFrame(responseBody.generateFrame(channelId));
         }
         return true;
@@ -924,7 +915,6 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
 
         try
         {
-            _connection.changeState(AMQState.CONNECTION_CLOSED);
             _connection.closeSession();
         }
         catch (Exception e)
@@ -1031,9 +1021,6 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
 
                 _logger.info("Authentication failed:" + (cause == null ? "" : cause.getMessage()));
 
-                // This should be abstracted
-                _connection.changeState(AMQState.CONNECTION_CLOSING);
-
                 ConnectionCloseBody connectionCloseBody =
                         methodRegistry.createConnectionCloseBody(AMQConstant.NOT_ALLOWED.getCode(),
                                                                  AMQConstant.NOT_ALLOWED.getName(),
@@ -1048,7 +1035,6 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
                 {
                     _logger.info("Connected as: " + authResult.getSubject());
                 }
-                _connection.changeState(AMQState.CONNECTION_NOT_TUNED);
 
                 int frameMax = broker.getContextValue(Integer.class, Broker.BROKER_FRAME_SIZE);
 
@@ -1066,7 +1052,6 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
                 disposeSaslServer(_connection);
                 break;
             case CONTINUE:
-                _connection.changeState(AMQState.CONNECTION_NOT_AUTH);
 
                 ConnectionSecureBody
                         secureBody = methodRegistry.createConnectionSecureBody(authResult.getChallenge());
@@ -1129,8 +1114,6 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
 
                     _logger.info("Authentication failed:" + (cause == null ? "" : cause.getMessage()));
 
-                    _connection.changeState(AMQState.CONNECTION_CLOSING);
-
                     ConnectionCloseBody closeBody =
                             methodRegistry.createConnectionCloseBody(AMQConstant.NOT_ALLOWED.getCode(),    // replyCode
                                                                      AMQConstant.NOT_ALLOWED.getName(),
@@ -1148,7 +1131,6 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
                     }
                     _connection.setAuthorizedSubject(authResult.getSubject());
 
-                    _connection.changeState(AMQState.CONNECTION_NOT_TUNED);
                     int frameMax = broker.getContextValue(Integer.class, Broker.BROKER_FRAME_SIZE);
 
                     if(frameMax <= 0)
@@ -1163,8 +1145,6 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
                     _connection.writeFrame(tuneBody.generateFrame(0));
                     break;
                 case CONTINUE:
-                    _connection.changeState(AMQState.CONNECTION_NOT_AUTH);
-
                     ConnectionSecureBody
                             secureBody = methodRegistry.createConnectionSecureBody(authResult.getChallenge());
                     _connection.writeFrame(secureBody.generateFrame(0));
@@ -1186,7 +1166,6 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
         {
             _logger.debug(body);
         }
-        connection.changeState(AMQState.CONNECTION_NOT_OPENED);
 
         connection.initHeartbeats(body.getHeartbeat());
 
