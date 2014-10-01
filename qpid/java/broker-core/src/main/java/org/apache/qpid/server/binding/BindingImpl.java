@@ -29,9 +29,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.VoidTask;
 import org.apache.qpid.server.exchange.AbstractExchange;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.filter.AMQInvalidArgumentException;
+import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.BindingMessages;
 import org.apache.qpid.server.logging.subjects.BindingLogSubject;
@@ -269,4 +272,23 @@ public class BindingImpl
                );
 
     }
+
+    @Override
+    public void validateOnCreate()
+    {
+        AMQQueue queue = getAMQQueue();
+        Map<String, Object> arguments = getArguments();
+        if (arguments!=null && !arguments.isEmpty() && FilterSupport.argumentsContainFilter(arguments))
+        {
+            try
+            {
+                FilterSupport.createMessageFilter(arguments, queue);
+            }
+            catch (AMQInvalidArgumentException e)
+            {
+                throw new IllegalConfigurationException(e.getMessage(), e);
+            }
+        }
+    }
+
 }

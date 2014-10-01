@@ -118,16 +118,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             throw new IllegalArgumentException("Unknown attributes provided: " + providedAttributeNames);
         }
         _virtualHost = vhost;
-        // check ACL
-        try
-        {
-            _virtualHost.getSecurityManager().authoriseCreateExchange(this);
-        }
-        catch (AccessControlException e)
-        {
-            deleted();
-            throw e;
-        }
 
         _logSubject = new ExchangeLogSubject(this, this.getVirtualHost());
 
@@ -142,6 +132,12 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                 }
             }
         };
+    }
+
+    @Override
+    public void validateOnCreate()
+    {
+        _virtualHost.getSecurityManager().authoriseCreateExchange(this);
     }
 
     @Override
@@ -756,7 +752,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                                              final Map<String, Object> oldArguments);
 
 
-    @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
+    @StateTransition(currentState = {State.UNINITIALIZED,State.ERRORED}, desiredState = State.ACTIVE)
     private void activate()
     {
         setState(State.ACTIVE);

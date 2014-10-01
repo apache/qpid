@@ -121,33 +121,38 @@ public class TestFileUtils
         File file = createTempFile(testcase, suffix);
         if (content != null)
         {
-            FileOutputStream fos =  null;
-            try
+            saveTextContentInFile(content, file);
+        }
+        return file;
+    }
+
+    public static void saveTextContentInFile(String content, File file)
+    {
+        FileOutputStream fos =  null;
+        try
+        {
+            fos = new FileOutputStream(file);
+            fos.write(content.getBytes("UTF-8"));
+            fos.flush();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Cannot add the content into temp file " + file.getAbsolutePath(), e);
+        }
+        finally
+        {
+            if (fos != null)
             {
-                fos = new FileOutputStream(file);
-                fos.write(content.getBytes("UTF-8"));
-                fos.flush();
-            }
-            catch (Exception e)
-            {
-                throw new RuntimeException("Cannot add the content into temp file " + file.getAbsolutePath(), e);
-            }
-            finally
-            {
-                if (fos != null)
+                try
                 {
-                    try
-                    {
-                        fos.close();
-                    }
-                    catch (IOException e)
-                    {
-                        throw new RuntimeException("Cannot close output stream into temp file " + file.getAbsolutePath(), e);
-                    }
+                    fos.close();
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException("Cannot close output stream into temp file " + file.getAbsolutePath(), e);
                 }
             }
         }
-        return file;
     }
 
     /**

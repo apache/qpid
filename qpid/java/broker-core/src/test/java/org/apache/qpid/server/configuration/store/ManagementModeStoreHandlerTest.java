@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.server.model.BrokerShutdownProvider;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -78,7 +79,8 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
         _taskExecutor.start();
 
         _systemConfig = new JsonSystemConfigImpl(_taskExecutor, mock(EventLogger.class),
-                                               mock(LogRecorder.class), new BrokerOptions());
+                                               mock(LogRecorder.class), new BrokerOptions(),
+                                               mock(BrokerShutdownProvider.class));
 
 
         ConfiguredObjectRecord systemContextRecord = _systemConfig.asObjectRecord();

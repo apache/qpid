@@ -103,7 +103,7 @@ public class JMXManagementPluginImpl
         return _usePlatformMBeanServer;
     }
 
-    @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
+    @StateTransition(currentState = {State.UNINITIALIZED,State.ERRORED}, desiredState = State.ACTIVE)
     private void doStart() throws JMException, IOException
     {
         _allowPortActivation = true;

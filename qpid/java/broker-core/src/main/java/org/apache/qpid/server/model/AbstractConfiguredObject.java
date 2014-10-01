@@ -47,6 +47,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 
+import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.Version;
@@ -72,6 +73,8 @@ import org.apache.qpid.util.Strings;
 
 public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> implements ConfiguredObject<X>
 {
+    private static final Logger LOGGER = Logger.getLogger(AbstractConfiguredObject.class);
+
     private static final Map<Class, Object> SECURE_VALUES;
 
     public static final String SECURED_STRING_VALUE = "********";
@@ -156,9 +159,10 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private final OwnAttributeResolver _attributeResolver = new OwnAttributeResolver(this);
 
-    @ManagedAttributeField( afterSet = "attainStateIfResolved" )
+    @ManagedAttributeField( afterSet = "attainStateIfOpenedOrReopenFailed" )
     private State _desiredState;
     private boolean _openComplete;
+    private boolean _openFailed;
     private volatile State _state = State.UNINITIALIZED;
 
     protected static Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parentsMap(ConfiguredObject<?>... parents)
@@ -404,10 +408,19 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         if(_dynamicState.compareAndSet(DynamicState.UNINIT, DynamicState.OPENED))
         {
-            doResolution(true);
-            doValidation(true);
-            doOpening(true);
-            doAttainState();
+            _openFailed = false;
+            OpenExceptionHandler exceptionHandler = new OpenExceptionHandler();
+            try
+            {
+                doResolution(true, exceptionHandler);
+                doValidation(true, exceptionHandler);
+                doOpening(true, exceptionHandler);
+                doAttainState(exceptionHandler);
+            }
+            catch(RuntimeException e)
+            {
+                exceptionHandler.handleException(e, this);
+            }
         }
     }
 
@@ -485,18 +498,84 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             _lastUpdatedTime = currentTime;
             _createdTime = currentTime;
 
-            doResolution(true);
-            doValidation(true);
+            CreateExceptionHandler createExceptionHandler = new CreateExceptionHandler();
+            try
+            {
+                doResolution(true, createExceptionHandler);
+                validateOnCreate();
+                doValidation(true, createExceptionHandler);
+                registerWithParents();
+            }
+            catch(RuntimeException e)
+            {
+                createExceptionHandler.handleException(e, this);
+            }
 
-            registerWithParents();
+            AbstractConfiguredObjectExceptionHandler unregisteringExceptionHandler = new CreateExceptionHandler(true);
+            try
+            {
+                doCreation(true, unregisteringExceptionHandler);
+            }
+            catch(RuntimeException e)
+            {
+                unregisteringExceptionHandler.handleException(e, this);
+            }
 
-            doCreation(true);
-            doOpening(true);
-            doAttainState();
+            OpenExceptionHandler openExceptionHandler = new OpenExceptionHandler();
+            try
+            {
+                doOpening(true, openExceptionHandler);
+                doAttainState(openExceptionHandler);
+            }
+            catch(RuntimeException e)
+            {
+                openExceptionHandler.handleException(e, this);
+            }
         }
     }
 
-    private void doAttainState()
+    protected void validateOnCreate()
+    {
+    }
+
+    protected final void handleExceptionOnOpen(RuntimeException e, AbstractConfiguredObject<?> configuredObject)
+    {
+        if (e instanceof ServerScopedRuntimeException)
+        {
+            throw e;
+        }
+
+        LOGGER.error("Exception occurred on open for " + configuredObject.getName(), e);
+
+        try
+        {
+            configuredObject.onExceptionInOpen(e);
+        }
+        catch (RuntimeException re)
+        {
+            LOGGER.error("Unexpected exception while handling exception on open for " + configuredObject.getName(), e);
+        }
+
+        if (!configuredObject._openComplete)
+        {
+            configuredObject._openFailed = true;
+            configuredObject._dynamicState.compareAndSet(DynamicState.OPENED, DynamicState.UNINIT);
+        }
+        configuredObject.closeChildren();
+        configuredObject.setState(State.ERRORED);
+    }
+
+    /**
+     * Callback method to perform ConfiguredObject specific exception handling on exception in open.
+     * <p/>
+     * The method is not expected to throw any runtime exception.
+     * @param e open exception
+     */
+    protected void onExceptionInOpen(RuntimeException e)
+    {
+    }
+
+    private void doAttainState(final AbstractConfiguredObjectExceptionHandler exceptionHandler)
     {
         applyToChildren(new Action<ConfiguredObject<?>>()
         {
@@ -505,14 +584,25 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 if (child instanceof AbstractConfiguredObject)
                 {
-                    ((AbstractConfiguredObject) child).doAttainState();
+                    AbstractConfiguredObject configuredObject = (AbstractConfiguredObject) child;
+                    if (configuredObject._dynamicState.get() == DynamicState.OPENED)
+                    {
+                        try
+                        {
+                            configuredObject.doAttainState(exceptionHandler);
+                        }
+                        catch (RuntimeException e)
+                        {
+                            exceptionHandler.handleException(e, configuredObject);
+                        }
+                    }
                 }
             }
         });
         attainState();
     }
 
-    protected void doOpening(final boolean skipCheck)
+    protected void doOpening(boolean skipCheck, final AbstractConfiguredObjectExceptionHandler exceptionHandler)
     {
         if(skipCheck || _dynamicState.compareAndSet(DynamicState.UNINIT,DynamicState.OPENED))
         {
@@ -525,7 +615,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 {
                     if (child instanceof AbstractConfiguredObject)
                     {
-                        ((AbstractConfiguredObject) child).doOpening(false);
+                        AbstractConfiguredObject configuredObject = (AbstractConfiguredObject) child;
+                        try
+                        {
+                            configuredObject.doOpening(false, exceptionHandler);
+                        }
+                        catch (RuntimeException e)
+                        {
+                            exceptionHandler.handleException(e, configuredObject);
+                        }
                     }
                 }
             });
@@ -533,7 +631,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    protected final void doValidation(final boolean skipCheck)
+    protected final void doValidation(final boolean skipCheck, final AbstractConfiguredObjectExceptionHandler exceptionHandler)
     {
         if(skipCheck || _dynamicState.get() != DynamicState.OPENED)
         {
@@ -544,7 +642,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 {
                     if (child instanceof AbstractConfiguredObject)
                     {
-                        ((AbstractConfiguredObject) child).doValidation(false);
+                        AbstractConfiguredObject configuredObject = (AbstractConfiguredObject) child;
+                        try
+                        {
+                            configuredObject.doValidation(false, exceptionHandler);
+                        }
+                        catch (RuntimeException e)
+                        {
+                            exceptionHandler.handleException(e, configuredObject);
+                        }
                     }
                 }
             });
@@ -552,20 +658,28 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    protected final void doResolution(final boolean skipCheck)
+    protected final void doResolution(boolean skipCheck, final AbstractConfiguredObjectExceptionHandler exceptionHandler)
     {
         if(skipCheck || _dynamicState.get() != DynamicState.OPENED)
         {
             onResolve();
             postResolve();
-            applyToChildren(new Action<ConfiguredObject<?>>()
+            applyToChildren(new Action()
             {
                 @Override
-                public void performAction(final ConfiguredObject<?> child)
+                public void performAction(Object child)
                 {
                     if (child instanceof AbstractConfiguredObject)
                     {
-                        ((AbstractConfiguredObject) child).doResolution(false);
+                        AbstractConfiguredObject configuredObject = (AbstractConfiguredObject) child;
+                        try
+                        {
+                            configuredObject.doResolution(false, exceptionHandler);
+                        }
+                        catch (RuntimeException e)
+                        {
+                            exceptionHandler.handleException(e, configuredObject);
+                        }
                     }
                 }
             });
@@ -576,7 +690,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
     }
 
-    protected final void doCreation(final boolean skipCheck)
+    protected final void doCreation(final boolean skipCheck, final AbstractConfiguredObjectExceptionHandler exceptionHandler)
     {
         if(skipCheck || _dynamicState.get() != DynamicState.OPENED)
         {
@@ -588,7 +702,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 {
                     if (child instanceof AbstractConfiguredObject)
                     {
-                        ((AbstractConfiguredObject) child).doCreation(false);
+                        AbstractConfiguredObject configuredObject =(AbstractConfiguredObject) child;
+                        try
+                        {
+                            configuredObject.doCreation(false, exceptionHandler);
+                        }
+                        catch (RuntimeException e)
+                        {
+                            exceptionHandler.handleException(e, configuredObject);
+                        }
                     }
                 }
             });
@@ -711,11 +833,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    private void attainStateIfResolved()
+    private void attainStateIfOpenedOrReopenFailed()
     {
-        if(_openComplete)
+        if (_openComplete || getDesiredState() == State.DELETED)
         {
             attainState();
+        }
+        else if (_openFailed)
+        {
+            open();
         }
     }
 
@@ -830,7 +956,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                 State state = getState();
                                 if(desiredState == getDesiredState() && desiredState != state)
                                 {
-                                    attainState();
+                                    attainStateIfOpenedOrReopenFailed();
                                     return getState();
                                 }
                                 else
@@ -1217,7 +1343,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         {
             if (_childrenByName.get(categoryClass).containsKey(name))
             {
-                child.delete();
                 throw new DuplicateNameException(child);
             }
             _childrenByName.get(categoryClass).put(name, child);
@@ -1754,6 +1879,56 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         public String getName()
         {
             return _name;
+        }
+    }
+
+    interface AbstractConfiguredObjectExceptionHandler
+    {
+        void handleException(RuntimeException exception, AbstractConfiguredObject<?> source);
+    }
+
+    private class OpenExceptionHandler implements AbstractConfiguredObjectExceptionHandler
+    {
+        @Override
+        public void handleException(RuntimeException exception, AbstractConfiguredObject<?> source)
+        {
+            handleExceptionOnOpen(exception, source);
+        }
+    }
+
+    private class CreateExceptionHandler implements AbstractConfiguredObjectExceptionHandler
+    {
+        private boolean _unregister;
+
+        private CreateExceptionHandler()
+        {
+            this(false);
+        }
+
+        private CreateExceptionHandler(boolean unregister)
+        {
+            this._unregister = unregister;
+        }
+
+        @Override
+
+        public void handleException(RuntimeException exception, AbstractConfiguredObject<?> source)
+        {
+            if (source.getState() != State.DELETED)
+            {
+                try
+                {
+                    source.delete();
+                }
+                finally
+                {
+                    if (_unregister)
+                    {
+                        source.unregister(false);
+                    }
+                    throw exception;
+                }
+            }
         }
     }
 }

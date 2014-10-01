@@ -90,14 +90,19 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
 
     private void setupMocks() throws Exception
     {
-        _principalDatabase = mock(PrincipalDatabase.class);
-
-        when(_principalDatabase.getMechanisms()).thenReturn(Collections.singletonList(MOCK_MECH_NAME));
-        when(_principalDatabase.createSaslServer(MOCK_MECH_NAME, LOCALHOST, null)).thenReturn(new MySaslServer(false, true));
+        setUpPrincipalDatabase();
 
         setupManager(false);
 
         _manager.initialise();
+    }
+
+    private void setUpPrincipalDatabase() throws SaslException
+    {
+        _principalDatabase = mock(PrincipalDatabase.class);
+
+        when(_principalDatabase.getMechanisms()).thenReturn(Collections.singletonList(MOCK_MECH_NAME));
+        when(_principalDatabase.createSaslServer(MOCK_MECH_NAME, LOCALHOST, null)).thenReturn(new MySaslServer(false, true));
     }
 
     private void setupManager(final boolean recovering)
@@ -106,15 +111,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
         attrs.put(ConfiguredObject.ID, UUID.randomUUID());
         attrs.put(ConfiguredObject.NAME, getTestName());
         attrs.put("path", _passwordFileLocation);
-        _manager = new PrincipalDatabaseAuthenticationManager(attrs, BrokerTestHelper.createBrokerMock())
-        {
-            @Override
-            protected PrincipalDatabase createDatabase()
-            {
-                return _principalDatabase;
-            }
-
-        };
+        _manager = getPrincipalDatabaseAuthenticationManager(attrs);
         if(recovering)
         {
             _manager.open();
@@ -271,6 +268,41 @@ public class PrincipalDatabaseAuthenticationManagerTest extends QpidTestCase
 
         _manager.delete();
         assertFalse("Password file was not deleted", new File(_passwordFileLocation).exists());
+    }
+
+    public void testCreateForInvalidPath() throws Exception
+    {
+        setUpPrincipalDatabase();
+
+        Map<String,Object> attrs = new HashMap<>();
+        attrs.put(ConfiguredObject.ID, UUID.randomUUID());
+        attrs.put(ConfiguredObject.NAME, getTestName());
+        String path = TMP_FOLDER + File.separator + getTestName() + System.nanoTime() + File.separator + "users";
+        attrs.put("path", path);
+
+        _manager = getPrincipalDatabaseAuthenticationManager(attrs);
+        try
+        {
+            _manager.create();
+            fail("Creation with invalid path should have failed");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            assertEquals("Unexpected exception message:" + e.getMessage(), String.format("Cannot create password file at '%s'", path), e.getMessage());
+        }
+    }
+
+    PrincipalDatabaseAuthenticationManager getPrincipalDatabaseAuthenticationManager(final Map<String, Object> attrs)
+    {
+        return new PrincipalDatabaseAuthenticationManager(attrs, BrokerTestHelper.createBrokerMock())
+        {
+            @Override
+            protected PrincipalDatabase createDatabase()
+            {
+                return _principalDatabase;
+            }
+
+        };
     }
 
     private void deletePasswordFileIfExists()

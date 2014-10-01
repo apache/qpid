@@ -76,24 +76,31 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     }
 
     @Override
+    protected void validateOnCreate()
+    {
+        super.validateOnCreate();
+        File passwordFile = new File(_path);
+        if (passwordFile.exists() && !passwordFile.canRead())
+        {
+            throw new IllegalConfigurationException(String.format("Cannot read password file '%s'. Please check permissions.", _path));
+        }
+    }
+
+    @Override
     protected void onCreate()
     {
         super.onCreate();
-        try
+        File passwordFile = new File(_path);
+        if (!passwordFile.exists())
         {
-            File passwordFile = new File(_path);
-            if (!passwordFile.exists())
+            try
             {
                 passwordFile.createNewFile();
             }
-            else if (!passwordFile.canRead())
+            catch (IOException e)
             {
-                throw new IllegalConfigurationException("Cannot read password file" + _path + ". Check permissions.");
+                throw new IllegalConfigurationException(String.format("Cannot create password file at '%s'", _path), e);
             }
-        }
-        catch (IOException e)
-        {
-            throw new IllegalConfigurationException("Cannot use password database at :" + _path, e);
         }
     }
 
@@ -102,23 +109,14 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     {
         super.onOpen();
         _principalDatabase = createDatabase();
-        try
+        initialise();
+        List<Principal> users = _principalDatabase == null ? Collections.<Principal>emptyList() : _principalDatabase.getUsers();
+        for (Principal user : users)
         {
-            initialise();
-            List<Principal> users =
-                    _principalDatabase == null ? Collections.<Principal>emptyList() : _principalDatabase.getUsers();
-            for (Principal user : users)
-            {
-                PrincipalAdapter principalAdapter = new PrincipalAdapter(user);
-                principalAdapter.registerWithParents();
-                principalAdapter.open();
-                _userMap.put(user, principalAdapter);
-            }
-        }
-        catch(IllegalConfigurationException e)
-        {
-            setState(State.ERRORED);
-
+            PrincipalAdapter principalAdapter = new PrincipalAdapter(user);
+            principalAdapter.registerWithParents();
+            principalAdapter.open();
+            _userMap.put(user, principalAdapter);
         }
     }
 
@@ -457,7 +455,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
             return super.changeAttribute(name, expected, desired);
         }
 
-        @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
+        @StateTransition(currentState = {State.UNINITIALIZED,State.ERRORED}, desiredState = State.ACTIVE)
         private void activate()
         {
             setState(State.ACTIVE);

@@ -63,7 +63,7 @@ public class FileKeyStoreCreationTest extends TestCase
         Map<String, Object> attributesCopy = new HashMap<String, Object>(attributes);
 
         Broker broker = mock(Broker.class);
-        TaskExecutor executor = new CurrentThreadTaskExecutor();
+        TaskExecutor executor = CurrentThreadTaskExecutor.newStartedInstance();
         when(broker.getObjectFactory()).thenReturn(_factory);
         when(broker.getModel()).thenReturn(_factory.getModel());
         when(broker.getTaskExecutor()).thenReturn(executor);

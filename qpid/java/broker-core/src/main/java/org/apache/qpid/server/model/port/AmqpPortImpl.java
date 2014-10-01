@@ -34,6 +34,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.qpid.server.util.PortUtil;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
@@ -184,6 +185,18 @@ public class AmqpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<
                 _broker.getEventLogger().message(BrokerMessages.SHUTTING_DOWN(String.valueOf(transport), getPort()));
             }
             _transport.close();
+        }
+    }
+
+    @Override
+    public void validateOnCreate()
+    {
+        super.validateOnCreate();
+        String bindingAddress = getBindingAddress();
+        if (!PortUtil.isPortAvailable(bindingAddress, getPort()))
+        {
+            throw new IllegalConfigurationException(String.format("Cannot bind to port %d and binding address '%s'. Port is already is use.",
+                    getPort(), bindingAddress == null || "".equals(bindingAddress) ? "*" : bindingAddress));
         }
     }
 
