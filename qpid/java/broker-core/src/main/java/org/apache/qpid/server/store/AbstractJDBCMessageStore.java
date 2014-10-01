@@ -133,7 +133,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         }
         catch (SQLException e)
         {
-            throw new StoreException(e);
+            throw new StoreException("Failed to determine maximum ids", e);
         }
 
     }
@@ -816,7 +816,6 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
 
     private void commitTran(ConnectionWrapper connWrapper) throws StoreException
     {
-
         try
         {
             Connection conn = connWrapper.getConnection();
@@ -832,10 +831,6 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         catch (SQLException e)
         {
             throw new StoreException("Error commit tx: " + e.getMessage(), e);
-        }
-        finally
-        {
-
         }
     }
 
@@ -1448,7 +1443,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
                 }
                 catch (SQLException e)
                 {
-                    throw new StoreException(e);
+                    throw new StoreException("Failed to get metadata for message id: " + _messageId, e);
                 }
             }
 
@@ -1507,7 +1502,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
                         }
                         catch (SQLException e)
                         {
-                            throw new StoreException(e);
+                            throw new StoreException("Failed to get content for message id " + _messageId, e);
                         }
                     }
                     else
@@ -1551,7 +1546,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
                         }
                         catch (SQLException e)
                         {
-                            throw new StoreException(e);
+                            throw new StoreException("Failed to get content for message id: " + _messageId, e);
                         }
                     }
                     else
@@ -1598,11 +1593,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
             }
             catch (SQLException e)
             {
-                throw new StoreException(e);
-            }
-            finally
-            {
-
+                throw new StoreException("Failed to flow to disk", e);
             }
             return true;
         }
