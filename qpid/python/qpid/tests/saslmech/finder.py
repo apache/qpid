@@ -51,6 +51,15 @@ class SaslFinderTests (TestCase):
 
     self.assertTrue(isinstance(mech, MY_SASL), "Mechanism %s is of unexpected type" % mech)
 
+  def test_sasl_mechanism_fallback_without_credentials(self):
+
+    # MY-SASL requires username/password, MY-SASL2 does not
+    supportedMechs = ["MY-SASL", "MY-SASL2"]
+
+    mech = get_sasl_mechanism(supportedMechs, None, None, namespace="qpid.tests.saslmech")
+
+    self.assertTrue(isinstance(mech, MY_SASL2), "Mechanism %s is of unexpected type" % mech)
+
   def test_sasl_mechansim_options(self):
 
     supportedMechs = ["MY-SASL"]

@@ -19,5 +19,9 @@
 
 from sasl import Sasl
 
-class ANONYMOUS(Sasl): pass
+class ANONYMOUS(Sasl):
+
+  def prerequistesOk(self):
+    return True
+
 

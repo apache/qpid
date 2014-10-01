@@ -17,14 +17,11 @@
 # under the License.
 #
 
-from sasl import Sasl, SaslException
+from sasl import Sasl
 
 class AMQPLAIN(Sasl):
 
   def initialResponse(self):
-    if (self.user is None or self.password is None):
-      raise SaslException("User and password must be specified")
-
     return {"LOGIN": self.user, "PASSWORD": self.password}
 
   def priority(self):

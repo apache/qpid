@@ -24,9 +24,6 @@ from hashlib import md5
 class CRAM_MD5_HEX(Sasl):
 
   def response(self, challenge):
-    if (self.user is None or self.password is None):
-      raise SaslException("User and password must be specified")
-
     m = md5()
     m.update(self.password)
     digest = HMAC( m.hexdigest(), challenge).hexdigest()

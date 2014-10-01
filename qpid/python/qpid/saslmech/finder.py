@@ -37,9 +37,12 @@ def get_sasl_mechanism(mechanismNames, username, password, namespace="qpid.saslm
       clazz = _get_class(canonicalName)
       log.debug("Found SASL implementation")
       instance = clazz(username, password, mechanismName, sasl_options)
-      instances.append(instance)
+      if (instance.prerequistesOk()):
+        instances.append(instance)
+      else:
+        log.debug("SASL mechanism %s unavailable as the prerequistes for this mechanism have not been met", mechanismName)
     except (ImportError, AttributeError), e:
-      # Unknown mechanism - this is normal if the server supports m
+      # Unknown mechanism - this is normal if the server supports mechanism that the client does not
       log.debug("Could not load implementation for %s", canonicalName)
       pass
 
