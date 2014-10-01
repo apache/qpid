@@ -65,6 +65,7 @@ public class VirtualHostTest extends QpidTestCase
     private TaskExecutor _taskExecutor;
     private VirtualHostNode<?> _virtualHostNode;
     private DurableConfigurationStore _configStore;
+    private VirtualHost<?, ?, ?> _virtualHost;
 
     @Override
     protected void setUp() throws Exception
@@ -94,7 +95,17 @@ public class VirtualHostTest extends QpidTestCase
     {
         try
         {
-            _taskExecutor.stopImmediately();
+            try
+            {
+                _taskExecutor.stopImmediately();
+            }
+            finally
+            {
+                if (_virtualHost != null)
+                {
+                    _virtualHost.close();
+                }
+            }
         }
         finally
         {
@@ -386,6 +397,7 @@ public class VirtualHostTest extends QpidTestCase
 
         TestMemoryVirtualHost host = new TestMemoryVirtualHost(attributes, _virtualHostNode);
         host.create();
+        _virtualHost = host;
         return host;
     }
 
