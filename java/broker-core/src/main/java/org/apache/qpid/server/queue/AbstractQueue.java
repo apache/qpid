@@ -254,6 +254,12 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     }
 
     @Override
+    protected void validateOnCreate()
+    {
+        _virtualHost.getSecurityManager().authoriseCreateQueue(this);
+    }
+
+    @Override
     protected void onCreate()
     {
         super.onCreate();
@@ -304,6 +310,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         }
     }
 
+    @Override
     protected void onOpen()
     {
         super.onOpen();
@@ -318,17 +325,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         _arguments = Collections.synchronizedMap(arguments);
 
         _logSubject = new QueueLogSubject(this);
-
-        try
-        {
-
-            _virtualHost.getSecurityManager().authoriseCreateQueue(this);
-        }
-        catch(AccessControlException e)
-        {
-            deleted();
-            throw e;
-        }
 
         Subject activeSubject = Subject.getSubject(AccessController.getContext());
         Set<SessionPrincipal> sessionPrincipals = activeSubject == null ? Collections.<SessionPrincipal>emptySet() : activeSubject.getPrincipals(SessionPrincipal.class);
@@ -2798,7 +2794,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     //=============
 
-    @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
+    @StateTransition(currentState = {State.UNINITIALIZED,State.ERRORED}, desiredState = State.ACTIVE)
     private void activate()
     {
         setState(State.ACTIVE);

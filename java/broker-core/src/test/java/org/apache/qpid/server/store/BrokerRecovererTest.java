@@ -21,7 +21,9 @@
 package org.apache.qpid.server.store;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,6 +42,7 @@ import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.BrokerShutdownProvider;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.JsonSystemConfigImpl;
@@ -55,6 +58,7 @@ public class BrokerRecovererTest extends TestCase
     private UUID _authenticationProvider1Id = UUID.randomUUID();
     private SystemConfig<?> _systemConfig;
     private TaskExecutor _taskExecutor;
+    private BrokerShutdownProvider _brokerShutdownProvider;
 
     @Override
     protected void setUp() throws Exception
@@ -63,8 +67,11 @@ public class BrokerRecovererTest extends TestCase
 
         _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
+        _brokerShutdownProvider = mock(BrokerShutdownProvider.class);
         _systemConfig = new JsonSystemConfigImpl(_taskExecutor,
-                                               mock(EventLogger.class), mock(LogRecorder.class), new BrokerOptions());
+                                               mock(EventLogger.class), mock(LogRecorder.class),
+                                               new BrokerOptions(),
+                                               _brokerShutdownProvider);
 
         when(_brokerEntry.getId()).thenReturn(_brokerId);
         when(_brokerEntry.getType()).thenReturn(Broker.class.getSimpleName());
@@ -251,18 +258,10 @@ public class BrokerRecovererTest extends TestCase
             brokerAttributes.put(Broker.NAME, getName());
             when(_brokerEntry.getAttributes()).thenReturn(brokerAttributes);
 
-            try
-            {
-                resolveObjects(_brokerEntry);
-                Broker<?> broker = _systemConfig.getBroker();
-                broker.open();
-                fail("The broker creation should fail due to unsupported model version");
-            }
-            catch (IllegalConfigurationException e)
-            {
-                assertEquals("The model version '" + incompatibleVersion
-                        + "' in configuration is incompatible with the broker model version '" + BrokerModel.MODEL_VERSION + "'", e.getMessage());
-            }
+            resolveObjects(_brokerEntry);
+            Broker<?> broker = _systemConfig.getBroker();
+            broker.open();
+            verify(_brokerShutdownProvider).shutdown();
         }
     }
 
@@ -276,20 +275,12 @@ public class BrokerRecovererTest extends TestCase
 
         when(_brokerEntry.getAttributes()).thenReturn(brokerAttributes);
 
-        try
-        {
-            UnresolvedConfiguredObject<? extends ConfiguredObject> recover =
-                    _systemConfig.getObjectFactory().recover(_brokerEntry, _systemConfig);
+        UnresolvedConfiguredObject<? extends ConfiguredObject> recover =
+                _systemConfig.getObjectFactory().recover(_brokerEntry, _systemConfig);
 
-            Broker<?> broker = (Broker<?>) recover.resolve();
-            broker.open();
-            fail("The broker creation should fail due to unsupported model version");
-        }
-        catch (IllegalConfigurationException e)
-        {
-            assertEquals("The model version '" + incompatibleVersion
-                    + "' in configuration is incompatible with the broker model version '" + BrokerModel.MODEL_VERSION + "'", e.getMessage());
-        }
+        Broker<?> broker = (Broker<?>) recover.resolve();
+        broker.open();
+        verify(_brokerShutdownProvider).shutdown();
     }
 
     public void testIncorrectModelVersion() throws Exception
@@ -303,18 +294,12 @@ public class BrokerRecovererTest extends TestCase
             brokerAttributes.put(Broker.MODEL_VERSION, modelVersion);
             when(_brokerEntry.getAttributes()).thenReturn(brokerAttributes);
 
-            try
-            {
-                UnresolvedConfiguredObject<? extends ConfiguredObject> recover =
-                        _systemConfig.getObjectFactory().recover(_brokerEntry, _systemConfig);
-                Broker<?> broker = (Broker<?>) recover.resolve();
-                broker.open();
-                fail("The broker creation should fail due to unsupported model version");
-            }
-            catch (IllegalConfigurationException e)
-            {
-                // pass
-            }
+            UnresolvedConfiguredObject<? extends ConfiguredObject> recover =
+                    _systemConfig.getObjectFactory().recover(_brokerEntry, _systemConfig);
+            Broker<?> broker = (Broker<?>) recover.resolve();
+            broker.open();
+            verify(_brokerShutdownProvider).shutdown();
+            reset(_brokerShutdownProvider);
         }
     }
 

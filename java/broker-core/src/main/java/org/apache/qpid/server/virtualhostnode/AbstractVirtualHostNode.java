@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 
@@ -100,8 +99,6 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     {
         super.onOpen();
         _durableConfigurationStore = createConfigurationStore();
-        _configurationStoreLogSubject = new MessageStoreLogSubject(getName(), _durableConfigurationStore.getClass().getSimpleName());
-
     }
 
     @Override
@@ -167,11 +164,6 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         return _eventLogger;
     }
 
-    protected DurableConfigurationStore getDurableConfigurationStore()
-    {
-        return _durableConfigurationStore;
-    }
-
     protected MessageStoreLogSubject getConfigurationStoreLogSubject()
     {
         return _configurationStoreLogSubject;
@@ -205,8 +197,26 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     protected void stopAndSetStateTo(State stoppedState)
     {
         closeChildren();
-        closeConfigurationStore();
+        closeConfigurationStoreSafely();
         setState(stoppedState);
+    }
+
+    @Override
+    protected void onExceptionInOpen(RuntimeException e)
+    {
+        super.onExceptionInOpen(e);
+        closeConfigurationStoreSafely();
+    }
+
+    @Override
+    protected void postResolve()
+    {
+        DurableConfigurationStore store = getConfigurationStore();
+        if (store == null)
+        {
+            store = createConfigurationStore();
+        }
+        _configurationStoreLogSubject = new MessageStoreLogSubject(getName(), store.getClass().getSimpleName());
     }
 
     @Override
@@ -259,6 +269,18 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         {
             configurationStore.closeConfigurationStore();
             getEventLogger().message(getConfigurationStoreLogSubject(), ConfigStoreMessages.CLOSE());
+        }
+    }
+
+    private void closeConfigurationStoreSafely()
+    {
+        try
+        {
+            closeConfigurationStore();
+        }
+        catch(Exception e)
+        {
+            LOGGER.warn("Unexpected exception on close of configuration store", e);
         }
     }
 

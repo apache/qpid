@@ -117,9 +117,9 @@ public class SystemConfigFactoryGenerator extends AbstractProcessor
             pw.println("import org.apache.qpid.server.configuration.updater.TaskExecutor;");
             pw.println("import org.apache.qpid.server.logging.EventLogger;");
             pw.println("import org.apache.qpid.server.logging.LogRecorder;");
-            pw.println("import org.apache.qpid.server.model.SystemConfig;");
+            pw.println("import org.apache.qpid.server.model.BrokerShutdownProvider;");
             pw.println("import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;");
-            pw.println();
+            pw.println("import org.apache.qpid.server.model.SystemConfig;");
             pw.println("import org.apache.qpid.server.plugin.PluggableService;");
             pw.println("import org.apache.qpid.server.plugin.SystemConfigFactory;");
             pw.println();
@@ -140,9 +140,10 @@ public class SystemConfigFactoryGenerator extends AbstractProcessor
             pw.println("    public "+objectSimpleName+" newInstance(final TaskExecutor taskExecutor,");
             pw.println("                       final EventLogger eventLogger,");
             pw.println("                       final LogRecorder logRecorder,");
-            pw.println("                       final BrokerOptions brokerOptions)");
+            pw.println("                       final BrokerOptions brokerOptions,");
+            pw.println("                       final BrokerShutdownProvider brokerShutdownProvider)");
             pw.println("    {");
-            pw.println("        return new "+objectSimpleName+"(taskExecutor, eventLogger, logRecorder, brokerOptions);");
+            pw.println("        return new "+objectSimpleName+"(taskExecutor, eventLogger, logRecorder, brokerOptions, brokerShutdownProvider);");
             pw.println("    }");
             pw.println("}");
 

@@ -18,20 +18,9 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.plugin;
+package org.apache.qpid.server.model;
 
-import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
-import org.apache.qpid.server.logging.EventLogger;
-import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.model.BrokerShutdownProvider;
-import org.apache.qpid.server.model.SystemConfig;
-
-public interface SystemConfigFactory<X extends SystemConfig<X>> extends Pluggable
+public interface BrokerShutdownProvider
 {
-    public X newInstance(final TaskExecutor taskExecutor,
-                         final EventLogger eventLogger,
-                         final LogRecorder logRecorder,
-                         final BrokerOptions brokerOptions,
-                         final BrokerShutdownProvider brokerShutdownProvider);
+    void shutdown();
 }

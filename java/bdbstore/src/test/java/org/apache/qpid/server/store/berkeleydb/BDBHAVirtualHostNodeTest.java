@@ -23,6 +23,8 @@ package org.apache.qpid.server.store.berkeleydb;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -53,6 +55,8 @@ import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNodeTes
 import org.apache.qpid.server.virtualhostnode.berkeleydb.NodeRole;
 import org.apache.qpid.test.utils.PortHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.TestFileUtils;
+import org.apache.qpid.util.FileUtils;
 
 public class BDBHAVirtualHostNodeTest extends QpidTestCase
 {
@@ -587,4 +591,87 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertTrue("Intruder protection was not triggered during expected timeout", stopLatch.await(20, TimeUnit.SECONDS));
     }
 
+    public void testValidateOnCreateForNonExistingHelperNode() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
+
+
+        Map<String, Object> attributes = _helper.createNodeAttributes("node1", "group", "localhost:" + node1PortNumber,
+                "localhost:" + node2PortNumber, "node2", node1PortNumber, node1PortNumber, node2PortNumber);
+        try
+        {
+            _helper.createAndStartHaVHN(attributes);
+            fail("Node creation should fail because of invalid helper address");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            assertEquals("Unexpected exception on connection to non-existing helper address",
+                    String.format("Cannot connect to '%s'", "localhost:" + node2PortNumber), e.getMessage());
+        }
+    }
+
+    public void testValidateOnCreateForAlreadyBoundAddress() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+
+        ServerSocket serverSocket = null;
+        try
+        {
+            serverSocket = new ServerSocket();
+            serverSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress("localhost", node1PortNumber));
+
+
+            Map<String, Object> attributes = _helper.createNodeAttributes("node1", "group", "localhost:" + node1PortNumber,
+                    "localhost:" + node1PortNumber, "node2", node1PortNumber, node1PortNumber);
+            try
+            {
+                _helper.createAndStartHaVHN(attributes);
+                fail("Node creation should fail because of invalid address");
+            }
+            catch(IllegalConfigurationException e)
+            {
+                assertEquals("Unexpected exception on attempt to create node with already bound address",
+                        String.format("Cannot bind to address '%s'. Address is already in use.", "localhost:" + node1PortNumber), e.getMessage());
+            }
+        }
+        finally
+        {
+            if (serverSocket != null)
+            {
+                serverSocket.close();
+            }
+        }
+    }
+
+    public void testValidateOnCreateForInvalidStorePath() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+
+        File storeBaseFolder = TestFileUtils.createTestDirectory();
+        File file = new File(storeBaseFolder, getTestName());
+        file.createNewFile();
+        File storePath = new File(file, "test");
+        try
+        {
+            Map<String, Object> attributes = _helper.createNodeAttributes("node1", "group", "localhost:" + node1PortNumber,
+                    "localhost:" + node1PortNumber, "node2", node1PortNumber, node1PortNumber);
+            attributes.put(BDBHAVirtualHostNode.STORE_PATH, storePath.getAbsoluteFile());
+            try
+            {
+                _helper.createAndStartHaVHN(attributes);
+                fail("Node creation should fail because of invalid store path");
+            }
+            catch (IllegalConfigurationException e)
+            {
+                assertEquals("Unexpected exception on attempt to create environment in invalid location",
+                        String.format("Store path '%s' is not a folder", storePath.getAbsoluteFile()), e.getMessage());
+            }
+        }
+        finally
+        {
+            FileUtils.delete(storeBaseFolder, true);
+        }
+    }
 }

@@ -358,9 +358,9 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
 
         int responseCode = getRestTestHelper().submitRequest("port/" + newPortName, "PUT", attributes);
-        assertEquals("Unexpected response code for port creation", 201, responseCode);
+        assertEquals("Unexpected response code for port creation", 409, responseCode);
 
-        portData = getRestTestHelper().getJsonAsSingletonList("port/" + URLDecoder.decode(newPortName, "UTF-8"));
-        Asserts.assertPortAttributes(portData, State.ERRORED);
+        List<Map<String,Object>> ports  = getRestTestHelper().getJsonAsList("port/" + URLDecoder.decode(newPortName, "UTF-8"));
+        assertTrue("Port should not be created", ports.isEmpty());
     }
 }

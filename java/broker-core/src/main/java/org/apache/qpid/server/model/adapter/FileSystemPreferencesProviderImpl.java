@@ -76,20 +76,72 @@ public class FileSystemPreferencesProviderImpl
         _authenticationProvider = authenticationProvider;
     }
 
-    @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.ACTIVE )
+    @Override
+    protected void validateOnCreate()
+    {
+        super.validateOnCreate();
+        File storeFile  = new File(_path);
+        if (storeFile.exists() )
+        {
+            if (!storeFile.canRead())
+            {
+                throw new IllegalConfigurationException(String.format("Cannot read preferences file '%s'. Please check permissions.", _path));
+            }
+
+            FileSystemPreferencesStore store = null;
+            try
+            {
+                store = new FileSystemPreferencesStore(storeFile);
+                store.open();
+            }
+            catch (RuntimeException e)
+            {
+                if (e instanceof IllegalConfigurationException)
+                {
+                    throw e;
+                }
+                throw new IllegalConfigurationException(String.format("Cannot open preferences store at '%s'", _path), e);
+            }
+            finally
+            {
+                if (store != null)
+                {
+                    store.close();
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void onCreate()
+    {
+        super.validateOnCreate();
+        File storeFile  = new File(_path);
+        if (!storeFile.exists() )
+        {
+            new FileSystemPreferencesStore(storeFile).createIfNotExist();
+        }
+    }
+
+    @Override
+    protected void onOpen()
+    {
+        FileSystemPreferencesStore store = new FileSystemPreferencesStore(new File(_path));
+        store.open();
+        _store = store;
+        _open = true;
+    }
+
+    @StateTransition( currentState = {State.UNINITIALIZED, State.ERRORED}, desiredState = State.ACTIVE )
     private void activate()
     {
-        try
+        if (_store != null)
         {
-            _store = new FileSystemPreferencesStore(new File(_path));
-            createStoreIfNotExist();
-            _store.open();
-            _open = true;
             setState(State.ACTIVE);
         }
-        catch( RuntimeException e )
+        else
         {
-            setState(State.ERRORED);
+            throw new IllegalStateException("Cannot open preferences provider " + getName() + " in state " + getState() );
         }
     }
 
@@ -148,9 +200,14 @@ public class FileSystemPreferencesProviderImpl
         setState(State.DELETED);
     }
 
-    @StateTransition(currentState = { State.QUIESCED, State.ERRORED }, desiredState = State.ACTIVE )
+    @StateTransition(currentState = State.QUIESCED, desiredState = State.ACTIVE )
     private void restart()
     {
+        if (_store == null)
+        {
+            throw new IllegalStateException("Cannot open preferences provider " + getName() + " in state " + getState() );
+        }
+
         _store.open();
         setState(State.ACTIVE);
     }
@@ -158,24 +215,39 @@ public class FileSystemPreferencesProviderImpl
     @Override
     public Map<String, Object> getPreferences(String userId)
     {
-        return _store.getPreferences(userId);
+        return _store == null? Collections.<String, Object>emptyMap() : _store.getPreferences(userId);
     }
 
     @Override
     public Map<String, Object> setPreferences(String userId, Map<String, Object> preferences)
     {
+        if (_store == null)
+        {
+            throw new IllegalStateException("Cannot set preferences with preferences provider " + getName() + " in state " + getState() );
+        }
+
         return _store.setPreferences(userId, preferences);
     }
 
     @Override
     public String[] deletePreferences(String... userIDs)
     {
+        if (_store == null)
+        {
+            throw new IllegalStateException("Cannot delete preferences with preferences provider " + getName() + " in state " + getState() );
+        }
+
         return _store.deletePreferences(userIDs);
     }
 
     @Override
     public Set<String> listUserIDs()
     {
+        if (_store == null)
+        {
+            return Collections.emptySet();
+        }
+
         return _store.listUserIDs();
     }
 
@@ -215,9 +287,10 @@ public class FileSystemPreferencesProviderImpl
             }
             else
             {
-                _store = new FileSystemPreferencesStore(new File(_path));
-                createStoreIfNotExist();
-                _store.open();
+                FileSystemPreferencesStore store = new FileSystemPreferencesStore(new File(_path));
+                store.createIfNotExist();
+                store.open();
+                _store = store;
             }
         }
     }
@@ -265,11 +338,6 @@ public class FileSystemPreferencesProviderImpl
 
     }
 
-    private void createStoreIfNotExist()
-    {
-        _store.createIfNotExist();
-    }
-
     public static class FileSystemPreferencesStore
     {
         private final ObjectMapper _objectMapper;
@@ -294,18 +362,18 @@ public class FileSystemPreferencesProviderImpl
                 File parent = _storeFile.getParentFile();
                 if (!parent.exists() && !parent.mkdirs())
                 {
-                    throw new IllegalConfigurationException("Cannot create preferences store folders");
+                    throw new IllegalConfigurationException(String.format("Cannot create preferences store folder at '%s'", _storeFile.getAbsolutePath()));
                 }
                 try
                 {
                     if (_storeFile.createNewFile() && !_storeFile.exists())
                     {
-                        throw new IllegalConfigurationException("Preferences store file was not created:" + _storeFile.getAbsolutePath());
+                        throw new IllegalConfigurationException(String.format("Cannot create preferences store file at '%s'", _storeFile.getAbsolutePath()));
                     }
                 }
                 catch (IOException e)
                 {
-                    throw new IllegalConfigurationException("Cannot create preferences store file");
+                    throw new IllegalConfigurationException(String.format("Cannot create preferences store file at '%s'", _storeFile.getAbsolutePath()), e);
                 }
             }
         }

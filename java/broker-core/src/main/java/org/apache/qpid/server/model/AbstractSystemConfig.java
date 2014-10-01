@@ -49,13 +49,15 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
     private final EventLogger _eventLogger;
     private final LogRecorder _logRecorder;
     private final BrokerOptions _brokerOptions;
+    private final BrokerShutdownProvider _brokerShutdownProvider;
 
     private DurableConfigurationStore _configurationStore;
 
     public AbstractSystemConfig(final TaskExecutor taskExecutor,
                                 final EventLogger eventLogger,
                                 final LogRecorder logRecorder,
-                                final BrokerOptions brokerOptions)
+                                final BrokerOptions brokerOptions,
+                                final BrokerShutdownProvider brokerShutdownProvider)
     {
         super(parentsMap(),
               updateAttributes(brokerOptions.convertToSystemAttributes()),
@@ -64,6 +66,7 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
         getTaskExecutor().start();
         _logRecorder = logRecorder;
         _brokerOptions = brokerOptions;
+        _brokerShutdownProvider = brokerShutdownProvider;
     }
 
     private static Map<String, Object> updateAttributes(Map<String, Object> attributes)
@@ -212,4 +215,9 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
 
     }
 
+    @Override
+    public BrokerShutdownProvider getBrokerShutdownProvider()
+    {
+        return _brokerShutdownProvider;
+    }
 }

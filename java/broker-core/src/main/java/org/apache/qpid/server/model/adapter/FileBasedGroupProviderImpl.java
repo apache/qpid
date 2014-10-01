@@ -114,22 +114,27 @@ public class FileBasedGroupProviderImpl
             throw new IllegalArgumentException("Cannot change the path");
         }
     }
+
+    @Override
     protected void onOpen()
     {
         super.onOpen();
-        if(_groupDatabase == null)
+        FileGroupDatabase groupDatabase = new FileGroupDatabase();
+        try
         {
-            _groupDatabase = new FileGroupDatabase();
-            try
-            {
-                _groupDatabase.setGroupFile(getPath());
-            }
-            catch (IOException e)
-            {
-                setState(State.ERRORED);
-                LOGGER.warn(("Unable to open preferences file at " + _path));
-            }
+            groupDatabase.setGroupFile(getPath());
         }
+        catch(IOException | RuntimeException e)
+        {
+            if (e instanceof IllegalConfigurationException)
+            {
+                throw (IllegalConfigurationException) e;
+            }
+            throw new IllegalConfigurationException(String.format("Cannot load groups from '%s'", getPath()), e);
+        }
+
+        _groupDatabase = groupDatabase;
+
         Set<Principal> groups = getGroupPrincipals();
         Collection<Group> principals = new ArrayList<Group>(groups.size());
         for (Principal group : groups)
@@ -150,43 +155,47 @@ public class FileBasedGroupProviderImpl
     protected void onCreate()
     {
         super.onCreate();
-        _groupDatabase = new FileGroupDatabase();
-
         File file = new File(_path);
         if (!file.exists())
         {
             File parent = file.getParentFile();
-            if (!parent.exists())
+            if (!parent.exists() && !file.getParentFile().mkdirs())
             {
-                parent.mkdirs();
+                throw new IllegalConfigurationException(String.format("Cannot create groups file at '%s'",_path));
             }
-            if (parent.exists())
+            try
             {
-                try
-                {
-                    file.createNewFile();
-                }
-                catch (IOException e)
-                {
-                    throw new IllegalConfigurationException("Cannot create group file");
-                }
+                file.createNewFile();
             }
-            else
+            catch (IOException e)
             {
-                throw new IllegalConfigurationException("Cannot create group file");
+                throw new IllegalConfigurationException(String.format("Cannot create groups file at '%s'", _path), e);
             }
         }
-        try
-        {
-            _groupDatabase.setGroupFile(getPath());
-        }
-        catch (IOException e)
-        {
-            setState(State.ERRORED);
-            LOGGER.warn(("Unable to open preferences file at " + _path));
-        }
+    }
 
+    @Override
+    protected void validateOnCreate()
+    {
+        super.validateOnCreate();
+        File groupsFile = new File(_path);
+        if (groupsFile.exists())
+        {
+            if (!groupsFile.canRead())
+            {
+                throw new IllegalConfigurationException(String.format("Cannot read groups file '%s'. Please check permissions.", _path));
+            }
 
+            FileGroupDatabase groupDatabase = new FileGroupDatabase();
+            try
+            {
+                groupDatabase.setGroupFile(_path);
+            }
+            catch (Exception e)
+            {
+                throw new IllegalConfigurationException(String.format("Cannot load groups from '%s'", _path), e);
+            }
+        }
     }
 
     @Override
@@ -204,6 +213,11 @@ public class FileBasedGroupProviderImpl
             String groupName = (String) attributes.get(Group.NAME);
 
             getSecurityManager().authoriseGroupOperation(Operation.CREATE, groupName);
+
+            if (getState() != State.ACTIVE)
+            {
+                throw new IllegalConfigurationException(String.format("Group provider '%s' is not activated. Cannot create a group.", getName()));
+            }
 
             _groupDatabase.createGroup(groupName);
 
@@ -247,20 +261,22 @@ public class FileBasedGroupProviderImpl
         return _broker.getSecurityManager();
     }
 
-    @StateTransition( currentState = { State.UNINITIALIZED, State.QUIESCED }, desiredState = State.ACTIVE )
+    @StateTransition( currentState = { State.UNINITIALIZED, State.QUIESCED, State.ERRORED }, desiredState = State.ACTIVE )
     private void activate()
     {
-        try
+        if (_groupDatabase != null)
         {
-            _groupDatabase.setGroupFile(getPath());
             setState(State.ACTIVE);
         }
-        catch(IOException | RuntimeException e)
+        else
         {
-            setState(State.ERRORED);
             if (_broker.isManagementMode())
             {
-                LOGGER.warn("Failed to activate group provider: " + getName(), e);
+                        LOGGER.warn("Failed to activate group provider: " + getName());
+            }
+            else
+            {
+                throw new IllegalConfigurationException(String.format("Cannot load groups from '%s'", getPath()));
             }
         }
     }
@@ -268,6 +284,7 @@ public class FileBasedGroupProviderImpl
     @StateTransition( currentState = { State.QUIESCED, State.ACTIVE, State.ERRORED}, desiredState = State.DELETED )
     private void doDelete()
     {
+        close();
         File file = new File(getPath());
         if (file.exists())
         {
@@ -289,7 +306,7 @@ public class FileBasedGroupProviderImpl
 
     public Set<Principal> getGroupPrincipalsForUser(String username)
     {
-        Set<String> groups = _groupDatabase.getGroupsForUser(username);
+        Set<String> groups = _groupDatabase == null ? Collections.<String>emptySet(): _groupDatabase.getGroupsForUser(username);
         if (groups.isEmpty())
         {
             return Collections.emptySet();
