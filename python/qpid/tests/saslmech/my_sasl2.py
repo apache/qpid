@@ -23,3 +23,6 @@ class MY_SASL2(Sasl):
 
   def priority(self):
     return 0
+
+  def prerequistesOk(self):
+    return True

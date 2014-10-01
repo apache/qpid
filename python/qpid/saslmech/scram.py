@@ -32,9 +32,6 @@ class SCRAM_base(Sasl):
     self.server_signature = None
 
   def initialResponse(self):
-    if (self.user is None or self.password is None):
-      raise SaslException("User and password must be specified")
-
     name = self.user.replace("=","=3D").replace(",","=2C")
     self.client_first_message = "n=" + name + ",r=" + self.client_nonce
     return "n,," + self.client_first_message

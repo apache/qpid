@@ -17,14 +17,11 @@
 # under the License.
 #
 
-from sasl import Sasl, SaslException
+from sasl import Sasl
 from hmac import HMAC
 
 class CRAM_MD5(Sasl):
 
   def response(self, challenge):
-    if (self.user is None or self.password is None):
-      raise SaslException("User and password must be specified")
-
     digest = HMAC( self.password, challenge).hexdigest()
     return "%s %s" % (self.user, digest)
