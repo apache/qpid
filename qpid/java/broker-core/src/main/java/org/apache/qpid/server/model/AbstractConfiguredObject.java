@@ -502,8 +502,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             try
             {
                 doResolution(true, createExceptionHandler);
-                validateOnCreate();
                 doValidation(true, createExceptionHandler);
+                validateOnCreate();
                 registerWithParents();
             }
             catch(RuntimeException e)
@@ -515,21 +515,12 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             try
             {
                 doCreation(true, unregisteringExceptionHandler);
+                doOpening(true, unregisteringExceptionHandler);
+                doAttainState(unregisteringExceptionHandler);
             }
             catch(RuntimeException e)
             {
                 unregisteringExceptionHandler.handleException(e, this);
-            }
-
-            OpenExceptionHandler openExceptionHandler = new OpenExceptionHandler();
-            try
-            {
-                doOpening(true, openExceptionHandler);
-                doAttainState(openExceptionHandler);
-            }
-            catch(RuntimeException e)
-            {
-                openExceptionHandler.handleException(e, this);
             }
         }
     }
@@ -1914,20 +1905,20 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
         public void handleException(RuntimeException exception, AbstractConfiguredObject<?> source)
         {
-            if (source.getState() != State.DELETED)
+            try
             {
-                try
+                if (source.getState() != State.DELETED)
                 {
                     source.delete();
                 }
-                finally
+            }
+            finally
+            {
+                if (_unregister)
                 {
-                    if (_unregister)
-                    {
-                        source.unregister(false);
-                    }
-                    throw exception;
+                    source.unregister(false);
                 }
+                throw exception;
             }
         }
     }
