@@ -22,6 +22,8 @@ package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
 import java.io.File;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
@@ -371,9 +373,15 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     @StateTransition( currentState = { State.ACTIVE, State.STOPPED, State.ERRORED}, desiredState = State.DELETED )
     protected void doDelete()
     {
+        // get helpers before close. on close all children are closed and not available anymore
         Set<InetSocketAddress> helpers = getRemoteNodeAddresses();
         super.doDelete();
-        getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DELETED());
+
+        if (getConfigurationStore() != null)
+        {
+            getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DELETED());
+        }
+
         if (getState() == State.DELETED && !helpers.isEmpty())
         {
             try
@@ -487,39 +495,32 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     {
         String address = getAddress();
 
-        if (address == null || "".equals(address))
-        {
-            throw new IllegalConfigurationException("Node address is not set");
-        }
+        URI uri = addressToURI(address);
 
-        String[] tokens = address.split(":");
-        if (tokens.length != 2)
-        {
-            throw new IllegalConfigurationException(String.format("Invalid address specified '%s'. ", address));
-        }
-
-        String hostName = tokens[0];
-        if ("".equals(hostName.trim()))
-        {
-            throw new IllegalConfigurationException(String.format("Invalid address specified '%s'. ", address));
-        }
-
-        int port = -1;
-        try
-        {
-            port = Integer.parseInt(tokens[1]);
-        }
-        catch(Exception e)
-        {
-            throw new IllegalConfigurationException(String.format("Invalid port is specified in address '%s'. ", address));
-        }
-        if (!PortUtil.isPortAvailable(hostName, port))
+        if (!PortUtil.isPortAvailable(uri.getHost(), uri.getPort()))
         {
             throw new IllegalConfigurationException(String.format("Cannot bind to address '%s'. Address is already in use.", address));
         }
     }
 
+    private URI addressToURI(String address)
+    {
+        if (address == null || "".equals(address))
+        {
+            throw new IllegalConfigurationException("Node address is not set");
+        }
 
+        URI uri = null;
+        try
+        {
+            uri = new URI( "tcp://" + address);
+        }
+        catch (URISyntaxException e)
+        {
+            throw new IllegalConfigurationException(String.format("Invalid address specified '%s'. ", address));
+        }
+        return uri;
+    }
 
     private void onMaster()
     {
@@ -801,7 +802,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
     private boolean isFirstNodeInAGroup()
     {
-        return getAddress().equals(getHelperAddress());
+        return getHelperNodeName() == null;
     }
 
     BDBHAVirtualHostNodeLogSubject getVirtualHostNodeLogSubject()
@@ -876,23 +877,16 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         validatePermittedNodesFormat(proposedPermittedNodes);
     }
 
-    private void validatePermittedNodesFormat(Collection<String> proposedPermittedNodes)
+    private void validatePermittedNodesFormat(Collection<String> permittedNodes)
     {
-        for (String permittedNode: proposedPermittedNodes)
+        if (permittedNodes == null || permittedNodes.isEmpty())
         {
-            String[] tokens = permittedNode.split(":");
-            if (tokens.length != 2)
-            {
-                throw new IllegalArgumentException(String.format("Invalid permitted node specified '%s'. ", permittedNode));
-            }
-            try
-            {
-                Integer.parseInt(tokens[1]);
-            }
-            catch(Exception e)
-            {
-                throw new IllegalArgumentException(String.format("Invalid port is specified in permitted node '%s'. ", permittedNode));
-            }
+            throw new IllegalConfigurationException("Permitted nodes are not set");
+        }
+
+        for (String permittedNode: permittedNodes)
+        {
+            addressToURI(permittedNode);
         }
     }
 

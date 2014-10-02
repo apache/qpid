@@ -293,6 +293,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         _helper.awaitRemoteNodes(master, 2);
 
         BDBHAVirtualHostNode<?> replica = _helper.awaitAndFindNodeInRole(NodeRole.REPLICA);
+        _helper.awaitRemoteNodes(replica, 2);
 
         assertNotNull("Remote node " + replica.getName() + " is not found", _helper.findRemoteNode(master, replica.getName()));
         replica.delete();
@@ -607,7 +608,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         catch(IllegalConfigurationException e)
         {
             assertEquals("Unexpected exception on connection to non-existing helper address",
-                    String.format("Cannot connect to '%s'", "localhost:" + node2PortNumber), e.getMessage());
+                    String.format("Cannot connect to existing node '%s' at '%s'", "node2", "localhost:" + node2PortNumber), e.getMessage());
         }
     }
 
