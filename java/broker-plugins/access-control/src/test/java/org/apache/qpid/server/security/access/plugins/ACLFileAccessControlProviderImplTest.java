@@ -59,7 +59,8 @@ public class ACLFileAccessControlProviderImplTest extends QpidTestCase
     public void testValidationOnCreateWithNonExistingACLFile()
     {
         Map<String,Object> attributes = new HashMap<>();
-        String aclFilePath = TMP_FOLDER + File.separator + "test_" + getTestName() + System.nanoTime() + ".acl";
+        String aclFilePath = new File(TMP_FOLDER, "test_" + getTestName() + System.nanoTime() + ".acl").getAbsolutePath();
+
         attributes.put("path", aclFilePath);
         attributes.put(ACLFileAccessControlProvider.NAME, getTestName());
 
