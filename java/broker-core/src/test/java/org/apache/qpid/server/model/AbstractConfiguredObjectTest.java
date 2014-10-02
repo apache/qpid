@@ -357,14 +357,18 @@ public class AbstractConfiguredObjectTest extends TestCase
     {
         TestConfiguredObject object = new TestConfiguredObject(getName());
         object.setThrowExceptionOnOpen(true);
-        object.create();
-        assertFalse("Unexpected opened", object.isOpened());
-        assertEquals("Unexpected state", State.ERRORED, object.getState());
+        try
+        {
+            object.create();
+            fail("Exception should have been re-thrown");
+        }
+        catch (RuntimeException re)
+        {
+            // pass
+        }
 
-        object.setThrowExceptionOnOpen(false);
-        object.start();
-        assertTrue("Unexpected opened", object.isOpened());
-        assertEquals("Unexpected state", State.ACTIVE, object.getState());
+        assertFalse("Unexpected opened", object.isOpened());
+        assertEquals("Unexpected state", State.DELETED, object.getState());
     }
 
     public void testCreationWithExceptionThrownFromOnCreate() throws Exception

@@ -283,8 +283,18 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     public void onCreate()
     {
         super.onCreate();
-
+        if (!isFirstNodeInAGroup())
+        {
+            _permittedNodes = new ArrayList<>(getPermittedNodesFromHelper());
+        }
         getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.CREATED());
+    }
+
+    @Override
+    public void onOpen()
+    {
+        validatePermittedNodesFormat(_permittedNodes);
+        super.onOpen();
     }
 
     protected ReplicatedEnvironmentFacade getReplicatedEnvironmentFacade()
@@ -421,13 +431,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     }
 
     @Override
-    public void onValidate()
-    {
-        super.onValidate();
-        validatePermittedNodes(_permittedNodes);
-    }
-
-    @Override
     protected void postResolve()
     {
         super.postResolve();
@@ -447,9 +450,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
         if (!isFirstNodeInAGroup())
         {
-            // validate that helper address points to valid node
-            // we need _permittedNodes for the further validation in onValidate
-            _permittedNodes = new ArrayList<>(getPermittedNodesFromHelper());
+            getPermittedNodesFromHelper();
         }
     }
 
@@ -872,6 +873,11 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             }
         }
 
+        validatePermittedNodesFormat(proposedPermittedNodes);
+    }
+
+    private void validatePermittedNodesFormat(Collection<String> proposedPermittedNodes)
+    {
         for (String permittedNode: proposedPermittedNodes)
         {
             String[] tokens = permittedNode.split(":");
@@ -888,7 +894,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                 throw new IllegalArgumentException(String.format("Invalid port is specified in permitted node '%s'. ", permittedNode));
             }
         }
-
     }
 
     private class RemoteNodesDiscoverer implements ReplicationGroupListener
