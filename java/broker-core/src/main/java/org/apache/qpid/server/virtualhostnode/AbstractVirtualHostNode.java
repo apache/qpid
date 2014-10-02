@@ -176,7 +176,11 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         deleteVirtualHostIfExists();
         close();
         deleted();
-        getConfigurationStore().onDelete(this);
+        DurableConfigurationStore configurationStore = getConfigurationStore();
+        if (configurationStore != null)
+        {
+            configurationStore.onDelete(this);
+        }
     }
 
     protected void deleteVirtualHostIfExists()
@@ -211,6 +215,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     @Override
     protected void postResolve()
     {
+        super.postResolve();
         DurableConfigurationStore store = getConfigurationStore();
         if (store == null)
         {
