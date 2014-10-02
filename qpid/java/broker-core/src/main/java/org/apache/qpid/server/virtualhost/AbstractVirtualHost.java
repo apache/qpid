@@ -699,11 +699,11 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             {
                 _logger.error("Failed to close message store", e);
             }
-        }
 
-        if (!(_virtualHostNode.getConfigurationStore() instanceof MessageStoreProvider))
-        {
-            getEventLogger().message(getMessageStoreLogSubject(), MessageStoreMessages.CLOSED());
+            if (!(_virtualHostNode.getConfigurationStore() instanceof MessageStoreProvider))
+            {
+                getEventLogger().message(getMessageStoreLogSubject(), MessageStoreMessages.CLOSED());
+            }
         }
     }
 

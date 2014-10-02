@@ -113,20 +113,12 @@ public class FileSystemPreferencesProviderImpl
     }
 
     @Override
-    protected void onCreate()
-    {
-        super.validateOnCreate();
-        File storeFile  = new File(_path);
-        if (!storeFile.exists() )
-        {
-            new FileSystemPreferencesStore(storeFile).createIfNotExist();
-        }
-    }
-
-    @Override
     protected void onOpen()
     {
         FileSystemPreferencesStore store = new FileSystemPreferencesStore(new File(_path));
+
+        // we need to check and create file if it does not exist every time on open
+        store.createIfNotExist();
         store.open();
         _store = store;
         _open = true;
