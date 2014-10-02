@@ -287,12 +287,20 @@ bool SocketAddress::compareAddresses(const struct addrinfo& lo,
         return false;
     }
     if (lo.ai_family == AF_INET) {
-        struct sockaddr_in* sin4lo = (struct sockaddr_in*)lo.ai_addr;
-        struct sockaddr_in* sin4hi = (struct sockaddr_in*)hi.ai_addr;
+        void* taddr;
+
+        taddr = (void*)lo.ai_addr;
+        struct sockaddr_in* sin4lo = (struct sockaddr_in*)taddr;
+        taddr = (void*)hi.ai_addr;
+        struct sockaddr_in* sin4hi = (struct sockaddr_in*)taddr;
         result = memcmp(&sin4hi->sin_addr, &sin4lo->sin_addr, sizeof(in_addr));
     } else if (lo.ai_family == AF_INET6) {
-        struct sockaddr_in6* sin6lo = (struct sockaddr_in6*)lo.ai_addr;
-        struct sockaddr_in6* sin6hi = (struct sockaddr_in6*)hi.ai_addr;
+        void* taddr;
+
+        taddr = (void*)lo.ai_addr;
+        struct sockaddr_in6* sin6lo = (struct sockaddr_in6*)taddr;
+        taddr = (void*)hi.ai_addr;
+        struct sockaddr_in6* sin6hi = (struct sockaddr_in6*)taddr;
         result = memcmp(&sin6hi->sin6_addr, &sin6lo->sin6_addr, sizeof(in6_addr));
     } else {
         assert (false);
