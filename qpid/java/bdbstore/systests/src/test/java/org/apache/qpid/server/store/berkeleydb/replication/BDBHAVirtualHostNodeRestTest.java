@@ -326,7 +326,10 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         nodeData.put(BDBHAVirtualHostNode.GROUP_NAME, _hostName);
         nodeData.put(BDBHAVirtualHostNode.ADDRESS, "localhost:" + nodePort);
         nodeData.put(BDBHAVirtualHostNode.HELPER_ADDRESS, "localhost:" + helperPort);
-        nodeData.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, NODE1);
+        if (nodePort != helperPort)
+        {
+            nodeData.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, NODE1);
+        }
 
         Map<String,String> context = new HashMap<>();
         nodeData.put(BDBHAVirtualHostNode.CONTEXT, context);

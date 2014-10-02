@@ -279,10 +279,13 @@ public class BDBHAVirtualHostNodeTestHelper
         node1Attributes.put(BDBHAVirtualHostNode.ADDRESS, address);
         node1Attributes.put(BDBHAVirtualHostNode.HELPER_ADDRESS, helperAddress);
         node1Attributes.put(BDBHAVirtualHostNode.STORE_PATH, getMessageStorePath() + File.separator + nodeName);
-        node1Attributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, helperNodeNode);
         if (address.equals(helperAddress))
         {
             node1Attributes.put(BDBHAVirtualHostNode.PERMITTED_NODES, getPermittedNodes(ports));
+        }
+        else
+        {
+            node1Attributes.put(BDBHAVirtualHostNode.HELPER_NODE_NAME, helperNodeNode);
         }
 
         Map<String, String> context = new HashMap<String, String>();
