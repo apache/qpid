@@ -529,31 +529,32 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
     }
 
-    protected final void handleExceptionOnOpen(RuntimeException e, AbstractConfiguredObject<?> configuredObject)
+    protected final void handleExceptionOnOpen(RuntimeException e)
     {
         if (e instanceof ServerScopedRuntimeException)
         {
             throw e;
         }
 
-        LOGGER.error("Exception occurred on open for " + configuredObject.getName(), e);
+        LOGGER.error("Exception occurred on open for " + getName(), e);
 
         try
         {
-            configuredObject.onExceptionInOpen(e);
+            onExceptionInOpen(e);
         }
         catch (RuntimeException re)
         {
-            LOGGER.error("Unexpected exception while handling exception on open for " + configuredObject.getName(), e);
+            LOGGER.error("Unexpected exception while handling exception on open for " + getName(), e);
         }
 
-        if (!configuredObject._openComplete)
+        if (!_openComplete)
         {
-            configuredObject._openFailed = true;
-            configuredObject._dynamicState.compareAndSet(DynamicState.OPENED, DynamicState.UNINIT);
+            _openFailed = true;
+            _dynamicState.compareAndSet(DynamicState.OPENED, DynamicState.UNINIT);
         }
-        configuredObject.closeChildren();
-        configuredObject.setState(State.ERRORED);
+
+        //TODO: children of ERRORED CO will continue to remain in ACTIVE state
+        setState(State.ERRORED);
     }
 
     /**
@@ -604,7 +605,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 @Override
                 public void performAction(final ConfiguredObject<?> child)
                 {
-                    if (child instanceof AbstractConfiguredObject)
+                    if (child.getState() != State.ERRORED && child instanceof AbstractConfiguredObject)
                     {
                         AbstractConfiguredObject configuredObject = (AbstractConfiguredObject) child;
                         try
@@ -631,7 +632,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 @Override
                 public void performAction(final ConfiguredObject<?> child)
                 {
-                    if (child instanceof AbstractConfiguredObject)
+                    if (child.getState() != State.ERRORED && child instanceof AbstractConfiguredObject)
                     {
                         AbstractConfiguredObject configuredObject = (AbstractConfiguredObject) child;
                         try
@@ -1878,18 +1879,18 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         void handleException(RuntimeException exception, AbstractConfiguredObject<?> source);
     }
 
-    private class OpenExceptionHandler implements AbstractConfiguredObjectExceptionHandler
+    private static class OpenExceptionHandler implements AbstractConfiguredObjectExceptionHandler
     {
         @Override
         public void handleException(RuntimeException exception, AbstractConfiguredObject<?> source)
         {
-            handleExceptionOnOpen(exception, source);
+            source.handleExceptionOnOpen(exception);
         }
     }
 
-    private class CreateExceptionHandler implements AbstractConfiguredObjectExceptionHandler
+    private static class CreateExceptionHandler implements AbstractConfiguredObjectExceptionHandler
     {
-        private boolean _unregister;
+        private final boolean _unregister;
 
         private CreateExceptionHandler()
         {
@@ -1898,7 +1899,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
         private CreateExceptionHandler(boolean unregister)
         {
-            this._unregister = unregister;
+            _unregister = unregister;
         }
 
         @Override
