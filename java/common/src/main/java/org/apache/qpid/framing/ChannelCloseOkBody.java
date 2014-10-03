@@ -35,6 +35,7 @@ import org.apache.qpid.codec.MarkableDataInput;
 
 public class ChannelCloseOkBody extends AMQMethodBodyImpl implements EncodableAMQDataBlock, AMQMethodBody
 {
+    public static final ChannelCloseOkBody INSTANCE = new ChannelCloseOkBody();
 
     public static final int CLASS_ID =  20;
     public static final int METHOD_ID = 41;
@@ -46,8 +47,7 @@ public class ChannelCloseOkBody extends AMQMethodBodyImpl implements EncodableAM
     {
     }
 
-    public ChannelCloseOkBody(
-                             )
+    private ChannelCloseOkBody()
     {
     }
 
@@ -64,8 +64,7 @@ public class ChannelCloseOkBody extends AMQMethodBodyImpl implements EncodableAM
 
     protected int getBodySize()
     {
-        int size = 0;
-        return size;
+        return 0;
     }
 
     public void writeMethodPayload(DataOutput buffer) throws IOException
@@ -79,9 +78,8 @@ public class ChannelCloseOkBody extends AMQMethodBodyImpl implements EncodableAM
 
     public String toString()
     {
-        StringBuilder buf = new StringBuilder("[ChannelCloseOkBodyImpl: ");
-        buf.append("]");
-        return buf.toString();
+        return "[ChannelCloseOkBody]";
+
     }
 
 }

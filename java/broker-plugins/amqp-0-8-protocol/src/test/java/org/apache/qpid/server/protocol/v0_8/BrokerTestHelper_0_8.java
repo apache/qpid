@@ -81,12 +81,10 @@ public class BrokerTestHelper_0_8 extends BrokerTestHelper
         {
             channel.setPublishFrame(info, destination);
 
-            // Set the body size
-            ContentHeaderBody _headerBody = new ContentHeaderBody();
-            _headerBody.setBodySize(0);
 
             // Set Minimum properties
             BasicContentHeaderProperties properties = new BasicContentHeaderProperties();
+
 
             properties.setExpiration(0L);
             properties.setTimestamp(System.currentTimeMillis());
@@ -94,9 +92,9 @@ public class BrokerTestHelper_0_8 extends BrokerTestHelper
             // Make Message Persistent
             properties.setDeliveryMode((byte) 2);
 
-            _headerBody.setProperties(properties);
+            ContentHeaderBody headerBody = new ContentHeaderBody(properties, 0);
 
-            channel.publishContentHeader(_headerBody);
+            channel.publishContentHeader(headerBody);
         }
         channel.sync();
     }

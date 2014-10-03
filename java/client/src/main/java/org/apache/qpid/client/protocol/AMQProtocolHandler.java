@@ -193,7 +193,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         _connection = con;
         _protocolSession = new AMQProtocolSession(this, _connection);
         _stateManager = new AMQStateManager(_protocolSession);
-        _decoder = new AMQDecoder(false, _protocolSession);
+        _decoder = new AMQDecoder(false, _protocolSession.getMethodRegistry());
         _failoverHandler = new FailoverHandler(this);
     }
 

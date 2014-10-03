@@ -47,9 +47,9 @@ public class ConnectionTuneOkBody extends AMQMethodBodyImpl implements Encodable
     // Constructor
     public ConnectionTuneOkBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _channelMax = readUnsignedShort( buffer );
-        _frameMax = readUnsignedInteger( buffer );
-        _heartbeat = readUnsignedShort( buffer );
+        _channelMax = buffer.readUnsignedShort();
+        _frameMax = EncodingUtils.readUnsignedInteger(buffer);
+        _heartbeat = buffer.readUnsignedShort();
     }
 
     public ConnectionTuneOkBody(
@@ -119,4 +119,12 @@ public class ConnectionTuneOkBody extends AMQMethodBodyImpl implements Encodable
         return buf.toString();
     }
 
+    public static <T> T process(final MarkableDataInput buffer, final MethodProcessor<T> dispatcher) throws IOException
+    {
+
+        int channelMax = buffer.readUnsignedShort();
+        long frameMax = EncodingUtils.readUnsignedInteger(buffer);
+        int heartbeat = buffer.readUnsignedShort();
+        return dispatcher.connectionTuneOk(channelMax, frameMax, heartbeat);
+    }
 }

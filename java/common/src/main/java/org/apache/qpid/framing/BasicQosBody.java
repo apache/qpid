@@ -47,9 +47,9 @@ public class BasicQosBody extends AMQMethodBodyImpl implements EncodableAMQDataB
     // Constructor
     public BasicQosBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _prefetchSize = readUnsignedInteger( buffer );
-        _prefetchCount = readUnsignedShort( buffer );
-        _bitfield0 = readBitfield( buffer );
+        _prefetchSize = EncodingUtils.readUnsignedInteger(buffer);
+        _prefetchCount = buffer.readUnsignedShort();
+        _bitfield0 = buffer.readByte();
     }
 
     public BasicQosBody(
@@ -124,4 +124,14 @@ public class BasicQosBody extends AMQMethodBodyImpl implements EncodableAMQDataB
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+
+        long prefetchSize = EncodingUtils.readUnsignedInteger(buffer);
+        int prefetchCount = buffer.readUnsignedShort();
+        boolean global = (buffer.readByte() & 0x01) == 0x01;
+        return dispatcher.basicQos(channelId, prefetchSize, prefetchCount, global);
+    }
 }

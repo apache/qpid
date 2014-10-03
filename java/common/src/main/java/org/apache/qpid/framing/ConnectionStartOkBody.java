@@ -45,15 +45,6 @@ public class ConnectionStartOkBody extends AMQMethodBodyImpl implements Encodabl
     private final byte[] _response; // [response]
     private final AMQShortString _locale; // [locale]
 
-    // Constructor
-    public ConnectionStartOkBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
-    {
-        _clientProperties = readFieldTable( buffer );
-        _mechanism = readAMQShortString( buffer );
-        _response = readBytes( buffer );
-        _locale = readAMQShortString( buffer );
-    }
-
     public ConnectionStartOkBody(
             FieldTable clientProperties,
             AMQShortString mechanism,
@@ -135,4 +126,15 @@ public class ConnectionStartOkBody extends AMQMethodBodyImpl implements Encodabl
         return buf.toString();
     }
 
+    public static <T> T process(final MarkableDataInput in, final MethodProcessor<T> dispatcher)
+            throws IOException, AMQFrameDecodingException
+    {
+
+        FieldTable clientProperties = EncodingUtils.readFieldTable(in);
+        AMQShortString mechanism = in.readAMQShortString();
+        byte[] response = EncodingUtils.readBytes(in);
+        AMQShortString locale = in.readAMQShortString();
+
+        return dispatcher.connectionStartOk(clientProperties, mechanism, response, locale);
+    }
 }

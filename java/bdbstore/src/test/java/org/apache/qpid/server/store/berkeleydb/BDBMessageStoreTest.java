@@ -241,9 +241,9 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
 
     private ContentHeaderBody createContentHeaderBody_0_8(BasicContentHeaderProperties props, int length)
     {
-        MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v0_9);
+        MethodRegistry methodRegistry = new MethodRegistry(ProtocolVersion.v0_9);
         int classForBasic = methodRegistry.createBasicQosOkBody().getClazz();
-        return new ContentHeaderBody(classForBasic, 1, props, length);
+        return new ContentHeaderBody(props, length);
     }
 
     private BasicContentHeaderProperties createContentHeaderProperties_0_8()

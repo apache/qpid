@@ -49,11 +49,11 @@ public class BasicDeliverBody extends AMQMethodBodyImpl implements EncodableAMQD
     // Constructor
     public BasicDeliverBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _consumerTag = readAMQShortString( buffer );
-        _deliveryTag = readLong( buffer );
-        _bitfield0 = readBitfield( buffer );
-        _exchange = readAMQShortString( buffer );
-        _routingKey = readAMQShortString( buffer );
+        _consumerTag = buffer.readAMQShortString();
+        _deliveryTag = buffer.readLong();
+        _bitfield0 = buffer.readByte();
+        _exchange = buffer.readAMQShortString();
+        _routingKey = buffer.readAMQShortString();
     }
 
     public BasicDeliverBody(
@@ -152,4 +152,16 @@ public class BasicDeliverBody extends AMQMethodBodyImpl implements EncodableAMQD
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+
+        AMQShortString consumerTag = buffer.readAMQShortString();
+        long deliveryTag = buffer.readLong();
+        boolean redelivered = (buffer.readByte() & 0x01) != 0;
+        AMQShortString exchange = buffer.readAMQShortString();
+        AMQShortString routingKey = buffer.readAMQShortString();
+        return dispatcher.basicDeliver(channelId, consumerTag, deliveryTag, redelivered, exchange, routingKey);
+    }
 }

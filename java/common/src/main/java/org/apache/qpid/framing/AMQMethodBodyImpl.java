@@ -28,7 +28,6 @@ import java.io.IOException;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.codec.MarkableDataInput;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
@@ -107,17 +106,6 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
     }
 
 
-    protected byte readByte(DataInput buffer) throws IOException
-    {
-        return buffer.readByte();
-    }
-
-    protected AMQShortString readAMQShortString(MarkableDataInput buffer) throws IOException
-    {
-        AMQShortString str = buffer.readAMQShortString();
-        return str == null ? null : str.intern(false);
-    }
-
     protected int getSizeOf(AMQShortString string)
     {
         return EncodingUtils.encodedShortStringLength(string);
@@ -143,11 +131,6 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
         buffer.writeInt(i);
     }
 
-    protected FieldTable readFieldTable(DataInput buffer) throws AMQFrameDecodingException, IOException
-    {
-        return EncodingUtils.readFieldTable(buffer);
-    }
-
     protected int getSizeOf(FieldTable table)
     {
         return EncodingUtils.encodedFieldTableLength(table);  //To change body of created methods use File | Settings | File Templates.
@@ -156,11 +139,6 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
     protected void writeFieldTable(DataOutput buffer, FieldTable table) throws IOException
     {
         EncodingUtils.writeFieldTableBytes(buffer, table);
-    }
-
-    protected long readLong(DataInput buffer) throws IOException
-    {
-        return buffer.readLong();
     }
 
     protected void writeLong(DataOutput buffer, long l) throws IOException
@@ -178,11 +156,6 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
         EncodingUtils.writeBytes(buffer,data);
     }
 
-    protected byte[] readBytes(DataInput buffer) throws IOException
-    {
-        return EncodingUtils.readBytes(buffer);
-    }
-
     protected short readShort(DataInput buffer) throws IOException
     {
         return EncodingUtils.readShort(buffer);
@@ -191,16 +164,6 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
     protected void writeShort(DataOutput buffer, short s) throws IOException
     {
         EncodingUtils.writeShort(buffer, s);
-    }
-
-    protected byte readBitfield(DataInput buffer) throws IOException
-    {
-        return readByte(buffer);
-    }
-
-    protected int readUnsignedShort(DataInput buffer) throws IOException
-    {
-        return buffer.readUnsignedShort();
     }
 
     protected void writeBitfield(DataOutput buffer, byte bitfield0) throws IOException
@@ -213,20 +176,11 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
         EncodingUtils.writeUnsignedShort(buffer, s);
     }
 
-    protected long readUnsignedInteger(DataInput buffer) throws IOException
-    {
-        return EncodingUtils.readUnsignedInteger(buffer);
-    }
     protected void writeUnsignedInteger(DataOutput buffer, long i) throws IOException
     {
         EncodingUtils.writeUnsignedInteger(buffer, i);
     }
 
-
-    protected short readUnsignedByte(DataInput buffer) throws IOException
-    {
-        return (short) buffer.readUnsignedByte();
-    }
 
     protected void writeUnsignedByte(DataOutput buffer, short unsignedByte) throws IOException
     {

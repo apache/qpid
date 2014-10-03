@@ -84,10 +84,9 @@ public class ReferenceCountingTest extends QpidTestCase
 
     private ContentHeaderBody createPersistentContentHeader()
     {
-        ContentHeaderBody chb = new ContentHeaderBody();
         BasicContentHeaderProperties bchp = new BasicContentHeaderProperties();
         bchp.setDeliveryMode((byte)2);
-        chb.setProperties(bchp);
+        ContentHeaderBody chb = new ContentHeaderBody(bchp);
         return chb;
     }
 

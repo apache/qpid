@@ -23,11 +23,7 @@
   <fail message="A required property was not set">
     <condition>
       <not>
-        <and>
-          <isset property="generated-amqp-0-8-dir"/>
-          <isset property="generated-amqp-0-10-dir"/>
-          <isset property="gentools.classes"/>
-        </and>
+        <isset property="generated-amqp-0-10-dir"/>
       </not>
     </condition>
   </fail>
@@ -39,14 +35,8 @@
   <property name="mllib.dir" value="${basedir}/../../python"/>
   <property name="xml.spec.dir" value="${basedir}/../../specs"/>
 
-  <property name="xml.spec.0-8" value="amqp0-8-qpid.stripped.xml"/>
-  <property name="xml.spec.0-9" value="amqp0-9-qpid.stripped.xml"/>
-  <property name="xml.spec.0-9-1" value="amqp0-9-1.stripped.xml"/>
   <property name="xml.spec.0-10" value="amqp.0-10-qpid-errata.stripped.xml"/>
-  <property name="xml.spec.deps.0-8" value="${xml.spec.0-8} ${xml.spec.0-9} ${xml.spec.0-9-1}"/>
-  <property name="xml.spec.list.0-8" value='"${xml.spec.dir}/${xml.spec.0-8}" "${xml.spec.dir}/${xml.spec.0-9}" "${xml.spec.dir}/${xml.spec.0-9-1}"'/>
 
-  <property name="gentools.src" value="${basedir}/gentools/src"/>
   <property name="generated.package" value="org/apache/qpid/framing" />
 
 
@@ -65,27 +55,6 @@
       </java>
   </target>
 
-  <target name="compile-gentools">
-    <mkdir dir="${gentools.classes}"/>
-    <javac srcdir="${gentools.src}" destdir="${gentools.classes}" source="${java.source}" target="${java.target}" fork="true" includeantruntime="false">
-      <classpath>
-        <path refid="source.generation.classpathref"/>
-      </classpath>
-    </javac>
-  </target>
-
-  <target name="amqp-0-8-generation" depends="compile-gentools" if="generate.protocol.sources">
-    <mkdir dir="${generated-amqp-0-8-dir}/${generated.package}"/>
-    <echo message="Generating AMQP 0-8/0-9/0-9-1 protocol classes..."/>
-    <java classname="org.apache.qpid.gentools.Main" fork="true" dir="${gentools.classes}" failonerror="true">
-      <arg line='-j -o "${generated-amqp-0-8-dir}/${generated.package}" -t "${basedir}/templates" ${xml.spec.list.0-8}'/>
-      <classpath>
-        <pathelement path="${gentools.classes}" />
-        <path refid="source.generation.classpathref"/>
-      </classpath>
-    </java>
-  </target>
-
-  <target name="generate-sources" depends="amqp-0-8-generation, amqp-0-10-generation"/>
+  <target name="generate-sources" depends="amqp-0-10-generation"/>
 
 </project>

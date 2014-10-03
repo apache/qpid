@@ -47,9 +47,9 @@ public class QueueDeclareOkBody extends AMQMethodBodyImpl implements EncodableAM
     // Constructor
     public QueueDeclareOkBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _queue = readAMQShortString( buffer );
-        _messageCount = readUnsignedInteger( buffer );
-        _consumerCount = readUnsignedInteger( buffer );
+        _queue = buffer.readAMQShortString();
+        _messageCount = EncodingUtils.readUnsignedInteger(buffer);
+        _consumerCount = EncodingUtils.readUnsignedInteger(buffer);
     }
 
     public QueueDeclareOkBody(
@@ -120,4 +120,13 @@ public class QueueDeclareOkBody extends AMQMethodBodyImpl implements EncodableAM
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+        AMQShortString queue = buffer.readAMQShortString();
+        long messageCount = EncodingUtils.readUnsignedInteger(buffer);
+        long consumerCount = EncodingUtils.readUnsignedInteger(buffer);
+        return dispatcher.queueDeclareOk(channelId, queue, messageCount, consumerCount);
+    }
 }

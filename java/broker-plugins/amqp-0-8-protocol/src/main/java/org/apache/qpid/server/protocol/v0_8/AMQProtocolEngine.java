@@ -84,7 +84,7 @@ import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.util.BytesDataOutput;
 
-public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSession<AMQProtocolEngine>, MethodRegistrySource
+public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSession<AMQProtocolEngine>
 {
     private static final Logger _logger = Logger.getLogger(AMQProtocolEngine.class);
 
@@ -132,7 +132,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     /* AMQP Version for this session */
     private ProtocolVersion _protocolVersion = ProtocolVersion.getLatestSupportedVersion();
-    private MethodRegistry _methodRegistry = MethodRegistry.getMethodRegistry(_protocolVersion);
+    private final MethodRegistry _methodRegistry = new MethodRegistry(_protocolVersion);
     private final List<Action<? super AMQProtocolEngine>> _taskList =
             new CopyOnWriteArrayList<Action<? super AMQProtocolEngine>>();
 
@@ -185,7 +185,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         _transport = transport;
         _maxNoOfChannels = broker.getConnection_sessionCountLimit();
         _receivedLock = new ReentrantLock();
-        _decoder = new AMQDecoder(true, this);
+        _decoder = new AMQDecoder(true, _methodRegistry);
         _connectionID = connectionId;
         _logSubject = new ConnectionLogSubject(this);
 
@@ -1207,7 +1207,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private void setProtocolVersion(ProtocolVersion pv)
     {
         _protocolVersion = pv;
-        _methodRegistry = MethodRegistry.getMethodRegistry(_protocolVersion);
+        _methodRegistry.setProtocolVersion(_protocolVersion);
         _protocolOutputConverter = new ProtocolOutputConverterImpl(this);
         _dispatcher = ServerMethodDispatcherImpl.createMethodDispatcher(this);
     }
@@ -1385,8 +1385,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                 _logger.error("Exception caught in " + this + ", closing connection explicitly: " + throwable, throwable);
 
 
-                MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(getProtocolVersion());
-                ConnectionCloseBody closeBody = methodRegistry.createConnectionCloseBody(200,
+                ConnectionCloseBody closeBody = _methodRegistry.createConnectionCloseBody(200,
                                                                                              AMQShortString.validValueOf(
                                                                                                      throwable.getMessage()),
                                                                                              0,

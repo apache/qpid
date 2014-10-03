@@ -46,8 +46,8 @@ public class AccessRequestBody extends AMQMethodBodyImpl implements EncodableAMQ
     // Constructor
     public AccessRequestBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _realm = readAMQShortString( buffer );
-        _bitfield0 = readBitfield( buffer );
+        _realm = buffer.readAMQShortString();
+        _bitfield0 = buffer.readByte();
     }
 
     public AccessRequestBody(
@@ -165,4 +165,17 @@ public class AccessRequestBody extends AMQMethodBodyImpl implements EncodableAMQ
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+        AMQShortString realm = buffer.readAMQShortString();
+        byte bitfield = buffer.readByte();
+        boolean exclusive = (bitfield & 0x01) == 0x1 ;
+        boolean passive = (bitfield & 0x02) == 0x2 ;
+        boolean active = (bitfield & 0x04) == 0x4 ;
+        boolean write = (bitfield & 0x08) == 0x8 ;
+        boolean read = (bitfield & 0x10) == 0x10 ;
+        return dispatcher.accessRequest(channelId, realm, exclusive, passive, active, write, read);
+    }
 }

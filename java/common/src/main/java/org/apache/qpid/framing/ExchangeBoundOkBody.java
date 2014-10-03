@@ -46,8 +46,8 @@ public class ExchangeBoundOkBody extends AMQMethodBodyImpl implements EncodableA
     // Constructor
     public ExchangeBoundOkBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _replyCode = readUnsignedShort( buffer );
-        _replyText = readAMQShortString( buffer );
+        _replyCode = buffer.readUnsignedShort();
+        _replyText = buffer.readAMQShortString();
     }
 
     public ExchangeBoundOkBody(
@@ -108,4 +108,12 @@ public class ExchangeBoundOkBody extends AMQMethodBodyImpl implements EncodableA
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId, final MarkableDataInput buffer, final MethodProcessor<T> dispatcher)
+            throws IOException
+    {
+
+        int replyCode = buffer.readUnsignedShort();
+        AMQShortString replyText = buffer.readAMQShortString();
+        return dispatcher.exchangeBoundOk(channelId, replyCode, replyText);
+    }
 }

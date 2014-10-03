@@ -42,9 +42,6 @@ import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
-import org.apache.qpid.server.protocol.v0_8.AMQMessage;
-import org.apache.qpid.server.protocol.v0_8.AMQProtocolSession;
-import org.apache.qpid.server.protocol.v0_8.ProtocolOutputConverter;
 import org.apache.qpid.util.GZIPUtils;
 
 public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
@@ -145,7 +142,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         final int bodySize;
         bodySize = content.length;
         ContentHeaderBody modifiedHeaderBody =
-                new ContentHeaderBody(BASIC_CLASS_ID, 0, modifiedProps, bodySize);
+                new ContentHeaderBody(modifiedProps, bodySize);
         final MessageContentSource wrappedSource = new MessageContentSource()
         {
             @Override

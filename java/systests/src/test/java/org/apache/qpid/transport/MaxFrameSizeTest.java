@@ -41,20 +41,18 @@ import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 
-import org.apache.qpid.codec.MarkableDataInput;
-import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlockDecoder;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.AMQProtocolVersionException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BodyFactory;
 import org.apache.qpid.framing.ByteArrayDataInput;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.ConnectionTuneOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
@@ -238,21 +236,14 @@ public class MaxFrameSizeTest extends QpidBrokerTestCase
         byte[] serverData = baos.toByteArray();
         ByteArrayDataInput badi = new ByteArrayDataInput(serverData);
         AMQDataBlockDecoder datablockDecoder = new AMQDataBlockDecoder();
-        final MethodRegistry methodRegistry_0_91 = MethodRegistry.registry_0_91;
-        BodyFactory methodBodyFactory = new BodyFactory()
-        {
-            @Override
-            public AMQBody createBody(final MarkableDataInput in, final long bodySize)
-                    throws AMQFrameDecodingException, IOException
-            {
-                return methodRegistry_0_91.convertToBody(in, bodySize);
-            }
-        };
+        final MethodRegistry methodRegistry_0_91 = new MethodRegistry(ProtocolVersion.v0_91);
 
         List<AMQFrame> frames = new ArrayList<>();
         while (datablockDecoder.decodable(badi))
         {
-            frames.add(datablockDecoder.createAndPopulateFrame(methodBodyFactory, badi));
+            frames.add(datablockDecoder.createAndPopulateFrame(methodRegistry_0_91.getProtocolVersion(),
+                                                               methodRegistry_0_91.getMethodProcessor(),
+                                                               badi));
         }
 
         evaluator.evaluate(socket, frames);

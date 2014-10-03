@@ -48,10 +48,10 @@ public class QueueDeclareBody extends AMQMethodBodyImpl implements EncodableAMQD
     // Constructor
     public QueueDeclareBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _ticket = readUnsignedShort( buffer );
-        _queue = readAMQShortString( buffer );
-        _bitfield0 = readBitfield( buffer );
-        _arguments = readFieldTable( buffer );
+        _ticket = buffer.readUnsignedShort();
+        _queue = buffer.readAMQShortString();
+        _bitfield0 = buffer.readByte();
+        _arguments = EncodingUtils.readFieldTable(buffer);
     }
 
     public QueueDeclareBody(
@@ -191,4 +191,21 @@ public class QueueDeclareBody extends AMQMethodBodyImpl implements EncodableAMQD
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException, AMQFrameDecodingException
+    {
+
+        int ticket = buffer.readUnsignedShort();
+        AMQShortString queue = buffer.readAMQShortString();
+        byte bitfield = buffer.readByte();
+
+        boolean passive = (bitfield & 0x01 ) == 0x01;
+        boolean durable = (bitfield & 0x02 ) == 0x02;
+        boolean exclusive = (bitfield & 0x04 ) == 0x04;
+        boolean autoDelete = (bitfield & 0x08 ) == 0x08;
+        boolean nowait = (bitfield & 0x010 ) == 0x010;
+        FieldTable arguments = EncodingUtils.readFieldTable(buffer);
+        return dispatcher.queueDeclare(channelId, queue, passive, durable, exclusive, autoDelete, nowait, arguments);
+    }
 }

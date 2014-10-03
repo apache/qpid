@@ -45,7 +45,7 @@ public class QueueDeleteOkBody extends AMQMethodBodyImpl implements EncodableAMQ
     // Constructor
     public QueueDeleteOkBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _messageCount = readUnsignedInteger( buffer );
+        _messageCount = EncodingUtils.readUnsignedInteger(buffer);
     }
 
     public QueueDeleteOkBody(
@@ -95,4 +95,11 @@ public class QueueDeleteOkBody extends AMQMethodBodyImpl implements EncodableAMQ
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+        long messageCount = EncodingUtils.readUnsignedInteger(buffer);
+        return dispatcher.queueDeleteOk(channelId, messageCount);
+    }
 }

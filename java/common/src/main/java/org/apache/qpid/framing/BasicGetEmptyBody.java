@@ -45,7 +45,7 @@ public class BasicGetEmptyBody extends AMQMethodBodyImpl implements EncodableAMQ
     // Constructor
     public BasicGetEmptyBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _clusterId = readAMQShortString( buffer );
+        _clusterId = buffer.readAMQShortString();
     }
 
     public BasicGetEmptyBody(
@@ -89,11 +89,18 @@ public class BasicGetEmptyBody extends AMQMethodBodyImpl implements EncodableAMQ
 
     public String toString()
     {
-        StringBuilder buf = new StringBuilder("[BasicGetEmptyBodyImpl: ");
+        StringBuilder buf = new StringBuilder("[BasicGetEmptyBody: ");
         buf.append( "clusterId=" );
         buf.append(  getClusterId() );
         buf.append("]");
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+        AMQShortString clusterId = buffer.readAMQShortString();
+        return dispatcher.basicGetEmpty(channelId);
+    }
 }

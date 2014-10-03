@@ -45,7 +45,7 @@ public class AccessRequestOkBody extends AMQMethodBodyImpl implements EncodableA
     // Constructor
     public AccessRequestOkBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _ticket = readUnsignedShort( buffer );
+        _ticket = buffer.readUnsignedShort();
     }
 
     public AccessRequestOkBody(
@@ -95,4 +95,10 @@ public class AccessRequestOkBody extends AMQMethodBodyImpl implements EncodableA
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId, final MarkableDataInput buffer, final MethodProcessor<T> dispatcher)
+            throws IOException
+    {
+        int ticket = buffer.readUnsignedShort();
+        return dispatcher.accessRequestOk(channelId, ticket);
+    }
 }

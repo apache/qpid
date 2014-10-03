@@ -48,10 +48,10 @@ public class ChannelCloseBody extends AMQMethodBodyImpl implements EncodableAMQD
     // Constructor
     public ChannelCloseBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _replyCode = readUnsignedShort( buffer );
-        _replyText = readAMQShortString( buffer );
-        _classId = readUnsignedShort( buffer );
-        _methodId = readUnsignedShort( buffer );
+        _replyCode = buffer.readUnsignedShort();
+        _replyText = buffer.readAMQShortString();
+        _classId = buffer.readUnsignedShort();
+        _methodId = buffer.readUnsignedShort();
     }
 
     public ChannelCloseBody(
@@ -132,4 +132,15 @@ public class ChannelCloseBody extends AMQMethodBodyImpl implements EncodableAMQD
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+
+        int replyCode = buffer.readUnsignedShort();
+        AMQShortString replyText = buffer.readAMQShortString();
+        int classId = buffer.readUnsignedShort();
+        int methodId = buffer.readUnsignedShort();
+        return dispatcher.channelClose(channelId, replyCode, replyText, classId, methodId);
+    }
 }

@@ -38,6 +38,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeleteBody;
 import org.apache.qpid.framing.ExchangeDeleteOkBody;
 import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.ProtocolVersion;
 
 /**
  * Exchange
@@ -192,7 +193,7 @@ public class ExchangeLoggingTest extends AbstractTestLogging
         }
         else
         {
-            MethodRegistry registry = MethodRegistry.registry_8_0;
+            MethodRegistry registry = new MethodRegistry(ProtocolVersion.v8_0);
 
             ExchangeDeleteBody body = registry.createExchangeDeleteBody(0, new AMQShortString(_name), false, true);
 

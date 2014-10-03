@@ -29,301 +29,22 @@
 
 package org.apache.qpid.framing;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.qpid.codec.MarkableDataInput;
-import org.apache.qpid.protocol.AMQConstant;
-
-
 public final class MethodRegistry
 {
-    private static final Map<ProtocolVersion, MethodRegistry> _registries = new HashMap<>();
+    private final FrameCreatingMethodProcessor _methodProcessor;
+    private ProtocolVersion _protocolVersion;
 
 
-    public static final MethodRegistry registry_0_9 =
-        new MethodRegistry(ProtocolVersion.v0_9);
-
-    public static final MethodRegistry registry_0_91 =
-            new MethodRegistry(ProtocolVersion.v0_91);
-
-    public static final MethodRegistry registry_8_0 =
-            new MethodRegistry(ProtocolVersion.v8_0);
-
-    private final ProtocolVersion _protocolVersion;
-
-    public final AMQMethodBody convertToBody(MarkableDataInput in, long size)
-        throws AMQFrameDecodingException, IOException
+    public MethodRegistry(ProtocolVersion pv)
     {
-        final int classAndMethod = in.readInt();
-
-        AMQMethodBody methodBody;
-        switch(classAndMethod)
-        {
-            //CONNECTION_CLASS:
-                    case 0x000a000a:
-                        methodBody = new ConnectionStartBody(in);
-                        break;
-                    case 0x000a000b:
-                        methodBody = new ConnectionStartOkBody(in);
-                        break;
-                    case 0x000a0014:
-                        methodBody = new ConnectionSecureBody(in);
-                        break;
-                    case 0x000a0015:
-                        methodBody = new ConnectionSecureOkBody(in);
-                        break;
-                    case 0x000a001e:
-                        methodBody = new ConnectionTuneBody(in);
-                        break;
-                    case 0x000a001f:
-                        methodBody = new ConnectionTuneOkBody(in);
-                        break;
-                    case 0x000a0028:
-                        methodBody = new ConnectionOpenBody(in);
-                        break;
-                    case 0x000a0029:
-                        methodBody = new ConnectionOpenOkBody(in);
-                        break;
-                    case 0x000a002a:
-                        methodBody = new ConnectionRedirectBody(in, _protocolVersion);
-                        break;
-                    case 0x000a0032:
-                        if(_protocolVersion.equals(ProtocolVersion.v8_0))
-                        {
-                            methodBody = new ConnectionRedirectBody(in, _protocolVersion);
-                        }
-                        else
-                        {
-                            methodBody = new ConnectionCloseBody(in, _protocolVersion);
-                        }
-                        break;
-                    case 0x000a0033:
-                        if(_protocolVersion.equals(ProtocolVersion.v8_0))
-                        {
-                            throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF));
-                        }
-                        else
-                        {
-                            methodBody = ConnectionCloseOkBody.CONNECTION_CLOSE_OK_0_9;
-                        }
-                        break;
-                    case 0x000a003c:
-                        if(_protocolVersion.equals(ProtocolVersion.v8_0))
-                        {
-                            methodBody = new ConnectionCloseBody(in, _protocolVersion);
-                        }
-                        else
-                        {
-                            throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF));
-                        }
-                        break;
-                    case 0x000a003d:
-                        if(_protocolVersion.equals(ProtocolVersion.v8_0))
-                        {
-                            methodBody = ConnectionCloseOkBody.CONNECTION_CLOSE_OK_0_8;
-                        }
-                        else
-                        {
-                            throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF));
-                        }
-                        break;
-
-            // CHANNEL_CLASS:
-
-                    case 0x0014000a:
-                        methodBody = new ChannelOpenBody(in);
-                        break;
-                    case 0x0014000b:
-                        methodBody = ChannelOpenOkBody.getInstance(_protocolVersion, in);
-                        break;
-                    case 0x00140014:
-                        methodBody = new ChannelFlowBody(in);
-                        break;
-                    case 0x00140015:
-                        methodBody = new ChannelFlowOkBody(in);
-                        break;
-                    case 0x0014001e:
-                        methodBody = new ChannelAlertBody(in);
-                        break;
-                    case 0x00140028:
-                        methodBody = new ChannelCloseBody(in);
-                        break;
-                    case 0x00140029:
-                        methodBody = new ChannelCloseOkBody(in);
-                        break;
-            // ACCESS_CLASS:
-
-                    case 0x001e000a:
-                        methodBody = new AccessRequestBody(in);
-                        break;
-                    case 0x001e000b:
-                        methodBody = new AccessRequestOkBody(in);
-                        break;
-
-            // EXCHANGE_CLASS:
-
-                    case 0x0028000a:
-                        methodBody = new ExchangeDeclareBody(in);
-                        break;
-                    case 0x0028000b:
-                        methodBody = new ExchangeDeclareOkBody(in);
-                        break;
-                    case 0x00280014:
-                        methodBody = new ExchangeDeleteBody(in);
-                        break;
-                    case 0x00280015:
-                        methodBody = new ExchangeDeleteOkBody(in);
-                        break;
-                    case 0x00280016:
-                        methodBody = new ExchangeBoundBody(in);
-                        break;
-                    case 0x00280017:
-                        methodBody = new ExchangeBoundOkBody(in);
-                        break;
-
-
-            // QUEUE_CLASS:
-
-                    case 0x0032000a:
-                        methodBody = new QueueDeclareBody(in);
-                        break;
-                    case 0x0032000b:
-                        methodBody = new QueueDeclareOkBody(in);
-                        break;
-                    case 0x00320014:
-                        methodBody = new QueueBindBody(in);
-                        break;
-                    case 0x00320015:
-                        methodBody = new QueueBindOkBody(in);
-                        break;
-                    case 0x0032001e:
-                        methodBody = new QueuePurgeBody(in);
-                        break;
-                    case 0x0032001f:
-                        methodBody = new QueuePurgeOkBody(in);
-                        break;
-                    case 0x00320028:
-                        methodBody = new QueueDeleteBody(in);
-                        break;
-                    case 0x00320029:
-                        methodBody = new QueueDeleteOkBody(in);
-                        break;
-                    case 0x00320032:
-                        methodBody = new QueueUnbindBody(in);
-                        break;
-                    case 0x00320033:
-                        methodBody = new QueueUnbindOkBody(in);
-                        break;
-
-
-            // BASIC_CLASS:
-
-                    case 0x003c000a:
-                        methodBody = new BasicQosBody(in);
-                        break;
-                    case 0x003c000b:
-                        methodBody = new BasicQosOkBody(in);
-                        break;
-                    case 0x003c0014:
-                        methodBody = new BasicConsumeBody(in);
-                        break;
-                    case 0x003c0015:
-                        methodBody = new BasicConsumeOkBody(in);
-                        break;
-                    case 0x003c001e:
-                        methodBody = new BasicCancelBody(in);
-                        break;
-                    case 0x003c001f:
-                        methodBody = new BasicCancelOkBody(in);
-                        break;
-                    case 0x003c0028:
-                        methodBody = new BasicPublishBody(in);
-                        break;
-                    case 0x003c0032:
-                        methodBody = new BasicReturnBody(in);
-                        break;
-                    case 0x003c003c:
-                        methodBody = new BasicDeliverBody(in);
-                        break;
-                    case 0x003c0046:
-                        methodBody = new BasicGetBody(in);
-                        break;
-                    case 0x003c0047:
-                        methodBody = new BasicGetOkBody(in);
-                        break;
-                    case 0x003c0048:
-                        methodBody = new BasicGetEmptyBody(in);
-                        break;
-                    case 0x003c0050:
-                        methodBody = new BasicAckBody(in);
-                        break;
-                    case 0x003c005a:
-                        methodBody = new BasicRejectBody(in);
-                        break;
-                    case 0x003c0064:
-                        methodBody = new BasicRecoverBody(in);
-                        break;
-                    case 0x003c0065:
-                        methodBody = new BasicRecoverSyncOkBody(_protocolVersion);
-                        break;
-                    case 0x003c0066:
-                        methodBody = new BasicRecoverSyncBody(in, _protocolVersion);
-                        break;
-                    case 0x003c006e:
-                        methodBody = new BasicRecoverSyncBody(in, _protocolVersion);
-                        break;
-                    case 0x003c006f:
-                        methodBody = new BasicRecoverSyncOkBody(_protocolVersion);
-                        break;
-
-            // TX_CLASS:
-
-                    case 0x005a000a:
-                        methodBody = TxSelectBody.INSTANCE;
-                        break;
-                    case 0x005a000b:
-                        methodBody = TxSelectOkBody.INSTANCE;
-                        break;
-                    case 0x005a0014:
-                        methodBody = TxCommitBody.INSTANCE;
-                        break;
-                    case 0x005a0015:
-                        methodBody = TxCommitOkBody.INSTANCE;
-                        break;
-                    case 0x005a001e:
-                        methodBody = TxRollbackBody.INSTANCE;
-                        break;
-                    case 0x005a001f:
-                        methodBody = TxRollbackOkBody.INSTANCE;
-                        break;
-
-                    default:
-                        throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF));
-
-        }
-        return methodBody;
-    }
-
-    private AMQFrameDecodingException newUnknownMethodException(final int classId, final int methodId)
-    {
-        return new AMQFrameDecodingException(AMQConstant.COMMAND_INVALID,
-                                            "Method " + methodId + " unknown in AMQP version " + _protocolVersion
-                                            + " (while trying to decode class " + classId + " method " + methodId + ".");
-    }
-
-    private MethodRegistry(ProtocolVersion pv)
-    {
-        _registries.put(pv, this);
         _protocolVersion = pv;
+        _methodProcessor = new FrameCreatingMethodProcessor(this);
     }
 
-    public static MethodRegistry getMethodRegistry(ProtocolVersion pv)
+    public void setProtocolVersion(final ProtocolVersion protocolVersion)
     {
-        return _registries.get(pv);
+        _protocolVersion = protocolVersion;
     }
-
 
     public final AccessRequestBody createAccessRequestBody(final AMQShortString realm,
                                                            final boolean exclusive,
@@ -502,7 +223,7 @@ public final class MethodRegistry
 
     public final ChannelOpenBody createChannelOpenBody(final AMQShortString outOfBand)
     {
-        return new ChannelOpenBody(outOfBand);
+        return new ChannelOpenBody();
     }
 
     public final ChannelOpenOkBody createChannelOpenOkBody(byte[] channelId)
@@ -540,7 +261,7 @@ public final class MethodRegistry
 
     public final ChannelCloseOkBody createChannelCloseOkBody()
     {
-        return new ChannelCloseOkBody();
+        return ChannelCloseOkBody.INSTANCE;
     }
 
 
@@ -828,5 +549,16 @@ public final class MethodRegistry
     {
         return TxRollbackOkBody.INSTANCE;
     }
+
+    public ProtocolVersion getProtocolVersion()
+    {
+        return _protocolVersion;
+    }
+
+    public FrameCreatingMethodProcessor getMethodProcessor()
+    {
+        return _methodProcessor;
+    }
+
 
 }

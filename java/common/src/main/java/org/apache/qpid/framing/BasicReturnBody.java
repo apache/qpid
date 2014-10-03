@@ -48,10 +48,10 @@ public class BasicReturnBody extends AMQMethodBodyImpl implements EncodableAMQDa
     // Constructor
     public BasicReturnBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _replyCode = readUnsignedShort( buffer );
-        _replyText = readAMQShortString( buffer );
-        _exchange = readAMQShortString( buffer );
-        _routingKey = readAMQShortString( buffer );
+        _replyCode = buffer.readUnsignedShort();
+        _replyText = buffer.readAMQShortString();
+        _exchange = buffer.readAMQShortString();
+        _routingKey = buffer.readAMQShortString();
     }
 
     public BasicReturnBody(
@@ -134,4 +134,15 @@ public class BasicReturnBody extends AMQMethodBodyImpl implements EncodableAMQDa
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+
+        int replyCode = buffer.readUnsignedShort();
+        AMQShortString replyText = buffer.readAMQShortString();
+        AMQShortString exchange = buffer.readAMQShortString();
+        AMQShortString routingKey = buffer.readAMQShortString();
+        return dispatcher.basicReturn(channelId, replyCode, replyText, exchange, routingKey);
+    }
 }

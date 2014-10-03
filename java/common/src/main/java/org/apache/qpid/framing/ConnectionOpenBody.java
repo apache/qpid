@@ -42,14 +42,14 @@ public class ConnectionOpenBody extends AMQMethodBodyImpl implements EncodableAM
     // Fields declared in specification
     private final AMQShortString _virtualHost; // [virtualHost]
     private final AMQShortString _capabilities; // [capabilities]
-    private final byte _bitfield0; // [insist]
+    private final boolean _insist; // [insist]
 
     // Constructor
     public ConnectionOpenBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _virtualHost = readAMQShortString( buffer );
-        _capabilities = readAMQShortString( buffer );
-        _bitfield0 = readBitfield( buffer );
+        _virtualHost = buffer.readAMQShortString();
+        _capabilities = buffer.readAMQShortString();
+        _insist = (buffer.readByte() & 0x01) == 0x01;
     }
 
     public ConnectionOpenBody(
@@ -60,12 +60,7 @@ public class ConnectionOpenBody extends AMQMethodBodyImpl implements EncodableAM
     {
         _virtualHost = virtualHost;
         _capabilities = capabilities;
-        byte bitfield0 = (byte)0;
-        if( insist )
-        {
-            bitfield0 = (byte) (((int) bitfield0) | (1 << 0));
-        }
-        _bitfield0 = bitfield0;
+        _insist = insist;
     }
 
     public int getClazz()
@@ -88,7 +83,7 @@ public class ConnectionOpenBody extends AMQMethodBodyImpl implements EncodableAM
     }
     public final boolean getInsist()
     {
-        return (((int)(_bitfield0)) & ( 1 << 0)) != 0;
+        return _insist;
     }
 
     protected int getBodySize()
@@ -103,7 +98,7 @@ public class ConnectionOpenBody extends AMQMethodBodyImpl implements EncodableAM
     {
         writeAMQShortString( buffer, _virtualHost );
         writeAMQShortString( buffer, _capabilities );
-        writeBitfield( buffer, _bitfield0 );
+        writeBitfield( buffer, _insist ? (byte)1 : (byte)0);
     }
 
     public boolean execute(MethodDispatcher dispatcher, int channelId) throws AMQException
@@ -126,4 +121,12 @@ public class ConnectionOpenBody extends AMQMethodBodyImpl implements EncodableAM
         return buf.toString();
     }
 
+    public static <T> T process(final MarkableDataInput buffer, final MethodProcessor<T> dispatcher) throws IOException
+    {
+
+        AMQShortString virtualHost = buffer.readAMQShortString();
+        AMQShortString capabilities = buffer.readAMQShortString();
+        boolean insist = (buffer.readByte() & 0x01) == 0x01;
+        return dispatcher.connectionOpen(virtualHost, capabilities, insist);
+    }
 }

@@ -49,10 +49,10 @@ public class ConnectionCloseBody extends AMQMethodBodyImpl implements EncodableA
     public ConnectionCloseBody(MarkableDataInput buffer, ProtocolVersion protocolVersion) throws AMQFrameDecodingException, IOException
     {
         _ownMethodId = ProtocolVersion.v8_0.equals(protocolVersion) ? 60 : 50;
-        _replyCode = readUnsignedShort( buffer );
-        _replyText = readAMQShortString( buffer );
-        _classId = readUnsignedShort( buffer );
-        _methodId = readUnsignedShort( buffer );
+        _replyCode = buffer.readUnsignedShort();
+        _replyText = buffer.readAMQShortString();
+        _classId = buffer.readUnsignedShort();
+        _methodId = buffer.readUnsignedShort();
     }
 
     public ConnectionCloseBody(ProtocolVersion protocolVersion,
@@ -134,4 +134,12 @@ public class ConnectionCloseBody extends AMQMethodBodyImpl implements EncodableA
         return buf.toString();
     }
 
+    public static <T> T process(final MarkableDataInput buffer, final MethodProcessor<T> dispatcher) throws IOException
+    {
+        int replyCode = buffer.readUnsignedShort();
+        AMQShortString replyText = buffer.readAMQShortString();
+        int classId = buffer.readUnsignedShort();
+        int methodId = buffer.readUnsignedShort();
+        return dispatcher.connectionClose(replyCode, replyText, classId, methodId);
+    }
 }

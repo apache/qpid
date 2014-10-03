@@ -45,7 +45,7 @@ public class ConnectionOpenOkBody extends AMQMethodBodyImpl implements Encodable
     // Constructor
     public ConnectionOpenOkBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _knownHosts = readAMQShortString( buffer );
+        _knownHosts = buffer.readAMQShortString();
     }
 
     public ConnectionOpenOkBody(
@@ -96,4 +96,10 @@ public class ConnectionOpenOkBody extends AMQMethodBodyImpl implements Encodable
         return buf.toString();
     }
 
+    public static <T> T process(final MarkableDataInput buffer, final MethodProcessor<T> dispatcher) throws IOException
+    {
+        AMQShortString knownHosts = buffer.readAMQShortString();
+        return dispatcher.connectionOpenOk(knownHosts);
+
+    }
 }

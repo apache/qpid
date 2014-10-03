@@ -45,7 +45,7 @@ public class ConnectionSecureOkBody extends AMQMethodBodyImpl implements Encodab
     // Constructor
     public ConnectionSecureOkBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _response = readBytes( buffer );
+        _response = EncodingUtils.readBytes(buffer);
     }
 
     public ConnectionSecureOkBody(
@@ -96,4 +96,9 @@ public class ConnectionSecureOkBody extends AMQMethodBodyImpl implements Encodab
         return buf.toString();
     }
 
+    public static <T> T process(final MarkableDataInput in, final MethodProcessor<T> dispatcher) throws IOException
+    {
+        byte[] response = EncodingUtils.readBytes(in);
+        return dispatcher.connectionSecureOk(response);
+    }
 }

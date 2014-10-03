@@ -47,9 +47,9 @@ public class ExchangeDeleteBody extends AMQMethodBodyImpl implements EncodableAM
     // Constructor
     public ExchangeDeleteBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _ticket = readUnsignedShort( buffer );
-        _exchange = readAMQShortString( buffer );
-        _bitfield0 = readBitfield( buffer );
+        _ticket = buffer.readUnsignedShort();
+        _exchange = buffer.readAMQShortString();
+        _bitfield0 = buffer.readByte();
     }
 
     public ExchangeDeleteBody(
@@ -138,4 +138,15 @@ public class ExchangeDeleteBody extends AMQMethodBodyImpl implements EncodableAM
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId, final MarkableDataInput buffer, final MethodProcessor<T> dispatcher)
+            throws IOException
+    {
+
+        int ticket = buffer.readUnsignedShort();
+        AMQShortString exchange = buffer.readAMQShortString();
+        byte bitfield = buffer.readByte();
+        boolean ifUnused = (bitfield & 0x01) == 0x01;
+        boolean nowait = (bitfield & 0x02) == 0x02;
+        return dispatcher.exchangeDelete(channelId, exchange, ifUnused, nowait);
+    }
 }

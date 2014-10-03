@@ -34,6 +34,8 @@ import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.AMQProtocolVersionException;
 import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.ProtocolVersion;
 
 public class AMQDecoderTest extends TestCase
 {
@@ -43,7 +45,7 @@ public class AMQDecoderTest extends TestCase
 
     public void setUp()
     {
-        _decoder = new AMQDecoder(false, null);
+        _decoder = new AMQDecoder(false, new MethodRegistry(ProtocolVersion.v0_91));
     }
    
     

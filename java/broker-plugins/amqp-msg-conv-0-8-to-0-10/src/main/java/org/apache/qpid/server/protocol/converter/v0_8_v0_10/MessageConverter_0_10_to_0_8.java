@@ -239,7 +239,7 @@ public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTra
     private ContentHeaderBody convertContentHeaderBody(MessageTransferMessage message, VirtualHostImpl vhost)
     {
         BasicContentHeaderProperties props = convertContentHeaderProperties(message, vhost);
-        ContentHeaderBody chb = new ContentHeaderBody(props, BASIC_CLASS_ID);
+        ContentHeaderBody chb = new ContentHeaderBody(props);
         chb.setBodySize(message.getSize());
         return chb;
     }

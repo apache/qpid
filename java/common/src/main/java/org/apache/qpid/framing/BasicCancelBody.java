@@ -46,8 +46,8 @@ public class BasicCancelBody extends AMQMethodBodyImpl implements EncodableAMQDa
     // Constructor
     public BasicCancelBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _consumerTag = readAMQShortString( buffer );
-        _bitfield0 = readBitfield( buffer );
+        _consumerTag = buffer.readAMQShortString();
+        _bitfield0 = buffer.readByte();
     }
 
     public BasicCancelBody(
@@ -113,4 +113,13 @@ public class BasicCancelBody extends AMQMethodBodyImpl implements EncodableAMQDa
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+
+        AMQShortString consumerTag = buffer.readAMQShortString();
+        boolean noWait = (buffer.readByte() & 0x01) == 0x01;
+        return dispatcher.basicCancel(channelId, consumerTag, noWait);
+    }
 }

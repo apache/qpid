@@ -45,7 +45,7 @@ public class BasicConsumeOkBody extends AMQMethodBodyImpl implements EncodableAM
     // Constructor
     public BasicConsumeOkBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _consumerTag = readAMQShortString( buffer );
+        _consumerTag = buffer.readAMQShortString();
     }
 
     public BasicConsumeOkBody(
@@ -96,4 +96,10 @@ public class BasicConsumeOkBody extends AMQMethodBodyImpl implements EncodableAM
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId, final MarkableDataInput buffer, final MethodProcessor<T> dispatcher)
+            throws IOException
+    {
+        AMQShortString consumerTag = buffer.readAMQShortString();
+        return dispatcher.basicConsumeOk(channelId, consumerTag);
+    }
 }

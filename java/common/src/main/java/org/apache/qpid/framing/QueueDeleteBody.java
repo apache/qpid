@@ -47,9 +47,9 @@ public class QueueDeleteBody extends AMQMethodBodyImpl implements EncodableAMQDa
     // Constructor
     public QueueDeleteBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _ticket = readUnsignedShort( buffer );
-        _queue = readAMQShortString( buffer );
-        _bitfield0 = readBitfield( buffer );
+        _ticket = buffer.readUnsignedShort();
+        _queue = buffer.readAMQShortString();
+        _bitfield0 = buffer.readByte();
     }
 
     public QueueDeleteBody(
@@ -151,4 +151,18 @@ public class QueueDeleteBody extends AMQMethodBodyImpl implements EncodableAMQDa
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+
+        int ticket = buffer.readUnsignedShort();
+        AMQShortString queue = buffer.readAMQShortString();
+        byte bitfield = buffer.readByte();
+
+        boolean ifUnused = (bitfield & 0x01) == 0x01;
+        boolean ifEmpty = (bitfield & 0x02) == 0x02;
+        boolean nowait = (bitfield & 0x04) == 0x04;
+        return dispatcher.queueDelete(channelId, queue, ifUnused, ifEmpty, nowait);
+    }
 }

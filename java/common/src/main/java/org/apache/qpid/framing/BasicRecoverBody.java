@@ -45,7 +45,7 @@ public class BasicRecoverBody extends AMQMethodBodyImpl implements EncodableAMQD
     // Constructor
     public BasicRecoverBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _bitfield0 = readBitfield( buffer );
+        _bitfield0 = buffer.readByte();
     }
 
     public BasicRecoverBody(
@@ -100,4 +100,14 @@ public class BasicRecoverBody extends AMQMethodBodyImpl implements EncodableAMQD
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput in,
+                                final ProtocolVersion protocolVersion,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+        boolean requeue = (in.readByte() & 0x01) == 0x01;
+        boolean sync = (ProtocolVersion.v8_0.equals(protocolVersion));
+
+        return dispatcher.basicRecover(channelId, requeue, sync);
+    }
 }

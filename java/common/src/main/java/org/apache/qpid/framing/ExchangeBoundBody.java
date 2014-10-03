@@ -47,9 +47,9 @@ public class ExchangeBoundBody extends AMQMethodBodyImpl implements EncodableAMQ
     // Constructor
     public ExchangeBoundBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _exchange = readAMQShortString( buffer );
-        _routingKey = readAMQShortString( buffer );
-        _queue = readAMQShortString( buffer );
+        _exchange = buffer.readAMQShortString();
+        _routingKey = buffer.readAMQShortString();
+        _queue = buffer.readAMQShortString();
     }
 
     public ExchangeBoundBody(
@@ -122,4 +122,13 @@ public class ExchangeBoundBody extends AMQMethodBodyImpl implements EncodableAMQ
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId, final MarkableDataInput buffer, final MethodProcessor<T> dispatcher)
+            throws IOException
+    {
+
+        AMQShortString exchange = buffer.readAMQShortString();
+        AMQShortString routingKey = buffer.readAMQShortString();
+        AMQShortString queue = buffer.readAMQShortString();
+        return dispatcher.exchangeBound(channelId, exchange, routingKey, queue);
+    }
 }

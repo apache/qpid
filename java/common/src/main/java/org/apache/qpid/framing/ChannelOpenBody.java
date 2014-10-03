@@ -39,20 +39,17 @@ public class ChannelOpenBody extends AMQMethodBodyImpl implements EncodableAMQDa
     public static final int CLASS_ID =  20;
     public static final int METHOD_ID = 10;
 
-    // Fields declared in specification
-    private final AMQShortString _outOfBand; // [outOfBand]
 
     // Constructor
     public ChannelOpenBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _outOfBand = readAMQShortString( buffer );
+        // ignore unused OOB string
+        buffer.readAMQShortString();
     }
 
-    public ChannelOpenBody(
-            AMQShortString outOfBand
-                          )
+    public ChannelOpenBody()
     {
-        _outOfBand = outOfBand;
+
     }
 
     public int getClazz()
@@ -65,21 +62,14 @@ public class ChannelOpenBody extends AMQMethodBodyImpl implements EncodableAMQDa
         return METHOD_ID;
     }
 
-    public final AMQShortString getOutOfBand()
-    {
-        return _outOfBand;
-    }
-
     protected int getBodySize()
     {
-        int size = 0;
-        size += getSizeOf( _outOfBand );
-        return size;
+        return 1;
     }
 
     public void writeMethodPayload(DataOutput buffer) throws IOException
     {
-        writeAMQShortString( buffer, _outOfBand );
+        writeAMQShortString( buffer, null );
     }
 
     public boolean execute(MethodDispatcher dispatcher, int channelId) throws AMQException
@@ -89,11 +79,14 @@ public class ChannelOpenBody extends AMQMethodBodyImpl implements EncodableAMQDa
 
     public String toString()
     {
-        StringBuilder buf = new StringBuilder("[ChannelOpenBodyImpl: ");
-        buf.append( "outOfBand=" );
-        buf.append(  getOutOfBand() );
-        buf.append("]");
-        return buf.toString();
+        return "[ChannelOpenBody] ";
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+        buffer.readAMQShortString();
+        return dispatcher.channelOpen(channelId);
+    }
 }

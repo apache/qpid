@@ -46,16 +46,6 @@ public class ConnectionStartBody extends AMQMethodBodyImpl implements EncodableA
     private final byte[] _mechanisms; // [mechanisms]
     private final byte[] _locales; // [locales]
 
-    // Constructor
-    public ConnectionStartBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
-    {
-        _versionMajor = readUnsignedByte( buffer );
-        _versionMinor = readUnsignedByte( buffer );
-        _serverProperties = readFieldTable( buffer );
-        _mechanisms = readBytes( buffer );
-        _locales = readBytes( buffer );
-    }
-
     public ConnectionStartBody(
             short versionMajor,
             short versionMinor,
@@ -146,4 +136,16 @@ public class ConnectionStartBody extends AMQMethodBodyImpl implements EncodableA
         return buf.toString();
     }
 
+    public static <T> T process(final MarkableDataInput in, final MethodProcessor<T> dispatcher)
+            throws IOException, AMQFrameDecodingException
+    {
+        short versionMajor = (short) in.readUnsignedByte();
+        short versionMinor = (short) in.readUnsignedByte();
+        FieldTable serverProperties = EncodingUtils.readFieldTable(in);
+        byte[] mechanisms = EncodingUtils.readBytes(in);
+        byte[] locales = EncodingUtils.readBytes(in);
+
+
+        return dispatcher.connectionStart(versionMajor, versionMinor, serverProperties, mechanisms, locales);
+    }
 }

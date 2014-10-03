@@ -33,12 +33,11 @@ import java.util.ListIterator;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQDataBlockDecoder;
 import org.apache.qpid.framing.AMQFrameDecodingException;
-import org.apache.qpid.framing.AMQMethodBodyFactory;
 import org.apache.qpid.framing.AMQProtocolVersionException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ByteArrayDataInput;
 import org.apache.qpid.framing.EncodingUtils;
-import org.apache.qpid.framing.MethodRegistrySource;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolInitiation;
 
 /**
@@ -55,6 +54,7 @@ import org.apache.qpid.framing.ProtocolInitiation;
  */
 public class AMQDecoder
 {
+    private final MethodRegistry _registry;
     /** Holds the 'normal' AMQP data decoder. */
     private AMQDataBlockDecoder _dataBlockDecoder = new AMQDataBlockDecoder();
 
@@ -64,7 +64,6 @@ public class AMQDecoder
     /** Flag to indicate whether this decoder needs to handle protocol initiation. */
     private boolean _expectProtocolInitiation;
 
-    private AMQMethodBodyFactory _bodyFactory;
 
     private boolean _firstRead = true;
 
@@ -74,12 +73,12 @@ public class AMQDecoder
      * Creates a new AMQP decoder.
      *
      * @param expectProtocolInitiation <tt>true</tt> if this decoder needs to handle protocol initiation.
-     * @param registrySource method registry source
+     * @param registry method registry
      */
-    public AMQDecoder(boolean expectProtocolInitiation, MethodRegistrySource registrySource)
+    public AMQDecoder(boolean expectProtocolInitiation, MethodRegistry registry)
     {
         _expectProtocolInitiation = expectProtocolInitiation;
-        _bodyFactory = new AMQMethodBodyFactory(registrySource);
+        _registry = registry;
     }
 
 
@@ -259,7 +258,9 @@ public class AMQDecoder
                 enoughData = _dataBlockDecoder.decodable(msg);
                 if (enoughData)
                 {
-                    dataBlocks.add(_dataBlockDecoder.createAndPopulateFrame(_bodyFactory, msg));
+                    dataBlocks.add(_dataBlockDecoder.createAndPopulateFrame(_registry.getProtocolVersion(),
+                                                                            _registry.getMethodProcessor(),
+                                                                            msg));
                 }
             }
             else

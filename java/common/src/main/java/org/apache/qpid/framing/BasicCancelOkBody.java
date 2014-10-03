@@ -45,7 +45,7 @@ public class BasicCancelOkBody extends AMQMethodBodyImpl implements EncodableAMQ
     // Constructor
     public BasicCancelOkBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _consumerTag = readAMQShortString( buffer );
+        _consumerTag = buffer.readAMQShortString();
     }
 
     public BasicCancelOkBody(
@@ -96,4 +96,10 @@ public class BasicCancelOkBody extends AMQMethodBodyImpl implements EncodableAMQ
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId, final MarkableDataInput in, final MethodProcessor<T> dispatcher)
+            throws IOException
+    {
+        AMQShortString consumerTag = in.readAMQShortString();
+        return dispatcher.basicCancelOk(channelId, consumerTag);
+    }
 }

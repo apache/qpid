@@ -47,7 +47,6 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.HeartbeatBody;
 import org.apache.qpid.framing.MethodDispatcher;
 import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.framing.MethodRegistrySource;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQConstant;
@@ -61,7 +60,7 @@ import org.apache.qpid.transport.TransportException;
  * <p>
  * The underlying protocol session is still available but clients should not use it to obtain session attributes.
  */
-public class AMQProtocolSession implements AMQVersionAwareProtocolSession, MethodRegistrySource
+public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 {
     protected static final int LAST_WRITE_FUTURE_JOIN_TIMEOUT = 1000 * 60 * 2;
 
@@ -89,8 +88,8 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession, Metho
 
     private ProtocolVersion _protocolVersion;
 
-    private MethodRegistry _methodRegistry =
-            MethodRegistry.getMethodRegistry(ProtocolVersion.getLatestSupportedVersion());
+    private final MethodRegistry _methodRegistry =
+            new MethodRegistry(ProtocolVersion.getLatestSupportedVersion());
 
     private MethodDispatcher _methodDispatcher;
 
@@ -417,7 +416,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession, Metho
             _logger.debug("Setting ProtocolVersion to :" + pv);
         }
         _protocolVersion = pv;
-        _methodRegistry = MethodRegistry.getMethodRegistry(pv);
+        _methodRegistry.setProtocolVersion(pv);;
         _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(pv, this);
   }
 

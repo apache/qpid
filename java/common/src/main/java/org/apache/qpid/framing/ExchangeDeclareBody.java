@@ -49,11 +49,11 @@ public class ExchangeDeclareBody extends AMQMethodBodyImpl implements EncodableA
     // Constructor
     public ExchangeDeclareBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _ticket = readUnsignedShort( buffer );
-        _exchange = readAMQShortString( buffer );
-        _type = readAMQShortString( buffer );
-        _bitfield0 = readBitfield( buffer );
-        _arguments = readFieldTable( buffer );
+        _ticket = buffer.readUnsignedShort();
+        _exchange = buffer.readAMQShortString();
+        _type = buffer.readAMQShortString();
+        _bitfield0 = buffer.readByte();
+        _arguments = EncodingUtils.readFieldTable(buffer);
     }
 
     public ExchangeDeclareBody(
@@ -204,4 +204,21 @@ public class ExchangeDeclareBody extends AMQMethodBodyImpl implements EncodableA
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException, AMQFrameDecodingException
+    {
+
+        int ticket = buffer.readUnsignedShort();
+        AMQShortString exchange = buffer.readAMQShortString();
+        AMQShortString type = buffer.readAMQShortString();
+        byte bitfield = buffer.readByte();
+        boolean passive = (bitfield & 0x1) == 0x1;
+        boolean durable = (bitfield & 0x2) == 0x2;
+        boolean autoDelete = (bitfield & 0x4) == 0x4;
+        boolean internal = (bitfield & 0x8) == 0x8;
+        boolean nowait = (bitfield & 0x10) == 0x10;
+        FieldTable arguments = EncodingUtils.readFieldTable(buffer);
+        return dispatcher.exchangeDeclare(channelId, exchange, type, passive, durable, autoDelete, internal, nowait, arguments);
+    }
 }

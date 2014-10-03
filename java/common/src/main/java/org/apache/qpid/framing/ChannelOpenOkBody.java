@@ -96,4 +96,16 @@ public class ChannelOpenOkBody extends AMQMethodBodyImpl implements EncodableAMQ
         return "[ChannelOpenOkBody]";
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput in,
+                                final ProtocolVersion protocolVersion,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+        if(!ProtocolVersion.v8_0.equals(protocolVersion))
+        {
+            EncodingUtils.readBytes(in);
+        }
+
+        return dispatcher.channelOpenOk(channelId);
+    }
 }

@@ -93,8 +93,7 @@ public class AckTest extends QpidTestCase
             MessagePublishInfo publishBody = new MessagePublishInfo(new AMQShortString("someExchange"), false, false,
                                                                     new AMQShortString("rk"));
             BasicContentHeaderProperties b = new BasicContentHeaderProperties();
-            ContentHeaderBody cb = new ContentHeaderBody();
-            cb.setProperties(b);
+            ContentHeaderBody cb = new ContentHeaderBody(b);
 
             if (persistent)
             {

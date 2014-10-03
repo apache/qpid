@@ -25,7 +25,6 @@ import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQConstant;
 
 /**
@@ -37,12 +36,6 @@ public class AMQConnectionException extends AMQException
     private final int _methodId;
 
     private final MethodRegistry _methodRegistry;
-
-    public AMQConnectionException(AMQConstant errorCode, String msg, int classId, int methodId, byte major, byte minor,
-        Throwable cause)
-    {
-        this(errorCode, msg, classId, methodId, MethodRegistry.getMethodRegistry(new ProtocolVersion(major,minor)), cause);
-    }
 
     public AMQConnectionException(AMQConstant errorCode, String msg, AMQMethodBody body, MethodRegistry methodRegistry)
     {

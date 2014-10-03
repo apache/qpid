@@ -40,24 +40,17 @@ public class ChannelFlowOkBody extends AMQMethodBodyImpl implements EncodableAMQ
     public static final int METHOD_ID = 21;
 
     // Fields declared in specification
-    private final byte _bitfield0; // [active]
+    private final boolean _active; // [active]
 
     // Constructor
     public ChannelFlowOkBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _bitfield0 = readBitfield( buffer );
+        _active = (buffer.readByte() & 0x01) == 0x01;
     }
 
-    public ChannelFlowOkBody(
-            boolean active
-                            )
+    public ChannelFlowOkBody(boolean active)
     {
-        byte bitfield0 = (byte)0;
-        if( active )
-        {
-            bitfield0 = (byte) (((int) bitfield0) | (1 << 0));
-        }
-        _bitfield0 = bitfield0;
+        _active = active;
     }
 
     public int getClazz()
@@ -72,7 +65,7 @@ public class ChannelFlowOkBody extends AMQMethodBodyImpl implements EncodableAMQ
 
     public final boolean getActive()
     {
-        return (((int)(_bitfield0)) & ( 1 << 0)) != 0;
+        return _active;
     }
 
     protected int getBodySize()
@@ -83,7 +76,7 @@ public class ChannelFlowOkBody extends AMQMethodBodyImpl implements EncodableAMQ
 
     public void writeMethodPayload(DataOutput buffer) throws IOException
     {
-        writeBitfield( buffer, _bitfield0 );
+        writeBitfield( buffer, _active ? (byte)1 : (byte)0 );
     }
 
     public boolean execute(MethodDispatcher dispatcher, int channelId) throws AMQException
@@ -100,4 +93,10 @@ public class ChannelFlowOkBody extends AMQMethodBodyImpl implements EncodableAMQ
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId, final MarkableDataInput buffer, final MethodProcessor<T> dispatcher)
+            throws IOException
+    {
+        boolean active = (buffer.readByte() & 0x01) == 0x01;
+        return dispatcher.channelFlowOk(channelId, active);
+    }
 }

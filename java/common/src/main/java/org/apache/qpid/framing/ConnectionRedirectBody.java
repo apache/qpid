@@ -47,8 +47,8 @@ public class ConnectionRedirectBody extends AMQMethodBodyImpl implements Encodab
     public ConnectionRedirectBody(MarkableDataInput buffer, ProtocolVersion protocolVersion) throws AMQFrameDecodingException, IOException
     {
         _ownMethodId = ProtocolVersion.v8_0.equals(protocolVersion) ? 50 : 42;
-        _host = readAMQShortString( buffer );
-        _knownHosts = readAMQShortString( buffer );
+        _host = buffer.readAMQShortString();
+        _knownHosts = buffer.readAMQShortString();
     }
 
     public ConnectionRedirectBody(ProtocolVersion protocolVersion, AMQShortString host, AMQShortString knownHosts)
@@ -108,4 +108,10 @@ public class ConnectionRedirectBody extends AMQMethodBodyImpl implements Encodab
         return buf.toString();
     }
 
+    public static <T> T process(final MarkableDataInput buffer, final MethodProcessor<T> dispatcher) throws IOException
+    {
+        AMQShortString host = buffer.readAMQShortString();
+        AMQShortString knownHosts = buffer.readAMQShortString();
+        return dispatcher.connectionRedirect(host, knownHosts);
+    }
 }

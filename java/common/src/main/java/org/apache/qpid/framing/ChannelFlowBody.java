@@ -40,24 +40,17 @@ public class ChannelFlowBody extends AMQMethodBodyImpl implements EncodableAMQDa
     public static final int METHOD_ID = 20;
 
     // Fields declared in specification
-    private final byte _bitfield0; // [active]
+    private final boolean _active; // [active]
 
     // Constructor
     public ChannelFlowBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _bitfield0 = readBitfield( buffer );
+        _active = (buffer.readByte() & 0x01) == 0x01;
     }
 
-    public ChannelFlowBody(
-            boolean active
-                          )
+    public ChannelFlowBody(boolean active)
     {
-        byte bitfield0 = (byte)0;
-        if( active )
-        {
-            bitfield0 = (byte) (((int) bitfield0) | (1 << 0));
-        }
-        _bitfield0 = bitfield0;
+        _active = active;
     }
 
     public int getClazz()
@@ -72,18 +65,17 @@ public class ChannelFlowBody extends AMQMethodBodyImpl implements EncodableAMQDa
 
     public final boolean getActive()
     {
-        return (((int)(_bitfield0)) & ( 1 << 0)) != 0;
+        return _active;
     }
 
     protected int getBodySize()
     {
-        int size = 1;
-        return size;
+        return 1;
     }
 
     public void writeMethodPayload(DataOutput buffer) throws IOException
     {
-        writeBitfield( buffer, _bitfield0 );
+        writeBitfield( buffer, _active ? (byte)1 : (byte)0);
     }
 
     public boolean execute(MethodDispatcher dispatcher, int channelId) throws AMQException
@@ -100,4 +92,11 @@ public class ChannelFlowBody extends AMQMethodBodyImpl implements EncodableAMQDa
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+        boolean active = (buffer.readByte() & 0x01) == 0x01;
+        return dispatcher.channelFlow(channelId, active);
+    }
 }

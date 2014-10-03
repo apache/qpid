@@ -172,7 +172,7 @@ public class MessageConverter_1_0_to_v0_8 implements MessageConverter<Message_1_
 
         props.setHeaders(FieldTable.convertToFieldTable(headerProps));
 
-        final ContentHeaderBody chb = new ContentHeaderBody(props, BASIC_CLASS_ID);
+        final ContentHeaderBody chb = new ContentHeaderBody(props);
         chb.setBodySize(size);
 
         return new MessageMetaData(publishInfo, chb, serverMsg.getArrivalTime());

@@ -48,10 +48,10 @@ public class BasicPublishBody extends AMQMethodBodyImpl implements EncodableAMQD
     // Constructor
     public BasicPublishBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _ticket = readUnsignedShort( buffer );
-        _exchange = readAMQShortString( buffer );
-        _routingKey = readAMQShortString( buffer );
-        _bitfield0 = readBitfield( buffer );
+        _ticket = buffer.readUnsignedShort();
+        _exchange = buffer.readAMQShortString();
+        _routingKey = buffer.readAMQShortString();
+        _bitfield0 = buffer.readByte();
     }
 
     public BasicPublishBody(
@@ -151,4 +151,18 @@ public class BasicPublishBody extends AMQMethodBodyImpl implements EncodableAMQD
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+
+        int ticket = buffer.readUnsignedShort();
+        AMQShortString exchange = buffer.readAMQShortString();
+        AMQShortString routingKey = buffer.readAMQShortString();
+        byte bitfield = buffer.readByte();
+
+        boolean mandatory = (bitfield & 0x01) != 0;
+        boolean immediate = (bitfield & 0x02) != 0;
+        return dispatcher.basicPublish(channelId, exchange, routingKey, mandatory, immediate);
+    }
 }

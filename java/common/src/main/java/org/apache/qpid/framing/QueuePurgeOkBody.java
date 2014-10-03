@@ -45,7 +45,7 @@ public class QueuePurgeOkBody extends AMQMethodBodyImpl implements EncodableAMQD
     // Constructor
     public QueuePurgeOkBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _messageCount = readUnsignedInteger( buffer );
+        _messageCount = EncodingUtils.readUnsignedInteger(buffer);
     }
 
     public QueuePurgeOkBody(
@@ -95,4 +95,11 @@ public class QueuePurgeOkBody extends AMQMethodBodyImpl implements EncodableAMQD
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+        long messageCount = EncodingUtils.readUnsignedInteger(buffer);
+        return dispatcher.queuePurgeOk(channelId, messageCount);
+    }
 }

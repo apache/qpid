@@ -31,7 +31,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.codec.MarkableDataInput;
 
 public class BasicRecoverSyncOkBody extends AMQMethodBodyImpl implements EncodableAMQDataBlock, AMQMethodBody
 {

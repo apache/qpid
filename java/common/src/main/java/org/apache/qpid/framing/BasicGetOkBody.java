@@ -49,11 +49,11 @@ public class BasicGetOkBody extends AMQMethodBodyImpl implements EncodableAMQDat
     // Constructor
     public BasicGetOkBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _deliveryTag = readLong( buffer );
-        _bitfield0 = readBitfield( buffer );
-        _exchange = readAMQShortString( buffer );
-        _routingKey = readAMQShortString( buffer );
-        _messageCount = readUnsignedInteger( buffer );
+        _deliveryTag = buffer.readLong();
+        _bitfield0 = buffer.readByte();
+        _exchange = buffer.readAMQShortString();
+        _routingKey = buffer.readAMQShortString();
+        _messageCount = EncodingUtils.readUnsignedInteger(buffer);
     }
 
     public BasicGetOkBody(
@@ -151,4 +151,15 @@ public class BasicGetOkBody extends AMQMethodBodyImpl implements EncodableAMQDat
         return buf.toString();
     }
 
+    public static <T> T process(final int channelId,
+                                final MarkableDataInput buffer,
+                                final MethodProcessor<T> dispatcher) throws IOException
+    {
+        long deliveryTag = buffer.readLong();
+        boolean redelivered = (buffer.readByte() & 0x01) != 0;
+        AMQShortString exchange = buffer.readAMQShortString();
+        AMQShortString routingKey = buffer.readAMQShortString();
+        long messageCount = EncodingUtils.readUnsignedInteger(buffer);
+        return dispatcher.basicGetOk(channelId, deliveryTag, redelivered, exchange, routingKey, messageCount);
+    }
 }
