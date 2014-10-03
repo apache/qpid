@@ -34,6 +34,7 @@ define(["dojo/_base/xhr",
         "qpid/management/moveCopyMessages",
         "qpid/management/showMessage",
         "qpid/management/UserPreferences",
+        "qpid/management/editQueue",
         "dojo/store/JsonRest",
         "dojox/grid/EnhancedGrid",
         "dojo/data/ObjectStore",
@@ -42,7 +43,7 @@ define(["dojo/_base/xhr",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
        function (xhr, parser, query, registry, connect, event, json, properties, updater, util, formatter,
-                 UpdatableStore, addBinding, moveMessages, showMessage, UserPreferences, JsonRest, EnhancedGrid, ObjectStore, entities) {
+                 UpdatableStore, addBinding, moveMessages, showMessage, UserPreferences, editQueue, JsonRest, EnhancedGrid, ObjectStore, entities) {
 
            function Queue(name, parent, controller) {
                this.name = name;
@@ -171,6 +172,12 @@ define(["dojo/_base/xhr",
                                     function(evt){
                                         event.stop(evt);
                                         that.deleteQueue();
+                                    });
+                            var editQueueButton = query(".editQueueButton", contentPane.containerNode)[0];
+                            connect.connect(registry.byNode(editQueueButton), "onClick",
+                                    function(evt){
+                                        event.stop(evt);
+                                        editQueue.show({nodeName:that.modelObj.parent.parent.name, hostName:that.modelObj.parent.name,queueName:that.name});
                                     });
                             UserPreferences.addListener(that);
                         }});

@@ -28,6 +28,7 @@ define(["dojo/_base/xhr",
         "dojo/_base/event",
         'dojo/_base/json',
         'qpid/common/util',
+        "qpid/common/ContextVariablesEditor",
         "dijit/form/NumberSpinner", // required by the form
         /* dojox/ validate resources */
         "dojox/validate/us", "dojox/validate/web",
@@ -200,6 +201,14 @@ define(["dojo/_base/xhr",
                             registry.byId("addQueue").show();
                             util.applyMetadataToWidgets(form.domNode, "Queue", "standard");
 
+                            if (!this.context)
+                            {
+                             this.context = new qpid.common.ContextVariablesEditor({name: 'context', title: 'Context variables'});
+                             this.context.placeAt(dom.byId("formAddQueue.context"));
+                            }
+
+                            var escapedUrl = "api/latest/virtualhost/" + encodeURIComponent(addQueue.vhostnode) + "/" + encodeURIComponent(addQueue.vhost);
+                            this.context.loadInheritedData(escapedUrl);
         };
 
         return addQueue;

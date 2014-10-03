@@ -73,8 +73,8 @@
                               value: '',
                               searchAttr: 'name',
                               required: false,
-                              promptMessage: 'Message durability override. If not default, messages arriving will have durability setting overridden',
-                              title: 'Enter message durability override'">
+                              promptMessage: 'Message persistence override. If not default, messages arriving will have persistence setting overridden',
+                              title: 'Enter message persistence override'">
                         <option value="ALWAYS">Always</option>
                         <option value="DEFAULT">Default</option>
                         <option value="NEVER">Never</option>
@@ -108,9 +108,7 @@
                 </div>
             </div>
 
-            <br/>
             <div class="clear"></div>
-
 
             <div id="formAddQueueTypePriority:fields" class="hidden"
                  data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Priority Queue Settings'">
@@ -166,8 +164,9 @@
                 <div class="clear"></div>
             </div>
 
-            <br/>
-            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Flow Control Settings', open: false">
+            <div class="clear formBox">
+                <fieldset>
+                <legend>Flow Control Settings</legend>
                 <div class="clear">
                     <div class="formLabel-labelCell">Capacity:</div>
                     <div class="formLabel-controlCell">
@@ -194,11 +193,13 @@
                                   trim: true"/>
                     </div>
                 </div>
+                </fieldset>
                 <div class="clear"></div>
             </div>
 
-            <br/>
-            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Alerting Settings', open: false">
+            <div class="clear formBox">
+                <fieldset>
+                <legend>Alerting Settings</legend>
                 <div class="clear">
                     <div class="formLabel-labelCell">Queue Depth:</div>
                     <div class="formLabel-controlCell">
@@ -264,11 +265,13 @@
                                   trim: true"/>
                     </div>
                 </div>
+                </fieldset>
                 <div class="clear"></div>
             </div>
 
-            <br/>
-            <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Other Settings', open: false">
+            <div class="clear formBox">
+                <fieldset>
+                <legend>Other Settings</legend>
                 <div class="clear">
                     <div class="formLabel-labelCell">Maximum Delivery Retries:</div>
                     <div class="formLabel-controlCell">
@@ -323,8 +326,13 @@
                               title: 'Controls where a shared groups feature is enabled'"/>
                     </div>
                 </div>
+                </fieldset>
                 <div class="clear"></div>
             </div>
+
+          <div class="clear" data-dojo-type="dijit/TitlePane" data-dojo-props="title: 'Context variables',  open: false">
+              <div id="formAddQueue.context" ></div>
+          </div>
 
           <div class="dijitDialogPaneActionBar">
             <!-- submit buttons -->

@@ -134,35 +134,10 @@ define(["dojo/_base/xhr",
                 this.virtualHostContext.placeAt(dom.byId("addVirtualHost.context"));
 
         }
-        var inheritedActualValues = null;
-        xhr.get(
-            {
-              url: "api/latest/broker",
-              sync: true,
-              content: { actuals: true, inheritedActuals: true},
-              handleAs: "json",
-              load: function(data)
-              {
-                inheritedActualValues = data[0].context;
-              }
-            }
-        );
 
-        var effectiveValues = null;
-        xhr.get(
-            {
-              url: "api/latest/broker",
-              sync: true,
-              handleAs: "json",
-              load: function(data)
-              {
-                effectiveValues = data[0].context;
-              }
-            }
-        );
+        this.virtualHostNodeContext.loadInheritedData("api/latest/broker");
+        this.virtualHostContext.loadInheritedData("api/latest/broker");
 
-        this.virtualHostNodeContext.setData({},effectiveValues,inheritedActualValues);
-        this.virtualHostContext.setData({},effectiveValues,inheritedActualValues);
         this.dialog.show();
         if (!this.resizeEventRegistered)
         {
