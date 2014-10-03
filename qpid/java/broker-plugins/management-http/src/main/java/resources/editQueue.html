@@ -1,0 +1,247 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+<div class="dijitHidden">
+    <div data-dojo-type="dijit.Dialog" data-dojo-props="title:'Edit Queue'" id="editQueue">
+        <form id="formEditQueue" method="post" dojoType="dijit.form.Form">
+        <div id="formEditQueue.allFields">
+            <div id="formEditQueue.contentPane">
+                <div class="editNoteBanner">NOTE: All changes will only take effect after Virtual Host restart.</div>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Queue Name:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formEditQueue.name"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                      name: 'name',
+                                      placeHolder: 'queue name',
+                                      required: true,
+                                      promptMessage: 'Name of queue',
+                                      disabled: 'true'"/>
+                    </div>
+                </div>
+
+                <div class="clear">
+                    <div class="formLabel-labelCell">Queue Type:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formEditQueue.type"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                      name: 'type',
+                                      placeHolder: 'queue type',
+                                      required: true,
+                                      promptMessage: 'Type of queue',
+                                      disabled: 'true'"/>
+                    </div>
+                </div>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Durable?</div>
+                    <div class="formLabel-controlCell">
+                        <input type="checkbox" id="formEditQueue.durable"
+                               dojoType="dijit.form.CheckBox"
+                               data-dojo-props="
+                                  name: 'durable',
+                                  value: 'durable',
+                                  disabled: 'true'"/>
+                    </div>
+                </div>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Persist Messages?</div>
+                    <div class="formLabel-controlCell">
+                        <select id="formEditQueue.messageDurability"
+                                dojoType="dijit.form.FilteringSelect"
+                                data-dojo-props="
+                                  name: 'messageDurability',
+                                  value: '',
+                                  searchAttr: 'name',
+                                  required: false,
+                                  promptMessage: 'Message persistence override. If not default, messages arriving will have persistence setting overridden',
+                                  title: 'Enter message persistence override'">
+                            <option value="ALWAYS">Always</option>
+                            <option value="DEFAULT">Default</option>
+                            <option value="NEVER">Never</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Maximum Ttl:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formEditQueue.maximumMessageTtl"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                      name: 'maximumMessageTtl',
+                                      placeHolder: 'ttl in ms',
+                                      promptMessage: 'Maximum message time to live (ttl) in ms. Messages arriving with larger ttl values will be overridden by this value',
+                                      title: 'Enter the maximum message time to live in milliseconds',
+                                      trim: true"/>
+                    </div>
+                </div>
+                <div class="clear">
+                    <div class="formLabel-labelCell">Minimum Ttl:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formEditQueue.minimumMessageTtl"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                      name: 'minimumMessageTtl',
+                                      placeHolder: 'ttl in ms',
+                                      promptMessage: 'Minimum message time to live (ttl) in ms. Messages arriving with smaller ttl values will be overridden by this value',
+                                      title: 'Enter the minimum message time to live in milliseconds',
+                                      trim: true"/>
+                    </div>
+                </div>
+
+                <div class="clear"></div>
+
+                <div class="clear formBox">
+                    <fieldset>
+                    <legend>Flow Control Settings</legend>
+                    <div class="clear">
+                        <div class="formLabel-labelCell">Capacity:</div>
+                        <div class="formLabel-controlCell">
+                            <input type="text" id="formEditQueue.queueFlowControlSizeBytes"
+                                   data-dojo-type="dijit/form/ValidationTextBox"
+                                   data-dojo-props="
+                                      name: 'queueFlowControlSizeBytes',
+                                      placeHolder: 'size in bytes',
+                                      promptMessage: 'Ceiling (in bytes) at which queue will begin to throttle sessions producing messages',
+                                      title: 'Enter the ceiling (in bytes) at which queue will begin to throttle sessions producing messages',
+                                      trim: true"/>
+                        </div>
+                    </div>
+                    <div class="clear">
+                        <div class="formLabel-labelCell">Resume Capacity:</div>
+                        <div class="formLabel-controlCell">
+                            <input type="text" id="formEditQueue.queueFlowResumeSizeBytes"
+                                   data-dojo-type="dijit/form/ValidationTextBox"
+                                   data-dojo-props="
+                                      name: 'queueFlowResumeSizeBytes',
+                                      placeHolder: 'size in bytes',
+                                      promptMessage: 'Floor (in bytes) at which queue will cease to throttle sessions producing messages',
+                                      title: 'Enter the floor (in bytes) at which queue will cease to throttle sessions producing messages',
+                                      trim: true"/>
+                        </div>
+                    </div>
+                    </fieldset>
+                    <div class="clear"></div>
+                </div>
+
+                <div class="clear formBox">
+                    <fieldset>
+                        <legend>Alerting Settings</legend>
+                        <div class="clear">
+                        <div class="formLabel-labelCell">Queue Depth:</div>
+                        <div class="formLabel-controlCell">
+                            <input type="text" id="formEditQueue.alertThresholdQueueDepthMessages"
+                                   data-dojo-type="dijit/form/ValidationTextBox"
+                                   data-dojo-props="
+                                      name: 'alertThresholdQueueDepthMessages',
+                                      placeHolder: 'number of messages',
+                                      promptMessage: 'Ceiling value for number of messages on queue before alerts will be generated',
+                                      title: 'Enter the ceiling value for number of messages on queue before alerts will be generated',
+                                      trim: true"/>
+                        </div>
+                    </div>
+                    <div class="clear">
+                        <div class="formLabel-labelCell">Queue Depth:</div>
+                        <div class="formLabel-controlCell">
+                            <input type="text" id="formEditQueue.alertThresholdQueueDepthBytes"
+                                   data-dojo-type="dijit/form/ValidationTextBox"
+                                   data-dojo-props="
+                                      name: 'alertThresholdQueueDepthBytes',
+                                      placeHolder: 'total message size in bytes',
+                                      promptMessage: 'Ceiling value (in bytes) for total size of all messages on the queue before alerts will be generated',
+                                      title: 'Enter the ceiling value (in bytes) for total size of all messages on the queue before alerts will be generated',
+                                      trim: true"/>
+                        </div>
+                    </div>
+                    <div class="clear">
+                        <div class="formLabel-labelCell">Message Age:</div>
+                        <div class="formLabel-controlCell">
+                            <input type="text" id="formEditQueue.alertThresholdMessageAge"
+                                   data-dojo-type="dijit/form/ValidationTextBox"
+                                   data-dojo-props="
+                                      name: 'alertThresholdMessageAge',
+                                      placeHolder: 'time in ms',
+                                      promptMessage: 'Message age (in milliseconds) above which alerts will be generated',
+                                      title: 'Enter the message age (in milliseconds) above which alerts will be generated',
+                                      trim: true"/>
+                        </div>
+                    </div>
+                    <div class="clear">
+                        <div class="formLabel-labelCell">Message Size:</div>
+                        <div class="formLabel-controlCell">
+                            <input type="text" id="formEditQueue.alertThresholdMessageSize"
+                                   data-dojo-type="dijit/form/ValidationTextBox"
+                                   data-dojo-props="
+                                      name: 'alertThresholdMessageSize',
+                                      placeHolder: 'message size in bytes',
+                                      promptMessage: 'Message size (in bytes) above which alerts will be generated',
+                                      title: 'Enter the message size (in bytes) above which alerts will be generated',
+                                      trim: true"/>
+                        </div>
+                    </div>
+                    <div class="clear">
+                        <div class="formLabel-labelCell">Gap between alerts:</div>
+                        <div class="formLabel-controlCell">
+                            <input type="text" id="formEditQueue.alertRepeatGap"
+                                   data-dojo-type="dijit/form/ValidationTextBox"
+                                   data-dojo-props="
+                                      name: 'alertRepeatGap',
+                                      placeHolder: 'time in ms',
+                                      promptMessage: 'Minimum time (in milliseconds) between each alert',
+                                      title: 'Enter the minimum time (in milliseconds) between each alert.',
+                                      trim: true"/>
+                        </div>
+                    </div>
+                    </fieldset>
+                    <div class="clear"></div>
+                </div>
+
+                <div class="clear formBox">
+                    <fieldset>
+                    <legend>Other Settings</legend>
+                    <div class="clear">
+                        <div class="formLabel-labelCell">Maximum Delivery Retries:</div>
+                        <div class="formLabel-controlCell">
+                            <input type="text" id="formEditQueue.maximumDeliveryAttempts"
+                                   data-dojo-type="dijit/form/ValidationTextBox"
+                                   data-dojo-props="
+                                      name: 'maximumDeliveryAttempts',
+                                      placeHolder: 'number of retries',
+                                      promptMessage: 'Maximum number of delivery attempts before the message will be sent to the alternate exchange',
+                                      title: 'Enter the maximum number of delivery attempts before the message will be sent to the alternate exchange',
+                                      trim: true"/>
+                        </div>
+                    </div>
+                    </fieldset>
+                    <div class="clear"></div>
+                </div>
+
+                <div data-dojo-type="dijit/TitlePane" data-dojo-props="title: 'Context variables',  open: false">
+                    <div id="formEditQueue.context" ></div>
+                </div>
+            </div>
+            <div class="dijitDialogPaneActionBar">
+                <button data-dojo-type="dijit/form/Button" id="formEditQueue.saveButton" data-dojo-props="label: 'Save'">Save</button>
+                <button data-dojo-type="dijit/form/Button" id="formEditQueue.cancelButton" data-dojo-props="label: 'Cancel'" ></button>
+            </div>
+        </div>
+
+        </form>
+    </div>
+</div>

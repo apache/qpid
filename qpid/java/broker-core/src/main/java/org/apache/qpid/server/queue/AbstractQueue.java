@@ -2961,7 +2961,10 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         {
             throw new IllegalConfigurationException("Flow resume size can't be greater than flow control size");
         }
-
+        else if (changedAttributes.contains(DURABLE) && proxyForValidation.isDurable() != isDurable())
+        {
+            throw new IllegalConfigurationException("Message durability cannot be modified after queue creation");
+        }
 
         for (String attrName : NON_NEGATIVE_NUMBERS)
         {

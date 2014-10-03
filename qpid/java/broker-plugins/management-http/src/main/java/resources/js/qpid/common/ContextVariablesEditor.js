@@ -77,8 +77,8 @@ function (util, xhr, declare, array, connect, lang, domConstruct, parser, query,
         var addButton = registry.byNode(addButtonNode);
         var deleteButton = registry.byNode(deleteButtonNode);
         var layout = [[
-                      { name: "Name", field: "name", width: "40%", editable: true, selectOnClick: false, type: dojox.grid.cells._Widget, widgetClass: dijit.form.TextBox },
-                      { name: 'Actual Value', field: 'actualValue', width: '30%', editable: true, selectOnClick: false, type: dojox.grid.cells._Widget, widgetClass: dijit.form.TextBox},
+                      { name: "Name", field: "name", width: "40%", editable: true},
+                      { name: 'Actual Value', field: 'actualValue', width: '30%', editable: true},
                       { name: 'Effective Value', field: 'effectiveValue', width: '30%', editable: false}
                     ]];
         var data = [];
@@ -176,6 +176,38 @@ function (util, xhr, declare, array, connect, lang, domConstruct, parser, query,
             );
         }
         this.setData(actualValues, allEffectiveValues, inheritedActualValues);
+    },
+    loadInheritedData: function(restUrl)
+    {
+        var allEffectiveValues = null;
+        xhr.get(
+            {
+              url: restUrl,
+              sync: true,
+              content: { actuals: false },
+              handleAs: "json",
+              load: function(data)
+              {
+                allEffectiveValues = data[0].context;
+              }
+            }
+        );
+
+        var inheritedActualValues = null;
+        xhr.get(
+            {
+              url: restUrl,
+              sync: true,
+              content: { actuals: true, inheritedActuals: true},
+              handleAs: "json",
+              load: function(data)
+              {
+                inheritedActualValues = data[0].context;
+              }
+            }
+        );
+
+        this.setData({}, allEffectiveValues, inheritedActualValues);
     },
     setData: function(actualValues, allEffectiveValues, inheritedActualValues)
     {
