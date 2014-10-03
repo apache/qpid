@@ -388,4 +388,60 @@ public class AbstractConfiguredObjectTest extends TestCase
         assertFalse("Unexpected opened", object.isOpened());
         assertEquals("Unexpected state", State.DELETED, object.getState());
     }
+
+    public void testUnresolvedChildInERROREDStateIsNotValidatedOrOpenedOrAttainedDesiredStateOnParentOpen() throws Exception
+    {
+        TestConfiguredObject parent = new TestConfiguredObject("parent");
+        TestConfiguredObject child1 = new TestConfiguredObject("child1", parent, parent.getTaskExecutor());
+        child1.registerWithParents();
+        TestConfiguredObject child2 = new TestConfiguredObject("child2", parent, parent.getTaskExecutor());
+        child2.registerWithParents();
+
+        child1.setThrowExceptionOnPostResolve(true);
+
+        parent.open();
+
+        assertTrue("Parent should be resolved", parent.isResolved());
+        assertTrue("Parent should be validated", parent.isValidated());
+        assertTrue("Parent should be opened", parent.isOpened());
+        assertEquals("Unexpected parent state", State.ACTIVE, parent.getState());
+
+        assertTrue("Child2 should be resolved", child2.isResolved());
+        assertTrue("Child2 should be validated", child2.isValidated());
+        assertTrue("Child2 should be opened", child2.isOpened());
+        assertEquals("Unexpected child2 state", State.ACTIVE, child2.getState());
+
+        assertFalse("Child2 should not be resolved", child1.isResolved());
+        assertFalse("Child1 should not be validated", child1.isValidated());
+        assertFalse("Child1 should not be opened", child1.isOpened());
+        assertEquals("Unexpected child1 state", State.ERRORED, child1.getState());
+    }
+
+    public void testUnvalidatedChildInERROREDStateIsNotOpenedOrAttainedDesiredStateOnParentOpen() throws Exception
+    {
+        TestConfiguredObject parent = new TestConfiguredObject("parent");
+        TestConfiguredObject child1 = new TestConfiguredObject("child1", parent, parent.getTaskExecutor());
+        child1.registerWithParents();
+        TestConfiguredObject child2 = new TestConfiguredObject("child2", parent, parent.getTaskExecutor());
+        child2.registerWithParents();
+
+        child1.setThrowExceptionOnValidate(true);
+
+        parent.open();
+
+        assertTrue("Parent should be resolved", parent.isResolved());
+        assertTrue("Parent should be validated", parent.isValidated());
+        assertTrue("Parent should be opened", parent.isOpened());
+        assertEquals("Unexpected parent state", State.ACTIVE, parent.getState());
+
+        assertTrue("Child2 should be resolved", child2.isResolved());
+        assertTrue("Child2 should be validated", child2.isValidated());
+        assertTrue("Child2 should be opened", child2.isOpened());
+        assertEquals("Unexpected child2 state", State.ACTIVE, child2.getState());
+
+        assertTrue("Child1 should be resolved", child1.isResolved());
+        assertFalse("Child1 should not be validated", child1.isValidated());
+        assertFalse("Child1 should not be opened", child1.isOpened());
+        assertEquals("Unexpected child1 state", State.ERRORED, child1.getState());
+    }
 }
