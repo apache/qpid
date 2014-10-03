@@ -21,7 +21,7 @@ from sasl import Sasl
 
 class ANONYMOUS(Sasl):
 
-  def prerequistesOk(self):
+  def prerequisitesOk(self):
     return True
 
 
