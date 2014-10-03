@@ -87,6 +87,9 @@ public class BDBHAVirtualHostNodeOperationalLoggingTest extends QpidTestCase
 
         _helper.assertNodeRole(node1, NodeRole.MASTER);
 
+        // stop node to avoid running into race when role change is reported after we performed the check
+        node1.stop();
+
         assertEquals("Unexpected VHN log subject", "[grp(/group)/vhn(/node1)] ", node1.getVirtualHostNodeLogSubject().getLogString());
         assertEquals("Unexpected group log subject", "[grp(/group)] ", node1.getGroupLogSubject().getLogString());
 
