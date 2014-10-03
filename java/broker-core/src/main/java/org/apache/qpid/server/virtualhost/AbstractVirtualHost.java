@@ -678,6 +678,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     protected void onClose()
     {
+        setState(State.UNAVAILABLE);
         //Stop Connections
         _connectionRegistry.close();
         _dtxRegistry.close();
