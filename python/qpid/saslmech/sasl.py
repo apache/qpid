@@ -27,7 +27,7 @@ class Sasl:
     self.name = name
     self.sasl_options = sasl_options
 
-  def prerequistesOk(self):
+  def prerequisitesOk(self):
     return self.user is not None and self.password is not None
 
   def initialResponse(self):

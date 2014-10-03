@@ -37,7 +37,7 @@ def get_sasl_mechanism(mechanismNames, username, password, namespace="qpid.saslm
       clazz = _get_class(canonicalName)
       log.debug("Found SASL implementation")
       instance = clazz(username, password, mechanismName, sasl_options)
-      if (instance.prerequistesOk()):
+      if (instance.prerequisitesOk()):
         instances.append(instance)
       else:
         log.debug("SASL mechanism %s unavailable as the prerequistes for this mechanism have not been met", mechanismName)

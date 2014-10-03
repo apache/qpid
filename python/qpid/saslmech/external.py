@@ -23,5 +23,5 @@ from sasl import Sasl
 class EXTERNAL(Sasl):
   """Sasl mechanism used when SSL with client-auth is in use"""
 
-  def prerequistesOk(self):
+  def prerequisitesOk(self):
     return True
