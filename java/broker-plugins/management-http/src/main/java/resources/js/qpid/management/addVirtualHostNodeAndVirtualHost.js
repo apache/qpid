@@ -136,7 +136,7 @@ define(["dojo/_base/xhr",
         }
 
         this.virtualHostNodeContext.loadInheritedData("api/latest/broker");
-        this.virtualHostContext.loadInheritedData("api/latest/broker");
+        this.virtualHostContext.setData({}, this.virtualHostNodeContext.effectiveValues,this.virtualHostNodeContext.inheritedActualValues);
 
         this.dialog.show();
         if (!this.resizeEventRegistered)
