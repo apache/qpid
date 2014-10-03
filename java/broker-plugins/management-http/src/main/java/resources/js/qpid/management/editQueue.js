@@ -30,8 +30,6 @@ define(["dojo/_base/xhr",
         "dojo/parser",
         'dojo/json',
         "dojo/query",
-        "dojo/store/Memory",
-        "dojo/data/ObjectStore",
         "qpid/common/util",
         "dojo/text!editQueue.html",
         "qpid/common/ContextVariablesEditor",
@@ -44,7 +42,7 @@ define(["dojo/_base/xhr",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"],
-  function (xhr, entities, array, event, lang, win, dom, domConstruct, registry, parser, json, query, Memory, ObjectStore, util, template)
+  function (xhr, entities, array, event, lang, win, dom, domConstruct, registry, parser, json, query, util, template)
   {
     var fields = ["name",
                   "type",
