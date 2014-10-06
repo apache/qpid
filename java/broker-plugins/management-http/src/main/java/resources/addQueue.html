@@ -39,19 +39,75 @@
             <div class="clear">
                 <div class="formLabel-labelCell">Queue Type:</div>
                 <div class="formLabel-controlCell">
-                    <input type="radio" id="formAddQueueTypeStandard" name="type" value="standard" checked="checked" dojoType="dijit.form.RadioButton" />
-                    <label for="formAddQueueTypeStandard">Standard</label>
-                    &nbsp;
-                    <input type="radio" id="formAddQueueTypePriority" name="type" value="priority" dojoType="dijit.form.RadioButton" />
-                    <label for="formAddQueueTypePriority">Priority</label>
-                    &nbsp;
-                    <input type="radio" id="formAddQueueTypeLVQ" name="type" value="lvq" dojoType="dijit.form.RadioButton" />
-                    <label for="formAddQueueTypeLVQ">LVQ</label>
-                    &nbsp;
-                    <input type="radio" id="formAddQueueTypeSorted" name="type" value="sorted" dojoType="dijit.form.RadioButton" />
-                    <label for="formAddQueueTypeSorted">Sorted</label>
+                    <select id="formAddQueue.type"
+                            dojoType="dijit.form.FilteringSelect"
+                            data-dojo-props="
+                              name: 'type',
+                              value: 'standard',
+                              searchAttr: 'name',
+                              required: true,
+                              promptMessage: 'Type of Queue',
+                              title: 'Enter the queue type'">
+                        <option value="standard">Standard</option>
+                        <option value="priority">Priority</option>
+                        <option value="lvq">LVQ</option>
+                        <option value="sorted">Sorted</option>
+                    </select>
                 </div>
             </div>
+            <div class="clear"></div>
+
+            <div id="formAddQueueType:priority" class="hidden typeSpecificDiv">
+                <div class="clear">
+                    <div class="formLabel-labelCell">Priorities:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.priorities"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'priorities',
+                                  placeHolder: 'number of priorities',
+                                  promptMessage: 'Number of priorities supported by the queue',
+                                  title: 'Enter the number of priorities supported by the queue',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear"></div>
+            </div>
+
+            <div id="formAddQueueType:lvq" class="hidden typeSpecificDiv">
+                <div class="clear">
+                    <div class="formLabel-labelCell">LVQ Message Property:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.lvqKey"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'lvqKey',
+                                  placeHolder: 'lvq key',
+                                  promptMessage: 'Name of the message property used to perform the conflation',
+                                  title: 'Enter the name of the message property used to perform the conflation',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear"></div>
+            </div>
+
+            <div id="formAddQueueType:sorted" class="hidden typeSpecificDiv">
+                <div class="clear">
+                    <div class="formLabel-labelCell">Sort Message Property*:</div>
+                    <div class="formLabel-controlCell">
+                        <input type="text" id="formAddQueue.sortKey"
+                               data-dojo-type="dijit/form/ValidationTextBox"
+                               data-dojo-props="
+                                  name: 'sortKey',
+                                  placeHolder: 'sort key',
+                                  promptMessage: 'Name of the message property used for sorting the messages on the queue',
+                                  title: 'Enter the name of the message property used for sorting the messages on the queue',
+                                  trim: true"/>
+                    </div>
+                </div>
+                <div class="clear"></div>
+            </div>
+
             <div class="clear">
                 <div class="formLabel-labelCell">Durable?</div>
                 <div class="formLabel-controlCell">
@@ -106,62 +162,6 @@
                                   title: 'Enter the minimum message time to live in milliseconds',
                                   trim: true"/>
                 </div>
-            </div>
-
-            <div class="clear"></div>
-
-            <div id="formAddQueueTypePriority:fields" class="hidden"
-                 data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Priority Queue Settings'">
-                <div class="clear">
-                    <div class="formLabel-labelCell">Priorities:</div>
-                    <div class="formLabel-controlCell">
-                        <input type="text" id="formAddQueue.priorities"
-                               data-dojo-type="dijit/form/ValidationTextBox"
-                               data-dojo-props="
-                                  name: 'priorities',
-                                  placeHolder: 'number of priorities',
-                                  promptMessage: 'Number of priorities supported by the queue',
-                                  title: 'Enter the number of priorities supported by the queue',
-                                  trim: true"/>
-                    </div>
-                </div>
-                <div class="clear"></div>
-            </div>
-
-            <div id="formAddQueueTypeLVQ:fields" class="hidden"
-                 data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Last Value Queue Settings'">
-                <div class="clear">
-                    <div class="formLabel-labelCell">LVQ Message Property:</div>
-                    <div class="formLabel-controlCell">
-                        <input type="text" id="formAddQueue.lvqkey"
-                               data-dojo-type="dijit/form/ValidationTextBox"
-                               data-dojo-props="
-                                  name: 'lvqKey',
-                                  placeHolder: 'lvq key',
-                                  promptMessage: 'Name of the message property used to perform the conflation',
-                                  title: 'Enter the name of the message property used to perform the conflation',
-                                  trim: true"/>
-                    </div>
-                </div>
-                <div class="clear"></div>
-            </div>
-
-            <div id="formAddQueueTypeSorted:fields" class="hidden"
-                 data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Sorted Queue Settings'">
-                <div class="clear">
-                    <div class="formLabel-labelCell">Sort Message Property*:</div>
-                    <div class="formLabel-controlCell">
-                        <input type="text" id="formAddQueue.sortkey"
-                               data-dojo-type="dijit/form/ValidationTextBox"
-                               data-dojo-props="
-                                  name: 'sortKey',
-                                  placeHolder: 'sort key',
-                                  promptMessage: 'Name of the message property used for sorting the messages on the queue',
-                                  title: 'Enter the name of the message property used for sorting the messages on the queue',
-                                  trim: true"/>
-                    </div>
-                </div>
-                <div class="clear"></div>
             </div>
 
             <div class="clear formBox">
