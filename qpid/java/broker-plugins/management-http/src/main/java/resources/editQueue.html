@@ -49,6 +49,59 @@
                                       disabled: 'true'"/>
                     </div>
                 </div>
+                <div class="clear"></div>
+
+                <div id="formEditQueueType:priority" class="hidden typeSpecificDiv">
+                    <div class="clear">
+                        <div class="formLabel-labelCell">Priorities:</div>
+                        <div class="formLabel-controlCell">
+                            <input type="text" id="formEditQueue.priorities"
+                                   data-dojo-type="dijit/form/ValidationTextBox"
+                                   data-dojo-props="
+                                  name: 'priorities',
+                                  disabled: 'true',
+                                  promptMessage: 'Number of priorities supported by the queue',
+                                  title: 'Enter the number of priorities supported by the queue',
+                                  trim: true"/>
+                        </div>
+                    </div>
+                    <div class="clear"></div>
+                </div>
+
+                <div id="formEditQueueType:lvq" class="hidden typeSpecificDiv">
+                    <div class="clear">
+                        <div class="formLabel-labelCell">LVQ Message Property:</div>
+                        <div class="formLabel-controlCell">
+                            <input type="text" id="formEditQueue.lvqKey"
+                                   data-dojo-type="dijit/form/ValidationTextBox"
+                                   data-dojo-props="
+                                  name: 'lvqKey',
+                                  disabled: 'true',
+                                  promptMessage: 'Name of the message property used to perform the conflation',
+                                  title: 'Enter the name of the message property used to perform the conflation',
+                                  trim: true"/>
+                        </div>
+                    </div>
+                    <div class="clear"></div>
+                </div>
+
+                <div id="formEditQueueType:sorted" class="hidden typeSpecificDiv">
+                    <div class="clear">
+                        <div class="formLabel-labelCell">Sort Message Property*:</div>
+                        <div class="formLabel-controlCell">
+                            <input type="text" id="formEditQueue.sortKey"
+                                   data-dojo-type="dijit/form/ValidationTextBox"
+                                   data-dojo-props="
+                                  name: 'sortKey',
+                                  disabled: 'true',
+                                  promptMessage: 'Name of the message property used for sorting the messages on the queue',
+                                  title: 'Enter the name of the message property used for sorting the messages on the queue',
+                                  trim: true"/>
+                        </div>
+                    </div>
+                    <div class="clear"></div>
+                </div>
+
                 <div class="clear">
                     <div class="formLabel-labelCell">Durable?</div>
                     <div class="formLabel-controlCell">

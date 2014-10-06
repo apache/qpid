@@ -57,7 +57,10 @@ define(["dojo/_base/xhr",
                   "alertThresholdMessageAge",
                   "alertThresholdMessageSize",
                   "alertRepeatGap",
-                  "maximumDeliveryAttempts"];
+                  "maximumDeliveryAttempts",
+                  "priorities",
+                  "lvqKey",
+                  "sortKey"];
 
     var numericFieldNames = ["maximumMessageTtl",
                   "minimumMessageTtl",
@@ -90,6 +93,7 @@ define(["dojo/_base/xhr",
         }
         this.form = registry.byId("formEditQueue");
         this.form.on("submit", function(){return false;});
+        this.typeSelector = registry.byId("formEditQueue.type");
       },
       show: function(hostData)
       {
@@ -113,6 +117,18 @@ define(["dojo/_base/xhr",
               }
             }
         );
+        var queueType = this.typeSelector.get("value");
+        query(".typeSpecificDiv").forEach(function(node, index, arr){
+            if (node.id === "formEditQueueType:" + queueType)
+            {
+                node.style.display = "block";
+                util.applyMetadataToWidgets(node, "Queue", queueType);
+            }
+            else
+            {
+                node.style.display = "none";
+            }
+        });
       },
       destroy: function()
       {

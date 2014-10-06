@@ -27,6 +27,7 @@ define(["dojo/_base/xhr",
         "dojo/_base/array",
         "dojo/_base/event",
         'dojo/_base/json',
+        "dojo/query",
         'qpid/common/util',
         "qpid/common/ContextVariablesEditor",
         "dijit/form/NumberSpinner", // required by the form
@@ -43,22 +44,14 @@ define(["dojo/_base/xhr",
         /* basic dojox classes */
         "dojox/form/BusyButton", "dojox/form/CheckedMultiSelect",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser, array, event, json, util) {
+    function (xhr, dom, construct, win, registry, parser, array, event, json, query, util) {
 
         var addQueue = {};
 
         var node = construct.create("div", null, win.body(), "last");
 
-        var typeSpecificFields = {
-                        priorities: "priority",
-                        lvqKey: "lvq",
-                        sortKey: "sorted"
-                    };
-
-        var requiredFields = {
-                priority: "priorities",
-                sorted: "sortkey"
-            };
+        var typeSpecificFields = { priorities: "priority", lvqKey: "lvq", sortKey: "sorted" };
+        var requiredFields = { sorted: "sortKey"};
 
         var fieldConverters = {
                 queueFlowControlSizeBytes:        parseInt,
@@ -97,8 +90,8 @@ define(["dojo/_base/xhr",
                                 newQueue["messageGroupSharedGroups"] = true;
                             }
                         }
-                        else if (!typeSpecificFields.hasOwnProperty(propName) ||
-                                        formValues[ "type" ] === typeSpecificFields[ propName ]) {
+                        else if (!typeSpecificFields.hasOwnProperty(propName) || formValues[ "type" ] === typeSpecificFields[ propName ])
+                        {
                             if(formValues[ propName ] !== "") {
                                 if (fieldConverters.hasOwnProperty(propName))
                                 {
@@ -126,36 +119,29 @@ define(["dojo/_base/xhr",
                             addQueue.dialogNode = dom.byId("addQueue");
                             parser.instantiate([addQueue.dialogNode]);
 
-                            // for children which have name type, add a function to make all the associated rows
-                            // visible / invisible as the radio button is checked / unchecked
-
+                            // for children which have name type, add a function to make all the associated atrributes
+                            // visible / invisible as the select is changed
                             theForm = registry.byId("formAddQueue");
-                            array.forEach(theForm.getDescendants(), function(widget)
+                            var typeSelector = registry.byId("formAddQueue.type");
+                            typeSelector.on("change", function(value)
+                            {
+                                query(".typeSpecificDiv").forEach(function(node, index, arr)
                                 {
-                                    if(widget.name === "type") {
-                                        widget.on("change", function(isChecked) {
-
-                                            var objId = widget.id + ":fields";
-                                            var obj = registry.byId(objId);
-                                            if(obj) {
-                                                if(isChecked) {
-                                                    obj.domNode.style.display = "block";
-                                                } else {
-                                                    obj.domNode.style.display = "none";
-                                                }
-                                                obj.resize();
-                                                var widgetValue = widget.value;
-                                                if (requiredFields.hasOwnProperty(widgetValue))
-                                                {
-                                                    dijit.byId('formAddQueue.' + requiredFields[widgetValue]).required = isChecked;
-                                                }
-
-                                                util.applyMetadataToWidgets(obj.domNode, "Queue", widgetValue);
-                                            }
-                                        })
+                                    if (node.id === "formAddQueueType:" + value)
+                                    {
+                                        node.style.display = "block";
+                                        util.applyMetadataToWidgets(node, "Queue", value);
                                     }
-
+                                    else
+                                    {
+                                        node.style.display = "none";
+                                    }
                                 });
+                                for(var requiredField in requiredFields)
+                                {
+                                    dijit.byId('formAddQueue.' + requiredFields[requiredField]).required = (requiredField == value);
+                                }
+                            });
 
                             theForm.on("submit", function(e) {
 
