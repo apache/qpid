@@ -31,50 +31,73 @@
     <title>JVM Installation verification</title>
     <section role="h2" id="Java-Broker-Miscellaneous-JVM-Verification-Windows">
       <title>Verify JVM on Windows</title>
-      <para>
-        Firstly confirm that the JAVA_HOME environment variable is set correctly by typing the
-        following at the command prompt:
-      </para>
+      <para> Firstly confirm that the JAVA_HOME environment variable is set correctly by typing the
+        following at the command prompt: </para>
       <programlisting><![CDATA[echo %JAVA_HOME%]]></programlisting>
-      <para>
-        If JAVA_HOME is set you will see something similar to the following:
-      </para>
-      <screen><![CDATA[c:"\PROGRA~1"\Java\jdk1.6.0_24\]]>
+      <para> If JAVA_HOME is set you will see something similar to the following: </para>
+      <screen><![CDATA[c:"\PROGRA~1"\Java\jdk1.7.0_60\]]>
       </screen>
-      <para>
-        Then confirm that a Java installation (1.6 or higher) is available:
-      </para>
+      <para> Then confirm that a Java installation (1.7 or higher) is available: </para>
       <programlisting><![CDATA[java -version]]></programlisting>
-      <para>
-        If java is available on the path, output similar to the following will be seen:
-      </para>
-      <screen><![CDATA[java version "1.6.0_24"
-Java(TM) SE Runtime Environment (build 1.6.0_24-b07)
-Java HotSpot(TM) 64-Bit Server VM (build 19.1-b02, mixed mode)]]></screen>
+      <para> If java is available on the path, output similar to the following will be seen: </para>
+      <screen><![CDATA[java version "1.7.0_60"
+Java(TM) SE Runtime Environment (build 1.7.0_60-b19)
+Java HotSpot(TM) 64-Bit Server VM (build 24.60-b09, mixed mode)]]></screen>
     </section>
 
     <section role="h2" id="Java-Broker-Miscellaneous-JVM-Verification-Unix">
       <title>Verify JVM on Unix</title>
-      <para>
-        Firstly confirm that the JAVA_HOME environment variable is set correctly by typing the
-        following at the command prompt:
-      </para>
+      <para> Firstly confirm that the JAVA_HOME environment variable is set correctly by typing the
+        following at the command prompt: </para>
       <programlisting><![CDATA[echo $JAVA_HOME]]></programlisting>
-      <para>
-        If JAVA_HOME is set you will see something similar to the following:
-      </para>
-      <screen><![CDATA[/usr/java/jdk1.6.0_35]]>
+      <para> If JAVA_HOME is set you will see something similar to the following: </para>
+      <screen><![CDATA[/usr/java/jdk1.7.0_60]]>
       </screen>
-      <para>
-        Then confirm that a Java installation (1.6 or higher) is available:
-      </para>
+      <para> Then confirm that a Java installation (1.7 or higher) is available: </para>
       <programlisting><![CDATA[java -version]]></programlisting>
-      <para>
-        If java is available on the path, output similar to the following will be seen:
-      </para>
-      <screen><![CDATA[java version "1.6.0_35"
-Java(TM) SE Runtime Environment (build 1.6.0_35-b10-428-11M3811)
-Java HotSpot(TM) 64-Bit Server VM (build 20.10-b01-428, mixed mode)]]></screen>
+      <para> If java is available on the path, output similar to the following will be seen: </para>
+      <screen><![CDATA[java version "1.7.0_60"
+Java(TM) SE Runtime Environment (build 1.7.0_60-b19)
+Java HotSpot(TM) 64-Bit Server VM (build 24.60-b09, mixed mode)]]></screen>
     </section>
   </section>
+  <section role="h2" id="Java-Broker-Miscellaneous-Installing-External-JDBC-Driver">
+    <title>Installing External JDBC Driver</title>
+    <para>In order to use a JDBC Virtualhost Node or a JDBC Virtualhost, you must make the
+      Database's JDBC 4.0 compatible drivers available on the Broker's classpath. To do this copy
+      the driver's JAR file into the <literal>${QPID_HOME}/lib/opt</literal> folder.</para>
+    <programlisting>Unix:
+cp <literal>driver</literal>.jar qpid-broker-&qpidCurrentRelease;/lib/opt</programlisting>
+    
+    <programlisting>Windows:
+copy <literal>driver</literal>.jar qpid-broker-&qpidCurrentRelease;\lib\opt</programlisting>
+    
+  </section>
+  <section role="h2" id="Java-Broker-Miscellaneous-Installing-Oracle-BDB-JE">
+    <title>Installing Oracle BDB JE</title>
+    <para> The Oracle BDB JE is not distributed with Apache Qpid owing to license considerations.. </para>
+    <para>If you wish to use a BDB Virtualhost Node, BDB Virtualhost, or BDB HA Virtualhost Node you
+      must make the BDB JE's JDBC 4.0 compatible drivers= available on the Broker's classpath. </para>
+    <para> Download the Oracle BDB JE &oracleBdbProductVersion; release <ulink
+        url="&oracleJeDownloadUrl;">from the Oracle website.</ulink>
+    </para>
+    <para> The download has a name in the form je-&oracleBdbProductVersion;.tar.gz. It is
+      recommended that you confirm the integrity of the download by verifying the MD5. </para>
+    <para>Copy the je-&oracleBdbProductVersion;.jar from within the release into
+        <literal>${QPID_HOME}/lib/opt</literal> folder.</para>
+
+    <programlisting>Unix:
+cp je-&oracleBdbProductVersion;.jar qpid-broker-&qpidCurrentRelease;/lib/opt</programlisting>
+
+    <programlisting>Windows:
+copy je-&oracleBdbProductVersion;.jar qpid-broker-&qpidCurrentRelease;\lib\opt</programlisting>
+
+  </section>
+
+
+
+
+
+
+
 </chapter>

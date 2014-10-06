@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="Java-Broker-Management-Managing-RemoteReplicationNodes">
+  <title>Remote Replication Nodes</title>
+  <para>Used for HA only. A <link linkend="Java-Broker-Concepts-RemoteReplicationNodes">remote replication node</link> is a representation of another virtualhost node
+    in the group. Remote replication nodes are not created directly. Instead the system
+    automatically creates a remote replciation node for every node in the group. It serves to
+    provide a view of the whole group from every node in the system.</para>
+  <section id="Java-Broker-Management-Managing-RemoteReplicationNodes-Attributes">
+    <title>Attributes</title>
+    <para><itemizedlist>
+        <listitem>
+          <para><emphasis>Name the remote replication node</emphasis>. This is the name of the
+            remote virtualhost node</para>
+        </listitem>
+        <listitem>
+          <para><emphasis>Role</emphasis>. Indicates the role that the remote node is playing in the
+            group at this moment. <itemizedlist>
+              <listitem>
+                <para><emphasis>MASTER</emphasis> - Remote node is a master.</para>
+              </listitem>
+              <listitem>
+                <para><emphasis>REPLICA</emphasis> - Remote node is a replica.</para>
+              </listitem>
+              <listitem>
+                <para><emphasis>UNREACHABLE</emphasis> - Remote node unreachanble from this node.
+                  This remote note may be down, or an network problem may prevent it from being
+                  contacted.</para>
+              </listitem>
+            </itemizedlist>
+          </para>
+        </listitem>
+        <listitem>
+          <para><emphasis>Join time</emphasis>. Time when first contact was established with this
+            node.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis>Last known transaction id</emphasis>. Last transaction id reported
+            processed by node. This is an internal transaction counter and does not relate to any
+            value available to the messaging clients. This value can only be used to determine the
+            node is up to date relative to others in the group.</para>
+        </listitem>
+      </itemizedlist></para>
+  </section>
+  <section id="Java-Broker-Management-Managing-RemoteReplicationNodes-Children">
+    <title>Children</title>
+    <para>None</para>
+  </section>
+  <section id="Java-Broker-Management-Managing-RemoteReplicationNodes-Lifecycle">
+    <title>Lifecycle</title>
+    <para>
+      <itemizedlist>
+        <listitem>
+          <para><emphasis>Delete</emphasis>. Causes the remote node to be permanently removed from
+            the group. This operation should be used when the virtualhost node cannot be deleted
+            from its own Broker, for instance, if a Broker has been destroyed by machine
+            failure.</para>
+        </listitem>
+      </itemizedlist>
+    </para>
+  </section>
+  <section id="Java-Broker-Management-Managing-RemoteReplication-Nodes-Operations">
+    <title>Operations</title>
+    <para>
+      <itemizedlist>
+        <listitem>
+          <para><emphasis>Transfer Master</emphasis>. Initiates a process where a master is moved to
+            anther node in the group. The transfer sequence is as follows. <orderedlist>
+              <listitem>
+                <para>Group waits until the proposed master is reasonable up to date.</para>
+              </listitem>
+              <listitem>
+                <para>Any in-flight transactions on the current master are blocked.</para>
+              </listitem>
+              <listitem>
+                <para>The current master awaits the proposed master to become up to date.</para>
+              </listitem>
+              <listitem>
+                <para>The mastership is transfered. This will automatically disconnect messaging
+                  clients from the old master, and in-flight transactions are rolled back. Messaging
+                  clients reconnect to the new master.</para>
+              </listitem>
+              <listitem>
+                <para>The old master will rejoin as a replica.</para>
+              </listitem>
+            </orderedlist>
+          </para>
+        </listitem>
+      </itemizedlist>
+    </para>
+  </section>
+</section>

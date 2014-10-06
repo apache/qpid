@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 
  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,10 +20,7 @@
 
 -->
 
-<chapter id="Java-Broker-Security">
-  <title>Security</title>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Authentication-Providers.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Group-Providers.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-ACLs.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Configuration-Encryption.xml"/>
-</chapter>
+<section id="Java-Broker-Management-Managing-Group-Providers">
+    <title>Group Providers</title>
+    <para>See <xref linkend="Java-Broker-Security-Group-Providers"/></para>
+</section>

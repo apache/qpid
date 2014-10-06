@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--
 
  Licensed to the Apache Software Foundation (ASF) under one
@@ -20,10 +20,10 @@
 
 -->
 
-<chapter id="Java-Broker-Security">
-  <title>Security</title>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Authentication-Providers.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Group-Providers.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-ACLs.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Configuration-Encryption.xml"/>
-</chapter>
+<section id="Java-Broker-Management-Channel-AMQP-Intrinstic">
+    <title>AMQP Intrinstic Management</title>
+    <para>The AMQP protocols 0-8..0-10 allow for creation, deletion and query of Exchanges, Queue
+        and Bindings.</para>
+    <para>The exact details of how to utilise this commands depends of the client. See the
+        documentation accompanying the client for details.</para>
+</section>

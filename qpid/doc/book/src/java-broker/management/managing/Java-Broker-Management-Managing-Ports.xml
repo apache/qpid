@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="Java-Broker-Management-Managing-Ports">
+    <title>Ports</title>
+    <para>Ports provide TCP/IP connectivity for messaging and management. A port is defined to use a
+        protocol. This can be an AMQP protocol for messaging or HTTP/JMX for management.</para>
+    <para>A port is defined to have one or more transports. A transport can either be plain (TCP) or
+        SSL. When SSL is in use, the port can be configured to accept or require client
+        authentication.</para>
+    <para>Any number of ports defined to use AMQP or HTTP protocols can be defined. JMX is limited
+        to a single port instance per JMX protocol type.</para>
+    <para>Ports can only be managed by the HTTP management channel.</para>
+    <section id="Java-Broker-Management-Managing-Ports-Attributes">
+        <title>Attributes</title>
+        <para><itemizedlist>
+                <listitem>
+                    <para><emphasis>Name the port</emphasis>.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Port number</emphasis>.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Binding address</emphasis>. Used to limit port binding to a
+                        single network interface.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Authentication Provider</emphasis>. The <link
+                            linkend="Java-Broker-Concepts-Authentication-Providers">authentication
+                            provider</link> used to authenticate incoming connections.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Protocol(s)</emphasis>. A list of protocols to be supported by
+                        the port. For messaging choose one or more AMQP protocols. For management
+                        choose HTTP or on one the two JMX protocols.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Transports</emphasis>. A list of transports supported by the
+                        port. For messaging or HTTP management chose TCP, SSL or both. For JMX, the
+                        TCP/SSL combination is not supported.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Keystore</emphasis>. <link
+                            linkend="Java-Broker-Management-Managing-Keystores">Keystore</link>
+                        containing the Broker's private key. Required if the SSL is in use.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Want/Need Client Auth</emphasis>. Client authentication can be
+                        either accepted if offered (want), or demanded (need). When Client
+                        Certificate Authentication is in use a Truststore must be configured. When
+                        using Client Certificate Authentication it may be desirable to use the <link
+                            linkend="Java-Broker-Security-External-Provider">External Authentication
+                            Provider</link>.</para>
+                    <para>JMX does not support client authentication.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Truststore</emphasis>. <link
+                            linkend="Java-Broker-Management-Managing-Truststores">Trust store</link>
+                        contain an issuer certificate or the public keys of the clients themselves
+                        if peers only is desired.</para>
+                </listitem>
+            </itemizedlist></para>
+    </section>
+    <section id="Java-Broker-Management-Managing-Ports-Children">
+        <title>Children</title>
+        <para>None</para>
+    </section>
+    <section id="Java-Broker-Management-Managing-Ports-Lifecycle">
+        <title>Lifecycle</title>
+        <para>Not supported</para>
+        <important>
+            <para>When updating an existing port, changes to SSL settings, binding address and port
+                numbers do not become effective until the Broker is restarted.</para>
+        </important>
+    </section>
+</section>

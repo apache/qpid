@@ -43,16 +43,6 @@
         </row>
       </thead>
       <tbody>
-        <row id="Java-Broker-Appendix-System-Properties-Shared-Msg-Group">
-          <entry>qpid.shared_msg_group</entry>
-          <entry>
-            <literal>qpid.no-group</literal>
-          </entry>
-          <entry>
-            <para>Controls the default group for groups operating in 'shared groups' mode. See <xref
-                linkend="Java-Broker-Queues-OtherTypes-Message-Grouping"/></para>
-          </entry>
-        </row>
         <row id="Java-Broker-Appendix-System-Properties-Broker-Heartbeat-Timeout-Factor">
           <entry>qpid.broker_heartbeat_timeout_factor</entry>
           <entry>2</entry>
@@ -90,24 +80,6 @@
           <entry>true</entry>
           <entry>
             <para>If set true, the Broker will produce operational logging messages.</para>
-          </entry>
-        </row>
-        <row id="Java-Broker-Appendix-System-Properties-Broker-Amqp-Protocol-Excludes">
-          <entry>qpid.broker_default_amqp_protocol_excludes</entry>
-          <entry>none</entry>
-          <entry>
-            <para>Controls the AMQP protocol versions supported by the Broker. The value of this
-              property is a comma separated list of AMQP protocol versions whose support should be
-              disabled.</para>
-          </entry>
-        </row>
-        <row id="Java-Broker-Appendix-System-Properties-Broker-Amqp-Protocol-Includes">
-          <entry>qpid.broker_default_amqp_protocol_includes</entry>
-          <entry>none</entry>
-          <entry>
-            <para>Controls the AMQP protocol versions supported by the Broker. The value of this
-              property is a comma separated list of AMQP protocol versions whose support should be
-              enabled.</para>
           </entry>
         </row>
         <row id="Java-Broker-Appendix-System-Properties-Broker-Default-Supported-Protocol-Version-Reply">

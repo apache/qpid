@@ -28,9 +28,6 @@
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Getting-And-Dependencies.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Examples.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Understanding.xml"/>
-    <!-- TODO:
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-JMS-Extensions.xml"/>
-    -->
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-JNDI-Properties-Format.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Connection-URL.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Binding-URL.xml"/>
@@ -42,7 +39,8 @@
     -->
    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Appendix-Exceptions.xml"/>
    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-Appendix-Maven.xml"/>
- 
+   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="JMS-Client-JMS-Extensions.xml"/>
+  
  
 
 </book>

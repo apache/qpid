@@ -34,9 +34,9 @@
     </para>
     <para>
       For additional details about the broker configuration store and related command line arguments see
-      <xref linkend="Java-Broker-Configuring-And-Managing-Configuration-Store"/>.
+      <xref linkend="Java-Broker-Initial-Configuration"/>.
       The broker is fully configurable via its Web Management Console, for details of this see
-      <xref linkend="Java-Broker-Configuring-And-Managing-Web-Console"/>.
+      <xref linkend="Java-Broker-Management-Channel-Web-Console"/>.
     </para>
   </section>
   <section role="h2" id="Java-Broker-Getting-Started-Starting-Stopping-Windows">
@@ -63,7 +63,7 @@
     <para>The BRK-1004 message confirms that the Broker is ready for work.  The MNG-1002 and BRK-1002 confirm the ports to
       which the Broker is listening (for HTTP/JMX management and AMQP respectively).</para>
     <para>To stop the Broker, use Control-C or use the Shutdown MBean from the
-          <link linkend="Java-Broker-Configuring-And-Managing-JMX-Management">JMX management plugin</link>.</para>
+          <link linkend="Java-Broker-Management-Channel-JMX">JMX management plugin</link>.</para>
   </section>
   <section role="h2" id="Java-Broker-Getting-Started-Starting-Stopping-Unix">
     <title>Starting/Stopping the broker on Unix</title>
@@ -90,7 +90,7 @@
     which the Broker is listening (for HTTP/JMX management and AMQP respectively).</para>
     <para>To stop the Broker, use Control-C from the controlling shell, use the
         <command>bin/qpid.stop</command> script, use <command>kill -TERM &lt;pid&gt;</command>, or
-      the Shutdown MBean from the <link linkend="Java-Broker-Configuring-And-Managing-JMX-Management">JMX management plugin</link>.</para>
+      the Shutdown MBean from the <link linkend="Java-Broker-Management-Channel-JMX">JMX management plugin</link>.</para>
   </section>
   <section role="h2" id="Java-Broker-Getting-Started-LogFile">
     <title>Log file</title>
@@ -105,9 +105,9 @@
     <para>The Java Broker understands a number of command line options which may be used to customise the configuration.</para>
     <para>
       For additional details about the broker configuration and related command line arguments see
-      <xref linkend="Java-Broker-Configuring-And-Managing-Configuration-Store"/>.
+      <xref linkend="Java-Broker-Initial-Configuration"/>.
       The broker is fully configurable via its Web Management Console, for details of this see
-      <xref linkend="Java-Broker-Configuring-And-Managing-Web-Console"/>.
+      <xref linkend="Java-Broker-Management-Channel-Web-Console"/>.
     </para>
     <para>To see usage information for all command line options, use the <option>--help</option> option</para>
     <programlisting><![CDATA[bin/qpid-server --help]]></programlisting>
@@ -171,5 +171,4 @@
                                                 means do not check for changes.
 ]]></screen>
   </section>
-
 </chapter>

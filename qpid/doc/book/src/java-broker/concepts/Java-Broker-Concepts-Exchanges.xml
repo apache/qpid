@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="Java-Broker-Concepts-Exchanges">
+<title>Exchanges</title>
+ <para>An <emphasis>Exchange</emphasis> is a named entity within the <emphasis>Virtualhost</emphasis> which receives
+  messages from producers and routes them to matching <emphasis>Queue</emphasis>s within the <emphasis>Virtualhost</emphasis>.</para>
+ <para>The server provides a set of exchange types with each exchange type implementing a different routing algorithm. For details of how
+  these exchanges types work see <xref linkend="Java-Broker-Concepts-Exchanges-Types"/> below.</para>
+ <para>The server predeclares a number of exchange instances with names starting with &quot;<literal>amq.</literal>&quot;. These are defined in
+  <xref linkend="Java-Broker-Concepts-Exchanges-Predeclared"/>.</para>
+ <para>Applications can make use the pre-declared exchanges, or they may declare their own. The number of exchanges within a virtual host is
+  limited only by resource constraints.</para>
+ <para>The behaviour when an exchange is unable to route a message to any queue is defined in <xref linkend="Java-Broker-Concepts-Exchanges-UnroutableMessage"/></para>
+ <section id="Java-Broker-Concepts-Exchanges-Predeclared">
+  <title>Predeclared Exchanges</title>
+  <para>Each virtual host pre-declares the following exchanges:
+   <itemizedlist>
+    <listitem><para>amq.direct (an instance of a direct exchange)</para></listitem>
+    <listitem><para>amq.topic (an instance of a topic exchange)</para></listitem>
+    <listitem><para>amq.fanout (an instance of a fanout exchange)</para></listitem>
+    <listitem><para>amq.match (an instance of a headers exchange)</para></listitem>
+   </itemizedlist>
+  </para>
+  <para>The conceptual &quot;<literal>default exchange</literal>&quot; always exists, effectively a special instance of
+   direct exchange which uses the empty string as its name. All queues are automatically bound to it upon their creation
+   using the queue name as the binding key, and unbound upon their deletion. It is not possible to manually add or remove
+   bindings within this exchange.</para>
+  <para>Applications may not declare exchanges with names beginning with &quot;<literal>amq.</literal>&quot;. Such names are reserved for system use.</para>
+ </section>
+ <section id="Java-Broker-Concepts-Exchanges-Types">
+  <title>Exchange Types</title>
+  <para>
+   The following Exchange types are supported.
+   <itemizedlist>
+    <listitem><para>Direct</para></listitem>
+    <listitem><para>Topic</para></listitem>
+    <listitem><para>Fanout</para></listitem>
+    <listitem><para>Headers</para></listitem>
+   </itemizedlist>
+   These exchange types are described in the following sub-sections.</para>
+
+   <section id="Java-Broker-Concepts-Exchanges-Types-Direct">
+   <title>Direct</title>
+   <para>The direct exchange type routes messages to queues based on an exact match between
+    the routing key of the message, and the binding key used to bind the queue to the exchange. Additional
+    filter rules may be specified using a <link linkend="Java-Broker-Concepts-Exchanges-BindingArguments-JMSSelector">
+    binding argument specifying a JMS message selector</link>.
+   </para>
+   <para>This exchange type is often used to implement point to point messaging. When used in this manner, the normal
+   convention is that the binding key matches the name of the queue. It is also possible to use this exchange type
+   for multi-cast, in this case the same binding key is associated with many queues.</para>
+   <figure>
+    <title>Direct exchange</title>
+    <mediaobject>
+     <imageobject>
+      <imagedata fileref="images/Exchange-Direct.png" format="PNG" scalefit="1"/>
+     </imageobject>
+    </mediaobject>
+   </figure>
+   <para>The figure above illustrates the operation of direct exchange type. The yellow messages published with the routing key
+    &quot;<literal>myqueue</literal>&quot; match the binding key corresponding to queue &quot;<literal>myqueue</literal>&quot; and so are routed there.  The red
+    messages published with the routing key &quot;<literal>foo</literal>&quot; match two bindings in the table so a copy of the message is
+    routed to both the &quot;<literal>bar1</literal>&quot; and &quot;<literal>bar2</literal>&quot; queues.</para>
+    <para>The routing key of the blue message matches no binding keys, so the message is unroutable. It is handled as described
+     in <xref linkend="Java-Broker-Concepts-Exchanges-UnroutableMessage"/>.</para>
+  </section>
+  <section id="Java-Broker-Concepts-Exchanges-Types-Topic">
+    <title>Topic</title>
+    <para>This exchange type is used to support the classic publish/subscribe paradigm.</para>
+    <para>The topic exchange is capable of routing messages to queues based on wildcard matches between the routing key and the
+     binding key pattern defined by the queue binding. Routing keys are formed from one or more words, with each word delimited
+     by a full-stop (.). The pattern matching characters are the * and # symbols. The * symbol matches a single word  and the #
+     symbol matches zero or more words.</para>
+   <para>Additional filter rules may be specified using a <link linkend="Java-Broker-Concepts-Exchanges-BindingArguments-JMSSelector">
+     binding argument specifying a JMS message selector</link>.</para>
+   <para>The following three figures help explain how the topic exchange functions.</para>
+    <para></para>
+    <figure>
+     <title>Topic exchange - exact match on topic name</title>
+     <mediaobject>
+      <imageobject>
+       <imagedata fileref="images/Exchange-Topic.png" format="PNG" scalefit="1"/>
+      </imageobject>
+     </mediaobject>
+    </figure>
+   <para>The figure above illustrates publishing messages with routing key &quot;<literal>weather</literal>&quot;. The exchange routes each
+    message to every bound queue whose binding key matches the routing key.</para>
+   <para>In the case illustrated, this means that each subscriber's queue receives every yellow message.</para>
+   <figure>
+    <title>Topic exchange - matching on hierarchical topic patterns</title>
+    <mediaobject>
+     <imageobject>
+      <imagedata fileref="images/Exchange-Topic-Hierarchical.png" format="PNG" scalefit="1"/>
+     </imageobject>
+    </mediaobject>
+   </figure>
+   <para>The figure above illustrates publishing messages with hierarchical routing keys. As before, the exchange routes each
+    message to every bound queue whose binding key matches the routing key but as the binding keys contain wildcards, the
+    wildcard rules described above apply.</para>
+   <para>In the case illustrated, <literal>sub1</literal> has received the red and green message as &quot;<literal>news.uk</literal>&quot; and &quot;<literal>news.de</literal>&quot;
+    match binding key &quot;<literal>news.#</literal>&quot;. The red message has also gone to <literal>sub2</literal> and <literal>sub3</literal> as it's routing key
+    is matched exactly by &quot;<literal>news.uk</literal>&quot; and by &quot;<literal>*.uk</literal>&quot;.</para>
+   <para>The routing key of the yellow message matches no binding keys, so the message is unroutable. It is handled as described
+    in <xref linkend="Java-Broker-Concepts-Exchanges-UnroutableMessage"/>.</para>
+   <figure>
+    <title>Topic exchange - matching on JMS message selector</title>
+    <mediaobject>
+     <imageobject>
+      <imagedata fileref="images/Exchange-Topic-JMSSelector.png" format="PNG" scalefit="1"/>
+     </imageobject>
+    </mediaobject>
+   </figure>
+   <para>The figure above illustrates messages with properties published with routing key &quot;<literal>shipping</literal>&quot;.</para>
+   <para>As before, the exchange routes each message to every bound queue whose binding key matches the routing key but as a JMS selector
+    argument has been specified, the expression is evaluated against each matching message. Only messages whose message header values or properties
+    match the expression are routed to the queue.</para>
+   <para>In the case illustrated, <literal>sub1</literal> has received the yellow and blue message as their property &quot;<literal>area</literal>&quot;
+    cause expression &quot;<literal>area in ('Forties', 'Cromarty')</literal>&quot; to evaluate true.  Similarly, the yellow message has also gone to
+    <literal>gale_alert</literal> as its property &quot;<literal>speed</literal>&quot; causes expression &quot;<literal>speed &gt; 7 and speed &lt; 10</literal>&quot;
+    to evaluate true.</para>
+   <para>The properties of purple message cause no expressions to evaluate true, so the message is unroutable. It is handled as described in
+    <xref linkend="Java-Broker-Concepts-Exchanges-UnroutableMessage"/>.</para>
+  </section>
+  <section id="Java-Broker-Concepts-Exchanges-Types-Fanout">
+    <title>Fanout</title>
+    <para>The fanout exchange type routes messages to all queues bound to the exchange, regardless of the message's routing key.</para>
+    <para>Filter rules may be specified using a <link linkend="Java-Broker-Concepts-Exchanges-BindingArguments-JMSSelector">
+    binding argument specifying a JMS message selector</link>.</para>
+    <figure>
+     <title>Fanout exchange</title>
+     <mediaobject>
+      <imageobject>
+       <imagedata fileref="images/Exchange-Fanout.png" format="PNG" scalefit="1"/>
+      </imageobject>
+     </mediaobject>
+    </figure>
+  </section>
+  <section id="Java-Broker-Concepts-Exchanges-Types-Headers">
+    <title>Headers</title>
+    <para>The headers exchange type routes messages to queues based on header properties within the message. The message is passed to
+     a queue if the header properties of the message satisfy the <link linkend="Java-Broker-Concepts-Exchanges-BindingArguments-x-match">
+     x-match expression</link> specified by the binding arguments with which the queue was bound.
+   </para>
+  </section>
+ </section>
+ <section id="Java-Broker-Concepts-Exchanges-BindingArguments">
+  <title>Binding Arguments</title>
+  <para>Binding arguments are used by certain exchange types to further filter messages.</para>
+  <section id="Java-Broker-Concepts-Exchanges-BindingArguments-JMSSelector">
+   <title>JMS Selector</title>
+   <para>The binding argument <literal>x-filter-jms-selector</literal> specifies a JMS selector conditional expression. The expression
+    is written in terms of message header and message property names.  If the expression evaluates to true, the message is routed to the queue.
+    This type of binding argument is understood by exchange types direct, topic and fanout.<footnote><para>
+    This is a Qpid specific extension.</para></footnote>.</para>
+  </section>
+  <section id="Java-Broker-Concepts-Exchanges-BindingArguments-x-match">
+   <title>x-match</title>
+   <para>The binding argument <literal>x-match</literal> is understood by exchange type headers.  It can take two values, dictating how the
+    rest of the name value pairs are treated during matching.</para>
+   <itemizedlist>
+     <listitem><para><literal>all</literal> implies that all the other pairs must match the headers property of a message for that message to be routed
+      (i.e. an AND match)</para></listitem>
+     <listitem><para><literal>any</literal> implies that the message should be routed if any of the fields in the headers property match one of the
+      fields in the arguments table (i.e. an OR match)</para></listitem>
+   </itemizedlist>
+   <para>A field in the bind arguments matches a field in the message if either the field in the bind arguments has no value and a field of the
+    same name is present in the message headers or if the field in the bind arguments has a value and a field of the same name exists in the
+    message headers and has that same value.</para>
+  </section>
+ </section>
+ <section id="Java-Broker-Concepts-Exchanges-UnroutableMessage">
+  <title>Unrouteable Messages</title>
+  <para>If an exchange is unable to route a message to any queues, the Broker will:
+   <itemizedlist>
+    <listitem><para>If using AMQP 0-10 protocol, and an alternate exchange has been set on the exchange, the message is routed to the alternate exchange.
+    The alternate exchange routes the message according to its routing algorithm and its binding table.  If the messages is still unroutable,
+    the message is discarded.</para></listitem>
+    <listitem><para>If using AMQP protocols 0-8..0-9-1, and the publisher set the mandatory flag and the<link linkend="Java-Broker-Close-Connection-When-No-Route">
+     close when no route</link> feature did not close the connection, the message is returned to the Producer.</para></listitem>
+    <listitem><para>Otherwise, the message is discarded.</para></listitem>
+   </itemizedlist>
+  </para>
+ </section>
+</section>

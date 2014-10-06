@@ -45,9 +45,9 @@
   <title>Purpose</title>
   <para> This feature has been introduced to address the scenario where an open transaction on the
    broker holds an open transaction on the persistent store. This can have undesirable consequences
-   if the store does not time out or close long-running transactions, such as with <link
-    linkend="Java-Broker-Stores-BDB-Store">BDB</link>. This can can result in a rapid increase in
-   disk usage size, bounded only by available space, due to growth of the transaction log. </para>
+   if the store does not time out or close long-running transactions, such as with BDB. This can can
+   result in a rapid increase in disk usage size, bounded only by available space, due to growth of
+   the transaction log. </para>
  </section>
  <section role="h2" id="Java-Broker-Runtime-Producer-Transaction-Timeout-Scope">
   <title>Scope</title>
@@ -113,9 +113,8 @@ CHN-1003 : Close]]>
   <title>Configuration</title>
   <section role="h3" id="Java-Broker-Runtime-Producer-Transaction-Timeout-Configuration-Overview">
    <title>Configuration</title>
-   <important>Transaction timeouts can be configured globally for all virtual hosts by setting corresponding Broker transaction timeout attributes.</important>
-   <para>Transaction timeouts can be configured separately on each defined virtual host, using the
-    virtualhosts.xml file.</para>
+   <para>The transaction timeouts can be specified when a new virtualhost is created or an exiting
+    virtualhost is edited.</para>
    <para>We would recommend that only warnings are configured at first, which should allow broker
     administrators to obtain an idea of the distribution of transaction lengths on their systems,
     and configure production settings appropriately for both warning and closure. Ideally
@@ -133,12 +132,6 @@ CHN-1003 : Close]]>
     managing both consumers and producers, or multiple producers, will be affected by a single
     producer hanging or leaving a transaction idle or open, and closed, and must take appropriate
     action to handle that scenario.</para>
-  </section>
-  <section role="h3"
-   id="Java-Broker-Runtime-Producer-Transaction-Timeout-Configuration-Virtualhosts">
-   <title>Virtualhost configuration</title>
-   <para>The details how to configure Transaction Timeouts in Virtual Host configuration file
-   are provided in <xref linkend="Java-Broker-Virtual-Host-Transaction-Timeout-Configuring"/></para>
   </section>
  </section>
 </section>

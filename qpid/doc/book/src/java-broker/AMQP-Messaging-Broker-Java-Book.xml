@@ -21,25 +21,21 @@
 -->
 
 <book xmlns:xi="http://www.w3.org/2001/XInclude">
-<title>AMQP Messaging Broker (Java)</title>
+  <title>AMQP Messaging Broker (Java)</title>
 
-<xi:include  href="Java-Broker-Introduction.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Installation.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Getting-Started.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Concepts.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Configuring-And-Managing.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Ports.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Virtual-Hosts.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Exchanges.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Queues.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Stores.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Runtime.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-High-Availability.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Virtual-Hosts-Configuration.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Miscellaneous.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-Environment-Variables.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-System-Properties.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-Operational-Logging-Messages.xml"/>
-<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-Queue-Alerts.xml"/>
+  <xi:include href="Java-Broker-Introduction.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Installation.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Getting-Started.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Concepts.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Initial-Configuration.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Management-Channels.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Management-Managing-Entities.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Runtime.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-High-Availability.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Miscellaneous.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-Environment-Variables.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-System-Properties.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-Operational-Logging-Messages.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-Queue-Alerts.xml"/>
 </book>
