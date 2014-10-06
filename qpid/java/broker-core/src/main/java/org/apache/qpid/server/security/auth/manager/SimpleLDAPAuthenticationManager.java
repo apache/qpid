@@ -30,13 +30,13 @@ import org.apache.qpid.server.model.TrustStore;
 public interface SimpleLDAPAuthenticationManager<X extends SimpleLDAPAuthenticationManager<X>> extends AuthenticationProvider<X>
 {
     String PROVIDER_TYPE = "SimpleLDAP";
-    String TRUST_STORE = "trustStore";
     String PROVIDER_URL = "providerUrl";
     String PROVIDER_AUTH_URL = "providerAuthUrl";
     String SEARCH_CONTEXT = "searchContext";
     String LDAP_CONTEXT_FACTORY = "ldapContextFactory";
     String SEARCH_USERNAME = "getSearchUsername";
     String SEARCH_PASSWORD = "getSearchPassword";
+    String TRUST_STORE = "trustStore";
 
 
     @ManagedAttribute( description = "LDAP server URL", mandatory = true)
