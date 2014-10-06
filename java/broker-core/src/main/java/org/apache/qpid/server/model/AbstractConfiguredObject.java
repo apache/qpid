@@ -536,7 +536,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             throw e;
         }
 
-        LOGGER.error("Exception occurred on open for " + getName(), e);
+        LOGGER.error("Failed to open object with name '" + getName() + "'.  Object will be put into ERROR state.", e);
 
         try
         {
