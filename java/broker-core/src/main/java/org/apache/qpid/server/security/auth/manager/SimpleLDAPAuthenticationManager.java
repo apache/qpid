@@ -22,6 +22,7 @@ package org.apache.qpid.server.security.auth.manager;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.TrustStore;
 
@@ -30,23 +31,33 @@ public interface SimpleLDAPAuthenticationManager<X extends SimpleLDAPAuthenticat
 {
     String PROVIDER_TYPE = "SimpleLDAP";
     String TRUST_STORE = "trustStore";
+    String PROVIDER_URL = "providerUrl";
+    String PROVIDER_AUTH_URL = "providerAuthUrl";
+    String SEARCH_CONTEXT = "searchContext";
+    String LDAP_CONTEXT_FACTORY = "ldapContextFactory";
+    String SEARCH_USERNAME = "getSearchUsername";
+    String SEARCH_PASSWORD = "getSearchPassword";
 
-    @ManagedAttribute( description = "LDAP server URL" )
+
+    @ManagedAttribute( description = "LDAP server URL", mandatory = true)
     String getProviderUrl();
 
     @ManagedAttribute( description = "LDAP authentication URL")
     String getProviderAuthUrl();
 
-    @ManagedAttribute( description = "Search context")
+    @ManagedAttribute( description = "Search context", mandatory = true)
     String getSearchContext();
 
-    @ManagedAttribute( description = "Search filter")
+    @ManagedAttribute( description = "Search filter", mandatory = true)
     String getSearchFilter();
 
     @ManagedAttribute( description = "Bind without search")
     boolean isBindWithoutSearch();
 
-    @ManagedAttribute( description = "LDAP context factory")
+    @ManagedContextDefault( name = "ldap.context.factory")
+    String DEFAULT_LDAP_CONTEXT_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
+
+    @ManagedAttribute( description = "LDAP context factory", defaultValue = "${ldap.context.factory}")
     String getLdapContextFactory();
 
     @ManagedAttribute( description = "Trust store name")

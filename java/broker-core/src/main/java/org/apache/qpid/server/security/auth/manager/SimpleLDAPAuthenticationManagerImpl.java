@@ -19,15 +19,20 @@
 
 package org.apache.qpid.server.security.auth.manager;
 
+import static java.util.Collections.disjoint;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.singletonList;
+
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.naming.AuthenticationException;
 import javax.naming.Context;
@@ -48,7 +53,9 @@ import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.TrustStore;
@@ -67,6 +74,13 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         implements SimpleLDAPAuthenticationManager<SimpleLDAPAuthenticationManagerImpl>
 {
     private static final Logger _logger = Logger.getLogger(SimpleLDAPAuthenticationManagerImpl.class);
+
+    private static final List<String> CONNECTIVITY_ATTRS = unmodifiableList(Arrays.asList(PROVIDER_URL,
+                                                                             PROVIDER_AUTH_URL,
+                                                                             SEARCH_CONTEXT,
+                                                                             LDAP_CONTEXT_FACTORY,
+                                                                             SEARCH_USERNAME,
+                                                                             SEARCH_PASSWORD));
 
     /**
      * Environment key to instruct {@link InitialDirContext} to override the socket factory.
@@ -111,6 +125,23 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         super(attributes, broker);
     }
 
+    @Override
+    protected void validateOnCreate()
+    {
+        super.validateOnCreate();
+        validateInitialDirContext();
+    }
+
+    @Override
+    protected void validateChange(ConfiguredObject<?> proxyForValidation, Set<String> changedAttributes)
+    {
+        super.validateChange(proxyForValidation, changedAttributes);
+
+        if (!disjoint(changedAttributes, CONNECTIVITY_ATTRS))
+        {
+            validateInitialDirContext();
+        }
+    }
 
     @Override
     protected void onOpen()
@@ -118,8 +149,6 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         super.onOpen();
 
         _sslSocketFactoryOverrideClass = createSslSocketFactoryOverrideClass();
-
-      //  validateInitialDirContext();
     }
 
     @Override
@@ -174,7 +203,7 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
     @Override
     public List<String> getMechanisms()
     {
-        return Collections.singletonList(PlainSaslServer.MECHANISM);
+        return singletonList(PlainSaslServer.MECHANISM);
     }
 
     @Override
@@ -362,6 +391,17 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         return null;
     }
 
+    @Override
+    public String toString()
+    {
+        return "SimpleLDAPAuthenticationManagerImpl [id=" + getId() + ", name=" + getName() +
+               ", providerUrl=" + _providerUrl + ", providerAuthUrl=" + _providerAuthUrl +
+               ", searchContext=" + _searchContext + ", state=" + getState() +
+               ", searchFilter=" + _searchFilter + ", ldapContextFactory=" + _ldapContextFactory +
+               ", bindWithoutSearch=" + _bindWithoutSearch  + ", trustStore=" + _trustStore  +
+               ", searchUsername=" + _searchUsername + "]";
+    }
+
     private void validateInitialDirContext()
     {
         Hashtable<String,Object> env = createInitialDirContextEnvironment(_providerUrl);
@@ -375,7 +415,8 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         }
         catch (NamingException e)
         {
-            throw new ServerScopedRuntimeException("Unable to establish connection to the ldap server at " + _providerUrl, e);
+            _logger.error("Failed to establish connectivity to the ldap server for " + this, e);
+            throw new IllegalConfigurationException("Failed to establish connectivity to the ldap server." , e);
         }
         finally
         {
