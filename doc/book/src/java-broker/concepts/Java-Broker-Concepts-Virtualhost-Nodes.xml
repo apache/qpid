@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="Java-Broker-Concepts-Virtualhost-Nodes">
+  <title>Virtualhost Nodes</title>
+  <para>A <emphasis>virtualhost node</emphasis> is a container for the virtualhost. It has exactly
+    one virtualhost.</para>
+  <para>A <emphasis>virtualhost node</emphasis> is backed by storage. This storage is used to record
+    the durable entities that exist beneath the virtualhost node (the virtualhost, queues, exchanges
+    etc).</para>
+  <para>When HA is in used, it is the virtualhost nodes of many Brokers that come together to form
+    the group. The virtualhost nodes together elect a master. When the high availability feature is
+    in use, the virtualhost node has <link linkend="Java-Broker-Concepts-RemoteReplicationNodes"
+      >remote replications nodes</link>. There is a remote replication node corresponding to each
+    remote virtualhost node that form part of the group.</para>
+
+
+</section>

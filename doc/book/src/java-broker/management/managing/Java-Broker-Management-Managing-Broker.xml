@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="Java-Broker-Management-Managing-Broker">
+  <title>Broker</title>
+  <para>The <link linkend="Java-Broker-Concepts-Broker">Broker</link> is the principal entity. It is
+    composed on a number of other entities that colabrate together to provide message broker
+    facilities.</para>
+  <para>The Broker can only be managed via the HTTP management channel.</para>
+  <section id="Java-Broker-Management-Managing-Broker-Attributes">
+    <title>Attributes</title>
+    <para><itemizedlist>
+        <listitem>
+          <para><emphasis>Name the Broker</emphasis>. This helps distinguish between Brokers in
+            environments that have many.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis>Default Virtualhost</emphasis>. The default virtualhost is the one that
+            messaging clients will connect to if they do not specify a virtualhost name when they
+            form the connect to the Broker.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis>Heartbeating</emphasis>. Enables heartbeats between Broker and Clients.
+            Heartbeats help discover severed TCP/IP connections in a timely manner.</para>
+        </listitem>
+      </itemizedlist></para>
+  </section>
+  <section id="Java-Broker-Management-Managing-Broker-Context">
+    <title>Context</title>
+    <para>
+      <itemizedlist>
+        <listitem><para><emphasis>broker.flowToDiskThreshold</emphasis> Control the <link linkend="Java-Broker-Runtime-Flow-To-Disk">flow to disk</link> feature.</para></listitem>
+      </itemizedlist>
+    </para>
+  </section>
+  <section id="Java-Broker-Management-Managing-Broker-Children">
+    <title>Children</title>
+    <para><itemizedlist>
+        <listitem>
+          <para><link linkend="Java-Broker-Management-Managing-Virtualhost-Nodes">Virtualhost
+              nodes</link></para>
+        </listitem>
+        <listitem>
+          <para><link linkend="Java-Broker-Management-Managing-Ports">Ports</link></para>
+        </listitem>
+        <listitem>
+          <para>Authentication Providers</para>
+        </listitem>
+        <listitem>
+          <para>Key Stores / Trust Stores</para>
+        </listitem>
+        <listitem>
+          <para>Group Providers</para>
+        </listitem>
+        <listitem>
+          <para>Access Control Providers</para>
+        </listitem>
+      </itemizedlist></para>
+  </section>
+  <section id="Java-Broker-Management-Managing-Broker-Lifecycle">
+    <title>Lifecycle</title>
+    <para>Not supported</para>
+  </section>
+</section>

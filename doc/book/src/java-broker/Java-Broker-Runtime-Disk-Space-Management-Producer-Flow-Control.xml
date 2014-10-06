@@ -26,10 +26,9 @@
     <section role="h2" id="Java-Broker-Runtime-Disk-Space-Management-Producer-Flow-Control-GeneralInformation">
         <title>General Information</title>
         <para>
-            The Qpid 0.6 release introduced a simplistic producer-side flow control mechanism
-            into the Java Messaging Broker, causing producers to be flow-controlled when they
-            attempt to send messages to an overfull queue. Qpid 0.18 introduced a similar
-            mechanism triggered by an overfull persistent message store on a virtual host.
+            The Java Broker supports a flow control mechanism to which can be used to prevent either a single queue
+            or an entire virtualhost exceeding configured limits.  These two mechanisms are described
+            next.
         </para>
     </section>
     <section role="h2" id="Java-Broker-Runtime-Disk-Space-Management-Producer-Flow-Control-ServerConfiguration">
@@ -41,23 +40,17 @@
                 which is "overfull". The producer flow control will be rescinded when all
                 Queues on which a producer is blocking become "underfull". A Queue is defined
                 as overfull when the size (in bytes) of the messages on the queue exceeds the
-                "capacity" of the Queue. A Queue becomes "underfull" when its size becomes
-                less than the "flowResumeCapacity".
+                <emphasis>capacity</emphasis> of the Queue. A Queue becomes "underfull" when its
+                size becomes less than the <emphasis>resume capacity</emphasis>.
             </para>
             <para>
-                Examples how to configure flow control in virtual host configuration are provided in
-                <xref linkend="Java-Broker-Virtual-Host-Configure-Flow-Control"/>.
+                The capacity and resume capacity can be specified when the queue is created.  This
+                can be done using the Flow Control Settings wintin the Queue creation dialogue.
             </para>
-            <para>
-                Where no flowResumeCapacity is set, the flowResumeCapacity is set to be equal
-                to the capacity. Where no capacity is set, capacity is defaulted to 0 meaning
-                there is no capacity limit.
-            </para>
-            <important>Flow control can be configured globally for all virtual hosts by specifying threshold values for Broker flow control attributes.</important>
             <section role="h4">
                 <title>Broker Log Messages</title>
                 <para>
-                    There are four new Broker log messages that may occur if flow control through queue capacity limits is enabled.
+                    There are four Broker log messages that may occur if flow control through queue capacity limits is enabled.
                     Firstly, when a capacity limited queue becomes overfull, a log message similar to the following is produced
                 </para>
                 <programlisting>
@@ -84,8 +77,8 @@ MESSAGE [con:2(guest@anonymous(713889609)/test)/ch:1] [con:2(guest@anonymous(713
         <section role="h3">
             <title>Disk quota-based flow control</title>
             <para>
-                Since version 0.18 of Qpid Broker, flow control can be triggered when a
-                configured disk quota is exceeded. This is supported by the BDB and Derby message stores.
+                Flow control can also be triggered when a configured disk quota is exceeded. This is supported by the BDB and
+                Derby virtualhosts.
             </para>
             <para>
                 This functionality blocks all producers on reaching the disk overflow limit. When consumers
@@ -96,15 +89,17 @@ MESSAGE [con:2(guest@anonymous(713889609)/test)/ch:1] [con:2(guest@anonymous(713
                 Two limits can be configured:
             </para>
             <para>
-                overfull limit - the maximum space on disk (in bytes) which can be used by store.
+                overfull limit - the maximum space on disk (in bytes).
             </para>
             <para>
                 underfull limit - when the space on disk drops below this limit, producers are allowed to resume publishing.
             </para>
 
             <para>
-                An example how to configure disk quota-based flow control in virtual host configuration is provided in
-                <xref linkend="Java-Broker-Virtual-Host-Configure-Disk-Quotas"/>.
+                The overfull and underful limit can be specified when a new virtualhost is created or an exiting
+                virtualhost is edited.  This can be done using the Store Overflow and Store Underfull settings
+                within the virtual host creation and edit dialogue.  If editing an existing virtualhost, the virtualhost
+                must be restarted for the new values to take effect.
             </para>
 
             <para>
@@ -117,7 +112,7 @@ MESSAGE [con:2(guest@anonymous(713889609)/test)/ch:1] [con:2(guest@anonymous(713
             <section role="h4">
                 <title>Broker Log Messages for quota flow control</title>
                 <para>
-                    There are 2 new broker log messages that may occur if flow control through disk quota limits is enabled.
+                    There are two broker log messages that may occur if flow control through disk quota limits is enabled.
                     When the virtual host is blocked due to exceeding of the disk quota limit the following message
                     appears in the broker log
                     <programlisting>

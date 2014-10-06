@@ -43,8 +43,8 @@
   </para>
 
  <para>
-    The ACL Providers can be configured using <link linkend="Java-Broker-Configuring-And-Managing-REST-API">REST Management interfaces</link>
-    and <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management Console</link>.
+    The ACL Providers can be configured using <link linkend="Java-Broker-Management-Channel-REST-API">REST Management interfaces</link>
+    and <link linkend="Java-Broker-Management-Channel-Web-Console">Web Management Console</link>.
   </para>
 
   <para>The following ACL Provider managing operations are available from Web Management Console:
@@ -195,7 +195,7 @@
         <row>
           <entry> <command>CREATE</command> </entry>
           <entry> <para> Applied when an object is created, such as bindings, queues, exchanges</para> </entry>
-          <entry><para>EXCHANGE, QUEUE, USER, GROUP</para></entry>
+          <entry><para>VIRTUALHOSTNODE, VIRTUALHOST, EXCHANGE, QUEUE, USER, GROUP</para></entry>
           <entry><para>see properties on the corresponding object type</para></entry>
         </row>
         <row>
@@ -219,7 +219,7 @@
         <row>
           <entry> <command>DELETE</command> </entry>
           <entry> <para> Applied when objects are deleted </para> </entry>
-          <entry><para>EXCHANGE, QUEUE, USER, GROUP</para></entry>
+          <entry><para>VIRTUALHOSTNODE, VIRTUALHOST, EXCHANGE, QUEUE, USER, GROUP</para></entry>
           <entry><para>see properties on the corresponding object type</para></entry>
         </row>
         <row>
@@ -231,7 +231,7 @@
         <row>
           <entry> <command>UPDATE</command> </entry>
           <entry> <para> Applied when an object is updated </para> </entry>
-          <entry><para>EXCHANGE, QUEUE, USER, GROUP</para></entry>
+          <entry><para>VIRTUALHOSTNODE, VIRTUALHOST, EXCHANGE, QUEUE, USER, GROUP</para></entry>
           <entry><para>see EXCHANGE and QUEUE properties</para></entry>
         </row>
         <row>
@@ -262,9 +262,15 @@
       </thead>
       <tbody>
         <row>
+          <entry> <command>VIRTUALHOSTNODE</command> </entry>
+          <entry> <para>A virtualhostnode or remote replication node</para> </entry>
+          <entry><para>ALL, CREATE, UPDATE, DELETE</para> </entry>
+          <entry><para>name</para> </entry>
+        </row>
+        <row>
           <entry> <command>VIRTUALHOST</command> </entry>
           <entry> <para>A virtualhost</para> </entry>
-          <entry><para>ALL, ACCESS</para> </entry>
+          <entry><para>ALL, CREATE, UPDATE, DELETE, ACCESS</para> </entry>
           <entry><para>name</para> </entry>
         </row>
         <row>
@@ -593,11 +599,17 @@ ACL DENY-LOG all all
       <programlisting>
 # allow to the users from webadmins group to change broker model
 # this rule allows adding/removing/editing of Broker level objects:
-# Broker, Virtual Host, Group Provider, Authentication Provider, Port, Access Control Provider etc
+# Broker, Group Provider, Authentication Provider, Port, Access Control Provider etc
 ACL ALLOW-LOG webadmins CONFIGURE BROKER
 
 # allow to the users from webadmins group to perform
-# create/update/delete on Virtual Host children
+# create/update/delete on virtualhost node and children
+ACL ALLOW-LOG webadmins CREATE VIRTUALHOSTNODE
+ACL ALLOW-LOG webadmins UPDATE VIRTUALHOSTNODE
+ACL ALLOW-LOG webadmins DELETE VIRTUALHOSTNODE
+ACL ALLOW-LOG webadmins CREATE VIRTUALHOST
+ACL ALLOW-LOG webadmins UPDATE VIRTUALHOST
+ACL ALLOW-LOG webadmins DELETE VIRTUALHOST
 ACL ALLOW-LOG webadmins CREATE QUEUE
 ACL ALLOW-LOG webadmins UPDATE QUEUE
 ACL ALLOW-LOG webadmins DELETE QUEUE

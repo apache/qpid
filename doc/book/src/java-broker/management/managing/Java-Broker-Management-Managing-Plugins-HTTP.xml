@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="Java-Broker-Management-Managing-Plugin-HTTP">
+    <title>HTTP Plugin</title>
+    <para>The HTTP Plugin provides the <link linkend="Java-Broker-Management-Channel-HTTP">HTTP managenenent channel</link> comprising of the <link linkend="Java-Broker-Management-Channel-Web-Console">Web
+        Managemnt Console</link> and the <link linkend="Java-Broker-Management-Channel-REST-API">REST API</link>.</para>
+    <section id="Java-Broker-Management-Managing-Plugin-HTTP-Attributes">
+        <title>Attributes</title>
+        <para>
+            <itemizedlist>
+                <listitem>
+                    <para><emphasis>Basic Authentication for HTTP</emphasis>. It is set to false
+                        (disabled) by default.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Basic Authentication for HTTPS</emphasis>. It is set to true
+                        (enabled) by default.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>SASL Authentication for HTTP</emphasis>. It is set to true
+                        (enabled) by default.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>SASL Authentication for HTTPS</emphasis>. It is set to true
+                        (enabled) by default.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Session timeout</emphasis> is the timeout in seconds to close
+                        the HTTP session. It is set to 10 minutes by default.</para>
+                </listitem>
+            </itemizedlist>
+        </para>
+    </section>
+    <section id="Java-Broker-Management-Managing-Plugin-HTTP-Children">
+        <title>Children</title>
+        <para>None</para>
+    </section>
+    <section id="Java-Broker-Management-Managing-Plugin-HTTP-Lifecycle">
+        <title>Lifecycle</title>
+        <para>Not supported<important><para>NOTE: Changes to the Session Timeout attribute only take
+                    effect at broker restart. </para></important></para>
+    </section>
+</section>

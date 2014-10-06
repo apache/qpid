@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="Java-Broker-Concepts-Virtualhosts">
+  <title>Virtualhosts</title>
+  <para>A virtualhost is a namespace in which messaging is performed. Virtualhosts are independent;
+    the messaging goes on a within a virtualhost is independent of any messaging that goes on in
+    another virtualhost. For instance, a queue named <emphasis>foo</emphasis> defined in one
+    virtualhost is completely independent of a queue named <emphasis>foo</emphasis> in another
+    virtualhost.</para>
+  <para>A virtualhost is identified by a name which must be unique broker-wide. Clients use the name
+    to identify the virtualhost to which they wish to connect when they connect.</para>
+  <para>A virtualhost exists in a container called a virtualhost node.</para>
+  <para>The virtualhost comprises of a number of entities. This section summaries the purpose of
+    each of the entities and describes the relationships between them. These details are developed
+    further in the sub-sections that follow.</para>
+  <para><emphasis>Exchanges</emphasis> is a named entity within the Virtual Host which receives
+    messages from producers and routes them to matching Queues.</para>
+  <para><emphasis>Queues</emphasis> are named entities that hold messages for delivery to consumer
+    applications.</para>
+  <para><emphasis>Bindings</emphasis> are relationships between Exchanges and Queue that facilitate
+    routing of messages from the Exchange to the Queue.</para>
+  <para><emphasis>Connections</emphasis> represent a live connection to the virtualhost from a
+    messaging client.</para>
+  <para>A <emphasis>Session</emphasis> represents a context for the production or consumption of
+    messages. Connection support many Sessions.</para>
+  <para>A <emphasis>Consumer</emphasis> represents a live consumer that is attached to queue.</para>
+  <para> The following diagram depicts the Virtualhost model: <figure>
+      <title>Virtualhost Model</title>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="images/VirtualHost-Model.png" format="PNG" scalefit="1"/>
+        </imageobject>
+        <textobject>
+          <phrase>Virtual Host Model</phrase>
+        </textobject>
+      </mediaobject>
+    </figure>
+  </para>
+  <para>A <emphasis>virtualhost</emphasis> is backed by storage which is used to store the messages.</para>
+</section>

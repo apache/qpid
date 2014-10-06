@@ -26,6 +26,9 @@
 
 <appendix id="Java-Broker-Appendix-Operation-Logging">
   <title>Operational Logging</title>
+  
+  <para> TODO add HA operation log messages</para>
+  
   <para>The Broker will, by default, produce structured log messages in response to key events in
     the lives of objects within the Broker. These consise messages are designed to allow the user to
     understand the actions of the Broker in retrospect. This is valuable for problem diagnosis and

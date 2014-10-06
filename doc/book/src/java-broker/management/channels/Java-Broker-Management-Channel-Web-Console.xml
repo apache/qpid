@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="Java-Broker-Management-Channel-Web-Console">
+    <title>Web Management Console</title>
+    <para> The Web Management Console provides a simple and intuitive interface for the Management
+        and Control of the Broker. From here, all aspects of the Broker can be controled, including: <itemizedlist>
+            <listitem>
+                <para>add, remove and monitor queues</para>
+            </listitem>
+            <listitem>
+                <para>inspect, move, copy or delete messages</para>
+            </listitem>
+            <listitem>
+                <para>add, remove and monitor virtualhosts</para>
+            </listitem>
+            <listitem>
+                <para>configure and control high availabiliy</para>
+            </listitem>
+        </itemizedlist>
+    </para>
+    <para>The remainder of the section provides an introduction to the web managemnet console and
+        its use.</para>
+    <section id="Java-Broker-Management-Channel-Web-Console-Accessing">
+        <title>Accessing the Console</title>
+        <para>The Web Management Console is provided by the HTTP Management Plugin. Providing the
+            HTTP Management Plugin is in its default configuration, the Web Management Console can
+            be accessed by pointing a brower at the following URL:</para>
+        <para><literal>http://myhost.mydomain.com:8080</literal></para>
+        <para>The Console will prompt you to login using a username and password.</para>
+        <example>
+            <title>Web Management Console - Authentication</title>
+            <screenshot>
+                <graphic fileref="images/Management-Web-Auth.png" width="600px"/>
+            </screenshot>
+        </example>
+    </section>
+    <section id="Java-Broker-Management-Channel-Web-Console-Orientation">
+        <title>Orientation</title>
+        <para>After you have logged on you will see a screen similar to the following. The elements
+            of the screen are now explained.</para>
+        <example>
+            <title>Web Management Orientation - Console</title>
+            <screenshot>
+                <graphic fileref="images/Management-Web-Console.png" width="600px"/>
+            </screenshot>
+        </example>
+        <para>
+            <itemizedlist>
+                <listitem>
+                    <para><emphasis>A</emphasis> - Hierarchy view. Expandable/collapsable view showing all entities
+                        within the Broker. Double click on an entity name to cause its tab to be
+                        opened. </para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>B</emphasis> - Tab. Shows the details of an entity including its attributes and its
+                        child entities. </para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>C</emphasis> - Occluded tab. Click tab name to bring the tab to the front.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>D</emphasis> - Auto restore check box. Checked tabs will be automatically restored on
+                        subsequent login.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>E</emphasis> - Close. Click to close the tab.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>F</emphasis> - User Menu. Access to Preferences, Logout and Help.</para>
+                </listitem>
+            </itemizedlist>
+        </para>
+        <example>
+            <title>Web Management Orientation - Tab</title>
+            <screenshot>
+                <graphic fileref="images/Management-Web-Tab.png" width="600px"/>
+            </screenshot>
+        </example>
+        <para>The elements of a tab are now explained: <itemizedlist>
+                <listitem>
+                    <para><emphasis>1</emphasis> - Attribute Panel. Shows the attributes of the entity. Click the panel
+                        title bar opens/closes the panel.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>2</emphasis> - Child Panels. Panels containing a table listing the children of the entity. Click the panel
+                        title bar opens/closes the panel.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>3</emphasis> - Child Row. Row summarizing a child entity. Double click to open the
+                        child tab.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>4</emphasis> - Child Operations. Buttons to add a new child or perform operations on existing children.</para>
+                </listitem>
+            </itemizedlist>
+        </para>
+    </section>
+
+</section>

@@ -67,11 +67,11 @@
         External, and file-based authentication mechanisms.</para>
     </listitem>
     <listitem>
-      <para>Pluggable message store architecture with implementations based on <ulink
+      <para>Pluggable storage architecture with implementations including <ulink
           url="http://db.apache.org/derby/">Apache Derby</ulink>, <ulink
           url="&oracleBdbProductOverviewUrl;">Oracle BDB JE</ulink><footnote>
           <para>Oracle BDB JE must be downloaded separately.</para>
-        </footnote>, and Memory Store</para>
+        </footnote>, and External Database</para>
     </listitem>
     <listitem>
       <para>Web based management interface and programmatic management interfaces  via REST and JMX

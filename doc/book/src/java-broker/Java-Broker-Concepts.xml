@@ -20,40 +20,25 @@
 
 -->
 
-<chapter  id="Java-Broker-Concepts">
-    <title>Concepts</title>
+<chapter id="Java-Broker-Concepts">
+  <title>Concepts</title>
 
-    <section id="Java-Broker-Concepts-Broker">
-        <title>Broker</title>
-        <para>
-        The Qpid Broker has one or more <emphasis>Virtual Hosts</emphasis> (independent containers of <emphasis>Queues</emphasis>,
-        <emphasis>Exchanges</emphasis>, etc) sharing a connection, authentication, and access control model via the configured
-        <emphasis>Ports</emphasis>, <emphasis>Authentication Providers</emphasis>, <emphasis>Group providers</emphasis> and
-        <emphasis>Access Control Providers</emphasis>. <emphasis>Keystores</emphasis> and <emphasis>Truststores</emphasis> can
-        be defined on the broker level and linked to <emphasis>Ports</emphasis> configured with an SSL transport. The Broker
-        also provides management plugins to allow configuring and monitoring it.
-        </para>
-        <para>
-        The following diagram depicts the Broker model:
-        <figure>
-            <title>Broker Model</title>
-            <mediaobject>
-              <imageobject>
-                <imagedata fileref="images/Broker-Model.png" format="PNG" scalefit="1"/>
-              </imageobject>
-              <textobject>
-                <phrase>Broker Model</phrase>
-              </textobject>
-            </mediaobject>
-        </figure>
-        These concepts will be expanded upon in the forthcoming pages.
-        </para>
-    </section>
-
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Concepts-Virtual-Hosts.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Concepts-Exchanges.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Concepts-Queues.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Concepts-Ports.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Concepts-Authentication-Providers.xml"/>
-    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Concepts-Other-Services.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+    href="concepts/Java-Broker-Concepts-Broker.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+    href="concepts/Java-Broker-Concepts-Virtualhost-Nodes.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+    href="concepts/Java-Broker-Concepts-RemoteReplicationNodes.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+    href="concepts/Java-Broker-Concepts-Virtualhosts.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+    href="concepts/Java-Broker-Concepts-Exchanges.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+    href="concepts/Java-Broker-Concepts-Queues.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+    href="concepts/Java-Broker-Concepts-Ports.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+    href="concepts/Java-Broker-Concepts-Authentication-Providers.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+    href="concepts/Java-Broker-Concepts-Other-Services.xml"/>
 </chapter>

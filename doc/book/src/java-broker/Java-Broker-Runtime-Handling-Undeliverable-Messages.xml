@@ -70,11 +70,8 @@
    the Management interfaces, but is not possible to determine this information from a message client.
    Specifically, the optional JMS message header <property>JMSXDeliveryCount</property> is not
    supported.</para>
-  <para>Maximum Delivery Count can be enabled via management (see <xref
-    linkend="Java-Broker-Configuring-And-Managing"/>) using the the queue declare property
-    <property>x-qpid-maximum-delivery-count</property> or via <link
-    linkend="Java-Broker-Runtime-Handling-Undeliverable-Messages-Configuration">configuration</link>
-   as illustrated below.</para>
+  <para>Maximum Delivery Count can be specified when a new queue is created or using the the
+   queue declare property <property>x-qpid-maximum-delivery-count</property></para>
  </section>
 
  <section role="h2" id="Java-Broker-Runtime-Handling-Undeliverable-Messages-Dead-Letter-Queues">
@@ -86,10 +83,8 @@
    onto the DLQ and removed from the original queue. </para>
   <para>The DLQ feature causes generation of a Dead Letter Exchange and a Dead Letter Queue. These
    are named convention QueueName<emphasis>_DLE</emphasis> and QueueName<emphasis>_DLQ</emphasis>.</para>
-  <para>DLQs can be enabled via management (see <xref linkend="Java-Broker-Configuring-And-Managing"
-   />) using the queue declare property <property>x-qpid-dlq-enabled</property> or via <link
-    linkend="Java-Broker-Runtime-Handling-Undeliverable-Messages-Configuration">configuration</link>
-   as illustrated below.</para>
+  <para>DLQs can be enabled when a new queue is created
+   or using the queue declare property <property>x-qpid-dlq-enabled</property>.</para>
   <caution>
    <title>Avoid excessive queue depth</title>
    <para>Applications making use of DLQs <emphasis>should</emphasis> make provision for the frequent
@@ -99,16 +94,4 @@
     depths should not be permitted to develop.</para>
   </caution>
  </section>
-
- <section role="h2" id="Java-Broker-Runtime-Handling-Undeliverable-Messages-Configuration">
-  <title>Configuration</title>
-  <important>DLQs/Maximum Delivery can be configured globally for all Virtual Hosts by
-  specifying non-zero value for global Broker attribute
-  "queue.maximumDeliveryAttempts" and setting of Broker attribute "queue.deadLetterQueueEnabled" to true.</important>
-
-  <para>An examples of configuring DLQs/Maximum Delivery Count using Virtual Hosts configuration file
-   are described in <xref linkend="Java-Broker-Virtual-Host-Configuring-DLQ"/>.</para>
- </section>
-
-
 </section>

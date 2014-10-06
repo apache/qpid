@@ -41,9 +41,8 @@
 
   <section role="h3" id="Java-Broker-High-Availability-OfferingsOfJavaBroker">
     <title>HA offerings of the Java Broker</title>
-    <para>The Java Broker's HA offering became available at release <emphasis role="bold">0.18</emphasis>.  HA is provided by way of the HA
-      features built into the <ulink url="&oracleBdbProductOverviewUrl;">Java Edition of the Berkley Database (BDB JE)</ulink> and as such
-      is currently only available to Java Broker users who use the optional BDB JE based persistence store. This
+    <para>HA is provided by way of the HA features built into the <ulink url="&oracleBdbProductOverviewUrl;">Java Edition of the Berkley Database
+      (BDB JE)</ulink> and as such is currently only available to Java Broker users who use the optional BDB JE based persistence store. This
       <emphasis role="bold">optional</emphasis> store requires the use of BDB JE which is licensed under the Sleepycat Licence, which is
       not compatible with the Apache Licence and thus BDB JE is not distributed with Qpid. Users who elect to use this optional store for
       the broker have to provide this dependency.</para>
@@ -286,96 +285,13 @@
 
   <section role="h3" id="Java-Broker-High-Availability-MultiNodeCluster">
     <title>Multi Node Cluster</title>
-    <para>Multi node clusters, that is clusters where the number of nodes is three or more, are not yet
-         ready for use.</para>
+    <para>Multi node clusters are now supported. TODO expand</para>
   </section>
 
-  <section role="h3" id="Java-Broker-High-Availability-Configuration">
-    <title>Configuring a Virtual Host to be a node</title>
-    <para>To configure a virtualhost as a cluster node, configure the virtualhost.xml in the following manner:</para>
-    <para>
-
-    <example>
-      <title>Configuring a VirtualHost to use the BDBHAMessageStore</title>
-      <programlisting language="xml"><![CDATA[
-<virtualhosts>
-  <virtualhost>
-    <name>vhostname</name>
-    <vhostname>
-      <store>
-	<class>org.apache.qpid.server.store.berkeleydb.BDBHAMessageStore</class>
-	<environment-path>${QPID_WORK}/bdbhastore/vhostname</environment-path>
-	<highAvailability>
-	  <groupName>myclustername</groupName>
-	  <nodeName>mynode1</nodeName>
-	  <nodeHostPort>node1host:port</nodeHostPort>
-	  <helperHostPort>node1host:port</helperHostPort>
-	  <durability>NO_SYNC\,NO_SYNC\,SIMPLE_MAJORITY</durability>
-	  <coalescingSync>true|false</coalescingSync>
-	  <designatedPrimary>true|false</designatedPrimary>
-	</highAvailability>
-      </store>
-      ...
-   </vhostname>
-  </virtualhost>
-</virtualhosts>]]></programlisting>
-    </example>
-    </para>
-    <para>The <varname>groupName</varname> is the name of logical name of the cluster.  All nodes within the
-      cluster must use the same <varname>groupName</varname> in order to be considered part of the cluster.</para>
-    <para>The <varname>nodeName</varname> is the logical name of the node.  All nodes within the cluster must have a
-      unique name.  It is recommended that the node name should be chosen from a different nomenclature from that of
-      the servers on which they are hosted, in case the need arises to move node to a new server in the future.</para>
-    <para>The <varname>nodeHostPort</varname> is the hostname and port number used by this node to communicate with the
-      the other nodes in the cluster. For the hostname, an IP address, hostname or fully qualified hostname may be used.
-      For the port number, any free port can be used.  It is important that this address is stable over time, as BDB
-      records and uses this address internally.</para>
-    <para>The <varname>helperHostPort</varname> is the hostname and port number that new nodes use to discover other
-      nodes within the cluster when they are newly introduced to the cluster.  When configuring the first node, set the
-      <varname>helperHostPort</varname> to its own <varname>nodeHostPort</varname>.  For the second and subsequent nodes,
-      set their <varname>helperHostPort</varname> to that of the first node.</para>
-    <para><varname>durability</varname> controls the <link linkend="Java-Broker-High-Availability-DurabilityGuarantee">durability</link>
-      guarantees made by the cluster. It is important that all nodes use the same value for this property. The default value is
-      NO_SYNC\,NO_SYNC\,SIMPLE_MAJORITY. Owing to the internal use of Apache Commons Config, it is currently necessary
-      to escape the commas within the durability string.</para>
-    <para><varname>coalescingSync</varname> controls the <link linkend="Java-Broker-High-Availability-DurabilityGuarantee_CoalescingSync">coalescing-sync</link>
-      mode of Qpid. It is important that all nodes use the same value. If omitted, it defaults to true.</para>
-    <para>The <varname>designatedPrimary</varname> is applicable only to the <link linkend="Java-Broker-High-Availability-TwoNodeCluster">two-node
-     case.</link>  It governs the behaviour of a node when the other node fails or becomes uncontactable.  If true,
-     the node will be designated as primary at startup and will be able to continue operating as a single node master.
-     If false, the node will transition to an unavailable state until a third-party manually designates the node as
-     primary or the other node is restored. It is suggested that the node that normally fulfils the role of master is
-     set true in config file and the node that is normally replica is set false.  Be aware that setting both nodes to
-     true will lead to a failure to start up, as both cannot be designated at the point of contact. Designating both
-     nodes as primary at runtime (using the JMX interface) will lead to a <link linkend="Java-Broker-High-Availability-TwoNodeSplitBrain">split-brain</link>
-     in the case of network partition and must be avoided.</para>
-     <note><para>Usage of domain names in  <varname>helperHostPort</varname> and <varname>nodeHostPort</varname> is more preferebale
-     over IP addresses due to the tendency of more frequent changes of the last over the former.
-     If server IP address changes but domain name remains the same the HA cluster can continue working as normal
-     in case when domain names are used in cluster configuration. In case when IP addresses are used and they are changed with the time
-     than Qpid <link linkend="Java-Broker-High-Availability-JMXAPI">JMX API for HA</link> can be used to change the addresses or remove the nodes from the cluster.</para></note>
-
-    <section role="h4" id="Java-Broker-High-Availability-Configuration_BDBEnvVars">
-      <title>Passing BDB environment and replication configuration options</title>
-      <para>It is possible to pass BDB <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/EnvironmentConfig.html">environment</ulink> and
-        <ulink url="&oracleBdbJavaDocUrl;com/sleepycat/je/rep/ReplicationConfig.html">replication</ulink> configuration options from the
-        virtualhost.xml.</para>
-      <para>Environment configuration options are passed as described in <xref linkend="Java-Broker-Stores-BDB-Store-Configuration_BDBEnvVars"/></para>
-      <para>Replication configuration option are passed using <varname>repConfig</varname> elements with the <varname>store</varname> element.</para>
-      <para>For example, to override the BDB replication configuration option <varname>je.rep.electionsPrimaryRetries</varname>.</para>
-      <programlisting language="xml"><![CDATA[
-         ...
-      </highAvailability>
-      ...
-      <repConfig>
-        <name>je.rep.electionsPrimaryRetries</name>
-        <value>3</value>
-      </repConfig>
-      ...
-    </store>]]></programlisting>
-    </section>
+  <section role="h3" id="Java-Broker-High-Availability-Creating-A-Grouop">
+    <title>Creating a Group</title>
+    <para>TODO</para>
   </section>
-
   <section role="h3" id="Java-Broker-High-Availability-DurabilityGuarantee">
     <title>Durability Guarantees</title>
     <para>The term <ulink url="http://en.wikipedia.org/wiki/ACID#Durability">durability</ulink> is used to mean that once a
@@ -482,9 +398,9 @@
       the value greater than 1000 milliseconds. If it is desired that clients re-connect automatically after a
       master to replica failure, <varname>cyclecount</varname> should be tuned so that the retry period is longer than
       the expected length of time to perform the failover.</para>
-    <example><title>Example of connection URL for the HA Cluster</title><![CDATA[
+    <example><title>Example of connection URL for the HA Cluster</title><para><![CDATA[
 amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672?connectdelay='2000'&retries='3';tcp://localhost:5671?connectdelay='2000'&retries='3';tcp://localhost:5673?connectdelay='2000'&retries='3''&failover='roundrobin?cyclecount='30''
-        ]]></example>
+        ]]></para></example>
   </section>
 
 
@@ -706,8 +622,7 @@ Current state of node: Node-5001 from group: TestClusterGroup
     <para>In case when a Replica goes down (or falls behind the Master in 2 node cluster where the Master is designated primary)
     and the Master continues running, the non-replicated store files are kept on the Masters disk for the period of time
     as specified in <emphasis>je.rep.repStreamTimeout</emphasis> JE setting in order to replicate this data later
-    when the Replica is back. This setting is set to 1 hour by default by the broker. The setting can be overridden as described in
-    <xref linkend="Java-Broker-High-Availability-Configuration_BDBEnvVars"/>.</para>
+    when the Replica is back. This setting is set to 1 hour by default by the broker.</para>
     <para>Depending from the application publishing/consuming rates and message sizes,
     the disk space might become overfull during this period of time due to preserved logs.
     Please, make sure to allocate enough space on your disk to avoid this from happening.

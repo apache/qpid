@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="Java-Broker-Management-Managing-Truststores">
+    <title>Truststores</title>
+    <para> A <link linkend="Java-Broker-Concepts-Truststores">Truststore</link> is required by a
+        Port in order to SSL client authentication. Some authentication provides also use a
+        truststore when connecting to authentication systems that are protected by a private issuer
+        SSL certificate.</para>
+    <section id="Java-Broker-Management-Managing-Truststores-Attributes">
+        <title>Attributes</title>
+        <para><itemizedlist>
+                <listitem>
+                    <para><emphasis>Name the truststore</emphasis>. Used to identify the
+                        truststore.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Path</emphasis>. Path to truststore file</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Truststore password</emphasis>. Password used to secure the truststore<important>
+                            <para> The password of the certificate used by the Broker <emphasis
+                                    role="bold">must</emphasis> match the password of the keystore
+                                itself. </para>
+                        </important></para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Certificate Alias</emphasis>. An optional way of specifying
+                        which certificate the broker should use if the keystore contains multiple
+                        entries.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Manager Factory Algorithm</emphasis>. In keystores the have more
+                        than one certificate, the alias identifies the certificate to be
+                        used.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Key Store Type</emphasis>. Type of Keystore.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis>Peers only</emphasis>. When "Peers Only" option is selected for
+                        the Truststore it will allow logging in for the clients with the certificate
+                        exactly matching the certificate loaded in the Truststore database, thus,
+                        authenticating the connections with self signed certificates not nessesary
+                        signed by CA.</para>
+                </listitem>
+            </itemizedlist></para>
+    </section>
+    <section id="Java-Broker-Management-Managing-Truststores-Children">
+        <title>Children</title>
+        <para>None</para>
+    </section>
+    <section id="Java-Broker-Management-Managing-Truststores-Lifecycle">
+        <title>Lifecycle</title>
+        <para>Not supported</para>
+    </section>
+</section>

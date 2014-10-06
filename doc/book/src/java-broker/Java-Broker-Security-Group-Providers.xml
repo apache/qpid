@@ -29,8 +29,8 @@
     the configured Group Providers are consulted allowing the assignment of GroupPrincipals for a given authenticated user. Any number of
     Group Providers can be added into the Broker. All of them will be checked for the presence of the groups for a given authenticated user.
   </para>
-  <para>The <emphasis>Group Provider</emphasis> can be configured using <link linkend="Java-Broker-Configuring-And-Managing-REST-API">
-  REST Management interfaces</link> and <link linkend="Java-Broker-Configuring-And-Managing-Web-Console">Web Management Console</link>.</para>
+  <para>The <emphasis>Group Provider</emphasis> can be configured using <link linkend="Java-Broker-Management-Channel-REST-API">
+    REST Management interfaces</link> and <link linkend="Java-Broker-Management-Channel-Web-Console">Web Management Console</link>.</para>
   <para>The following <emphasis>Group Provider</emphasis> managing operations are available from Web Management Console:
     <itemizedlist>
         <listitem><para>A new Group Provider can be added by clicking onto "Add Group Provider" button on a Broker tab.</para></listitem>
