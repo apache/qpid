@@ -1253,7 +1253,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     {
         if (LOGGER.isDebugEnabled())
         {
-            LOGGER.debug("Setting permitted nodes to " + permittedNodes);
+            LOGGER.debug(_prettyGroupNodeName + " permitted nodes set to " + permittedNodes);
         }
 
         _permittedNodes.clear();
@@ -1263,12 +1263,18 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             registerAppStateMonitorIfPermittedNodesSpecified();
 
             ReplicationGroupListener listener = _replicationGroupListener.get();
+            int count = 0;
             for(ReplicationNode node: _remoteReplicationNodes.values())
             {
                 if (!isNodePermitted(node))
                 {
                     onIntruder(listener, node);
                 }
+                count++;
+            }
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug(_prettyGroupNodeName + " checked  " + count + " node(s)");
             }
         }
     }
