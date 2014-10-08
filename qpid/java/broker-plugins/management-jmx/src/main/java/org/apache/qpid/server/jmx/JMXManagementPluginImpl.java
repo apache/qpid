@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import javax.management.InstanceAlreadyExistsException;
 import javax.management.JMException;
 
 import org.apache.log4j.Logger;
@@ -340,8 +341,8 @@ public class JMXManagementPluginImpl
                         mbean = new UserManagementMBean((PasswordCredentialManagingAuthenticationProvider<?>) object, _objectRegistry);
                         registerMBean(object, _pluginMBeanProvider, mbean);
                     }
-                    createAdditionalMBeansFromProvidersIfNecessary(object, _objectRegistry);
                 }
+                createAdditionalMBeansFromProvidersIfNecessary(object, _objectRegistry);
             }
         }
         return mbean;
@@ -351,10 +352,27 @@ public class JMXManagementPluginImpl
     {
         if (!providerMBeanExists(host, _pluginMBeanProvider))
         {
-            VirtualHostMBean mbean = new VirtualHostMBean(host, _objectRegistry);
-            registerMBean(host, _pluginMBeanProvider, mbean);
             host.addChangeListener(_changeListener);
-            return mbean;
+            try
+            {
+                VirtualHostMBean mbean = new VirtualHostMBean(host, _objectRegistry);
+                registerMBean(host, _pluginMBeanProvider, mbean);
+                return mbean;
+            }
+            catch (InstanceAlreadyExistsException e)
+            {
+                VirtualHostNode parent = host.getParent(VirtualHostNode.class);
+                Set<ConfiguredObject<?>> registered = _children.keySet();
+                for (ConfiguredObject<?> object: registered)
+                {
+                    if (object instanceof VirtualHost && object.getParent(VirtualHostNode.class) == parent)
+                    {
+                        LOGGER.warn("Unexpected MBean is found for VirtualHost " + object + " belonging to node " +  parent);
+                    }
+                }
+
+                throw e;
+            }
         }
         return null;
     }
@@ -392,24 +410,21 @@ public class JMXManagementPluginImpl
                 }
                 unregisterObjectMBeans(object);
                 _children.remove(object);
-                destroyChildrenMBeansIfVirtualHostNode(object);
+                destroyChildrenMBeans(object);
             }
         }
     }
 
-    private void destroyChildrenMBeansIfVirtualHostNode(ConfiguredObject<?> child)
+    private void destroyChildrenMBeans(ConfiguredObject<?> object)
     {
-        if (child instanceof VirtualHostNode)
+        for (Iterator<ConfiguredObject<?>> iterator = _children.keySet().iterator(); iterator.hasNext();)
         {
-            for (Iterator<ConfiguredObject<?>> iterator = _children.keySet().iterator(); iterator.hasNext();)
+            ConfiguredObject<?> registeredObject = iterator.next();
+            ConfiguredObject<?> parent = registeredObject.getParent(object.getCategoryClass());
+            if (parent == object)
             {
-                ConfiguredObject<?> registeredObject = iterator.next();
-                ConfiguredObject<?> parent = registeredObject.getParent(VirtualHostNode.class);
-                if (parent == child)
-                {
-                    registeredObject.removeChangeListener(_changeListener);
-                    unregisterObjectMBeans(registeredObject);
-                }
+                registeredObject.removeChangeListener(_changeListener);
+                unregisterObjectMBeans(registeredObject);
                 iterator.remove();
             }
         }
