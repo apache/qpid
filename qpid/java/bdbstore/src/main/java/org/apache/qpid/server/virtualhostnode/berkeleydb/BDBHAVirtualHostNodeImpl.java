@@ -260,7 +260,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     public String toString()
     {
         return "BDBHAVirtualHostNodeImpl [id=" + getId() + ", name=" + getName() + ", storePath=" + _storePath + ", groupName=" + _groupName + ", address=" + _address
-                + ", state=" + getState() + ", priority=" + _priority + ", designatedPrimary=" + _designatedPrimary + ", quorumOverride=" + _quorumOverride + "]";
+                + ", state=" + getState() + ", priority=" + _priority + ", designatedPrimary=" + _designatedPrimary + ", quorumOverride=" + _quorumOverride + ", role=" + getRole() + "]";
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -612,7 +612,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
     private void onDetached()
     {
-        createReplicaVirtualHost();
+        closeVirtualHostIfExist();
     }
 
     private void createReplicaVirtualHost()
@@ -652,7 +652,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
             if (LOGGER.isInfoEnabled())
             {
-                LOGGER.info("Received BDB event indicating transition to state " + state);
+                LOGGER.info("Received BDB event indicating transition to state " + state + " for " + getName());
             }
             NodeRole previousRole = getRole();
             try
@@ -1006,7 +1006,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                     {
                         byte[] applicationState = nodeState.getAppState();
                         Set<String> permittedNodes = ReplicatedEnvironmentFacade.convertApplicationStateBytesToPermittedNodeList(applicationState);
-                        if (!_permittedNodes.equals(permittedNodes))
+                        if (_permittedNodes.size() != permittedNodes.size() || !_permittedNodes.containsAll(permittedNodes))
                         {
                             if (_permittedNodes.contains(remoteNode.getAddress()))
                             {
