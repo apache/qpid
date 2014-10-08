@@ -949,7 +949,12 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                 if(desiredState == getDesiredState() && desiredState != state)
                                 {
                                     attainStateIfOpenedOrReopenFailed();
-                                    return getState();
+                                    final State currentState = getState();
+                                    if (currentState != state)
+                                    {
+                                        notifyStateChanged(state, currentState);
+                                    }
+                                    return currentState;
                                 }
                                 else
                                 {

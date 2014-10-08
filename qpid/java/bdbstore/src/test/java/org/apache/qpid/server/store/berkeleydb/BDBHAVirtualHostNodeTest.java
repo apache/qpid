@@ -42,6 +42,7 @@ import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationConfig;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.RemoteReplicationNode;
@@ -489,21 +490,21 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         nonMasterNode.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, amendedPermittedNodes));
     }
 
-    public void testIntruderProtectionInManagementMode() throws Exception
+    public void testIntruderProtection() throws Exception
     {
-        int node1PortNumber = _portHelper.getNextAvailable();
-        int node2PortNumber = _portHelper.getNextAvailable();
+        int nodePortNumber = _portHelper.getNextAvailable();
+        int intruderPortNumber = _portHelper.getNextAvailable();
 
-        String helperAddress = "localhost:" + node1PortNumber;
+        String helperAddress = "localhost:" + nodePortNumber;
         String groupName = "group";
-        String nodeName = "node1";
+        String nodeName = "node";
 
-        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber);
-        BDBHAVirtualHostNode<?> node1 = _helper.createAndStartHaVHN(node1Attributes);
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, nodePortNumber, intruderPortNumber);
+        BDBHAVirtualHostNode<?> node = _helper.createAndStartHaVHN(node1Attributes);
 
-        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
-        node2Attributes.put(BDBHAVirtualHostNode.PRIORITY, 0);
-        BDBHAVirtualHostNode<?> node2 = _helper.createAndStartHaVHN(node2Attributes);
+        Map<String, Object> intruderAttributes = _helper.createNodeAttributes("intruder", groupName, "localhost:" + intruderPortNumber, helperAddress, nodeName);
+        intruderAttributes.put(BDBHAVirtualHostNode.PRIORITY, 0);
+        BDBHAVirtualHostNode<?> intruder = _helper.createAndStartHaVHN(intruderAttributes);
 
         final CountDownLatch stopLatch = new CountDownLatch(1);
         ConfigurationChangeListener listener = new NoopConfigurationChangeListener()
@@ -517,21 +518,68 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
                 }
             }
         };
-        node1.addChangeListener(listener);
+        node.addChangeListener(listener);
 
         List<String> permittedNodes = new ArrayList<String>();
         permittedNodes.add(helperAddress);
-        node1.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, permittedNodes));
+        node.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, permittedNodes));
 
         assertTrue("Intruder protection was not triggered during expected timeout", stopLatch.await(10, TimeUnit.SECONDS));
 
+        // Try top re start the ERRORED node and ensure exception is thrown
+        try
+        {
+            node.start();
+            fail("Restart of node should have thrown exception");
+        }
+        catch (IllegalStateException ise)
+        {
+            assertEquals("Unexpected exception when restarting node post intruder detection", "Intruder node detected: " + "localhost:" + intruderPortNumber, ise.getMessage());
+        }
+        _helper.awaitForAttributeChange(node, AbstractConfiguredObject.STATE, State.ERRORED);
+    }
+
+    public void testIntruderProtectionInManagementMode() throws Exception
+    {
+        int nodePortNumber = _portHelper.getNextAvailable();
+        int intruderPortNumber = _portHelper.getNextAvailable();
+
+        String helperAddress = "localhost:" + nodePortNumber;
+        String groupName = "group";
+        String nodeName = "node";
+
+        Map<String, Object> nodeAttributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, nodePortNumber, intruderPortNumber);
+        BDBHAVirtualHostNode<?> node = _helper.createAndStartHaVHN(nodeAttributes);
+
+        Map<String, Object> intruderAttributes = _helper.createNodeAttributes("intruder", groupName, "localhost:" + intruderPortNumber, helperAddress, nodeName);
+        intruderAttributes.put(BDBHAVirtualHostNode.PRIORITY, 0);
+        BDBHAVirtualHostNode<?> intruder = _helper.createAndStartHaVHN(intruderAttributes);
+
+        final CountDownLatch stopLatch = new CountDownLatch(1);
+        ConfigurationChangeListener listener = new NoopConfigurationChangeListener()
+        {
+            @Override
+            public void stateChanged(ConfiguredObject<?> object, State oldState, State newState)
+            {
+                if (newState == State.ERRORED)
+                {
+                    stopLatch.countDown();
+                }
+            }
+        };
+        node.addChangeListener(listener);
+
+        List<String> permittedNodes = new ArrayList<String>();
+        permittedNodes.add(helperAddress);
+        node.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, permittedNodes));
+
+        assertTrue("Intruder protection was not triggered during expected timeout", stopLatch.await(10, TimeUnit.SECONDS));
+
+        // test that if management mode is enabled then the node can start without exception
         when(_helper.getBroker().isManagementMode()).thenReturn(true);
-        node1.start();
+        node.start();
 
-        _helper.awaitRemoteNodes(node1, 1);
-
-        BDBHARemoteReplicationNode<?> remote = _helper.findRemoteNode(node1, node2.getName());
-        remote.delete();
+        _helper.awaitForAttributeChange(node, AbstractConfiguredObject.STATE, State.ERRORED);
     }
 
     public void testPermittedNodesChangedOnReplicaNodeOnlyOnceAfterBeingChangedOnMaster() throws Exception

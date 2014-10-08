@@ -335,6 +335,24 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             throw new IllegalStateException("Environment facade is not created");
         }
 
+        try
+        {
+            Set<ReplicationNode> remoteNodes = environmentFacade.getEnvironment().getGroup().getNodes();
+            for (ReplicationNode node : remoteNodes)
+            {
+                String nodeAddress = node.getHostName() + ":" + node.getPort();
+                if (!_permittedNodes.contains(nodeAddress))
+                {
+                    shutdownOnIntruder(nodeAddress);
+                    throw new IllegalStateException("Intruder node detected: " + nodeAddress);
+                }
+            }
+        }
+        catch (DatabaseException dbe)
+        {
+            environmentFacade.handleDatabaseException("DB exception while checking for intruder node", dbe);
+        }
+
         if (_environmentFacade.compareAndSet(null, environmentFacade))
         {
             environmentFacade.setStateChangeListener(new EnvironmentStateChangeListener());
@@ -1047,7 +1065,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
         private boolean processIntruderNode(ReplicationNode node)
         {
-            String hostAndPort = node.getHostName() + ":" + node.getPort();
+            final String hostAndPort = node.getHostName() + ":" + node.getPort();
             getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.INTRUDER_DETECTED(node.getName(), hostAndPort));
 
             boolean inManagementMode = getParent(Broker.class).isManagementMode();
@@ -1069,35 +1087,16 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                                            BDBHAVirtualHostNodeImpl.this.getName(),
                                            _lastRole.get(),
                                            String.valueOf(BDBHAVirtualHostNodeImpl.this.getPermittedNodes()) ));
-
                 getTaskExecutor().submit(new Task<Void>()
                 {
                     @Override
                     public Void execute()
                     {
-                        State state = getState();
-                        if (state != State.ERRORED)
-                        {
-                            try
-                            {
-                                stopAndSetStateTo(State.ERRORED);
-                            }
-                            catch(Exception e)
-                            {
-                                LOGGER.error("Unexpected exception on closing the node when intruder is detected ", e);
-                            }
-                            finally
-                            {
-                                closeEnvironment();
-
-                                _lastRole.set(NodeRole.DETACHED);
-                                attributeSet(ROLE, _role, NodeRole.DETACHED);
-                            }
-                            notifyStateChanged(state, State.ERRORED);
-                        }
+                        shutdownOnIntruder(hostAndPort);
                         return null;
                     }
                 });
+
                 return false;
             }
         }
@@ -1117,6 +1116,28 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             attributes.put(BDBHARemoteReplicationNode.MONITOR, replicationNode.getType() == NodeType.MONITOR);
             return attributes;
         }
+    }
+
+    protected void shutdownOnIntruder(String intruderHostAndPort)
+    {
+        LOGGER.info("Intruder detected (" + intruderHostAndPort + "), stopping and setting state to ERRORED");
+
+        State initialState = getState();
+        try
+        {
+            stopAndSetStateTo(State.ERRORED);
+        }
+        catch (Exception e)
+        {
+            LOGGER.error("Unexpected exception on closing the node when intruder is detected ", e);
+        }
+        finally
+        {
+            closeEnvironment();
+            _lastRole.set(NodeRole.DETACHED);
+            attributeSet(ROLE, _role, NodeRole.DETACHED);
+        }
+        notifyStateChanged(initialState, State.ERRORED);
     }
 
     private abstract class VirtualHostNodeGroupTask implements Task<Void>
