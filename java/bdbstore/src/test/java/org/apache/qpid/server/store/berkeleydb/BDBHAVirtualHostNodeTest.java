@@ -28,10 +28,12 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.sleepycat.je.Durability;
@@ -46,6 +48,7 @@ import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.berkeleydb.replication.DatabasePinger;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
@@ -529,6 +532,72 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
 
         BDBHARemoteReplicationNode<?> remote = _helper.findRemoteNode(node1, node2.getName());
         remote.delete();
+    }
+
+    public void testPermittedNodesChangedOnReplicaNodeOnlyOnceAfterBeingChangedOnMaster() throws Exception
+    {
+        int node1PortNumber = _portHelper.getNextAvailable();
+        int node2PortNumber = _portHelper.getNextAvailable();
+
+        String helperAddress = "localhost:" + node1PortNumber;
+        String groupName = "group";
+        String nodeName = "node1";
+
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, node1PortNumber, node2PortNumber);
+        BDBHAVirtualHostNode<?> node1 = _helper.createAndStartHaVHN(node1Attributes);
+
+        Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
+        node2Attributes.put(BDBHAVirtualHostNode.PRIORITY, 0);
+        BDBHAVirtualHostNode<?> node2 = _helper.createAndStartHaVHN(node2Attributes);
+        assertEquals("Unexpected role", NodeRole.REPLICA, node2.getRole());
+        _helper.awaitRemoteNodes(node2, 1);
+
+        BDBHARemoteReplicationNode<?> remote = _helper.findRemoteNode(node2, node1.getName());
+
+        final AtomicInteger permittedNodesChangeCounter = new AtomicInteger();
+        final CountDownLatch _permittedNodesLatch = new CountDownLatch(1);
+        node2.addChangeListener(new NoopConfigurationChangeListener()
+        {
+            @Override
+            public void attributeSet(ConfiguredObject<?> object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
+            {
+                if (attributeName.equals(BDBHAVirtualHostNode.PERMITTED_NODES))
+                {
+                    permittedNodesChangeCounter.incrementAndGet();
+                    _permittedNodesLatch.countDown();
+                }
+            }
+        });
+        List<String> permittedNodes = new ArrayList<>(node1.getPermittedNodes());
+        permittedNodes.add("localhost:5000");
+        node1.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, permittedNodes));
+
+        assertTrue("Permitted nodes were not changed on Replica", _permittedNodesLatch.await(10, TimeUnit.SECONDS));
+        assertEquals("Not the same permitted nodes", new HashSet<>(node1.getPermittedNodes()), new HashSet<>(node2.getPermittedNodes()));
+        assertEquals("Unexpected counter of changes permitted nodes", 1, permittedNodesChangeCounter.get());
+
+        // change the order of permitted nodes
+        Collections.swap(permittedNodes, 0, 2);
+        node1.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, permittedNodes));
+
+        // make sure that node2 onNodeState was invoked by performing transaction on master and making sure that it was replicated
+        performTransactionAndAwaitForRemoteNodeToGetAware(node1, remote);
+
+        // perform transaction second time because permitted nodes are changed after last transaction id
+        performTransactionAndAwaitForRemoteNodeToGetAware(node1, remote);
+        assertEquals("Unexpected counter of changes permitted nodes", 1, permittedNodesChangeCounter.get());
+    }
+
+    private void performTransactionAndAwaitForRemoteNodeToGetAware(BDBHAVirtualHostNode<?> node1, BDBHARemoteReplicationNode<?> remote) throws InterruptedException
+    {
+        new DatabasePinger().pingDb(((BDBConfigurationStore)node1.getConfigurationStore()).getEnvironmentFacade());
+
+        int waitCounter = 100;
+        while ( remote.getLastKnownReplicationTransactionId() != node1.getLastKnownReplicationTransactionId() && (waitCounter--) != 0)
+        {
+            Thread.sleep(100l);
+        }
+        assertEquals("Last transaction was not replicated", new Long(remote.getLastKnownReplicationTransactionId()), node1.getLastKnownReplicationTransactionId() );
     }
 
     public void testIntruderConnected() throws Exception
