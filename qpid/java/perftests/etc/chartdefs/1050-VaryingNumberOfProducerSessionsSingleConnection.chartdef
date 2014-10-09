@@ -20,7 +20,7 @@
 chartType=XYLINE
 chartTitle=Varying number of producer sessions on single connection
 chartSubtitle=Persistent messages (1024b)
-chartDescription=1-80P transacted on single connection, 20C transacted on separate connections, persistent, message payload 1KB.
+chartDescription=1-80P transacted on single connection, 20C transacted on separate connections, persistent, message payload 1KB, single queue.
 
 xAxisTitle=Number of producer sessions
 yAxisTitle=Throughput (KB/s)

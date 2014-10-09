@@ -26,6 +26,7 @@ for (var i=0; i<2; i++)
 {
     var deliveryMode = i+1;
     var durable = (deliveryMode == 2);
+    var acknowledgeMode = ((i==0) ? 1 : 0);
     var suffix = durable ? "PERSISTENT" : "NON-PERSISTENT";
     var queueName = "direct://amq.direct//queue-selectors-overlapping-" + suffix + "?durable='" + durable + "'";
     var consumerNumbers = [2, 4, 8, 16, 32];
@@ -70,7 +71,7 @@ for (var i=0; i<2; i++)
                         "_sessions": [
                           {
                             "_sessionName": "session1",
-                            "_acknowledgeMode": 1,
+                            "_acknowledgeMode": acknowledgeMode,
                             "_producers": [
                               {
                                 "_name": "Producer1",
@@ -111,7 +112,7 @@ for (var i=0; i<2; i++)
                     "_sessions": [
                       {
                         "_sessionName": "session" + n,
-                        "_acknowledgeMode": consumerAcknowledgeMode,
+                        "_acknowledgeMode": acknowledgeMode,
                         "_consumers": [
                           {
                             "_name": "Consumer" + n,

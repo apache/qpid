@@ -20,7 +20,7 @@
 chartType=STATISTICAL_BAR
 chartTitle=Impact of message size on latency
 chartSubtitle=Transient messages
-chartDescription=1P 1C, transient, auto-ack, with message payload between 256-262144 bytes.
+chartDescription=1P 1C, transient, auto-ack, with message payload between 256-262144 bytes, single queue.
 
 xAxisTitle=Message Size (B)
 yAxisTitle=Latency (millis)
