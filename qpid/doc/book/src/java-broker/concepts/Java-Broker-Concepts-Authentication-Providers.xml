@@ -27,27 +27,5 @@
         Many <emphasis>Authentication Providers</emphasis> can be configured on the Broker at the same time, from which
         each <emphasis>Port</emphasis> can be assigned one.
     </para>
-    <para>
-        The following authentication providers are supported:
-        <itemizedlist>
-            <listitem><para><link linkend= "Java-Broker-Security-Anonymous-Provider">Anonymous</link>:
-            allows anonymous connections to the broker</para></listitem>
-            <listitem><para><link linkend= "Java-Broker-Security-External-Provider">External</link>:
-            delegates to external mechanisms such as SSL Client Certificate Authentication</para></listitem>
-            <listitem><para><link linkend= "Java-Broker-Security-Kerberos-Provider">Kerberos</link>:
-            uses Kerberos to authenticate connections via GSS-API.</para></listitem>
-            <listitem><para><link linkend= "Java-Broker-Security-LDAP-Provider">SimpleLDAP</link>:
-            authenticate users against an LDAP server.</para></listitem>
-            <listitem><para><link linkend= "Java-Broker-Security-PlainPasswordFile-Provider">PlainPasswordFile</link>:
-            authenticate users against credentials stored in plain text in a local file.</para></listitem>
-            <listitem><para><link linkend= "Java-Broker-Security-Base64MD5PasswordFile-Provider">Base64MD5PasswordFile</link>:
-            authenticate users against credentials stored encoded in a local file.</para></listitem>
-        </itemizedlist>
-    </para>
-    <para>
-        The Password File based providers can perform explicit management (adding, removing, changing passwords)
-        of users via the Brokers management interfaces. The other providers offer no ability to manage users as they either have no scope
-        for user management (e.g Anonymous) or delegate this task to other systems (e.g LDAP).
-    </para>
-    <para>The configuration details for Authentication Providers are covered in <xref linkend= "Java-Broker-Security-Authentication-Providers"/>.</para>
+    <para>Some Authentication Providers offer facilities for creation and deletion of users.</para>
 </section>

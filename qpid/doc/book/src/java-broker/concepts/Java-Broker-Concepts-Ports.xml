@@ -21,19 +21,18 @@
 -->
 
 <section id="Java-Broker-Concepts-Ports">
-<title>Ports</title>
-    <para>
-        The Broker supports configuration of <emphasis>Ports</emphasis> to specify the particular AMQP messaging
-        and HTTP/JMX management connectivity it offers for use.
-    </para>
-    <para>
-        Each Port is configured with the particular <emphasis>Protocols</emphasis> and <emphasis>Transports</emphasis> it supports, as well as the <emphasis>Authentication Provider</emphasis> to be used to authenticate connections. Where SSL is in use, the <emphasis>Port</emphasis> configuration also defines which <emphasis>Keystore</emphasis> to use and (where supported) which <emphasis>TrustStore(s)</emphasis> and whether Client Certificates should be requested/required. 
-    </para>
-    <para>
-        Different <emphasis>Ports</emphasis> can support different protocols, and many <emphasis>Ports</emphasis> can be configured on the Broker.</para>
-    <para>
-        The following AMQP protocols are currently supported by the Broker:
-        <itemizedlist>
+    <title>Ports</title>
+    <para> The Broker supports configuration of <emphasis>Ports</emphasis> to specify the particular
+        AMQP messaging and HTTP/JMX management connectivity it offers for use. </para>
+    <para> Each Port is configured with the particular <emphasis>Protocols</emphasis> and
+            <emphasis>Transports</emphasis> it supports, as well as the <emphasis>Authentication
+            Provider</emphasis> to be used to authenticate connections. Where SSL is in use, the
+            <emphasis>Port</emphasis> configuration also defines which <emphasis>Keystore</emphasis>
+        to use and (where supported) which <emphasis>TrustStore(s)</emphasis> and whether Client
+        Certificates should be requested/required. </para>
+    <para> Different <emphasis>Ports</emphasis> can support different protocols, and many
+            <emphasis>Ports</emphasis> can be configured on the Broker.</para>
+    <para> The following AMQP protocols are currently supported by the Broker: <itemizedlist>
             <listitem><para><emphasis>AMQP 0-8</emphasis></para></listitem>
             <listitem><para><emphasis>AMQP 0-9</emphasis></para></listitem>
             <listitem><para><emphasis>AMQP 0-9-1</emphasis></para></listitem>
@@ -42,7 +41,20 @@
         </itemizedlist>
     </para>
 
-    <para>
-        Addittionally, HTTP and JMX ports can be configured for use by the associated management plugins.
-    </para>
+    <para> Addittionally, HTTP and JMX ports can be configured for use by the associated management
+        plugins. </para>
+    <para>This diagram explains how Ports, <link
+            linkEnd="Java-Broker-Concepts-Authentication-Providers">Authentication Providers</link>
+        and an Access Control Provider work together to allow an application to form a connection to
+        a Virtualhost.<figure>
+            <title>Control flow during Authentication</title>
+            <mediaobject>
+                <imageobject>
+                    <imagedata fileref="images/Broker-PortAuthFlow.png" format="PNG" scalefit="1"/>
+                </imageobject>
+                <textobject>
+                    <phrase>Control flow during Authentication</phrase>
+                </textobject>
+            </mediaobject>
+        </figure></para>
 </section>

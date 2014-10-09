@@ -36,7 +36,7 @@
   <para><emphasis>Headline features</emphasis></para>
   <itemizedlist mark="circle">
     <listitem>
-      <para>100% Java implementation - runs on any platform supporting Java 1.6 or higher</para>
+      <para>100% Java implementation - runs on any platform supporting Java 1.7 or higher</para>
     </listitem>
     <listitem>
       <para>Messaging clients support in Java, C++, Python.</para>

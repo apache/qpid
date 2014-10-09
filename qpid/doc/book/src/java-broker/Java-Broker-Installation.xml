@@ -36,7 +36,8 @@
     <section role="h3" id="Java-Broker-Installation-Prerequistes-Java">
       <title>Java Platform</title>
       <para> The Java Broker is an 100% Java implementation and as such it can be used on any
-        operating system supporting Java 1.7 or higher. This includes Linux, Solaris, Mac OS X, and
+        operating system supporting Java 1.7  or higher<footnote><para>Java Cryptography Extension (JCE)
+          Unlimited Strength required for some features</para></footnote>. This includes Linux, Solaris, Mac OS X, and
         Windows XP/Vista/7/8.</para>
       <para> The broker has been tested with Java implementations from both Oracle and IBM. Whatever
         platform you chose, it is recommended that you ensure it is patched with any critical

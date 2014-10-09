@@ -26,9 +26,7 @@
 
 <appendix id="Java-Broker-Appendix-Operation-Logging">
   <title>Operational Logging</title>
-  
-  <para> TODO add HA operation log messages</para>
-  
+
   <para>The Broker will, by default, produce structured log messages in response to key events in
     the lives of objects within the Broker. These consise messages are designed to allow the user to
     understand the actions of the Broker in retrospect. This is valuable for problem diagnosis and
@@ -137,6 +135,17 @@
               scoped by the owning connection.</para>
           </entry>
         </row>
+        <row>
+          <entry morerows="1">Group</entry>
+          <entry> [grp(/<replaceable>groupname</replaceable>)/vhn(/<replaceable>virtualhostnode
+              name</replaceable>)]</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Used for HA. Used for operations performed by the system itself often as a result
+              of actions performed on another node..</para>
+          </entry>
+        </row>
       </tbody>
     </tgroup>
   </table>
@@ -217,6 +226,15 @@
         <row>
           <entry>
             <para>A virtualhost/message store on the Broker.</para>
+          </entry>
+        </row>
+        <row>
+          <entry morerows="1">HA Group</entry>
+          <entry> [grp(/<replaceable>group name</replaceable>)]</entry>
+        </row>
+        <row>
+          <entry>
+            <para>A HA group</para>
           </entry>
         </row>
       </tbody>
@@ -870,8 +888,9 @@
         </row>
         <row>
           <entry>
-            <para>Indicates that a message store has been created.  The message store is responsible for the storage
-             of the messages themselves, including the message body and any headers.</para>
+            <para>Indicates that a message store has been created. The message store is responsible
+              for the storage of the messages themselves, including the message body and any
+              headers.</para>
           </entry>
         </row>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-MST-1002">
@@ -973,8 +992,9 @@
         </row>
         <row>
           <entry>
-            <para>Indicates that a transaction store has been created.  The transaction store is responsible for the storage
-              of messages instances, that is, the presence of a message on a queue.</para>
+            <para>Indicates that a transaction store has been created. The transaction store is
+              responsible for the storage of messages instances, that is, the presence of a message
+              on a queue.</para>
           </entry>
         </row>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-TXN-1002">
@@ -983,8 +1003,8 @@
         </row>
         <row>
           <entry>
-            <para>Indicates that the transaction store is using <replaceable>path</replaceable> for the
-              location of the store.</para>
+            <para>Indicates that the transaction store is using <replaceable>path</replaceable> for
+              the location of the store.</para>
           </entry>
         </row>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-TXN-1003">
@@ -1007,11 +1027,13 @@
         </row>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-MST-TXN">
           <entry morerows="1">TXN-1005</entry>
-          <entry>Recovered <replaceable>number</replaceable> messages for queue <replaceable>name</replaceable>.</entry>
+          <entry>Recovered <replaceable>number</replaceable> messages for queue
+              <replaceable>name</replaceable>.</entry>
         </row>
         <row>
           <entry>
-            <para>Indicates that recovery recovered the given number of message instances for the given queue.</para>
+            <para>Indicates that recovery recovered the given number of message instances for the
+              given queue.</para>
           </entry>
         </row>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-TXN-1006">
@@ -1043,8 +1065,9 @@
         </row>
         <row>
           <entry>
-            <para>Indicates that a configuration store has been created.  The configuration store is responsible
-              for the storage of the definition of objects such as queues, exchanges, and bindings.</para>
+            <para>Indicates that a configuration store has been created. The configuration store is
+              responsible for the storage of the definition of objects such as queues, exchanges,
+              and bindings.</para>
           </entry>
         </row>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-CFG-1002">
@@ -1053,8 +1076,8 @@
         </row>
         <row>
           <entry>
-            <para>Indicates that the configuration store is using <replaceable>path</replaceable> for the
-              location of the store.</para>
+            <para>Indicates that the configuration store is using <replaceable>path</replaceable>
+              for the location of the store.</para>
           </entry>
         </row>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-CFG-1003">
@@ -1087,4 +1110,152 @@
       </tbody>
     </tgroup>
   </table>
+
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Message-List-HA">
+    <title>HA Log Messages</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Message Id</entry>
+          <entry>Message Text / Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1001">
+          <entry morerows="1">HA-1001</entry>
+          <entry>Created</entry>
+        </row>
+        <row>
+          <entry>
+            <para>This HA node has been created.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1002">
+          <entry morerows="1">HA-1002</entry>
+          <entry>Deleted</entry>
+        </row>
+        <row>
+          <entry>
+            <para>This HA node has been deleted</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1003">
+          <entry morerows="1">HA-1003</entry>
+          <entry>Added : Node : '<replaceable>name</replaceable>'
+              (<replaceable>host:port</replaceable>)</entry>
+        </row>
+        <row>
+          <entry>
+            <para>A new node has been added to the group.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1004">
+          <entry morerows="1">HA-1004</entry>
+          <entry>Removed : Node : '<replaceable>name</replaceable>'
+              (<replaceable>host:port</replaceable>)</entry>
+        </row>
+        <row>
+          <entry>
+            <para>The node has been removed from the group. This removal is permanent.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1005">
+          <entry morerows="1">HA-1005</entry>
+          <entry>Joined : Node : '<replaceable>name</replaceable>'
+              (<replaceable>host:port</replaceable>)</entry>
+        </row>
+        <row>
+          <entry>
+            <para>The node has become reachable. This may be as a result of the node being
+              restarted, or a network problem may have been resolved.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1006">
+          <entry morerows="1">HA-1006</entry>
+          <entry>Left : Node : '<replaceable>name</replaceable>'
+              (<replaceable>host:port</replaceable>)</entry>
+        </row>
+        <row>
+          <entry>
+            <para>The node is no longer reachanble. This may be as a result of the node being
+              stopped or a network partition may be preventing it from being connected. The node is
+              still a member of the group.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1007">
+          <entry morerows="1">HA-1007</entry>
+          <entry>HA-1007 : Master transfer requested : to '<replaceable>name</replaceable>'
+              (<replaceable>host:port</replaceable>)</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a master transfer operation has been requested.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1008">
+          <entry morerows="1">HA-1008</entry>
+          <entry>HA-1008 : Intruder detected : Node '<replaceable>name</replaceable>'
+              (<replaceable>host:port</replaceable>)</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that an unexpected node has joined the group. The virtualhost node will
+              go into the ERROR state in response to the condition.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1009">
+          <entry morerows="1">HA-1009</entry>
+          <entry>HA-1009 : Insufficient replicas contactable</entry>
+        </row>
+        <row>
+          <entry>
+            <para>This node (which was in the master role) no longer has sufficient replica in
+              contact in order to complete transactions.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1010">
+          <entry morerows="1">HA-1010</entry>
+          <entry>HA-1010 : Role change reported: Node : '<replaceable>name</replaceable>'
+              (<replaceable>host:port</replaceable>) : from <replaceable>role</replaceable> to
+              <replaceable>role</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the node has changed role within the group.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1011">
+          <entry morerows="1">HA-1011</entry>
+          <entry>HA-1011 : Minimum group size : <replaceable>new group size</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>The quorum requirements from completing elections or transactions has been
+              changed.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1012">
+          <entry morerows="1">HA-1012</entry>
+          <entry>HA-1012 : Priority : <replaceable>priority</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>The priority of the object node has been changed. Zero indicates that the node
+              cannot be elected master.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1013">
+          <entry morerows="1">HA-1013</entry>
+          <entry>HA-1013 : Designated primary : <replaceable>true|false</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>This node has been designated primary and can now operate solo. Applies to two
+              node groups only.</para>
+          </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+
 </appendix>

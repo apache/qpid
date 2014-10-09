@@ -50,7 +50,7 @@
         <example>
             <title>Web Management Console - Authentication</title>
             <screenshot>
-                <graphic fileref="images/Management-Web-Auth.png" width="600px"/>
+                <graphic fileref="images/Management-Web-Auth.png" width="800px"/>
             </screenshot>
         </example>
     </section>
@@ -61,7 +61,7 @@
         <example>
             <title>Web Management Orientation - Console</title>
             <screenshot>
-                <graphic fileref="images/Management-Web-Console.png" width="600px"/>
+                <graphic fileref="images/Management-Web-Console.png" width="800px"/>
             </screenshot>
         </example>
         <para>
@@ -93,7 +93,7 @@
         <example>
             <title>Web Management Orientation - Tab</title>
             <screenshot>
-                <graphic fileref="images/Management-Web-Tab.png" width="600px"/>
+                <graphic fileref="images/Management-Web-Tab.png" width="800px"/>
             </screenshot>
         </example>
         <para>The elements of a tab are now explained: <itemizedlist>

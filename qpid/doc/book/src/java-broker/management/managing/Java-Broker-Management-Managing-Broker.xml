@@ -48,7 +48,7 @@
     <title>Context</title>
     <para>
       <itemizedlist>
-        <listitem><para><emphasis>broker.flowToDiskThreshold</emphasis> Control the <link linkend="Java-Broker-Runtime-Flow-To-Disk">flow to disk</link> feature.</para></listitem>
+        <listitem><para><emphasis>broker.flowToDiskThreshold</emphasis> Controls the <link linkend="Java-Broker-Runtime-Flow-To-Disk">flow to disk</link> feature.</para></listitem>
       </itemizedlist>
     </para>
   </section>

@@ -118,6 +118,19 @@
           <entry>No</entry>
           <entry>No</entry>
         </row>
+        <row>
+          <entry>Users</entry>
+          <entry>C//D</entry>
+          <entry>C/D</entry>
+          <entry>No</entry>
+        </row>
+        <row>
+          <entry>Groups</entry>
+          <entry>C//D</entry>
+          <entry>No</entry>
+          <entry>No</entry>
+        </row>
+        
       </tbody>
     </tgroup>
   </table>

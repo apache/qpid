@@ -21,43 +21,6 @@
 -->
 <section id="Java-Broker-Concepts-Broker">
   <title>Broker</title>
-  <para>The Java Broker comprises of a number of entities. This section summaries the purpose of
-    each of the entities and describes the relationships between them. These details are developed
-    further in the sub-sections that follow.</para>
-  <para>The most important entity is the <emphasis>Virtualhost</emphasis>. A virtualhost is an
-    independent namespace in which messaging is performed. A <emphasis>virtualhost</emphasis> exists
-    in a container called a <emphasis>virtualhost node</emphasis>. A virtualhost node has exactly
-    one virtualhost.</para>
-  <para><emphasis>Ports</emphasis> accept connections for messaging and management. The Broker
-    supports any number of ports. When connecting for messaging, the user specifies a virtualhost
-    name to indicate the virtualhost to which it is to be connected.</para>
-  <para><emphasis>Authentication Providers</emphasis> assert the identity of the user as it connects
-    for messaging or management. The Broker supports any number of authentication providers. Each
-    port is associated with exactly one authentication provider. The port uses the authentication
-    provider to assert the identity of the user as new connections are received.</para>
-  <para><emphasis>Group Providers</emphasis> provide mechanisms that provide grouping of users. A
-    Broker supports zero or more group providers.</para>
-  <para><emphasis>Access Control Provider</emphasis> allows the abilities of users (or groups of
-    users) to be restrained. A Broker can have zero or one access control providers.</para>
-  <para><emphasis>Keystores</emphasis> provide a repositories of certificates and are used when the
-    Broker accepts SSL connections. Any number of keystore providers can be defined. Keystores are
-    be associated with Ports defined to accepts SSL.</para>
-  <para><emphasis>Truststores</emphasis> provide a repositories of trust and are used to validate a
-    peer. Any number of truststore provides can be defined. Truststores can be associated with Ports
-    and other entities that form SSL connections.</para>
-  <para><emphasis>Remote Replication Nodes</emphasis> are used when the high availability feature is
-    in use. It is the remote representation of other virtualhost nodes that form part of the same
-    group.</para>
-
-  <para>The following diagram depicts the Broker model: <figure>
-      <title>Broker Model</title>
-      <mediaobject>
-        <imageobject>
-          <imagedata fileref="images/Broker-Model.png" format="PNG" scalefit="1"/>
-        </imageobject>
-        <textobject>
-          <phrase>Broker Model</phrase>
-        </textobject>
-      </mediaobject>
-    </figure> These concepts will be expanded upon in the forthcoming pages. </para>
+  <para>The <emphasis>Broker</emphasis> is the outermost entity within the system.</para>
+  <para>The Broker is backed by storage. This storage is used to record the durable entities that exist beneath it.</para>
 </section>
