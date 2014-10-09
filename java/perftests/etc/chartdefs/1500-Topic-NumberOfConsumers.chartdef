@@ -20,7 +20,7 @@
 chartType=XYLINE
 chartTitle=Number of topic consumers
 chartSubtitle=Transient 1KB messages
-chartDescription=1P 1-100C transient, transacted, with message payload 1KB.
+chartDescription=1P 1-100C transient, transacted, with message payload 1KB, single queue.
 
 xAxisTitle=Numer of consumers
 yAxisTitle=Throughput (messages/s)

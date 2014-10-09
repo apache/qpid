@@ -20,7 +20,7 @@
 chartType=BAR
 chartTitle=Performance of acknowledgement modes
 chartSubtitle=Transient messages (1024b)
-chartDescription=1P 1C, transient, with message payload 1KB.
+chartDescription=1P 1C, transient, with message payload 1KB, single queue.
 
 xAxisTitle=Acknowledge mode (0=session transacted; 1=auto-acknowledge)
 yAxisTitle=Throughput (messages/s)

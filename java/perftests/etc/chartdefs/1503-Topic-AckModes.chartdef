@@ -20,7 +20,7 @@
 chartType=BAR
 chartTitle=Topic acknowledge modes
 chartSubtitle=Transient 1KB messages
-chartDescription=1P 10C, transient, non-durable subscription, message payload 1KB
+chartDescription=1P 10C, transient, non-durable subscription, message payload 1KB, single topic.
 
 xAxisTitle=Ack Mode (0=transaction 1=auto-ack)
 yAxisTitle=Throughput (messages/s)

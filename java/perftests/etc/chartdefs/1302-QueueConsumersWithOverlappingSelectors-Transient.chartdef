@@ -22,7 +22,7 @@ chartTitle=Impact of 50%-overlapping selectors in queue consumers with transient
 chartSubtitle=Transient 1KB messages
 xAxisTitle=Consumers
 yAxisTitle=Throughput (messages/s)
-chartDescription=Impact of 50%-overlapping selectors in queue consumers with transient messages, auto-ack, message payload 1KB, 1 producer, varying number of consumers from 2 to 32.
+chartDescription=Impact of 50%-overlapping selectors in queue consumers with transient messages, auto-ack, message payload 1KB, 1 producer, varying number of consumers from 2 to 32, single queue.
 
 series.1.statement=SELECT totalNumberOfConsumers,throughputMessagesPerS FROM QueueConsumersWithOverlappingSelectors WHERE participantName = 'All' and testName like '%50_ overlapping - NON_PERSISTENT%'
 series.1.legend=Current

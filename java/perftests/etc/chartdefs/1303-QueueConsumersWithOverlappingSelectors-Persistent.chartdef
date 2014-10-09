@@ -19,7 +19,7 @@
 
 chartType=XYLINE
 chartTitle=Impact of 50%-overlapping selectors in queue consumers with persistent messages
-chartDescription=Impact of 50%-overlapping selectors in queue consumers with persistent messages, auto-ack, message payload of 1KB, 1 producer, varying number of consumers from 2 to 32.
+chartDescription=Impact of 50%-overlapping selectors in queue consumers with persistent messages, auto-ack, message payload of 1KB, 1 producer, varying number of consumers from 2 to 32, single queue.
 chartSubtitle=Persistent 1KB messages
 xAxisTitle=Consumers
 yAxisTitle=Throughput (messages/s)

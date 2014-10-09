@@ -153,7 +153,7 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
+                  "_acknowledgeMode": 0,
                   "_producers": [
                     {
                       "_name": "Producer1",
@@ -177,7 +177,7 @@
               "_sessions": [
                 {
                   "_sessionName": "session1",
-                  "_acknowledgeMode": 1,
+                  "_acknowledgeMode": 0,
                   "_consumers": [
                     {
                       "_name": "Consumer1",
