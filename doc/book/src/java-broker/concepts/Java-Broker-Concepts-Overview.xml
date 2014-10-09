@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+<section id="Java-Broker-Concepts-Overview">
+  <title>Overview</title>
+  <para>The Broker comprises of a number of entities. This section summaries the purpose of
+    each of the entities and describes the relationships between them. These details are developed
+    further in the sub-sections that follow.</para>
+  <para>The most important entity is the <emphasis>Virtualhost</emphasis>. A virtualhost is an
+    independent namespace in which messaging is performed. A <emphasis>virtualhost</emphasis> exists
+    in a container called a <emphasis>virtualhost node</emphasis>. A virtualhost node has exactly
+    one virtualhost.</para>
+  <para><emphasis>Ports</emphasis> accept connections for messaging and management. The Broker
+    supports any number of ports. When connecting for messaging, the user specifies a virtualhost
+    name to indicate the virtualhost to which it is to be connected.</para>
+  <para><emphasis>Authentication Providers</emphasis> assert the identity of the user as it connects
+    for messaging or management. The Broker supports any number of authentication providers. Each
+    port is associated with exactly one authentication provider. The port uses the authentication
+    provider to assert the identity of the user as new connections are received.</para>
+  <para><emphasis>Group Providers</emphasis> provide mechanisms that provide grouping of users. A
+    Broker supports zero or more group providers.</para>
+  <para><emphasis>Access Control Provider</emphasis> allows the abilities of users (or groups of
+    users) to be restrained. A Broker can have zero or one access control providers.</para>
+  <para><emphasis>Keystores</emphasis> provide a repositories of certificates and are used when the
+    Broker accepts SSL connections. Any number of keystore providers can be defined. Keystores are
+    be associated with Ports defined to accepts SSL.</para>
+  <para><emphasis>Truststores</emphasis> provide a repositories of trust and are used to validate a
+    peer. Any number of truststore provides can be defined. Truststores can be associated with Ports
+    and other entities that form SSL connections.</para>
+  <para><emphasis>Remote Replication Nodes</emphasis> are used when the high availability feature is
+    in use. It is the remote representation of other virtualhost nodes that form part of the same
+    group.</para>
+  <para>These concepts will be developed over the forthcoming pages. The diagrams below also help
+    put these entities in context of one and other.</para>
+  <para><figure>
+      <title>Message Flow</title>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="images/Broker-MessageFlow.png" format="PNG" scalefit="1"/>
+        </imageobject>
+        <textobject>
+          <phrase>Message Flow through the Broker</phrase>
+        </textobject>
+      </mediaobject>
+    </figure></para>
+  <para><figure>
+      <title>Broker Structure</title>
+      <mediaobject>
+        <imageobject>
+          <imagedata fileref="images/Broker-Model.png" format="PNG" scalefit="1"/>
+        </imageobject>
+        <textobject>
+          <phrase>Broker Structure</phrase>
+        </textobject>
+      </mediaobject>
+    </figure>
+  </para>
+
+</section>

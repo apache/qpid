@@ -23,17 +23,50 @@
 <section id="Java-Broker-Management-Managing-Authentication-Providers">
     <title>Authentication Providers</title>
     <para>
-        <link linkend="Java-Broker-Concepts-Authentication-Providers">Authentication Providers</link> are used by <link linkend="Java-Broker-Concepts-Ports">Ports</link> to
-        authenticate connections. </para>
+        <link linkend="Java-Broker-Concepts-Authentication-Providers">Authentication
+            Providers</link> are used by <link linkend="Java-Broker-Concepts-Ports">Ports</link> to
+        authenticate connections.</para>
     <para>See <xref linkend="Java-Broker-Security-Authentication-Providers"/></para>
-    
+
+    <section id="Java-Broker-Management-Managing-Authentication-Providers-Types">
+        <title>Types</title>
+        <para> The following authentication providers are supported: <itemizedlist>
+                <listitem><para><link linkend="Java-Broker-Security-Anonymous-Provider"
+                            >Anonymous</link>: allows anonymous connections to the
+                    Broker</para></listitem>
+                <listitem><para><link linkend="Java-Broker-Security-External-Provider"
+                            >External</link>: delegates to external mechanisms such as SSL Client
+                        Certificate Authentication</para></listitem>
+                <listitem><para><link linkend="Java-Broker-Security-Kerberos-Provider"
+                            >Kerberos</link>: uses Kerberos to authenticate connections via
+                        GSS-API.</para></listitem>
+                <listitem><para><link linkend="Java-Broker-Security-LDAP-Provider"
+                        >SimpleLDAP</link>: authenticate users against an LDAP
+                    server.</para></listitem>
+                <listitem><para><link linkend="Java-Broker-Security-ScramSha-Providers"
+                            >ScramSha</link>: authenticate users against credentials stored in a
+                        local database</para></listitem>
+                <listitem><para><link linkend="Java-Broker-Security-PlainPasswordFile-Provider"
+                            >PlainPasswordFile</link>: authenticate users against credentials stored
+                        in plain text in a local file.</para></listitem>
+                <listitem><para><link linkend="Java-Broker-Security-Base64MD5PasswordFile-Provider"
+                            >Base64MD5PasswordFile</link>: authenticate users against credentials
+                        stored encoded in a local file.</para></listitem>
+            </itemizedlist>
+            <para>The last three providers offer user management facilities too, that is, users can
+                be created, deleted and passwords reset.</para>
+        </para>
+    </section>
+
     <section id="Java-Broker-Management-Managing-Authentication-Providers-Attributes">
         <title>Attributes</title>
-        <para><itemizedlist>
+        <para>
+            <itemizedlist>
                 <listitem>
-                    <para><emphasis>Name the authentication</emphasis>.</para>
+                    <para><emphasis>Name the authentication provider</emphasis>.</para>
                 </listitem>
-            </itemizedlist></para>
+            </itemizedlist>
+        </para>
         <para>Other attributes are provider specific.</para>
     </section>
     <section id="Java-Broker-Management-Managing-Authentication-Providers-Children">

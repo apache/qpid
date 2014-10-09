@@ -29,23 +29,6 @@
     the configured Group Providers are consulted allowing the assignment of GroupPrincipals for a given authenticated user. Any number of
     Group Providers can be added into the Broker. All of them will be checked for the presence of the groups for a given authenticated user.
   </para>
-  <para>The <emphasis>Group Provider</emphasis> can be configured using <link linkend="Java-Broker-Management-Channel-REST-API">
-    REST Management interfaces</link> and <link linkend="Java-Broker-Management-Channel-Web-Console">Web Management Console</link>.</para>
-  <para>The following <emphasis>Group Provider</emphasis> managing operations are available from Web Management Console:
-    <itemizedlist>
-        <listitem><para>A new Group Provider can be added by clicking onto "Add Group Provider" button on a Broker tab.</para></listitem>
-        <listitem><para>An existing providers can be removed by pressing "Delete Group Provider" button
-         on Broker tab or Group Provider tab.</para></listitem>
-        <listitem><para>On clicking onto provider name in the Group Providers grid or Broker object tree,
-         the tab for the Group Provider is displayed.</para></listitem>
-        <listitem><para>A new group can be added into the Group Provider by clicking onto "Add Group" button on provider tab.</para></listitem>
-        <listitem><para>An existing group can be deleted from the Group Provider by clicking onto "Delete Group" button on provider tab.</para></listitem>
-        <listitem><para>On clicking onto group name in the groups grid, the tab with the list of existing
-        group members is displayed for the Group.</para></listitem>
-        <listitem><para>From the Group tab a new member can be added into a group or existing members can be deleted
-        from a group by clicking on "Add Group Member" or "Remove Group Members" accordingly.</para></listitem>
-     </itemizedlist>
-   </para>
 
   <section role="h3" id="File-Group-Manager">
     <title>GroupFile Provider</title>

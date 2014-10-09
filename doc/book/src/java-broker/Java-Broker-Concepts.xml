@@ -24,6 +24,8 @@
   <title>Concepts</title>
 
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+    href="concepts/Java-Broker-Concepts-Overview.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
     href="concepts/Java-Broker-Concepts-Broker.xml"/>
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
     href="concepts/Java-Broker-Concepts-Virtualhost-Nodes.xml"/>
