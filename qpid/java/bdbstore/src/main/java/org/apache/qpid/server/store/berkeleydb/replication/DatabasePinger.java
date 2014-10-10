@@ -79,7 +79,7 @@ public class DatabasePinger
                 }
             }
         }
-        catch (DatabaseException de)
+        catch (RuntimeException de)
         {
             facade.handleDatabaseException("DatabaseException from DatabasePinger ", de);
         }

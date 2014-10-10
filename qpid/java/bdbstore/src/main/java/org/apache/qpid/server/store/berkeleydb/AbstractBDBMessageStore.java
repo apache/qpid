@@ -107,7 +107,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         {
             new Upgrader(getEnvironmentFacade().getEnvironment(), getParent()).upgradeIfNecessary();
         }
-        catch(DatabaseException e)
+        catch(RuntimeException e)
         {
             throw getEnvironmentFacade().handleDatabaseException("Cannot upgrade store", e);
         }
@@ -138,7 +138,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                                                               MESSAGE_METADATA_SEQ_CONFIG);
             newMessageId = mmdSeq.get(null, 1);
         }
-        catch (DatabaseException de)
+        catch (RuntimeException de)
         {
             throw getEnvironmentFacade().handleDatabaseException("Cannot get sequence value for new message", de);
         }
@@ -216,7 +216,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                 }
             }
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw getEnvironmentFacade().handleDatabaseException("Cannot visit message instances", e);
         }
@@ -259,7 +259,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                 entries.add(entry);
             }
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw getEnvironmentFacade().handleDatabaseException("Cannot visit message instances", e);
         }
@@ -306,7 +306,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             }
 
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw getEnvironmentFacade().handleDatabaseException("Cannot recover distributed transactions", e);
         }
@@ -350,7 +350,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
             return mdd;
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw getEnvironmentFacade().handleDatabaseException("Error reading message metadata for message with id "
                                                                  + messageId
@@ -424,7 +424,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                             tx.abort();
                         }
                     }
-                    catch(DatabaseException e2)
+                    catch(RuntimeException e2)
                     {
                         getLogger().warn(
                                 "Unable to abort transaction after LockConflictException on removal of message with id "
@@ -465,7 +465,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             }
             while(!complete);
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             getLogger().error("Unexpected BDB exception", e);
 
@@ -550,7 +550,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             }
             return written;
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw getEnvironmentFacade().handleDatabaseException("Error getting AMQMessage with id "
                                                                  + messageId
@@ -587,7 +587,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             }
 
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw getEnvironmentFacade().handleDatabaseException("Error getting AMQMessage with id "
                                                                  + messageId
@@ -618,7 +618,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                 }
             }
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw environmentFacade.handleDatabaseException("Cannot visit messages", e);
         }
@@ -630,7 +630,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                 {
                     cursor.close();
                 }
-                catch(DatabaseException e)
+                catch(RuntimeException e)
                 {
                     throw environmentFacade.handleDatabaseException("Cannot close cursor", e);
                 }
@@ -659,7 +659,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             }
 
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw environmentFacade.handleDatabaseException("Cannot visit messages", e);
         }
@@ -697,7 +697,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
             }
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw getEnvironmentFacade().handleDatabaseException("Error writing AMQMessage with id "
                                                                  + messageId
@@ -740,7 +740,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                 getLogger().debug("Storing message metadata for message id " + messageId + " in transaction " + tx);
             }
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw getEnvironmentFacade().handleDatabaseException("Error writing message metadata with id "
                                                                  + messageId
@@ -779,7 +779,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             }
             getDeliveryDb().put(tx, key, value);
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             getLogger().error("Failed to enqueue: " + e.getMessage(), e);
             throw getEnvironmentFacade().handleDatabaseException("Error writing enqueued message with id "
@@ -838,7 +838,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
             }
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
 
             getLogger().error("Failed to dequeue message " + messageId + " in transaction " + tx, e);
@@ -879,7 +879,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             getXidDb().put(txn, key, value);
             return postActions;
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             getLogger().error("Failed to write xid: " + e.getMessage(), e);
             throw getEnvironmentFacade().handleDatabaseException("Error writing xid to database", e);
@@ -910,7 +910,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             }
 
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
 
             getLogger().error("Failed to remove xid in transaction " + txn, e);
@@ -963,7 +963,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         {
             tx.abort();
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw getEnvironmentFacade().handleDatabaseException("Error aborting transaction: " + e.getMessage(), e);
         }
@@ -975,7 +975,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         {
             storedSizeChange(delta);
         }
-        catch(DatabaseException e)
+        catch(RuntimeException e)
         {
             throw getEnvironmentFacade().handleDatabaseException("Stored size change exception", e);
         }
@@ -1415,7 +1415,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
                     txn = getEnvironmentFacade().getEnvironment().beginTransaction(
                             null, null);
                 }
-                catch (DatabaseException e)
+                catch (RuntimeException e)
                 {
                     throw getEnvironmentFacade().handleDatabaseException("failed to begin transaction", e);
                 }
@@ -1476,7 +1476,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             {
                 _txn = getEnvironmentFacade().getEnvironment().beginTransaction(null, null);
             }
-            catch(DatabaseException e)
+            catch(RuntimeException e)
             {
                 throw getEnvironmentFacade().handleDatabaseException("Cannot create store transaction", e);
             }

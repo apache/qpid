@@ -315,7 +315,7 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
         catch (RuntimeException e)
         {
             assertEquals("Unexpected exception message", "Offset 15 is greater than message size 10 for message id "
-                    + messageid_0_8 + "!", e.getMessage());
+                    + messageid_0_8 + "!", e.getCause().getMessage());
         }
 
         // buffer is smaller then message size
