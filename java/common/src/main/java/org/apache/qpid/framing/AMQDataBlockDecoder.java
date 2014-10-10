@@ -35,7 +35,8 @@ public class AMQDataBlockDecoder
     private int _maxFrameSize = AMQConstant.FRAME_MIN_SIZE.getCode();
 
     public AMQDataBlockDecoder()
-    { }
+    {
+    }
 
     public boolean decodable(MarkableDataInput in) throws AMQFrameDecodingException, IOException
     {
@@ -52,9 +53,13 @@ public class AMQDataBlockDecoder
 
         // Get an unsigned int, lifted from MINA ByteBuffer getUnsignedInt() 
         final long bodySize = in.readInt() & 0xffffffffL;
-        if(bodySize > _maxFrameSize)
+        if (bodySize > _maxFrameSize)
         {
-            throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR, "Incoming frame size of "+bodySize+" is larger than negotiated maximum of  " + _maxFrameSize);
+            throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR,
+                                                "Incoming frame size of "
+                                                + bodySize
+                                                + " is larger than negotiated maximum of  "
+                                                + _maxFrameSize);
         }
         in.reset();
 
@@ -62,9 +67,8 @@ public class AMQDataBlockDecoder
 
     }
 
-    public <T> T createAndPopulateFrame(ProtocolVersion pv,
-                                        MethodProcessor<T> processor,
-                                        MarkableDataInput in)
+    public void processInput(MethodProcessor processor,
+                             MarkableDataInput in)
             throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
     {
         final byte type = in.readByte();
@@ -75,24 +79,24 @@ public class AMQDataBlockDecoder
         // bodySize can be zero
         if ((channel < 0) || (bodySize < 0))
         {
-            throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR, "Undecodable frame: type = " + type + " channel = " + channel
-                + " bodySize = " + bodySize);
+            throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR,
+                                                "Undecodable frame: type = " + type + " channel = " + channel
+                                                + " bodySize = " + bodySize);
         }
 
-        T result;
-        switch(type)
+        switch (type)
         {
             case 1:
-                result = processMethod(channel, in, processor, pv);
+                processMethod(channel, in, processor);
                 break;
             case 2:
-                result = ContentHeaderBody.process(channel, in, processor, bodySize);
+                ContentHeaderBody.process(channel, in, processor, bodySize);
                 break;
             case 3:
-                result = ContentBody.process(channel, in, processor, bodySize);
+                ContentBody.process(channel, in, processor, bodySize);
                 break;
             case 8:
-                result = HeartbeatBody.process(channel, in, processor, bodySize);
+                HeartbeatBody.process(channel, in, processor, bodySize);
                 break;
             default:
                 throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR, "Unsupported frame type: " + type);
@@ -101,11 +105,11 @@ public class AMQDataBlockDecoder
         byte marker = in.readByte();
         if ((marker & 0xFF) != 0xCE)
         {
-            throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR, "End of frame marker not found. Read " + marker + " length=" + bodySize
-                + " type=" + type);
+            throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR,
+                                                "End of frame marker not found. Read " + marker + " length=" + bodySize
+                                                + " type=" + type);
         }
 
-        return result;
     }
 
     public void setMaxFrameSize(final int maxFrameSize)
@@ -113,200 +117,277 @@ public class AMQDataBlockDecoder
         _maxFrameSize = maxFrameSize;
     }
 
-    private <T> T processMethod(int channelId, MarkableDataInput in, MethodProcessor<T> dispatcher, ProtocolVersion protocolVersion)
+    private void processMethod(int channelId,
+                               MarkableDataInput in,
+                               MethodProcessor dispatcher)
             throws AMQFrameDecodingException, IOException
     {
         final int classAndMethod = in.readInt();
-
         switch (classAndMethod)
         {
             //CONNECTION_CLASS:
             case 0x000a000a:
-                return ConnectionStartBody.process(in, dispatcher);
+                ConnectionStartBody.process(in, dispatcher);
+                break;
             case 0x000a000b:
-                return ConnectionStartOkBody.process(in, dispatcher);
+                ConnectionStartOkBody.process(in, dispatcher);
+                break;
             case 0x000a0014:
-                return ConnectionSecureBody.process(in, dispatcher);
+                ConnectionSecureBody.process(in, dispatcher);
+                break;
             case 0x000a0015:
-                return ConnectionSecureOkBody.process(in, dispatcher);
+                ConnectionSecureOkBody.process(in, dispatcher);
+                break;
             case 0x000a001e:
-                return ConnectionTuneBody.process(in, dispatcher);
+                ConnectionTuneBody.process(in, dispatcher);
+                break;
             case 0x000a001f:
-                return ConnectionTuneOkBody.process(in, dispatcher);
+                ConnectionTuneOkBody.process(in, dispatcher);
+                break;
             case 0x000a0028:
-                return ConnectionOpenBody.process(in, dispatcher);
+                ConnectionOpenBody.process(in, dispatcher);
+                break;
             case 0x000a0029:
-                return ConnectionOpenOkBody.process(in, dispatcher);
+                ConnectionOpenOkBody.process(in, dispatcher);
+                break;
             case 0x000a002a:
-                return ConnectionRedirectBody.process(in, dispatcher);
+                ConnectionRedirectBody.process(in, dispatcher);
+                break;
             case 0x000a0032:
-                if (protocolVersion.equals(ProtocolVersion.v8_0))
+                if (dispatcher.getProtocolVersion().equals(ProtocolVersion.v8_0))
                 {
-                    return ConnectionRedirectBody.process(in, dispatcher);
+                    ConnectionRedirectBody.process(in, dispatcher);
                 }
                 else
                 {
-                    return ConnectionCloseBody.process(in, dispatcher);
+                    ConnectionCloseBody.process(in, dispatcher);
                 }
+                break;
             case 0x000a0033:
-                if (protocolVersion.equals(ProtocolVersion.v8_0))
+                if (dispatcher.getProtocolVersion().equals(ProtocolVersion.v8_0))
                 {
-                    throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF), protocolVersion);
+                    throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF),
+                                                    dispatcher.getProtocolVersion());
                 }
                 else
                 {
-                    return dispatcher.connectionCloseOk();
+                    dispatcher.receiveConnectionCloseOk();
                 }
+                break;
             case 0x000a003c:
-                if (protocolVersion.equals(ProtocolVersion.v8_0))
+                if (dispatcher.getProtocolVersion().equals(ProtocolVersion.v8_0))
                 {
-                    return ConnectionCloseBody.process(in, dispatcher);
+                    ConnectionCloseBody.process(in, dispatcher);
                 }
                 else
                 {
-                    throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF), protocolVersion);
+                    throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF),
+                                                    dispatcher.getProtocolVersion());
                 }
+                break;
             case 0x000a003d:
-                if (protocolVersion.equals(ProtocolVersion.v8_0))
+                if (dispatcher.getProtocolVersion().equals(ProtocolVersion.v8_0))
                 {
-                    return dispatcher.connectionCloseOk();
+                    dispatcher.receiveConnectionCloseOk();
                 }
                 else
                 {
-                    throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF), protocolVersion);
+                    throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF),
+                                                    dispatcher.getProtocolVersion());
                 }
+                break;
 
                 // CHANNEL_CLASS:
 
             case 0x0014000a:
-                return ChannelOpenBody.process(channelId, in, dispatcher);
+                ChannelOpenBody.process(channelId, in, dispatcher);
+                break;
             case 0x0014000b:
-                return ChannelOpenOkBody.process(channelId, in, protocolVersion, dispatcher);
+                ChannelOpenOkBody.process(channelId, in, dispatcher.getProtocolVersion(), dispatcher);
+                break;
             case 0x00140014:
-                return ChannelFlowBody.process(channelId, in, dispatcher);
+                ChannelFlowBody.process(channelId, in, dispatcher);
+                break;
             case 0x00140015:
-                return ChannelFlowOkBody.process(channelId, in, dispatcher);
+                ChannelFlowOkBody.process(channelId, in, dispatcher);
+                break;
             case 0x0014001e:
-                return ChannelAlertBody.process(channelId, in, dispatcher);
+                ChannelAlertBody.process(channelId, in, dispatcher);
+                break;
             case 0x00140028:
-                return ChannelCloseBody.process(channelId, in, dispatcher);
+                ChannelCloseBody.process(channelId, in, dispatcher);
+                break;
             case 0x00140029:
-                return dispatcher.channelCloseOk(channelId);
+                dispatcher.receiveChannelCloseOk(channelId);
+                break;
 
             // ACCESS_CLASS:
 
             case 0x001e000a:
-                return AccessRequestBody.process(channelId, in, dispatcher);
+                AccessRequestBody.process(channelId, in, dispatcher);
+                break;
             case 0x001e000b:
-                return AccessRequestOkBody.process(channelId, in, dispatcher);
+                AccessRequestOkBody.process(channelId, in, dispatcher);
+                break;
 
             // EXCHANGE_CLASS:
 
             case 0x0028000a:
-                return ExchangeDeclareBody.process(channelId, in, dispatcher);
+                ExchangeDeclareBody.process(channelId, in, dispatcher);
+                break;
             case 0x0028000b:
-                return dispatcher.exchangeDeclareOk(channelId);
+                dispatcher.receiveExchangeDeclareOk(channelId);
+                break;
             case 0x00280014:
-                return ExchangeDeleteBody.process(channelId, in, dispatcher);
+                ExchangeDeleteBody.process(channelId, in, dispatcher);
+                break;
             case 0x00280015:
-                return dispatcher.exchangeDeleteOk(channelId);
+                dispatcher.receiveExchangeDeleteOk(channelId);
+                break;
             case 0x00280016:
-                return ExchangeBoundBody.process(channelId, in, dispatcher);
+                ExchangeBoundBody.process(channelId, in, dispatcher);
+                break;
             case 0x00280017:
-                return ExchangeBoundOkBody.process(channelId, in, dispatcher);
+                ExchangeBoundOkBody.process(channelId, in, dispatcher);
+                break;
 
 
             // QUEUE_CLASS:
 
             case 0x0032000a:
-                return QueueDeclareBody.process(channelId, in, dispatcher);
+                QueueDeclareBody.process(channelId, in, dispatcher);
+                break;
             case 0x0032000b:
-                return QueueDeclareOkBody.process(channelId, in, dispatcher);
+                QueueDeclareOkBody.process(channelId, in, dispatcher);
+                break;
             case 0x00320014:
-                return QueueBindBody.process(channelId, in, dispatcher);
+                QueueBindBody.process(channelId, in, dispatcher);
+                break;
             case 0x00320015:
-                return dispatcher.queueBindOk(channelId);
+                dispatcher.receiveQueueBindOk(channelId);
+                break;
             case 0x0032001e:
-                return QueuePurgeBody.process(channelId, in, dispatcher);
+                QueuePurgeBody.process(channelId, in, dispatcher);
+                break;
             case 0x0032001f:
-                return QueuePurgeOkBody.process(channelId, in, dispatcher);
+                QueuePurgeOkBody.process(channelId, in, dispatcher);
+                break;
             case 0x00320028:
-                return QueueDeleteBody.process(channelId, in, dispatcher);
+                QueueDeleteBody.process(channelId, in, dispatcher);
+                break;
             case 0x00320029:
-                return QueueDeleteOkBody.process(channelId, in, dispatcher);
+                QueueDeleteOkBody.process(channelId, in, dispatcher);
+                break;
             case 0x00320032:
-                return QueueUnbindBody.process(channelId, in, dispatcher);
+                QueueUnbindBody.process(channelId, in, dispatcher);
+                break;
             case 0x00320033:
-                return dispatcher.queueUnbindOk(channelId);
+                dispatcher.receiveQueueUnbindOk(channelId);
+                break;
 
 
             // BASIC_CLASS:
 
             case 0x003c000a:
-                return BasicQosBody.process(channelId, in, dispatcher);
+                BasicQosBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c000b:
-                return dispatcher.basicQosOk(channelId);
+                dispatcher.receiveBasicQosOk(channelId);
+                break;
             case 0x003c0014:
-                return BasicConsumeBody.process(channelId, in, dispatcher);
+                BasicConsumeBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c0015:
-                return BasicConsumeOkBody.process(channelId, in, dispatcher);
+                BasicConsumeOkBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c001e:
-                return BasicCancelBody.process(channelId, in, dispatcher);
+                BasicCancelBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c001f:
-                return BasicCancelOkBody.process(channelId, in, dispatcher);
+                BasicCancelOkBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c0028:
-                return BasicPublishBody.process(channelId, in, dispatcher);
+                BasicPublishBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c0032:
-                return BasicReturnBody.process(channelId, in, dispatcher);
+                BasicReturnBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c003c:
-                return BasicDeliverBody.process(channelId, in, dispatcher);
+                BasicDeliverBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c0046:
-                return BasicGetBody.process(channelId, in, dispatcher);
+                BasicGetBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c0047:
-                return BasicGetOkBody.process(channelId, in, dispatcher);
+                BasicGetOkBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c0048:
-                return BasicGetEmptyBody.process(channelId, in, dispatcher);
+                BasicGetEmptyBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c0050:
-                return BasicAckBody.process(channelId, in, dispatcher);
+                BasicAckBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c005a:
-                return BasicRejectBody.process(channelId, in, dispatcher);
+                BasicRejectBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c0064:
-                return BasicRecoverBody.process(channelId, in, protocolVersion, dispatcher);
+                BasicRecoverBody.process(channelId, in, dispatcher.getProtocolVersion(), dispatcher);
+                break;
             case 0x003c0065:
-                return dispatcher.basicRecoverSyncOk(channelId);
+                dispatcher.receiveBasicRecoverSyncOk(channelId);
+                break;
             case 0x003c0066:
-                return BasicRecoverSyncBody.process(channelId, in, dispatcher);
+                BasicRecoverSyncBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c006e:
-                return BasicRecoverSyncBody.process(channelId, in, dispatcher);
+                BasicRecoverSyncBody.process(channelId, in, dispatcher);
+                break;
             case 0x003c006f:
-                return dispatcher.basicRecoverSyncOk(channelId);
+                dispatcher.receiveBasicRecoverSyncOk(channelId);
+                break;
 
             // TX_CLASS:
 
             case 0x005a000a:
-                return dispatcher.txSelect(channelId);
+                dispatcher.receiveTxSelect(channelId);
+                break;
             case 0x005a000b:
-                return dispatcher.txSelectOk(channelId);
+                dispatcher.receiveTxSelectOk(channelId);
+                break;
             case 0x005a0014:
-                return dispatcher.txCommit(channelId);
+                dispatcher.receiveTxCommit(channelId);
+                break;
             case 0x005a0015:
-                return dispatcher.txCommitOk(channelId);
+                dispatcher.receiveTxCommitOk(channelId);
+                break;
             case 0x005a001e:
-                return dispatcher.txRollback(channelId);
+                dispatcher.receiveTxRollback(channelId);
+                break;
             case 0x005a001f:
-                return dispatcher.txRollbackOk(channelId);
+                dispatcher.receiveTxRollbackOk(channelId);
+                break;
 
             default:
-                throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF), protocolVersion);
+                throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF),
+                                                dispatcher.getProtocolVersion());
 
         }
     }
 
-    private AMQFrameDecodingException newUnknownMethodException(final int classId, final int methodId, ProtocolVersion protocolVersion)
+    private AMQFrameDecodingException newUnknownMethodException(final int classId,
+                                                                final int methodId,
+                                                                ProtocolVersion protocolVersion)
     {
         return new AMQFrameDecodingException(AMQConstant.COMMAND_INVALID,
-                                             "Method " + methodId + " unknown in AMQP version " + protocolVersion
-                                             + " (while trying to decode class " + classId + " method " + methodId + ".");
+                                             "Method "
+                                             + methodId
+                                             + " unknown in AMQP version "
+                                             + protocolVersion
+                                             + " (while trying to decode class "
+                                             + classId
+                                             + " method "
+                                             + methodId
+                                             + ".");
     }
 
 

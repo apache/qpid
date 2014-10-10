@@ -113,13 +113,13 @@ public class BasicCancelBody extends AMQMethodBodyImpl implements EncodableAMQDa
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId,
+    public static void process(final int channelId,
                                 final MarkableDataInput buffer,
-                                final MethodProcessor<T> dispatcher) throws IOException
+                                final MethodProcessor dispatcher) throws IOException
     {
 
         AMQShortString consumerTag = buffer.readAMQShortString();
         boolean noWait = (buffer.readByte() & 0x01) == 0x01;
-        return dispatcher.basicCancel(channelId, consumerTag, noWait);
+        dispatcher.receiveBasicCancel(channelId, consumerTag, noWait);
     }
 }

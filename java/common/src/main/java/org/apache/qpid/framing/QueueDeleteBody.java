@@ -151,9 +151,9 @@ public class QueueDeleteBody extends AMQMethodBodyImpl implements EncodableAMQDa
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId,
+    public static void process(final int channelId,
                                 final MarkableDataInput buffer,
-                                final MethodProcessor<T> dispatcher) throws IOException
+                                final MethodProcessor dispatcher) throws IOException
     {
 
         int ticket = buffer.readUnsignedShort();
@@ -163,6 +163,6 @@ public class QueueDeleteBody extends AMQMethodBodyImpl implements EncodableAMQDa
         boolean ifUnused = (bitfield & 0x01) == 0x01;
         boolean ifEmpty = (bitfield & 0x02) == 0x02;
         boolean nowait = (bitfield & 0x04) == 0x04;
-        return dispatcher.queueDelete(channelId, queue, ifUnused, ifEmpty, nowait);
+        dispatcher.receiveQueueDelete(channelId, queue, ifUnused, ifEmpty, nowait);
     }
 }

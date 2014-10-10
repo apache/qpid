@@ -125,13 +125,13 @@ public class BasicGetBody extends AMQMethodBodyImpl implements EncodableAMQDataB
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId, final MarkableDataInput buffer, final MethodProcessor<T> dispatcher)
+    public static void process(final int channelId, final MarkableDataInput buffer, final MethodProcessor dispatcher)
             throws IOException
     {
 
         int ticket = buffer.readUnsignedShort();
         AMQShortString queue = buffer.readAMQShortString();
         boolean noAck = (buffer.readByte() & 0x01) != 0;
-        return dispatcher.basicGet(channelId, queue, noAck);
+        dispatcher.receiveBasicGet(channelId, queue, noAck);
     }
 }

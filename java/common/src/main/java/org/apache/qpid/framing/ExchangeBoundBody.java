@@ -122,13 +122,13 @@ public class ExchangeBoundBody extends AMQMethodBodyImpl implements EncodableAMQ
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId, final MarkableDataInput buffer, final MethodProcessor<T> dispatcher)
+    public static void process(final int channelId, final MarkableDataInput buffer, final MethodProcessor dispatcher)
             throws IOException
     {
 
         AMQShortString exchange = buffer.readAMQShortString();
         AMQShortString routingKey = buffer.readAMQShortString();
         AMQShortString queue = buffer.readAMQShortString();
-        return dispatcher.exchangeBound(channelId, exchange, routingKey, queue);
+        dispatcher.receiveExchangeBound(channelId, exchange, routingKey, queue);
     }
 }

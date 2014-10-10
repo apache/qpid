@@ -124,14 +124,14 @@ public class BasicQosBody extends AMQMethodBodyImpl implements EncodableAMQDataB
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId,
+    public static void process(final int channelId,
                                 final MarkableDataInput buffer,
-                                final MethodProcessor<T> dispatcher) throws IOException
+                                final MethodProcessor dispatcher) throws IOException
     {
 
         long prefetchSize = EncodingUtils.readUnsignedInteger(buffer);
         int prefetchCount = buffer.readUnsignedShort();
         boolean global = (buffer.readByte() & 0x01) == 0x01;
-        return dispatcher.basicQos(channelId, prefetchSize, prefetchCount, global);
+        dispatcher.receiveBasicQos(channelId, prefetchSize, prefetchCount, global);
     }
 }

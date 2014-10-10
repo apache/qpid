@@ -155,9 +155,9 @@ public class ContentHeaderBody implements AMQBody
         _bodySize = bodySize;
     }
 
-    public static <T> T process(final int channelId,
+    public static void process(final int channelId,
                                 final MarkableDataInput buffer,
-                                final MethodProcessor<T> methodProcessor, final long size)
+                                final MethodProcessor methodProcessor, final long size)
             throws IOException, AMQFrameDecodingException
     {
 
@@ -175,6 +175,6 @@ public class ContentHeaderBody implements AMQBody
             properties = new BasicContentHeaderProperties();
         properties.populatePropertiesFromBuffer(buffer, propertyFlags, (int)(size-14));
 
-        return methodProcessor.messageHeader(channelId, properties, bodySize);
+        methodProcessor.receiveMessageHeader(channelId, properties, bodySize);
     }
 }

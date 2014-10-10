@@ -23,8 +23,8 @@ package org.apache.qpid.client.protocol;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
@@ -193,7 +193,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         _connection = con;
         _protocolSession = new AMQProtocolSession(this, _connection);
         _stateManager = new AMQStateManager(_protocolSession);
-        _decoder = new AMQDecoder(false, _protocolSession.getMethodRegistry());
+        _decoder = new AMQDecoder(false, _protocolSession.getMethodProcessor());
         _failoverHandler = new FailoverHandler(this);
     }
 
@@ -459,9 +459,10 @@ public class AMQProtocolHandler implements ProtocolEngine
     {
         _readBytes += msg.remaining();
         _lastReadTime = System.currentTimeMillis();
+        final List<AMQDataBlock> dataBlocks = _protocolSession.getMethodProcessor().getProcessedMethods();
         try
         {
-            final ArrayList<AMQDataBlock> dataBlocks = _decoder.decodeBuffer(msg);
+            _decoder.decodeBuffer(msg);
 
             // Decode buffer
             int size = dataBlocks.size();
@@ -510,6 +511,10 @@ public class AMQProtocolHandler implements ProtocolEngine
             _logger.error("Exception processing frame", e);
             propagateExceptionToFrameListeners(e);
             exception(e);
+        }
+        finally
+        {
+            dataBlocks.clear();
         }
 
 

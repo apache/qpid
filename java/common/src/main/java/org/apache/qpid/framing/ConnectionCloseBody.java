@@ -134,12 +134,12 @@ public class ConnectionCloseBody extends AMQMethodBodyImpl implements EncodableA
         return buf.toString();
     }
 
-    public static <T> T process(final MarkableDataInput buffer, final MethodProcessor<T> dispatcher) throws IOException
+    public static void process(final MarkableDataInput buffer, final MethodProcessor dispatcher) throws IOException
     {
         int replyCode = buffer.readUnsignedShort();
         AMQShortString replyText = buffer.readAMQShortString();
         int classId = buffer.readUnsignedShort();
         int methodId = buffer.readUnsignedShort();
-        return dispatcher.connectionClose(replyCode, replyText, classId, methodId);
+        dispatcher.receiveConnectionClose(replyCode, replyText, classId, methodId);
     }
 }

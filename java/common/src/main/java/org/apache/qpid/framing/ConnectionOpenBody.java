@@ -121,12 +121,12 @@ public class ConnectionOpenBody extends AMQMethodBodyImpl implements EncodableAM
         return buf.toString();
     }
 
-    public static <T> T process(final MarkableDataInput buffer, final MethodProcessor<T> dispatcher) throws IOException
+    public static void process(final MarkableDataInput buffer, final MethodProcessor dispatcher) throws IOException
     {
 
         AMQShortString virtualHost = buffer.readAMQShortString();
         AMQShortString capabilities = buffer.readAMQShortString();
         boolean insist = (buffer.readByte() & 0x01) == 0x01;
-        return dispatcher.connectionOpen(virtualHost, capabilities, insist);
+        dispatcher.receiveConnectionOpen(virtualHost, capabilities, insist);
     }
 }

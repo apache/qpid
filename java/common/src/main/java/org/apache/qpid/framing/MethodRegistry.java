@@ -31,14 +31,12 @@ package org.apache.qpid.framing;
 
 public final class MethodRegistry
 {
-    private final FrameCreatingMethodProcessor _methodProcessor;
     private ProtocolVersion _protocolVersion;
 
 
     public MethodRegistry(ProtocolVersion pv)
     {
         _protocolVersion = pv;
-        _methodProcessor = new FrameCreatingMethodProcessor(this);
     }
 
     public void setProtocolVersion(final ProtocolVersion protocolVersion)
@@ -553,11 +551,6 @@ public final class MethodRegistry
     public ProtocolVersion getProtocolVersion()
     {
         return _protocolVersion;
-    }
-
-    public FrameCreatingMethodProcessor getMethodProcessor()
-    {
-        return _methodProcessor;
     }
 
 

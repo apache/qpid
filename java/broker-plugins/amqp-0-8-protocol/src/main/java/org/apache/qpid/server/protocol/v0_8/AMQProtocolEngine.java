@@ -133,6 +133,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     /* AMQP Version for this session */
     private ProtocolVersion _protocolVersion = ProtocolVersion.getLatestSupportedVersion();
     private final MethodRegistry _methodRegistry = new MethodRegistry(_protocolVersion);
+    private final FrameCreatingMethodProcessor _methodProcessor = new FrameCreatingMethodProcessor(_protocolVersion);
     private final List<Action<? super AMQProtocolEngine>> _taskList =
             new CopyOnWriteArrayList<Action<? super AMQProtocolEngine>>();
 
@@ -185,7 +186,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         _transport = transport;
         _maxNoOfChannels = broker.getConnection_sessionCountLimit();
         _receivedLock = new ReentrantLock();
-        _decoder = new AMQDecoder(true, _methodRegistry);
+        _decoder = new AMQDecoder(true, _methodProcessor);
         _connectionID = connectionId;
         _logSubject = new ConnectionLogSubject(this);
 
@@ -296,10 +297,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                 _readBytes += msg.remaining();
 
                 _receivedLock.lock();
+                List<AMQDataBlock> processedMethods = _methodProcessor.getProcessedMethods();
                 try
                 {
-                    final ArrayList<AMQDataBlock> dataBlocks = _decoder.decodeBuffer(msg);
-                    for (AMQDataBlock dataBlock : dataBlocks)
+                    _decoder.decodeBuffer(msg);
+                    for (AMQDataBlock dataBlock : processedMethods)
                     {
                         try
                         {
@@ -320,6 +322,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                             break;
                         }
                     }
+                    processedMethods.clear();
                     receivedComplete();
                 }
                 catch (ConnectionScopedRuntimeException e)
@@ -349,6 +352,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                 }
                 finally
                 {
+                    processedMethods.clear();
                     _receivedLock.unlock();
                 }
                 return null;
@@ -1089,13 +1093,32 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     private void closeConnection(int channelId, AMQConnectionException e)
     {
+
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Closing connection due to: " + e);
+        }
+        closeConnection(channelId, e.getCloseFrame());
+    }
+
+
+    void closeConnection(AMQConstant errorCode,
+                         String message, int channelId,
+                         int classId,
+                         int methodId)
+    {
+
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Closing connection due to: " + message);
+        }
+        closeConnection(channelId, new AMQFrame(0, new ConnectionCloseBody(getProtocolVersion(), errorCode.getCode(), AMQShortString.validValueOf(message), classId, methodId)));
+    }
+
+    private void closeConnection(int channelId, AMQFrame frame)
+    {
         try
         {
-            if (_logger.isInfoEnabled())
-            {
-                _logger.info("Closing connection due to: " + e);
-            }
-
             markChannelAwaitingCloseOk(channelId);
             closeSession();
         }
@@ -1103,7 +1126,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         {
             try
             {
-                writeFrame(e.getCloseFrame());
+                writeFrame(frame);
             }
             finally
             {
@@ -1208,6 +1231,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     {
         _protocolVersion = pv;
         _methodRegistry.setProtocolVersion(_protocolVersion);
+        _methodProcessor.setProtocolVersion(_protocolVersion);
         _protocolOutputConverter = new ProtocolOutputConverterImpl(this);
         _dispatcher = ServerMethodDispatcherImpl.createMethodDispatcher(this);
     }

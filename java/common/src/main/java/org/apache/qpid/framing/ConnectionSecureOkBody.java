@@ -96,9 +96,9 @@ public class ConnectionSecureOkBody extends AMQMethodBodyImpl implements Encodab
         return buf.toString();
     }
 
-    public static <T> T process(final MarkableDataInput in, final MethodProcessor<T> dispatcher) throws IOException
+    public static void process(final MarkableDataInput in, final MethodProcessor dispatcher) throws IOException
     {
         byte[] response = EncodingUtils.readBytes(in);
-        return dispatcher.connectionSecureOk(response);
+        dispatcher.receiveConnectionSecureOk(response);
     }
 }

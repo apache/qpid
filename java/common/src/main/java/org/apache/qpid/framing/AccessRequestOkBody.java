@@ -95,10 +95,10 @@ public class AccessRequestOkBody extends AMQMethodBodyImpl implements EncodableA
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId, final MarkableDataInput buffer, final MethodProcessor<T> dispatcher)
+    public static void process(final int channelId, final MarkableDataInput buffer, final MethodProcessor dispatcher)
             throws IOException
     {
         int ticket = buffer.readUnsignedShort();
-        return dispatcher.accessRequestOk(channelId, ticket);
+        dispatcher.receiveAccessRequestOk(channelId, ticket);
     }
 }

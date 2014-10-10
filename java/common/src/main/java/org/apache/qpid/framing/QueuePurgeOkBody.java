@@ -95,11 +95,11 @@ public class QueuePurgeOkBody extends AMQMethodBodyImpl implements EncodableAMQD
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId,
+    public static void process(final int channelId,
                                 final MarkableDataInput buffer,
-                                final MethodProcessor<T> dispatcher) throws IOException
+                                final MethodProcessor dispatcher) throws IOException
     {
         long messageCount = EncodingUtils.readUnsignedInteger(buffer);
-        return dispatcher.queuePurgeOk(channelId, messageCount);
+        dispatcher.receiveQueuePurgeOk(channelId, messageCount);
     }
 }

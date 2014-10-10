@@ -93,10 +93,10 @@ public class ChannelFlowOkBody extends AMQMethodBodyImpl implements EncodableAMQ
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId, final MarkableDataInput buffer, final MethodProcessor<T> dispatcher)
+    public static void process(final int channelId, final MarkableDataInput buffer, final MethodProcessor dispatcher)
             throws IOException
     {
         boolean active = (buffer.readByte() & 0x01) == 0x01;
-        return dispatcher.channelFlowOk(channelId, active);
+        dispatcher.receiveChannelFlowOk(channelId, active);
     }
 }

@@ -112,13 +112,13 @@ public class BasicAckBody extends AMQMethodBodyImpl implements EncodableAMQDataB
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId,
+    public static void process(final int channelId,
                                 final MarkableDataInput buffer,
-                                final MethodProcessor<T> dispatcher) throws IOException
+                                final MethodProcessor dispatcher) throws IOException
     {
 
         long deliveryTag = buffer.readLong();
         boolean multiple = (buffer.readByte() & 0x01) != 0;
-        return dispatcher.basicAck(channelId, deliveryTag, multiple);
+        dispatcher.receiveBasicAck(channelId, deliveryTag, multiple);
     }
 }

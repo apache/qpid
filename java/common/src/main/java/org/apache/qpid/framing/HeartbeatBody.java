@@ -81,9 +81,9 @@ public class HeartbeatBody implements AMQBody
         return new AMQFrame(0, this);
     }
 
-    public static <T> T process(final int channel,
+    public static void process(final int channel,
                             final MarkableDataInput in,
-                            final MethodProcessor<T> processor,
+                            final MethodProcessor processor,
                             final long bodySize) throws IOException
     {
 
@@ -91,6 +91,6 @@ public class HeartbeatBody implements AMQBody
         {
             in.skip(bodySize);
         }
-        return processor.heartbeat();
+        processor.receiveHeartbeat();
     }
 }

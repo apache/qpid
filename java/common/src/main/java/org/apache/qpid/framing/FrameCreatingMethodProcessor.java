@@ -20,484 +20,506 @@
  */
 package org.apache.qpid.framing;
 
-public class FrameCreatingMethodProcessor implements MethodProcessor<AMQFrame>
+import java.util.ArrayList;
+import java.util.List;
+
+public class FrameCreatingMethodProcessor implements MethodProcessor
 {
-    private final MethodRegistry _methodRegistry;
+    private ProtocolVersion _protocolVersion;
+    
+    private final List<AMQDataBlock> _processedMethods = new ArrayList<>();
 
-    FrameCreatingMethodProcessor(final MethodRegistry methodRegistry)
+    public FrameCreatingMethodProcessor(final ProtocolVersion protocolVersion)
     {
-        _methodRegistry = methodRegistry;
+        _protocolVersion = protocolVersion;
+    }
+
+    public List<AMQDataBlock> getProcessedMethods()
+    {
+        return _processedMethods;
+    }
+    
+    @Override
+    public void receiveConnectionStart(final short versionMajor,
+                                       final short versionMinor,
+                                       final FieldTable serverProperties,
+                                       final byte[] mechanisms,
+                                       final byte[] locales)
+    {
+        _processedMethods.add(new AMQFrame(0, new ConnectionStartBody(versionMajor, versionMinor, serverProperties, mechanisms, locales)));
     }
 
     @Override
-    public AMQFrame connectionStart(final short versionMajor,
-                                         final short versionMinor,
-                                         final FieldTable serverProperties,
-                                         final byte[] mechanisms,
-                                         final byte[] locales)
+    public void receiveConnectionStartOk(final FieldTable clientProperties,
+                                         final AMQShortString mechanism,
+                                         final byte[] response,
+                                         final AMQShortString locale)
     {
-        return new AMQFrame(0, new ConnectionStartBody(versionMajor, versionMinor, serverProperties, mechanisms, locales));
+        _processedMethods.add(new AMQFrame(0, new ConnectionStartOkBody(clientProperties, mechanism, response, locale)));
     }
 
     @Override
-    public AMQFrame connectionStartOk(final FieldTable clientProperties,
-                                           final AMQShortString mechanism,
-                                           final byte[] response,
-                                           final AMQShortString locale)
+    public void receiveTxSelect(final int channelId)
     {
-        return new AMQFrame(0, new ConnectionStartOkBody(clientProperties, mechanism, response, locale));
+        _processedMethods.add(new AMQFrame(channelId, TxSelectBody.INSTANCE));
     }
 
     @Override
-    public AMQFrame txSelect(final int channelId)
+    public void receiveTxSelectOk(final int channelId)
     {
-        return new AMQFrame(channelId, TxSelectBody.INSTANCE);
+        _processedMethods.add(new AMQFrame(channelId, TxSelectOkBody.INSTANCE));
     }
 
     @Override
-    public AMQFrame txSelectOk(final int channelId)
+    public void receiveTxCommit(final int channelId)
     {
-        return new AMQFrame(channelId, TxSelectOkBody.INSTANCE);
+        _processedMethods.add(new AMQFrame(channelId, TxCommitBody.INSTANCE));
     }
 
     @Override
-    public AMQFrame txCommit(final int channelId)
+    public void receiveTxCommitOk(final int channelId)
     {
-        return new AMQFrame(channelId, TxCommitBody.INSTANCE);
+        _processedMethods.add(new AMQFrame(channelId, TxCommitOkBody.INSTANCE));
     }
 
     @Override
-    public AMQFrame txCommitOk(final int channelId)
+    public void receiveTxRollback(final int channelId)
     {
-        return new AMQFrame(channelId, TxCommitOkBody.INSTANCE);
+        _processedMethods.add(new AMQFrame(channelId, TxRollbackBody.INSTANCE));
     }
 
     @Override
-    public AMQFrame txRollback(final int channelId)
+    public void receiveTxRollbackOk(final int channelId)
     {
-        return new AMQFrame(channelId, TxRollbackBody.INSTANCE);
+        _processedMethods.add(new AMQFrame(channelId, TxRollbackOkBody.INSTANCE));
     }
 
     @Override
-    public AMQFrame txRollbackOk(final int channelId)
+    public void receiveConnectionSecure(final byte[] challenge)
     {
-        return new AMQFrame(channelId, TxRollbackOkBody.INSTANCE);
+        _processedMethods.add(new AMQFrame(0, new ConnectionSecureBody(challenge)));
     }
 
     @Override
-    public AMQFrame connectionSecure(final byte[] challenge)
+    public void receiveConnectionSecureOk(final byte[] response)
     {
-        return new AMQFrame(0, new ConnectionSecureBody(challenge));
+        _processedMethods.add(new AMQFrame(0, new ConnectionSecureOkBody(response)));
     }
 
     @Override
-    public AMQFrame connectionSecureOk(final byte[] response)
+    public void receiveConnectionTune(final int channelMax, final long frameMax, final int heartbeat)
     {
-        return new AMQFrame(0, new ConnectionSecureOkBody(response));
+        _processedMethods.add(new AMQFrame(0, new ConnectionTuneBody(channelMax, frameMax, heartbeat)));
     }
 
     @Override
-    public AMQFrame connectionTune(final int channelMax, final long frameMax, final int heartbeat)
+    public void receiveConnectionTuneOk(final int channelMax, final long frameMax, final int heartbeat)
     {
-        return new AMQFrame(0, new ConnectionTuneBody(channelMax, frameMax, heartbeat));
+        _processedMethods.add(new AMQFrame(0, new ConnectionTuneOkBody(channelMax, frameMax, heartbeat)));
     }
 
     @Override
-    public AMQFrame connectionTuneOk(final int channelMax, final long frameMax, final int heartbeat)
+    public void receiveConnectionOpen(final AMQShortString virtualHost,
+                                      final AMQShortString capabilities,
+                                      final boolean insist)
     {
-        return new AMQFrame(0, new ConnectionTuneOkBody(channelMax, frameMax, heartbeat));
+        _processedMethods.add(new AMQFrame(0, new ConnectionOpenBody(virtualHost, capabilities, insist)));
     }
 
     @Override
-    public AMQFrame connectionOpen(final AMQShortString virtualHost,
-                                        final AMQShortString capabilities,
-                                        final boolean insist)
+    public void receiveConnectionOpenOk(final AMQShortString knownHosts)
     {
-        return new AMQFrame(0, new ConnectionOpenBody(virtualHost, capabilities, insist));
+        _processedMethods.add(new AMQFrame(0, new ConnectionOpenOkBody(knownHosts)));
     }
 
     @Override
-    public AMQFrame connectionOpenOk(final AMQShortString knownHosts)
+    public void receiveConnectionRedirect(final AMQShortString host, final AMQShortString knownHosts)
     {
-        return new AMQFrame(0, new ConnectionOpenOkBody(knownHosts));
+        _processedMethods.add(new AMQFrame(0, new ConnectionRedirectBody(getProtocolVersion(), host, knownHosts)));
     }
 
     @Override
-    public AMQFrame connectionRedirect(final AMQShortString host, final AMQShortString knownHosts)
+    public void receiveConnectionClose(final int replyCode,
+                                       final AMQShortString replyText,
+                                       final int classId,
+                                       final int methodId)
     {
-        return new AMQFrame(0, new ConnectionRedirectBody(getProtocolVersion(), host, knownHosts));
+        _processedMethods.add(new AMQFrame(0, new ConnectionCloseBody(getProtocolVersion(), replyCode, replyText, classId, methodId)));
     }
 
     @Override
-    public AMQFrame connectionClose(final int replyCode,
-                                         final AMQShortString replyText,
-                                         final int classId,
-                                         final int methodId)
+    public void receiveConnectionCloseOk()
     {
-        return new AMQFrame(0, new ConnectionCloseBody(getProtocolVersion(), replyCode, replyText, classId, methodId));
-    }
-
-    @Override
-    public AMQFrame connectionCloseOk()
-    {
-        return new AMQFrame(0, ProtocolVersion.v8_0.equals(getProtocolVersion())
+        _processedMethods.add(new AMQFrame(0, ProtocolVersion.v8_0.equals(getProtocolVersion())
                 ? ConnectionCloseOkBody.CONNECTION_CLOSE_OK_0_8
-                : ConnectionCloseOkBody.CONNECTION_CLOSE_OK_0_9);
+                : ConnectionCloseOkBody.CONNECTION_CLOSE_OK_0_9));
     }
 
     @Override
-    public AMQFrame channelOpen(final int channelId)
+    public void receiveChannelOpen(final int channelId)
     {
-        return new AMQFrame(channelId, new ChannelOpenBody());
+        _processedMethods.add(new AMQFrame(channelId, new ChannelOpenBody()));
     }
 
     @Override
-    public AMQFrame channelOpenOk(final int channelId)
+    public void receiveChannelOpenOk(final int channelId)
     {
-        return new AMQFrame(channelId, ProtocolVersion.v8_0.equals(getProtocolVersion())
+        _processedMethods.add(new AMQFrame(channelId, ProtocolVersion.v8_0.equals(getProtocolVersion())
                 ? ChannelOpenOkBody.INSTANCE_0_8
-                : ChannelOpenOkBody.INSTANCE_0_9);
+                : ChannelOpenOkBody.INSTANCE_0_9));
     }
 
     @Override
-    public AMQFrame channelFlow(final int channelId, final boolean active)
+    public void receiveChannelFlow(final int channelId, final boolean active)
     {
-        return new AMQFrame(channelId, new ChannelFlowBody(active));
+        _processedMethods.add(new AMQFrame(channelId, new ChannelFlowBody(active)));
     }
 
     @Override
-    public AMQFrame channelFlowOk(final int channelId, final boolean active)
+    public void receiveChannelFlowOk(final int channelId, final boolean active)
     {
-        return new AMQFrame(channelId, new ChannelFlowOkBody(active));
+        _processedMethods.add(new AMQFrame(channelId, new ChannelFlowOkBody(active)));
     }
 
     @Override
-    public AMQFrame channelAlert(final int channelId,
-                                      final int replyCode,
-                                      final AMQShortString replyText,
-                                      final FieldTable details)
+    public void receiveChannelAlert(final int channelId,
+                                    final int replyCode,
+                                    final AMQShortString replyText,
+                                    final FieldTable details)
     {
-        return new AMQFrame(channelId, new ChannelAlertBody(replyCode, replyText, details));
+        _processedMethods.add(new AMQFrame(channelId, new ChannelAlertBody(replyCode, replyText, details)));
     }
 
     @Override
-    public AMQFrame channelClose(final int channelId,
-                                      final int replyCode,
-                                      final AMQShortString replyText,
-                                      final int classId,
-                                      final int methodId)
+    public void receiveChannelClose(final int channelId,
+                                    final int replyCode,
+                                    final AMQShortString replyText,
+                                    final int classId,
+                                    final int methodId)
     {
-        return new AMQFrame(channelId, new ChannelCloseBody(replyCode, replyText, classId, methodId));
+        _processedMethods.add(new AMQFrame(channelId, new ChannelCloseBody(replyCode, replyText, classId, methodId)));
     }
 
     @Override
-    public AMQFrame channelCloseOk(final int channelId)
+    public void receiveChannelCloseOk(final int channelId)
     {
-        return new AMQFrame(channelId, ChannelCloseOkBody.INSTANCE);
+        _processedMethods.add(new AMQFrame(channelId, ChannelCloseOkBody.INSTANCE));
     }
 
     @Override
-    public AMQFrame accessRequest(final int channelId,
-                                       final AMQShortString realm,
-                                       final boolean exclusive,
-                                       final boolean passive,
-                                       final boolean active,
-                                       final boolean write,
-                                       final boolean read)
+    public void receiveAccessRequest(final int channelId,
+                                     final AMQShortString realm,
+                                     final boolean exclusive,
+                                     final boolean passive,
+                                     final boolean active,
+                                     final boolean write,
+                                     final boolean read)
     {
-        return new AMQFrame(channelId, new AccessRequestBody(realm, exclusive, passive, active, write, read));
+        _processedMethods.add(new AMQFrame(channelId, new AccessRequestBody(realm, exclusive, passive, active, write, read)));
     }
 
     @Override
-    public AMQFrame accessRequestOk(final int channelId, final int ticket)
+    public void receiveAccessRequestOk(final int channelId, final int ticket)
     {
-        return new AMQFrame(channelId, new AccessRequestOkBody(ticket));
+        _processedMethods.add(new AMQFrame(channelId, new AccessRequestOkBody(ticket)));
     }
 
     @Override
-    public AMQFrame exchangeDeclare(final int channelId,
-                                         final AMQShortString exchange,
-                                         final AMQShortString type,
-                                         final boolean passive,
-                                         final boolean durable,
-                                         final boolean autoDelete,
-                                         final boolean internal,
-                                         final boolean nowait, final FieldTable arguments)
-    {
-        return new AMQFrame(channelId, new ExchangeDeclareBody(0, exchange, type, passive, durable, autoDelete, internal, nowait, arguments));
-    }
-
-    @Override
-    public AMQFrame exchangeDeclareOk(final int channelId)
-    {
-        return new AMQFrame(channelId, new ExchangeDeclareOkBody());
-    }
-
-    @Override
-    public AMQFrame exchangeDelete(final int channelId,
-                                        final AMQShortString exchange,
-                                        final boolean ifUnused,
-                                        final boolean nowait)
-    {
-        return new AMQFrame(channelId, new ExchangeDeleteBody(0, exchange, ifUnused, nowait));
-    }
-
-    @Override
-    public AMQFrame exchangeDeleteOk(final int channelId)
-    {
-        return new AMQFrame(channelId, new ExchangeDeleteOkBody());
-    }
-
-    @Override
-    public AMQFrame exchangeBound(final int channelId,
+    public void receiveExchangeDeclare(final int channelId,
                                        final AMQShortString exchange,
-                                       final AMQShortString routingKey,
-                                       final AMQShortString queue)
+                                       final AMQShortString type,
+                                       final boolean passive,
+                                       final boolean durable,
+                                       final boolean autoDelete,
+                                       final boolean internal,
+                                       final boolean nowait, final FieldTable arguments)
     {
-        return new AMQFrame(channelId, new ExchangeBoundBody(exchange, routingKey, queue));
+        _processedMethods.add(new AMQFrame(channelId, new ExchangeDeclareBody(0, exchange, type, passive, durable, autoDelete, internal, nowait, arguments)));
     }
 
     @Override
-    public AMQFrame exchangeBoundOk(final int channelId, final int replyCode, final AMQShortString replyText)
+    public void receiveExchangeDeclareOk(final int channelId)
     {
-        return new AMQFrame(channelId, new ExchangeBoundOkBody(replyCode, replyText));
+        _processedMethods.add(new AMQFrame(channelId, new ExchangeDeclareOkBody()));
     }
 
     @Override
-    public AMQFrame queueBindOk(final int channelId)
+    public void receiveExchangeDelete(final int channelId,
+                                      final AMQShortString exchange,
+                                      final boolean ifUnused,
+                                      final boolean nowait)
     {
-        return new AMQFrame(channelId, new QueueBindOkBody());
+        _processedMethods.add(new AMQFrame(channelId, new ExchangeDeleteBody(0, exchange, ifUnused, nowait)));
     }
 
     @Override
-    public AMQFrame queueUnbindOk(final int channelId)
+    public void receiveExchangeDeleteOk(final int channelId)
     {
-        return new AMQFrame(channelId, new QueueUnbindOkBody());
+        _processedMethods.add(new AMQFrame(channelId, new ExchangeDeleteOkBody()));
     }
 
     @Override
-    public AMQFrame queueDeclare(final int channelId,
+    public void receiveExchangeBound(final int channelId,
+                                     final AMQShortString exchange,
+                                     final AMQShortString routingKey,
+                                     final AMQShortString queue)
+    {
+        _processedMethods.add(new AMQFrame(channelId, new ExchangeBoundBody(exchange, routingKey, queue)));
+    }
+
+    @Override
+    public void receiveExchangeBoundOk(final int channelId, final int replyCode, final AMQShortString replyText)
+    {
+        _processedMethods.add(new AMQFrame(channelId, new ExchangeBoundOkBody(replyCode, replyText)));
+    }
+
+    @Override
+    public void receiveQueueBindOk(final int channelId)
+    {
+        _processedMethods.add(new AMQFrame(channelId, new QueueBindOkBody()));
+    }
+
+    @Override
+    public void receiveQueueUnbindOk(final int channelId)
+    {
+        _processedMethods.add(new AMQFrame(channelId, new QueueUnbindOkBody()));
+    }
+
+    @Override
+    public void receiveQueueDeclare(final int channelId,
+                                    final AMQShortString queue,
+                                    final boolean passive,
+                                    final boolean durable,
+                                    final boolean exclusive,
+                                    final boolean autoDelete,
+                                    final boolean nowait,
+                                    final FieldTable arguments)
+    {
+        _processedMethods.add(new AMQFrame(channelId, new QueueDeclareBody(0, queue, passive, durable, exclusive, autoDelete, nowait, arguments)));
+    }
+
+    @Override
+    public void receiveQueueDeclareOk(final int channelId,
                                       final AMQShortString queue,
-                                      final boolean passive,
-                                      final boolean durable,
-                                      final boolean exclusive,
-                                      final boolean autoDelete,
-                                      final boolean nowait,
-                                      final FieldTable arguments)
+                                      final long messageCount,
+                                      final long consumerCount)
     {
-        return new AMQFrame(channelId, new QueueDeclareBody(0, queue, passive, durable, exclusive, autoDelete, nowait, arguments));
+        _processedMethods.add(new AMQFrame(channelId, new QueueDeclareOkBody(queue, messageCount, consumerCount)));
     }
 
     @Override
-    public AMQFrame queueDeclareOk(final int channelId,
-                                        final AMQShortString queue,
-                                        final long messageCount,
-                                        final long consumerCount)
+    public void receiveQueueBind(final int channelId,
+                                 final AMQShortString queue,
+                                 final AMQShortString exchange,
+                                 final AMQShortString bindingKey,
+                                 final boolean nowait,
+                                 final FieldTable arguments)
     {
-        return new AMQFrame(channelId, new QueueDeclareOkBody(queue, messageCount, consumerCount));
+        _processedMethods.add(new AMQFrame(channelId, new QueueBindBody(0, queue, exchange, bindingKey, nowait, arguments)));
     }
 
     @Override
-    public AMQFrame queueBind(final int channelId,
+    public void receiveQueuePurge(final int channelId, final AMQShortString queue, final boolean nowait)
+    {
+        _processedMethods.add(new AMQFrame(channelId, new QueuePurgeBody(0, queue, nowait)));
+    }
+
+    @Override
+    public void receiveQueuePurgeOk(final int channelId, final long messageCount)
+    {
+        _processedMethods.add(new AMQFrame(channelId, new QueuePurgeOkBody(messageCount)));
+    }
+
+    @Override
+    public void receiveQueueDelete(final int channelId,
+                                   final AMQShortString queue,
+                                   final boolean ifUnused,
+                                   final boolean ifEmpty,
+                                   final boolean nowait)
+    {
+        _processedMethods.add(new AMQFrame(channelId, new QueueDeleteBody(0, queue, ifUnused, ifEmpty, nowait)));
+    }
+
+    @Override
+    public void receiveQueueDeleteOk(final int channelId, final long messageCount)
+    {
+        _processedMethods.add(new AMQFrame(channelId, new QueueDeleteOkBody(messageCount)));
+    }
+
+    @Override
+    public void receiveQueueUnbind(final int channelId,
                                    final AMQShortString queue,
                                    final AMQShortString exchange,
                                    final AMQShortString bindingKey,
-                                   final boolean nowait,
                                    final FieldTable arguments)
     {
-        return new AMQFrame(channelId, new QueueBindBody(0, queue, exchange, bindingKey, nowait, arguments));
+        _processedMethods.add(new AMQFrame(channelId, new QueueUnbindBody(0, queue, exchange, bindingKey, arguments)));
     }
 
     @Override
-    public AMQFrame queuePurge(final int channelId, final AMQShortString queue, final boolean nowait)
+    public void receiveBasicRecoverSyncOk(final int channelId)
     {
-        return new AMQFrame(channelId, new QueuePurgeBody(0, queue, nowait));
+        _processedMethods.add(new AMQFrame(channelId, new BasicRecoverSyncOkBody(getProtocolVersion())));
     }
 
     @Override
-    public AMQFrame queuePurgeOk(final int channelId, final long messageCount)
-    {
-        return new AMQFrame(channelId, new QueuePurgeOkBody(messageCount));
-    }
-
-    @Override
-    public AMQFrame queueDelete(final int channelId,
-                                     final AMQShortString queue,
-                                     final boolean ifUnused,
-                                     final boolean ifEmpty,
-                                     final boolean nowait)
-    {
-        return new AMQFrame(channelId, new QueueDeleteBody(0, queue, ifUnused, ifEmpty, nowait));
-    }
-
-    @Override
-    public AMQFrame queueDeleteOk(final int channelId, final long messageCount)
-    {
-        return new AMQFrame(channelId, new QueueDeleteOkBody(messageCount));
-    }
-
-    @Override
-    public AMQFrame queueUnbind(final int channelId,
-                                     final AMQShortString queue,
-                                     final AMQShortString exchange,
-                                     final AMQShortString bindingKey,
-                                     final FieldTable arguments)
-    {
-        return new AMQFrame(channelId, new QueueUnbindBody(0, queue, exchange, bindingKey, arguments));
-    }
-
-    @Override
-    public AMQFrame basicRecoverSyncOk(final int channelId)
-    {
-        return new AMQFrame(channelId, new BasicRecoverSyncOkBody(getProtocolVersion()));
-    }
-
-    @Override
-    public AMQFrame basicRecover(final int channelId, final boolean requeue, final boolean sync)
+    public void receiveBasicRecover(final int channelId, final boolean requeue, final boolean sync)
     {
         if(ProtocolVersion.v8_0.equals(getProtocolVersion()) || !sync)
         {
-            return new AMQFrame(channelId, new BasicRecoverBody(requeue));
+            _processedMethods.add(new AMQFrame(channelId, new BasicRecoverBody(requeue)));
         }
         else
         {
-            return new AMQFrame(channelId, new BasicRecoverSyncBody(getProtocolVersion(), requeue));
+            _processedMethods.add(new AMQFrame(channelId, new BasicRecoverSyncBody(getProtocolVersion(), requeue)));
         }
     }
 
     @Override
-    public AMQFrame basicQos(final int channelId,
-                                  final long prefetchSize,
-                                  final int prefetchCount,
-                                  final boolean global)
+    public void receiveBasicQos(final int channelId,
+                                final long prefetchSize,
+                                final int prefetchCount,
+                                final boolean global)
     {
-        return new AMQFrame(channelId, new BasicQosBody(prefetchSize, prefetchCount, global));
+        _processedMethods.add(new AMQFrame(channelId, new BasicQosBody(prefetchSize, prefetchCount, global)));
     }
 
     @Override
-    public AMQFrame basicQosOk(final int channelId)
+    public void receiveBasicQosOk(final int channelId)
     {
-        return new AMQFrame(channelId, new BasicQosOkBody());
+        _processedMethods.add(new AMQFrame(channelId, new BasicQosOkBody()));
     }
 
     @Override
-    public AMQFrame basicConsume(final int channelId,
-                                      final AMQShortString queue,
-                                      final AMQShortString consumerTag,
-                                      final boolean noLocal,
-                                      final boolean noAck,
-                                      final boolean exclusive,
-                                      final boolean nowait,
-                                      final FieldTable arguments)
+    public void receiveBasicConsume(final int channelId,
+                                    final AMQShortString queue,
+                                    final AMQShortString consumerTag,
+                                    final boolean noLocal,
+                                    final boolean noAck,
+                                    final boolean exclusive,
+                                    final boolean nowait,
+                                    final FieldTable arguments)
     {
-        return new AMQFrame(channelId, new BasicConsumeBody(0, queue, consumerTag, noLocal, noAck, exclusive, nowait, arguments));
+        _processedMethods.add(new AMQFrame(channelId, new BasicConsumeBody(0, queue, consumerTag, noLocal, noAck, exclusive, nowait, arguments)));
     }
 
     @Override
-    public AMQFrame basicConsumeOk(final int channelId, final AMQShortString consumerTag)
+    public void receiveBasicConsumeOk(final int channelId, final AMQShortString consumerTag)
     {
-        return new AMQFrame(channelId, new BasicConsumeOkBody(consumerTag));
+        _processedMethods.add(new AMQFrame(channelId, new BasicConsumeOkBody(consumerTag)));
     }
 
     @Override
-    public AMQFrame basicCancel(final int channelId, final AMQShortString consumerTag, final boolean noWait)
+    public void receiveBasicCancel(final int channelId, final AMQShortString consumerTag, final boolean noWait)
     {
-        return new AMQFrame(channelId, new BasicCancelBody(consumerTag, noWait));
+        _processedMethods.add(new AMQFrame(channelId, new BasicCancelBody(consumerTag, noWait)));
     }
 
     @Override
-    public AMQFrame basicCancelOk(final int channelId, final AMQShortString consumerTag)
+    public void receiveBasicCancelOk(final int channelId, final AMQShortString consumerTag)
     {
-        return new AMQFrame(channelId, new BasicCancelOkBody(consumerTag));
+        _processedMethods.add(new AMQFrame(channelId, new BasicCancelOkBody(consumerTag)));
     }
 
     @Override
-    public AMQFrame basicPublish(final int channelId,
-                                      final AMQShortString exchange,
-                                      final AMQShortString routingKey,
-                                      final boolean mandatory,
-                                      final boolean immediate)
+    public void receiveBasicPublish(final int channelId,
+                                    final AMQShortString exchange,
+                                    final AMQShortString routingKey,
+                                    final boolean mandatory,
+                                    final boolean immediate)
     {
-        return new AMQFrame(channelId, new BasicPublishBody(0, exchange, routingKey, mandatory, immediate));
+        _processedMethods.add(new AMQFrame(channelId, new BasicPublishBody(0, exchange, routingKey, mandatory, immediate)));
     }
 
     @Override
-    public AMQFrame basicReturn(final int channelId, final int replyCode,
-                                final AMQShortString replyText,
-                                final AMQShortString exchange,
-                                final AMQShortString routingKey)
+    public void receiveBasicReturn(final int channelId, final int replyCode,
+                                   final AMQShortString replyText,
+                                   final AMQShortString exchange,
+                                   final AMQShortString routingKey)
     {
-        return new AMQFrame(channelId, new BasicReturnBody(replyCode, replyText, exchange, routingKey));
+        _processedMethods.add(new AMQFrame(channelId, new BasicReturnBody(replyCode, replyText, exchange, routingKey)));
     }
 
     @Override
-    public AMQFrame basicDeliver(final int channelId,
-                                      final AMQShortString consumerTag,
-                                      final long deliveryTag,
-                                      final boolean redelivered,
-                                      final AMQShortString exchange,
-                                      final AMQShortString routingKey)
-    {
-        return new AMQFrame(channelId, new BasicDeliverBody(consumerTag, deliveryTag, redelivered, exchange, routingKey));
-    }
-
-    @Override
-    public AMQFrame basicGet(final int channelId, final AMQShortString queue, final boolean noAck)
-    {
-        return new AMQFrame(channelId, new BasicGetBody(0, queue, noAck));
-    }
-
-    @Override
-    public AMQFrame basicGetOk(final int channelId,
+    public void receiveBasicDeliver(final int channelId,
+                                    final AMQShortString consumerTag,
                                     final long deliveryTag,
                                     final boolean redelivered,
                                     final AMQShortString exchange,
-                                    final AMQShortString routingKey,
-                                    final long messageCount)
+                                    final AMQShortString routingKey)
     {
-        return new AMQFrame(channelId, new BasicGetOkBody(deliveryTag, redelivered, exchange, routingKey, messageCount));
+        _processedMethods.add(new AMQFrame(channelId, new BasicDeliverBody(consumerTag, deliveryTag, redelivered, exchange, routingKey)));
     }
 
     @Override
-    public AMQFrame basicGetEmpty(final int channelId)
+    public void receiveBasicGet(final int channelId, final AMQShortString queue, final boolean noAck)
     {
-        return new AMQFrame(channelId, new BasicGetEmptyBody((AMQShortString)null));
+        _processedMethods.add(new AMQFrame(channelId, new BasicGetBody(0, queue, noAck)));
     }
 
     @Override
-    public AMQFrame basicAck(final int channelId, final long deliveryTag, final boolean multiple)
+    public void receiveBasicGetOk(final int channelId,
+                                  final long deliveryTag,
+                                  final boolean redelivered,
+                                  final AMQShortString exchange,
+                                  final AMQShortString routingKey,
+                                  final long messageCount)
     {
-        return new AMQFrame(channelId, new BasicAckBody(deliveryTag, multiple));
+        _processedMethods.add(new AMQFrame(channelId, new BasicGetOkBody(deliveryTag, redelivered, exchange, routingKey, messageCount)));
     }
 
     @Override
-    public AMQFrame basicReject(final int channelId, final long deliveryTag, final boolean requeue)
+    public void receiveBasicGetEmpty(final int channelId)
     {
-        return new AMQFrame(channelId, new BasicRejectBody(deliveryTag, requeue));
+        _processedMethods.add(new AMQFrame(channelId, new BasicGetEmptyBody((AMQShortString)null)));
     }
 
     @Override
-    public AMQFrame heartbeat()
+    public void receiveBasicAck(final int channelId, final long deliveryTag, final boolean multiple)
     {
-        return new AMQFrame(0, new HeartbeatBody());
-    }
-
-    private ProtocolVersion getProtocolVersion()
-    {
-        return _methodRegistry.getProtocolVersion();
+        _processedMethods.add(new AMQFrame(channelId, new BasicAckBody(deliveryTag, multiple)));
     }
 
     @Override
-    public AMQFrame messageContent(final int channelId, final byte[] data)
+    public void receiveBasicReject(final int channelId, final long deliveryTag, final boolean requeue)
     {
-        return new AMQFrame(channelId, new ContentBody(data));
+        _processedMethods.add(new AMQFrame(channelId, new BasicRejectBody(deliveryTag, requeue)));
     }
 
     @Override
-    public AMQFrame messageHeader(final int channelId,
-                                 final BasicContentHeaderProperties properties,
-                                 final long bodySize)
+    public void receiveHeartbeat()
     {
-        return new AMQFrame(channelId, new ContentHeaderBody(properties, bodySize));
+        _processedMethods.add(new AMQFrame(0, new HeartbeatBody()));
+    }
+
+    @Override
+    public ProtocolVersion getProtocolVersion()
+    {
+        return _protocolVersion;
+    }
+
+    public void setProtocolVersion(final ProtocolVersion protocolVersion)
+    {
+        _protocolVersion = protocolVersion;
+    }
+
+    @Override
+    public void receiveMessageContent(final int channelId, final byte[] data)
+    {
+        _processedMethods.add(new AMQFrame(channelId, new ContentBody(data)));
+    }
+
+    @Override
+    public void receiveMessageHeader(final int channelId,
+                                     final BasicContentHeaderProperties properties,
+                                     final long bodySize)
+    {
+        _processedMethods.add(new AMQFrame(channelId, new ContentHeaderBody(properties, bodySize)));
+    }
+
+    @Override
+    public void receiveProtocolHeader(final ProtocolInitiation protocolInitiation)
+    {
+        _processedMethods.add(protocolInitiation);
     }
 }

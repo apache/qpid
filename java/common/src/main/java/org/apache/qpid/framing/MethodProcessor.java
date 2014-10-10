@@ -20,178 +20,182 @@
  */
 package org.apache.qpid.framing;
 
-public interface MethodProcessor<T>
+public interface MethodProcessor
 {
-    T connectionStart(short versionMajor,
-                      short versionMinor,
-                      FieldTable serverProperties,
-                      byte[] mechanisms,
-                      byte[] locales);
+    ProtocolVersion getProtocolVersion();
 
-    T connectionStartOk(FieldTable clientProperties,
-                        AMQShortString mechanism,
-                        byte[] response,
-                        AMQShortString locale);
+    void receiveConnectionStart(short versionMajor,
+                                short versionMinor,
+                                FieldTable serverProperties,
+                                byte[] mechanisms,
+                                byte[] locales);
 
-    T txSelect(int channelId);
+    void receiveConnectionStartOk(FieldTable clientProperties,
+                                  AMQShortString mechanism,
+                                  byte[] response,
+                                  AMQShortString locale);
 
-    T txSelectOk(int channelId);
+    void receiveTxSelect(int channelId);
 
-    T txCommit(int channelId);
+    void receiveTxSelectOk(int channelId);
 
-    T txCommitOk(int channelId);
+    void receiveTxCommit(int channelId);
 
-    T txRollback(int channelId);
+    void receiveTxCommitOk(int channelId);
 
-    T txRollbackOk(int channelId);
+    void receiveTxRollback(int channelId);
 
-    T connectionSecure(byte[] challenge);
+    void receiveTxRollbackOk(int channelId);
 
-    T connectionSecureOk(byte[] response);
+    void receiveConnectionSecure(byte[] challenge);
 
-    T connectionTune(int channelMax, long frameMax, int heartbeat);
+    void receiveConnectionSecureOk(byte[] response);
 
-    T connectionTuneOk(int channelMax, long frameMax, int heartbeat);
+    void receiveConnectionTune(int channelMax, long frameMax, int heartbeat);
 
-    T connectionOpen(AMQShortString virtualHost, AMQShortString capabilities, boolean insist);
+    void receiveConnectionTuneOk(int channelMax, long frameMax, int heartbeat);
 
-    T connectionOpenOk(AMQShortString knownHosts);
+    void receiveConnectionOpen(AMQShortString virtualHost, AMQShortString capabilities, boolean insist);
 
-    T connectionRedirect(AMQShortString host, AMQShortString knownHosts);
+    void receiveConnectionOpenOk(AMQShortString knownHosts);
 
-    T connectionClose(int replyCode, AMQShortString replyText, int classId, int methodId);
+    void receiveConnectionRedirect(AMQShortString host, AMQShortString knownHosts);
 
-    T connectionCloseOk();
+    void receiveConnectionClose(int replyCode, AMQShortString replyText, int classId, int methodId);
 
-    T channelOpen(int channelId);
+    void receiveConnectionCloseOk();
 
-    T channelOpenOk(int channelId);
+    void receiveChannelOpen(int channelId);
 
-    T channelFlow(int channelId, boolean active);
+    void receiveChannelOpenOk(int channelId);
 
-    T channelFlowOk(int channelId, boolean active);
+    void receiveChannelFlow(int channelId, boolean active);
 
-    T channelAlert(int channelId, int replyCode, final AMQShortString replyText, FieldTable details);
+    void receiveChannelFlowOk(int channelId, boolean active);
 
-    T channelClose(int channelId, int replyCode, AMQShortString replyText, int classId, int methodId);
+    void receiveChannelAlert(int channelId, int replyCode, final AMQShortString replyText, FieldTable details);
 
-    T channelCloseOk(int channelId);
+    void receiveChannelClose(int channelId, int replyCode, AMQShortString replyText, int classId, int methodId);
 
-    T accessRequest(int channelId,
-                    AMQShortString realm,
-                    boolean exclusive,
-                    boolean passive,
-                    boolean active,
-                    boolean write, boolean read);
+    void receiveChannelCloseOk(int channelId);
 
-    T accessRequestOk(int channelId, int ticket);
+    void receiveAccessRequest(int channelId,
+                              AMQShortString realm,
+                              boolean exclusive,
+                              boolean passive,
+                              boolean active,
+                              boolean write, boolean read);
 
-    T exchangeDeclare(int channelId,
-                      AMQShortString exchange,
-                      AMQShortString type,
-                      boolean passive,
-                      boolean durable,
-                      boolean autoDelete, boolean internal, boolean nowait, final FieldTable arguments);
+    void receiveAccessRequestOk(int channelId, int ticket);
 
-    T exchangeDeclareOk(int channelId);
+    void receiveExchangeDeclare(int channelId,
+                                AMQShortString exchange,
+                                AMQShortString type,
+                                boolean passive,
+                                boolean durable,
+                                boolean autoDelete, boolean internal, boolean nowait, final FieldTable arguments);
 
-    T exchangeDelete(int channelId, AMQShortString exchange, boolean ifUnused, boolean nowait);
+    void receiveExchangeDeclareOk(int channelId);
 
-    T exchangeDeleteOk(int channelId);
+    void receiveExchangeDelete(int channelId, AMQShortString exchange, boolean ifUnused, boolean nowait);
 
-    T exchangeBound(int channelId, AMQShortString exchange, AMQShortString routingKey, AMQShortString queue);
+    void receiveExchangeDeleteOk(int channelId);
 
-    T exchangeBoundOk(int channelId, int replyCode, AMQShortString replyText);
+    void receiveExchangeBound(int channelId, AMQShortString exchange, AMQShortString routingKey, AMQShortString queue);
 
-    T queueBindOk(int channelId);
+    void receiveExchangeBoundOk(int channelId, int replyCode, AMQShortString replyText);
 
-    T queueUnbindOk(final int channelId);
+    void receiveQueueBindOk(int channelId);
 
-    T queueDeclare(int channelId,
-                   AMQShortString queue,
-                   boolean passive,
-                   boolean durable,
-                   boolean exclusive,
-                   boolean autoDelete, boolean nowait, FieldTable arguments);
+    void receiveQueueUnbindOk(final int channelId);
 
-    T queueDeclareOk(int channelId, final AMQShortString queue, long messageCount, long consumerCount);
+    void receiveQueueDeclare(int channelId,
+                             AMQShortString queue,
+                             boolean passive,
+                             boolean durable,
+                             boolean exclusive,
+                             boolean autoDelete, boolean nowait, FieldTable arguments);
 
-    T queueBind(int channelId,
-                AMQShortString queue,
-                AMQShortString exchange,
-                AMQShortString bindingKey,
-                boolean nowait, FieldTable arguments);
+    void receiveQueueDeclareOk(int channelId, final AMQShortString queue, long messageCount, long consumerCount);
 
-    T queuePurge(int channelId, AMQShortString queue, boolean nowait);
+    void receiveQueueBind(int channelId,
+                          AMQShortString queue,
+                          AMQShortString exchange,
+                          AMQShortString bindingKey,
+                          boolean nowait, FieldTable arguments);
 
-    T queuePurgeOk(int channelId, long messageCount);
+    void receiveQueuePurge(int channelId, AMQShortString queue, boolean nowait);
 
-    T queueDelete(int channelId, AMQShortString queue, boolean ifUnused, boolean ifEmpty, boolean nowait);
+    void receiveQueuePurgeOk(int channelId, long messageCount);
 
-    T queueDeleteOk(int channelId, long messageCount);
+    void receiveQueueDelete(int channelId, AMQShortString queue, boolean ifUnused, boolean ifEmpty, boolean nowait);
 
-    T queueUnbind(int channelId,
-                  AMQShortString queue,
-                  AMQShortString exchange,
-                  AMQShortString bindingKey,
-                  FieldTable arguments);
+    void receiveQueueDeleteOk(int channelId, long messageCount);
 
-    T basicRecoverSyncOk(int channelId);
+    void receiveQueueUnbind(int channelId,
+                            AMQShortString queue,
+                            AMQShortString exchange,
+                            AMQShortString bindingKey,
+                            FieldTable arguments);
 
-    T basicRecover(int channelId, final boolean requeue, boolean sync);
+    void receiveBasicRecoverSyncOk(int channelId);
 
-    T basicQos(int channelId, long prefetchSize, int prefetchCount, boolean global);
+    void receiveBasicRecover(int channelId, final boolean requeue, boolean sync);
 
-    T basicQosOk(int channelId);
+    void receiveBasicQos(int channelId, long prefetchSize, int prefetchCount, boolean global);
 
-    T basicConsume(int channelId,
-                   AMQShortString queue,
-                   AMQShortString consumerTag,
-                   boolean noLocal,
-                   boolean noAck,
-                   boolean exclusive, boolean nowait, FieldTable arguments);
+    void receiveBasicQosOk(int channelId);
 
-    T basicConsumeOk(int channelId, AMQShortString consumerTag);
+    void receiveBasicConsume(int channelId,
+                             AMQShortString queue,
+                             AMQShortString consumerTag,
+                             boolean noLocal,
+                             boolean noAck,
+                             boolean exclusive, boolean nowait, FieldTable arguments);
 
-    T basicCancel(int channelId, AMQShortString consumerTag, boolean noWait);
+    void receiveBasicConsumeOk(int channelId, AMQShortString consumerTag);
 
-    T basicCancelOk(int channelId, AMQShortString consumerTag);
+    void receiveBasicCancel(int channelId, AMQShortString consumerTag, boolean noWait);
 
-    T basicPublish(int channelId,
-                   AMQShortString exchange,
-                   AMQShortString routingKey,
-                   boolean mandatory,
-                   boolean immediate);
+    void receiveBasicCancelOk(int channelId, AMQShortString consumerTag);
 
-    T basicReturn(final int channelId,
-                  int replyCode,
-                  AMQShortString replyText,
-                  AMQShortString exchange,
-                  AMQShortString routingKey);
+    void receiveBasicPublish(int channelId,
+                             AMQShortString exchange,
+                             AMQShortString routingKey,
+                             boolean mandatory,
+                             boolean immediate);
 
-    T basicDeliver(int channelId,
-                   AMQShortString consumerTag,
-                   long deliveryTag,
-                   boolean redelivered,
-                   AMQShortString exchange, AMQShortString routingKey);
+    void receiveBasicReturn(final int channelId,
+                            int replyCode,
+                            AMQShortString replyText,
+                            AMQShortString exchange,
+                            AMQShortString routingKey);
 
-    T basicGet(int channelId, AMQShortString queue, boolean noAck);
+    void receiveBasicDeliver(int channelId,
+                             AMQShortString consumerTag,
+                             long deliveryTag,
+                             boolean redelivered,
+                             AMQShortString exchange, AMQShortString routingKey);
 
-    T basicGetOk(int channelId,
-                 long deliveryTag,
-                 boolean redelivered,
-                 AMQShortString exchange,
-                 AMQShortString routingKey, long messageCount);
+    void receiveBasicGet(int channelId, AMQShortString queue, boolean noAck);
 
-    T basicGetEmpty(int channelId);
+    void receiveBasicGetOk(int channelId,
+                           long deliveryTag,
+                           boolean redelivered,
+                           AMQShortString exchange,
+                           AMQShortString routingKey, long messageCount);
 
-    T basicAck(int channelId, long deliveryTag, boolean multiple);
+    void receiveBasicGetEmpty(int channelId);
 
-    T basicReject(int channelId, long deliveryTag, boolean requeue);
+    void receiveBasicAck(int channelId, long deliveryTag, boolean multiple);
 
-    T heartbeat();
+    void receiveBasicReject(int channelId, long deliveryTag, boolean requeue);
 
-    T messageContent(int channelId, byte[] data);
+    void receiveHeartbeat();
 
-    T messageHeader(int channelId, BasicContentHeaderProperties properties, long bodySize);
+    void receiveMessageContent(int channelId, byte[] data);
+
+    void receiveMessageHeader(int channelId, BasicContentHeaderProperties properties, long bodySize);
+
+    void receiveProtocolHeader(ProtocolInitiation protocolInitiation);
 }

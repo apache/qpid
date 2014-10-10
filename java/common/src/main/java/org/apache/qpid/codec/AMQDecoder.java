@@ -30,14 +30,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
-import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQDataBlockDecoder;
 import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.AMQProtocolVersionException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ByteArrayDataInput;
 import org.apache.qpid.framing.EncodingUtils;
-import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.MethodProcessor;
 import org.apache.qpid.framing.ProtocolInitiation;
 
 /**
@@ -54,7 +53,8 @@ import org.apache.qpid.framing.ProtocolInitiation;
  */
 public class AMQDecoder
 {
-    private final MethodRegistry _registry;
+    private final MethodProcessor _methodProcessor;
+
     /** Holds the 'normal' AMQP data decoder. */
     private AMQDataBlockDecoder _dataBlockDecoder = new AMQDataBlockDecoder();
 
@@ -73,12 +73,12 @@ public class AMQDecoder
      * Creates a new AMQP decoder.
      *
      * @param expectProtocolInitiation <tt>true</tt> if this decoder needs to handle protocol initiation.
-     * @param registry method registry
+     * @param methodProcessor method processor
      */
-    public AMQDecoder(boolean expectProtocolInitiation, MethodRegistry registry)
+    public AMQDecoder(boolean expectProtocolInitiation, MethodProcessor methodProcessor)
     {
         _expectProtocolInitiation = expectProtocolInitiation;
-        _registry = registry;
+        _methodProcessor = methodProcessor;
     }
 
 
@@ -217,14 +217,13 @@ public class AMQDecoder
     }
 
 
-    public ArrayList<AMQDataBlock> decodeBuffer(ByteBuffer buf) throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
+    public void decodeBuffer(ByteBuffer buf) throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
     {
 
-        // get prior remaining data from accumulator
-        ArrayList<AMQDataBlock> dataBlocks = new ArrayList<AMQDataBlock>();
         MarkableDataInput msg;
 
 
+        // get prior remaining data from accumulator
         ByteArrayInputStream bais;
         DataInput di;
         if(!_remainingBufs.isEmpty())
@@ -258,9 +257,7 @@ public class AMQDecoder
                 enoughData = _dataBlockDecoder.decodable(msg);
                 if (enoughData)
                 {
-                    dataBlocks.add(_dataBlockDecoder.createAndPopulateFrame(_registry.getProtocolVersion(),
-                                                                            _registry.getMethodProcessor(),
-                                                                            msg));
+                    _dataBlockDecoder.processInput(_methodProcessor, msg);
                 }
             }
             else
@@ -268,7 +265,7 @@ public class AMQDecoder
                 enoughData = _piDecoder.decodable(msg);
                 if (enoughData)
                 {
-                    dataBlocks.add(new ProtocolInitiation(msg));
+                    _methodProcessor.receiveProtocolHeader(new ProtocolInitiation(msg));
                 }
 
             }
@@ -305,6 +302,5 @@ public class AMQDecoder
                 }
             }
         }
-        return dataBlocks;
     }
 }

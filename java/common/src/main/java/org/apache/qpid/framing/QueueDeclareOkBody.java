@@ -120,13 +120,13 @@ public class QueueDeclareOkBody extends AMQMethodBodyImpl implements EncodableAM
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId,
+    public static void process(final int channelId,
                                 final MarkableDataInput buffer,
-                                final MethodProcessor<T> dispatcher) throws IOException
+                                final MethodProcessor dispatcher) throws IOException
     {
         AMQShortString queue = buffer.readAMQShortString();
         long messageCount = EncodingUtils.readUnsignedInteger(buffer);
         long consumerCount = EncodingUtils.readUnsignedInteger(buffer);
-        return dispatcher.queueDeclareOk(channelId, queue, messageCount, consumerCount);
+        dispatcher.receiveQueueDeclareOk(channelId, queue, messageCount, consumerCount);
     }
 }

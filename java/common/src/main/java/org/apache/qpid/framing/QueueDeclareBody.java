@@ -191,9 +191,9 @@ public class QueueDeclareBody extends AMQMethodBodyImpl implements EncodableAMQD
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId,
+    public static void process(final int channelId,
                                 final MarkableDataInput buffer,
-                                final MethodProcessor<T> dispatcher) throws IOException, AMQFrameDecodingException
+                                final MethodProcessor dispatcher) throws IOException, AMQFrameDecodingException
     {
 
         int ticket = buffer.readUnsignedShort();
@@ -206,6 +206,6 @@ public class QueueDeclareBody extends AMQMethodBodyImpl implements EncodableAMQD
         boolean autoDelete = (bitfield & 0x08 ) == 0x08;
         boolean nowait = (bitfield & 0x010 ) == 0x010;
         FieldTable arguments = EncodingUtils.readFieldTable(buffer);
-        return dispatcher.queueDeclare(channelId, queue, passive, durable, exclusive, autoDelete, nowait, arguments);
+        dispatcher.receiveQueueDeclare(channelId, queue, passive, durable, exclusive, autoDelete, nowait, arguments);
     }
 }

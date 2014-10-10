@@ -191,7 +191,7 @@ public class BasicConsumeBody extends AMQMethodBodyImpl implements EncodableAMQD
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId, final MarkableDataInput buffer, final MethodProcessor<T> dispatcher)
+    public static void process(final int channelId, final MarkableDataInput buffer, final MethodProcessor dispatcher)
             throws IOException, AMQFrameDecodingException
     {
 
@@ -205,6 +205,6 @@ public class BasicConsumeBody extends AMQMethodBodyImpl implements EncodableAMQD
         boolean exclusive = (bitfield & 0x04) == 0x04;
         boolean nowait = (bitfield & 0x08) == 0x08;
         FieldTable arguments = EncodingUtils.readFieldTable(buffer);
-        return dispatcher.basicConsume(channelId, queue, consumerTag, noLocal, noAck, exclusive, nowait, arguments);
+        dispatcher.receiveBasicConsume(channelId, queue, consumerTag, noLocal, noAck, exclusive, nowait, arguments);
     }
 }

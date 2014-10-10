@@ -147,9 +147,9 @@ public class QueueUnbindBody extends AMQMethodBodyImpl implements EncodableAMQDa
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId,
+    public static void process(final int channelId,
                                 final MarkableDataInput buffer,
-                                final MethodProcessor<T> dispatcher) throws IOException, AMQFrameDecodingException
+                                final MethodProcessor dispatcher) throws IOException, AMQFrameDecodingException
     {
 
         int ticket = buffer.readUnsignedShort();
@@ -157,6 +157,6 @@ public class QueueUnbindBody extends AMQMethodBodyImpl implements EncodableAMQDa
         AMQShortString exchange = buffer.readAMQShortString();
         AMQShortString routingKey = buffer.readAMQShortString();
         FieldTable arguments = EncodingUtils.readFieldTable(buffer);
-        return dispatcher.queueUnbind(channelId, queue, exchange, routingKey, arguments);
+        dispatcher.receiveQueueUnbind(channelId, queue, exchange, routingKey, arguments);
     }
 }

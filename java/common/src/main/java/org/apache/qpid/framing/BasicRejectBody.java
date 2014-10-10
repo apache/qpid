@@ -112,13 +112,13 @@ public class BasicRejectBody extends AMQMethodBodyImpl implements EncodableAMQDa
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId,
+    public static void process(final int channelId,
                                 final MarkableDataInput buffer,
-                                final MethodProcessor<T> dispatcher) throws IOException
+                                final MethodProcessor dispatcher) throws IOException
     {
 
         long deliveryTag = buffer.readLong();
         boolean requeue = (buffer.readByte() & 0x01) != 0;
-        return dispatcher.basicReject(channelId, deliveryTag, requeue);
+        dispatcher.receiveBasicReject(channelId, deliveryTag, requeue);
     }
 }

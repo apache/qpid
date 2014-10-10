@@ -30,8 +30,6 @@ import java.util.Arrays;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaDataType_0_10;
@@ -241,8 +239,6 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
 
     private ContentHeaderBody createContentHeaderBody_0_8(BasicContentHeaderProperties props, int length)
     {
-        MethodRegistry methodRegistry = new MethodRegistry(ProtocolVersion.v0_9);
-        int classForBasic = methodRegistry.createBasicQosOkBody().getClazz();
         return new ContentHeaderBody(props, length);
     }
 

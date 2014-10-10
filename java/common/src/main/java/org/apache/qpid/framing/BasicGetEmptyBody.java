@@ -96,11 +96,11 @@ public class BasicGetEmptyBody extends AMQMethodBodyImpl implements EncodableAMQ
         return buf.toString();
     }
 
-    public static <T> T process(final int channelId,
+    public static void process(final int channelId,
                                 final MarkableDataInput buffer,
-                                final MethodProcessor<T> dispatcher) throws IOException
+                                final MethodProcessor dispatcher) throws IOException
     {
         AMQShortString clusterId = buffer.readAMQShortString();
-        return dispatcher.basicGetEmpty(channelId);
+        dispatcher.receiveBasicGetEmpty(channelId);
     }
 }

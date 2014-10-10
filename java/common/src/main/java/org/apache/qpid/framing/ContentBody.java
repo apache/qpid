@@ -92,14 +92,14 @@ public class ContentBody implements AMQBody
         return _payload;
     }
 
-    public static <T> T process(final int channel,
+    public static void process(final int channel,
                                   final MarkableDataInput in,
-                                  final MethodProcessor<T> methodProcessor, final long bodySize)
+                                  final MethodProcessor methodProcessor, final long bodySize)
             throws IOException
     {
         byte[] payload = new byte[(int)bodySize];
         in.readFully(payload);
-        return methodProcessor.messageContent(channel, payload);
+        methodProcessor.receiveMessageContent(channel, payload);
     }
 
     private static class BufferContentBody implements AMQBody
