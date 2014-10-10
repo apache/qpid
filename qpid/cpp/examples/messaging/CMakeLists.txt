@@ -54,14 +54,14 @@ add_messaging_example(server_reconnect)
 # These don't need Boost or OptionParser
 add_executable(hello_world hello_world.cpp)
 set_target_properties(hello_world PROPERTIES OUTPUT_NAME hello_world)
-target_link_libraries(hello_world qpidmessaging)
+target_link_libraries(hello_world qpidmessaging qpidtypes)
 install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/hello_world.cpp
            DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/messaging
            COMPONENT ${QPID_COMPONENT_EXAMPLES})
 
 add_executable(hello_xml hello_xml.cpp)
 set_target_properties(hello_xml PROPERTIES OUTPUT_NAME hello_xml)
-target_link_libraries(hello_xml qpidmessaging)
+target_link_libraries(hello_xml qpidmessaging qpidtypes)
 
 install (FILES
            ${CMAKE_CURRENT_SOURCE_DIR}/extra_dist/CMakeLists.txt
