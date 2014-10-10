@@ -300,6 +300,12 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
         }
     }
 
+    Message receiveRecoveredMessage()
+    {
+        return _replaymessages.isEmpty() ? null :  _replaymessages.remove(0);
+
+    }
+
     Message receive0(final long timeout)
     {
 
