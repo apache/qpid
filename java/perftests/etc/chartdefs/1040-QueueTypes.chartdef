@@ -20,7 +20,7 @@
 chartType=BAR
 chartTitle=Queue Types
 chartSubtitle=Persistent 1KB messages
-chartDescription=1P 1C, persistent, auto-ack with message payload 1KB. Sorted queue - 160,000 random keys, Priority - iteriates priority 0..9.
+chartDescription=1P 1C, persistent, auto-ack with message payload 1KB. Sorted queue - 160,000 random keys, Priority - iteriates priority 0..9, single queue.
 
 xAxisTitle=Queue Types
 yAxisTitle=Throughput (messages/s)

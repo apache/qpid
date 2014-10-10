@@ -122,7 +122,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         super(attributes, broker);
     }
 
-    @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
+    @StateTransition(currentState = {State.UNINITIALIZED,State.ERRORED}, desiredState = State.ACTIVE)
     private void doStart()
     {
         getBroker().getEventLogger().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));

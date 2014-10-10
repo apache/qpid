@@ -20,22 +20,30 @@
  */
 package org.apache.qpid.server.virtualhostnode;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.security.AccessControlException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.Model;
+import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.model.VirtualHost;
@@ -348,6 +356,132 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         assertEquals("Virtual host node state changed unexpectedly", State.ACTIVE, node.getState());
     }
 
+    public void testValidateOnCreateFails() throws Exception
+    {
+        String nodeName = getTestName();
+        Map<String, Object> attributes = Collections.<String, Object>singletonMap(TestVirtualHostNode.NAME, nodeName);
+
+        final DurableConfigurationStore store = mock(DurableConfigurationStore.class);
+        doThrow(new RuntimeException("Cannot open store")).when(store).openConfigurationStore(any(ConfiguredObject.class), any(boolean.class));
+        AbstractStandardVirtualHostNode node = createAbstractStandardVirtualHostNode(attributes, store);
+
+        try
+        {
+            node.validateOnCreate();
+            fail("Cannot create node");
+        }
+        catch (IllegalConfigurationException e)
+        {
+            assertTrue("Unexpected exception " + e.getMessage(), e.getMessage().startsWith("Cannot open node configuration store"));
+        }
+    }
+
+    public void testValidateOnCreateSucceeds() throws Exception
+    {
+        String nodeName = getTestName();
+        Map<String, Object> attributes = Collections.<String, Object>singletonMap(TestVirtualHostNode.NAME, nodeName);
+
+        final DurableConfigurationStore store = mock(DurableConfigurationStore.class);
+        AbstractStandardVirtualHostNode node = createAbstractStandardVirtualHostNode(attributes, store);
+
+        node.validateOnCreate();
+        verify(store).openConfigurationStore(node, false);
+        verify(store).closeConfigurationStore();
+    }
+
+    public void testOpenFails() throws Exception
+    {
+        String nodeName = getTestName();
+        Map<String, Object> attributes = Collections.<String, Object>singletonMap(TestVirtualHostNode.NAME, nodeName);
+
+        DurableConfigurationStore store = mock(DurableConfigurationStore.class);
+        AbstractVirtualHostNode node = new TestAbstractVirtualHostNode( _broker, attributes, store);
+        node.open();
+        assertEquals("Unexpected node state", State.ERRORED, node.getState());
+    }
+
+    public void testOpenSucceeds() throws Exception
+    {
+        String nodeName = getTestName();
+        Map<String, Object> attributes = Collections.<String, Object>singletonMap(TestVirtualHostNode.NAME, nodeName);
+
+        final AtomicBoolean onFailureFlag = new AtomicBoolean();
+        DurableConfigurationStore store = mock(DurableConfigurationStore.class);
+        AbstractVirtualHostNode node = new TestAbstractVirtualHostNode( _broker, attributes, store)
+        {
+            @Override
+            public void onValidate()
+            {
+                // no op
+            }
+
+            @Override
+            protected void onExceptionInOpen(RuntimeException e)
+            {
+                try
+                {
+                    super.onExceptionInOpen(e);
+                }
+                finally
+                {
+                    onFailureFlag.set(true);
+                }
+            }
+        };
+
+        node.open();
+        assertEquals("Unexpected node state", State.ACTIVE, node.getState());
+        assertFalse("onExceptionInOpen was called", onFailureFlag.get());
+    }
+
+
+    public void testDeleteInErrorStateAfterOpen()
+    {
+        String nodeName = getTestName();
+        Map<String, Object> attributes = Collections.<String, Object>singletonMap(TestVirtualHostNode.NAME, nodeName);
+
+        final DurableConfigurationStore store = mock(DurableConfigurationStore.class);
+        doThrow(new RuntimeException("Cannot open store")).when(store).openConfigurationStore(any(ConfiguredObject.class), any(boolean.class));
+        AbstractStandardVirtualHostNode node = createAbstractStandardVirtualHostNode(attributes, store);
+        node.open();
+        assertEquals("Unexpected node state", State.ERRORED, node.getState());
+
+        node.delete();
+        assertEquals("Unexpected state", State.DELETED, node.getState());
+    }
+
+    public void testActivateInErrorStateAfterOpen() throws Exception
+    {
+        String nodeName = getTestName();
+        Map<String, Object> attributes = Collections.<String, Object>singletonMap(TestVirtualHostNode.NAME, nodeName);
+
+        DurableConfigurationStore store = mock(DurableConfigurationStore.class);
+        doThrow(new RuntimeException("Cannot open store")).when(store).openConfigurationStore(any(ConfiguredObject.class), any(boolean.class));
+        AbstractVirtualHostNode node = createAbstractStandardVirtualHostNode(attributes, store);
+        node.open();
+        assertEquals("Unexpected node state", State.ERRORED, node.getState());
+        doNothing().when(store).openConfigurationStore(any(ConfiguredObject.class), any(boolean.class));
+
+        node.setAttributes(Collections.<String, Object>singletonMap(VirtualHostNode.DESIRED_STATE, State.ACTIVE));
+        assertEquals("Unexpected state", State.ACTIVE, node.getState());
+    }
+
+    public void testStartInErrorStateAfterOpen() throws Exception
+    {
+        String nodeName = getTestName();
+        Map<String, Object> attributes = Collections.<String, Object>singletonMap(TestVirtualHostNode.NAME, nodeName);
+
+        DurableConfigurationStore store = mock(DurableConfigurationStore.class);
+        doThrow(new RuntimeException("Cannot open store")).when(store).openConfigurationStore(any(ConfiguredObject.class), any(boolean.class));
+        AbstractVirtualHostNode node = createAbstractStandardVirtualHostNode(attributes, store);
+        node.open();
+        assertEquals("Unexpected node state", State.ERRORED, node.getState());
+        doNothing().when(store).openConfigurationStore(any(ConfiguredObject.class), any(boolean.class));
+
+        node.start();
+        assertEquals("Unexpected state", State.ACTIVE, node.getState());
+    }
+
     private ConfiguredObjectRecord createVirtualHostConfiguredObjectRecord(UUID virtualHostId)
     {
         Map<String, Object> virtualHostAttributes = new HashMap<>();
@@ -384,4 +518,62 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         return configStoreThatProduces(null);
     }
 
+
+    private AbstractStandardVirtualHostNode createAbstractStandardVirtualHostNode(final Map<String, Object> attributes, final DurableConfigurationStore store)
+    {
+        return new AbstractStandardVirtualHostNode(attributes,  _broker){
+
+            @Override
+            protected void writeLocationEventLog()
+            {
+
+            }
+
+            @Override
+            protected DurableConfigurationStore createConfigurationStore()
+            {
+                return store;
+            }
+        };
+    }
+
+    private class TestAbstractVirtualHostNode extends AbstractVirtualHostNode
+    {
+        private DurableConfigurationStore _store;
+
+        public TestAbstractVirtualHostNode(Broker parent, Map attributes, DurableConfigurationStore store)
+        {
+            super(parent, attributes);
+            _store = store;
+        }
+
+        @Override
+        public void onValidate()
+        {
+            throw new RuntimeException("Cannot validate");
+        }
+
+        @Override
+        protected DurableConfigurationStore createConfigurationStore()
+        {
+            return _store;
+        }
+
+        @Override
+        protected void activate()
+        {
+        }
+
+        @Override
+        protected ConfiguredObjectRecord enrichInitialVirtualHostRootRecord(ConfiguredObjectRecord vhostRecord)
+        {
+            return null;
+        }
+
+        @Override
+        public Collection<? extends RemoteReplicationNode> getRemoteReplicationNodes()
+        {
+            return null;
+        }
+    }
 }

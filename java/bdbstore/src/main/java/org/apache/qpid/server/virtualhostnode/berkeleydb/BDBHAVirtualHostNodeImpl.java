@@ -20,7 +20,11 @@
  */
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
+import java.io.File;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -74,6 +78,7 @@ import org.apache.qpid.server.store.berkeleydb.BDBConfigurationStore;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacadeFactory;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicationGroupListener;
+import org.apache.qpid.server.util.PortUtil;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
@@ -255,7 +260,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     public String toString()
     {
         return "BDBHAVirtualHostNodeImpl [id=" + getId() + ", name=" + getName() + ", storePath=" + _storePath + ", groupName=" + _groupName + ", address=" + _address
-                + ", state=" + getState() + ", priority=" + _priority + ", designatedPrimary=" + _designatedPrimary + ", quorumOverride=" + _quorumOverride + "]";
+                + ", state=" + getState() + ", priority=" + _priority + ", designatedPrimary=" + _designatedPrimary + ", quorumOverride=" + _quorumOverride + ", role=" + getRole() + "]";
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -282,20 +287,16 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         super.onCreate();
         if (!isFirstNodeInAGroup())
         {
-            try
-            {
-                int dbPingSocketTimeout = getContextKeys(false).contains("qpid.bdb.ha.db_ping_socket_timeout") ? getContextValue(Integer.class, "qpid.bdb.ha.db_ping_socket_timeout") : 10000 /* JE's own default */;
-                Collection<String> permittedNodes = ReplicatedEnvironmentFacade.connectToHelperNodeAndCheckPermittedHosts(getName(), getAddress(), getGroupName(), getHelperNodeName(), getHelperAddress(), dbPingSocketTimeout);
-                setAttribute(PERMITTED_NODES, null, new ArrayList<String>(permittedNodes));
-            }
-            catch(IllegalConfigurationException e)
-            {
-                deleted();
-                throw e;
-            }
+            _permittedNodes = new ArrayList<>(getPermittedNodesFromHelper());
         }
-
         getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.CREATED());
+    }
+
+    @Override
+    public void onOpen()
+    {
+        validatePermittedNodesFormat(_permittedNodes);
+        super.onOpen();
     }
 
     protected ReplicatedEnvironmentFacade getReplicatedEnvironmentFacade()
@@ -332,6 +333,24 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         if (environmentFacade == null)
         {
             throw new IllegalStateException("Environment facade is not created");
+        }
+
+        try
+        {
+            Set<ReplicationNode> remoteNodes = environmentFacade.getEnvironment().getGroup().getNodes();
+            for (ReplicationNode node : remoteNodes)
+            {
+                String nodeAddress = node.getHostName() + ":" + node.getPort();
+                if (!_permittedNodes.contains(nodeAddress))
+                {
+                    shutdownOnIntruder(nodeAddress);
+                    throw new IllegalStateException("Intruder node detected: " + nodeAddress);
+                }
+            }
+        }
+        catch (DatabaseException dbe)
+        {
+            environmentFacade.handleDatabaseException("DB exception while checking for intruder node", dbe);
         }
 
         if (_environmentFacade.compareAndSet(null, environmentFacade))
@@ -372,9 +391,15 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     @StateTransition( currentState = { State.ACTIVE, State.STOPPED, State.ERRORED}, desiredState = State.DELETED )
     protected void doDelete()
     {
+        // get helpers before close. on close all children are closed and not available anymore
         Set<InetSocketAddress> helpers = getRemoteNodeAddresses();
         super.doDelete();
-        getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DELETED());
+
+        if (getConfigurationStore() != null)
+        {
+            getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DELETED());
+        }
+
         if (getState() == State.DELETED && !helpers.isEmpty())
         {
             try
@@ -432,20 +457,87 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     }
 
     @Override
-    public void onValidate()
+    protected void postResolve()
     {
-        super.onValidate();
+        super.postResolve();
         _virtualHostNodeLogSubject =  new BDBHAVirtualHostNodeLogSubject(getGroupName(), getName());
         _groupLogSubject = new GroupLogSubject(getGroupName());
         _virtualHostNodePrincipalName = MessageFormat.format(VIRTUAL_HOST_PRINCIPAL_NAME_FORMAT, getGroupName(), getName());
     }
 
     @Override
-    public  void onOpen()
+    public void validateOnCreate()
     {
-        super.onOpen();
+        super.validateOnCreate();
 
-        validatePermittedNodes(_permittedNodes);
+        validateAddress();
+
+        validateStorePath();
+
+        if (!isFirstNodeInAGroup())
+        {
+            getPermittedNodesFromHelper();
+        }
+    }
+
+    private Collection<String> getPermittedNodesFromHelper()
+    {
+        int dbPingSocketTimeout = getContextKeys(false).contains("qpid.bdb.ha.db_ping_socket_timeout") ? getContextValue(Integer.class, "qpid.bdb.ha.db_ping_socket_timeout") : 10000 /* JE's own default */;
+        return ReplicatedEnvironmentFacade.connectToHelperNodeAndCheckPermittedHosts(getName(), getAddress(), getGroupName(), getHelperNodeName(), getHelperAddress(), dbPingSocketTimeout);
+    }
+
+    private void validateStorePath()
+    {
+        File storePath = new File(getStorePath());
+        while (!storePath.exists())
+        {
+            storePath = storePath.getParentFile();
+            if (storePath == null)
+            {
+                throw new IllegalConfigurationException(String.format("Store path '%s' is invalid", getStorePath()));
+            }
+        }
+
+        if (!storePath.isDirectory())
+        {
+            throw new IllegalConfigurationException(String.format("Store path '%s' is not a folder", getStorePath()));
+        }
+
+        if (!Files.isWritable(storePath.toPath()))
+        {
+            throw new IllegalConfigurationException(String.format("Store path '%s' is not writable", getStorePath()));
+        }
+    }
+
+    private void validateAddress()
+    {
+        String address = getAddress();
+
+        URI uri = addressToURI(address);
+
+        if (!PortUtil.isPortAvailable(uri.getHost(), uri.getPort()))
+        {
+            throw new IllegalConfigurationException(String.format("Cannot bind to address '%s'. Address is already in use.", address));
+        }
+    }
+
+    private URI addressToURI(String address)
+    {
+        if (address == null || "".equals(address))
+        {
+            throw new IllegalConfigurationException("Node address is not set");
+        }
+
+        URI uri = null;
+        try
+        {
+            uri = new URI( "tcp://" + address);
+        }
+        catch (URISyntaxException e)
+        {
+            throw new IllegalConfigurationException(String.format("Invalid address specified '%s'. ", address));
+        }
+        return uri;
     }
 
     private void onMaster()
@@ -538,7 +630,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
     private void onDetached()
     {
-        createReplicaVirtualHost();
+        closeVirtualHostIfExist();
     }
 
     private void createReplicaVirtualHost()
@@ -578,7 +670,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
             if (LOGGER.isInfoEnabled())
             {
-                LOGGER.info("Received BDB event indicating transition to state " + state);
+                LOGGER.info("Received BDB event indicating transition to state " + state + " for " + getName());
             }
             NodeRole previousRole = getRole();
             try
@@ -728,7 +820,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
     private boolean isFirstNodeInAGroup()
     {
-        return getAddress().equals(getHelperAddress());
+        return getHelperNodeName() == null;
     }
 
     BDBHAVirtualHostNodeLogSubject getVirtualHostNodeLogSubject()
@@ -761,7 +853,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         }
     }
 
-    private void validatePermittedNodes(List<String> proposedPermittedNodes)
+    private void validatePermittedNodes(Collection<String> proposedPermittedNodes)
     {
         if (getRemoteReplicationNodes().size() > 0 && getRole() != NodeRole.MASTER && !(getState() == State.STOPPED || getState() == State.ERRORED))
         {
@@ -772,47 +864,48 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             throw new IllegalArgumentException(String.format("Attribute '%s' is mandatory and must be set", PERMITTED_NODES));
         }
 
-        String missingNodeAddress = null;
-        if (getPermittedNodes().contains(getAddress()) && !proposedPermittedNodes.contains(getAddress()))
+        if (_permittedNodes != null)
         {
-            missingNodeAddress = getAddress();
-        }
-        else
-        {
-            for (final RemoteReplicationNode<?> node : getRemoteReplicationNodes())
+            String missingNodeAddress = null;
+
+            if (_permittedNodes.contains(getAddress()) && !proposedPermittedNodes.contains(getAddress()))
             {
-                final BDBHARemoteReplicationNode<?> bdbHaRemoteReplicationNode = (BDBHARemoteReplicationNode<?>) node;
-                final String remoteNodeAddress = bdbHaRemoteReplicationNode.getAddress();
-                if (getPermittedNodes().contains(remoteNodeAddress) && !proposedPermittedNodes.contains(remoteNodeAddress))
+                missingNodeAddress = getAddress();
+            }
+            else
+            {
+                for (final RemoteReplicationNode<?> node : getRemoteReplicationNodes())
                 {
-                    missingNodeAddress = remoteNodeAddress;
-                    break;
+                    final BDBHARemoteReplicationNode<?> bdbHaRemoteReplicationNode = (BDBHARemoteReplicationNode<?>) node;
+                    final String remoteNodeAddress = bdbHaRemoteReplicationNode.getAddress();
+                    if (_permittedNodes.contains(remoteNodeAddress) && !proposedPermittedNodes.contains(remoteNodeAddress))
+                    {
+                        missingNodeAddress = remoteNodeAddress;
+                        break;
+                    }
                 }
             }
+
+            if (missingNodeAddress != null)
+            {
+                throw new IllegalArgumentException(String.format("The current group node '%s' cannot be removed from '%s' as its already a group member", missingNodeAddress, PERMITTED_NODES));
+            }
         }
 
-        if (missingNodeAddress != null)
+        validatePermittedNodesFormat(proposedPermittedNodes);
+    }
+
+    private void validatePermittedNodesFormat(Collection<String> permittedNodes)
+    {
+        if (permittedNodes == null || permittedNodes.isEmpty())
         {
-            throw new IllegalArgumentException(String.format("The current group node '%s' cannot be removed from '%s' as its already a group member", missingNodeAddress, PERMITTED_NODES));
+            throw new IllegalConfigurationException("Permitted nodes are not set");
         }
 
-        for (String permittedNode: proposedPermittedNodes)
+        for (String permittedNode: permittedNodes)
         {
-            String[] tokens = permittedNode.split(":");
-            if (tokens.length != 2)
-            {
-                throw new IllegalArgumentException(String.format("Invalid permitted node specified '%s'. ", permittedNode));
-            }
-            try
-            {
-                Integer.parseInt(tokens[1]);
-            }
-            catch(Exception e)
-            {
-                throw new IllegalArgumentException(String.format("Invalid port is specified in permitted node '%s'. ", permittedNode));
-            }
+            addressToURI(permittedNode);
         }
-
     }
 
     private class RemoteNodesDiscoverer implements ReplicationGroupListener
@@ -931,7 +1024,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                     {
                         byte[] applicationState = nodeState.getAppState();
                         Set<String> permittedNodes = ReplicatedEnvironmentFacade.convertApplicationStateBytesToPermittedNodeList(applicationState);
-                        if (!_permittedNodes.equals(permittedNodes))
+                        if (_permittedNodes.size() != permittedNodes.size() || !_permittedNodes.containsAll(permittedNodes))
                         {
                             if (_permittedNodes.contains(remoteNode.getAddress()))
                             {
@@ -972,7 +1065,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
         private boolean processIntruderNode(ReplicationNode node)
         {
-            String hostAndPort = node.getHostName() + ":" + node.getPort();
+            final String hostAndPort = node.getHostName() + ":" + node.getPort();
             getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.INTRUDER_DETECTED(node.getName(), hostAndPort));
 
             boolean inManagementMode = getParent(Broker.class).isManagementMode();
@@ -994,35 +1087,16 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                                            BDBHAVirtualHostNodeImpl.this.getName(),
                                            _lastRole.get(),
                                            String.valueOf(BDBHAVirtualHostNodeImpl.this.getPermittedNodes()) ));
-
                 getTaskExecutor().submit(new Task<Void>()
                 {
                     @Override
                     public Void execute()
                     {
-                        State state = getState();
-                        if (state != State.ERRORED)
-                        {
-                            try
-                            {
-                                stopAndSetStateTo(State.ERRORED);
-                            }
-                            catch(Exception e)
-                            {
-                                LOGGER.error("Unexpected exception on closing the node when intruder is detected ", e);
-                            }
-                            finally
-                            {
-                                closeEnvironment();
-
-                                _lastRole.set(NodeRole.DETACHED);
-                                attributeSet(ROLE, _role, NodeRole.DETACHED);
-                            }
-                            notifyStateChanged(state, State.ERRORED);
-                        }
+                        shutdownOnIntruder(hostAndPort);
                         return null;
                     }
                 });
+
                 return false;
             }
         }
@@ -1042,6 +1116,28 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             attributes.put(BDBHARemoteReplicationNode.MONITOR, replicationNode.getType() == NodeType.MONITOR);
             return attributes;
         }
+    }
+
+    protected void shutdownOnIntruder(String intruderHostAndPort)
+    {
+        LOGGER.info("Intruder detected (" + intruderHostAndPort + "), stopping and setting state to ERRORED");
+
+        State initialState = getState();
+        try
+        {
+            stopAndSetStateTo(State.ERRORED);
+        }
+        catch (Exception e)
+        {
+            LOGGER.error("Unexpected exception on closing the node when intruder is detected ", e);
+        }
+        finally
+        {
+            closeEnvironment();
+            _lastRole.set(NodeRole.DETACHED);
+            attributeSet(ROLE, _role, NodeRole.DETACHED);
+        }
+        notifyStateChanged(initialState, State.ERRORED);
     }
 
     private abstract class VirtualHostNodeGroupTask implements Task<Void>

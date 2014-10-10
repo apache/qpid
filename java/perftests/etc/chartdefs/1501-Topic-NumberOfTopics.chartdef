@@ -20,7 +20,7 @@
 chartType=XYLINE
 chartTitle=Number of topics
 chartSubtitle=Transient 1KB messages
-chartDescription=1,10,50,100 PC, transient, transacted, with each PC pair having own topic, message payload 1KB.
+chartDescription=1,10,50,100 PC, transient, transacted, with each PC pair having own topic, message payload 1KB, single topic.
 
 xAxisTitle=Numer of topics
 yAxisTitle=Throughput (messages/s)

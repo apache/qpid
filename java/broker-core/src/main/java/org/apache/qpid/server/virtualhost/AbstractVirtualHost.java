@@ -37,7 +37,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 
@@ -228,6 +227,47 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     public MessageStore getMessageStore()
     {
         return _messageStore;
+    }
+
+    @Override
+    public void validateOnCreate()
+    {
+        super.validateOnCreate();
+        validateMessageStoreCreation();
+    }
+
+    private void validateMessageStoreCreation()
+    {
+        MessageStore store = createMessageStore();
+        if (store != null)
+        {
+            try
+            {
+                store.openMessageStore(this);
+            }
+            catch (Exception e)
+            {
+                throw new IllegalConfigurationException("Cannot open virtual host message store:" + e.getMessage(), e);
+            }
+            finally
+            {
+                try
+                {
+                    store.closeMessageStore();
+                }
+                catch(Exception e)
+                {
+                    _logger.warn("Failed to close database", e);
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void onExceptionInOpen(RuntimeException e)
+    {
+        super.onExceptionInOpen(e);
+        closeMessageStore();
     }
 
     @Override
@@ -638,6 +678,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     protected void onClose()
     {
+        setState(State.UNAVAILABLE);
         //Stop Connections
         _connectionRegistry.close();
         _dtxRegistry.close();
@@ -659,11 +700,11 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             {
                 _logger.error("Failed to close message store", e);
             }
-        }
 
-        if (!(_virtualHostNode.getConfigurationStore() instanceof MessageStoreProvider))
-        {
-            getEventLogger().message(getMessageStoreLogSubject(), MessageStoreMessages.CLOSED());
+            if (!(_virtualHostNode.getConfigurationStore() instanceof MessageStoreProvider))
+            {
+                getEventLogger().message(getMessageStoreLogSubject(), MessageStoreMessages.CLOSED());
+            }
         }
     }
 
@@ -1355,7 +1396,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         getDurableConfigurationStore().create(new ConfiguredObjectRecordImpl(record.getId(), record.getType(), record.getAttributes()));
     }
 
-    @StateTransition( currentState = { State.UNINITIALIZED }, desiredState = State.ACTIVE )
+    @StateTransition( currentState = { State.UNINITIALIZED,State.ERRORED }, desiredState = State.ACTIVE )
     private void onActivate()
     {
         _houseKeepingTasks = new ScheduledThreadPoolExecutor(getHousekeepingThreadCount());

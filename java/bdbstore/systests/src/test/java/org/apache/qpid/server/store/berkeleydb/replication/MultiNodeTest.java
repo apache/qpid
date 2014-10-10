@@ -166,8 +166,8 @@ public class MultiNodeTest extends QpidBrokerTestCase
         // New connections should now fail as vhost will be unavailable
         try
         {
-            getConnection(_negativeFailoverUrl);
-            fail("Exception not thrown");
+            Connection unexpectedConnection = getConnection(_negativeFailoverUrl);
+            fail("Got unexpected connection to node in group without quorum " + unexpectedConnection);
         }
         catch (JMSException je)
         {

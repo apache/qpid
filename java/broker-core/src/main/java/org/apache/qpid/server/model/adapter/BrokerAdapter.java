@@ -943,6 +943,28 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         _eventLogger = eventLogger;
     }
 
+    @Override
+    protected void onExceptionInOpen(RuntimeException e)
+    {
+        SystemConfig systemConfig = getParent(SystemConfig.class);
+        if (systemConfig != null)
+        {
+            BrokerShutdownProvider shutdownProvider = systemConfig.getBrokerShutdownProvider();
+            if (shutdownProvider != null)
+            {
+                shutdownProvider.shutdown();
+            }
+            else
+            {
+                throw new IllegalStateException("Shutdown provider is not found in system config");
+            }
+        }
+        else
+        {
+            throw new IllegalStateException("SystemConfig is not found among broker parents");
+        }
+    }
+
     public void registerMessageDelivered(long messageSize)
     {
         _messagesDelivered.registerEvent(1L);

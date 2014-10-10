@@ -53,6 +53,12 @@ public class TestVirtualHostNode extends AbstractStandardVirtualHostNode<TestVir
     }
 
     @Override
+    public DurableConfigurationStore getConfigurationStore()
+    {
+        return _store;
+    }
+
+    @Override
     protected void writeLocationEventLog()
     {
     }

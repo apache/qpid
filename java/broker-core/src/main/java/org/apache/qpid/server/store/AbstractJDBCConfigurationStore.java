@@ -572,7 +572,7 @@ public abstract class AbstractJDBCConfigurationStore implements MessageStoreProv
         }
         catch (SQLException e)
         {
-            throw new StoreException("Error creating ConfiguredObject " + object);
+            throw new StoreException("Error creating ConfiguredObject " + object, e);
         }
     }
 

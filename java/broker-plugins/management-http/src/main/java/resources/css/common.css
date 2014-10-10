@@ -262,7 +262,6 @@ div .messages {
 
 /* Required to keep queue type radio buttons on one line when dialog adds scrollbar */
 #addQueue {
-    max-height: 350px;
     overflow: auto;
     width: 630px;
 }

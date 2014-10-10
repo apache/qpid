@@ -22,10 +22,12 @@ package org.apache.qpid.server.model.port;
 
 import java.util.Map;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.util.PortUtil;
 
 public class HttpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<HttpPortImpl> implements HttpPort<HttpPortImpl>
 {
@@ -63,6 +65,18 @@ public class HttpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<
         else
         {
             return State.QUIESCED;
+        }
+    }
+
+    @Override
+    public void validateOnCreate()
+    {
+        super.validateOnCreate();
+        String bindingAddress = getBindingAddress();
+        if (!PortUtil.isPortAvailable(bindingAddress, getPort()))
+        {
+            throw new IllegalConfigurationException(String.format("Cannot bind to port %d and binding address '%s'. Port is already is use.",
+                    getPort(), bindingAddress == null || "".equals(bindingAddress) ? "*" : bindingAddress));
         }
     }
 }

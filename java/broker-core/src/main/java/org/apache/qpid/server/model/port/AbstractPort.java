@@ -317,7 +317,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         setState(State.DELETED);
     }
 
-    @StateTransition( currentState = {State.UNINITIALIZED, State.QUIESCED}, desiredState = State.ACTIVE )
+    @StateTransition( currentState = {State.UNINITIALIZED, State.QUIESCED, State.ERRORED}, desiredState = State.ACTIVE )
     protected void activate()
     {
         try
@@ -327,8 +327,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         catch (RuntimeException e)
         {
             setState(State.ERRORED);
-            LOGGER.error("Unable to active port '" + getName() + "'of type " + getType() + " on port " + getPort(),
-                         e);
+            throw new IllegalConfigurationException("Unable to active port '" + getName() + "'of type " + getType() + " on " + getPort(), e);
         }
     }
 

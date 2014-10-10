@@ -23,13 +23,17 @@ package org.apache.qpid.server.store.berkeleydb;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.sleepycat.je.Durability;
@@ -38,12 +42,14 @@ import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationConfig;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.berkeleydb.replication.DatabasePinger;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHost;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHARemoteReplicationNode;
@@ -53,6 +59,8 @@ import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNodeTes
 import org.apache.qpid.server.virtualhostnode.berkeleydb.NodeRole;
 import org.apache.qpid.test.utils.PortHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.TestFileUtils;
+import org.apache.qpid.util.FileUtils;
 
 public class BDBHAVirtualHostNodeTest extends QpidTestCase
 {
@@ -289,6 +297,7 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         _helper.awaitRemoteNodes(master, 2);
 
         BDBHAVirtualHostNode<?> replica = _helper.awaitAndFindNodeInRole(NodeRole.REPLICA);
+        _helper.awaitRemoteNodes(replica, 2);
 
         assertNotNull("Remote node " + replica.getName() + " is not found", _helper.findRemoteNode(master, replica.getName()));
         replica.delete();
@@ -481,7 +490,99 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         nonMasterNode.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, amendedPermittedNodes));
     }
 
+    public void testIntruderProtection() throws Exception
+    {
+        int nodePortNumber = _portHelper.getNextAvailable();
+        int intruderPortNumber = _portHelper.getNextAvailable();
+
+        String helperAddress = "localhost:" + nodePortNumber;
+        String groupName = "group";
+        String nodeName = "node";
+
+        Map<String, Object> node1Attributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, nodePortNumber, intruderPortNumber);
+        BDBHAVirtualHostNode<?> node = _helper.createAndStartHaVHN(node1Attributes);
+
+        Map<String, Object> intruderAttributes = _helper.createNodeAttributes("intruder", groupName, "localhost:" + intruderPortNumber, helperAddress, nodeName);
+        intruderAttributes.put(BDBHAVirtualHostNode.PRIORITY, 0);
+        BDBHAVirtualHostNode<?> intruder = _helper.createAndStartHaVHN(intruderAttributes);
+
+        final CountDownLatch stopLatch = new CountDownLatch(1);
+        ConfigurationChangeListener listener = new NoopConfigurationChangeListener()
+        {
+            @Override
+            public void stateChanged(ConfiguredObject<?> object, State oldState, State newState)
+            {
+                if (newState == State.ERRORED)
+                {
+                    stopLatch.countDown();
+                }
+            }
+        };
+        node.addChangeListener(listener);
+
+        List<String> permittedNodes = new ArrayList<String>();
+        permittedNodes.add(helperAddress);
+        node.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, permittedNodes));
+
+        assertTrue("Intruder protection was not triggered during expected timeout", stopLatch.await(10, TimeUnit.SECONDS));
+
+        // Try top re start the ERRORED node and ensure exception is thrown
+        try
+        {
+            node.start();
+            fail("Restart of node should have thrown exception");
+        }
+        catch (IllegalStateException ise)
+        {
+            assertEquals("Unexpected exception when restarting node post intruder detection", "Intruder node detected: " + "localhost:" + intruderPortNumber, ise.getMessage());
+        }
+        _helper.awaitForAttributeChange(node, AbstractConfiguredObject.STATE, State.ERRORED);
+    }
+
     public void testIntruderProtectionInManagementMode() throws Exception
+    {
+        int nodePortNumber = _portHelper.getNextAvailable();
+        int intruderPortNumber = _portHelper.getNextAvailable();
+
+        String helperAddress = "localhost:" + nodePortNumber;
+        String groupName = "group";
+        String nodeName = "node";
+
+        Map<String, Object> nodeAttributes = _helper.createNodeAttributes(nodeName, groupName, helperAddress, helperAddress, nodeName, nodePortNumber, intruderPortNumber);
+        BDBHAVirtualHostNode<?> node = _helper.createAndStartHaVHN(nodeAttributes);
+
+        Map<String, Object> intruderAttributes = _helper.createNodeAttributes("intruder", groupName, "localhost:" + intruderPortNumber, helperAddress, nodeName);
+        intruderAttributes.put(BDBHAVirtualHostNode.PRIORITY, 0);
+        BDBHAVirtualHostNode<?> intruder = _helper.createAndStartHaVHN(intruderAttributes);
+
+        final CountDownLatch stopLatch = new CountDownLatch(1);
+        ConfigurationChangeListener listener = new NoopConfigurationChangeListener()
+        {
+            @Override
+            public void stateChanged(ConfiguredObject<?> object, State oldState, State newState)
+            {
+                if (newState == State.ERRORED)
+                {
+                    stopLatch.countDown();
+                }
+            }
+        };
+        node.addChangeListener(listener);
+
+        List<String> permittedNodes = new ArrayList<String>();
+        permittedNodes.add(helperAddress);
+        node.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, permittedNodes));
+
+        assertTrue("Intruder protection was not triggered during expected timeout", stopLatch.await(10, TimeUnit.SECONDS));
+
+        // test that if management mode is enabled then the node can start without exception
+        when(_helper.getBroker().isManagementMode()).thenReturn(true);
+        node.start();
+
+        _helper.awaitForAttributeChange(node, AbstractConfiguredObject.STATE, State.ERRORED);
+    }
+
+    public void testPermittedNodesChangedOnReplicaNodeOnlyOnceAfterBeingChangedOnMaster() throws Exception
     {
         int node1PortNumber = _portHelper.getNextAvailable();
         int node2PortNumber = _portHelper.getNextAvailable();
@@ -496,34 +597,55 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         Map<String, Object> node2Attributes = _helper.createNodeAttributes("node2", groupName, "localhost:" + node2PortNumber, helperAddress, nodeName);
         node2Attributes.put(BDBHAVirtualHostNode.PRIORITY, 0);
         BDBHAVirtualHostNode<?> node2 = _helper.createAndStartHaVHN(node2Attributes);
+        assertEquals("Unexpected role", NodeRole.REPLICA, node2.getRole());
+        _helper.awaitRemoteNodes(node2, 1);
 
-        final CountDownLatch stopLatch = new CountDownLatch(1);
-        ConfigurationChangeListener listener = new NoopConfigurationChangeListener()
+        BDBHARemoteReplicationNode<?> remote = _helper.findRemoteNode(node2, node1.getName());
+
+        final AtomicInteger permittedNodesChangeCounter = new AtomicInteger();
+        final CountDownLatch _permittedNodesLatch = new CountDownLatch(1);
+        node2.addChangeListener(new NoopConfigurationChangeListener()
         {
             @Override
-            public void stateChanged(ConfiguredObject<?> object, State oldState, State newState)
+            public void attributeSet(ConfiguredObject<?> object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
             {
-                if (newState == State.ERRORED)
+                if (attributeName.equals(BDBHAVirtualHostNode.PERMITTED_NODES))
                 {
-                    stopLatch.countDown();
+                    permittedNodesChangeCounter.incrementAndGet();
+                    _permittedNodesLatch.countDown();
                 }
             }
-        };
-        node1.addChangeListener(listener);
-
-        List<String> permittedNodes = new ArrayList<String>();
-        permittedNodes.add(helperAddress);
+        });
+        List<String> permittedNodes = new ArrayList<>(node1.getPermittedNodes());
+        permittedNodes.add("localhost:5000");
         node1.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, permittedNodes));
 
-        assertTrue("Intruder protection was not triggered during expected timeout", stopLatch.await(10, TimeUnit.SECONDS));
+        assertTrue("Permitted nodes were not changed on Replica", _permittedNodesLatch.await(10, TimeUnit.SECONDS));
+        assertEquals("Not the same permitted nodes", new HashSet<>(node1.getPermittedNodes()), new HashSet<>(node2.getPermittedNodes()));
+        assertEquals("Unexpected counter of changes permitted nodes", 1, permittedNodesChangeCounter.get());
 
-        when(_helper.getBroker().isManagementMode()).thenReturn(true);
-        node1.start();
+        // change the order of permitted nodes
+        Collections.swap(permittedNodes, 0, 2);
+        node1.setAttributes(Collections.<String, Object>singletonMap(BDBHAVirtualHostNode.PERMITTED_NODES, permittedNodes));
 
-        _helper.awaitRemoteNodes(node1, 1);
+        // make sure that node2 onNodeState was invoked by performing transaction on master and making sure that it was replicated
+        performTransactionAndAwaitForRemoteNodeToGetAware(node1, remote);
 
-        BDBHARemoteReplicationNode<?> remote = _helper.findRemoteNode(node1, node2.getName());
-        remote.delete();
+        // perform transaction second time because permitted nodes are changed after last transaction id
+        performTransactionAndAwaitForRemoteNodeToGetAware(node1, remote);
+        assertEquals("Unexpected counter of changes permitted nodes", 1, permittedNodesChangeCounter.get());
+    }
+
+    private void performTransactionAndAwaitForRemoteNodeToGetAware(BDBHAVirtualHostNode<?> node1, BDBHARemoteReplicationNode<?> remote) throws InterruptedException
+    {
+        new DatabasePinger().pingDb(((BDBConfigurationStore)node1.getConfigurationStore()).getEnvironmentFacade());
+
+        int waitCounter = 100;
+        while ( remote.getLastKnownReplicationTransactionId() != node1.getLastKnownReplicationTransactionId() && (waitCounter--) != 0)
+        {
+            Thread.sleep(100l);
+        }
+        assertEquals("Last transaction was not replicated", new Long(remote.getLastKnownReplicationTransactionId()), node1.getLastKnownReplicationTransactionId() );
     }
 
     public void testIntruderConnected() throws Exception
@@ -587,4 +709,87 @@ public class BDBHAVirtualHostNodeTest extends QpidTestCase
         assertTrue("Intruder protection was not triggered during expected timeout", stopLatch.await(20, TimeUnit.SECONDS));
     }
 
+    public void testValidateOnCreateForNonExistingHelperNode() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+        int node2PortNumber = getNextAvailable(node1PortNumber + 1);
+
+
+        Map<String, Object> attributes = _helper.createNodeAttributes("node1", "group", "localhost:" + node1PortNumber,
+                "localhost:" + node2PortNumber, "node2", node1PortNumber, node1PortNumber, node2PortNumber);
+        try
+        {
+            _helper.createAndStartHaVHN(attributes);
+            fail("Node creation should fail because of invalid helper address");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            assertEquals("Unexpected exception on connection to non-existing helper address",
+                    String.format("Cannot connect to existing node '%s' at '%s'", "node2", "localhost:" + node2PortNumber), e.getMessage());
+        }
+    }
+
+    public void testValidateOnCreateForAlreadyBoundAddress() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+
+        ServerSocket serverSocket = null;
+        try
+        {
+            serverSocket = new ServerSocket();
+            serverSocket.setReuseAddress(true);
+            serverSocket.bind(new InetSocketAddress("localhost", node1PortNumber));
+
+
+            Map<String, Object> attributes = _helper.createNodeAttributes("node1", "group", "localhost:" + node1PortNumber,
+                    "localhost:" + node1PortNumber, "node2", node1PortNumber, node1PortNumber);
+            try
+            {
+                _helper.createAndStartHaVHN(attributes);
+                fail("Node creation should fail because of invalid address");
+            }
+            catch(IllegalConfigurationException e)
+            {
+                assertEquals("Unexpected exception on attempt to create node with already bound address",
+                        String.format("Cannot bind to address '%s'. Address is already in use.", "localhost:" + node1PortNumber), e.getMessage());
+            }
+        }
+        finally
+        {
+            if (serverSocket != null)
+            {
+                serverSocket.close();
+            }
+        }
+    }
+
+    public void testValidateOnCreateForInvalidStorePath() throws Exception
+    {
+        int node1PortNumber = findFreePort();
+
+        File storeBaseFolder = TestFileUtils.createTestDirectory();
+        File file = new File(storeBaseFolder, getTestName());
+        file.createNewFile();
+        File storePath = new File(file, "test");
+        try
+        {
+            Map<String, Object> attributes = _helper.createNodeAttributes("node1", "group", "localhost:" + node1PortNumber,
+                    "localhost:" + node1PortNumber, "node2", node1PortNumber, node1PortNumber);
+            attributes.put(BDBHAVirtualHostNode.STORE_PATH, storePath.getAbsoluteFile());
+            try
+            {
+                _helper.createAndStartHaVHN(attributes);
+                fail("Node creation should fail because of invalid store path");
+            }
+            catch (IllegalConfigurationException e)
+            {
+                assertEquals("Unexpected exception on attempt to create environment in invalid location",
+                        String.format("Store path '%s' is not a folder", storePath.getAbsoluteFile()), e.getMessage());
+            }
+        }
+        finally
+        {
+            FileUtils.delete(storeBaseFolder, true);
+        }
+    }
 }

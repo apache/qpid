@@ -57,40 +57,15 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
         _configuration.put(AuthenticationProvider.NAME, getName());
     }
 
-    public void testLdapInstanceCreated() throws Exception
-    {
-        _configuration.put(AuthenticationProvider.TYPE, SimpleLDAPAuthenticationManager.PROVIDER_TYPE);
-        _configuration.put("providerUrl", "ldap://example.com:389/");
-        _configuration.put("searchContext", "dc=example");
-
-        AuthenticationProvider manager = _factory.create(AuthenticationProvider.class, _configuration, _broker);
-        assertNotNull(manager);
-
-    }
-
-    public void testLdapsInstanceCreated() throws Exception
+    public void testLdapCreated() throws Exception
     {
         _configuration.put(AuthenticationProvider.TYPE, SimpleLDAPAuthenticationManager.PROVIDER_TYPE);
         _configuration.put("providerUrl", "ldaps://example.com:636/");
         _configuration.put("searchContext", "dc=example");
+        _configuration.put("searchFilter", "(uid={0})");
+        _configuration.put("ldapContextFactory", TestLdapDirectoryContext.class.getName());
 
-        AuthenticationProvider manager = _factory.create(AuthenticationProvider.class, _configuration, _broker);
-        assertNotNull(manager);
-
-    }
-
-    public void testLdapsWithTrustStoreInstanceCreated() throws Exception
-    {
-        when(_broker.getChildren(eq(TrustStore.class))).thenReturn(Collections.singletonList(_trustStore));
-
-
-        _configuration.put(AuthenticationProvider.TYPE, SimpleLDAPAuthenticationManager.PROVIDER_TYPE);
-        _configuration.put("providerUrl", "ldaps://example.com:636/");
-        _configuration.put("searchContext", "dc=example");
-        _configuration.put("trustStore", "mytruststore");
-
-        AuthenticationProvider manager = _factory.create(AuthenticationProvider.class, _configuration, _broker);
-        assertNotNull(manager);
+        _factory.create(AuthenticationProvider.class, _configuration, _broker);
     }
 
     public void testLdapsWhenTrustStoreNotFound() throws Exception
@@ -100,6 +75,7 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
         _configuration.put(AuthenticationProvider.TYPE, SimpleLDAPAuthenticationManager.PROVIDER_TYPE);
         _configuration.put("providerUrl", "ldaps://example.com:636/");
         _configuration.put("searchContext", "dc=example");
+        _configuration.put("searchFilter", "(uid={0})");
         _configuration.put("trustStore", "notfound");
 
         try
@@ -110,7 +86,7 @@ public class SimpleLDAPAuthenticationManagerFactoryTest extends TestCase
         catch(IllegalArgumentException e)
         {
             // PASS
-            assertTrue("Message does not include underlying issue", e.getMessage().contains("name 'notfound'"));
+            assertTrue("Message does not include underlying issue ", e.getMessage().contains("name 'notfound'"));
             assertTrue("Message does not include the attribute name", e.getMessage().contains("trustStore"));
             assertTrue("Message does not include the expected type", e.getMessage().contains("TrustStore"));
         }

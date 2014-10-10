@@ -22,7 +22,7 @@ chartTitle=Impact of non-overlapping selectors on queue consumers with transient
 chartSubtitle=Transient 1KB messages
 xAxisTitle=Consumers
 yAxisTitle=Throughput (messages/s)
-chartDescription=Impact of non-overlapping selectors on queue consumers with transient messages, auto-ack, message payload of 1024 bytes, 1 producer, varying  number of consumers from 1 to 32.
+chartDescription=Impact of non-overlapping selectors on queue consumers with transient messages, auto-ack, message payload of 1024 bytes, 1 producer, varying  number of consumers from 1 to 32, single queue.
 
 series.1.statement=SELECT totalNumberOfConsumers, throughputMessagesPerS FROM QueueConsumersWithNonOverlappingSelectors WHERE participantName = 'All' and testName like '%non overlapping - NON_PERSISTENT%'
 series.1.legend=Current

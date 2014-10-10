@@ -1253,7 +1253,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     {
         if (LOGGER.isDebugEnabled())
         {
-            LOGGER.debug("Setting permitted nodes to " + permittedNodes);
+            LOGGER.debug(_prettyGroupNodeName + " permitted nodes set to " + permittedNodes);
         }
 
         _permittedNodes.clear();
@@ -1263,12 +1263,18 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             registerAppStateMonitorIfPermittedNodesSpecified();
 
             ReplicationGroupListener listener = _replicationGroupListener.get();
+            int count = 0;
             for(ReplicationNode node: _remoteReplicationNodes.values())
             {
                 if (!isNodePermitted(node))
                 {
                     onIntruder(listener, node);
                 }
+                count++;
+            }
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug(_prettyGroupNodeName + " checked  " + count + " node(s)");
             }
         }
     }
@@ -1329,7 +1335,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
         catch (IOException e)
         {
-            throw new IllegalConfigurationException(String.format("Cannot connect to '%s'", helperHostPort), e);
+            throw new IllegalConfigurationException(String.format("Cannot connect to existing node '%s' at '%s'", helperNodeName, helperHostPort), e);
         }
         catch (ServiceConnectFailedException e)
         {
@@ -1337,8 +1343,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
         catch (Exception e)
         {
-            throw new RuntimeException(String.format("Unexpected exception on attempt to retrieve state from '%s' at '%s'",
-                    helperNodeName, helperHostPort), e);
+            throw new RuntimeException(String.format("Cannot retrieve state for node '%s' (%s) from group '%s'",
+                    helperNodeName, helperHostPort, groupName), e);
         }
 
         if (LOGGER.isDebugEnabled())

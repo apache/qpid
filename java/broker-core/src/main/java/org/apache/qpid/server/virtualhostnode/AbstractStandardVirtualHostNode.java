@@ -41,6 +41,7 @@ import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
+import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.VirtualHostStoreUpgraderAndRecoverer;
 
 public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandardVirtualHostNode<X>> extends AbstractVirtualHostNode<X>
@@ -168,5 +169,34 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
     public Collection<RemoteReplicationNode<?>> getRemoteReplicationNodes()
     {
         return Collections.emptyList();
+    }
+
+    @Override
+    public void validateOnCreate()
+    {
+        super.validateOnCreate();
+        DurableConfigurationStore store = createConfigurationStore();
+        if (store != null)
+        {
+            try
+            {
+                store.openConfigurationStore(this, false);
+            }
+            catch (Exception e)
+            {
+                throw new IllegalConfigurationException("Cannot open node configuration store:" + e.getMessage(), e);
+            }
+            finally
+            {
+                try
+                {
+                    store.closeConfigurationStore();
+                }
+                catch(Exception e)
+                {
+                    LOGGER.warn("Failed to close database", e);
+                }
+            }
+        }
     }
 }

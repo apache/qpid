@@ -1322,6 +1322,12 @@ public class AMQChannel<T extends AMQProtocolSession<T>>
         return _subject;
     }
 
+    public ChannelMethodProcessor getMethodProcessor()
+    {
+        // TODO
+        return null;
+    }
+
 
     private class ImmediateAction implements Action<MessageInstance>
     {

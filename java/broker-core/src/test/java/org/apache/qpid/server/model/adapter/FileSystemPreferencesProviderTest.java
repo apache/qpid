@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -109,7 +110,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
             attributes.put(ConfiguredObject.ID, UUID.randomUUID());
             attributes.put(ConfiguredObject.NAME, getTestName());
             _preferencesProvider = new FileSystemPreferencesProviderImpl(attributes, _authenticationProvider);
-            _preferencesProvider.open();
+            _preferencesProvider.create();
 
             assertEquals(State.ACTIVE, _preferencesProvider.getState());
             assertTrue("Preferences file was not created", nonExistingFile.exists());
@@ -117,6 +118,57 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         finally
         {
             nonExistingFile.delete();
+        }
+    }
+
+    public void testValidationOnCreateForInvalidPath() throws Exception
+    {
+        File file = new File(TMP_FOLDER + File.separator + getTestName() + System.nanoTime() );
+        file.createNewFile();
+        String path = file.getAbsolutePath() + File.separator + "users";
+
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        attributes.put(FileSystemPreferencesProvider.PATH, path);
+        attributes.put(ConfiguredObject.ID, UUID.randomUUID());
+        attributes.put(ConfiguredObject.NAME, getTestName());
+        _preferencesProvider = new FileSystemPreferencesProviderImpl(attributes, _authenticationProvider);
+
+        try
+        {
+
+            _preferencesProvider.create();
+
+            fail("Creation of preferences provider with invalid path should have failed");
+        }
+        catch(IllegalConfigurationException e)
+        {
+            assertEquals("Unexpected exception message:" + e.getMessage(), String.format("Cannot create preferences store file at '%s'", path), e.getMessage());
+        }
+    }
+
+    public void testValidationOnCreateWithInvalidPreferences()
+    {
+        File tmp = TestFileUtils.createTempFile(this, "preferences", "{blah:=boo}");
+        try
+        {
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(FileSystemPreferencesProvider.PATH, tmp.getAbsolutePath());
+            attributes.put(ConfiguredObject.ID, UUID.randomUUID());
+            attributes.put(ConfiguredObject.NAME, getTestName());
+            _preferencesProvider = new FileSystemPreferencesProviderImpl(attributes, _authenticationProvider);
+            try
+            {
+                _preferencesProvider.create();
+                fail("Exception is expected on validation of groups provider with invalid preferences format");
+            }
+            catch (IllegalConfigurationException e)
+            {
+                assertEquals("Unexpected exception message:" + e.getMessage(), "Cannot parse preferences json in " + tmp.getName(), e.getMessage());
+            }
+        }
+        finally
+        {
+            tmp.delete();
         }
     }
 

@@ -27,6 +27,7 @@ import org.apache.qpid.server.jmx.MBeanProvider;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 
@@ -46,7 +47,7 @@ public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
     @Override
     public boolean isChildManageableByMBean(ConfiguredObject child)
     {
-        return child instanceof BDBHAVirtualHostNode;
+        return child instanceof BDBHAVirtualHostNode && ((BDBHAVirtualHostNode)child).getState() != State.ERRORED;
     }
 
     @Override

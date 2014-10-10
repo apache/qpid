@@ -25,10 +25,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.Broker;
@@ -83,6 +83,29 @@ public class ACLFileAccessControlProviderImpl
     }
 
     @Override
+    protected void validateOnCreate()
+    {
+        DefaultAccessControl accessControl = null;
+        try
+        {
+            accessControl = new DefaultAccessControl(getPath(), _broker);
+            accessControl.validate();
+            accessControl.open();
+        }
+        catch(RuntimeException e)
+        {
+            throw new IllegalConfigurationException(e.getMessage(), e);
+        }
+        finally
+        {
+            if (accessControl != null)
+            {
+                accessControl.close();
+            }
+        }
+    }
+
+    @Override
     protected void onOpen()
     {
         super.onOpen();
@@ -105,6 +128,7 @@ public class ACLFileAccessControlProviderImpl
     @StateTransition(currentState = {State.UNINITIALIZED, State.QUIESCED, State.ERRORED}, desiredState = State.ACTIVE)
     private void activate()
     {
+
         if(_broker.isManagementMode())
         {
 
@@ -136,7 +160,10 @@ public class ACLFileAccessControlProviderImpl
     protected void onClose()
     {
         super.onClose();
-        _accessControl.close();
+        if (_accessControl != null)
+        {
+            _accessControl.close();
+        }
     }
 
     @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.QUIESCED)

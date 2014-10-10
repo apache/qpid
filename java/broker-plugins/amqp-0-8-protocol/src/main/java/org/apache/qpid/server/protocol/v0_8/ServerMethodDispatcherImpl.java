@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol.v0_8;
 
 import java.security.AccessControlException;
+import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
@@ -75,6 +77,11 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
     private final AMQProtocolSession<?> _connection;
 
 
+    private static interface ChannelAction
+    {
+        void onChannel(ChannelMethodProcessor channel);
+    }
+
     public static MethodDispatcher createMethodDispatcher(AMQProtocolSession<?> connection)
     {
         return new ServerMethodDispatcherImpl(connection);
@@ -90,6 +97,28 @@ public class ServerMethodDispatcherImpl implements MethodDispatcher
     protected final AMQProtocolSession<?> getConnection()
     {
         return _connection;
+    }
+
+    private void processChannelMethod(int channelId, final ChannelAction action)
+    {
+        final AMQChannel channel = _connection.getChannel(channelId);
+        if (channel == null)
+        {
+            // TODO throw body.getChannelNotFoundException(channelId, _connection.getMethodRegistry());
+        }
+        else
+        {
+            Subject.doAs(channel.getSubject(), new PrivilegedAction<Void>()
+            {
+                @Override
+                public Void run()
+                {
+                    action.onChannel(channel.getMethodProcessor());
+                    return null;
+                }
+            });
+        }
+
     }
 
     public boolean dispatchAccessRequest(AccessRequestBody body, int channelId) throws AMQException

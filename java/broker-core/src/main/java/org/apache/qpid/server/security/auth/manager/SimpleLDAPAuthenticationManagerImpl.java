@@ -19,15 +19,18 @@
 
 package org.apache.qpid.server.security.auth.manager;
 
+import static java.util.Collections.disjoint;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.singletonList;
+
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.naming.AuthenticationException;
 import javax.naming.Context;
@@ -48,7 +51,9 @@ import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.TrustStore;
@@ -59,7 +64,6 @@ import org.apache.qpid.server.security.auth.manager.ldap.AbstractLDAPSSLSocketFa
 import org.apache.qpid.server.security.auth.manager.ldap.LDAPSSLSocketFactoryGenerator;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainPasswordCallback;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainSaslServer;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.util.StringUtil;
 import org.apache.qpid.ssl.SSLContextFactory;
 
@@ -67,6 +71,14 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         implements SimpleLDAPAuthenticationManager<SimpleLDAPAuthenticationManagerImpl>
 {
     private static final Logger _logger = Logger.getLogger(SimpleLDAPAuthenticationManagerImpl.class);
+
+    private static final List<String> CONNECTIVITY_ATTRS = unmodifiableList(Arrays.asList(PROVIDER_URL,
+                                                                             PROVIDER_AUTH_URL,
+                                                                             SEARCH_CONTEXT,
+                                                                             LDAP_CONTEXT_FACTORY,
+                                                                             SEARCH_USERNAME,
+                                                                             SEARCH_PASSWORD,
+                                                                             TRUST_STORE));
 
     /**
      * Environment key to instruct {@link InitialDirContext} to override the socket factory.
@@ -111,15 +123,37 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         super(attributes, broker);
     }
 
+    @Override
+    protected void validateOnCreate()
+    {
+        super.validateOnCreate();
+
+        Class<? extends SocketFactory> sslSocketFactoryOverrideClass = _trustStore == null ? null : createSslSocketFactoryOverrideClass(_trustStore);
+        validateInitialDirContext(sslSocketFactoryOverrideClass, _providerUrl, _searchUsername, _searchPassword);
+    }
+
+    @Override
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
+    {
+        super.validateChange(proxyForValidation, changedAttributes);
+
+        if (!disjoint(changedAttributes, CONNECTIVITY_ATTRS))
+        {
+            SimpleLDAPAuthenticationManager changed = (SimpleLDAPAuthenticationManager)proxyForValidation;
+            TrustStore changedTruststore = changed.getTrustStore();
+            Class<? extends SocketFactory> sslSocketFactoryOverrideClass = changedTruststore == null ? null : createSslSocketFactoryOverrideClass(
+                    changedTruststore);
+            validateInitialDirContext(sslSocketFactoryOverrideClass, changed.getProviderUrl(), changed.getSearchUsername(),
+                                      changed.getSearchPassword());
+        }
+    }
 
     @Override
     protected void onOpen()
     {
         super.onOpen();
 
-        _sslSocketFactoryOverrideClass = createSslSocketFactoryOverrideClass();
-
-      //  validateInitialDirContext();
+        _sslSocketFactoryOverrideClass = _trustStore == null ? null : createSslSocketFactoryOverrideClass(_trustStore);
     }
 
     @Override
@@ -174,7 +208,7 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
     @Override
     public List<String> getMechanisms()
     {
-        return Collections.singletonList(PlainSaslServer.MECHANISM);
+        return singletonList(PlainSaslServer.MECHANISM);
     }
 
     @Override
@@ -259,7 +293,7 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         InitialDirContext ctx = null;
         try
         {
-            ctx = createInitialDirContext(env);
+            ctx = createInitialDirContext(env, _sslSocketFactoryOverrideClass);
 
             //Authentication succeeded
             return new AuthenticationResult(new UsernamePrincipal(name));
@@ -291,7 +325,8 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         return env;
     }
 
-    private InitialDirContext createInitialDirContext(Hashtable<String, Object> env) throws NamingException
+    private InitialDirContext createInitialDirContext(Hashtable<String, Object> env,
+                                                      Class<? extends SocketFactory> sslSocketFactoryOverrideClass) throws NamingException
     {
         ClassLoader existingContextClassLoader = null;
 
@@ -300,11 +335,11 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         boolean revertContentClassLoader = false;
         try
         {
-            if (isLdaps && _sslSocketFactoryOverrideClass != null)
+            if (isLdaps && sslSocketFactoryOverrideClass != null)
             {
                 existingContextClassLoader = Thread.currentThread().getContextClassLoader();
-                env.put(JAVA_NAMING_LDAP_FACTORY_SOCKET, _sslSocketFactoryOverrideClass.getName());
-                Thread.currentThread().setContextClassLoader(_sslSocketFactoryOverrideClass.getClassLoader());
+                env.put(JAVA_NAMING_LDAP_FACTORY_SOCKET, sslSocketFactoryOverrideClass.getName());
+                Thread.currentThread().setContextClassLoader(sslSocketFactoryOverrideClass.getClassLoader());
                 revertContentClassLoader = true;
             }
             return new InitialDirContext(env);
@@ -323,59 +358,59 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
      * associated with the {@link SSLContext} generated from that trust store.
      *
      * @return generated socket factory class
+     * @param trustStore
      */
-    private Class<? extends SocketFactory> createSslSocketFactoryOverrideClass()
+    private Class<? extends SocketFactory> createSslSocketFactoryOverrideClass(final TrustStore trustStore)
     {
-        if (_trustStore != null)
+        String clazzName = new StringUtil().createUniqueJavaName(getName() + "_" + trustStore.getName());
+        SSLContext sslContext = null;
+        try
         {
-            String clazzName = new StringUtil().createUniqueJavaName(getName());
-            SSLContext sslContext = null;
-            try
-            {
-                sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(null, _trustStore.getTrustManagers(), null);
-            }
-            catch (NoSuchAlgorithmException e)
-            {
-                _logger.error("Exception creating SSLContext", e);
-                throw new ServerScopedRuntimeException("Error creating SSLContext for trust store : " + _trustStore.getName() , e);
-            }
-            catch (KeyManagementException e)
-            {
-                _logger.error("Exception creating SSLContext", e);
-                throw new ServerScopedRuntimeException("Error creating SSLContext for trust store : " + _trustStore.getName() , e);
-            }
-            catch (GeneralSecurityException e)
-            {
-                _logger.error("Exception creating SSLContext", e);
-                throw new ServerScopedRuntimeException("Error creating SSLContext for trust store : " + _trustStore.getName() , e);
-            }
-
-            Class<? extends AbstractLDAPSSLSocketFactory> clazz = LDAPSSLSocketFactoryGenerator.createSubClass(clazzName, sslContext.getSocketFactory());
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Connection to Directory will use custom SSL socket factory : " +  clazz);
-            }
-            return clazz;
+            sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, trustStore.getTrustManagers(), null);
+        }
+        catch (GeneralSecurityException e)
+        {
+            _logger.error("Exception creating SSLContext", e);
+            throw new IllegalConfigurationException("Error creating SSLContext with trust store : " + trustStore.getName() , e);
         }
 
-        return null;
+        Class<? extends AbstractLDAPSSLSocketFactory> clazz = LDAPSSLSocketFactoryGenerator.createSubClass(clazzName, sslContext.getSocketFactory());
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Connection to Directory will use custom SSL socket factory : " +  clazz);
+        }
+        return clazz;
     }
 
-    private void validateInitialDirContext()
+    @Override
+    public String toString()
     {
-        Hashtable<String,Object> env = createInitialDirContextEnvironment(_providerUrl);
+        return "SimpleLDAPAuthenticationManagerImpl [id=" + getId() + ", name=" + getName() +
+               ", providerUrl=" + _providerUrl + ", providerAuthUrl=" + _providerAuthUrl +
+               ", searchContext=" + _searchContext + ", state=" + getState() +
+               ", searchFilter=" + _searchFilter + ", ldapContextFactory=" + _ldapContextFactory +
+               ", bindWithoutSearch=" + _bindWithoutSearch  + ", trustStore=" + _trustStore  +
+               ", searchUsername=" + _searchUsername + "]";
+    }
 
-        setupSearchContext(env);
+    private void validateInitialDirContext(Class<? extends SocketFactory> sslSocketFactoryOverrideClass,
+                                           final String providerUrl,
+                                           final String searchUsername, final String searchPassword)
+    {
+        Hashtable<String,Object> env = createInitialDirContextEnvironment(providerUrl);
+
+        setupSearchContext(env, searchUsername, searchPassword);
 
         InitialDirContext ctx = null;
         try
         {
-            ctx = createInitialDirContext(env);
+            ctx = createInitialDirContext(env, sslSocketFactoryOverrideClass);
         }
         catch (NamingException e)
         {
-            throw new ServerScopedRuntimeException("Unable to establish connection to the ldap server at " + _providerUrl, e);
+            _logger.error("Failed to establish connectivity to the ldap server for " + providerUrl, e);
+            throw new IllegalConfigurationException("Failed to establish connectivity to the ldap server." , e);
         }
         finally
         {
@@ -383,13 +418,14 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         }
     }
 
-    private void setupSearchContext(final Hashtable<String, Object> env)
+    private void setupSearchContext(final Hashtable<String, Object> env,
+                                    final String searchUsername, final String searchPassword)
     {
         if(_searchUsername != null && _searchUsername.trim().length()>0)
         {
             env.put(Context.SECURITY_AUTHENTICATION, "simple");
-            env.put(Context.SECURITY_PRINCIPAL, _searchUsername);
-            env.put(Context.SECURITY_CREDENTIALS, _searchPassword);
+            env.put(Context.SECURITY_PRINCIPAL, searchUsername);
+            env.put(Context.SECURITY_CREDENTIALS, searchPassword);
         }
         else
         {
@@ -454,9 +490,9 @@ public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationM
         {
             Hashtable<String, Object> env = createInitialDirContextEnvironment(_providerUrl);
 
-            setupSearchContext(env);
+            setupSearchContext(env, _searchUsername, _searchPassword);
 
-            InitialDirContext ctx = createInitialDirContext(env);
+            InitialDirContext ctx = createInitialDirContext(env, _sslSocketFactoryOverrideClass);
 
             try
             {

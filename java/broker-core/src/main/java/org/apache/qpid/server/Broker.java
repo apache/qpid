@@ -40,6 +40,7 @@ import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
+import org.apache.qpid.server.model.BrokerShutdownProvider;
 import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.plugin.PluggableFactoryLoader;
 import org.apache.qpid.server.plugin.SystemConfigFactory;
@@ -48,7 +49,7 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 
-public class Broker
+public class Broker implements BrokerShutdownProvider
 {
     private static final Logger LOGGER = Logger.getLogger(Broker.class);
 
@@ -143,7 +144,7 @@ public class Broker
         LogRecorder logRecorder = new LogRecorder();
 
         _taskExecutor.start();
-        SystemConfig systemConfig = configFactory.newInstance(_taskExecutor, _eventLogger, logRecorder, options);
+        SystemConfig systemConfig = configFactory.newInstance(_taskExecutor, _eventLogger, logRecorder, options, this);
         systemConfig.open();
         DurableConfigurationStore store = systemConfig.getConfigurationStore();
 
