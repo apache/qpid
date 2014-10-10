@@ -343,6 +343,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                 String nodeAddress = node.getHostName() + ":" + node.getPort();
                 if (!_permittedNodes.contains(nodeAddress))
                 {
+                    getEventLogger().message(getGroupLogSubject(), HighAvailabilityMessages.INTRUDER_DETECTED(node.getName(), nodeAddress));
                     shutdownOnIntruder(nodeAddress);
                     throw new IllegalStateException("Intruder node detected: " + nodeAddress);
                 }
