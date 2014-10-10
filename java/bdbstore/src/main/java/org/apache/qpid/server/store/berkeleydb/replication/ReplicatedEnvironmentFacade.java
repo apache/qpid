@@ -82,6 +82,7 @@ import com.sleepycat.je.rep.vlsn.VLSNRange;
 import com.sleepycat.je.utilint.PropUtil;
 import com.sleepycat.je.utilint.VLSN;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.store.StoreException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -371,26 +372,40 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     }
 
     @Override
-    public DatabaseException handleDatabaseException(String contextMessage, final DatabaseException dbe)
+    public RuntimeException handleDatabaseException(String contextMessage, final RuntimeException dbe)
     {
-        boolean noMajority = dbe instanceof InsufficientReplicasException || dbe instanceof InsufficientAcksException;
-
-        if (noMajority)
+        if (dbe instanceof StoreException || dbe instanceof ConnectionScopedRuntimeException)
         {
-            ReplicationGroupListener listener = _replicationGroupListener.get();
-            if (listener != null)
+            return dbe;
+        }
+        else if (dbe instanceof DatabaseException)
+        {
+            boolean noMajority = dbe instanceof InsufficientReplicasException || dbe instanceof InsufficientAcksException;
+
+            if (noMajority)
             {
-                listener.onNoMajority();
+                ReplicationGroupListener listener = _replicationGroupListener.get();
+                if (listener != null)
+                {
+                    listener.onNoMajority();
+                }
+            }
+
+            boolean restart = (noMajority || dbe instanceof RestartRequiredException);
+            if (restart)
+            {
+                tryToRestartEnvironment((DatabaseException)dbe);
+                return new ConnectionScopedRuntimeException(noMajority ? "Required number of nodes not reachable" : "Underlying JE environment is being restarted", dbe);
             }
         }
-
-        boolean restart = (noMajority || dbe instanceof RestartRequiredException);
-        if (restart)
+        else
         {
-            tryToRestartEnvironment(dbe);
-            throw new ConnectionScopedRuntimeException(noMajority ? "Required number of nodes not reachable" : "Underlying JE environment is being restarted", dbe);
+            if (dbe instanceof IllegalStateException && getFacadeState() == State.RESTARTING)
+            {
+                return new ConnectionScopedRuntimeException("Underlying JE environment is being restarted", dbe);
+            }
         }
-        return dbe;
+        return new StoreException("Unexpected exception occurred in replicated environment", dbe);
     }
 
     private void tryToRestartEnvironment(final DatabaseException dbe)

@@ -57,7 +57,7 @@ public interface EnvironmentFacade
 
     StoreFuture commit(com.sleepycat.je.Transaction tx, boolean sync);
 
-    DatabaseException handleDatabaseException(String contextMessage, DatabaseException e);
+    RuntimeException handleDatabaseException(String contextMessage, RuntimeException e);
 
     String getStoreLocation();
 
