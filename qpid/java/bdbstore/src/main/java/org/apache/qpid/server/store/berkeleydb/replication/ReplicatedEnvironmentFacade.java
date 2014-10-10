@@ -452,12 +452,12 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
         if (_state.get() != State.OPEN)
         {
-            throw new IllegalStateException("Environment facade is not in opened state");
+            throw new ConnectionScopedRuntimeException("Environment facade is not in opened state");
         }
 
         if (!_environment.isValid())
         {
-            throw new IllegalStateException("Environment is not valid");
+            throw new ConnectionScopedRuntimeException("Environment is not valid");
         }
 
         Database cachedHandle = _cachedDatabases.get(name);
