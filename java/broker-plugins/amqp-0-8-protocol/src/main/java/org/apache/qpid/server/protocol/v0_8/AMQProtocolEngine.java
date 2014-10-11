@@ -57,6 +57,7 @@ import org.apache.qpid.framing.*;
 import org.apache.qpid.properties.ConnectionStartProperties;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
@@ -70,6 +71,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.SessionModelListener;
 import org.apache.qpid.server.security.SubjectCreator;
@@ -84,7 +86,9 @@ import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.util.BytesDataOutput;
 
-public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSession<AMQProtocolEngine>
+public class AMQProtocolEngine implements ServerProtocolEngine,
+                                          AMQConnectionModel<AMQProtocolEngine, AMQChannel>,
+                                          AMQVersionAwareProtocolSession
 {
     private static final Logger _logger = Logger.getLogger(AMQProtocolEngine.class);
 
@@ -103,13 +107,12 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     private VirtualHostImpl<?,?,?> _virtualHost;
 
-    private final Map<Integer, AMQChannel<AMQProtocolEngine>> _channelMap =
-            new HashMap<Integer, AMQChannel<AMQProtocolEngine>>();
+    private final Map<Integer, AMQChannel> _channelMap =
+            new HashMap<Integer, AMQChannel>();
     private final CopyOnWriteArrayList<SessionModelListener> _sessionListeners =
             new CopyOnWriteArrayList<SessionModelListener>();
 
-    @SuppressWarnings("unchecked")
-    private final AMQChannel<AMQProtocolEngine>[] _cachedChannels = new AMQChannel[CHANNEL_CACHE_SIZE + 1];
+    private final AMQChannel[] _cachedChannels = new AMQChannel[CHANNEL_CACHE_SIZE + 1];
 
     /**
      * The channels that the latest call to {@link #received(ByteBuffer)} applied to.
@@ -118,8 +121,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
      *
      * Thread-safety: guarded by {@link #_receivedLock}.
      */
-    private final Set<AMQChannel<AMQProtocolEngine>> _channelsForCurrentMessage =
-            new HashSet<AMQChannel<AMQProtocolEngine>>();
+    private final Set<AMQChannel> _channelsForCurrentMessage =
+            new HashSet<AMQChannel>();
 
     private AMQDecoder _decoder;
 
@@ -365,7 +368,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     {
         RuntimeException exception = null;
 
-        for (AMQChannel<AMQProtocolEngine> channel : _channelsForCurrentMessage)
+        for (AMQChannel channel : _channelsForCurrentMessage)
         {
             try
             {
@@ -428,7 +431,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     private void frameReceived(AMQFrame frame) throws AMQException
     {
         int channelId = frame.getChannel();
-        AMQChannel<AMQProtocolEngine> amqChannel = _channelMap.get(channelId);
+        AMQChannel amqChannel = _channelMap.get(channelId);
         if(amqChannel != null)
         {
             // The _receivedLock is already acquired in the caller
@@ -638,8 +641,17 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
                         _logger.info("Closing channel due to: " + e.getMessage());
                     }
 
-                    writeFrame(e.getCloseFrame(channelId));
-                    closeChannel(channelId, e.getErrorCode() == null ? AMQConstant.INTERNAL_ERROR : e.getErrorCode(), e.getMessage());
+                    AMQConstant errorType = e.getErrorCode();
+                    if(errorType == null)
+                    {
+                        errorType = AMQConstant.INTERNAL_ERROR;
+                    }
+                    writeFrame(new AMQFrame(channelId,
+                                            getMethodRegistry().createChannelCloseBody(errorType.getCode(),
+                                                                                       AMQShortString.validValueOf(e.getMessage()),
+                                                                                       e.getClassId(),
+                                                                                       e.getMethodId())));
+                    closeChannel(channelId, errorType, e.getMessage());
                 }
                 else
                 {
@@ -730,7 +742,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     public void contentHeaderReceived(int channelId, ContentHeaderBody body) throws AMQException
     {
 
-        AMQChannel<AMQProtocolEngine> channel = getAndAssertChannel(channelId);
+        AMQChannel channel = getAndAssertChannel(channelId);
 
         channel.publishContentHeader(body);
 
@@ -738,7 +750,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     public void contentBodyReceived(int channelId, ContentBody body) throws AMQException
     {
-        AMQChannel<AMQProtocolEngine> channel = getAndAssertChannel(channelId);
+        AMQChannel channel = getAndAssertChannel(channelId);
 
         channel.publishContentBody(body);
     }
@@ -786,17 +798,17 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         _contextKey = contextKey;
     }
 
-    public List<AMQChannel<AMQProtocolEngine>> getChannels()
+    public List<AMQChannel> getChannels()
     {
         synchronized (_channelMap)
         {
-            return new ArrayList<AMQChannel<AMQProtocolEngine>>(_channelMap.values());
+            return new ArrayList<AMQChannel>(_channelMap.values());
         }
     }
 
-    public AMQChannel<AMQProtocolEngine> getAndAssertChannel(int channelId) throws AMQException
+    public AMQChannel getAndAssertChannel(int channelId) throws AMQException
     {
-        AMQChannel<AMQProtocolEngine> channel = getChannel(channelId);
+        AMQChannel channel = getChannel(channelId);
         if (channel == null)
         {
             throw new AMQException(AMQConstant.NOT_FOUND, "Channel not found with id:" + channelId);
@@ -805,9 +817,9 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         return channel;
     }
 
-    public AMQChannel<AMQProtocolEngine> getChannel(int channelId)
+    public AMQChannel getChannel(int channelId)
     {
-        final AMQChannel<AMQProtocolEngine> channel =
+        final AMQChannel channel =
                 ((channelId & CHANNEL_CACHE_SIZE) == channelId) ? _cachedChannels[channelId] : _channelMap.get(channelId);
         if ((channel == null) || channel.isClosing())
         {
@@ -824,7 +836,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         return !_closingChannelsList.isEmpty() && _closingChannelsList.containsKey(channelId);
     }
 
-    public void addChannel(AMQChannel<AMQProtocolEngine> channel) throws AMQException
+    public void addChannel(AMQChannel channel) throws AMQException
     {
         if (_closed)
         {
@@ -891,52 +903,52 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         _maxNoOfChannels = value;
     }
 
-    /**
-     * Close a specific channel. This will remove any resources used by the channel, including: <ul><li>any queue
-     * subscriptions (this may in turn remove queues if they are auto delete</li> </ul>
-     *
-     * @param channelId id of the channel to close
-     *
-     * @throws IllegalArgumentException if the channel id is not valid
-     */
-    @Override
-    public void closeChannel(int channelId)
+
+    void closeChannel(AMQChannel channel)
     {
-        closeChannel(channelId, null, null);
+        closeChannel(channel, null, null, false);
+    }
+
+    public void closeChannelAndWriteFrame(AMQChannel channel, AMQConstant cause, String message)
+    {
+        writeFrame(new AMQFrame(channel.getChannelId(),
+                                getMethodRegistry().createChannelCloseBody(cause.getCode(),
+                                                                           AMQShortString.validValueOf(message),
+                                                                           _methodProcessor.getClassId(),
+                                                                           _methodProcessor.getMethodId())));
+        closeChannel(channel, cause, message, true);
     }
 
     public void closeChannel(int channelId, AMQConstant cause, String message)
     {
-        final AMQChannel<AMQProtocolEngine> channel = getChannel(channelId);
+        final AMQChannel channel = getChannel(channelId);
         if (channel == null)
         {
             throw new IllegalArgumentException("Unknown channel id");
         }
-        else
+        closeChannel(channel, cause, message, true);
+    }
+
+    void closeChannel(AMQChannel channel, AMQConstant cause, String message, boolean mark)
+    {
+        int channelId = channel.getChannelId();
+        try
         {
-            try
+            channel.close(cause, message);
+            if(mark)
             {
-                channel.close(cause, message);
                 markChannelAwaitingCloseOk(channelId);
             }
-            finally
-            {
-                removeChannel(channelId);
-            }
+        }
+        finally
+        {
+            removeChannel(channelId);
         }
     }
 
+
     public void closeChannelOk(int channelId)
     {
-        // todo QPID-847 - This is called from two locations ChannelCloseHandler and ChannelCloseOkHandler.
-        // When it is the CC_OK_Handler then it makes sense to remove the channel else we will leak memory.
-        // We do it from the Close Handler as we are sending the OK back to the client.
-        // While this is AMQP spec compliant. The Java client in the event of an IllegalArgumentException
-        // will send a close-ok.. Where we should call removeChannel.
-        // However, due to the poor exception handling on the client. The client-user will be notified of the
-        // InvalidArgument and if they then decide to close the session/connection then the there will be time
-        // for that to occur i.e. a new close method be sent before the exception handling can mark the session closed.
-
         _closingChannelsList.remove(channelId);
     }
 
@@ -952,7 +964,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
      */
     public void removeChannel(int channelId)
     {
-        AMQChannel<AMQProtocolEngine> session;
+        AMQChannel session;
         synchronized (_channelMap)
         {
             session = _channelMap.remove(channelId);
@@ -988,7 +1000,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
      */
     private void closeAllChannels()
     {
-        for (AMQChannel<AMQProtocolEngine> channel : getChannels())
+        for (AMQChannel channel : getChannels())
         {
             channel.close();
         }
@@ -1003,7 +1015,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
     }
 
     /** This must be called when the session is _closed in order to free up any resources managed by the session. */
-    @Override
     public void closeSession()
     {
 
@@ -1103,16 +1114,14 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
 
     void closeConnection(AMQConstant errorCode,
-                         String message, int channelId,
-                         int classId,
-                         int methodId)
+                         String message, int channelId)
     {
 
         if (_logger.isInfoEnabled())
         {
             _logger.info("Closing connection due to: " + message);
         }
-        closeConnection(channelId, new AMQFrame(0, new ConnectionCloseBody(getProtocolVersion(), errorCode.getCode(), AMQShortString.validValueOf(message), classId, methodId)));
+        closeConnection(channelId, new AMQFrame(0, new ConnectionCloseBody(getProtocolVersion(), errorCode.getCode(), AMQShortString.validValueOf(message), _methodProcessor.getClassId(), _methodProcessor.getMethodId())));
     }
 
     private void closeConnection(int channelId, AMQFrame frame)
@@ -1137,7 +1146,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
 
     }
 
-    @Override
     public void closeProtocolSession()
     {
         _network.close();
@@ -1520,7 +1528,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         return String.valueOf(getRemoteAddress());
     }
 
-    public void closeSession(AMQChannel<AMQProtocolEngine> session, AMQConstant cause, String message)
+    public void closeSession(AMQChannel session, AMQConstant cause, String message)
     {
         int channelId = session.getChannelId();
         closeChannel(channelId, cause, message);
@@ -1549,7 +1557,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             if(!_blocking)
             {
                 _blocking = true;
-                for(AMQChannel<AMQProtocolEngine> channel : _channelMap.values())
+                for(AMQChannel channel : _channelMap.values())
                 {
                     channel.block();
                 }
@@ -1564,7 +1572,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
             if(_blocking)
             {
                 _blocking = false;
-                for(AMQChannel<AMQProtocolEngine> channel : _channelMap.values())
+                for(AMQChannel channel : _channelMap.values())
                 {
                     channel.unblock();
                 }
@@ -1577,9 +1585,9 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         return _closed;
     }
 
-    public List<AMQChannel<AMQProtocolEngine>> getSessionModels()
+    public List<AMQChannel> getSessionModels()
     {
-		return new ArrayList<AMQChannel<AMQProtocolEngine>>(getChannels());
+		return new ArrayList<AMQChannel>(getChannels());
     }
 
     public LogSubject getLogSubject()
@@ -1715,31 +1723,26 @@ public class AMQProtocolEngine implements ServerProtocolEngine, AMQProtocolSessi
         return _lastWriteTime.get();
     }
 
-    @Override
     public boolean isCloseWhenNoRoute()
     {
         return _closeWhenNoRoute;
     }
 
-    @Override
     public boolean isCompressionSupported()
     {
         return _compressionSupported && _broker.isMessageCompressionEnabled();
     }
 
-    @Override
     public int getMessageCompressionThreshold()
     {
         return _messageCompressionThreshold;
     }
 
-    @Override
     public Broker<?> getBroker()
     {
         return _broker;
     }
 
-    @Override
     public SubjectCreator getSubjectCreator()
     {
         return _broker.getSubjectCreator(getLocalAddress(), getTransport().isSecure());

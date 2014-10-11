@@ -51,7 +51,7 @@ public class AckTest extends QpidTestCase
     private ConsumerTarget_0_8 _subscriptionTarget;
     private ConsumerImpl _consumer;
 
-    private AMQProtocolSession _protocolSession;
+    private AMQProtocolEngine _protocolEngine;
 
     private TestMemoryMessageStore _messageStore;
 
@@ -68,8 +68,8 @@ public class AckTest extends QpidTestCase
         super.setUp();
         BrokerTestHelper.setUp();
         _channel = BrokerTestHelper_0_8.createChannel(5);
-        _protocolSession = _channel.getProtocolSession();
-        _virtualHost = _protocolSession.getVirtualHost();
+        _protocolEngine = _channel.getConnection();
+        _virtualHost = _protocolEngine.getVirtualHost();
         _queue = BrokerTestHelper.createQueue(getTestName(), _virtualHost);
         _messageStore = (TestMemoryMessageStore)_virtualHost.getMessageStore();
     }

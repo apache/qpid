@@ -38,6 +38,13 @@ public class ExchangeBoundOkBody extends AMQMethodBodyImpl implements EncodableA
 
     public static final int CLASS_ID =  40;
     public static final int METHOD_ID = 23;
+    public static final int OK = 0;
+    public static final int EXCHANGE_NOT_FOUND = 1;
+    public static final int QUEUE_NOT_FOUND = 2;
+    public static final int NO_BINDINGS = 3;
+    public static final int QUEUE_NOT_BOUND = 4;
+    public static final int NO_QUEUE_BOUND_WITH_RK = 5;
+    public static final int SPECIFIC_QUEUE_NOT_BOUND_WITH_RK = 6;
 
     // Fields declared in specification
     private final int _replyCode; // [replyCode]

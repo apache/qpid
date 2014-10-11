@@ -20,8 +20,6 @@
  */
 package org.apache.qpid;
 
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 
@@ -49,10 +47,19 @@ public class AMQChannelException extends AMQException
 
     }
 
-    public AMQFrame getCloseFrame(int channel)
+    public int getClassId()
     {
-        return new AMQFrame(channel, _methodRegistry.createChannelCloseBody(getErrorCode() == null ? AMQConstant.INTERNAL_ERROR.getCode() : getErrorCode().getCode(),
-                AMQShortString.validValueOf(getMessage()),_classId,_methodId));
+        return _classId;
+    }
+
+    public int getMethodId()
+    {
+        return _methodId;
+    }
+
+    public MethodRegistry getMethodRegistry()
+    {
+        return _methodRegistry;
     }
 
 }

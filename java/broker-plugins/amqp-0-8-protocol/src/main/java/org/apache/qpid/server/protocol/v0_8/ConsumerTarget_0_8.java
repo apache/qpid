@@ -79,7 +79,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
 
     public static ConsumerTarget_0_8 createBrowserTarget(AMQChannel channel,
                                                          AMQShortString consumerTag, FieldTable filters,
-                                                         FlowCreditManager creditManager) throws AMQException
+                                                         FlowCreditManager creditManager)
     {
         return new BrowserConsumer(channel, consumerTag, filters, creditManager, channel.getClientDeliveryMethod(), channel.getRecordDeliveryMethod());
     }
@@ -89,7 +89,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
                                                           final FieldTable filters,
                                                           final FlowCreditManager creditManager,
                                                           final ClientDeliveryMethod deliveryMethod,
-                                                          final RecordDeliveryMethod recordMethod) throws AMQException
+                                                          final RecordDeliveryMethod recordMethod)
     {
         return new GetNoAckConsumer(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
     }
@@ -106,7 +106,6 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
                                FlowCreditManager creditManager,
                                ClientDeliveryMethod deliveryMethod,
                                RecordDeliveryMethod recordMethod)
-            throws AMQException
         {
             super(channel, consumerTag,
                   filters, creditManager, deliveryMethod, recordMethod);
@@ -147,7 +146,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
 
     public static ConsumerTarget_0_8 createNoAckTarget(AMQChannel channel,
                                                            AMQShortString consumerTag, FieldTable filters,
-                                                           FlowCreditManager creditManager) throws AMQException
+                                                           FlowCreditManager creditManager)
     {
         return new NoAckConsumer(channel, consumerTag, filters, creditManager, channel.getClientDeliveryMethod(), channel.getRecordDeliveryMethod());
     }
@@ -170,7 +169,6 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
                              FlowCreditManager creditManager,
                              ClientDeliveryMethod deliveryMethod,
                              RecordDeliveryMethod recordMethod)
-            throws AMQException
         {
             super(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
 
@@ -206,7 +204,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
             long size;
             synchronized (getChannel())
             {
-                getChannel().getProtocolSession().setDeferFlush(batch);
+                getChannel().getConnection().setDeferFlush(batch);
                 long deliveryTag = getChannel().getNextDeliveryTag();
 
                 size = sendToClient(consumer, message, props, deliveryTag);
@@ -248,7 +246,6 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
                                 FlowCreditManager creditManager,
                                 ClientDeliveryMethod deliveryMethod,
                                 RecordDeliveryMethod recordMethod)
-            throws AMQException
         {
             super(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
         }
@@ -264,7 +261,6 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
     public static ConsumerTarget_0_8 createAckTarget(AMQChannel channel,
                                                          AMQShortString consumerTag, FieldTable filters,
                                                          FlowCreditManager creditManager)
-            throws AMQException
     {
         return new AckConsumer(channel,consumerTag,filters,creditManager, channel.getClientDeliveryMethod(), channel.getRecordDeliveryMethod());
     }
@@ -275,7 +271,6 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
                                                          FlowCreditManager creditManager,
                                                          ClientDeliveryMethod deliveryMethod,
                                                          RecordDeliveryMethod recordMethod)
-            throws AMQException
     {
         return new AckConsumer(channel,consumerTag,filters,creditManager, deliveryMethod, recordMethod);
     }
@@ -287,7 +282,6 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
                            FlowCreditManager creditManager,
                            ClientDeliveryMethod deliveryMethod,
                            RecordDeliveryMethod recordMethod)
-            throws AMQException
         {
             super(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
         }
@@ -307,7 +301,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
 
             synchronized (getChannel())
             {
-                getChannel().getProtocolSession().setDeferFlush(batch);
+                getChannel().getConnection().setDeferFlush(batch);
                 long deliveryTag = getChannel().getNextDeliveryTag();
 
                 addUnacknowledgedMessage(entry);
@@ -345,7 +339,6 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
                               FlowCreditManager creditManager,
                               ClientDeliveryMethod deliveryMethod,
                               RecordDeliveryMethod recordMethod)
-            throws AMQException
     {
         super(State.ACTIVE);
 
@@ -473,9 +466,9 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         return _consumerTag;
     }
 
-    public AMQProtocolSession getProtocolSession()
+    public AMQProtocolEngine getProtocolSession()
     {
-        return _channel.getProtocolSession();
+        return _channel.getConnection();
     }
 
     public void restoreCredit(final ServerMessage message)
@@ -524,7 +517,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
 
     public void confirmAutoClose()
     {
-        ProtocolOutputConverter converter = getChannel().getProtocolSession().getProtocolOutputConverter();
+        ProtocolOutputConverter converter = getChannel().getConnection().getProtocolOutputConverter();
         converter.confirmConsumerAutoClose(getChannel().getChannelId(), getConsumerTag());
     }
 
@@ -539,9 +532,9 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
 
     public void flushBatched()
     {
-        _channel.getProtocolSession().setDeferFlush(false);
+        _channel.getConnection().setDeferFlush(false);
 
-        _channel.getProtocolSession().flushBatched();
+        _channel.getConnection().flushBatched();
     }
 
     protected void addUnacknowledgedMessage(MessageInstance entry)

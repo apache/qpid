@@ -198,4 +198,6 @@ public interface MethodProcessor
     void receiveMessageHeader(int channelId, BasicContentHeaderProperties properties, long bodySize);
 
     void receiveProtocolHeader(ProtocolInitiation protocolInitiation);
+
+    void setCurrentMethod(int classId, int methodId);
 }

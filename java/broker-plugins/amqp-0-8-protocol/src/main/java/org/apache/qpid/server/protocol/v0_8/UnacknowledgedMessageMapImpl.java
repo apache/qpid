@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.MessageInstance;
 
 public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
@@ -82,7 +81,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
-    public void visit(Visitor visitor) throws AMQException
+    public void visit(Visitor visitor)
     {
         synchronized (_lock)
         {

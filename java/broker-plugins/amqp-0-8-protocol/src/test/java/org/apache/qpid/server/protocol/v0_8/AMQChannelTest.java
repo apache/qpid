@@ -41,7 +41,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
 public class AMQChannelTest extends QpidTestCase
 {
     private VirtualHostImpl _virtualHost;
-    private AMQProtocolSession _protocolSession;
+    private AMQProtocolEngine _protocolSession;
     private Map<Integer,String> _replies;
     private Broker _broker;
 
@@ -108,7 +108,7 @@ public class AMQChannelTest extends QpidTestCase
 
         channel.setPublishFrame(info, e);
         channel.publishContentHeader(contentHeaderBody);
-        channel.commit();
+        channel.commit(null, false);
 
         assertEquals("Unexpected number of replies", 1, _replies.size());
         assertEquals("Message authorization passed", "Access Refused", _replies.get(403));
@@ -130,7 +130,7 @@ public class AMQChannelTest extends QpidTestCase
 
         channel.setPublishFrame(info, e);
         channel.publishContentHeader(contentHeaderBody);
-        channel.commit();
+        channel.commit(null, false);
 
         assertEquals("Unexpected number of replies", 0, _replies.size());
     }

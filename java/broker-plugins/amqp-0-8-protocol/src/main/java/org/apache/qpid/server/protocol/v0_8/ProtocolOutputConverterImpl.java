@@ -48,12 +48,12 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 {
     private static final int BASIC_CLASS_ID = 60;
 
-    private final AMQProtocolSession _protocolSession;
+    private final AMQProtocolEngine _connection;
     private static final AMQShortString GZIP_ENCODING = AMQShortString.valueOf(GZIPUtils.GZIP_CONTENT_ENCODING);
 
-    public ProtocolOutputConverterImpl(AMQProtocolSession session)
+    public ProtocolOutputConverterImpl(AMQProtocolEngine connection)
     {
-        _protocolSession = session;
+        _connection = connection;
     }
 
 
@@ -76,7 +76,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         }
         else
         {
-            return getMessageConverter(serverMessage).convert(serverMessage, _protocolSession.getVirtualHost());
+            return getMessageConverter(serverMessage).convert(serverMessage, _connection.getVirtualHost());
         }
     }
 
@@ -99,7 +99,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         byte[] modifiedContent;
 
         // straight through case
-        boolean compressionSupported = _protocolSession.isCompressionSupported();
+        boolean compressionSupported = _connection.isCompressionSupported();
 
         if(msgCompressed && !compressionSupported &&
                 (modifiedContent = GZIPUtils.uncompressBufferToArray(message.getContent(0,bodySize))) != null)
@@ -115,7 +115,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         else if(!msgCompressed
                 && compressionSupported
                 && contentHeaderBody.getProperties().getEncoding()==null
-                && bodySize > _protocolSession.getMessageCompressionThreshold()
+                && bodySize > _connection.getMessageCompressionThreshold()
                 && (modifiedContent = GZIPUtils.compressBufferToArray(message.getContent(0, bodySize))) != null)
         {
             BasicContentHeaderProperties modifiedProps =
@@ -182,7 +182,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         }
         else
         {
-            int maxBodySize = (int) _protocolSession.getMaxFrameSize() - AMQFrame.getFrameOverhead();
+            int maxBodySize = (int) _connection.getMaxFrameSize() - AMQFrame.getFrameOverhead();
 
 
             int capacity = bodySize > maxBodySize ? maxBodySize : bodySize;
@@ -316,7 +316,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
         public AMQBody createAMQBody()
         {
-            return _protocolSession.getMethodRegistry().createBasicDeliverBody(_consumerTag,
+            return _connection.getMethodRegistry().createBasicDeliverBody(_consumerTag,
                                                                                _deliveryTag,
                                                                                _isRedelivered,
                                                                                _exchangeName,
@@ -372,7 +372,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         final boolean isRedelivered = Boolean.TRUE.equals(props.getProperty(InstanceProperties.Property.REDELIVERED));
 
         BasicGetOkBody getOkBody =
-                _protocolSession.getMethodRegistry().createBasicGetOkBody(deliveryTag,
+                _connection.getMethodRegistry().createBasicGetOkBody(deliveryTag,
                                                                           isRedelivered,
                                                                           exchangeName,
                                                                           routingKey,
@@ -387,7 +387,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
     {
 
         BasicReturnBody basicReturnBody =
-                _protocolSession.getMethodRegistry().createBasicReturnBody(replyCode,
+                _connection.getMethodRegistry().createBasicReturnBody(replyCode,
                                                                            replyText,
                                                                            messagePublishInfo.getExchange(),
                                                                            messagePublishInfo.getRoutingKey());
@@ -407,14 +407,14 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
     public void writeFrame(AMQDataBlock block)
     {
-        _protocolSession.writeFrame(block);
+        _connection.writeFrame(block);
     }
 
 
     public void confirmConsumerAutoClose(int channelId, AMQShortString consumerTag)
     {
 
-        BasicCancelOkBody basicCancelOkBody = _protocolSession.getMethodRegistry().createBasicCancelOkBody(consumerTag);
+        BasicCancelOkBody basicCancelOkBody = _connection.getMethodRegistry().createBasicCancelOkBody(consumerTag);
         writeFrame(basicCancelOkBody.generateFrame(channelId));
 
     }

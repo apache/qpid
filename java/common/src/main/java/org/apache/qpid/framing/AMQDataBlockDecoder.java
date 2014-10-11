@@ -123,254 +123,264 @@ public class AMQDataBlockDecoder
             throws AMQFrameDecodingException, IOException
     {
         final int classAndMethod = in.readInt();
-        switch (classAndMethod)
+        int classId = classAndMethod >> 16;
+        int methodId = classAndMethod & 0xFFFF;
+        dispatcher.setCurrentMethod(classId, methodId);
+        try
         {
-            //CONNECTION_CLASS:
-            case 0x000a000a:
-                ConnectionStartBody.process(in, dispatcher);
-                break;
-            case 0x000a000b:
-                ConnectionStartOkBody.process(in, dispatcher);
-                break;
-            case 0x000a0014:
-                ConnectionSecureBody.process(in, dispatcher);
-                break;
-            case 0x000a0015:
-                ConnectionSecureOkBody.process(in, dispatcher);
-                break;
-            case 0x000a001e:
-                ConnectionTuneBody.process(in, dispatcher);
-                break;
-            case 0x000a001f:
-                ConnectionTuneOkBody.process(in, dispatcher);
-                break;
-            case 0x000a0028:
-                ConnectionOpenBody.process(in, dispatcher);
-                break;
-            case 0x000a0029:
-                ConnectionOpenOkBody.process(in, dispatcher);
-                break;
-            case 0x000a002a:
-                ConnectionRedirectBody.process(in, dispatcher);
-                break;
-            case 0x000a0032:
-                if (dispatcher.getProtocolVersion().equals(ProtocolVersion.v8_0))
-                {
+            switch (classAndMethod)
+            {
+                //CONNECTION_CLASS:
+                case 0x000a000a:
+                    ConnectionStartBody.process(in, dispatcher);
+                    break;
+                case 0x000a000b:
+                    ConnectionStartOkBody.process(in, dispatcher);
+                    break;
+                case 0x000a0014:
+                    ConnectionSecureBody.process(in, dispatcher);
+                    break;
+                case 0x000a0015:
+                    ConnectionSecureOkBody.process(in, dispatcher);
+                    break;
+                case 0x000a001e:
+                    ConnectionTuneBody.process(in, dispatcher);
+                    break;
+                case 0x000a001f:
+                    ConnectionTuneOkBody.process(in, dispatcher);
+                    break;
+                case 0x000a0028:
+                    ConnectionOpenBody.process(in, dispatcher);
+                    break;
+                case 0x000a0029:
+                    ConnectionOpenOkBody.process(in, dispatcher);
+                    break;
+                case 0x000a002a:
                     ConnectionRedirectBody.process(in, dispatcher);
-                }
-                else
-                {
-                    ConnectionCloseBody.process(in, dispatcher);
-                }
-                break;
-            case 0x000a0033:
-                if (dispatcher.getProtocolVersion().equals(ProtocolVersion.v8_0))
-                {
-                    throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF),
-                                                    dispatcher.getProtocolVersion());
-                }
-                else
-                {
-                    dispatcher.receiveConnectionCloseOk();
-                }
-                break;
-            case 0x000a003c:
-                if (dispatcher.getProtocolVersion().equals(ProtocolVersion.v8_0))
-                {
-                    ConnectionCloseBody.process(in, dispatcher);
-                }
-                else
-                {
-                    throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF),
-                                                    dispatcher.getProtocolVersion());
-                }
-                break;
-            case 0x000a003d:
-                if (dispatcher.getProtocolVersion().equals(ProtocolVersion.v8_0))
-                {
-                    dispatcher.receiveConnectionCloseOk();
-                }
-                else
-                {
-                    throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF),
-                                                    dispatcher.getProtocolVersion());
-                }
-                break;
+                    break;
+                case 0x000a0032:
+                    if (dispatcher.getProtocolVersion().equals(ProtocolVersion.v8_0))
+                    {
+                        ConnectionRedirectBody.process(in, dispatcher);
+                    }
+                    else
+                    {
+                        ConnectionCloseBody.process(in, dispatcher);
+                    }
+                    break;
+                case 0x000a0033:
+                    if (dispatcher.getProtocolVersion().equals(ProtocolVersion.v8_0))
+                    {
+                        throw newUnknownMethodException(classId, methodId,
+                                                        dispatcher.getProtocolVersion());
+                    }
+                    else
+                    {
+                        dispatcher.receiveConnectionCloseOk();
+                    }
+                    break;
+                case 0x000a003c:
+                    if (dispatcher.getProtocolVersion().equals(ProtocolVersion.v8_0))
+                    {
+                        ConnectionCloseBody.process(in, dispatcher);
+                    }
+                    else
+                    {
+                        throw newUnknownMethodException(classId, methodId,
+                                                        dispatcher.getProtocolVersion());
+                    }
+                    break;
+                case 0x000a003d:
+                    if (dispatcher.getProtocolVersion().equals(ProtocolVersion.v8_0))
+                    {
+                        dispatcher.receiveConnectionCloseOk();
+                    }
+                    else
+                    {
+                        throw newUnknownMethodException(classId, methodId,
+                                                        dispatcher.getProtocolVersion());
+                    }
+                    break;
 
                 // CHANNEL_CLASS:
 
-            case 0x0014000a:
-                ChannelOpenBody.process(channelId, in, dispatcher);
-                break;
-            case 0x0014000b:
-                ChannelOpenOkBody.process(channelId, in, dispatcher.getProtocolVersion(), dispatcher);
-                break;
-            case 0x00140014:
-                ChannelFlowBody.process(channelId, in, dispatcher);
-                break;
-            case 0x00140015:
-                ChannelFlowOkBody.process(channelId, in, dispatcher);
-                break;
-            case 0x0014001e:
-                ChannelAlertBody.process(channelId, in, dispatcher);
-                break;
-            case 0x00140028:
-                ChannelCloseBody.process(channelId, in, dispatcher);
-                break;
-            case 0x00140029:
-                dispatcher.receiveChannelCloseOk(channelId);
-                break;
+                case 0x0014000a:
+                    ChannelOpenBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x0014000b:
+                    ChannelOpenOkBody.process(channelId, in, dispatcher.getProtocolVersion(), dispatcher);
+                    break;
+                case 0x00140014:
+                    ChannelFlowBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x00140015:
+                    ChannelFlowOkBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x0014001e:
+                    ChannelAlertBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x00140028:
+                    ChannelCloseBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x00140029:
+                    dispatcher.receiveChannelCloseOk(channelId);
+                    break;
 
-            // ACCESS_CLASS:
+                // ACCESS_CLASS:
 
-            case 0x001e000a:
-                AccessRequestBody.process(channelId, in, dispatcher);
-                break;
-            case 0x001e000b:
-                AccessRequestOkBody.process(channelId, in, dispatcher);
-                break;
+                case 0x001e000a:
+                    AccessRequestBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x001e000b:
+                    AccessRequestOkBody.process(channelId, in, dispatcher);
+                    break;
 
-            // EXCHANGE_CLASS:
+                // EXCHANGE_CLASS:
 
-            case 0x0028000a:
-                ExchangeDeclareBody.process(channelId, in, dispatcher);
-                break;
-            case 0x0028000b:
-                dispatcher.receiveExchangeDeclareOk(channelId);
-                break;
-            case 0x00280014:
-                ExchangeDeleteBody.process(channelId, in, dispatcher);
-                break;
-            case 0x00280015:
-                dispatcher.receiveExchangeDeleteOk(channelId);
-                break;
-            case 0x00280016:
-                ExchangeBoundBody.process(channelId, in, dispatcher);
-                break;
-            case 0x00280017:
-                ExchangeBoundOkBody.process(channelId, in, dispatcher);
-                break;
-
-
-            // QUEUE_CLASS:
-
-            case 0x0032000a:
-                QueueDeclareBody.process(channelId, in, dispatcher);
-                break;
-            case 0x0032000b:
-                QueueDeclareOkBody.process(channelId, in, dispatcher);
-                break;
-            case 0x00320014:
-                QueueBindBody.process(channelId, in, dispatcher);
-                break;
-            case 0x00320015:
-                dispatcher.receiveQueueBindOk(channelId);
-                break;
-            case 0x0032001e:
-                QueuePurgeBody.process(channelId, in, dispatcher);
-                break;
-            case 0x0032001f:
-                QueuePurgeOkBody.process(channelId, in, dispatcher);
-                break;
-            case 0x00320028:
-                QueueDeleteBody.process(channelId, in, dispatcher);
-                break;
-            case 0x00320029:
-                QueueDeleteOkBody.process(channelId, in, dispatcher);
-                break;
-            case 0x00320032:
-                QueueUnbindBody.process(channelId, in, dispatcher);
-                break;
-            case 0x00320033:
-                dispatcher.receiveQueueUnbindOk(channelId);
-                break;
+                case 0x0028000a:
+                    ExchangeDeclareBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x0028000b:
+                    dispatcher.receiveExchangeDeclareOk(channelId);
+                    break;
+                case 0x00280014:
+                    ExchangeDeleteBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x00280015:
+                    dispatcher.receiveExchangeDeleteOk(channelId);
+                    break;
+                case 0x00280016:
+                    ExchangeBoundBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x00280017:
+                    ExchangeBoundOkBody.process(channelId, in, dispatcher);
+                    break;
 
 
-            // BASIC_CLASS:
+                // QUEUE_CLASS:
 
-            case 0x003c000a:
-                BasicQosBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c000b:
-                dispatcher.receiveBasicQosOk(channelId);
-                break;
-            case 0x003c0014:
-                BasicConsumeBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c0015:
-                BasicConsumeOkBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c001e:
-                BasicCancelBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c001f:
-                BasicCancelOkBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c0028:
-                BasicPublishBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c0032:
-                BasicReturnBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c003c:
-                BasicDeliverBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c0046:
-                BasicGetBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c0047:
-                BasicGetOkBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c0048:
-                BasicGetEmptyBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c0050:
-                BasicAckBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c005a:
-                BasicRejectBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c0064:
-                BasicRecoverBody.process(channelId, in, dispatcher.getProtocolVersion(), dispatcher);
-                break;
-            case 0x003c0065:
-                dispatcher.receiveBasicRecoverSyncOk(channelId);
-                break;
-            case 0x003c0066:
-                BasicRecoverSyncBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c006e:
-                BasicRecoverSyncBody.process(channelId, in, dispatcher);
-                break;
-            case 0x003c006f:
-                dispatcher.receiveBasicRecoverSyncOk(channelId);
-                break;
+                case 0x0032000a:
+                    QueueDeclareBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x0032000b:
+                    QueueDeclareOkBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x00320014:
+                    QueueBindBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x00320015:
+                    dispatcher.receiveQueueBindOk(channelId);
+                    break;
+                case 0x0032001e:
+                    QueuePurgeBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x0032001f:
+                    QueuePurgeOkBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x00320028:
+                    QueueDeleteBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x00320029:
+                    QueueDeleteOkBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x00320032:
+                    QueueUnbindBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x00320033:
+                    dispatcher.receiveQueueUnbindOk(channelId);
+                    break;
 
-            // TX_CLASS:
 
-            case 0x005a000a:
-                dispatcher.receiveTxSelect(channelId);
-                break;
-            case 0x005a000b:
-                dispatcher.receiveTxSelectOk(channelId);
-                break;
-            case 0x005a0014:
-                dispatcher.receiveTxCommit(channelId);
-                break;
-            case 0x005a0015:
-                dispatcher.receiveTxCommitOk(channelId);
-                break;
-            case 0x005a001e:
-                dispatcher.receiveTxRollback(channelId);
-                break;
-            case 0x005a001f:
-                dispatcher.receiveTxRollbackOk(channelId);
-                break;
+                // BASIC_CLASS:
 
-            default:
-                throw newUnknownMethodException((classAndMethod >> 16), (classAndMethod & 0xFFFF),
-                                                dispatcher.getProtocolVersion());
+                case 0x003c000a:
+                    BasicQosBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c000b:
+                    dispatcher.receiveBasicQosOk(channelId);
+                    break;
+                case 0x003c0014:
+                    BasicConsumeBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c0015:
+                    BasicConsumeOkBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c001e:
+                    BasicCancelBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c001f:
+                    BasicCancelOkBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c0028:
+                    BasicPublishBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c0032:
+                    BasicReturnBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c003c:
+                    BasicDeliverBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c0046:
+                    BasicGetBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c0047:
+                    BasicGetOkBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c0048:
+                    BasicGetEmptyBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c0050:
+                    BasicAckBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c005a:
+                    BasicRejectBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c0064:
+                    BasicRecoverBody.process(channelId, in, dispatcher.getProtocolVersion(), dispatcher);
+                    break;
+                case 0x003c0065:
+                    dispatcher.receiveBasicRecoverSyncOk(channelId);
+                    break;
+                case 0x003c0066:
+                    BasicRecoverSyncBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c006e:
+                    BasicRecoverSyncBody.process(channelId, in, dispatcher);
+                    break;
+                case 0x003c006f:
+                    dispatcher.receiveBasicRecoverSyncOk(channelId);
+                    break;
 
+                // TX_CLASS:
+
+                case 0x005a000a:
+                    dispatcher.receiveTxSelect(channelId);
+                    break;
+                case 0x005a000b:
+                    dispatcher.receiveTxSelectOk(channelId);
+                    break;
+                case 0x005a0014:
+                    dispatcher.receiveTxCommit(channelId);
+                    break;
+                case 0x005a0015:
+                    dispatcher.receiveTxCommitOk(channelId);
+                    break;
+                case 0x005a001e:
+                    dispatcher.receiveTxRollback(channelId);
+                    break;
+                case 0x005a001f:
+                    dispatcher.receiveTxRollbackOk(channelId);
+                    break;
+
+                default:
+                    throw newUnknownMethodException(classId, methodId,
+                                                    dispatcher.getProtocolVersion());
+
+            }
+        }
+        finally
+        {
+            dispatcher.setCurrentMethod(0,0);
         }
     }
 

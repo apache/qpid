@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.queue.QueueEntry;
-
 import java.util.Collection;
 import java.util.Set;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.MessageInstance;
 
 
 public interface UnacknowledgedMessageMap
@@ -37,12 +36,12 @@ public interface UnacknowledgedMessageMap
          *@param message the message being iterated over @return true to stop iteration, false to continue
          * @throws AMQException
          */
-        boolean callback(final long deliveryTag, MessageInstance message) throws AMQException;
+        boolean callback(final long deliveryTag, MessageInstance message);
 
         void visitComplete();
     }
 
-    void visit(Visitor visitor) throws AMQException;
+    void visit(Visitor visitor);
 
     void add(long deliveryTag, MessageInstance message);
 

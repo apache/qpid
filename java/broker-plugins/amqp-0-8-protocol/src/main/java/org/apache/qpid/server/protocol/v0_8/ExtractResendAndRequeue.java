@@ -20,13 +20,12 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
-
-import java.util.Map;
 
 public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
 {
@@ -45,7 +44,7 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
         _msgToResend = msgToResend;
     }
 
-    public boolean callback(final long deliveryTag, MessageInstance message) throws AMQException
+    public boolean callback(final long deliveryTag, MessageInstance message)
     {
 
         message.setRedelivered();

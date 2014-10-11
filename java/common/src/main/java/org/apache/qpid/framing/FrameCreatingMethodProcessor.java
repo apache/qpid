@@ -28,6 +28,8 @@ public class FrameCreatingMethodProcessor implements MethodProcessor
     private ProtocolVersion _protocolVersion;
     
     private final List<AMQDataBlock> _processedMethods = new ArrayList<>();
+    private int _classId;
+    private int _methodId;
 
     public FrameCreatingMethodProcessor(final ProtocolVersion protocolVersion)
     {
@@ -521,5 +523,22 @@ public class FrameCreatingMethodProcessor implements MethodProcessor
     public void receiveProtocolHeader(final ProtocolInitiation protocolInitiation)
     {
         _processedMethods.add(protocolInitiation);
+    }
+
+    @Override
+    public void setCurrentMethod(final int classId, final int methodId)
+    {
+        _classId = classId;
+        _methodId = methodId;
+    }
+
+    public int getClassId()
+    {
+        return _classId;
+    }
+
+    public int getMethodId()
+    {
+        return _methodId;
     }
 }

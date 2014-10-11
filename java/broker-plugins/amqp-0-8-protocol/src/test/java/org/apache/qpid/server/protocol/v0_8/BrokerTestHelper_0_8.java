@@ -32,7 +32,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 public class BrokerTestHelper_0_8 extends BrokerTestHelper
 {
 
-    public static AMQChannel createChannel(int channelId, AMQProtocolSession session) throws AMQException
+    public static AMQChannel createChannel(int channelId, AMQProtocolEngine session) throws AMQException
     {
         AMQChannel channel = new AMQChannel(session, channelId, session.getVirtualHost().getMessageStore());
         session.addChannel(channel);

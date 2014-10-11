@@ -37,6 +37,8 @@ import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 public class ServerMethodProcessor implements MethodProcessor
 {
     private static final Logger LOGGER = Logger.getLogger(ServerMethodProcessor.class);
+    private int _classId;
+    private int _methodId;
 
 
     private static interface ChannelAction
@@ -92,8 +94,8 @@ public class ServerMethodProcessor implements MethodProcessor
                                                                   mechanisms,
                                                                   locales));
         }
-        _connection.closeConnection(AMQConstant.COMMAND_INVALID, "Unexpected method received:  ConnectionStart", 0,
-                                    ConnectionStartBody.CLASS_ID, ConnectionStartBody.METHOD_ID);
+        _connection.closeConnection(AMQConstant.COMMAND_INVALID, "Unexpected method received:  ConnectionStart", 0
+                                   );
 
     }
 
@@ -121,9 +123,8 @@ public class ServerMethodProcessor implements MethodProcessor
             if (ss == null)
             {
                 _connection.closeConnection(AMQConstant.RESOURCE_ERROR,
-                                                  "Unable to create SASL Server:" + mechanism, 0,
-                                                  ConnectionStartOkBody.CLASS_ID,
-                                                  ConnectionStartOkBody.METHOD_ID);
+                                                  "Unable to create SASL Server:" + mechanism, 0
+                                           );
             }
             else
             {
@@ -143,9 +144,8 @@ public class ServerMethodProcessor implements MethodProcessor
                         LOGGER.info("Authentication failed:" + (cause == null ? "" : cause.getMessage()));
 
                         _connection.closeConnection(AMQConstant.NOT_ALLOWED,
-                                                    AMQConstant.NOT_ALLOWED.getName().toString(), 0,
-                                                    ConnectionStartOkBody.CLASS_ID,
-                                                    ConnectionStartOkBody.METHOD_ID);
+                                                    AMQConstant.NOT_ALLOWED.getName().toString(), 0
+                                                   );
 
                         disposeSaslServer();
                         break;
@@ -182,8 +182,8 @@ public class ServerMethodProcessor implements MethodProcessor
         {
             disposeSaslServer();
 
-            _connection.closeConnection(AMQConstant.RESOURCE_ERROR, "SASL error:  " + e.getMessage(), 0,
-                                        ConnectionStartOkBody.CLASS_ID, ConnectionStartOkBody.METHOD_ID);
+            _connection.closeConnection(AMQConstant.RESOURCE_ERROR, "SASL error:  " + e.getMessage(), 0
+                                       );
         }
 
     }
@@ -936,6 +936,13 @@ public class ServerMethodProcessor implements MethodProcessor
             AMQDataBlock frame = protocolInitiation;
         }
 
+    }
+
+    @Override
+    public void setCurrentMethod(final int classId, final int methodId)
+    {
+        _classId = classId;
+        _methodId = methodId;
     }
 
     private void disposeSaslServer()
