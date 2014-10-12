@@ -151,7 +151,7 @@
                 details about the attribute and any default value that will take effect if you leave
                 the attribute unset. An example add dialogue is shown in the figure that
                 follows.</para>
-            <figure id="Java-Broker-Management-Channel-Web-Console-Orientation-Add-Dialogue">
+            <figure id="Java-Broker-Management-Channel-Web-Console-Managing-Entities-Add-Dialogue">
                 <title>Web Management Orientation - Add Dialogue</title>
                 <mediaobject>
                     <imageobject>
@@ -172,7 +172,7 @@
                 edit dialogue have field level help that give more details about the attribute and
                 any default value. An example edit dialogue is shown in the figure that
                 follows.</para>
-            <figure id="Java-Broker-Management-Channel-Web-Console-Orientation-Edit-Dialogue">
+            <figure id="Java-Broker-Management-Channel-Web-Console-Managing-Entities-Edit-Dialogue">
                 <title>Web Management Orientation - Edit Dialogue</title>
                 <mediaobject>
                     <imageobject>
@@ -192,7 +192,7 @@
                 For some child types, you can select many children from the parent's type and delete
                 many children at once.</para>
         </section>
-        <section id="Java-Broker-Management-Channel-Web-Console-Managing-Context Variables">
+        <section id="Java-Broker-Management-Channel-Web-Console-Managing-Context-Variables">
             <title>Context Variables</title>
             <para>All Entities within the Broker have the ability to have <link
                     linkend="Java-Broker-Management-Managing-Entities-General">context
@@ -200,7 +200,7 @@
             <para>Most add and edit dialogues have the ability to make context variable assignments.
                 To add/change/remove a context variable, click the Context Variable panel to expand
                 it.</para>
-            <figure id="Java-Broker-Management-Channel-Web-Console-Orientation-Edit-Dialogue">
+            <figure id="Java-Broker-Management-Channel-Web-Console-Managing-Entities-Context-Variables-Dialogue">
                 <title>Web Management Orientation - Context Variables</title>
                 <mediaobject>
                     <imageobject>
