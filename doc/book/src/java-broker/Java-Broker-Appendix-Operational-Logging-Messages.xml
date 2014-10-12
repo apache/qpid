@@ -344,6 +344,25 @@
             <para>Statistic - messages delivered or received by the Broker.</para>
           </entry>
         </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1014">
+          <entry morerows="1">BRK-1014</entry>
+          <entry>Message flow to disk active :  Message memory use <replaceable>size of all messages</replaceable> exceeds threshold <replaceable>threshold size</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the heap memory space occupied by messages has exceeded the threshold so the flow to disk feature has been activated.</para>
+          </entry>
+        </row>
+        
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1015">
+          <entry morerows="1">BRK-1015</entry>
+          <entry>Message flow to disk inactive :  Message memory use <replaceable>size of all messages</replaceable> within threshold <replaceable>threshold size</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that the heap memory space occupied by messages has fallen below the threshold so the flow to disk feature has been deactivated.</para>
+          </entry>
+        </row>
       </tbody>
     </tgroup>
   </table>

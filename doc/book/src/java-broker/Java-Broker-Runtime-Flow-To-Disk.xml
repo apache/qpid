@@ -28,15 +28,19 @@
     cumulative size of all messages falls below the limit once again.</para>
   <para>By default the Broker makes 40% of the max available memory for messages. This memory is
     divided between all the queues across all virtual hosts defined on the Broker with a percentage
-    calculated according to their current queue size.</para>
+    calculated according to their current queue size. These calulations are refreshed periodically
+    by the housekeeping cycle.</para>
   <para>For example if there are two queues, one containing 75MB and the second 100MB messages
     respectively and the Broker has 1GB heap memory with the default of 40% available for messages.
     The first queue will have a target size of 170MB and the second 230MB. Once 400MB is taken by
     messages, messages will begin to flow to disk. New messages will cease to flow to disk when
     their cumulative size falls beneath 400MB.</para>
-  <para>Target queue sizes are refreshed periodically according to the housekeeping cycle.</para>
   <para>Flow to disk is configured by Broker context variable
       <literal>broker.flowToDiskThreshold</literal>. It is expressed as a size in bytes and defaults
     to 40% of the JVM maximum heap size.</para>
-  <para>TODO: implement log message when flow to disk activates/deactives</para>
+  <para>Log message <link linkend="Java-Broker-Appendix-Operation-Logging-Message-BRK-1014"
+      >BRK-1014</link> is written when the feature activates. Once the total space of all messages
+    decreases below the threshold, the message <link
+      linkend="Java-Broker-Appendix-Operation-Logging-Message-BRK-1015">BRK-1015</link> is written
+    to show that the feature is no longer active.</para>
 </section>
