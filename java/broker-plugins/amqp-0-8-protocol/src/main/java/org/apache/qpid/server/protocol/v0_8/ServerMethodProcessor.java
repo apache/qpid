@@ -70,7 +70,7 @@ public class ServerMethodProcessor implements MethodProcessor
                 @Override
                 public Void run()
                 {
-                    action.onChannel(channel.getMethodProcessor());
+                    action.onChannel(channel);
                     return null;
                 }
             });
