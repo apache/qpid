@@ -58,9 +58,22 @@
       </itemizedlist>
     </para>
   </section>
+  <section id="Java-Broker-Management-Managing-Virtualhost-Context">
+    <title>Context</title>
+    <para>
+      <itemizedlist>
+        <listitem>
+          <para><emphasis>use_async_message_store_recovery</emphasis> Controls the <link
+              linkend="Java-Broker-Runtime-Background-Recovery">background recovery</link>
+            feature.</para>
+        </listitem>
+      </itemizedlist>
+    </para>
+  </section>
   <section id="Java-Broker-Management-Managing-Virtualhost-Attributes">
     <title>Attributes</title>
-    <para><itemizedlist>
+    <para>
+      <itemizedlist>
         <listitem>
           <para><emphasis>Name the virtualhost</emphasis>. This is the name the messaging clients
             refer to when forming a connection to the Broker.</para>
@@ -80,17 +93,22 @@
             transactions. See <xref linkend="Java-Broker-Runtime-Producer-Transaction-Timeout"
             /></para>
         </listitem>
-      </itemizedlist></para>
+      </itemizedlist>
+    </para>
   </section>
   <section id="Java-Broker-Management-Managing-Virtualhost-Children">
     <title>Children</title>
     <para>
       <itemizedlist>
         <listitem>
-          <para><link linkend="Java-Broker-Management-Managing-Exchanges">Exchange</link></para>
+          <para>
+            <link linkend="Java-Broker-Management-Managing-Exchanges">Exchange</link>
+          </para>
         </listitem>
         <listitem>
-          <para><link linkend="Java-Broker-Management-Managing-Queues">Queue</link></para>
+          <para>
+            <link linkend="Java-Broker-Management-Managing-Queues">Queue</link>
+          </para>
         </listitem>
         <listitem>
           <para>Connection</para>
