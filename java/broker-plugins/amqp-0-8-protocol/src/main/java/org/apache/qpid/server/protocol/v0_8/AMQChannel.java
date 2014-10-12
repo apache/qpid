@@ -202,7 +202,6 @@ public class AMQChannel
 
 
     public AMQChannel(AMQProtocolEngine connection, int channelId, final MessageStore messageStore)
-            throws AMQException
     {
         _connection = connection;
         _channelId = channelId;

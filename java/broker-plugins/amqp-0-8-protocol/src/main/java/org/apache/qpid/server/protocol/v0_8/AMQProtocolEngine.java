@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivilegedAction;
@@ -43,6 +44,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.security.auth.Subject;
+import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
@@ -70,12 +72,15 @@ import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.SessionModelListener;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
+import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
@@ -88,7 +93,8 @@ import org.apache.qpid.util.BytesDataOutput;
 
 public class AMQProtocolEngine implements ServerProtocolEngine,
                                           AMQConnectionModel<AMQProtocolEngine, AMQChannel>,
-                                          AMQVersionAwareProtocolSession
+                                          AMQVersionAwareProtocolSession,
+                                          ConnectionMethodProcessor
 {
     private static final Logger _logger = Logger.getLogger(AMQProtocolEngine.class);
 
@@ -836,38 +842,17 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         return !_closingChannelsList.isEmpty() && _closingChannelsList.containsKey(channelId);
     }
 
-    public void addChannel(AMQChannel channel) throws AMQException
+    public void addChannel(AMQChannel channel)
     {
-        if (_closed)
-        {
-            throw new AMQException("Session is closed");
-        }
-
         final int channelId = channel.getChannelId();
 
-        if (_closingChannelsList.containsKey(channelId))
+        synchronized (_channelMap)
         {
-            throw new AMQException("Session is marked awaiting channel close");
-        }
-
-        if (_channelMap.size() == _maxNoOfChannels)
-        {
-            String errorMessage =
-                    toString() + ": maximum number of channels has been reached (" + _maxNoOfChannels
-                    + "); can't create channel";
-            _logger.error(errorMessage);
-            throw new AMQException(AMQConstant.NOT_ALLOWED, errorMessage);
-        }
-        else
-        {
-            synchronized (_channelMap)
+            _channelMap.put(channel.getChannelId(), channel);
+            sessionAdded(channel);
+            if(_blocking)
             {
-                _channelMap.put(channel.getChannelId(), channel);
-                sessionAdded(channel);
-                if(_blocking)
-                {
-                    channel.block();
-                }
+                channel.block();
             }
         }
 
@@ -893,7 +878,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         }
     }
 
-    public Long getMaximumNumberOfChannels()
+    public long getMaximumNumberOfChannels()
     {
         return _maxNoOfChannels;
     }
@@ -1269,7 +1254,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         return _virtualHost;
     }
 
-    public void setVirtualHost(VirtualHostImpl<?,?,?> virtualHost) throws AMQException
+    public void setVirtualHost(VirtualHostImpl<?,?,?> virtualHost)
     {
         _virtualHost = virtualHost;
 
@@ -1674,6 +1659,336 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     public void setDeferFlush(boolean deferFlush)
     {
         _deferFlush = deferFlush;
+    }
+
+    @Override
+    public void receiveChannelOpen(final int channelId)
+    {
+        // Protect the broker against out of order frame request.
+        if (_virtualHost == null)
+        {
+            closeConnection(AMQConstant.COMMAND_INVALID,
+                            "Virtualhost has not yet been set. ConnectionOpen has not been called.", channelId);
+        }
+        else if(getChannel(channelId) != null || channelAwaitingClosure(channelId))
+        {
+            closeConnection(AMQConstant.CHANNEL_ERROR, "Channel " + channelId + " already exists", channelId);
+        }
+        else if(channelId > getMaximumNumberOfChannels())
+        {
+            closeConnection(AMQConstant.CHANNEL_ERROR,
+                            "Channel " + channelId + " cannot be created as the max allowed channel id is "
+                            + getMaximumNumberOfChannels(),
+                            channelId);
+        }
+        else
+        {
+            _logger.info("Connecting to: " + _virtualHost.getName());
+
+            final AMQChannel channel = new AMQChannel(this, channelId, _virtualHost.getMessageStore());
+
+            addChannel(channel);
+
+            ChannelOpenOkBody response;
+
+
+            response = getMethodRegistry().createChannelOpenOkBody();
+
+
+            writeFrame(response.generateFrame(channelId));
+        }
+    }
+
+    @Override
+    public void receiveConnectionOpen(AMQShortString virtualHostName,
+                                      AMQShortString capabilities,
+                                      boolean insist)
+    {
+        String virtualHostStr;
+        if ((virtualHostName != null) && virtualHostName.charAt(0) == '/')
+        {
+            virtualHostStr = virtualHostName.toString().substring(1);
+        }
+        else
+        {
+            virtualHostStr = virtualHostName == null ? null : virtualHostName.toString();
+        }
+
+        VirtualHostImpl virtualHost = ((AmqpPort)getPort()).getVirtualHost(virtualHostStr);
+
+        if (virtualHost == null)
+        {
+            closeConnection(AMQConstant.NOT_FOUND,
+                            "Unknown virtual host: '" + virtualHostName + "'",0);
+
+        }
+        else
+        {
+            // Check virtualhost access
+            if (virtualHost.getState() != State.ACTIVE)
+            {
+                closeConnection(AMQConstant.CONNECTION_FORCED,
+                                "Virtual host '" + virtualHost.getName() + "' is not active",0);
+
+            }
+            else
+            {
+                setVirtualHost(virtualHost);
+                try
+                {
+                    virtualHost.getSecurityManager().authoriseCreateConnection(this);
+                    if (getContextKey() == null)
+                    {
+                        setContextKey(new AMQShortString(Long.toString(System.currentTimeMillis())));
+                    }
+
+                    MethodRegistry methodRegistry = getMethodRegistry();
+                    AMQMethodBody responseBody = methodRegistry.createConnectionOpenOkBody(virtualHostName);
+
+                    writeFrame(responseBody.generateFrame(0));
+                }
+                catch (AccessControlException e)
+                {
+                    closeConnection(AMQConstant.ACCESS_REFUSED, e.getMessage(),0);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void receiveConnectionClose(final int replyCode,
+                                       final AMQShortString replyText,
+                                       final int classId,
+                                       final int methodId)
+    {
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("ConnectionClose received with reply code/reply text " + replyCode + "/" +
+                         replyText + " for " + this);
+        }
+        try
+        {
+            closeSession();
+        }
+        catch (Exception e)
+        {
+            _logger.error("Error closing protocol session: " + e, e);
+        }
+
+        MethodRegistry methodRegistry = getMethodRegistry();
+        ConnectionCloseOkBody responseBody = methodRegistry.createConnectionCloseOkBody();
+        writeFrame(responseBody.generateFrame(0));
+
+        closeProtocolSession();
+
+    }
+
+    @Override
+    public void receiveConnectionCloseOk()
+    {
+
+        _logger.info("Received Connection-close-ok");
+
+        try
+        {
+            closeSession();
+        }
+        catch (Exception e)
+        {
+            _logger.error("Error closing protocol session: " + e, e);
+        }
+    }
+
+    @Override
+    public void receiveConnectionSecureOk(final byte[] response)
+    {
+
+        Broker<?> broker = getBroker();
+
+        SubjectCreator subjectCreator = getSubjectCreator();
+
+        SaslServer ss = getSaslServer();
+        if (ss == null)
+        {
+            closeConnection(AMQConstant.INTERNAL_ERROR, "No SASL context set up in session",0 );
+        }
+        MethodRegistry methodRegistry = getMethodRegistry();
+        SubjectAuthenticationResult authResult = subjectCreator.authenticate(ss, response);
+        switch (authResult.getStatus())
+        {
+            case ERROR:
+                Exception cause = authResult.getCause();
+
+                _logger.info("Authentication failed:" + (cause == null ? "" : cause.getMessage()));
+
+                closeConnection(AMQConstant.NOT_ALLOWED, "Authentication failed",0);
+
+                disposeSaslServer();
+                break;
+            case SUCCESS:
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Connected as: " + authResult.getSubject());
+                }
+
+                int frameMax = broker.getContextValue(Integer.class, Broker.BROKER_FRAME_SIZE);
+
+                if (frameMax <= 0)
+                {
+                    frameMax = Integer.MAX_VALUE;
+                }
+
+                ConnectionTuneBody tuneBody =
+                        methodRegistry.createConnectionTuneBody(broker.getConnection_sessionCountLimit(),
+                                                                frameMax,
+                                                                broker.getConnection_heartBeatDelay());
+                writeFrame(tuneBody.generateFrame(0));
+                setAuthorizedSubject(authResult.getSubject());
+                disposeSaslServer();
+                break;
+            case CONTINUE:
+
+                ConnectionSecureBody
+                        secureBody = methodRegistry.createConnectionSecureBody(authResult.getChallenge());
+                writeFrame(secureBody.generateFrame(0));
+        }
+    }
+
+
+    private void disposeSaslServer()
+    {
+        SaslServer ss = getSaslServer();
+        if (ss != null)
+        {
+            setSaslServer(null);
+            try
+            {
+                ss.dispose();
+            }
+            catch (SaslException e)
+            {
+                _logger.error("Error disposing of Sasl server: " + e);
+            }
+        }
+    }
+
+    @Override
+    public void receiveConnectionStartOk(final FieldTable clientProperties,
+                                         final AMQShortString mechanism,
+                                         final byte[] response,
+                                         final AMQShortString locale)
+    {
+        Broker<?> broker = getBroker();
+
+        _logger.info("SASL Mechanism selected: " + mechanism);
+        _logger.info("Locale selected: " + locale);
+
+        SubjectCreator subjectCreator = getSubjectCreator();
+        SaslServer ss = null;
+        try
+        {
+            ss = subjectCreator.createSaslServer(String.valueOf(mechanism),
+                                                 getLocalFQDN(),
+                                                 getPeerPrincipal());
+
+            if (ss == null)
+            {
+                closeConnection(AMQConstant.RESOURCE_ERROR, "Unable to create SASL Server:" + mechanism, 0);
+
+            }
+            else
+            {
+                //save clientProperties
+                setClientProperties(clientProperties);
+
+                setSaslServer(ss);
+
+                final SubjectAuthenticationResult authResult = subjectCreator.authenticate(ss, response);
+
+                MethodRegistry methodRegistry = getMethodRegistry();
+
+                switch (authResult.getStatus())
+                {
+                    case ERROR:
+                        Exception cause = authResult.getCause();
+
+                        _logger.info("Authentication failed:" + (cause == null ? "" : cause.getMessage()));
+
+                        closeConnection(AMQConstant.NOT_ALLOWED, "Authentication failed", 0);
+
+                        disposeSaslServer();
+                        break;
+
+                    case SUCCESS:
+                        if (_logger.isInfoEnabled())
+                        {
+                            _logger.info("Connected as: " + authResult.getSubject());
+                        }
+                        setAuthorizedSubject(authResult.getSubject());
+
+                        int frameMax = broker.getContextValue(Integer.class, Broker.BROKER_FRAME_SIZE);
+
+                        if (frameMax <= 0)
+                        {
+                            frameMax = Integer.MAX_VALUE;
+                        }
+
+                        ConnectionTuneBody
+                                tuneBody =
+                                methodRegistry.createConnectionTuneBody(broker.getConnection_sessionCountLimit(),
+                                                                        frameMax,
+                                                                        broker.getConnection_heartBeatDelay());
+                        writeFrame(tuneBody.generateFrame(0));
+                        break;
+                    case CONTINUE:
+                        ConnectionSecureBody
+                                secureBody = methodRegistry.createConnectionSecureBody(authResult.getChallenge());
+                        writeFrame(secureBody.generateFrame(0));
+                }
+            }
+        }
+        catch (SaslException e)
+        {
+            disposeSaslServer();
+            closeConnection(AMQConstant.INTERNAL_ERROR, "SASL error: " + e, 0);
+        }
+    }
+
+    @Override
+    public void receiveConnectionTuneOk(final int channelMax, final long frameMax, final int heartbeat)
+    {
+        initHeartbeats(heartbeat);
+
+        int brokerFrameMax = getBroker().getContextValue(Integer.class, Broker.BROKER_FRAME_SIZE);
+        if (brokerFrameMax <= 0)
+        {
+            brokerFrameMax = Integer.MAX_VALUE;
+        }
+
+        if (frameMax > (long) brokerFrameMax)
+        {
+            closeConnection(AMQConstant.SYNTAX_ERROR,
+                            "Attempt to set max frame size to " + frameMax
+                            + " greater than the broker will allow: "
+                            + brokerFrameMax, 0);
+        }
+        else if (frameMax > 0 && frameMax < AMQConstant.FRAME_MIN_SIZE.getCode())
+        {
+            closeConnection(AMQConstant.SYNTAX_ERROR,
+                            "Attempt to set max frame size to " + frameMax
+                            + " which is smaller than the specification defined minimum: "
+                            + AMQConstant.FRAME_MIN_SIZE.getCode(), 0);
+        }
+        else
+        {
+            int calculatedFrameMax = frameMax == 0 ? brokerFrameMax : (int) frameMax;
+            setMaxFrameSize(calculatedFrameMax);
+
+            //0 means no implied limit, except that forced by protocol limitations (0xFFFF)
+            setMaximumNumberOfChannels( ((channelMax == 0l) || (channelMax > 0xFFFFL))
+                                               ? 0xFFFFL
+                                               : channelMax);
+        }
     }
 
     public final class WriteDeliverMethod

@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -46,23 +44,16 @@ public class MaxChannelsTest extends QpidTestCase
 
         long maxChannels = 10L;
         _session.setMaximumNumberOfChannels(maxChannels);
-        assertEquals("Number of channels not correctly set.", new Long(maxChannels), _session.getMaximumNumberOfChannels());
+        assertEquals("Number of channels not correctly set.", maxChannels, _session.getMaximumNumberOfChannels());
 
-        for (long currentChannel = 0L; currentChannel < maxChannels; currentChannel++)
+        for (long currentChannel = 1L; currentChannel <= maxChannels; currentChannel++)
         {
-            _session.addChannel(new AMQChannel(_session, (int) currentChannel, null));
+            _session.receiveChannelOpen( (int) currentChannel);
         }
-
-        try
-        {
-            _session.addChannel(new AMQChannel(_session, (int) maxChannels, null));
-            fail("Cannot create more channels then maximum");
-        }
-        catch (AMQException e)
-        {
-            assertEquals("Wrong exception received.", e.getErrorCode(), AMQConstant.NOT_ALLOWED);
-        }
-        assertEquals("Maximum number of channels not set.", new Long(maxChannels), new Long(_session.getChannels().size()));
+        assertFalse("Connection should not be closed after opening " + maxChannels + " channels",_session.isClosed());
+        assertEquals("Maximum number of channels not set.", maxChannels, _session.getChannels().size());
+        _session.receiveChannelOpen((int) maxChannels+1);
+        assertTrue("Connection should be closed after opening " + (maxChannels + 1) + " channels",_session.isClosed());
     }
 
     @Override
