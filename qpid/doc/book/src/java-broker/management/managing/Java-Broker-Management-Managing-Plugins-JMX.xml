@@ -23,7 +23,7 @@
 <section id="Java-Broker-Management-Managing-Plugins-JMX">
     <title>JMX Plugin</title>
     <para>
-        The JMX Plugin provides the <link linkend="Java-Broker-Management-Channel-JMX">JMX managenenent channel</link>.
+        The JMX Plugin provides the <link linkend="Java-Broker-Management-Channel-JMX">JMX management channel</link>.
     </para>
     <para>TODO</para>
 </section>

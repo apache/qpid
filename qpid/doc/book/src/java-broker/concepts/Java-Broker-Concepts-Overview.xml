@@ -51,13 +51,13 @@
   <para>These concepts will be developed over the forthcoming pages. The diagrams below also help
     put these entities in context of one and other.</para>
   <para><figure>
-      <title>Message Flow</title>
+      <title>Message Flow through Key Entities</title>
       <mediaobject>
         <imageobject>
           <imagedata fileref="images/Broker-MessageFlow.png" format="PNG" scalefit="1"/>
         </imageobject>
         <textobject>
-          <phrase>Message Flow through the Broker</phrase>
+          <phrase>Message Flow through the Key Entities of the Broker</phrase>
         </textobject>
       </mediaobject>
     </figure></para>

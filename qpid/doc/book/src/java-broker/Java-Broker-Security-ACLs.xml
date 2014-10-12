@@ -91,7 +91,7 @@
       ACL ALLOW bob ALL EXCHANGE
     </programlisting>
     <para>
-      All ACL files end with an implict rule denying all operations to all users.  It is as if each file ends with
+      All ACL files end with an implicit rule denying all operations to all users.  It is as if each file ends with
       <programlisting>ACL DENY ALL ALL </programlisting>
       If instead you wish to <emphasis>allow</emphasis> all operations other than those controlled by earlier rules,
       add <programlisting>ACL ALLOW ALL ALL</programlisting> to the bottom of the ACL file.
@@ -433,15 +433,15 @@
       <tbody>
         <row>
           <entry> <command>UserManagement</command> </entry>
-          <entry> <para>User maintainance; create/delete/view users, change passwords etc</para> </entry>
+          <entry> <para>User maintenance; create/delete/view users, change passwords etc</para> </entry>
         </row>
         <row>
           <entry> <command>ConfigurationManagement</command> </entry>
-          <entry> <para>Dynammically reload configuration from disk.</para> </entry>
+          <entry> <para>Dynamically reload configuration from disk.</para> </entry>
         </row>
         <row>
           <entry> <command>LoggingManagement</command> </entry>
-          <entry> <para>Dynammically control Qpid logging level</para> </entry>
+          <entry> <para>Dynamically control Qpid logging level</para> </entry>
         </row>
         <row>
           <entry> <command>ServerInformation</command> </entry>
@@ -449,7 +449,7 @@
         </row>
         <row>
           <entry> <command>VirtualHost.Queue</command> </entry>
-          <entry> <para>Queue maintainance; copy/move/purge/view etc</para> </entry>
+          <entry> <para>Queue maintenance; copy/move/purge/view etc</para> </entry>
         </row>
         <row>
           <entry> <command>VirtualHost.Exchange</command> </entry>
@@ -457,7 +457,7 @@
         </row>
         <row>
           <entry> <command>VirtualHost.VirtualHost</command> </entry>
-          <entry> <para>Virtual host maintainace; create/delete exchanges, queues etc</para> </entry>
+          <entry> <para>Virtual host maintenace; create/delete exchanges, queues etc</para> </entry>
         </row>
       </tbody>
     </tgroup>
@@ -501,7 +501,7 @@ ACL DENY-LOG ALL ALL
       <para>
         Suppose you wish to restrict User Management operations to users belonging to a
         <link linkend="Java-Broker-Security-Group-Providers">group</link> 'usermaint'.  No other user
-        is allowed to perform user maintainence  This example illustrates the permissioning of an individual component.
+        is allowed to perform user maintenance  This example illustrates the permissioning of an individual component.
       </para>
       <programlisting>
 # Give usermaint access to management and permission to execute all JMX Methods on the

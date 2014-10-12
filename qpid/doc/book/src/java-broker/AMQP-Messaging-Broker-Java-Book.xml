@@ -33,9 +33,10 @@
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security.xml"/>
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Runtime.xml"/>
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-High-Availability.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Miscellaneous.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Backup-And-Recovery.xml"/>
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-Environment-Variables.xml"/>
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-System-Properties.xml"/>
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-Operational-Logging-Messages.xml"/>
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-Queue-Alerts.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Appendix-Miscellaneous.xml"/>
 </book>

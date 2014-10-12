@@ -23,7 +23,8 @@
 <section id="Java-Broker-Management-Channel-Web-Console">
     <title>Web Management Console</title>
     <para> The Web Management Console provides a simple and intuitive interface for the Management
-        and Control of the Broker. From here, all aspects of the Broker can be controled, including: <itemizedlist>
+        and Control of the Broker. From here, all aspects of the Broker can be controlled,
+        including: <itemizedlist>
             <listitem>
                 <para>add, remove and monitor queues</para>
             </listitem>
@@ -34,86 +35,195 @@
                 <para>add, remove and monitor virtualhosts</para>
             </listitem>
             <listitem>
-                <para>configure and control high availabiliy</para>
+                <para>configure and control high availability</para>
             </listitem>
         </itemizedlist>
     </para>
-    <para>The remainder of the section provides an introduction to the web managemnet console and
+    <para>The remainder of the section provides an introduction to the web management console and
         its use.</para>
     <section id="Java-Broker-Management-Channel-Web-Console-Accessing">
         <title>Accessing the Console</title>
         <para>The Web Management Console is provided by the HTTP Management Plugin. Providing the
             HTTP Management Plugin is in its default configuration, the Web Management Console can
-            be accessed by pointing a brower at the following URL:</para>
-        <para><literal>http://myhost.mydomain.com:8080</literal></para>
+            be accessed by pointing a browser at the following URL:</para>
+        <para>
+            <literal>http://myhost.mydomain.com:8080</literal>
+        </para>
         <para>The Console will prompt you to login using a username and password.</para>
-        <example>
+        <figure>
             <title>Web Management Console - Authentication</title>
-            <screenshot>
-                <graphic fileref="images/Management-Web-Auth.png" width="800px"/>
-            </screenshot>
-        </example>
+            <mediaobject>
+                <imageobject>
+                    <imagedata fileref="images/Management-Web-Auth.png" format="PNG" scalefit="1"/>
+                </imageobject>
+                <textobject>
+                    <phrase>Web Console Authentication</phrase>
+                </textobject>
+            </mediaobject>
+        </figure>
     </section>
     <section id="Java-Broker-Management-Channel-Web-Console-Orientation">
         <title>Orientation</title>
         <para>After you have logged on you will see a screen similar to the following. The elements
             of the screen are now explained.</para>
-        <example>
+        <figure>
             <title>Web Management Orientation - Console</title>
-            <screenshot>
-                <graphic fileref="images/Management-Web-Console.png" width="800px"/>
-            </screenshot>
-        </example>
+            <mediaobject>
+                <imageobject>
+                    <imagedata fileref="images/Management-Web-Console.png" format="PNG" scalefit="1"
+                    />
+                </imageobject>
+                <textobject>
+                    <phrase>The Web Console</phrase>
+                </textobject>
+            </mediaobject>
+        </figure>
         <para>
             <itemizedlist>
                 <listitem>
-                    <para><emphasis>A</emphasis> - Hierarchy view. Expandable/collapsable view showing all entities
-                        within the Broker. Double click on an entity name to cause its tab to be
-                        opened. </para>
+                    <para><emphasis>A</emphasis> - Hierarchy view. Expandable/collapsible view
+                        showing all entities within the Broker. Double click on an entity name to
+                        cause its tab to be opened. </para>
                 </listitem>
                 <listitem>
-                    <para><emphasis>B</emphasis> - Tab. Shows the details of an entity including its attributes and its
-                        child entities. </para>
+                    <para><emphasis>B</emphasis> - Tab. Shows the details of an entity including its
+                        attributes and its child entities. </para>
                 </listitem>
                 <listitem>
-                    <para><emphasis>C</emphasis> - Occluded tab. Click tab name to bring the tab to the front.</para>
+                    <para><emphasis>C</emphasis> - Occluded tab. Click tab name to bring the tab to
+                        the front.</para>
                 </listitem>
                 <listitem>
-                    <para><emphasis>D</emphasis> - Auto restore check box. Checked tabs will be automatically restored on
-                        subsequent login.</para>
+                    <para><emphasis>D</emphasis> - Auto restore check box. Checked tabs will be
+                        automatically restored on subsequent login.</para>
                 </listitem>
                 <listitem>
                     <para><emphasis>E</emphasis> - Close. Click to close the tab.</para>
                 </listitem>
                 <listitem>
-                    <para><emphasis>F</emphasis> - User Menu. Access to Preferences, Logout and Help.</para>
+                    <para><emphasis>F</emphasis> - User Menu. Access to Preferences, Logout and
+                        Help.</para>
                 </listitem>
             </itemizedlist>
         </para>
-        <example>
+        <figure id="Java-Broker-Management-Channel-Web-Console-Orientation-Tab">
             <title>Web Management Orientation - Tab</title>
-            <screenshot>
-                <graphic fileref="images/Management-Web-Tab.png" width="800px"/>
-            </screenshot>
-        </example>
+            <mediaobject>
+                <imageobject>
+                    <imagedata fileref="images/Management-Web-Tab.png" format="PNG" scalefit="1"/>
+                </imageobject>
+                <textobject>
+                    <phrase>A tab within the Web Consle</phrase>
+                </textobject>
+            </mediaobject>
+        </figure>
         <para>The elements of a tab are now explained: <itemizedlist>
                 <listitem>
-                    <para><emphasis>1</emphasis> - Attribute Panel. Shows the attributes of the entity. Click the panel
-                        title bar opens/closes the panel.</para>
+                    <para><emphasis>1</emphasis> - Attribute Panel. Shows the attributes of the
+                        entity. Click the panel title bar opens/closes the panel.</para>
                 </listitem>
                 <listitem>
-                    <para><emphasis>2</emphasis> - Child Panels. Panels containing a table listing the children of the entity. Click the panel
-                        title bar opens/closes the panel.</para>
+                    <para><emphasis>2</emphasis> - Child Panels. Panels containing a table listing
+                        the children of the entity. Click the panel title bar opens/closes the
+                        panel.</para>
                 </listitem>
                 <listitem>
-                    <para><emphasis>3</emphasis> - Child Row. Row summarizing a child entity. Double click to open the
-                        child tab.</para>
+                    <para><emphasis>3</emphasis> - Child Row. Row summarizing a child entity. Double
+                        click to open the child tab.</para>
                 </listitem>
                 <listitem>
-                    <para><emphasis>4</emphasis> - Child Operations. Buttons to add a new child or perform operations on existing children.</para>
+                    <para><emphasis>4</emphasis> - Child Operations. Buttons to add a new child or
+                        perform operations on existing children.</para>
                 </listitem>
             </itemizedlist>
         </para>
+    </section>
+    <section id="Java-Broker-Management-Channel-Web-Console-Managing-Entities">
+        <title>Managing Entities</title>
+        <para>All the Entities of the Broker of can be managed through the Web Console.</para>
+        <section id="Java-Broker-Management-Channel-Web-Console-Managing-Entities-Add">
+            <title>Adding Entities</title>
+            <para>To <emphasis>add</emphasis> a new entity, click the <literal>Add</literal> button
+                on the Child Panel on the Parent's tab. Clicking the Add button causes an add
+                dialogue to be displayed.</para>
+            <para>Add dialogues allow you to set the attributes of the new child, and set context
+                variables. Most fields on the add dialogue have field level help that give more
+                details about the attribute and any default value that will take effect if you leave
+                the attribute unset. An example add dialogue is shown in the figure that
+                follows.</para>
+            <figure id="Java-Broker-Management-Channel-Web-Console-Orientation-Add-Dialogue">
+                <title>Web Management Orientation - Add Dialogue</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/Management-Web-Add-Dialogue.png" format="PNG"
+                            scalefit="1"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Example add dialogue</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </section>
+        <section id="Java-Broker-Management-Channel-Web-Console-Managing-Entities-Edit">
+            <title>Editing Entities</title>
+            <para>To <emphasis>edit</emphasis> an existing entity, click the <literal>Edit</literal>
+                button on the tab corresponding to the Entity itself. Editing an entity lets you
+                change some of its attributes and modify its context variables. Most fields on the
+                edit dialogue have field level help that give more details about the attribute and
+                any default value. An example edit dialogue is shown in the figure that
+                follows.</para>
+            <figure id="Java-Broker-Management-Channel-Web-Console-Orientation-Edit-Dialogue">
+                <title>Web Management Orientation - Edit Dialogue</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/Management-Web-Edit-Dialogue.png" format="PNG"
+                            scalefit="1"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Example edit dialogue</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+        </section>
+        <section id="Java-Broker-Management-Channel-Web-Console-Managing-Entities-Delete">
+            <title>Deleting Entities</title>
+            <para>To <emphasis>remove</emphasis> an existing entity, click the
+                    <literal>Delete</literal> button on the tab corresponding to the Entity itself.
+                For some child types, you can select many children from the parent's type and delete
+                many children at once.</para>
+        </section>
+        <section id="Java-Broker-Management-Channel-Web-Console-Managing-Context Variables">
+            <title>Context Variables</title>
+            <para>All Entities within the Broker have the ability to have <link
+                    linkend="Java-Broker-Management-Managing-Entities-General">context
+                    variables</link> associated with them.</para>
+            <para>Most add and edit dialogues have the ability to make context variable assignments.
+                To add/change/remove a context variable, click the Context Variable panel to expand
+                it.</para>
+            <figure id="Java-Broker-Management-Channel-Web-Console-Orientation-Edit-Dialogue">
+                <title>Web Management Orientation - Context Variables</title>
+                <mediaobject>
+                    <imageobject>
+                        <imagedata fileref="images/Management-Web-ContextVar.png" format="PNG"
+                            scalefit="1"/>
+                    </imageobject>
+                    <textobject>
+                        <phrase>Editting Context Variables</phrase>
+                    </textobject>
+                </mediaobject>
+            </figure>
+            <para>You will see any context varaiables already associated with the object, called
+                local context variables in bold, and any inherited from above in normal face.</para>
+            <para>Since context variables can be defined in terms of other context variables, the
+                display has two value columns: actual and effective. Actual shows the value truely
+                associated with the variable, where as effective shows the resulting value, after
+                variable expansion has taken place.</para>
+            <para>The <literal>+</literal> button allows new variables to be added. The
+                    <literal>-</literal> button removes existing one.</para>
+            <para>You change an existing local variables defintion by clicking on the actual value.
+                You can also <emphasis>provide a local definition</emphasis> for an inherited value
+                by clicking on the actual value and typing its new value.</para>
+        </section>
     </section>
 
 </section>

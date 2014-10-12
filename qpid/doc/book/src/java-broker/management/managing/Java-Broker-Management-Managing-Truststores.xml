@@ -58,10 +58,8 @@
                 </listitem>
                 <listitem>
                     <para><emphasis>Peers only</emphasis>. When "Peers Only" option is selected for
-                        the Truststore it will allow logging in for the clients with the certificate
-                        exactly matching the certificate loaded in the Truststore database, thus,
-                        authenticating the connections with self signed certificates not nessesary
-                        signed by CA.</para>
+                        the Truststore it will allow authenticate only those clients that present a certificate
+                        exactly matching a certificate contained within the Truststore database.</para>
                 </listitem>
             </itemizedlist></para>
     </section>

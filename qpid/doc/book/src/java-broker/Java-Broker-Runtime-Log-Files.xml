@@ -54,7 +54,7 @@
   <para>It can be helpful to enable debug within the Broker in order to understand a problem more
    clearly. If this is required, debug can be enabled at runtime (without restarting the Broker)
    using the Logging Management MBean. The change can also be made by changing the log configuration
-   file and restarting the Broker. Whichever mechanism is chosen, change the appender assoicated
+   file and restarting the Broker. Whichever mechanism is chosen, change the appender associated
    with <literal>org.apache.qpid</literal> from <literal>WARN</literal> to
    <literal>DEBUG</literal>.</para>
   <example>

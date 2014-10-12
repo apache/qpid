@@ -31,7 +31,7 @@
         <title>Introduction</title>
         <para>The JMX management plugin provides a series of managed beans (MBeans) allowing you to
             control and monitor the Broker via an industry compliant interface. This provides a
-            convenient intergration point for a variety of Infrastructure Monitoring Solutions,
+            convenient integration point for a variety of Infrastructure Monitoring Solutions,
             tools such as Jconsole and VisualVM, as well as custom Java programs and scripts.</para>
         <para>The following sections describe how to connect to JMX, the configuration of the JMX
             plugin covering topis including securing with SSL, programmatically interacting with
@@ -174,7 +174,7 @@ managedBroker.createNewQueue("myqueue", null, true);</programlisting>
                         <entry>
                             <para>MBean corresponding to the named virtualhost. Allows operations
                                 such as the creation/deletion of queues and exchanges on that
-                                virtualhost and virtualhost levell statistics.</para>
+                                virtualhost and virtualhost level statistics.</para>
                         </entry>
                     </row>
                     <row>

@@ -26,24 +26,26 @@
   <section id="Java-Broker-Management-Managing-Virtualhost-Nodes-Types">
     <title>Types</title>
     <para> The following virtualhost nodes types are supported. <itemizedlist>
-      <listitem><para>BDB - Node backed with Oracle BDB <footnote>
-        <para>Oracle BDB JE is optional. See <xref
-          linkend="Java-Broker-Miscellaneous-Installing-Oracle-BDB-JE"/>.</para>
-      </footnote></para></listitem>
-      <listitem><para>BDB HA - Node backed with Oracle BDB utilising High Availablity</para></listitem>
-      <listitem><para>DERBY - Node backed with Apache Derby</para></listitem>
-      <listitem><para>JDBC - Node backed with an external database <footnote>
-        <para>JDBC 4.0 compatible drivers must be available. See <xref
-          linkend="Java-Broker-Miscellaneous-Installing-External-JDBC-Driver"/></para>
-      </footnote></para></listitem>
-      <listitem><para>JSON - Node backed with a file containing json</para></listitem>
-      <listitem><para>Memory - In-memory node (changes lost on Broker restart)</para></listitem>
-    </itemizedlist>
+        <listitem><para>BDB - Node backed with Oracle BDB <footnote>
+              <para>Oracle BDB JE is optional. See <xref
+                  linkend="Java-Broker-Miscellaneous-Installing-Oracle-BDB-JE"/>.</para>
+            </footnote></para></listitem>
+        <listitem><para>BDB HA - Node backed with Oracle BDB utilising High
+          Availability</para></listitem>
+        <listitem><para>DERBY - Node backed with Apache Derby</para></listitem>
+        <listitem><para>JDBC - Node backed with an external database <footnote>
+              <para>JDBC 4.0 compatible drivers must be available. See <xref
+                  linkend="Java-Broker-Miscellaneous-Installing-External-JDBC-Driver"/></para>
+            </footnote></para></listitem>
+        <listitem><para>JSON - Node backed with a file containing json</para></listitem>
+        <listitem><para>Memory - In-memory node (changes lost on Broker restart)</para></listitem>
+      </itemizedlist>
     </para>
   </section>
   <section id="Java-Broker-Management-Managing-Virtualhost-Nodes-Attributes">
     <title>Attributes</title>
-    <para><itemizedlist>
+    <para>
+      <itemizedlist>
         <listitem>
           <para><emphasis>Name the virtualhost node</emphasis>.</para>
         </listitem>
@@ -52,8 +54,8 @@
             configuration of the virtualhost.</para>
         </listitem>
         <listitem>
-          <para><emphasis>Role</emphasis> (HA only). The role that this node is currently playing in the
-            group. <itemizedlist>
+          <para><emphasis>Role</emphasis> (HA only). The role that this node is currently playing in
+            the group. <itemizedlist>
               <listitem>
                 <para>MASTER - Virtualhost node is a master.</para>
               </listitem>
@@ -69,26 +71,40 @@
               </listitem>
             </itemizedlist></para>
         </listitem>
-      <listitem>
-        <para><emphasis>Priority</emphasis> (HA only). The priority of this node when elections occurs.  The attribute can be used to make it more likely for a node to be elected than other nodes, or disallow the node from never being elected at all.  See <xref linkend="Java-Broker-High-Availability"/></para>
-      </listitem>
-      <listitem>
-        <para><emphasis>Minimum Number Of Nodes</emphasis> (HA only - groups of three or more). Allows the number of nodes required to hold an election to be reduced in order that service can be restore when less than quorum nodes are present. See <xref linkend="Java-Broker-High-Availability"/></para>
-      </listitem>
-      <listitem>
-        <para><emphasis>Designated Primary</emphasis> (HA only - groups of two). Allows a single node in a two node group to operate solo.  See <xref linkend="Java-Broker-High-Availability"/></para>
-      </listitem>
-    </itemizedlist></para>
+        <listitem>
+          <para><emphasis>Priority</emphasis> (HA only). The priority of this node when elections
+            occurs. The attribute can be used to make it more likely for a node to be elected than
+            other nodes, or disallow the node from never being elected at all. See <xref
+              linkend="Java-Broker-High-Availability-Behaviour-NodePriority"/></para>
+        </listitem>
+        <listitem>
+          <para><emphasis>Minimum Number Of Nodes</emphasis> (HA only - groups of three or more).
+            Allows the number of nodes required to hold an election to be reduced in order that
+            service can be restore when less than quorum nodes are present. See <xref
+              linkend="Java-Broker-High-Availability-Behaviour-MinimumNumberOfNodes"/></para>
+        </listitem>
+        <listitem>
+          <para><emphasis>Designated Primary</emphasis> (HA only - groups of two). Allows a single
+            node in a two node group to operate solo. See <xref
+              linkend="Java-Broker-High-Availability-Behaviour-DesignatedPrimary"/></para>
+        </listitem>
+      </itemizedlist>
+    </para>
   </section>
   <section id="Java-Broker-Management-Managing-Virtualhost-Node-Children">
     <title>Children</title>
     <para>
       <itemizedlist>
         <listitem>
-          <para><link linkend="Java-Broker-Management-Managing-Virtualhosts">Virtualhost</link></para>
+          <para>
+            <link linkend="Java-Broker-Management-Managing-Virtualhosts">Virtualhost</link>
+          </para>
         </listitem>
         <listitem>
-          <para><link linkend="Java-Broker-Management-Managing-RemoteReplicationNodes">Remote Replication Nodes</link></para>
+          <para>
+            <link linkend="Java-Broker-Management-Managing-RemoteReplicationNodes">Remote
+              Replication Nodes</link>
+          </para>
         </listitem>
       </itemizedlist>
     </para>
@@ -115,8 +131,8 @@
         <listitem>
           <para><emphasis>Delete</emphasis>. Deletes the virtualhost node and the virtualhost
             contained within it. All exchanges and queues, any the messages contained within it are
-            removed. In the HA case, deleting the virtualhost node causes it be be removed
-            permantently from the group.</para>
+            removed. In the HA case, deleting the virtualhost node causes it be removed
+            permanently from the group.</para>
         </listitem>
       </itemizedlist>
     </para>

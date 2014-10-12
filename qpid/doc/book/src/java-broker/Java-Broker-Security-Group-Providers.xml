@@ -47,7 +47,7 @@
             The groups file has the following format:
           </para>
             <programlisting>
-    # &lt;GroupName&gt;.users = &lt;comma deliminated user list&gt;
+    # &lt;GroupName&gt;.users = &lt;comma delimited user list&gt;
     # For example:
 
     administrators.users = admin,manager

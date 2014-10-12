@@ -23,7 +23,7 @@
 <section id="Java-Broker-Management-Managing-Broker">
   <title>Broker</title>
   <para>The <link linkend="Java-Broker-Concepts-Broker">Broker</link> is the principal entity. It is
-    composed on a number of other entities that colabrate together to provide message broker
+    composed on a number of other entities that collaborate to provide message broker
     facilities.</para>
   <para>The Broker can only be managed via the HTTP management channel.</para>
   <section id="Java-Broker-Management-Managing-Broker-Attributes">
@@ -49,7 +49,9 @@
     <para>
       <itemizedlist>
         <listitem><para><emphasis>broker.flowToDiskThreshold</emphasis> Controls the <link linkend="Java-Broker-Runtime-Flow-To-Disk">flow to disk</link> feature.</para></listitem>
+        <listitem><para><emphasis>broker.messageCompressionEnabled</emphasis> Controls the message compression feature (co-operative feature with some Qpid clients).</para></listitem>
       </itemizedlist>
+      
     </para>
   </section>
   <section id="Java-Broker-Management-Managing-Broker-Children">

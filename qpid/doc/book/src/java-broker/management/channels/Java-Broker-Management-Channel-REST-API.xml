@@ -30,7 +30,7 @@
     configured object, PUT to create or update the configured object and POST to perform the
     configured objects updates not available with the PUT requests.</para>
   <para>The REST API is versioned with the version number built into the URL. The general form of
-    the the URL is <literal>/api/&lt;version&gt;</literal>. For convience the alias
+    the URL is <literal>/api/&lt;version&gt;</literal>. For convenience the alias
       <literal>latest</literal> signifies the latest supported version. There are also some
     ancillary service prefixed by <literal>/service</literal>.</para>
 

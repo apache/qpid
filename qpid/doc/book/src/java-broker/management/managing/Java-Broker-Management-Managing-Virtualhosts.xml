@@ -35,7 +35,7 @@
             </footnote></para>
         </listitem>
         <listitem>
-          <para>BDB HA - Virtualhost backed with Oracle BDB utilising High Availablity</para>
+          <para>BDB HA - Virtualhost backed with Oracle BDB utilising High Availability</para>
         </listitem>
         <listitem>
           <para>DERBY - Virtualhost backed with Apache Derby</para>
@@ -50,7 +50,7 @@
           <para>Memory - In-memory node (changes lost on Broker restart)</para>
         </listitem>
         <listitem>
-          <para>Provided - Virtualhost that colocates message data within the parent virtualhost
+          <para>Provided - Virtualhost that co-locates message data within the parent virtualhost
             node <footnote>
               <para>Not available if Virtualhost Node type is JSON.</para>
             </footnote>.</para>
@@ -92,6 +92,10 @@
           <para><emphasis>Store transaction timeouts</emphasis>. Warns of long running producer
             transactions. See <xref linkend="Java-Broker-Runtime-Producer-Transaction-Timeout"
             /></para>
+        </listitem>
+        <listitem>
+          <para><emphasis>Synchronization policy</emphasis>. HA only. See <xref
+              linkend="Java-Broker-High-Availability-Behaviour-SynchronizationPolicy"/></para>
         </listitem>
       </itemizedlist>
     </para>

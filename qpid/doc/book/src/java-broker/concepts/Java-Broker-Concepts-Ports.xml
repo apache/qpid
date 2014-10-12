@@ -41,7 +41,7 @@
         </itemizedlist>
     </para>
 
-    <para> Addittionally, HTTP and JMX ports can be configured for use by the associated management
+    <para> Additionally, HTTP and JMX ports can be configured for use by the associated management
         plugins. </para>
     <para>This diagram explains how Ports, <link
             linkEnd="Java-Broker-Concepts-Authentication-Providers">Authentication Providers</link>
