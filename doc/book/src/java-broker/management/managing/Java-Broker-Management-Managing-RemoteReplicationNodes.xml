@@ -24,7 +24,7 @@
   <title>Remote Replication Nodes</title>
   <para>Used for HA only. A <link linkend="Java-Broker-Concepts-RemoteReplicationNodes">remote replication node</link> is a representation of another virtualhost node
     in the group. Remote replication nodes are not created directly. Instead the system
-    automatically creates a remote replciation node for every node in the group. It serves to
+    automatically creates a remote replication node for every node in the group. It serves to
     provide a view of the whole group from every node in the system.</para>
   <section id="Java-Broker-Management-Managing-RemoteReplicationNodes-Attributes">
     <title>Attributes</title>
@@ -43,7 +43,7 @@
                 <para><emphasis>REPLICA</emphasis> - Remote node is a replica.</para>
               </listitem>
               <listitem>
-                <para><emphasis>UNREACHABLE</emphasis> - Remote node unreachanble from this node.
+                <para><emphasis>UNREACHABLE</emphasis> - Remote node unreachable from this node.
                   This remote note may be down, or an network problem may prevent it from being
                   contacted.</para>
               </listitem>
@@ -96,7 +96,7 @@
                 <para>The current master awaits the proposed master to become up to date.</para>
               </listitem>
               <listitem>
-                <para>The mastership is transfered. This will automatically disconnect messaging
+                <para>The mastership is transferred. This will automatically disconnect messaging
                   clients from the old master, and in-flight transactions are rolled back. Messaging
                   clients reconnect to the new master.</para>
               </listitem>

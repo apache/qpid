@@ -28,7 +28,7 @@
     cumulative size of all messages falls below the limit once again.</para>
   <para>By default the Broker makes 40% of the max available memory for messages. This memory is
     divided between all the queues across all virtual hosts defined on the Broker with a percentage
-    calculated according to their current queue size. These calulations are refreshed periodically
+    calculated according to their current queue size. These calculations are refreshed periodically
     by the housekeeping cycle.</para>
   <para>For example if there are two queues, one containing 75MB and the second 100MB messages
     respectively and the Broker has 1GB heap memory with the default of 40% available for messages.

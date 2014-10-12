@@ -36,14 +36,14 @@
                 </listitem>
                 <listitem>
                     <para><link linkend="Java-Broker-Management-Channel-REST-API">REST API</link> -
-                        REST API providing complete programatic management of the Broker.</para>
+                        REST API providing complete programmatic management of the Broker.</para>
                 </listitem>
             </itemizedlist></para>
 
         <para>The Web Management Console itself uses the REST API, so every function you can perform
-            through the Web Management Console can be also be scripted and intergrated into other
+            through the Web Management Console can be also be scripted and integrated into other
             systems. This provides a simple integration point allowing the Broker to monitored and
-            controled from systems such as Naoios or BMC Control-M.</para>
+            controlled from systems such as Naoios or BMC Control-M.</para>
     </section>
 
     <section id="Java-Broker-Management-Channel-HTTP-DefaultConfiguration">

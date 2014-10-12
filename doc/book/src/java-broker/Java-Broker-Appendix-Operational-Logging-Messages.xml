@@ -28,7 +28,7 @@
   <title>Operational Logging</title>
 
   <para>The Broker will, by default, produce structured log messages in response to key events in
-    the lives of objects within the Broker. These consise messages are designed to allow the user to
+    the lives of objects within the Broker. These concise messages are designed to allow the user to
     understand the actions of the Broker in retrospect. This is valuable for problem diagnosis and
     provides a useful audit trail.</para>
   <para>Each log message includes details of the entity causing the action (e.g. a management user
@@ -1196,7 +1196,7 @@
         </row>
         <row>
           <entry>
-            <para>The node is no longer reachanble. This may be as a result of the node being
+            <para>The node is no longer reachable. This may be as a result of the node being
               stopped or a network partition may be preventing it from being connected. The node is
               still a member of the group.</para>
           </entry>

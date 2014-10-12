@@ -45,7 +45,7 @@
             </para>
             <para>
                 The capacity and resume capacity can be specified when the queue is created.  This
-                can be done using the Flow Control Settings wintin the Queue creation dialogue.
+                can be done using the Flow Control Settings within the Queue creation dialogue.
             </para>
             <section role="h4">
                 <title>Broker Log Messages</title>

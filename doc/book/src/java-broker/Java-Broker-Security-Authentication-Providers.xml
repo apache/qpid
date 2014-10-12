@@ -199,7 +199,7 @@ com.sun.security.jgss.accept {
       passwords are stored as salted SHA digested password. This can be further encrypted using the
       facilities described in <xref linkend="Java-Broker-Security-Configuration-Encryption"
       />.</para>
-    <para>There are two varients of this provider, SHA1 and SHA256. SHA256 is recommended whenever
+    <para>There are two variants of this provider, SHA1 and SHA256. SHA256 is recommended whenever
       possible. SHA1 is provided with compatibility with clients utilising JDK 1.6 (which does not
       support SHA256).</para>
     <para>For these providers user credentials can be added, removed or changed using

@@ -56,7 +56,7 @@
               (e.g.<literal>${foo}</literal> or <literal>/data/${foo}/</literal>).</para>
         </listitem>
         <listitem>
-          <para>Each entity has own zero or more context variables.</para>
+          <para>Each entity has zero or more context variables.</para>
         </listitem>
         <listitem>
           <para>The System Context entity (the ultimate ancestor of all object) has a context too.

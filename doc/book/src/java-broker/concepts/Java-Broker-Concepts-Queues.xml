@@ -26,5 +26,5 @@
   hold/buffer messages for later delivery to consumer applications. An <link
    linkend="Java-Broker-Concepts-Exchanges">Exchange</link> for passing messages to a queue.
   Consumers subscribe to a queue in order to receive messages for it. </para>
- <para>The Broker supports different queue types, each with different delivery semantics.  It also also messages on a queue to be treated as a group.</para>
+ <para>The Broker supports different queue types, each with different delivery semantics.  It also messages on a queue to be treated as a group.</para>
 </section>

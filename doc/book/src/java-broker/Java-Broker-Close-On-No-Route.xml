@@ -33,7 +33,7 @@
         an <emphasis>AMQNoRouteException</emphasis> through the configured ExceptionListener on the Connection.
         This does not cause channel or connection closure, however it requires a special exception handling
         on client side in order to deal with <emphasis>AMQNoRouteExceptions</emphasis>.
-        This could potentially be a problem when using various messaging frameworks (e.g Mule)
+        This could potentially be a problem when using various messaging frameworks (e.g. Mule)
         as they usually close the connection on receiving any JMSException.
     </para>
     <para>

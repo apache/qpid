@@ -22,8 +22,8 @@
 
 <section id="Java-Broker-Management-Managing-Plugin-HTTP">
     <title>HTTP Plugin</title>
-    <para>The HTTP Plugin provides the <link linkend="Java-Broker-Management-Channel-HTTP">HTTP managenenent channel</link> comprising of the <link linkend="Java-Broker-Management-Channel-Web-Console">Web
-        Managemnt Console</link> and the <link linkend="Java-Broker-Management-Channel-REST-API">REST API</link>.</para>
+    <para>The HTTP Plugin provides the <link linkend="Java-Broker-Management-Channel-HTTP">HTTP management channel</link> comprising of the <link linkend="Java-Broker-Management-Channel-Web-Console">Web
+        Management Console</link> and the <link linkend="Java-Broker-Management-Channel-REST-API">REST API</link>.</para>
     <section id="Java-Broker-Management-Managing-Plugin-HTTP-Attributes">
         <title>Attributes</title>
         <para>

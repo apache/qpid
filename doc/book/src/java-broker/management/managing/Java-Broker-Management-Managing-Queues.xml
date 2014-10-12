@@ -113,7 +113,7 @@
         <listitem>
           <para><emphasis>Maximum/Minimum TTL</emphasis>. Defines a maximum and minimum
             time-to-live. Messages arriving with ttl larger than the maximum will be overridden by
-            the maximum. Similarly, messages arriving with tll less than the miniumum (or no ttl at
+            the maximum. Similarly, messages arriving with tll less than the minimum (or no ttl at
             all), will be overridden by the minimum.</para>
           <para>Changing these values affects only new arrivals, existing messages already on the
             queue are not affected.</para>
@@ -130,7 +130,7 @@
         </listitem>
         <listitem>
           <para><emphasis>Alerting Thresholds</emphasis>. Queues have the ability to alert on a
-            variety of conditions: totol queue depth exceeded a number or size, message age exceeded
+            variety of conditions: total queue depth exceeded a number or size, message age exceeded
             a threshold, message size exceeded a threshold. These thresholds are soft. See <xref
               linkend="Java-Broker-Appendix-Queue-Alerts"/></para>
         </listitem>

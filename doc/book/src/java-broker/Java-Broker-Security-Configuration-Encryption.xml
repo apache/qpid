@@ -23,7 +23,7 @@
 
 <section id="Java-Broker-Security-Configuration-Encryption">
   <title>Configuration Encryption</title>
-  <para> The Broker is capable of encypting passwords and other security items stored in the
+  <para> The Broker is capable of encrypting passwords and other security items stored in the
     Broker's configuration. This is means that items such as keystore/truststore passwords, JDBC
     passwords, and LDAP passwords can be stored in the configure in a form that is difficult to
     read.</para>
@@ -69,6 +69,6 @@
       the user, perhaps owing to the security standards of their institution, the
         <literal>ConfigurationSecretEncrypter</literal> interface is designed as an extension point.
       Users may implement their own implementation of ConfigurationSecretEncrypter perhaps to employ
-      stonger encryption or delegating the storage of the key to an Enterprise Password Safe.</para>
+      stronger encryption or delegating the storage of the key to an Enterprise Password Safe.</para>
   </section>
 </section>
