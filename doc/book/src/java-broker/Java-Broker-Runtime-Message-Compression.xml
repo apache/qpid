@@ -22,19 +22,19 @@
 
 <section id="Java-Broker-Runtime-Message-Compression">
  <title>Message Compression</title>
- <para>The Java Broker supports message compression. This feature works in co-operation with
-  Qpid Clients implementing the same feature.</para>
+ <para>The Java Broker supports<footnote><para>Message compression is not yet supported for the 1.0
+    protocol.</para></footnote> message compression. This feature works in co-operation with Qpid
+  Clients implementing the same feature.</para>
  <para>Once the feature is enabled (using Broker context variable
    <emphasis>broker.messageCompressionEnabled</emphasis>), the Broker will advertise support for the
   message compression feature to the client at connection time. This allows clients to opt to turn
   on message compression, allowing message payload sizes to be reduced.</para>
- <para>If the Broker has connections from client who have message compression enabled and other who
-  do not, it will internally, on-tyhe-fly, decompress compressed messages when sending to clients
-  without support and conversely, compress uncomressed messages when sending to clients who support
-  it.</para>
+ <para>If the Broker has connections from clients who have message compression enabled and others who
+  do not, it will internally, on-the-fly, decompress compressed messages when sending to clients
+  without support and conversely, compress uncomressed messages when sending to clients who do.</para>
  <para>The Broker has a threshold below which it will not consider compressing a message, this is
   controlled by Broker content variable
-   (<literal>connection.messageCompressionThresholdSize</literal>).</para>
+   (<literal>connection.messageCompressionThresholdSize</literal>) and expresses a size in bytes.</para>
  <para>This feature <emphasis>may</emphasis> have a beneficial effect on performance by:</para>
  <itemizedlist>
   <listitem>
@@ -42,7 +42,8 @@
     in the HA case, Broker to Broker, for replication purposes.</para>
   </listitem>
   <listitem>
-   <para>Reducing storage space when data is at rest within the Broker,  both on disk and in memory.</para>
+   <para>Reducing storage space when data is at rest within the Broker, both on disk and in
+    memory.</para>
   </listitem>
  </itemizedlist>
  <para>Of course, compression and decompression is computationally expensive. Turning on the feature
