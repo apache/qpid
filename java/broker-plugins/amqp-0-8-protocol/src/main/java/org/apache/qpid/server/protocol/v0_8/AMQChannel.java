@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
+import static org.apache.qpid.transport.util.Functions.hex;
+
 import java.nio.ByteBuffer;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
@@ -1855,6 +1857,15 @@ public class AMQChannel
                                      final boolean passive,
                                      final boolean active, final boolean write, final boolean read)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] AccessRequest[" +" realm: " + realm +
+                          " exclusive: " + exclusive +
+                          " passive: " + passive +
+                          " active: " + active +
+                          " write: " + write + " read: " + read + " ]");
+        }
+
         MethodRegistry methodRegistry = _connection.getMethodRegistry();
 
         if (ProtocolVersion.v0_91.equals(_connection.getProtocolVersion()))
@@ -1876,12 +1887,23 @@ public class AMQChannel
     @Override
     public void receiveBasicAck(final long deliveryTag, final boolean multiple)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] BasicAck[" +" deliveryTag: " + deliveryTag + " multiple: " + multiple + " ]");
+        }
+
         acknowledgeMessage(deliveryTag, multiple);
     }
 
     @Override
     public void receiveBasicCancel(final AMQShortString consumerTag, final boolean nowait)
     {
+
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] BasicCancel[" +" consumerTag: " + consumerTag + " noWait: " + nowait + " ]");
+        }
+
         unsubscribeConsumer(consumerTag);
         if (!nowait)
         {
@@ -1899,6 +1921,16 @@ public class AMQChannel
                                     final boolean noAck,
                                     final boolean exclusive, final boolean nowait, final FieldTable arguments)
     {
+
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] BasicConsume[" +" queue: " + queue +
+                          " consumerTag: " + consumerTag +
+                          " noLocal: " + noLocal +
+                          " noAck: " + noAck +
+                          " exclusive: " + exclusive + " nowait: " + nowait + " arguments: " + arguments + " ]");
+        }
+
         AMQShortString consumerTag1 = consumerTag;
         VirtualHostImpl<?, ?, ?> vHost = _connection.getVirtualHost();
         sync();
@@ -2020,6 +2052,11 @@ public class AMQChannel
     @Override
     public void receiveBasicGet(final AMQShortString queueName, final boolean noAck)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] BasicGet[" +" queue: " + queueName + " noAck: " + noAck + " ]");
+        }
+
         VirtualHostImpl vHost = _connection.getVirtualHost();
         sync();
         AMQQueue queue = queueName == null ? getDefaultQueue() : vHost.getQueue(queueName.toString());
@@ -2080,6 +2117,14 @@ public class AMQChannel
                                     final boolean mandatory,
                                     final boolean immediate)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] BasicPublish[" +" exchange: " + exchangeName +
+                          " routingKey: " + routingKey +
+                          " mandatory: " + mandatory +
+                          " immediate: " + immediate + " ]");
+        }
+
         VirtualHostImpl vHost = _connection.getVirtualHost();
 
         MessageDestination destination;
@@ -2121,6 +2166,11 @@ public class AMQChannel
     @Override
     public void receiveBasicQos(final long prefetchSize, final int prefetchCount, final boolean global)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] BasicQos[" +" prefetchSize: " + prefetchSize + " prefetchCount: " + prefetchCount + " global: " + global + " ]");
+        }
+
         sync();
         setCredit(prefetchSize, prefetchCount);
 
@@ -2133,6 +2183,11 @@ public class AMQChannel
     @Override
     public void receiveBasicRecover(final boolean requeue, final boolean sync)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] BasicRecover[" + " requeue: " + requeue + " sync: " + sync + " ]");
+        }
+
         resend();
 
         if (sync)
@@ -2149,6 +2204,11 @@ public class AMQChannel
     @Override
     public void receiveBasicReject(final long deliveryTag, final boolean requeue)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] BasicReject[" +" deliveryTag: " + deliveryTag + " requeue: " + requeue + " ]");
+        }
+
         MessageInstance message = getUnacknowledgedMessageMap().get(deliveryTag);
 
         if (message == null)
@@ -2228,6 +2288,12 @@ public class AMQChannel
                                     final int classId,
                                     final int methodId)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] ChannelClose[" +" replyCode: " + replyCode + " replyText: " + replyText + " classId: " + classId + " methodId: " + methodId + " ]");
+        }
+
+
         sync();
         _connection.closeChannel(this);
 
@@ -2238,12 +2304,21 @@ public class AMQChannel
     @Override
     public void receiveChannelCloseOk()
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] ChannelCloseOk");
+        }
+
         _connection.closeChannelOk(getChannelId());
     }
 
     @Override
     public void receiveMessageContent(final byte[] data)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] MessageContent[" +" data: " + hex(data,_connection.getBinaryDataLimit()) + " ] ");
+        }
 
         if(hasCurrentMessage())
         {
@@ -2260,6 +2335,11 @@ public class AMQChannel
     @Override
     public void receiveMessageHeader(final BasicContentHeaderProperties properties, final long bodySize)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] MessageHeader[ properties: {" + properties + "} bodySize: " + bodySize + " ]");
+        }
+
         if(hasCurrentMessage())
         {
             publishContentHeader(new ContentHeaderBody(properties, bodySize));
@@ -2281,6 +2361,12 @@ public class AMQChannel
     @Override
     public void receiveChannelFlow(final boolean active)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] ChannelFlow[" +" active: " + active + " ]");
+        }
+
+
         sync();
         setSuspended(!active);
 
@@ -2293,6 +2379,11 @@ public class AMQChannel
     @Override
     public void receiveChannelFlowOk(final boolean active)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] ChannelFlowOk[" +" active: " + active + " ]");
+        }
+
         // TODO - should we do anything here?
     }
 
@@ -2301,6 +2392,12 @@ public class AMQChannel
                                      final AMQShortString routingKey,
                                      final AMQShortString queueName)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] ExchangeBound[" +" exchange: " + exchangeName + " routingKey: " +
+                          routingKey + " queue: " + queueName + " ]");
+        }
+
         VirtualHostImpl virtualHost = _connection.getVirtualHost();
         MethodRegistry methodRegistry = _connection.getMethodRegistry();
 
@@ -2476,6 +2573,16 @@ public class AMQChannel
                                        final boolean nowait,
                                        final FieldTable arguments)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] ExchangeDeclare[" +" exchange: " + exchangeName +
+                          " type: " + type +
+                          " passive: " + passive +
+                          " durable: " + durable +
+                          " autoDelete: " + autoDelete +
+                          " internal: " + internal + " nowait: " + nowait + " arguments: " + arguments + " ]");
+        }
+
         ExchangeImpl exchange;
         VirtualHostImpl<?, ?, ?> virtualHost = _connection.getVirtualHost();
         if (isDefaultExchange(exchangeName))
@@ -2620,6 +2727,12 @@ public class AMQChannel
     @Override
     public void receiveExchangeDelete(final AMQShortString exchangeStr, final boolean ifUnused, final boolean nowait)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] ExchangeDelete[" +" exchange: " + exchangeStr + " ifUnused: " + ifUnused + " nowait: " + nowait + " ]");
+        }
+
+
         VirtualHostImpl virtualHost = _connection.getVirtualHost();
         sync();
         try
@@ -2673,6 +2786,14 @@ public class AMQChannel
                                  final boolean nowait,
                                  final FieldTable argumentsTable)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] QueueBind[" +" queue: " + queueName +
+                          " exchange: " + exchange +
+                          " bindingKey: " + routingKey +
+                          " nowait: " + nowait + " arguments: " + argumentsTable + " ]");
+        }
+
         VirtualHostImpl virtualHost = _connection.getVirtualHost();
         AMQQueue<?> queue;
         if (queueName == null)
@@ -2777,6 +2898,15 @@ public class AMQChannel
                                     final boolean nowait,
                                     final FieldTable arguments)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] QueueDeclare[" +" queue: " + queueStr +
+                          " passive: " + passive +
+                          " durable: " + durable +
+                          " exclusive: " + exclusive +
+                          " autoDelete: " + autoDelete + " nowait: " + nowait + " arguments: " + arguments + " ]");
+        }
+
         VirtualHostImpl virtualHost = _connection.getVirtualHost();
 
         final AMQShortString queueName;
@@ -2966,6 +3096,11 @@ public class AMQChannel
                                    final boolean ifEmpty,
                                    final boolean nowait)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] QueueDelete[" +" queue: " + queueName + " ifUnused: " + ifUnused + " ifEmpty: " + ifEmpty + " nowait: " + nowait + " ]");
+        }
+
         VirtualHostImpl virtualHost = _connection.getVirtualHost();
         sync();
         AMQQueue queue;
@@ -3028,6 +3163,11 @@ public class AMQChannel
     @Override
     public void receiveQueuePurge(final AMQShortString queueName, final boolean nowait)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] QueuePurge[" +" queue: " + queueName + " nowait: " + nowait + " ]");
+        }
+
         VirtualHostImpl virtualHost = _connection.getVirtualHost();
         AMQQueue queue = null;
         if (queueName == null && (queue = getDefaultQueue()) == null)
@@ -3073,6 +3213,14 @@ public class AMQChannel
                                    final AMQShortString routingKey,
                                    final FieldTable arguments)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] QueueUnbind[" +" queue: " + queueName +
+                          " exchange: " + exchange +
+                          " bindingKey: " + routingKey +
+                          " arguments: " + arguments + " ]");
+        }
+
         VirtualHostImpl virtualHost = _connection.getVirtualHost();
 
 
@@ -3132,6 +3280,11 @@ public class AMQChannel
     @Override
     public void receiveTxSelect()
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] TxSelect");
+        }
+
         setLocalTransactional();
 
         MethodRegistry methodRegistry = _connection.getMethodRegistry();
@@ -3143,6 +3296,12 @@ public class AMQChannel
     @Override
     public void receiveTxCommit()
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] TxCommit");
+        }
+
+
         if (!isTransactional())
         {
             closeChannel(AMQConstant.COMMAND_INVALID,
@@ -3165,6 +3324,11 @@ public class AMQChannel
     @Override
     public void receiveTxRollback()
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] TxRollback");
+        }
+
         if (!isTransactional())
         {
             closeChannel(AMQConstant.COMMAND_INVALID,

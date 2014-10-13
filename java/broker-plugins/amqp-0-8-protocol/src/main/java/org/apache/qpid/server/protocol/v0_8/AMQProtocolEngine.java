@@ -99,6 +99,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     // channels.  This value must be of the form 2^x - 1.
     private static final int CHANNEL_CACHE_SIZE = 0xff;
     private static final int REUSABLE_BYTE_BUFFER_CAPACITY = 65 * 1024;
+    public static final String BROKER_DEBUG_BINARY_DATA_LENGTH = "broker.debug.binaryDataLength";
+    public static final int DEFAULT_DEBUG_BINARY_DATA_LENGTH = 80;
     private final Port<?> _port;
     private final long _creationTime;
 
@@ -180,6 +182,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     private int _messageCompressionThreshold;
     private int _currentClassId;
     private int _currentMethodId;
+    private int _binaryDataLimit;
 
     public AMQProtocolEngine(Broker broker,
                              final NetworkConnection network,
@@ -195,7 +198,9 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         _decoder = new BrokerDecoder(this);
         _connectionID = connectionId;
         _logSubject = new ConnectionLogSubject(this);
-
+        _binaryDataLimit = _broker.getContextKeys(false).contains(BROKER_DEBUG_BINARY_DATA_LENGTH)
+                ? _broker.getContextValue(Integer.class, BROKER_DEBUG_BINARY_DATA_LENGTH)
+                : DEFAULT_DEBUG_BINARY_DATA_LENGTH;
         _authorizedSubject.getPrincipals().add(new ConnectionPrincipal(this));
         runAsSubject(new PrivilegedAction<Void>()
         {
@@ -1365,6 +1370,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     @Override
     public void receiveChannelOpen(final int channelId)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + channelId + "] ChannelOpen");
+        }
+
         // Protect the broker against out of order frame request.
         if (_virtualHost == null)
         {
@@ -1405,6 +1415,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                                       AMQShortString capabilities,
                                       boolean insist)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV ConnectionOpen[" +" virtualHost: " + virtualHostName + " capabilities: " + capabilities + " insist: " + insist + " ]");
+        }
+
         String virtualHostStr;
         if ((virtualHostName != null) && virtualHostName.charAt(0) == '/')
         {
@@ -1462,6 +1477,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                                        final int classId,
                                        final int methodId)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV ConnectionClose[" +" replyCode: " + replyCode + " replyText: " + replyText + " classId: " + classId + " methodId: " + methodId + " ]");
+        }
+
         if (_logger.isInfoEnabled())
         {
             _logger.info("ConnectionClose received with reply code/reply text " + replyCode + "/" +
@@ -1487,6 +1507,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     @Override
     public void receiveConnectionCloseOk()
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV ConnectionCloseOk");
+        }
 
         _logger.info("Received Connection-close-ok");
 
@@ -1503,6 +1527,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     @Override
     public void receiveConnectionSecureOk(final byte[] response)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV ConnectionSecureOk[ response: ******** ] ");
+        }
 
         Broker<?> broker = getBroker();
 
@@ -1579,6 +1607,19 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                                          final byte[] response,
                                          final AMQShortString locale)
     {
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV ConnectionStartOk["
+                          + " clientProperties: "
+                          + clientProperties
+                          + " mechanism: "
+                          + mechanism
+                          + " response: ********"
+                          + " locale: "
+                          + locale
+                          + " ]");
+        }
+
         Broker<?> broker = getBroker();
 
         _logger.info("SASL Mechanism selected: " + mechanism);
@@ -1658,6 +1699,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     @Override
     public void receiveConnectionTuneOk(final int channelMax, final long frameMax, final int heartbeat)
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV ConnectionTuneOk[" +" channelMax: " + channelMax + " frameMax: " + frameMax + " heartbeat: " + heartbeat + " ]");
+        }
+
         initHeartbeats(heartbeat);
 
         int brokerFrameMax = getBroker().getContextValue(Integer.class, Broker.BROKER_FRAME_SIZE);
@@ -1690,6 +1736,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                                                ? 0xFFFFL
                                                : channelMax);
         }
+    }
+
+    public int getBinaryDataLimit()
+    {
+        return _binaryDataLimit;
     }
 
     public final class WriteDeliverMethod
@@ -1810,12 +1861,23 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     @Override
     public void receiveHeartbeat()
     {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV Heartbeat");
+        }
+
         // No op
     }
 
     @Override
     public void receiveProtocolHeader(final ProtocolInitiation protocolInitiation)
     {
+
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV ProtocolHeader [" + protocolInitiation + " ]");
+        }
+
         protocolInitiationReceived(protocolInitiation);
     }
 

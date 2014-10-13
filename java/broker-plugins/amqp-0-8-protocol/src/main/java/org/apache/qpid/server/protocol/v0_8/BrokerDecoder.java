@@ -26,6 +26,8 @@ import java.security.PrivilegedExceptionAction;
 
 import javax.security.auth.Subject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.qpid.codec.MarkableDataInput;
 import org.apache.qpid.codec.ServerDecoder;
 import org.apache.qpid.framing.AMQFrameDecodingException;
@@ -33,6 +35,7 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class BrokerDecoder extends ServerDecoder
 {
+    private static final Logger _logger = Logger.getLogger(BrokerDecoder.class);
     private final AMQProtocolEngine _connection;
     /**
      * Creates a new AMQP decoder.
@@ -49,6 +52,11 @@ public class BrokerDecoder extends ServerDecoder
     protected void processFrame(final int channelId, final byte type, final long bodySize, final MarkableDataInput in)
             throws AMQFrameDecodingException, IOException
     {
+        long startTime = 0;
+        if (_logger.isDebugEnabled())
+        {
+            startTime = System.currentTimeMillis();
+        }
         Subject subject;
         AMQChannel channel = _connection.getChannel(channelId);
         if(channel == null)
@@ -72,6 +80,11 @@ public class BrokerDecoder extends ServerDecoder
                     return null;
                 }
             });
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Frame handled in " + (System.currentTimeMillis() - startTime) + " ms.");
+            }
+
         }
         catch (PrivilegedActionException e)
         {
