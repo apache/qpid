@@ -659,7 +659,7 @@ under the License.
     <title>Broker options affecting federation</title>
     <para>
       The following broker options affect federation:
-      <table frame="all" id="ha-broker-options">
+      <table frame="all" id="federation-broker-options-table">
 	<title>Broker Options for Federation</title>
 	<tgroup align="left" cols="2" colsep="1" rowsep="1">
 	  <colspec colname="c1"/>
