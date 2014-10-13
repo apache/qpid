@@ -28,7 +28,8 @@
   <para>The Broker can only be managed via the HTTP management channel.</para>
   <section id="Java-Broker-Management-Managing-Broker-Attributes">
     <title>Attributes</title>
-    <para><itemizedlist>
+    <para>
+      <itemizedlist>
         <listitem>
           <para><emphasis>Name the Broker</emphasis>. This helps distinguish between Brokers in
             environments that have many.</para>
@@ -42,27 +43,38 @@
           <para><emphasis>Heartbeating</emphasis>. Enables heartbeats between Broker and Clients.
             Heartbeats help discover severed TCP/IP connections in a timely manner.</para>
         </listitem>
-      </itemizedlist></para>
+      </itemizedlist>
+    </para>
   </section>
   <section id="Java-Broker-Management-Managing-Broker-Context">
     <title>Context</title>
     <para>
       <itemizedlist>
-        <listitem><para><emphasis>broker.flowToDiskThreshold</emphasis> Controls the <link linkend="Java-Broker-Runtime-Flow-To-Disk">flow to disk</link> feature.</para></listitem>
-        <listitem><para><emphasis>broker.messageCompressionEnabled</emphasis> Controls the message compression feature (co-operative feature with some Qpid clients).</para></listitem>
+        <listitem>
+          <para><emphasis>broker.flowToDiskThreshold</emphasis> Controls the <link
+              linkend="Java-Broker-Runtime-Flow-To-Disk">flow to disk</link> feature.</para>
+        </listitem>
+        <listitem>
+          <para><emphasis>broker.messageCompressionEnabled</emphasis> Controls the <link
+              linkend="Java-Broker-Runtime-Message-Compression">message compression</link> .</para>
+        </listitem>
       </itemizedlist>
-      
     </para>
   </section>
   <section id="Java-Broker-Management-Managing-Broker-Children">
     <title>Children</title>
-    <para><itemizedlist>
+    <para>
+      <itemizedlist>
         <listitem>
-          <para><link linkend="Java-Broker-Management-Managing-Virtualhost-Nodes">Virtualhost
-              nodes</link></para>
+          <para>
+            <link linkend="Java-Broker-Management-Managing-Virtualhost-Nodes">Virtualhost
+              nodes</link>
+          </para>
         </listitem>
         <listitem>
-          <para><link linkend="Java-Broker-Management-Managing-Ports">Ports</link></para>
+          <para>
+            <link linkend="Java-Broker-Management-Managing-Ports">Ports</link>
+          </para>
         </listitem>
         <listitem>
           <para>Authentication Providers</para>
@@ -76,7 +88,8 @@
         <listitem>
           <para>Access Control Providers</para>
         </listitem>
-      </itemizedlist></para>
+      </itemizedlist>
+    </para>
   </section>
   <section id="Java-Broker-Management-Managing-Broker-Lifecycle">
     <title>Lifecycle</title>

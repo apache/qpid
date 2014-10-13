@@ -87,6 +87,18 @@
                         <para>Setting this property to 'false' will disable that check and
                             allow you to ignore host name errors.</para></entry>
                 </row>
+				<row id="JMS-Client-0-8-System-Properties-ConnectionCompressMessages">
+					<entry>qpid.connection_compress_messages</entry>
+					<entry>Boolean</entry>
+					<entry>false</entry>
+					<entry><para>Controls whether the client will compress messages before they they are sent.</para></entry>
+				</row>
+				<row id="JMS-Client-0-8-System-Properties-MessageCompressionThresholdSize">
+					<entry>qpid.message_compression_threshold_size</entry>
+					<entry>Integer</entry>
+					<entry>102400</entry>
+					<entry><para>The payload size beyond which the client will start to compress message payloads.</para></entry>
+				</row>
 			</tbody>
 		</tgroup>
 	</table>
@@ -108,8 +120,7 @@
 					<entry>qpid.dest_syntax</entry>
 					<entry>String</entry>
 					<entry>ADDR</entry>
-					<entry><para>The default addressing syntax.  The Address (ADDR) syntax is supported when using AMQP 0-10.  Binding URL (BURL)
-					  is supported by AMQP protocols 0-8 through to 0-10.</para></entry>
+					<entry><para>Addressing syntax: ADDR (Address format) or BURL (Binding URL)</para></entry>
 				</row>
 				<row id="JMS-Client-0-8-System-Properties-Maxprefetch">
 					<entry>max_prefetch</entry>
@@ -121,8 +132,6 @@
 								linkend="JMS-Client-0-8-Connection-URL-ConnectionOptions-Maxprefetch"
 								>Connection URL</link> options.</para></entry>
 				</row>
-
-
 				<!-- 0-10
 				<row>
 					<entry>qpid.session.command_limit</entry>
