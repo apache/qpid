@@ -41,7 +41,7 @@
 
   <class name="Journal">
     <property name="queueRef"           type="objId"  access="RO" references="qpid.Queue" isGeneralReference="y"/>
-    <property name="name"               type="sstr"   access="RO" index="y"/>
+    <property name="name"               type="sstr"   access="RC" index="y"/>
     <property name="directory"          type="sstr"   access="RO"              desc="Directory containing journal files"/>
     <property name="baseFileName"       type="sstr"   access="RO"              desc="Deprecated"/>
     <property name="writePageSize"      type="uint32" access="RO" unit="byte"  desc="Deprecated"/>
