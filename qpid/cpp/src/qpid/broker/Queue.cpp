@@ -646,10 +646,8 @@ void Queue::purgeExpired(sys::Duration lapse) {
         // Report the count of discarded-by-ttl messages
         //
         if (mgmtObject && count) {
-            mgmtObject->inc_acquires(count);
             mgmtObject->inc_discardsTtl(count);
             if (brokerMgmtObject) {
-                brokerMgmtObject->inc_acquires(count);
                 brokerMgmtObject->inc_discardsTtl(count);
             }
         }
