@@ -138,7 +138,8 @@ public class ExchangeDeleteBody extends AMQMethodBodyImpl implements EncodableAM
         return buf.toString();
     }
 
-    public static void process(final int channelId, final MarkableDataInput buffer, final MethodProcessor dispatcher)
+    public static void process(final MarkableDataInput buffer,
+                               final ServerChannelMethodProcessor dispatcher)
             throws IOException
     {
 
@@ -147,6 +148,9 @@ public class ExchangeDeleteBody extends AMQMethodBodyImpl implements EncodableAM
         byte bitfield = buffer.readByte();
         boolean ifUnused = (bitfield & 0x01) == 0x01;
         boolean nowait = (bitfield & 0x02) == 0x02;
-        dispatcher.receiveExchangeDelete(channelId, exchange, ifUnused, nowait);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveExchangeDelete(exchange, ifUnused, nowait);
+        }
     }
 }

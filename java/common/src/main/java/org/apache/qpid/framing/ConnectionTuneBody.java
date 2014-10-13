@@ -119,12 +119,15 @@ public class ConnectionTuneBody extends AMQMethodBodyImpl implements EncodableAM
         return buf.toString();
     }
 
-    public static void process(final MarkableDataInput buffer, final MethodProcessor dispatcher) throws IOException
+    public static void process(final MarkableDataInput buffer, final ClientMethodProcessor dispatcher) throws IOException
     {
 
         int channelMax = buffer.readUnsignedShort();
         long frameMax = EncodingUtils.readUnsignedInteger(buffer);
         int heartbeat = buffer.readUnsignedShort();
-        dispatcher.receiveConnectionTune(channelMax, frameMax, heartbeat);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveConnectionTune(channelMax, frameMax, heartbeat);
+        }
     }
 }

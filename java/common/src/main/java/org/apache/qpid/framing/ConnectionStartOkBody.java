@@ -126,7 +126,7 @@ public class ConnectionStartOkBody extends AMQMethodBodyImpl implements Encodabl
         return buf.toString();
     }
 
-    public static void process(final MarkableDataInput in, final MethodProcessor dispatcher)
+    public static void process(final MarkableDataInput in, final ServerMethodProcessor dispatcher)
             throws IOException, AMQFrameDecodingException
     {
 
@@ -134,7 +134,9 @@ public class ConnectionStartOkBody extends AMQMethodBodyImpl implements Encodabl
         AMQShortString mechanism = in.readAMQShortString();
         byte[] response = EncodingUtils.readBytes(in);
         AMQShortString locale = in.readAMQShortString();
-
-        dispatcher.receiveConnectionStartOk(clientProperties, mechanism, response, locale);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveConnectionStartOk(clientProperties, mechanism, response, locale);
+        }
     }
 }

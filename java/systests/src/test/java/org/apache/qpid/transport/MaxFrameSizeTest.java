@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
@@ -40,13 +41,13 @@ import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 
+import org.apache.qpid.codec.AMQDecoder;
+import org.apache.qpid.codec.ClientDecoder;
 import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQDataBlockDecoder;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.AMQProtocolVersionException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ByteArrayDataInput;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.ConnectionTuneOkBody;
@@ -234,14 +235,9 @@ public class MaxFrameSizeTest extends QpidBrokerTestCase
         }
 
         byte[] serverData = baos.toByteArray();
-        ByteArrayDataInput badi = new ByteArrayDataInput(serverData);
-        AMQDataBlockDecoder datablockDecoder = new AMQDataBlockDecoder();
         final FrameCreatingMethodProcessor methodProcessor = new FrameCreatingMethodProcessor(ProtocolVersion.v0_91);
-
-        while (datablockDecoder.decodable(badi))
-        {
-            datablockDecoder.processInput(methodProcessor, badi);
-        }
+        AMQDecoder decoder = new ClientDecoder(methodProcessor);
+        decoder.decodeBuffer(ByteBuffer.wrap(serverData));
 
         evaluator.evaluate(socket, methodProcessor.getProcessedMethods());
     }

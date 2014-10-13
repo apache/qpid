@@ -92,11 +92,13 @@ public class ChannelFlowBody extends AMQMethodBodyImpl implements EncodableAMQDa
         return buf.toString();
     }
 
-    public static void process(final int channelId,
-                                final MarkableDataInput buffer,
-                                final MethodProcessor dispatcher) throws IOException
+    public static void process(final MarkableDataInput buffer,
+                               final ChannelMethodProcessor dispatcher) throws IOException
     {
         boolean active = (buffer.readByte() & 0x01) == 0x01;
-        dispatcher.receiveChannelFlow(channelId, active);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveChannelFlow(active);
+        }
     }
 }

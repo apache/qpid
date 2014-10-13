@@ -96,10 +96,14 @@ public class BasicCancelOkBody extends AMQMethodBodyImpl implements EncodableAMQ
         return buf.toString();
     }
 
-    public static void process(final int channelId, final MarkableDataInput in, final MethodProcessor dispatcher)
+    public static void process(final MarkableDataInput in,
+                               final ClientChannelMethodProcessor dispatcher)
             throws IOException
     {
         AMQShortString consumerTag = in.readAMQShortString();
-        dispatcher.receiveBasicCancelOk(channelId, consumerTag);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveBasicCancelOk(consumerTag);
+        }
     }
 }

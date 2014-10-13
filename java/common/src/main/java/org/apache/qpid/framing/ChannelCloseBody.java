@@ -132,15 +132,17 @@ public class ChannelCloseBody extends AMQMethodBodyImpl implements EncodableAMQD
         return buf.toString();
     }
 
-    public static void process(final int channelId,
-                                final MarkableDataInput buffer,
-                                final MethodProcessor dispatcher) throws IOException
+    public static void process(final MarkableDataInput buffer,
+                               final ChannelMethodProcessor dispatcher) throws IOException
     {
 
         int replyCode = buffer.readUnsignedShort();
         AMQShortString replyText = buffer.readAMQShortString();
         int classId = buffer.readUnsignedShort();
         int methodId = buffer.readUnsignedShort();
-        dispatcher.receiveChannelClose(channelId, replyCode, replyText, classId, methodId);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveChannelClose(replyCode, replyText, classId, methodId);
+        }
     }
 }

@@ -96,10 +96,13 @@ public class ConnectionOpenOkBody extends AMQMethodBodyImpl implements Encodable
         return buf.toString();
     }
 
-    public static void process(final MarkableDataInput buffer, final MethodProcessor dispatcher) throws IOException
+    public static void process(final MarkableDataInput buffer, final ClientMethodProcessor dispatcher) throws IOException
     {
         AMQShortString knownHosts = buffer.readAMQShortString();
-        dispatcher.receiveConnectionOpenOk(knownHosts);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveConnectionOpenOk(knownHosts);
+        }
 
     }
 }

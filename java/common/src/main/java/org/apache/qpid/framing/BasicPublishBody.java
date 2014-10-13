@@ -151,9 +151,8 @@ public class BasicPublishBody extends AMQMethodBodyImpl implements EncodableAMQD
         return buf.toString();
     }
 
-    public static void process(final int channelId,
-                                final MarkableDataInput buffer,
-                                final MethodProcessor dispatcher) throws IOException
+    public static void process(final MarkableDataInput buffer,
+                               final ServerChannelMethodProcessor dispatcher) throws IOException
     {
 
         int ticket = buffer.readUnsignedShort();
@@ -163,6 +162,9 @@ public class BasicPublishBody extends AMQMethodBodyImpl implements EncodableAMQD
 
         boolean mandatory = (bitfield & 0x01) != 0;
         boolean immediate = (bitfield & 0x02) != 0;
-        dispatcher.receiveBasicPublish(channelId, exchange, routingKey, mandatory, immediate);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveBasicPublish(exchange, routingKey, mandatory, immediate);
+        }
     }
 }

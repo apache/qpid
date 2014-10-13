@@ -136,7 +136,7 @@ public class ConnectionStartBody extends AMQMethodBodyImpl implements EncodableA
         return buf.toString();
     }
 
-    public static void process(final MarkableDataInput in, final MethodProcessor dispatcher)
+    public static void process(final MarkableDataInput in, final ClientMethodProcessor dispatcher)
             throws IOException, AMQFrameDecodingException
     {
         short versionMajor = (short) in.readUnsignedByte();
@@ -145,7 +145,9 @@ public class ConnectionStartBody extends AMQMethodBodyImpl implements EncodableA
         byte[] mechanisms = EncodingUtils.readBytes(in);
         byte[] locales = EncodingUtils.readBytes(in);
 
-
-        dispatcher.receiveConnectionStart(versionMajor, versionMinor, serverProperties, mechanisms, locales);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveConnectionStart(versionMajor, versionMinor, serverProperties, mechanisms, locales);
+        }
     }
 }

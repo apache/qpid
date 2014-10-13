@@ -48,6 +48,7 @@ import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateWaiter;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.codec.AMQDecoder;
+import org.apache.qpid.codec.ClientDecoder;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
@@ -193,7 +194,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         _connection = con;
         _protocolSession = new AMQProtocolSession(this, _connection);
         _stateManager = new AMQStateManager(_protocolSession);
-        _decoder = new AMQDecoder(false, _protocolSession.getMethodProcessor());
+        _decoder = new ClientDecoder(_protocolSession.getMethodProcessor());
         _failoverHandler = new FailoverHandler(this);
     }
 

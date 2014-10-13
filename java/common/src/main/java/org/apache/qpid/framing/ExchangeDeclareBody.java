@@ -204,9 +204,8 @@ public class ExchangeDeclareBody extends AMQMethodBodyImpl implements EncodableA
         return buf.toString();
     }
 
-    public static void process(final int channelId,
-                                final MarkableDataInput buffer,
-                                final MethodProcessor dispatcher) throws IOException, AMQFrameDecodingException
+    public static void process(final MarkableDataInput buffer,
+                               final ServerChannelMethodProcessor dispatcher) throws IOException, AMQFrameDecodingException
     {
 
         int ticket = buffer.readUnsignedShort();
@@ -219,14 +218,16 @@ public class ExchangeDeclareBody extends AMQMethodBodyImpl implements EncodableA
         boolean internal = (bitfield & 0x8) == 0x8;
         boolean nowait = (bitfield & 0x10) == 0x10;
         FieldTable arguments = EncodingUtils.readFieldTable(buffer);
-        dispatcher.receiveExchangeDeclare(channelId,
-                                          exchange,
-                                          type,
-                                          passive,
-                                          durable,
-                                          autoDelete,
-                                          internal,
-                                          nowait,
-                                          arguments);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveExchangeDeclare(exchange,
+                                              type,
+                                              passive,
+                                              durable,
+                                              autoDelete,
+                                              internal,
+                                              nowait,
+                                              arguments);
+        }
     }
 }

@@ -84,9 +84,12 @@ public class ChannelOpenBody extends AMQMethodBodyImpl implements EncodableAMQDa
 
     public static void process(final int channelId,
                                 final MarkableDataInput buffer,
-                                final MethodProcessor dispatcher) throws IOException
+                                final ServerMethodProcessor dispatcher) throws IOException
     {
         buffer.readAMQShortString();
-        dispatcher.receiveChannelOpen(channelId);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveChannelOpen(channelId);
+        }
     }
 }

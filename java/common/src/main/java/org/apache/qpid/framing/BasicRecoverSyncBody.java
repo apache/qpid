@@ -103,11 +103,13 @@ public class BasicRecoverSyncBody extends AMQMethodBodyImpl implements Encodable
         return buf.toString();
     }
 
-    public static void process(final int channelId,
-                                final MarkableDataInput in,
-                                final MethodProcessor dispatcher) throws IOException
+    public static void process(final MarkableDataInput in,
+                               final ServerChannelMethodProcessor dispatcher) throws IOException
     {
         boolean requeue = (in.readByte() & 0x01) == 0x01;
-        dispatcher.receiveBasicRecover(channelId, requeue, true);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveBasicRecover(requeue, true);
+        }
     }
 }

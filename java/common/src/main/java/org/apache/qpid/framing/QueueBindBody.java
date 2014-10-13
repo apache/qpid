@@ -165,9 +165,8 @@ public class QueueBindBody extends AMQMethodBodyImpl implements EncodableAMQData
         return buf.toString();
     }
 
-    public static void process(final int channelId,
-                                final MarkableDataInput buffer,
-                                final MethodProcessor dispatcher) throws IOException, AMQFrameDecodingException
+    public static void process(final MarkableDataInput buffer,
+                               final ServerChannelMethodProcessor dispatcher) throws IOException, AMQFrameDecodingException
     {
 
         int ticket = buffer.readUnsignedShort();
@@ -176,6 +175,9 @@ public class QueueBindBody extends AMQMethodBodyImpl implements EncodableAMQData
         AMQShortString bindingKey = buffer.readAMQShortString();
         boolean nowait = (buffer.readByte() & 0x01) == 0x01;
         FieldTable arguments = EncodingUtils.readFieldTable(buffer);
-        dispatcher.receiveQueueBind(channelId, queue, exchange, bindingKey, nowait, arguments);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveQueueBind(queue, exchange, bindingKey, nowait, arguments);
+        }
     }
 }

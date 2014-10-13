@@ -155,9 +155,8 @@ public class ContentHeaderBody implements AMQBody
         _bodySize = bodySize;
     }
 
-    public static void process(final int channelId,
-                                final MarkableDataInput buffer,
-                                final MethodProcessor methodProcessor, final long size)
+    public static void process(final MarkableDataInput buffer,
+                               final ChannelMethodProcessor methodProcessor, final long size)
             throws IOException, AMQFrameDecodingException
     {
 
@@ -168,13 +167,13 @@ public class ContentHeaderBody implements AMQBody
 
         BasicContentHeaderProperties properties;
 
-        if (classId != BasicConsumeBody.CLASS_ID)
+        if (classId != CLASS_ID)
         {
             throw new AMQFrameDecodingException(null, "Unsupported content header class id: " + classId, null);
         }
-            properties = new BasicContentHeaderProperties();
+        properties = new BasicContentHeaderProperties();
         properties.populatePropertiesFromBuffer(buffer, propertyFlags, (int)(size-14));
 
-        methodProcessor.receiveMessageHeader(channelId, properties, bodySize);
+        methodProcessor.receiveMessageHeader(properties, bodySize);
     }
 }

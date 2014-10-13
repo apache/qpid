@@ -20,21 +20,19 @@
  */
 package org.apache.qpid.framing;
 
-public interface MethodProcessor<T extends ChannelMethodProcessor>
+public interface ChannelMethodProcessor
 {
-    ProtocolVersion getProtocolVersion();
+    void receiveChannelFlow(boolean active);
 
-    T getChannelMethodProcessor(int channelId);
+    void receiveChannelFlowOk(boolean active);
 
-    void receiveConnectionClose(int replyCode, AMQShortString replyText, int classId, int methodId);
+    void receiveChannelClose(int replyCode, AMQShortString replyText, int classId, int methodId);
 
-    void receiveConnectionCloseOk();
+    void receiveChannelCloseOk();
 
-    void receiveHeartbeat();
+    void receiveMessageContent(byte[] data);
 
-    void receiveProtocolHeader(ProtocolInitiation protocolInitiation);
-
-    void setCurrentMethod(int classId, int methodId);
+    void receiveMessageHeader(BasicContentHeaderProperties properties, long bodySize);
 
     boolean ignoreAllButCloseOk();
 }

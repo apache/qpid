@@ -108,10 +108,13 @@ public class ConnectionRedirectBody extends AMQMethodBodyImpl implements Encodab
         return buf.toString();
     }
 
-    public static void process(final MarkableDataInput buffer, final MethodProcessor dispatcher) throws IOException
+    public static void process(final MarkableDataInput buffer, final ClientMethodProcessor dispatcher) throws IOException
     {
         AMQShortString host = buffer.readAMQShortString();
         AMQShortString knownHosts = buffer.readAMQShortString();
-        dispatcher.receiveConnectionRedirect(host, knownHosts);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveConnectionRedirect(host, knownHosts);
+        }
     }
 }

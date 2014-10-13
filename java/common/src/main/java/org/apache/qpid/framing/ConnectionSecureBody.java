@@ -96,11 +96,14 @@ public class ConnectionSecureBody extends AMQMethodBodyImpl implements Encodable
         return buf.toString();
     }
 
-    public static void process(final MarkableDataInput in, final MethodProcessor dispatcher)
+    public static void process(final MarkableDataInput in, final ClientMethodProcessor dispatcher)
             throws IOException, AMQFrameDecodingException
 
     {
         byte[] challenge = EncodingUtils.readBytes(in);
-        dispatcher.receiveConnectionSecure(challenge);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveConnectionSecure(challenge);
+        }
     }
 }

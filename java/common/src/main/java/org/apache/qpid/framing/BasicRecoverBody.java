@@ -100,14 +100,16 @@ public class BasicRecoverBody extends AMQMethodBodyImpl implements EncodableAMQD
         return buf.toString();
     }
 
-    public static void process(final int channelId,
-                                final MarkableDataInput in,
-                                final ProtocolVersion protocolVersion,
-                                final MethodProcessor dispatcher) throws IOException
+    public static void process(final MarkableDataInput in,
+                               final ProtocolVersion protocolVersion,
+                               final ServerChannelMethodProcessor dispatcher) throws IOException
     {
         boolean requeue = (in.readByte() & 0x01) == 0x01;
         boolean sync = (ProtocolVersion.v8_0.equals(protocolVersion));
 
-        dispatcher.receiveBasicRecover(channelId, requeue, sync);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveBasicRecover(requeue, sync);
+        }
     }
 }

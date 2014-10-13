@@ -121,13 +121,17 @@ public class ChannelAlertBody extends AMQMethodBodyImpl implements EncodableAMQD
         return buf.toString();
     }
 
-    public static void process(final int channelId, final MarkableDataInput buffer, final MethodProcessor dispatcher)
+    public static void process(final MarkableDataInput buffer,
+                               final ClientChannelMethodProcessor dispatcher)
             throws IOException, AMQFrameDecodingException
     {
 
         int replyCode = buffer.readUnsignedShort();
         AMQShortString replyText = buffer.readAMQShortString();
         FieldTable details = EncodingUtils.readFieldTable(buffer);
-        dispatcher.receiveChannelAlert(channelId, replyCode, replyText, details);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveChannelAlert(replyCode, replyText, details);
+        }
     }
 }

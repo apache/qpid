@@ -165,9 +165,8 @@ public class AccessRequestBody extends AMQMethodBodyImpl implements EncodableAMQ
         return buf.toString();
     }
 
-    public static void process(final int channelId,
-                                final MarkableDataInput buffer,
-                                final MethodProcessor dispatcher) throws IOException
+    public static void process(final MarkableDataInput buffer,
+                               final ServerChannelMethodProcessor dispatcher) throws IOException
     {
         AMQShortString realm = buffer.readAMQShortString();
         byte bitfield = buffer.readByte();
@@ -176,6 +175,9 @@ public class AccessRequestBody extends AMQMethodBodyImpl implements EncodableAMQ
         boolean active = (bitfield & 0x04) == 0x4 ;
         boolean write = (bitfield & 0x08) == 0x8 ;
         boolean read = (bitfield & 0x10) == 0x10 ;
-        dispatcher.receiveAccessRequest(channelId, realm, exclusive, passive, active, write, read);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveAccessRequest(realm, exclusive, passive, active, write, read);
+        }
     }
 }

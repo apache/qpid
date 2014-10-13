@@ -125,14 +125,16 @@ public class QueuePurgeBody extends AMQMethodBodyImpl implements EncodableAMQDat
         return buf.toString();
     }
 
-    public static void process(final int channelId,
-                                final MarkableDataInput buffer,
-                                final MethodProcessor dispatcher) throws IOException
+    public static void process(final MarkableDataInput buffer,
+                               final ServerChannelMethodProcessor dispatcher) throws IOException
     {
 
         int ticket = buffer.readUnsignedShort();
         AMQShortString queue = buffer.readAMQShortString();
         boolean nowait = (buffer.readByte() & 0x01) == 0x01;
-        dispatcher.receiveQueuePurge(channelId, queue, nowait);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveQueuePurge(queue, nowait);
+        }
     }
 }

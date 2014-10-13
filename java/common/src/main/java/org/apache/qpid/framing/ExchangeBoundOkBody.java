@@ -115,12 +115,16 @@ public class ExchangeBoundOkBody extends AMQMethodBodyImpl implements EncodableA
         return buf.toString();
     }
 
-    public static void process(final int channelId, final MarkableDataInput buffer, final MethodProcessor dispatcher)
+    public static void process(final MarkableDataInput buffer,
+                               final ClientChannelMethodProcessor dispatcher)
             throws IOException
     {
 
         int replyCode = buffer.readUnsignedShort();
         AMQShortString replyText = buffer.readAMQShortString();
-        dispatcher.receiveExchangeBoundOk(channelId, replyCode, replyText);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveExchangeBoundOk(replyCode, replyText);
+        }
     }
 }

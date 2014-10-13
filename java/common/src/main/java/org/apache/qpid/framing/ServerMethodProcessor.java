@@ -18,27 +18,22 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.protocol.v0_8;
+package org.apache.qpid.framing;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-
-public interface ConnectionMethodProcessor
+public interface ServerMethodProcessor<T extends ServerChannelMethodProcessor> extends MethodProcessor<T>
 {
-    void receiveChannelOpen(int channelId);
-
-    void receiveConnectionOpen(AMQShortString virtualHost, AMQShortString capabilities, boolean insist);
-
-    void receiveConnectionClose(int replyCode, AMQShortString replyText, int classId, int methodId);
-
-    void receiveConnectionCloseOk();
-
-    void receiveConnectionSecureOk(byte[] response);
-
     void receiveConnectionStartOk(FieldTable clientProperties,
                                   AMQShortString mechanism,
                                   byte[] response,
                                   AMQShortString locale);
 
+    void receiveConnectionSecureOk(byte[] response);
+
     void receiveConnectionTuneOk(int channelMax, long frameMax, int heartbeat);
+
+    void receiveConnectionOpen(AMQShortString virtualHost, AMQShortString capabilities, boolean insist);
+
+    void receiveChannelOpen(int channelId);
+
+
 }

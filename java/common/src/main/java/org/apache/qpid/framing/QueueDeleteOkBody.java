@@ -95,11 +95,13 @@ public class QueueDeleteOkBody extends AMQMethodBodyImpl implements EncodableAMQ
         return buf.toString();
     }
 
-    public static void process(final int channelId,
-                                final MarkableDataInput buffer,
-                                final MethodProcessor dispatcher) throws IOException
+    public static void process(final MarkableDataInput buffer,
+                               final ClientChannelMethodProcessor dispatcher) throws IOException
     {
         long messageCount = EncodingUtils.readUnsignedInteger(buffer);
-        dispatcher.receiveQueueDeleteOk(channelId, messageCount);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveQueueDeleteOk(messageCount);
+        }
     }
 }

@@ -96,10 +96,14 @@ public class BasicConsumeOkBody extends AMQMethodBodyImpl implements EncodableAM
         return buf.toString();
     }
 
-    public static void process(final int channelId, final MarkableDataInput buffer, final MethodProcessor dispatcher)
+    public static void process(final MarkableDataInput buffer,
+                               final ClientChannelMethodProcessor dispatcher)
             throws IOException
     {
         AMQShortString consumerTag = buffer.readAMQShortString();
-        dispatcher.receiveBasicConsumeOk(channelId, consumerTag);
+        if(!dispatcher.ignoreAllButCloseOk())
+        {
+            dispatcher.receiveBasicConsumeOk(consumerTag);
+        }
     }
 }

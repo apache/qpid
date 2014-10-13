@@ -47,7 +47,7 @@ public class AMQDecoderTest extends TestCase
     public void setUp()
     {
         _methodProcessor = new FrameCreatingMethodProcessor(ProtocolVersion.v0_91);
-        _decoder = new AMQDecoder(false, _methodProcessor);
+        _decoder = new ClientDecoder(_methodProcessor);
     }
    
     
