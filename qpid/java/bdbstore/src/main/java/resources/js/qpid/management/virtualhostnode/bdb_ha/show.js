@@ -31,7 +31,7 @@ define(["dojo/_base/xhr",
         "dojo/domReady!"],
   function (xhr, connect, entities, query, json, registry, EnhancedGrid, UpdatableStore, UserPreferences, util)
   {
-    var priorityNames = {'_0': 'Never', '_1': 'Default', '_2': 'Normal', '_3': 'High'};
+    var priorityNames = {'_0': 'Never', '_1': 'Default', '_2': 'High', '_3': 'Highest'};
     var nodeFields = ["storePath", "groupName", "role", "address", "designatedPrimary", "priority", "quorumOverride"];
 
     function findNode(nodeClass, containerNode)
