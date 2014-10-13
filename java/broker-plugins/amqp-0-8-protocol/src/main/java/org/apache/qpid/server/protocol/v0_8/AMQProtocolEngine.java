@@ -1108,12 +1108,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             {
                 _logger.error("Exception caught in " + this + ", closing connection explicitly: " + throwable, throwable);
 
-
-                ConnectionCloseBody closeBody = _methodRegistry.createConnectionCloseBody(200,
+                ConnectionCloseBody closeBody = _methodRegistry.createConnectionCloseBody(AMQConstant.INTERNAL_ERROR.getCode(),
                                                                                              AMQShortString.validValueOf(
                                                                                                      throwable.getMessage()),
-                                                                                             0,
-                                                                                             0);
+                                                                                             _currentClassId,
+                                                                                             _currentMethodId);
 
                 writeFrame(closeBody.generateFrame(0));
 
@@ -1790,8 +1789,17 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                         public Object invoke(final Object proxy, final Method method, final Object[] args)
                                 throws Throwable
                         {
-                            closeConnection(AMQConstant.CHANNEL_ERROR, "Unknown channel id: " + channelId, channelId);
-
+                            if(method.getName().startsWith("receive"))
+                            {
+                                closeConnection(AMQConstant.CHANNEL_ERROR,
+                                                "Unknown channel id: " + channelId,
+                                                channelId);
+                                return null;
+                            }
+                            else if(method.getName().equals("ignoreAllButCloseOk"))
+                            {
+                                return false;
+                            }
                             return null;
                         }
                     });
