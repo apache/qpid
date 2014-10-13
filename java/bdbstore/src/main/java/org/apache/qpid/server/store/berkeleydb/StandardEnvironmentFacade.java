@@ -37,6 +37,7 @@ import com.sleepycat.je.SequenceConfig;
 import com.sleepycat.je.Transaction;
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoreFuture;
 
 public class StandardEnvironmentFacade implements EnvironmentFacade
@@ -266,13 +267,17 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
     }
 
     @Override
-    public DatabaseException handleDatabaseException(String contextMessage, DatabaseException e)
+    public RuntimeException handleDatabaseException(String contextMessage, RuntimeException e)
     {
         if (_environment != null && !_environment.isValid())
         {
             closeEnvironmentSafely();
         }
-        return e;
+        if (e instanceof StoreException)
+        {
+            return e;
+        }
+        return new StoreException("Unexpected exception occurred on store operation", e);
     }
 
     @Override

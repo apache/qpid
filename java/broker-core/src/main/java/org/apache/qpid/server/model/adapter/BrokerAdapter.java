@@ -82,6 +82,9 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     private Timer _reportingTimer;
     private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
+    /** Flags used to control the reporting of flow to disk. Protected by this */
+    private boolean _totalMessageSizeExceedThresholdReported = false,  _totalMessageSizeWithinThresholdReported = true;
+
     @ManagedAttributeField
     private String _defaultVirtualHost;
     @ManagedAttributeField
@@ -98,6 +101,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     private boolean _messageCompressionEnabled;
     @ManagedAttributeField
     private String _confidentialConfigurationEncryptionProvider;
+
 
     @ManagedObjectFactoryConstructor
     public BrokerAdapter(Map<String, Object> attributes,
@@ -435,6 +439,19 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                 vhs.put(vh,totalQueueDepthBytes);
                 totalSize += totalQueueDepthBytes;
             }
+        }
+
+        if (totalSize > totalTarget && !_totalMessageSizeExceedThresholdReported)
+        {
+            _eventLogger.message(BrokerMessages.FLOW_TO_DISK_ACTIVE(totalSize / 1024, totalTarget / 1024));
+            _totalMessageSizeExceedThresholdReported = true;
+            _totalMessageSizeWithinThresholdReported = false;
+        }
+        else if (totalSize <= totalTarget && !_totalMessageSizeWithinThresholdReported)
+        {
+            _eventLogger.message(BrokerMessages.FLOW_TO_DISK_INACTIVE(totalSize / 1024, totalTarget / 1024));
+            _totalMessageSizeWithinThresholdReported = true;
+            _totalMessageSizeExceedThresholdReported = false;
         }
 
         for(Map.Entry<VirtualHost<?, ?, ?>,Long> entry : vhs.entrySet())

@@ -140,7 +140,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             }
             _initialRecords = new ConfiguredObjectRecord[0];
         }
-        catch(DatabaseException e)
+        catch (RuntimeException e)
         {
             throw _environmentFacade.handleDatabaseException("Cannot upgrade store", e);
         }
@@ -156,7 +156,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             doVisitAllConfiguredObjectRecords(handler);
             handler.end();
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw _environmentFacade.handleDatabaseException("Cannot visit configured object records", e);
         }
@@ -243,7 +243,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
                 _environmentFacade.close();
                 _environmentFacade = null;
             }
-            catch(DatabaseException e)
+            catch (RuntimeException e)
             {
                 throw new StoreException("Exception occurred on message store close", e);
             }
@@ -268,7 +268,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             txn.commit();
             txn = null;
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw _environmentFacade.handleDatabaseException("Error creating configured object " + configuredObject
                     + " in database: " + e.getMessage(), e);
@@ -305,7 +305,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             txn = null;
             return removed.toArray(new UUID[removed.size()]);
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw _environmentFacade.handleDatabaseException("Error deleting configured objects from database", e);
         }
@@ -334,7 +334,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             txn.commit();
             txn = null;
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw _environmentFacade.handleDatabaseException("Error updating configuration details within the store: " + e,e);
         }
@@ -408,7 +408,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
             }
             writeHierarchyRecords(txn, configuredObject);
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             throw _environmentFacade.handleDatabaseException("Error writing configured object " + configuredObject
                     + " to database: " + e.getMessage(), e);

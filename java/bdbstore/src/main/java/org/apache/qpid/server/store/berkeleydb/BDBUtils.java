@@ -38,7 +38,7 @@ public class BDBUtils
             {
                 cursor.close();
             }
-            catch(DatabaseException e)
+            catch (RuntimeException e)
             {
                 // We need the possible side effect of the facade restarting the environment but don't care about the exception
                 throw environmentFacade.handleDatabaseException("Cannot close cursor", e);
@@ -55,7 +55,7 @@ public class BDBUtils
                 tx.abort();
             }
         }
-        catch (DatabaseException e)
+        catch (RuntimeException e)
         {
             // We need the possible side effect of the facade restarting the environment but don't care about the exception
             environmentFacade.handleDatabaseException("Cannot abort transaction", e);

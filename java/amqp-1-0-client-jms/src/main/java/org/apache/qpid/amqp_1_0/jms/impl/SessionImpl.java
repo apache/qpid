@@ -922,7 +922,15 @@ public class SessionImpl implements Session, QueueSession, TopicSession
                         else
                         {
                             consumer = _messageConsumerList.remove(0);
-                            msg = consumer.receive0(0L);
+                            msg = consumer.receiveRecoveredMessage();
+                            if(msg == null)
+                            {
+                                msg = consumer.receive0(0L);
+                            }
+                            else
+                            {
+                                recoveredMessage = true;
+                            }
                         }
 
                         MessageListener listener = consumer._messageListener;

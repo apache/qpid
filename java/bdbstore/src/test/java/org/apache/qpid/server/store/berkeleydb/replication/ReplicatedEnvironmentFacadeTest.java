@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.test.utils.PortHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
@@ -144,6 +145,24 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
         Database handle3 = ef.openDatabase("myDatabase", createIfAbsentDbConfig);
         assertNotSame("Expecting a new handle after database closure", handle1, handle3);
+    }
+
+    public void testOpenDatabaseWhenFacadeIsNotOpened() throws Exception
+    {
+        DatabaseConfig createIfAbsentDbConfig = DatabaseConfig.DEFAULT.setAllowCreate(true);
+
+        EnvironmentFacade ef = createMaster();
+        ef.close();
+
+        try
+        {
+            ef.openDatabase("myDatabase", createIfAbsentDbConfig );
+            fail("Database open should fail");
+        }
+        catch(ConnectionScopedRuntimeException e)
+        {
+            assertEquals("Unexpected exception", "Environment facade is not in opened state", e.getMessage());
+        }
     }
 
     public void testGetGroupName() throws Exception
