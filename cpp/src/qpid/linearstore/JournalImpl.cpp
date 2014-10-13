@@ -109,9 +109,8 @@ JournalImpl::initManagement(::qpid::management::ManagementAgent* a)
     if (_agent != 0)
     {
         _mgmtObject = ::qmf::org::apache::qpid::linearstore::Journal::shared_ptr (
-            new ::qmf::org::apache::qpid::linearstore::Journal(_agent, this));
+            new ::qmf::org::apache::qpid::linearstore::Journal(_agent, this, _jid));
 
-        _mgmtObject->set_name(_jid);
         _mgmtObject->set_directory(_jdir.dirname());
 //        _mgmtObject->set_baseFileName(_base_filename);
 //        _mgmtObject->set_readPageSize(JRNL_RMGR_PAGE_SIZE * JRNL_SBLK_SIZE);
