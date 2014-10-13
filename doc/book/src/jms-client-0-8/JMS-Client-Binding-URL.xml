@@ -29,10 +29,11 @@
 <chapter id="JMS-Client-0-8-Binding-URL">
   <title>Binding URL</title>
 
-  <para> The <emphasis>Binding URL</emphasis> syntax is the only addressing syntax supported by the
-    Qpid JMS client for AMQP 0-8, 0-9 and 0-9-1. It allows to specify the bindings that define the
-    relationship between a queue and an exchange, queue and exchange creation arguments and client
-    behaviour. </para>
+  <para> The <emphasis>Binding URL</emphasis> syntax for addressing<footnote>
+      <para>The client also supports the ADDR format. This is documented in <ulink
+          url="&qpidProgrammingBook;">Programming in Apache Qpid</ulink>.</para>
+    </footnote>. It allows the specification of the bindings between a queue and an exchange, queue
+    and exchange creation arguments and some ancillary options.</para>
 
   <para> The format for a <emphasis>Binding URL</emphasis> is provided below <screen><![CDATA[
 <Exchange Class>://<Exchange Name>/[<Destination>]/[<Queue>][?<option>='<value>'[&<option>='<value>']]

@@ -90,8 +90,9 @@
       is closed when the application calls <ulink
         url="&oracleJeeDocUrl;javax/jms/Connection.html#close()">Connection#close()</ulink>, but it
       can also be closed if the connection is closed from the Broker side (via a Management
-      operation or broker shutdown or running into coditions which AMQP specifications treats as errors and mandates closing the connection).
-      The JMS connection will also be closed if the underlying TCP/IP connection is broken.</para>
+      operation or broker shutdown or running into conditions which AMQP specifications treats as
+      errors and mandates closing the connection). The JMS connection will also be closed if the
+      underlying TCP/IP connection is broken.</para>
     <para>Qpid connections have failover and heartbeating capabilities. They support SSL and
       client-auth. These are described in the sub-sections that follow.</para>
     <section id="JMS-Client-0-8-Client-Understanding-Connection-Failover">
@@ -136,17 +137,18 @@ amqp://username:password@clientid/test
         </screen>
       </example>
       <para>For full details see <xref linkend="JMS-Client-0-8-Connection-URL"/></para>
-      <note><para>Note, that a single broker failover is enabled by default. If the failover behaviour is not desired it can be switched off
-       by setting a failover option to <emphasis>nofailover</emphasis> as in the example below
-       <example>
-        <title>Connection URL configured with nofailover</title>
-        <screen><![CDATA[
+      <note>
+        <para>Note, that a single broker failover is enabled by default. If the failover behaviour
+          is not desired it can be switched off by setting a failover option to
+            <literal>nofailover</literal> as in the example below <example>
+            <title>Connection URL configured with nofailover</title>
+            <screen><![CDATA[
 amqp://username:password@clientid/test
             ?brokerlist='tcp://localhost:15672?failover='nofailover']]>
         </screen>
-      </example>
-      </para></note>
-      <!-- TODO perhaps mention ConnectionListener?-->
+          </example>
+        </para>
+      </note>
     </section>
     <section id="JMS-Client-0-8-Client-Understanding-Connection-Heartbeating">
       <title>Heartbeating</title>
@@ -228,6 +230,31 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?key_store='/path/to/app1
         </listitem>
       </itemizedlist>
     </section>
+    <section id="JMS-Client-0-8-Client-Understanding-Connection-MessageCompression">
+      <title>Message Compression</title>
+      <para>The client has the ability to transparently compress message payloads on outgoing
+        messages and decompress them on incoming messages. In some environments and with some
+        payloads this feature might offer performance improvements by reducing the number of bytes
+        transmitted over the connection.</para>
+      <para>In order to make use of message compression, the Broker must enable the feature too,
+        otherwise the compression options will be ignored.</para>
+      <para> To enable message compression on the client use the connection url property <link
+          linkend="JMS-Client-0-8-Connection-URL-ConnectionOptions-CompressMessages"
+            ><literal>compressMessages</literal></link> (or JVM wide using the system property <link
+          linkend="JMS-Client-0-8-System-Properties-ConnectionCompressMessages"
+            ><literal>qpid.connection_compress_messages</literal></link>)</para>
+      <para>It is also possible to control the threshold at which the client will begin to compress
+        message payloads. See connection url property <link
+          linkend="JMS-Client-0-8-Connection-URL-ConnectionOptions-MessageCompressionThresholdSize"
+            ><literal>messageCompressionThresholdSize</literal></link> (or JVM wide using the system
+        property <link linkend="JMS-Client-0-8-System-Properties-MessageCompressionThresholdSize"
+            ><literal>qpid.message_compression_threshold_size</literal></link>)</para>
+      <note>
+        <para>The Broker, where necessary, takes care of compressing/decompressing messages of the
+          fly so that clients using message compression can exchange messages with clients not
+          supporting message compression transparently, without application intervention.</para>
+      </note>
+    </section>
   </section>
   <section id="JMS-Client-0-8-Client-Understanding-Session">
     <title>Session</title>
@@ -284,17 +311,21 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?key_store='/path/to/app1
           >MessageConsumer#receive()</ulink> for Consumer B on the same Session, the application
         will hang indefinitely as even if messages suitable for B arrive at the Broker. Those
         messages can never be sent to the Session as no space is available in prefetch. </para>
-      <note><para>Please note, when the acknowlegement mode <emphasis>Session#SESSION_TRANSACTED</emphasis>
-       or <emphasis>Session#CLIENT_ACKNOWLEDGE</emphasis> is set on a consuming session,
-       the prefetched messages are released from the prefetch buffer on transaction commit/rollback
-       (in case of acknowledgement mode <emphasis>Session#SESSION_TRANSACTED</emphasis> )
-       or acknowledgement of the messages receipt (in case of acknowledgement mode
-       <emphasis>Session#CLIENT_ACKNOWLEDGE</emphasis> ). If the consuming application does not commit/rollback
-       the receiving transaction (for example, due to mistakes in application exception handling logic),
-       the prefetched messages continue to remain in the prefetch buffer preventing the delivery of the following messages.
-       As result, the application might stop the receiving of the messages
-       until the transaction is committed/rolled back (for <emphasis>Session#SESSION_TRANSACTED</emphasis> )
-        or received messages are acknowledged (for <emphasis>Session#CLIENT_ACKNOWLEDGE</emphasis>).</para></note>
+      <note>
+        <para>Please note, when the acknowledgement mode
+            <emphasis>Session#SESSION_TRANSACTED</emphasis> or
+            <emphasis>Session#CLIENT_ACKNOWLEDGE</emphasis> is set on a consuming session, the
+          prefetched messages are released from the prefetch buffer on transaction commit/rollback
+          (in case of acknowledgement mode <emphasis>Session#SESSION_TRANSACTED</emphasis> ) or
+          acknowledgement of the messages receipt (in case of acknowledgement mode
+            <emphasis>Session#CLIENT_ACKNOWLEDGE</emphasis> ). If the consuming application does not
+          commit/rollback the receiving transaction (for example, due to mistakes in application
+          exception handling logic), the prefetched messages continue to remain in the prefetch
+          buffer preventing the delivery of the following messages. As result, the application might
+          stop the receiving of the messages until the transaction is committed/rolled back (for
+            <emphasis>Session#SESSION_TRANSACTED</emphasis> ) or received messages are acknowledged
+          (for <emphasis>Session#CLIENT_ACKNOWLEDGE</emphasis>).</para>
+      </note>
     </section>
     <section id="JMS-Client-0-8-Client-Understanding-Session-TemporaryQueues">
       <title>TemporaryQueues</title>
@@ -379,10 +410,11 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?key_store='/path/to/app1
           linkend="JMS-Client-0-8-System-Properties-DefaultMandatoryTopic"
             ><literal>qpid.default_mandatory_topic</literal></link> for Queues and Topics
         respectively.</para>
-      <note><para>Please note, according to AMQP specifications the mandatory flag on a message tells the server
-       how to react if the message cannot be routed to a  queue. If this flag is set, the server will return an unroutable message with a
-       Return method. If this flag is zero, the server silently drops the message. Please, refer <ulink url="&amqpSrc;">AMQP specifications</ulink>
-        for more details.</para></note>
+      <note>
+        <para>If this the mandatory flag is not set, the Broker will treat <ulink
+            url="&qpidJavaBrokerBook;Java-Broker-Concepts-Exchanges.html#Java-Broker-Concepts-Exchanges-UnroutableMessage"
+            >the messages as unroutable</ulink>.</para>
+      </note>
     </section>
     <section id="JMS-Client-0-8-Client-Understanding-MessageProducer-CloseWhenNoRoute">
       <title>Close When No Route</title>
@@ -457,13 +489,13 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?key_store='/path/to/app1
             by the Binding URL associated with the Destination.</para>
         </listitem>
       </orderedlist>
-      <para>The exchange declare, queue declare and bind side effects can be suppressed using system properties
-          <link linkend="JMS-Client-0-8-System-Properties-DeclareExchanges"
+      <para>The exchange declare, queue declare and bind side effects can be suppressed using system
+        properties <link linkend="JMS-Client-0-8-System-Properties-DeclareExchanges"
             ><literal>qpid.declare_exchanges</literal></link>, <link
           linkend="JMS-Client-0-8-System-Properties-DeclareQueues"
-            ><literal>qpid.declare_queues</literal></link> and
-          <link linkend="JMS-Client-0-8-System-Properties-BindQueues"
-            ><literal>qpid.bind_queues</literal></link>.</para>
+            ><literal>qpid.declare_queues</literal></link> and <link
+          linkend="JMS-Client-0-8-System-Properties-BindQueues"
+          ><literal>qpid.bind_queues</literal></link>.</para>
     </section>
     <section id="JMS-Client-0-8-Client-Understanding-MessageConsumer-TopicSubscriptions">
       <title>Topic Subscriptions</title>
@@ -509,9 +541,11 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?key_store='/path/to/app1
       <para>See <ulink
           url="&qpidJavaBrokerBook;Java-Broker-Runtime-Handling-Undeliverable-Messages.html#Java-Broker-Runtime-Handling-Undeliverable-Messages-Maximum-Delivery-Count"
           > Handling Undeliverable Messages</ulink> within the Java Broker book for full details of
-          the functioning of this feature.</para>
-      <note><para>The optional JMS message header <literal>JMSXDeliveryCount</literal> is <emphasis>not</emphasis>
-          supported.</para></note>
+        the functioning of this feature.</para>
+      <note>
+        <para>The optional JMS message header <literal>JMSXDeliveryCount</literal> is
+            <emphasis>not</emphasis> supported.</para>
+      </note>
     </section>
   </section>
   <section id="JMS-Client-0-8-Client-Understanding-Destinations">

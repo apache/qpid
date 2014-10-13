@@ -28,11 +28,14 @@
 
 <appendix id="JMS-Client-0-8-Appendix-JMS-Extensions">
   <title>JMS Extensions</title>
-  <para>This section illustrates using Qpid specific JMX extentions for the managament of queues,
-    exchanges and bindings.</para>
-  <para>
-    <important>It is not recommended that these extensions are normally used. Instead, the reader is
-      directed towards the Managment interfaces of the Broker.</important></para>
+  <para>This section illustrates using Qpid specific extentions to JMX for the managament of queues,
+  exchanges and bindings.</para>
+  <!-- TODO perhaps mention ConnectionListener?-->
+  <important>
+    <para>It is not recommended that these extensions are generally used. These interfaces are
+      subject to change and will not be supported in this form for AMQP 1.0. Instead, the reader is
+      directed towards the Managment interfaces of the Broker.</para>
+  </important>
   <section id="JMS-Client-0-8-Appendix-JMS-Extensions-Queue">
     <title>Queue Management</title>
     <para>These extensions allow queues to be created or removed.</para>
@@ -55,17 +58,19 @@ AMQDestination amqQueue = (AMQDestination) context.lookup("myqueue");
 ]]></programlisting>
       </example>
     </section>
-    <section id="JMS-Client-0-8-Appendix-JMS-Extensions-Binding">
-      <title>Binding Management</title>
-      <para>These extensions allow bindings to be created or removed.</para>
+  </section>
 
-      <section id="JMS-Client-0-8-Appendix-JMS-Extensions-Binding-Creation">
-        <title>Binding creation</title>
-        <para>The following example illustrates the creation of queue binding to topic exchange with
-          JMS client.</para>
-        <example>
-          <title>Binding a queue using JMS</title>
-          <programlisting><![CDATA[ConnectionFactory connectionFactory = ...
+  <section id="JMS-Client-0-8-Appendix-JMS-Extensions-Binding">
+    <title>Binding Management</title>
+    <para>These extensions allow bindings to be created or removed.</para>
+
+    <section id="JMS-Client-0-8-Appendix-JMS-Extensions-Binding-Creation">
+      <title>Binding creation</title>
+      <para>The following example illustrates the creation of queue binding to topic exchange with
+        JMS client.</para>
+      <example>
+        <title>Binding a queue using JMS</title>
+        <programlisting><![CDATA[ConnectionFactory connectionFactory = ...
 Connection connection = connectionFactory.createConnection();
 AMQSession<?, ?> session = (AMQSession<?,?>)connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -84,8 +89,7 @@ arguments.put("x-filter-jms-selector", "application='app1'");
 // create binding
 session.bindQueue(queueName, routingKey, FieldTable.convertToFieldTable(arguments),
     new AMQShortString("amq.topic"), destination);]]></programlisting>
-        </example>
-      </section>
+      </example>
     </section>
   </section>
 </appendix>
