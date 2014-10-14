@@ -32,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Destination;
@@ -98,6 +99,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
     /** Flow control */
     private FlowControlIndicator _flowControl = new FlowControlIndicator();
+    private final AtomicBoolean _creditChanged = new AtomicBoolean();
 
     /**
      * Creates a new session on a connection.
@@ -858,6 +860,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
                             getProtocolHandler().syncWrite(basicQosBody.generateFrame(getChannelId()),
                                                            BasicQosOkBody.class);
+                            _creditChanged.set(true);
                             return true;
                         }
                         else
@@ -874,7 +877,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         int acknowledgeMode = getAcknowledgeMode();
         boolean manageCredit = acknowledgeMode == javax.jms.Session.CLIENT_ACKNOWLEDGE || acknowledgeMode == javax.jms.Session.SESSION_TRANSACTED;
 
-        if(manageCredit)
+        if(manageCredit && _creditChanged.compareAndSet(true,false))
         {
             new FailoverNoopSupport<>(
                     new FailoverProtectedOperation<Void, AMQException>()
