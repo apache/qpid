@@ -34,7 +34,6 @@ import java.util.UUID;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
@@ -261,7 +260,7 @@ public class BrokerRecovererTest extends TestCase
             resolveObjects(_brokerEntry);
             Broker<?> broker = _systemConfig.getBroker();
             broker.open();
-            verify(_brokerShutdownProvider).shutdown();
+            verify(_brokerShutdownProvider).shutdown(1);
         }
     }
 
@@ -280,7 +279,7 @@ public class BrokerRecovererTest extends TestCase
 
         Broker<?> broker = (Broker<?>) recover.resolve();
         broker.open();
-        verify(_brokerShutdownProvider).shutdown();
+        verify(_brokerShutdownProvider).shutdown(1);
     }
 
     public void testIncorrectModelVersion() throws Exception
@@ -298,7 +297,7 @@ public class BrokerRecovererTest extends TestCase
                     _systemConfig.getObjectFactory().recover(_brokerEntry, _systemConfig);
             Broker<?> broker = (Broker<?>) recover.resolve();
             broker.open();
-            verify(_brokerShutdownProvider).shutdown();
+            verify(_brokerShutdownProvider).shutdown(1);
             reset(_brokerShutdownProvider);
         }
     }

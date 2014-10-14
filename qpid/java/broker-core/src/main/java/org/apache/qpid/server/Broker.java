@@ -58,6 +58,17 @@ public class Broker implements BrokerShutdownProvider
     private EventLogger _eventLogger;
     private boolean _configuringOwnLogging = false;
     private final TaskExecutor _taskExecutor = new TaskExecutorImpl();
+    private final boolean _exitJVMOnShutdownWithNonZeroExitCode;
+
+    public Broker()
+    {
+        this(false);
+    }
+
+    public Broker(boolean exitJVMOnShutdownWithNonZeroExitCode)
+    {
+        this._exitJVMOnShutdownWithNonZeroExitCode = exitJVMOnShutdownWithNonZeroExitCode;
+    }
 
     protected static class InitException extends RuntimeException
     {
@@ -70,6 +81,12 @@ public class Broker implements BrokerShutdownProvider
     }
 
     public void shutdown()
+    {
+        shutdown(0);
+    }
+
+    @Override
+    public void shutdown(int exitStatusCode)
     {
         try
         {
@@ -91,6 +108,11 @@ public class Broker implements BrokerShutdownProvider
                 if (_configuringOwnLogging)
                 {
                     LogManager.shutdown();
+                }
+
+                if (_exitJVMOnShutdownWithNonZeroExitCode && exitStatusCode != 0)
+                {
+                    System.exit(exitStatusCode);
                 }
             }
         }
