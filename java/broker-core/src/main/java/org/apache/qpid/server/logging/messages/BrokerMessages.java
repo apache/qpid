@@ -57,6 +57,7 @@ public class BrokerMessages
     public static final String SHUTTING_DOWN_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "broker.shutting_down";
     public static final String MANAGEMENT_MODE_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "broker.management_mode";
     public static final String STARTUP_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "broker.startup";
+    public static final String FATAL_ERROR_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "broker.fatal_error";
     public static final String READY_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "broker.ready";
 
     static
@@ -75,6 +76,7 @@ public class BrokerMessages
         Logger.getLogger(SHUTTING_DOWN_LOG_HIERARCHY);
         Logger.getLogger(MANAGEMENT_MODE_LOG_HIERARCHY);
         Logger.getLogger(STARTUP_LOG_HIERARCHY);
+        Logger.getLogger(FATAL_ERROR_LOG_HIERARCHY);
         Logger.getLogger(READY_LOG_HIERARCHY);
 
         _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.Broker_logmessages", _currentLocale);
@@ -487,6 +489,38 @@ public class BrokerMessages
             public String getLogHierarchy()
             {
                 return STARTUP_LOG_HIERARCHY;
+            }
+        };
+    }
+
+    /**
+     * Log a Broker message of the Format:
+     * <pre>BRK-1016 : Fatal error : {0} : See log file for more information</pre>
+     * Optional values are contained in [square brackets] and are numbered
+     * sequentially in the method call.
+     *
+     */
+    public static LogMessage FATAL_ERROR(String param1)
+    {
+        String rawMessage = _messages.getString("FATAL_ERROR");
+
+        final Object[] messageArguments = {param1};
+        // Create a new MessageFormat to ensure thread safety.
+        // Sharing a MessageFormat and using applyPattern is not thread safe
+        MessageFormat formatter = new MessageFormat(rawMessage, _currentLocale);
+
+        final String message = formatter.format(messageArguments);
+
+        return new LogMessage()
+        {
+            public String toString()
+            {
+                return message;
+            }
+
+            public String getLogHierarchy()
+            {
+                return FATAL_ERROR_LOG_HIERARCHY;
             }
         };
     }

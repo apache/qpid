@@ -32,6 +32,7 @@ import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.store.BrokerStoreUpgraderAndRecoverer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -77,17 +78,17 @@ public class ApplicationRegistry implements IApplicationRegistry
         logStartupMessages(startupLogger);
 
         BrokerStoreUpgraderAndRecoverer upgrader = new BrokerStoreUpgraderAndRecoverer(_systemConfig);
-        _broker = upgrader.perform(_store);
+        Broker broker = upgrader.perform(_store);
+        _broker = broker;
 
-        _broker.setEventLogger(startupLogger);
-        _broker.open();
+        broker.setEventLogger(startupLogger);
+        broker.open();
 
-        // starting the broker
-        //_broker.setDesiredState(State.ACTIVE);
-
-        startupLogger.message(BrokerMessages.READY());
-        _broker.setEventLogger(eventLogger);
-
+        if (broker.getState() == State.ACTIVE)
+        {
+            startupLogger.message(BrokerMessages.READY());
+            broker.setEventLogger(eventLogger);
+        }
     }
 
     public void close()

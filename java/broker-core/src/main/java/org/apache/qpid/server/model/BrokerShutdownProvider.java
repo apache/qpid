@@ -22,5 +22,5 @@ package org.apache.qpid.server.model;
 
 public interface BrokerShutdownProvider
 {
-    void shutdown();
+    void shutdown(int exitStatusCode);
 }
