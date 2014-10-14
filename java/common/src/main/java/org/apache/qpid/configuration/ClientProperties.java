@@ -134,6 +134,18 @@ public class ClientProperties
     public static final int DEFAULT_SYNC_OPERATION_TIMEOUT = 60000;
 
     /**
+     * System properties to change the default timeout used whilst closing connections
+     * and underlying sessions.
+     */
+    public static final String QPID_CLOSE_TIMEOUT = "qpid.close_timeout";
+
+    /**
+     * A default timeout value for close operations
+     */
+    public static final int DEFAULT_CLOSE_TIMEOUT = 2000;
+
+
+    /**
      * System properties to change the default value used for TCP_NODELAY
      */
     public static final String QPID_TCP_NODELAY_PROP_NAME = "qpid.tcp_nodelay";
