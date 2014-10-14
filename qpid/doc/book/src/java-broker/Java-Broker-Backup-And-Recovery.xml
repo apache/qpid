@@ -55,9 +55,14 @@
       <example>
         <title>Performing store backup by using <classname>BDBBackup</classname> class
           directly</title>
-        <command> java -cp qpid-bdbstore-&qpidCurrentRelease;.jar
-          org.apache.qpid.server.store.berkeleydb.BDBBackup -fromdir
-          ${QPID_WORK}/&lt;nodename&gt;/config -todir path/to/backup/folder</command>
+        <cmdsynopsis>
+          <command>java</command>
+          <arg choice="plain">-cp qpid-bdbstore-&qpidCurrentRelease;.jar</arg>
+          <arg choice="plain">org.apache.qpid.server.store.berkeleydb.BDBBackup</arg>
+          <sbr/>
+          <arg choice="plain">-fromdir <replaceable>${QPID_WORK}/&lt;nodename&gt;/config</replaceable></arg>
+          <arg choice="plain">-todir <replaceable>path/to/backup/folder</replaceable></arg>
+        </cmdsynopsis>
       </example>
       <para>In the example above BDBBackup utility is called from
         qpid-bdbstore-&qpidCurrentRelease;.jar to backup the store at
@@ -67,12 +72,15 @@
         running this script in a similar way.</para>
       <example>
         <title>Performing store backup by using <classname>backup.sh</classname> bash script</title>
-        <command>backup.sh -fromdir ${QPID_WORK}/&lt;nodename&gt;/config -todir
-          path/to/backup/folder</command>
+        <cmdsynopsis>
+          <command>backup.sh</command>
+          <arg choice="plain">-fromdir <replaceable>${QPID_WORK}/&lt;nodename&gt;/config</replaceable></arg>
+          <arg choice="plain">-todir <replaceable>path/to/backup/folder</replaceable></arg>
+        </cmdsynopsis>
       </example>
     </section>
     <section id="Java-Broker-Backup-And-Recovery-Virtualhost-Node-BDB-HA">
-      <title>BDB</title>
+      <title>BDB-HA</title>
       <para>See <xref linkend="Java-Broker-Backup-And-Recovery-Virtualhost-Node-BDB"/></para>
     </section>
     <section id="Java-Broker-Backup-And-Recovery-Virtualhost-Node-Derby">

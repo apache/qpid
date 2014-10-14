@@ -23,7 +23,7 @@
 <section id="Java-Broker-Management-Managing-Broker">
   <title>Broker</title>
   <para>The <link linkend="Java-Broker-Concepts-Broker">Broker</link> is the principal entity. It is
-    composed on a number of other entities that collaborate to provide message broker
+    composed of a number of other entities that collaborate to provide message broker
     facilities.</para>
   <para>The Broker can only be managed via the HTTP management channel.</para>
   <section id="Java-Broker-Management-Managing-Broker-Attributes">

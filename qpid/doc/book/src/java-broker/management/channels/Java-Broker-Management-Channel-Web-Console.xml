@@ -54,7 +54,8 @@
             <title>Web Management Console - Authentication</title>
             <mediaobject>
                 <imageobject>
-                    <imagedata fileref="images/Management-Web-Auth.png" format="PNG" scalefit="1"/>
+                    <imagedata fileref="images/Management-Web-Auth.png" format="PNG" scalefit="1"
+                        width="900px"/>
                 </imageobject>
                 <textobject>
                     <phrase>Web Console Authentication</phrase>
@@ -71,7 +72,7 @@
             <mediaobject>
                 <imageobject>
                     <imagedata fileref="images/Management-Web-Console.png" format="PNG" scalefit="1"
-                    />
+                        width="900px"/>
                 </imageobject>
                 <textobject>
                     <phrase>The Web Console</phrase>
@@ -110,7 +111,8 @@
             <title>Web Management Orientation - Tab</title>
             <mediaobject>
                 <imageobject>
-                    <imagedata fileref="images/Management-Web-Tab.png" format="PNG" scalefit="1"/>
+                    <imagedata fileref="images/Management-Web-Tab.png" format="PNG" scalefit="1"
+                        width="900px"/>
                 </imageobject>
                 <textobject>
                     <phrase>A tab within the Web Consle</phrase>
@@ -148,9 +150,9 @@
                 dialogue to be displayed.</para>
             <para>Add dialogues allow you to set the attributes of the new child, and set context
                 variables. Most fields on the add dialogue have field level help that give more
-                details about the attribute and any default value that will take effect if you leave
-                the attribute unset. An example add dialogue is shown in the figure that
-                follows.</para>
+                details about the attribute and any default value (which may be expressed in terms
+                of a context variable) that will take effect if you leave the attribute unset. An
+                example add dialogue is shown in the figure that follows.</para>
             <figure id="Java-Broker-Management-Channel-Web-Console-Managing-Entities-Add-Dialogue">
                 <title>Web Management Orientation - Add Dialogue</title>
                 <mediaobject>
@@ -159,7 +161,7 @@
                             scalefit="1"/>
                     </imageobject>
                     <textobject>
-                        <phrase>Example add dialogue</phrase>
+                        <phrase>Example add dialogue showing field level help</phrase>
                     </textobject>
                 </mediaobject>
             </figure>
@@ -200,7 +202,8 @@
             <para>Most add and edit dialogues have the ability to make context variable assignments.
                 To add/change/remove a context variable, click the Context Variable panel to expand
                 it.</para>
-            <figure id="Java-Broker-Management-Channel-Web-Console-Managing-Entities-Context-Variables-Dialogue">
+            <figure
+                id="Java-Broker-Management-Channel-Web-Console-Managing-Entities-Context-Variables-Dialogue">
                 <title>Web Management Orientation - Context Variables</title>
                 <mediaobject>
                     <imageobject>
@@ -212,14 +215,14 @@
                     </textobject>
                 </mediaobject>
             </figure>
-            <para>You will see any context varaiables already associated with the object, called
+            <para>You will see any context variables already associated with the object, called
                 local context variables in bold, and any inherited from above in normal face.</para>
             <para>Since context variables can be defined in terms of other context variables, the
                 display has two value columns: actual and effective. Actual shows the value truely
                 associated with the variable, where as effective shows the resulting value, after
                 variable expansion has taken place.</para>
             <para>The <literal>+</literal> button allows new variables to be added. The
-                    <literal>-</literal> button removes existing one.</para>
+                    <literal>-</literal> button removes existing ones.</para>
             <para>You change an existing local variables defintion by clicking on the actual value.
                 You can also <emphasis>provide a local definition</emphasis> for an inherited value
                 by clicking on the actual value and typing its new value.</para>

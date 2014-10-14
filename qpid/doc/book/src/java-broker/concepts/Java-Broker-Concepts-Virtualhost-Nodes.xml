@@ -27,7 +27,7 @@
   <para>A <emphasis>virtualhost node</emphasis> is backed by storage. This storage is used to record
     the durable entities that exist beneath the virtualhost node (the virtualhost, queues, exchanges
     etc).</para>
-  <para>When HA is in used, it is the virtualhost nodes of many Brokers that come together to form
+  <para>When HA is in use, it is the virtualhost nodes of many Brokers that come together to form
     the group. The virtualhost nodes together elect a master. When the high availability feature is
     in use, the virtualhost node has <link linkend="Java-Broker-Concepts-RemoteReplicationNodes"
       >remote replications nodes</link>. There is a remote replication node corresponding to each
