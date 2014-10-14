@@ -26,7 +26,7 @@
 
 <section id="Java-Broker-Management-Managing-Queues">
   <title>Queues</title>
-  <para><link linkend="Java-Broker-Concepts-Queues">Queue</link>s are named entities that
+  <para><link linkend="Java-Broker-Concepts-Queues">Queues</link> are named entities that
     hold/buffer messages for later delivery to consumer applications.</para>
   <para>Queues can be managed using the HTTP, JMX or AMQP channels.</para>
   <section id="Java-Broker-Management-Managing-Queues-Types">

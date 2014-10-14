@@ -23,7 +23,7 @@
 <section id="Java-Broker-Management-Channel-REST-API">
   <title>REST API</title>
   <para> This section provides a brief overview of the REST interface, which can be used directly to
-    monitor and manage the Broker instance.. </para>
+    monitor and manage the Broker instance.</para>
 
   <para>The REST interface support traditional REST model which uses the GET method requests to
     retrieve the information about broker configured objects, DELETE method requests to delete the
@@ -32,7 +32,7 @@
   <para>The REST API is versioned with the version number built into the URL. The general form of
     the URL is <literal>/api/&lt;version&gt;</literal>. For convenience the alias
       <literal>latest</literal> signifies the latest supported version. There are also some
-    ancillary service prefixed by <literal>/service</literal>.</para>
+    ancillary services prefixed by <literal>/service</literal>.</para>
 
   <para>The table below lists the available REST services with brief description how they can be
     used.</para>
@@ -321,16 +321,17 @@
     "asterisks" in GET requests to denote all object of a particular type. Additionally, trailing
     object type in the URL hierarchy can be omitted. In this case GET request will return all of the
     object underneath of the current object.</para>
-  <para>For example, for binding URL
-    http://localhost:8080/api/latest/binding/&lt;vhost node&gt;/&lt;vhost&gt;/&lt;exchange&gt;/&lt;queue&gt;/&lt;binding&gt;
-    replacing of <emphasis>&lt;exchange&gt;</emphasis> with "asterisks"
-    (http://localhost:8080/api/&lt;ver&gt;/binding/&lt;vhost node&gt;/&lt;vhost&gt;/*/&lt;queue&gt;/&lt;binding&gt;)
-    will result in the GET response containing the list of bindings for all of the exchanges in the
-    virtualhost having the given name and given queue. If <emphasis>&lt;binding&gt;</emphasis> and
-      <emphasis>&lt;queue&gt;</emphasis> are omitted in binding REST URL
-    (http://localhost:8080/api/&lt;ver&gt;/binding/&lt;vhost node&gt;/&lt;vhost&gt;/&lt;exchangename&gt;) the GET
-    request will result in returning all bindings for all queues for the given exchange in the
-    virtual host. </para>
+  <para>For example, for binding URL <literal>http://localhost:8080/api/latest/binding/&lt;vhost
+      node&gt;/&lt;vhost&gt;/&lt;exchange&gt;/&lt;queue&gt;/&lt;binding&gt;</literal> replacing of
+      <literal>&lt;exchange&gt;</literal> with "asterisks"
+      (<literal>http://localhost:8080/api/&lt;ver&gt;/binding/&lt;vhost
+      node&gt;/&lt;vhost&gt;/*/&lt;queue&gt;/&lt;binding&gt;</literal>) will result in the GET
+    response containing the list of bindings for all of the exchanges in the virtualhost having the
+    given name and given queue.</para>
+  <para>If <literal>&lt;binding&gt;</literal> and <literal>&lt;queue&gt;</literal> are omitted in
+    binding REST URL (<literal>http://localhost:8080/api/&lt;ver&gt;/binding/&lt;vhost
+      node&gt;/&lt;vhost&gt;/&lt;exchangename&gt;</literal>) the GET request will result in
+    returning all bindings for all queues for the given exchange in the virtual host. </para>
   <example>
     <title>Examples of queue creation using curl (authenticating as user admin):</title>
     <programlisting><![CDATA[
@@ -348,7 +349,6 @@ curl --user admin -X PUT  -d '{}' http://localhost:8080/api/latest/binding/<vhos
   </example>
   <para> NOTE: These curl examples utilise unsecure HTTP transport. To use the examples it is first
     necessary enable Basic authentication for HTTP within the HTTP Management Configuration (it is
-    off by default). For details see <xref
-      linkend="Java-Broker-Management-Managing-Plugin-HTTP"/>
+    off by default). For details see <xref linkend="Java-Broker-Management-Managing-Plugin-HTTP"/>
   </para>
 </section>

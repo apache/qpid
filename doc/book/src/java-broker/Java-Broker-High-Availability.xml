@@ -116,8 +116,8 @@
         </listitem>
         <listitem>
           <para>Select one Broker instance to host the first node instance. This choice is an
-            arbitrary one. The node is special only whilst creating group. Once creation is complete,
-            all nodes will be considered equal.</para>
+            arbitrary one. The node is special only whilst creating group. Once creation is
+            complete, all nodes will be considered equal.</para>
         </listitem>
         <listitem>
           <para>
@@ -198,12 +198,13 @@
                   contact it and introduce itself into the group. At this stage, the group will have
                   two nodes, with the second node in the replica role.</para>
               </listitem>
-              <listitem>Repeat these steps until you have added all the nodes to the
-                group.</listitem>
+              <listitem>
+                <para>Repeat these steps until you have added all the nodes to the group.</para>
+              </listitem>
             </orderedlist>
             <para>
               <figure>
-                <title>Adding subsequent nodes to the group</title>     
+                <title>Adding subsequent nodes to the group</title>
                 <mediaobject>
                   <imageobject>
                     <imagedata fileref="images/HA-Create-2.png" format="PNG" scalefit="1"/>
@@ -261,8 +262,8 @@
           </listitem>
         </itemizedlist></para>
       <para>If there were to be a master failure immediately after the transaction was committed,
-        the transaction would be held by at least quorum minus one replicas. For example, if we
-        had a group of three, then we would be assured that at least one replica held the
+        the transaction would be held by at least quorum minus one replicas. For example, if we had
+        a group of three, then we would be assured that at least one replica held the
         transaction.</para>
 
       <para>In the event of a master failure, if quorum nodes remain, those nodes hold an election.
@@ -273,9 +274,9 @@
         fewer than quorum nodes and to influence which node gets elected in the event of a
         tie.</para>
 
-      <para>Whenever a group has fewer than quorum nodes present, the virtualhost will be unavailable
-        and messaging connections will be refused. If quorum disappears at the very moment a
-        messaging client sends a transaction that transaction will fail.</para>
+      <para>Whenever a group has fewer than quorum nodes present, the virtualhost will be
+        unavailable and messaging connections will be refused. If quorum disappears at the very
+        moment a messaging client sends a transaction that transaction will fail.</para>
 
       <para>You will have noticed the difference in the synchronization policies applied the master
         and the replicas. The replicas send the acknowledgement back before the data is written to
@@ -392,9 +393,11 @@
         as the remaining node cannot elect itself master. To allow it to become master, apply the
         designated primary flag to it. It will elect itself master and work can continue, albeit
         from one node.</para>
-      <important>It is imperative not to allow designated primary to be set on both nodes at once.
-        To do so will mean, in the event of a network partition, a <ulink
-          url="http://en.wikipedia.org/wiki/Split-brain_(computing)">split-brain</ulink> will occur.
+      <important>
+        <para>It is imperative not to allow designated primary to be set on both nodes at once. To
+          do so will mean, in the event of a network partition, a <ulink
+            url="http://en.wikipedia.org/wiki/Split-brain_(computing)">split-brain</ulink> will
+          occur.</para>
       </important>
     </section>
   </section>
@@ -434,9 +437,9 @@
         </listitem>
         <listitem>
           <para><emphasis>Delete</emphasis></para>
-          <para>A virtualhost node can be deleted. Deleting a node permanently removes the node
-            from the group. The data stored locally is removed but this does not affect the data
-            held by the remainder of the group.</para>
+          <para>A virtualhost node can be deleted. Deleting a node permanently removes the node from
+            the group. The data stored locally is removed but this does not affect the data held by
+            the remainder of the group.</para>
           <note>
             <para>The names of deleted virtualhost node cannot be reused within a group.</para>
           </note>
@@ -485,8 +488,8 @@
   </section>
   <section role="h3" id="Java-Broker-High-Availability-JMXAPI">
     <title>Qpid JMX API for HA</title>
-    <para>The Qpid JMX API for HA is now deprecated. New users are recommended to use the REST
-      API.</para>
+    <para>The Qpid JMX API for HA is now deprecated. New users are recommended to use the <link
+        linkend="Java-Broker-Management-Channel-REST-API">REST API.</link></para>
   </section>
 
   <section id="Java-Broker-High-Availability-DiskSpace">
@@ -541,14 +544,21 @@
       provided information. </para>
     <example>
       <title>Resetting of replication group with <classname>DbResetRepGroup</classname></title>
-      <command>java -cp je-&oracleBdbProductVersion;.jar com.sleepycat.je.rep.util.DbResetRepGroup
-        -h path/to/jelogfiles -groupName newgroupname -nodeName nodename -nodeHostPort
-        thor:5000</command>
+      <cmdsynopsis>
+        <command>java</command>
+        <arg choice="plain">-cp je-&oracleBdbProductVersion;.jar</arg>
+        <arg choice="plain">com.sleepycat.je.rep.util.DbResetRepGroup</arg>
+        <arg choice="plain">-h <replaceable>path/to/jelogfiles</replaceable></arg>
+        <sbr/>
+        <arg choice="plain">-groupName <replaceable>newgroupname</replaceable></arg>
+        <arg choice="plain">-nodeName <replaceable>newnodename</replaceable></arg>
+        <arg choice="plain">-nodeHostPort <replaceable>newhostname:5000</replaceable></arg>
+      </cmdsynopsis>
     </example>
     <para>The modified log files can then by copied into
         <literal>${QPID_WORK}/&lt;nodename&gt;/config</literal> directory of a target Broker. Then
-      start the Broker, and add a BDB HA Virtualhost node specify the same group name, node name
-      and node address. You will then have a group with a single node, ready to start re-adding
+      start the Broker, and add a BDB HA Virtualhost node specify the same group name, node name and
+      node address. You will then have a group with a single node, ready to start re-adding
       additional nodes as described above. </para>
   </section>
 
