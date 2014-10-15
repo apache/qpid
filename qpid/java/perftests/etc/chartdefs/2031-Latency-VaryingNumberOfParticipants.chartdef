@@ -20,7 +20,7 @@
 chartType=STATISTICAL_BAR
 chartTitle=Latency, varying number of participants
 chartSubtitle=Persistent 1KB messages
-chartDescription=1,2,5,10 P/Cs, persistent, auto-ack, with message payload 1KB, single queue.
+chartDescription=1,2,5,10 P/Cs, single queue, persistent, session-transacted, with message payload 1KB.
 
 xAxisTitle=Consumers
 yAxisTitle=Latency (millis)

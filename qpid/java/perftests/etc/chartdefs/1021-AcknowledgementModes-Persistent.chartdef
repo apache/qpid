@@ -20,7 +20,7 @@
 chartType=BAR
 chartTitle=Performance of acknowledgement modes
 chartSubtitle=Persistent messages (1KB)
-chartDescription=1P 1C, persistent, with message payload 1KB, single queue.
+chartDescription=1P 1C, single queue, persistent, with message payload 1KB.
 
 xAxisTitle=Acknowledge mode (0=session transacted; 1=auto-acknowledge)
 yAxisTitle=Throughput (messages/s)

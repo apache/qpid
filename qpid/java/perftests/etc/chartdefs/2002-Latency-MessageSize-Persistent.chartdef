@@ -20,7 +20,7 @@
 chartType=STATISTICAL_BAR
 chartTitle=Impact of message size on latency
 chartSubtitle=Persistent messages
-chartDescription=1P 1C, persistent, auto-ack, with message payload between 256-262144 bytes, single queue.
+chartDescription=1P 1C, single queue, persistent, session-transacted, with message payload between 256-262144 bytes.
 
 xAxisTitle=Message Size (B)
 yAxisTitle=Latency (millis)
