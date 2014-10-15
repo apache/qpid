@@ -149,13 +149,11 @@
 				<row id="JMS-Client-0-8-Connection-URL-ConnectionOptions-CompressMessages">
 					<entry>compressMessages</entry>
 					<entry>Boolean</entry>
-					<entry>false</entry>
 					<entry><para>Controls whether the client will compress messages before they they are sent.</para></entry>
 				</row>
 				<row id="JMS-Client-0-8-Connection-URL-ConnectionOptions-MessageCompressionThresholdSize">
 					<entry>messageCompressionThresholdSize</entry>
 					<entry>Integer</entry>
-					<entry>102400</entry>
 					<entry><para>The payload size beyond which the client will start to compress message payloads.</para></entry>
 				</row>
 			</tbody>
