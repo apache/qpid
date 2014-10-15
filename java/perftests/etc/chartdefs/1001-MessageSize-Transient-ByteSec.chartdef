@@ -20,7 +20,7 @@
 chartType=XYLINE
 chartTitle=Impact of Message Size Bytes/S
 chartSubtitle=Transient messages
-chartDescription=1P 1C, transient, auto-ack, with message payload between 256-262144 bytes ${baselineName}, single queue.
+chartDescription=1P 1C, single queue, transient, auto-ack, with message payload between 256-262144 bytes ${baselineName}.
 
 xAxisTitle=Message Size (B)
 yAxisTitle=Throughput (KB/s)
