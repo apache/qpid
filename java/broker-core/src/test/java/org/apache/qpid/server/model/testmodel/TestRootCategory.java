@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.ManagedObject;
 
 @ManagedObject( defaultType = "test" )
@@ -34,6 +35,13 @@ public interface TestRootCategory<X extends TestRootCategory<X>> extends Configu
     String DEFAULTED_VALUE = "defaultedValue";
     String STRING_VALUE = "stringValue";
     String MAP_VALUE = "mapValue";
+
+
+    String TEST_CONTEXT_DEFAULT = "TEST_CONTEXT_DEFAULT";
+
+    @ManagedContextDefault(name = TEST_CONTEXT_DEFAULT)
+    String testGlobalDefault = "default";
+
 
     @ManagedAttribute
     String getAutomatedPersistedValue();
