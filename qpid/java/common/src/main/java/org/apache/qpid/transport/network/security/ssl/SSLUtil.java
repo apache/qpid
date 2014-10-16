@@ -250,10 +250,10 @@ public class SSLUtil
 
     public static void removeSSLv3Support(final SSLEngine engine)
     {
-        List<String> supportedProtocols = Arrays.asList(engine.getSupportedProtocols());
-        if(supportedProtocols.contains(SSLV3_PROTOCOL))
+        List<String> enabledProtocols = Arrays.asList(engine.getEnabledProtocols());
+        if(enabledProtocols.contains(SSLV3_PROTOCOL))
         {
-            List<String> allowedProtocols = new ArrayList<>(supportedProtocols);
+            List<String> allowedProtocols = new ArrayList<>(enabledProtocols);
             allowedProtocols.remove(SSLV3_PROTOCOL);
             engine.setEnabledProtocols(allowedProtocols.toArray(new String[allowedProtocols.size()]));
         }
@@ -261,10 +261,10 @@ public class SSLUtil
 
     public static void removeSSLv3Support(final SSLSocket socket)
     {
-        List<String> supportedProtocols = Arrays.asList(socket.getSupportedProtocols());
-        if(supportedProtocols.contains(SSLV3_PROTOCOL))
+        List<String> enabledProtocols = Arrays.asList(socket.getEnabledProtocols());
+        if(enabledProtocols.contains(SSLV3_PROTOCOL))
         {
-            List<String> allowedProtocols = new ArrayList<>(supportedProtocols);
+            List<String> allowedProtocols = new ArrayList<>(enabledProtocols);
             allowedProtocols.remove(SSLV3_PROTOCOL);
             socket.setEnabledProtocols(allowedProtocols.toArray(new String[allowedProtocols.size()]));
         }
@@ -273,10 +273,10 @@ public class SSLUtil
 
     public static void removeSSLv3Support(final SSLServerSocket socket)
     {
-        List<String> supportedProtocols = Arrays.asList(socket.getSupportedProtocols());
-        if(supportedProtocols.contains(SSLV3_PROTOCOL))
+        List<String> enabledProtocols = Arrays.asList(socket.getEnabledProtocols());
+        if(enabledProtocols.contains(SSLV3_PROTOCOL))
         {
-            List<String> allowedProtocols = new ArrayList<>(supportedProtocols);
+            List<String> allowedProtocols = new ArrayList<>(enabledProtocols);
             allowedProtocols.remove(SSLV3_PROTOCOL);
             socket.setEnabledProtocols(allowedProtocols.toArray(new String[allowedProtocols.size()]));
         }

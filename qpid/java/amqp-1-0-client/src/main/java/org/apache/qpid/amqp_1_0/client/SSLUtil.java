@@ -20,13 +20,6 @@
  */
 package org.apache.qpid.amqp_1_0.client;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509ExtendedKeyManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -37,10 +30,23 @@ import java.security.KeyStore;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509ExtendedKeyManager;
 
 public class SSLUtil
 {
     public static final String TRANSPORT_LAYER_SECURITY_CODE = "TLS";
+    public static final String SSLV3_PROTOCOL = "SSLv3";
 
     public static SSLContext buildSslContext(final String certAlias,
                                              final String keyStorePath,
@@ -212,4 +218,16 @@ public class SSLUtil
             return delegate.chooseEngineServerAlias(keyType, issuers, engine);
         }
     }
+
+    public static void removeSSLv3Support(final SSLSocket socket)
+    {
+        List<String> enabledProtocols = Arrays.asList(socket.getEnabledProtocols());
+        if(enabledProtocols.contains(SSLV3_PROTOCOL))
+        {
+            List<String> allowedProtocols = new ArrayList<>(enabledProtocols);
+            allowedProtocols.remove(SSLV3_PROTOCOL);
+            socket.setEnabledProtocols(allowedProtocols.toArray(new String[allowedProtocols.size()]));
+        }
+    }
+
 }
