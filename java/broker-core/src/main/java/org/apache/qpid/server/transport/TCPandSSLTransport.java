@@ -42,13 +42,13 @@ class TCPandSSLTransport implements AcceptingTransport
     private Set<Transport> _transports;
     private SSLContext _sslContext;
     private InetSocketAddress _bindingSocketAddress;
-    private Port<?> _port;
+    private AmqpPort<?> _port;
     private Set<Protocol> _supported;
     private Protocol _defaultSupportedProtocolReply;
 
     TCPandSSLTransport(final Set<Transport> transports,
                        final SSLContext sslContext,
-                       final Port<?> port,
+                       final AmqpPort<?> port,
                        final Set<Protocol> supported,
                        final Protocol defaultSupportedProtocolReply)
     {
@@ -67,7 +67,7 @@ class TCPandSSLTransport implements AcceptingTransport
         {
             bindingAddress = null;
         }
-        Integer port = (Integer) _port.getAttribute(Port.PORT);
+        int port = _port.getPort();
         if ( bindingAddress == null )
         {
             _bindingSocketAddress = new InetSocketAddress(port);
@@ -91,6 +91,11 @@ class TCPandSSLTransport implements AcceptingTransport
         _networkTransport.accept(settings, protocolEngineFactory, _transports.contains(Transport.TCP) ? null : _sslContext);
     }
 
+    public int getAcceptingPort()
+    {
+        return _networkTransport.getAcceptingPort();
+    }
+
     @Override
     public void close()
     {
@@ -106,31 +111,31 @@ class TCPandSSLTransport implements AcceptingTransport
         @Override
         public boolean wantClientAuth()
         {
-            return (Boolean)_port.getAttribute(Port.WANT_CLIENT_AUTH);
+            return _port.getWantClientAuth();
         }
 
         @Override
         public boolean needClientAuth()
         {
-            return (Boolean)_port.getAttribute(Port.NEED_CLIENT_AUTH);
+            return _port.getNeedClientAuth();
         }
 
         @Override
         public Boolean getTcpNoDelay()
         {
-            return (Boolean)_port.getAttribute(Port.TCP_NO_DELAY);
+            return _port.isTcpNoDelay();
         }
 
         @Override
         public Integer getSendBufferSize()
         {
-            return (Integer)_port.getAttribute(AmqpPort.SEND_BUFFER_SIZE);
+            return _port.getSendBufferSize();
         }
 
         @Override
         public Integer getReceiveBufferSize()
         {
-            return (Integer)_port.getAttribute(AmqpPort.RECEIVE_BUFFER_SIZE);
+            return _port.getReceiveBufferSize();
         }
 
         @Override

@@ -24,9 +24,9 @@ import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.transport.AcceptingTransport;
 import org.apache.qpid.server.transport.TransportProvider;
 
@@ -39,7 +39,7 @@ class WebSocketTransportProvider implements TransportProvider
     @Override
     public AcceptingTransport createTransport(final Set<Transport> transports,
                                               final SSLContext sslContext,
-                                              final Port port,
+                                              final AmqpPort<?> port,
                                               final Set<Protocol> supported,
                                               final Protocol defaultSupportedProtocolReply)
     {

@@ -71,7 +71,7 @@ class WebSocketProvider implements TransportProvider
 
 
             sslContextFactory.setSslContext(context);
-
+            sslContextFactory.addExcludeProtocols("SSLv3");
             factory.start();
 
             return factory;

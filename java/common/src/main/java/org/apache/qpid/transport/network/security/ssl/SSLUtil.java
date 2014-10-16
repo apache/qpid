@@ -30,6 +30,8 @@ import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -39,6 +41,8 @@ import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
 
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.util.Logger;
@@ -47,6 +51,7 @@ public class SSLUtil
 {
     private static final Logger log = Logger.get(SSLUtil.class);
     private static final Integer DNS_NAME_TYPE = 2;
+    public static final String SSLV3_PROTOCOL = "SSLv3";
 
     private SSLUtil()
     {
@@ -241,5 +246,39 @@ public class SSLUtil
             }
         }
         return ks;
+    }
+
+    public static void removeSSLv3Support(final SSLEngine engine)
+    {
+        List<String> supportedProtocols = Arrays.asList(engine.getSupportedProtocols());
+        if(supportedProtocols.contains(SSLV3_PROTOCOL))
+        {
+            List<String> allowedProtocols = new ArrayList<>(supportedProtocols);
+            allowedProtocols.remove(SSLV3_PROTOCOL);
+            engine.setEnabledProtocols(allowedProtocols.toArray(new String[allowedProtocols.size()]));
+        }
+    }
+
+    public static void removeSSLv3Support(final SSLSocket socket)
+    {
+        List<String> supportedProtocols = Arrays.asList(socket.getSupportedProtocols());
+        if(supportedProtocols.contains(SSLV3_PROTOCOL))
+        {
+            List<String> allowedProtocols = new ArrayList<>(supportedProtocols);
+            allowedProtocols.remove(SSLV3_PROTOCOL);
+            socket.setEnabledProtocols(allowedProtocols.toArray(new String[allowedProtocols.size()]));
+        }
+    }
+
+
+    public static void removeSSLv3Support(final SSLServerSocket socket)
+    {
+        List<String> supportedProtocols = Arrays.asList(socket.getSupportedProtocols());
+        if(supportedProtocols.contains(SSLV3_PROTOCOL))
+        {
+            List<String> allowedProtocols = new ArrayList<>(supportedProtocols);
+            allowedProtocols.remove(SSLV3_PROTOCOL);
+            socket.setEnabledProtocols(allowedProtocols.toArray(new String[allowedProtocols.size()]));
+        }
     }
 }

@@ -26,6 +26,9 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -76,6 +79,13 @@ class TCPTransportProvier implements TransportProvider
                 final SSLSocketFactory socketFactory = sslContext.getSocketFactory();
 
                 SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(address, port);
+                List<String> supportedProtocols = Arrays.asList(sslSocket.getSupportedProtocols());
+                if(supportedProtocols.contains("SSLv3"))
+                {
+                    List<String> allowedProtocols = new ArrayList<>(supportedProtocols);
+                    allowedProtocols.remove("SSLv3");
+                    sslSocket.setEnabledProtocols(allowedProtocols.toArray(new String[allowedProtocols.size()]));
+                }
                 sslSocket.startHandshake();
                 conn.setExternalPrincipal(sslSocket.getSession().getLocalPrincipal());
                 _socket=sslSocket;

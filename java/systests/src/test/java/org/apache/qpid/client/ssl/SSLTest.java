@@ -36,6 +36,9 @@ import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Session;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQTestConnection_0_10;
 import org.apache.qpid.jms.ConnectionURL;
@@ -43,8 +46,6 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class SSLTest extends QpidBrokerTestCase
 {

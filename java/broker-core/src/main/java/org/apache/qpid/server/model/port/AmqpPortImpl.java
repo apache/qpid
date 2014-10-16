@@ -34,7 +34,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
-import org.apache.qpid.server.util.PortUtil;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
@@ -43,7 +42,6 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.ManagedAttributeField;
-import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
@@ -54,6 +52,7 @@ import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.TransportProviderFactory;
 import org.apache.qpid.server.transport.AcceptingTransport;
 import org.apache.qpid.server.transport.TransportProvider;
+import org.apache.qpid.server.util.PortUtil;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
@@ -215,6 +214,7 @@ public class AmqpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<
         try
         {
             SSLContext sslContext = SSLContext.getInstance("TLS");
+
             KeyManager[] keyManagers = keyStore.getKeyManagers();
 
             TrustManager[] trustManagers;
