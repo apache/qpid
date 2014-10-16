@@ -74,6 +74,7 @@ import org.apache.qpid.server.model.port.HttpPort;
 import org.apache.qpid.server.model.port.PortManager;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
+import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 @ManagedObject( category = false, type = "MANAGEMENT-HTTP" )
 public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implements HttpManagementConfiguration<HttpManagement>, PortManager
@@ -317,7 +318,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
             throw new IllegalConfigurationException("Key store is not configured. Cannot start management on HTTPS port without keystore");
         }
         SslContextFactory factory = new SslContextFactory();
-
+        factory.addExcludeProtocols(SSLUtil.SSLV3_PROTOCOL);
         boolean needClientCert = port.getNeedClientAuth() || port.getWantClientAuth();
 
         if (needClientCert && trustStores.isEmpty())

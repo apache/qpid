@@ -32,8 +32,6 @@ import java.util.Set;
 import javax.net.ssl.SSLContext;
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.qpid.server.model.port.AmqpPort;
-import org.apache.qpid.server.model.port.HttpPort;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
@@ -48,11 +46,14 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.port.AmqpPort;
+import org.apache.qpid.server.model.port.HttpPort;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.server.transport.AcceptingTransport;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
+import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 class WebSocketProvider implements AcceptingTransport
 {
@@ -103,6 +104,7 @@ class WebSocketProvider implements AcceptingTransport
         {
             SslContextFactory factory = new SslContextFactory();
             factory.setSslContext(_sslContext);
+            factory.addExcludeProtocols(SSLUtil.SSLV3_PROTOCOL);
             factory.setNeedClientAuth(true);
             connector = new SslSelectChannelConnector(factory);
         }
