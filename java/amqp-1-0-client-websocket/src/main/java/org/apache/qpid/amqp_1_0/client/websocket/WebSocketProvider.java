@@ -33,6 +33,7 @@ import org.eclipse.jetty.websocket.WebSocketClient;
 import org.eclipse.jetty.websocket.WebSocketClientFactory;
 
 import org.apache.qpid.amqp_1_0.client.ConnectionException;
+import org.apache.qpid.amqp_1_0.client.SSLUtil;
 import org.apache.qpid.amqp_1_0.client.TransportProvider;
 import org.apache.qpid.amqp_1_0.codec.FrameWriter;
 import org.apache.qpid.amqp_1_0.framing.AMQFrame;
@@ -71,7 +72,7 @@ class WebSocketProvider implements TransportProvider
 
 
             sslContextFactory.setSslContext(context);
-            sslContextFactory.addExcludeProtocols("SSLv3");
+            sslContextFactory.addExcludeProtocols(SSLUtil.SSLV3_PROTOCOL);
             factory.start();
 
             return factory;
