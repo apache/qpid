@@ -1578,7 +1578,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public Set<String> getContextKeys(final boolean excludeSystem)
     {
-        Map<String,String> inheritedContext = new HashMap<>();
+        Map<String,String> inheritedContext = new HashMap<>(_model.getTypeRegistry().getDefaultContext());
         if(!excludeSystem)
         {
             inheritedContext.putAll(System.getenv());
