@@ -173,10 +173,11 @@ efpDataSize_kib_t EmptyFilePool::dataSizeFromDirName_kib(const std::string& dirN
 
 // --- protected functions ---
 
+// WARNING: this method needs to be called under the scope of emptyFileListMutex_ lock
 void EmptyFilePool::createEmptyFile() {
     std::string efpfn = getEfpFileName();
     if (overwriteFileContents(efpfn)) {
-        pushEmptyFile(efpfn);
+        emptyFileList_.push_back(efpfn);
     }
 }
 
@@ -207,16 +208,11 @@ bool EmptyFilePool::overwriteFileContents(const std::string& fqFileName) {
 
 std::string EmptyFilePool::popEmptyFile() {
     std::string emptyFileName;
-    bool isEmpty = false;
     {
         slock l(emptyFileListMutex_);
-        isEmpty = emptyFileList_.empty();
-    }
-    if (isEmpty) {
-        createEmptyFile();
-    }
-    {
-        slock l(emptyFileListMutex_);
+        if (emptyFileList_.empty()) {
+            createEmptyFile();
+        }
         emptyFileName = emptyFileList_.front();
         emptyFileList_.pop_front();
     }
