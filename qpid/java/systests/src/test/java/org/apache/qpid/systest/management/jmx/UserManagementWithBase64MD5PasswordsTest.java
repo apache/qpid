@@ -18,16 +18,41 @@
  */
 package org.apache.qpid.systest.management.jmx;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+import javax.xml.bind.DatatypeConverter;
+
 import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordDatabaseAuthenticationManager;
-import org.apache.qpid.tools.security.Passwd;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class UserManagementWithBase64MD5PasswordsTest extends UserManagementTest
 {
     @Override
-    protected Passwd createPasswordEncodingUtility()
+    protected void writeUsernamePassword(final FileWriter writer, final String username, final String password)
+            throws IOException
     {
-        return new Passwd();
+        writer.append(username);
+        writer.append(":");
+        byte[] data = password.getBytes(StandardCharsets.UTF_8);
+        MessageDigest md = null;
+        try
+        {
+            md = MessageDigest.getInstance("MD5");
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new ServerScopedRuntimeException("MD5 not supported although Java compliance requires it");
+        }
+
+        md.update(data);
+        writer.append(DatatypeConverter.printBase64Binary(md.digest()));
+        writer.append('\n');
     }
+
 
     @Override
     protected String getAuthenticationManagerType()

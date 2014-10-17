@@ -20,10 +20,9 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import java.util.Collections;
 import java.util.Map;
 
-public class ScramSHA1AuthenticationManagerTest extends ManagedAuthenticationManagerTestBase
+public class PlainAuthenticationManagerTest extends ManagedAuthenticationManagerTestBase
 {
     @Override
     public void setUp() throws Exception
@@ -34,35 +33,19 @@ public class ScramSHA1AuthenticationManagerTest extends ManagedAuthenticationMan
     @Override
     protected ConfigModelPasswordManagingAuthenticationProvider<?> createAuthManager(final Map<String, Object> attributesMap)
     {
-        return new ScramSHA1AuthenticationManager(attributesMap, getBroker());
+        return new PlainAuthenticationProvider(attributesMap, getBroker());
     }
 
     @Override
     protected boolean isPlain()
     {
-        return false;
+        return true;
     }
 
     @Override
     public void tearDown() throws Exception
     {
         super.tearDown();
-    }
-
-
-    public void testNonASCIIUser()
-    {
-        try
-        {
-            getAuthManager().createUser(getTestName() + Character.toString((char) 0xa3),
-                                        "password",
-                                        Collections.<String, String>emptyMap());
-            fail("Expected exception when attempting to create a user with a non ascii name");
-        }
-        catch(IllegalArgumentException e)
-        {
-            // pass
-        }
     }
 
 }

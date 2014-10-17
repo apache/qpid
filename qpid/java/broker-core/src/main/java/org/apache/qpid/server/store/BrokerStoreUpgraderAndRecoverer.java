@@ -229,6 +229,13 @@ public class BrokerStoreUpgraderAndRecoverer
                 createAliasRecord(record, "hostnameAlias", "hostnameAlias");
 
             }
+            else if(record.getType().equals("User") && "scram".equals(record.getAttributes().get("type")) )
+            {
+                Map<String, Object> updatedAttributes = new HashMap<String, Object>(record.getAttributes());
+                updatedAttributes.put("type", "managed");
+                record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), updatedAttributes, record.getParents());
+                getUpdateMap().put(record.getId(), record);
+            }
             else if (record.getType().equals("Broker"))
             {
                 record = upgradeRootRecord(record);

@@ -27,8 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import javax.security.sasl.SaslException;
-
 import org.apache.qpid.server.configuration.updater.VoidTask;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -41,24 +39,21 @@ import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.security.access.Operation;
 
-@ManagedObject( category = false, type = ScramAuthUser.SCRAM_USER_TYPE)
-class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements User<ScramAuthUser>
+@ManagedObject( category = false, type = ManagedUser.MANAGED_USER_TYPE)
+class ManagedUser extends AbstractConfiguredObject<ManagedUser> implements User<ManagedUser>
 {
-    public static final String SCRAM_USER_TYPE = "scram";
+    public static final String MANAGED_USER_TYPE = "managed";
 
-    private AbstractScramAuthenticationManager _authenticationManager;
+    private ConfigModelPasswordManagingAuthenticationProvider<?> _authenticationManager;
     @ManagedAttributeField
     private String _password;
 
     @ManagedObjectFactoryConstructor
-    ScramAuthUser(final Map<String, Object> attributes, AbstractScramAuthenticationManager parent)
+    ManagedUser(final Map<String, Object> attributes, ConfigModelPasswordManagingAuthenticationProvider<?> parent)
     {
         super(parentsMap(parent), attributes);
         _authenticationManager = parent;
-        if(!ScramSHA1AuthenticationManager.ASCII.newEncoder().canEncode(getName()))
-        {
-            throw new IllegalArgumentException("Scram SHA1 user names are restricted to characters in the ASCII charset");
-        }
+
         setState(State.ACTIVE);
     }
 
@@ -73,6 +68,7 @@ class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements U
     public void onValidate()
     {
         super.onValidate();
+        _authenticationManager.validateUser(this);
         if(!isDurable())
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
@@ -122,17 +118,11 @@ class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements U
                 if (attributes.containsKey(User.PASSWORD)
                     && !newPassword.equals(getActualAttributes().get(User.PASSWORD)))
                 {
-                    try
-                    {
-                        modifiedAttributes.put(User.PASSWORD,
-                                               _authenticationManager.createStoredPassword(newPassword));
-                    }
-                    catch (SaslException e)
-                    {
-                        throw new IllegalArgumentException(e);
-                    }
+                    modifiedAttributes.put(User.PASSWORD,
+                                           _authenticationManager.createStoredPassword(newPassword));
+
                 }
-                ScramAuthUser.super.setAttributes(modifiedAttributes);
+                ManagedUser.super.setAttributes(modifiedAttributes);
             }
         });
 
@@ -150,15 +140,9 @@ class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements U
     {
         _authenticationManager.getSecurityManager().authoriseUserOperation(Operation.UPDATE, getName());
 
-        try
-        {
-            changeAttribute(User.PASSWORD, getAttribute(User.PASSWORD), _authenticationManager.createStoredPassword(
-                    password));
-        }
-        catch (SaslException e)
-        {
-            throw new IllegalArgumentException(e);
-        }
+        changeAttribute(User.PASSWORD, getAttribute(User.PASSWORD),
+                        _authenticationManager.createStoredPassword(password));
+
     }
 
     @Override
@@ -170,7 +154,7 @@ class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements U
     @Override
     public Map<String, Object> getPreferences()
     {
-        PreferencesProvider preferencesProvider = _authenticationManager.getPreferencesProvider();
+        PreferencesProvider<?> preferencesProvider = _authenticationManager.getPreferencesProvider();
         if (preferencesProvider == null)
         {
             return null;
@@ -192,7 +176,7 @@ class ScramAuthUser extends AbstractConfiguredObject<ScramAuthUser> implements U
     @Override
     public Map<String, Object> setPreferences(Map<String, Object> preferences)
     {
-        PreferencesProvider preferencesProvider = _authenticationManager.getPreferencesProvider();
+        PreferencesProvider<?> preferencesProvider = _authenticationManager.getPreferencesProvider();
         if (preferencesProvider == null)
         {
             return null;

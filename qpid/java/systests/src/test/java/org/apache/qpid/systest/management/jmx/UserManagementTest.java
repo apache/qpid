@@ -35,7 +35,6 @@ import org.apache.qpid.server.security.auth.manager.PlainPasswordDatabaseAuthent
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
-import org.apache.qpid.tools.security.Passwd;
 
 /**
  * System test for User Management.
@@ -49,11 +48,9 @@ public class UserManagementTest extends QpidBrokerTestCase
     private String _testUserName;
     private File _passwordFile;
     private UserManagement _userManagement;
-    private Passwd _passwd;
 
     public void setUp() throws Exception
     {
-        _passwd = createPasswordEncodingUtility();
         _passwordFile = createTemporaryPasswordFileWithJmxAdminUser();
 
         Map<String, Object> newAttributes = new HashMap<String, Object>();
@@ -161,17 +158,6 @@ public class UserManagementTest extends QpidBrokerTestCase
         assertEquals("unexpected authentication provider type", getAuthenticationManagerType(), actualType);
     }
 
-    protected Passwd createPasswordEncodingUtility()
-    {
-        return new Passwd()
-        {
-            @Override
-            public String getOutput(String username, String password)
-            {
-                return username + ":" + password;
-            }
-        };
-    }
 
     protected String getAuthenticationManagerType()
     {
@@ -188,21 +174,25 @@ public class UserManagementTest extends QpidBrokerTestCase
 
     private void writePasswordFile(File passwordFile, String... userNamePasswordPairs) throws Exception
     {
-        FileWriter writer = null;
-        try
+        try(FileWriter writer = new FileWriter(passwordFile))
         {
-            writer = new FileWriter(passwordFile);
             for (int i = 0; i < userNamePasswordPairs.length; i=i+2)
             {
                 String username = userNamePasswordPairs[i];
                 String password = userNamePasswordPairs[i+1];
-                writer.append(_passwd.getOutput(username, password) + "\n");
+                writeUsernamePassword(writer, username, password);
             }
         }
-        finally
-        {
-            writer.close();
-        }
+
+    }
+
+    protected void writeUsernamePassword(final FileWriter writer, final String username, final String password)
+            throws IOException
+    {
+        writer.append(username);
+        writer.append(':');
+        writer.append(password);
+        writer.append('\n');
     }
 
 
@@ -218,10 +208,8 @@ public class UserManagementTest extends QpidBrokerTestCase
 
     private boolean passwordFileContainsUser(String username) throws IOException
     {
-        BufferedReader reader = null;
-        try
+        try(BufferedReader reader = new BufferedReader(new FileReader(_passwordFile)))
         {
-            reader = new BufferedReader(new FileReader(_passwordFile));
             String line = reader.readLine();
             while(line != null)
             {
@@ -233,10 +221,6 @@ public class UserManagementTest extends QpidBrokerTestCase
             }
 
             return false;
-        }
-        finally
-        {
-            reader.close();
         }
     }
 
