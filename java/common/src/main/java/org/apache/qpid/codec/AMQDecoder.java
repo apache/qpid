@@ -30,16 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQDataBlockDecoder;
-import org.apache.qpid.framing.AMQFrameDecodingException;
-import org.apache.qpid.framing.AMQMethodBodyFactory;
-import org.apache.qpid.framing.AMQProtocolVersionException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ByteArrayDataInput;
-import org.apache.qpid.framing.EncodingUtils;
-import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.framing.*;
+import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * AMQDecoder delegates the decoding of AMQP either to a data block decoder, or in the case of new connections, to a
@@ -53,10 +45,9 @@ import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
  * TODO If protocol initiation decoder not needed, then don't create it. Probably not a big deal, but it adds to the
  *       per-session overhead.
  */
-public class AMQDecoder
+public abstract class AMQDecoder<T extends MethodProcessor>
 {
-    /** Holds the 'normal' AMQP data decoder. */
-    private AMQDataBlockDecoder _dataBlockDecoder = new AMQDataBlockDecoder();
+    private final T _methodProcessor;
 
     /** Holds the protocol initiation decoder. */
     private ProtocolInitiation.Decoder _piDecoder = new ProtocolInitiation.Decoder();
@@ -64,9 +55,10 @@ public class AMQDecoder
     /** Flag to indicate whether this decoder needs to handle protocol initiation. */
     private boolean _expectProtocolInitiation;
 
-    private AMQMethodBodyFactory _bodyFactory;
 
     private boolean _firstRead = true;
+
+    private int _maxFrameSize = AMQConstant.FRAME_MIN_SIZE.getCode();
 
     private List<ByteArrayInputStream> _remainingBufs = new ArrayList<ByteArrayInputStream>();
 
@@ -74,14 +66,13 @@ public class AMQDecoder
      * Creates a new AMQP decoder.
      *
      * @param expectProtocolInitiation <tt>true</tt> if this decoder needs to handle protocol initiation.
-     * @param session protocol session (connection)
+     * @param methodProcessor method processor
      */
-    public AMQDecoder(boolean expectProtocolInitiation, AMQVersionAwareProtocolSession session)
+    protected AMQDecoder(boolean expectProtocolInitiation, T methodProcessor)
     {
         _expectProtocolInitiation = expectProtocolInitiation;
-        _bodyFactory = new AMQMethodBodyFactory(session);
+        _methodProcessor = methodProcessor;
     }
-
 
 
     /**
@@ -98,7 +89,12 @@ public class AMQDecoder
 
     public void setMaxFrameSize(final int frameMax)
     {
-        _dataBlockDecoder.setMaxFrameSize(frameMax);
+        _maxFrameSize = frameMax;
+    }
+
+    public T getMethodProcessor()
+    {
+        return _methodProcessor;
     }
 
     private class RemainingByteArrayInputStream extends InputStream
@@ -219,14 +215,13 @@ public class AMQDecoder
     }
 
 
-    public ArrayList<AMQDataBlock> decodeBuffer(ByteBuffer buf) throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
+    public void decodeBuffer(ByteBuffer buf) throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
     {
 
-        // get prior remaining data from accumulator
-        ArrayList<AMQDataBlock> dataBlocks = new ArrayList<AMQDataBlock>();
         MarkableDataInput msg;
 
 
+        // get prior remaining data from accumulator
         ByteArrayInputStream bais;
         DataInput di;
         if(!_remainingBufs.isEmpty())
@@ -257,10 +252,10 @@ public class AMQDecoder
         {
             if(!_expectProtocolInitiation)
             {
-                enoughData = _dataBlockDecoder.decodable(msg);
+                enoughData = decodable(msg);
                 if (enoughData)
                 {
-                    dataBlocks.add(_dataBlockDecoder.createAndPopulateFrame(_bodyFactory, msg));
+                    processInput(msg);
                 }
             }
             else
@@ -268,7 +263,7 @@ public class AMQDecoder
                 enoughData = _piDecoder.decodable(msg);
                 if (enoughData)
                 {
-                    dataBlocks.add(new ProtocolInitiation(msg));
+                    _methodProcessor.receiveProtocolHeader(new ProtocolInitiation(msg));
                 }
 
             }
@@ -305,6 +300,106 @@ public class AMQDecoder
                 }
             }
         }
-        return dataBlocks;
     }
+
+    private boolean decodable(final MarkableDataInput in) throws AMQFrameDecodingException, IOException
+    {
+        final int remainingAfterAttributes = in.available() - (1 + 2 + 4 + 1);
+        // type, channel, body length and end byte
+        if (remainingAfterAttributes < 0)
+        {
+            return false;
+        }
+
+        in.mark(8);
+        in.skip(1 + 2);
+
+
+        // Get an unsigned int, lifted from MINA ByteBuffer getUnsignedInt()
+        final long bodySize = in.readInt() & 0xffffffffL;
+        if (bodySize > _maxFrameSize)
+        {
+            throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR,
+                                                "Incoming frame size of "
+                                                + bodySize
+                                                + " is larger than negotiated maximum of  "
+                                                + _maxFrameSize);
+        }
+        in.reset();
+
+        return (remainingAfterAttributes >= bodySize);
+
+    }
+
+    private void processInput(final MarkableDataInput in)
+            throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
+    {
+        final byte type = in.readByte();
+
+        final int channel = in.readUnsignedShort();
+        final long bodySize = EncodingUtils.readUnsignedInteger(in);
+
+        // bodySize can be zero
+        if ((channel < 0) || (bodySize < 0))
+        {
+            throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR,
+                                                "Undecodable frame: type = " + type + " channel = " + channel
+                                                + " bodySize = " + bodySize);
+        }
+
+        processFrame(channel, type, bodySize, in);
+
+        byte marker = in.readByte();
+        if ((marker & 0xFF) != 0xCE)
+        {
+            throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR,
+                                                "End of frame marker not found. Read " + marker + " length=" + bodySize
+                                                + " type=" + type);
+        }
+
+    }
+
+    protected void processFrame(final int channel, final byte type, final long bodySize, final MarkableDataInput in)
+            throws AMQFrameDecodingException, IOException
+    {
+        switch (type)
+        {
+            case 1:
+                processMethod(channel, in);
+                break;
+            case 2:
+                ContentHeaderBody.process(in, _methodProcessor.getChannelMethodProcessor(channel), bodySize);
+                break;
+            case 3:
+                ContentBody.process(in, _methodProcessor.getChannelMethodProcessor(channel), bodySize);
+                break;
+            case 8:
+                HeartbeatBody.process(channel, in, _methodProcessor, bodySize);
+                break;
+            default:
+                throw new AMQFrameDecodingException(AMQConstant.FRAME_ERROR, "Unsupported frame type: " + type);
+        }
+    }
+
+
+    abstract void processMethod(int channelId,
+                               MarkableDataInput in)
+            throws AMQFrameDecodingException, IOException;
+
+    AMQFrameDecodingException newUnknownMethodException(final int classId,
+                                                        final int methodId,
+                                                        ProtocolVersion protocolVersion)
+    {
+        return new AMQFrameDecodingException(AMQConstant.COMMAND_INVALID,
+                                             "Method "
+                                             + methodId
+                                             + " unknown in AMQP version "
+                                             + protocolVersion
+                                             + " (while trying to decode class "
+                                             + classId
+                                             + " method "
+                                             + methodId
+                                             + ".");
+    }
+
 }

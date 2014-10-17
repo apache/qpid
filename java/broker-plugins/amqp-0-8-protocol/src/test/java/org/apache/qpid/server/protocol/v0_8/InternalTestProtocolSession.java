@@ -39,14 +39,13 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.protocol.v0_8.output.ProtocolOutputConverter;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -231,7 +230,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         //Simulate the Client responding with a CloseOK
         // should really update the StateManger but we don't have access here
         // changeState(AMQState.CONNECTION_CLOSED);
-        ((AMQChannel)session).getProtocolSession().closeSession();
+        ((AMQChannel)session).getConnection().closeSession();
 
     }
 

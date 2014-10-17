@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.qpid.codec.MarkableDataInput;
-
 import java.io.DataOutput;
 import java.io.IOException;
 
@@ -37,12 +35,6 @@ public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
     {
         _channel = channel;
         _bodyFrame = bodyFrame;
-    }
-
-    public AMQFrame(final MarkableDataInput in, final int channel, final long bodySize, final BodyFactory bodyFactory) throws AMQFrameDecodingException, IOException
-    {
-        this._channel = channel;
-        this._bodyFrame = bodyFactory.createBody(in,bodySize);
     }
 
     public long getSize()

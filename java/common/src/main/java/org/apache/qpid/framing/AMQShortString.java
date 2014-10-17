@@ -389,6 +389,17 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         {
             return new CharSubSequence(start + _sequenceOffset, end + _sequenceOffset);
         }
+
+        @Override
+        public String toString()
+        {
+            char[] chars = new char[length()];
+            for(int i = 0; i < length(); i++)
+            {
+                chars[i] = charAt(i);
+            }
+            return new String(chars);
+        }
     }
 
     public char[] asChars()

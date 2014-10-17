@@ -30,7 +30,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.plugin.PluggableService;
@@ -239,7 +239,7 @@ public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTra
     private ContentHeaderBody convertContentHeaderBody(MessageTransferMessage message, VirtualHostImpl vhost)
     {
         BasicContentHeaderProperties props = convertContentHeaderProperties(message, vhost);
-        ContentHeaderBody chb = new ContentHeaderBody(props, BASIC_CLASS_ID);
+        ContentHeaderBody chb = new ContentHeaderBody(props);
         chb.setBodySize(message.getSize());
         return chb;
     }
@@ -256,38 +256,7 @@ public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTra
         final boolean immediate = delvProps != null && delvProps.getImmediate();
         final boolean mandatory = delvProps != null && !delvProps.getDiscardUnroutable();
 
-        return new MessagePublishInfo()
-        {
-            @Override
-            public AMQShortString getExchange()
-            {
-                return exchangeName;
-            }
-
-            @Override
-            public void setExchange(AMQShortString exchange)
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isImmediate()
-            {
-                return immediate;
-            }
-
-            @Override
-            public boolean isMandatory()
-            {
-                return mandatory;
-            }
-
-            @Override
-            public AMQShortString getRoutingKey()
-            {
-                return routingKey;
-            }
-        };
+        return new MessagePublishInfo(exchangeName, immediate, mandatory, routingKey);
     }
 
     @Override

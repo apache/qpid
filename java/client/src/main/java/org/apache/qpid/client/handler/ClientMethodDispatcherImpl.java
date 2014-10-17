@@ -125,6 +125,28 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
         return false;
     }
 
+    @Override
+    public boolean dispatchQueueUnbindOk(final QueueUnbindOkBody body, final int channelId)
+            throws AMQException
+    {
+        throw new AMQMethodNotImplementedException(body);
+    }
+
+    @Override
+    public boolean dispatchBasicRecoverSyncOk(final BasicRecoverSyncOkBody basicRecoverSyncOkBody,
+                                              final int channelId)
+            throws AMQException
+    {
+        return false;
+    }
+
+    @Override
+    public boolean dispatchChannelAlert(final ChannelAlertBody channelAlertBody, final int channelId)
+            throws AMQException
+    {
+        return false;
+    }
+
     public boolean dispatchBasicCancelOk(BasicCancelOkBody body, int channelId) throws AMQException
     {
         _basicCancelOkMethodHandler.methodReceived(_session, body, channelId);
@@ -244,16 +266,6 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
         return false;
     }
 
-    public boolean dispatchStreamCancelOk(StreamCancelOkBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchStreamConsumeOk(StreamConsumeOkBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
     public boolean dispatchAccessRequest(AccessRequestBody body, int channelId) throws AMQException
     {
         throw new AMQMethodNotImplementedException(body);
@@ -324,16 +336,6 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
         throw new AMQMethodNotImplementedException(body);
     }
 
-    public boolean dispatchDtxSelect(DtxSelectBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchDtxStart(DtxStartBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
     public boolean dispatchExchangeBound(ExchangeBoundBody body, int channelId) throws AMQException
     {
         throw new AMQMethodNotImplementedException(body);
@@ -345,36 +347,6 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
     }
 
     public boolean dispatchExchangeDelete(ExchangeDeleteBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchFileAck(FileAckBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchFileCancel(FileCancelBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchFileConsume(FileConsumeBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchFilePublish(FilePublishBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchFileQos(FileQosBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchFileReject(FileRejectBody body, int channelId) throws AMQException
     {
         throw new AMQMethodNotImplementedException(body);
     }
@@ -399,30 +371,6 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
         throw new AMQMethodNotImplementedException(body);
     }
 
-    public boolean dispatchStreamCancel(StreamCancelBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchStreamConsume(StreamConsumeBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchStreamPublish(StreamPublishBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchStreamQos(StreamQosBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchTunnelRequest(TunnelRequestBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
 
     public boolean dispatchTxCommit(TxCommitBody body, int channelId) throws AMQException
     {
@@ -439,14 +387,17 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
         throw new AMQMethodNotImplementedException(body);
     }
 
-    public boolean dispatchDtxSelectOk(DtxSelectOkBody body, int channelId) throws AMQException
+    @Override
+    public boolean dispatchQueueUnbind(final QueueUnbindBody queueUnbindBody, final int channelId) throws AMQException
     {
-        throw new AMQMethodNotImplementedException(body);
+        return false;
     }
 
-    public boolean dispatchDtxStartOk(DtxStartOkBody body, int channelId) throws AMQException
+    @Override
+    public boolean dispatchBasicRecoverSync(final BasicRecoverSyncBody basicRecoverSyncBody, final int channelId)
+            throws AMQException
     {
-        throw new AMQMethodNotImplementedException(body);
+        return false;
     }
 
     public boolean dispatchExchangeBoundOk(ExchangeBoundOkBody body, int channelId) throws AMQException
@@ -465,46 +416,6 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
         return false;
     }
 
-    public boolean dispatchFileCancelOk(FileCancelOkBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchFileConsumeOk(FileConsumeOkBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchFileDeliver(FileDeliverBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchFileOpen(FileOpenBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchFileOpenOk(FileOpenOkBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchFileQosOk(FileQosOkBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchFileReturn(FileReturnBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchFileStage(FileStageBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
     public boolean dispatchQueueBindOk(QueueBindOkBody body, int channelId) throws AMQException
     {
         return false;
@@ -513,21 +424,6 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
     public boolean dispatchQueueDeclareOk(QueueDeclareOkBody body, int channelId) throws AMQException
     {
         return false;
-    }
-
-    public boolean dispatchStreamDeliver(StreamDeliverBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchStreamQosOk(StreamQosOkBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
-    }
-
-    public boolean dispatchStreamReturn(StreamReturnBody body, int channelId) throws AMQException
-    {
-        throw new AMQMethodNotImplementedException(body);
     }
 
     public boolean dispatchTxCommitOk(TxCommitOkBody body, int channelId) throws AMQException

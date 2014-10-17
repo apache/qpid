@@ -86,8 +86,16 @@ public class JavaServerCloseRaceConditionTest extends QpidBrokerTestCase
         // Set no wait true so that we block the connection
         // Also set a different exchange class string so the attempt to declare
         // the exchange causes an exchange. 
-        ExchangeDeclareBody body = session.getMethodRegistry().createExchangeDeclareBody(session.getTicket(), new AMQShortString(EXCHANGE_NAME), null,
-                                                                                         true, false, false, false, true, null);
+        ExchangeDeclareBody body = session.getMethodRegistry().createExchangeDeclareBody(session.getTicket(),
+                                                                                             new AMQShortString(
+                                                                                                     EXCHANGE_NAME),
+                                                                                             null,
+                                                                                             true,
+                                                                                             false,
+                                                                                             false,
+                                                                                             false,
+                                                                                             true,
+                                                                                             null);
 
         AMQFrame exchangeDeclare = body.generateFrame(session.getChannelId());
 

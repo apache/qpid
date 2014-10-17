@@ -20,7 +20,6 @@
  */
 package org.apache.qpid;
 
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.protocol.AMQConstant;
 
 /**
@@ -72,7 +71,6 @@ public class AMQException extends Exception
         this(null, (msg == null) ? "" : msg);
     }
 
-    @Deprecated
     public AMQException(AMQConstant errorCode, String msg)
     {
         this(errorCode, (msg == null) ? "" : msg, null);

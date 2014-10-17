@@ -30,22 +30,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQFrameDecodingException;
-import org.apache.qpid.framing.AMQProtocolVersionException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
-import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.server.store.StorableMessageMetaData;
-import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
-import org.apache.qpid.server.store.berkeleydb.FieldTableEncoding;
-
 import com.sleepycat.bind.tuple.ByteBinding;
 import com.sleepycat.bind.tuple.LongBinding;
 import com.sleepycat.bind.tuple.TupleBase;
@@ -56,6 +40,22 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.Transaction;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQFrameDecodingException;
+import org.apache.qpid.framing.AMQProtocolVersionException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.MessagePublishInfo;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
+import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
+import org.apache.qpid.server.store.berkeleydb.FieldTableEncoding;
 
 public class UpgradeFrom4To5 extends AbstractStoreUpgrade
 {
@@ -662,34 +662,7 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
             final boolean mandatory = tupleInput.readBoolean();
             final boolean immediate = tupleInput.readBoolean();
 
-            return new MessagePublishInfo()
-            {
-
-                public AMQShortString getExchange()
-                {
-                    return exchange;
-                }
-
-                public void setExchange(AMQShortString exchange)
-                {
-
-                }
-
-                public boolean isImmediate()
-                {
-                    return immediate;
-                }
-
-                public boolean isMandatory()
-                {
-                    return mandatory;
-                }
-
-                public AMQShortString getRoutingKey()
-                {
-                    return routingKey;
-                }
-            };
+            return new MessagePublishInfo(exchange, immediate, mandatory, routingKey);
 
         }
 

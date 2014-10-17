@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.framing;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EncodingUtils
 {
@@ -218,12 +218,6 @@ public class EncodingUtils
         }
     }
 
-    public static int encodedContentLength(Content table)
-    {
-        // TODO: New Content class required for AMQP 0-9.
-        return 0;
-    }
-
     public static void writeShortStringBytes(DataOutput buffer, String s) throws IOException
     {
         if (s != null)
@@ -372,11 +366,6 @@ public class EncodingUtils
         {
             EncodingUtils.writeUnsignedInteger(buffer, 0);
         }
-    }
-
-    public static void writeContentBytes(DataOutput buffer, Content content)
-    {
-        // TODO: New Content class required for AMQP 0-9.
     }
 
     public static void writeBooleans(DataOutput buffer, boolean[] values) throws IOException
@@ -654,12 +643,6 @@ public class EncodingUtils
         {
             return FieldTableFactory.newFieldTable(buffer, length);
         }
-    }
-
-    public static Content readContent(DataInput buffer) throws AMQFrameDecodingException
-    {
-        // TODO: New Content class required for AMQP 0-9.
-        return null;
     }
 
     public static AMQShortString readAMQShortString(DataInput buffer) throws IOException
@@ -955,7 +938,6 @@ public class EncodingUtils
         }
         else
         {                                                    
-            // really writing out unsigned byte
             writeUnsignedInteger(buffer, 0L);
         }
     }

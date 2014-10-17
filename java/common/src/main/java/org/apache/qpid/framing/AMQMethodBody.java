@@ -20,27 +20,17 @@
  */
 package org.apache.qpid.framing;
 
+import java.io.DataOutput;
+import java.io.IOException;
+
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 
-import java.io.DataOutput;
-import java.io.IOException;
-
 public interface AMQMethodBody extends AMQBody
 {
     public static final byte TYPE = 1;
-
-    /** AMQP major version 
-     * @return the major version*/
-    public byte getMajor();
-
-    /** AMQP minor version 
-     * @return the minor version*/
-    public byte getMinor();
-
-
 
     /** @return unsigned short */
     public int getClazz();
@@ -66,18 +56,18 @@ public interface AMQMethodBody extends AMQBody
      *
      * @param channelId The channel id that is not found
      *
+     * @param methodRegistry
      * @return new AMQChannelException
      */
-    public AMQChannelException getChannelNotFoundException(int channelId);
+    public AMQChannelException getChannelNotFoundException(int channelId, final MethodRegistry methodRegistry);
 
-    public AMQChannelException getChannelException(AMQConstant code, String message);
+    public AMQChannelException getChannelException(AMQConstant code,
+                                                   String message,
+                                                   final MethodRegistry methodRegistry);
 
-    public AMQChannelException getChannelException(AMQConstant code, String message, Throwable cause);
-
-    public AMQConnectionException getConnectionException(AMQConstant code, String message);
-
-
-    public AMQConnectionException getConnectionException(AMQConstant code, String message, Throwable cause);
+    public AMQConnectionException getConnectionException(AMQConstant code,
+                                                         String message,
+                                                         final MethodRegistry methodRegistry);
 
 
     public boolean execute(MethodDispatcher methodDispatcher, int channelId) throws AMQException;

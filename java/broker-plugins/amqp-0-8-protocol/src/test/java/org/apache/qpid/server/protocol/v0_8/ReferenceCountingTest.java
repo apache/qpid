@@ -23,10 +23,9 @@ package org.apache.qpid.server.protocol.v0_8;
 import java.util.UUID;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.store.MessageCounter;
@@ -57,36 +56,7 @@ public class ReferenceCountingTest extends QpidTestCase
     {
         ContentHeaderBody chb = createPersistentContentHeader();
 
-        MessagePublishInfo info = new MessagePublishInfo()
-        {
-
-            public AMQShortString getExchange()
-            {
-                return null;
-            }
-
-            public void setExchange(AMQShortString exchange)
-            {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            public boolean isImmediate()
-            {
-                return false;
-            }
-
-            public boolean isMandatory()
-            {
-                return false;
-            }
-
-            public AMQShortString getRoutingKey()
-            {
-                return null;
-            }
-        };
-
-
+        MessagePublishInfo info = new MessagePublishInfo(null, false, false, null);
 
         final MessageMetaData mmd = new MessageMetaData(info, chb);
 
@@ -114,44 +84,16 @@ public class ReferenceCountingTest extends QpidTestCase
 
     private ContentHeaderBody createPersistentContentHeader()
     {
-        ContentHeaderBody chb = new ContentHeaderBody();
         BasicContentHeaderProperties bchp = new BasicContentHeaderProperties();
         bchp.setDeliveryMode((byte)2);
-        chb.setProperties(bchp);
+        ContentHeaderBody chb = new ContentHeaderBody(bchp);
         return chb;
     }
 
     public void testMessageRemains() throws AMQException
     {
 
-        MessagePublishInfo info = new MessagePublishInfo()
-        {
-
-            public AMQShortString getExchange()
-            {
-                return null;
-            }
-
-            public void setExchange(AMQShortString exchange)
-            {
-                //To change body of implemented methods use File | Settings | File Templates.
-            }
-
-            public boolean isImmediate()
-            {
-                return false;
-            }
-
-            public boolean isMandatory()
-            {
-                return false;
-            }
-
-            public AMQShortString getRoutingKey()
-            {
-                return null;
-            }
-        };
+        MessagePublishInfo info = new MessagePublishInfo(null, false, false, null);
 
         final ContentHeaderBody chb = createPersistentContentHeader();
 

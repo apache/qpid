@@ -29,7 +29,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.flow.LimitlessCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
@@ -51,7 +51,7 @@ public class AckTest extends QpidTestCase
     private ConsumerTarget_0_8 _subscriptionTarget;
     private ConsumerImpl _consumer;
 
-    private AMQProtocolSession _protocolSession;
+    private AMQProtocolEngine _protocolEngine;
 
     private TestMemoryMessageStore _messageStore;
 
@@ -68,8 +68,8 @@ public class AckTest extends QpidTestCase
         super.setUp();
         BrokerTestHelper.setUp();
         _channel = BrokerTestHelper_0_8.createChannel(5);
-        _protocolSession = _channel.getProtocolSession();
-        _virtualHost = _protocolSession.getVirtualHost();
+        _protocolEngine = _channel.getConnection();
+        _virtualHost = _protocolEngine.getVirtualHost();
         _queue = BrokerTestHelper.createQueue(getTestName(), _virtualHost);
         _messageStore = (TestMemoryMessageStore)_virtualHost.getMessageStore();
     }
@@ -90,37 +90,10 @@ public class AckTest extends QpidTestCase
     {
         for (int i = 1; i <= count; i++)
         {
-            MessagePublishInfo publishBody = new MessagePublishInfo()
-            {
-
-                public AMQShortString getExchange()
-                {
-                    return new AMQShortString("someExchange");
-                }
-
-                public void setExchange(AMQShortString exchange)
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                public boolean isImmediate()
-                {
-                    return false;
-                }
-
-                public boolean isMandatory()
-                {
-                    return false;
-                }
-
-                public AMQShortString getRoutingKey()
-                {
-                    return new AMQShortString("rk");
-                }
-            };
+            MessagePublishInfo publishBody = new MessagePublishInfo(new AMQShortString("someExchange"), false, false,
+                                                                    new AMQShortString("rk"));
             BasicContentHeaderProperties b = new BasicContentHeaderProperties();
-            ContentHeaderBody cb = new ContentHeaderBody();
-            cb.setProperties(b);
+            ContentHeaderBody cb = new ContentHeaderBody(b);
 
             if (persistent)
             {

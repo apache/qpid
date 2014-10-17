@@ -24,18 +24,15 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 public class BrokerTestHelper_0_8 extends BrokerTestHelper
 {
 
-    public static AMQChannel createChannel(int channelId, AMQProtocolSession session) throws AMQException
+    public static AMQChannel createChannel(int channelId, AMQProtocolEngine session) throws AMQException
     {
         AMQChannel channel = new AMQChannel(session, channelId, session.getVirtualHost().getMessageStore());
         session.addChannel(channel);
@@ -69,9 +66,7 @@ public class BrokerTestHelper_0_8 extends BrokerTestHelper
     {
         AMQShortString routingKey = new AMQShortString(queueName);
         AMQShortString exchangeNameAsShortString = new AMQShortString(exchangeName);
-        MessagePublishInfo info = mock(MessagePublishInfo.class);
-        when(info.getExchange()).thenReturn(exchangeNameAsShortString);
-        when(info.getRoutingKey()).thenReturn(routingKey);
+        MessagePublishInfo info = new MessagePublishInfo(exchangeNameAsShortString, false, false, routingKey);
 
         MessageDestination destination;
         if(exchangeName == null || "".equals(exchangeName))
@@ -86,12 +81,10 @@ public class BrokerTestHelper_0_8 extends BrokerTestHelper
         {
             channel.setPublishFrame(info, destination);
 
-            // Set the body size
-            ContentHeaderBody _headerBody = new ContentHeaderBody();
-            _headerBody.setBodySize(0);
 
             // Set Minimum properties
             BasicContentHeaderProperties properties = new BasicContentHeaderProperties();
+
 
             properties.setExpiration(0L);
             properties.setTimestamp(System.currentTimeMillis());
@@ -99,9 +92,9 @@ public class BrokerTestHelper_0_8 extends BrokerTestHelper
             // Make Message Persistent
             properties.setDeliveryMode((byte) 2);
 
-            _headerBody.setProperties(properties);
+            ContentHeaderBody headerBody = new ContentHeaderBody(properties, 0);
 
-            channel.publishContentHeader(_headerBody);
+            channel.publishContentHeader(headerBody);
         }
         channel.sync();
     }

@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.transport.util;
 
-import java.nio.ByteBuffer;
-
 import static java.lang.Math.min;
+
+import java.nio.ByteBuffer;
 
 
 /**
@@ -33,6 +33,9 @@ import static java.lang.Math.min;
 
 public final class Functions
 {
+    private static final char[] HEX_CHARACTERS =
+            {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
     private Functions()
     {
     }
@@ -100,6 +103,23 @@ public final class Functions
     public static final String str(byte[] bytes, int limit)
     {
         return str(ByteBuffer.wrap(bytes), limit);
+    }
+
+    public static String hex(byte[] bytes, int limit)
+    {
+        limit = Math.min(limit, bytes == null ? 0 : bytes.length);
+        StringBuilder sb = new StringBuilder(3 + limit*2);
+        for(int i = 0; i < limit; i++)
+        {
+            sb.append(HEX_CHARACTERS[(((int)bytes[i]) & 0xf0)>>4]);
+            sb.append(HEX_CHARACTERS[(((int)bytes[i]) & 0x0f)]);
+
+        }
+        if(bytes != null && bytes.length>limit)
+        {
+            sb.append("...");
+        }
+        return sb.toString();
     }
 
 }

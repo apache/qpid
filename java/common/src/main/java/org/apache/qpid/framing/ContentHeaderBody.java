@@ -20,54 +20,45 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.codec.MarkableDataInput;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+
 public class ContentHeaderBody implements AMQBody
 {
     public static final byte TYPE = 2;
+    public static final int CLASS_ID =  60;
 
-    private int classId;
-
-    private int weight;
-
-    private long bodySize;
+    private long _bodySize;
 
     /** must never be null */
-    private BasicContentHeaderProperties properties;
-
-    public ContentHeaderBody()
-    {
-    }
+    private BasicContentHeaderProperties _properties;
 
     public ContentHeaderBody(DataInput buffer, long size) throws AMQFrameDecodingException, IOException
     {
-        classId = buffer.readUnsignedShort();
-        weight = buffer.readUnsignedShort();
-        bodySize = buffer.readLong();
+        buffer.readUnsignedShort();
+        buffer.readUnsignedShort();
+        _bodySize = buffer.readLong();
         int propertyFlags = buffer.readUnsignedShort();
         ContentHeaderPropertiesFactory factory = ContentHeaderPropertiesFactory.getInstance();
-        properties = factory.createContentHeaderProperties(classId, propertyFlags, buffer, (int)size - 14);
+        _properties = factory.createContentHeaderProperties(CLASS_ID, propertyFlags, buffer, (int)size - 14);
 
     }
 
-
-    public ContentHeaderBody(BasicContentHeaderProperties props, int classId)
+    public ContentHeaderBody(BasicContentHeaderProperties props)
     {
-        properties = props;
-        this.classId = classId;
+        _properties = props;
     }
 
-    public ContentHeaderBody(int classId, int weight, BasicContentHeaderProperties props, long bodySize)
+    public ContentHeaderBody(BasicContentHeaderProperties props, long bodySize)
     {
-        this(props, classId);
-        this.weight = weight;
-        this.bodySize = bodySize;
+        _properties = props;
+        _bodySize = bodySize;
     }
 
     public byte getFrameType()
@@ -95,16 +86,16 @@ public class ContentHeaderBody implements AMQBody
 
     public int getSize()
     {
-        return 2 + 2 + 8 + 2 + properties.getPropertyListSize();
+        return 2 + 2 + 8 + 2 + _properties.getPropertyListSize();
     }
 
     public void writePayload(DataOutput buffer) throws IOException
     {
-        EncodingUtils.writeUnsignedShort(buffer, classId);
-        EncodingUtils.writeUnsignedShort(buffer, weight);
-        buffer.writeLong(bodySize);
-        EncodingUtils.writeUnsignedShort(buffer, properties.getPropertyFlags());
-        properties.writePropertyListPayload(buffer);
+        EncodingUtils.writeUnsignedShort(buffer, CLASS_ID);
+        EncodingUtils.writeUnsignedShort(buffer, 0);
+        buffer.writeLong(_bodySize);
+        EncodingUtils.writeUnsignedShort(buffer, _properties.getPropertyFlags());
+        _properties.writePropertyListPayload(buffer);
     }
 
     public void handle(final int channelId, final AMQVersionAwareProtocolSession session)
@@ -113,46 +104,42 @@ public class ContentHeaderBody implements AMQBody
         session.contentHeaderReceived(channelId, this);
     }
 
-    public static AMQFrame createAMQFrame(int channelId, int classId, int weight, BasicContentHeaderProperties properties,
+    public static AMQFrame createAMQFrame(int channelId,
+                                          BasicContentHeaderProperties properties,
                                           long bodySize)
     {
-        return new AMQFrame(channelId, new ContentHeaderBody(classId, weight, properties, bodySize));
-    }
-
-    public static AMQFrame createAMQFrame(int channelId, ContentHeaderBody body)
-    {
-        return new AMQFrame(channelId, body);
+        return new AMQFrame(channelId, new ContentHeaderBody(properties, bodySize));
     }
 
     public BasicContentHeaderProperties getProperties()
     {
-        return properties;
+        return _properties;
     }
 
     public void setProperties(BasicContentHeaderProperties props)
     {
-        properties = props;
+        _properties = props;
     }
 
     @Override
     public String toString()
     {
         return "ContentHeaderBody{" +
-                "classId=" + classId +
-                ", weight=" + weight +
-                ", bodySize=" + bodySize +
-                ", properties=" + properties +
+                "classId=" + CLASS_ID +
+                ", weight=" + 0 +
+                ", bodySize=" + _bodySize +
+                ", properties=" + _properties +
                 '}';
     }
 
     public int getClassId()
     {
-        return classId;
+        return CLASS_ID;
     }
 
     public int getWeight()
     {
-        return weight;
+        return 0;
     }
 
     /** unsigned long but java can't handle that anyway when allocating byte array
@@ -160,11 +147,33 @@ public class ContentHeaderBody implements AMQBody
      * @return the body size */
     public long getBodySize()
     {
-        return bodySize;
+        return _bodySize;
     }
 
     public void setBodySize(long bodySize)
     {
-        this.bodySize = bodySize;
+        _bodySize = bodySize;
+    }
+
+    public static void process(final MarkableDataInput buffer,
+                               final ChannelMethodProcessor methodProcessor, final long size)
+            throws IOException, AMQFrameDecodingException
+    {
+
+        int classId = buffer.readUnsignedShort();
+        buffer.readUnsignedShort();
+        long bodySize = buffer.readLong();
+        int propertyFlags = buffer.readUnsignedShort();
+
+        BasicContentHeaderProperties properties;
+
+        if (classId != CLASS_ID)
+        {
+            throw new AMQFrameDecodingException(null, "Unsupported content header class id: " + classId, null);
+        }
+        properties = new BasicContentHeaderProperties();
+        properties.populatePropertiesFromBuffer(buffer, propertyFlags, (int)(size-14));
+
+        methodProcessor.receiveMessageHeader(properties, bodySize);
     }
 }

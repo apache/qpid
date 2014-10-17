@@ -20,14 +20,8 @@
  */
 package org.apache.qpid.server.logging;
 
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQSession_0_10;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ExchangeDeleteBody;
-import org.apache.qpid.framing.ExchangeDeleteOkBody;
-import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
+import java.io.IOException;
+import java.util.List;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -35,8 +29,16 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
-import java.io.IOException;
-import java.util.List;
+
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.AMQSession_0_10;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ExchangeDeleteBody;
+import org.apache.qpid.framing.ExchangeDeleteOkBody;
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.ProtocolVersion;
 
 /**
  * Exchange
@@ -191,7 +193,7 @@ public class ExchangeLoggingTest extends AbstractTestLogging
         }
         else
         {
-            MethodRegistry_8_0 registry = new MethodRegistry_8_0();
+            MethodRegistry registry = new MethodRegistry(ProtocolVersion.v8_0);
 
             ExchangeDeleteBody body = registry.createExchangeDeleteBody(0, new AMQShortString(_name), false, true);
 

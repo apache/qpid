@@ -111,7 +111,6 @@
                 <target>
                     <ant antfile="build-generate-sources.xml">
                       <reference torefid="source.generation.classpathref" refid="maven.plugin.classpath" />
-                      <property name="gentools.classes" value="${project.build.directory}/gentools-classes" />
                       <property name="build.compiler" value="extJavac" />
                     </ant>
                 </target>
@@ -119,16 +118,6 @@
             </execution>
         </executions>
         <dependencies>
-          <dependency>
-            <groupId>velocity</groupId>
-            <artifactId>velocity</artifactId>
-            <version>${velocity-version}</version>
-          </dependency>
-          <dependency>
-            <groupId>velocity</groupId>
-            <artifactId>velocity-dep</artifactId>
-            <version>${velocity-version}</version>
-          </dependency>
           <dependency>
             <groupId>org.python</groupId>
             <artifactId>jython-standalone</artifactId>

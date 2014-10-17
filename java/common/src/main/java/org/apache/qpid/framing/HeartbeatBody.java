@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.codec.MarkableDataInput;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 public class HeartbeatBody implements AMQBody
 {
@@ -78,5 +79,18 @@ public class HeartbeatBody implements AMQBody
     public AMQFrame toFrame()
     {
         return new AMQFrame(0, this);
+    }
+
+    public static void process(final int channel,
+                            final MarkableDataInput in,
+                            final MethodProcessor processor,
+                            final long bodySize) throws IOException
+    {
+
+        if(bodySize > 0)
+        {
+            in.skip(bodySize);
+        }
+        processor.receiveHeartbeat();
     }
 }

@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.MessageCounter;
 import org.apache.qpid.server.store.MessageStore;
@@ -75,7 +76,7 @@ public class AcknowledgeTest extends QpidTestCase
 
     private InternalTestProtocolSession getSession()
     {
-        return (InternalTestProtocolSession)_channel.getProtocolSession();
+        return (InternalTestProtocolSession)_channel.getConnection();
     }
 
     private AMQQueue getQueue()
@@ -129,7 +130,7 @@ public class AcknowledgeTest extends QpidTestCase
 
         if (getChannel().isTransactional())
         {
-            getChannel().commit();
+            getChannel().commit(null, false);
         }
 
         //Ensure they are stored
@@ -140,7 +141,7 @@ public class AcknowledgeTest extends QpidTestCase
 
         //Subscribe to the queue
         AMQShortString subscriber = _channel.consumeFromSource(null,
-                                                               Collections.singleton(_queue),
+                                                               Collections.<MessageSource>singleton(_queue),
                                                                true, null, true, false);
 
         getQueue().deliverAsync();
@@ -164,7 +165,7 @@ public class AcknowledgeTest extends QpidTestCase
 
         if (getChannel().isTransactional())
         {
-            getChannel().commit();
+            getChannel().commit(null, false);
         }
 
         // Check Remaining Acknowledgements

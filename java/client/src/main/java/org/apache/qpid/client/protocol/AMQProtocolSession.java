@@ -44,6 +44,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FrameCreatingMethodProcessor;
 import org.apache.qpid.framing.HeartbeatBody;
 import org.apache.qpid.framing.MethodDispatcher;
 import org.apache.qpid.framing.MethodRegistry;
@@ -88,8 +89,11 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     private ProtocolVersion _protocolVersion;
 
-    private MethodRegistry _methodRegistry =
-            MethodRegistry.getMethodRegistry(ProtocolVersion.getLatestSupportedVersion());
+    private final MethodRegistry _methodRegistry =
+            new MethodRegistry(ProtocolVersion.getLatestSupportedVersion());
+
+    private final FrameCreatingMethodProcessor _methodProcessor =
+            new FrameCreatingMethodProcessor(ProtocolVersion.getLatestSupportedVersion());
 
     private MethodDispatcher _methodDispatcher;
 
@@ -416,7 +420,8 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
             _logger.debug("Setting ProtocolVersion to :" + pv);
         }
         _protocolVersion = pv;
-        _methodRegistry = MethodRegistry.getMethodRegistry(pv);
+        _methodRegistry.setProtocolVersion(pv);
+        _methodProcessor.setProtocolVersion(pv);
         _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(pv, this);
   }
 
@@ -548,5 +553,10 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     public void setMaxFrameSize(final long frameMax)
     {
         _protocolHandler.setMaxFrameSize(frameMax);
+    }
+
+    public FrameCreatingMethodProcessor getMethodProcessor()
+    {
+        return _methodProcessor;
     }
 }

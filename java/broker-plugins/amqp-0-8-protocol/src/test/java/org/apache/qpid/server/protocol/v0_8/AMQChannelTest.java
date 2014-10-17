@@ -29,7 +29,7 @@ import java.util.Map;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.message.MessageContentSource;
@@ -41,7 +41,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
 public class AMQChannelTest extends QpidTestCase
 {
     private VirtualHostImpl _virtualHost;
-    private AMQProtocolSession _protocolSession;
+    private AMQProtocolEngine _protocolSession;
     private Map<Integer,String> _replies;
     private Broker _broker;
 
@@ -98,18 +98,17 @@ public class AMQChannelTest extends QpidTestCase
         AMQChannel channel = new AMQChannel(_protocolSession, 1, _virtualHost.getMessageStore());
         channel.setLocalTransactional();
 
-        MessagePublishInfo info = mock(MessagePublishInfo.class);
+        MessagePublishInfo info = new MessagePublishInfo(new AMQShortString("test"), false, false, null);
         ExchangeImpl e = mock(ExchangeImpl.class);
         ContentHeaderBody contentHeaderBody= mock(ContentHeaderBody.class);
         BasicContentHeaderProperties properties = mock(BasicContentHeaderProperties.class);
 
         when(contentHeaderBody.getProperties()).thenReturn(properties);
-        when(info.getExchange()).thenReturn(new AMQShortString("test"));
         when(properties.getUserId()).thenReturn(new AMQShortString(_protocolSession.getAuthorizedPrincipal().getName() + "_incorrect"));
 
         channel.setPublishFrame(info, e);
         channel.publishContentHeader(contentHeaderBody);
-        channel.commit();
+        channel.commit(null, false);
 
         assertEquals("Unexpected number of replies", 1, _replies.size());
         assertEquals("Message authorization passed", "Access Refused", _replies.get(403));
@@ -121,18 +120,17 @@ public class AMQChannelTest extends QpidTestCase
         AMQChannel channel = new AMQChannel(_protocolSession, 1, _virtualHost.getMessageStore());
         channel.setLocalTransactional();
 
-        MessagePublishInfo info = mock(MessagePublishInfo.class);
+        MessagePublishInfo info = new MessagePublishInfo(new AMQShortString("test"), false, false, null);
         ExchangeImpl e = mock(ExchangeImpl.class);
         ContentHeaderBody contentHeaderBody= mock(ContentHeaderBody.class);
         BasicContentHeaderProperties properties = mock(BasicContentHeaderProperties.class);
 
         when(contentHeaderBody.getProperties()).thenReturn(properties);
-        when(info.getExchange()).thenReturn(new AMQShortString("test"));
         when(properties.getUserId()).thenReturn(new AMQShortString(_protocolSession.getAuthorizedPrincipal().getName()));
 
         channel.setPublishFrame(info, e);
         channel.publishContentHeader(contentHeaderBody);
-        channel.commit();
+        channel.commit(null, false);
 
         assertEquals("Unexpected number of replies", 0, _replies.size());
     }

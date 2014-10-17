@@ -20,13 +20,14 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.codec.MarkableDataInput;
-
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.codec.MarkableDataInput;
 
 public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQDataBlock
 {
@@ -227,7 +228,7 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
 
     public String toString()
     {
-        StringBuffer buffer = new StringBuffer(new String(_protocolHeader));
+        StringBuffer buffer = new StringBuffer(new String(_protocolHeader, StandardCharsets.US_ASCII));
         buffer.append(Integer.toHexString(_protocolClass));
         buffer.append(Integer.toHexString(_protocolInstance));
         buffer.append(Integer.toHexString(_protocolMajor));

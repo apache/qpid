@@ -23,16 +23,17 @@ package org.apache.qpid.framing.abstraction;
 import junit.framework.TestCase;
 
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.MessagePublishInfo;
 
 public class MessagePublishInfoImplTest extends TestCase
 {
-    private MessagePublishInfoImpl _mpi;
+    private MessagePublishInfo _mpi;
     private final AMQShortString _exchange = new AMQShortString("exchange");
     private final AMQShortString _routingKey = new AMQShortString("routingKey");
 
     public void setUp()
     {
-        _mpi = new MessagePublishInfoImpl(_exchange, true, true, _routingKey);
+        _mpi = new MessagePublishInfo(_exchange, true, true, _routingKey);
     }
 
     /** Test that we can update the exchange value. */
@@ -55,7 +56,7 @@ public class MessagePublishInfoImplTest extends TestCase
         //Check that the set value is correct
         assertTrue("Set value for immediate not as expected", _mpi.isImmediate());
 
-        MessagePublishInfoImpl mpi = new MessagePublishInfoImpl();
+        MessagePublishInfo mpi = new MessagePublishInfo();
 
         assertFalse("Default value for immediate should be false", mpi.isImmediate());
 
@@ -72,7 +73,7 @@ public class MessagePublishInfoImplTest extends TestCase
     {
         assertTrue("Set value for mandatory not as expected", _mpi.isMandatory());
 
-        MessagePublishInfoImpl mpi = new MessagePublishInfoImpl();
+        MessagePublishInfo mpi = new MessagePublishInfo();
 
         assertFalse("Default value for mandatory should be false", mpi.isMandatory());
 

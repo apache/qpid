@@ -62,8 +62,6 @@ import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.*;
-import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
-import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -316,21 +314,12 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
             if(getProtocolHandler().getProtocolVersion().equals(ProtocolVersion.v8_0))
             {
                 BasicRecoverBody body = getMethodRegistry().createBasicRecoverBody(false);
-                getAMQConnection().getProtocolHandler().syncWrite(body.generateFrame(getChannelId()), BasicRecoverOkBody.class);
-            }
-            else if(getProtocolVersion().equals(ProtocolVersion.v0_9))
-            {
-                BasicRecoverSyncBody body = ((MethodRegistry_0_9)getMethodRegistry()).createBasicRecoverSyncBody(false);
-                getAMQConnection().getProtocolHandler().syncWrite(body.generateFrame(getChannelId()), BasicRecoverSyncOkBody.class);
-            }
-            else if(getProtocolVersion().equals(ProtocolVersion.v0_91))
-            {
-                BasicRecoverSyncBody body = ((MethodRegistry_0_91)getMethodRegistry()).createBasicRecoverSyncBody(false);
                 getAMQConnection().getProtocolHandler().syncWrite(body.generateFrame(getChannelId()), BasicRecoverSyncOkBody.class);
             }
             else
             {
-                throw new RuntimeException("Unsupported version of the AMQP Protocol: " + getProtocolVersion());
+                BasicRecoverSyncBody body = getMethodRegistry().createBasicRecoverSyncBody(false);
+                getAMQConnection().getProtocolHandler().syncWrite(body.generateFrame(getChannelId()), BasicRecoverSyncOkBody.class);
             }
         }
     }
@@ -1148,33 +1137,22 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
                 if (isBound(null, AMQShortString.valueOf(queue), null))
                 {
-                    MethodRegistry methodRegistry = getProtocolHandler().getMethodRegistry();
-                    AMQMethodBody body;
-                    if (methodRegistry instanceof MethodRegistry_0_9)
-                    {
-                        String bindingKey = binding.getBindingKey() == null ? queue : binding.getBindingKey();
 
-                        MethodRegistry_0_9 methodRegistry_0_9 = (MethodRegistry_0_9) methodRegistry;
-                        body = methodRegistry_0_9.createQueueUnbindBody(getTicket(),
+                    if(ProtocolVersion.v8_0.equals(getProtocolVersion()))
+                    {
+                        throw new AMQException(AMQConstant.NOT_IMPLEMENTED, "Cannot unbind a queue in AMQP 0-8");
+                    }
+
+                    MethodRegistry methodRegistry = getProtocolHandler().getMethodRegistry();
+
+                    String bindingKey = binding.getBindingKey() == null ? queue : binding.getBindingKey();
+
+                    AMQMethodBody body = methodRegistry.createQueueUnbindBody(getTicket(),
                                                                         AMQShortString.valueOf(queue),
                                                                         AMQShortString.valueOf(exchange),
                                                                         AMQShortString.valueOf(bindingKey),
                                                                         null);
-                    }
-                    else if (methodRegistry instanceof MethodRegistry_0_91)
-                    {
-                        MethodRegistry_0_91 methodRegistry_0_91 = (MethodRegistry_0_91) methodRegistry;
-                        body = methodRegistry_0_91.createQueueUnbindBody(getTicket(),
-                                                                         AMQShortString.valueOf(queue),
-                                                                         AMQShortString.valueOf(exchange),
-                                                                         AMQShortString.valueOf(binding.getBindingKey()),
-                                                                         null);
 
-                    }
-                    else
-                    {
-                        throw new AMQException(AMQConstant.NOT_IMPLEMENTED, "Cannot unbind a queue in AMQP 0-8");
-                    }
                     getProtocolHandler().syncWrite(body.generateFrame(getChannelId()), QueueUnbindOkBody.class);
                     return null;
                 }
