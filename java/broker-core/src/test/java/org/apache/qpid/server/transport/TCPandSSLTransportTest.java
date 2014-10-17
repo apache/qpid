@@ -20,11 +20,13 @@
  */
 package org.apache.qpid.server.transport;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
 import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -106,6 +108,7 @@ public class TCPandSSLTransportTest extends QpidTestCase
         when(port.getPort()).thenReturn(0);
         when(port.getSendBufferSize()).thenReturn(64*1024);
         when(port.getReceiveBufferSize()).thenReturn(64*1024);
+        when(port.canAcceptNewConnection(any(SocketAddress.class))).thenReturn(true);
 
         TCPandSSLTransport transport = new TCPandSSLTransport(new HashSet<>(Arrays.asList(transports)),
                                                               sslContext,
@@ -135,6 +138,8 @@ public class TCPandSSLTransportTest extends QpidTestCase
         sslSocket.startHandshake();
         transport.close();
     }
+
+
 
     // self signed cert keystore valid until Oct 2024
     private static String keystoreString = "/u3+7QAAAAIAAAABAAAAAQAKc2VsZnNpZ25lZAAAAUkYmo+uAAAFATCCBP0wDgYKKwYBBAEqAhEB"

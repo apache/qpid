@@ -116,4 +116,11 @@ public class LogSubjectFormat
      */
     public static final String QUEUE_FORMAT = "vh(/{0})/qu({1})";
 
+
+    /**
+     * LOG FORMAT for the Port LogSubject,
+     * 0 - Port number
+     */
+    public static final String PORT_FORMAT = "port({0})";
+
 }

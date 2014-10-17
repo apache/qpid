@@ -243,28 +243,38 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                     try
                     {
                         socket = _serverSocket.accept();
-                        socket.setTcpNoDelay(_config.getTcpNoDelay());
-                        socket.setSoTimeout(1000 * HANSHAKE_TIMEOUT);
 
-                        final Integer sendBufferSize = _config.getSendBufferSize();
-                        final Integer receiveBufferSize = _config.getReceiveBufferSize();
+                        ProtocolEngine engine = _factory.newProtocolEngine(socket.getRemoteSocketAddress());
 
-                        socket.setSendBufferSize(sendBufferSize);
-                        socket.setReceiveBufferSize(receiveBufferSize);
+                        if(engine != null)
+                        {
+                            socket.setTcpNoDelay(_config.getTcpNoDelay());
+                            socket.setSoTimeout(1000 * HANSHAKE_TIMEOUT);
 
-                        ProtocolEngine engine = _factory.newProtocolEngine();
+                            final Integer sendBufferSize = _config.getSendBufferSize();
+                            final Integer receiveBufferSize = _config.getReceiveBufferSize();
 
-                        final IdleTimeoutTicker ticker = new IdleTimeoutTicker(engine, TIMEOUT);
-                        NetworkConnection connection = new IoNetworkConnection(socket, engine, sendBufferSize, receiveBufferSize, _timeout,
-                                                                               ticker);
+                            socket.setSendBufferSize(sendBufferSize);
+                            socket.setReceiveBufferSize(receiveBufferSize);
 
-                        connection.setMaxReadIdle(HANSHAKE_TIMEOUT);
 
-                        ticker.setConnection(connection);
+                            final IdleTimeoutTicker ticker = new IdleTimeoutTicker(engine, TIMEOUT);
+                            NetworkConnection connection =
+                                    new IoNetworkConnection(socket, engine, sendBufferSize, receiveBufferSize, _timeout,
+                                                            ticker);
 
-                        engine.setNetworkConnection(connection, connection.getSender());
+                            connection.setMaxReadIdle(HANSHAKE_TIMEOUT);
 
-                        connection.start();
+                            ticker.setConnection(connection);
+
+                            engine.setNetworkConnection(connection, connection.getSender());
+
+                            connection.start();
+                        }
+                        else
+                        {
+                            socket.close();
+                        }
                     }
                     catch(RuntimeException e)
                     {

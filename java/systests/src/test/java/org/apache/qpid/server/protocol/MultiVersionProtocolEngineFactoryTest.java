@@ -20,6 +20,7 @@
 */
 package org.apache.qpid.server.protocol;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,6 +37,7 @@ import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -153,14 +155,16 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
     {
         Set<Protocol> protocols = getAllAMQPProtocols();
 
-        Port<?> port = mock(Port.class);
+        AmqpPort<?> port = mock(AmqpPort.class);
+        when(port.canAcceptNewConnection(any(SocketAddress.class))).thenReturn(true);
+
         when(port.getContextValue(eq(Long.class),eq(Port.CONNECTION_MAXIMUM_AUTHENTICATION_DELAY))).thenReturn(10000l);
         MultiVersionProtocolEngineFactory factory =
             new MultiVersionProtocolEngineFactory(_broker, null, false, false, protocols, null, port,
                     org.apache.qpid.server.model.Transport.TCP);
 
         //create a dummy to retrieve the 'current' ID number
-        long previousId = factory.newProtocolEngine().getConnectionId();
+        long previousId = factory.newProtocolEngine(mock(SocketAddress.class)).getConnectionId();
 
         //create a protocol engine and send the AMQP header for all supported AMQP verisons,
         //ensuring the ID assigned increases as expected
@@ -170,7 +174,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
             byte[] header = getAmqpHeader(protocol);
             assertNotNull("protocol header should not be null", header);
 
-            ServerProtocolEngine engine = factory.newProtocolEngine();
+            ServerProtocolEngine engine = factory.newProtocolEngine(null);
             TestNetworkConnection conn = new TestNetworkConnection();
             engine.setNetworkConnection(conn, conn.getSender());
             assertEquals("ID did not increment as expected", expectedID, engine.getConnectionId());

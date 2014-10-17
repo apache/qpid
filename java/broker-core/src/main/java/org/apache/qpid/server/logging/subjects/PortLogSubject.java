@@ -18,14 +18,30 @@
  * under the License.
  *
  */
-package org.apache.qpid.protocol;
+package org.apache.qpid.server.logging.subjects;
 
-import java.net.SocketAddress;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.PORT_FORMAT;
 
-public interface ProtocolEngineFactory
-{ 
- 
-  // Returns a new instance of a ProtocolEngine 
-  ProtocolEngine newProtocolEngine(final SocketAddress remoteSocketAddress);
-   
-} 
+import org.apache.qpid.server.model.Port;
+
+public class PortLogSubject extends AbstractLogSubject
+{
+    public PortLogSubject(Port<?> port)
+    {
+        /**
+         * LOG FORMAT used by the AMQPConnectorActor follows
+         * ChannelLogSubject.CHANNEL_FORMAT : con:{0}({1}@{2}/{3})/ch:{4}.
+         *
+         * Uses a MessageFormat call to insert the required values according to
+         * these indices:
+         *
+         * 0 - Connection ID
+         * 1 - User ID
+         * 2 - IP
+         * 3 - Virtualhost
+         * 4 - Channel ID
+         */
+        setLogStringWithFormat(PORT_FORMAT, port.getPort());
+
+    }
+}
