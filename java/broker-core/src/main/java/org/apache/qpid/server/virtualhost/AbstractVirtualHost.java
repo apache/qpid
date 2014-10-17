@@ -60,7 +60,6 @@ import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.ConnectionAdapter;
-import org.apache.qpid.server.model.adapter.VirtualHostAliasAdapter;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -283,18 +282,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
         _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
-
-
-        synchronized(_aliases)
-        {
-            for(Port port :_broker.getPorts())
-            {
-                if (Protocol.hasAmqpProtocol(port.getProtocols()))
-                {
-                    _aliases.add(new VirtualHostAliasAdapter(this, port));
-                }
-            }
-        }
 
         addChangeListener(new StoreUpdatingChangeListener());
     }

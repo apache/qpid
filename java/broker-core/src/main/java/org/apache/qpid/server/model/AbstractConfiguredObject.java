@@ -1361,6 +1361,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             _desiredState = State.DELETED;
         }
         setDesiredState(State.DELETED);
+
     }
 
     public final void start() { setDesiredState(State.ACTIVE); }

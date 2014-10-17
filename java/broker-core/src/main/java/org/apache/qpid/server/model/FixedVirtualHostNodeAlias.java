@@ -20,17 +20,10 @@
  */
 package org.apache.qpid.server.model;
 
-@ManagedObject( creatable = false )
-public interface VirtualHostAlias<X extends VirtualHostAlias<X>> extends ConfiguredObject<X>
+public interface FixedVirtualHostNodeAlias<X extends FixedVirtualHostNodeAlias<X>> extends VirtualHostAlias<X>
 {
-    String PRIORITY = "priority";
+    String VIRTUAL_HOST_NODE = "virtualHostNode";
 
-    // parents
-    Port getPort();
-
-    @ManagedAttribute( defaultValue = "100" )
-    int getPriority();
-
-
-    VirtualHostNode getVirtualHostNode(String name);
+    @ManagedAttribute
+    VirtualHostNode<?> getVirtualHostNode();
 }

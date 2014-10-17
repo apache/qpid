@@ -27,10 +27,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
@@ -69,6 +71,9 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
         when(broker.getCategoryClass()).thenReturn(Broker.class);
         VirtualHost child = mock(VirtualHost.class);
         when(child.getCategoryClass()).thenReturn(VirtualHost.class);
+        Model model = mock(Model.class);
+        when(model.getChildTypes(any(Class.class))).thenReturn(Collections.<Class<? extends ConfiguredObject>>emptyList());
+        when(child.getModel()).thenReturn(model);
         _listener.childAdded(broker, child);
         verify(_store).update(eq(true), any(ConfiguredObjectRecord.class));
     }

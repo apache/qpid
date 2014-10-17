@@ -130,21 +130,12 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     public void openReceived()
     {
         String host = _conn.getLocalHostname();
-        if(host == null || host.trim().equals(""))
-        {
-            host = _broker.getDefaultVirtualHost();
-        }
-
         _vhost = ((AmqpPort)_port).getVirtualHost(host);
-        if(_vhost == null && _port.isLocalMachine(host))
-        {
-            _vhost = ((AmqpPort)_port).getVirtualHost(_broker.getDefaultVirtualHost());
-        }
         if(_vhost == null)
         {
             final Error err = new Error();
             err.setCondition(AmqpError.NOT_FOUND);
-            err.setDescription("Unknown hostname " + _conn.getLocalHostname());
+            err.setDescription("Unknown hostname in connection open: '" + host + "'");
             _conn.close(err);
             _closedOnOpen = true;
         }

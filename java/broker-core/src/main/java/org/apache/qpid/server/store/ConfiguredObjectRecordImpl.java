@@ -79,7 +79,7 @@ public class ConfiguredObjectRecordImpl implements ConfiguredObjectRecord
     @Override
     public String toString()
     {
-        return "ConfiguredObjectRecord [id=" + _id + ", type=" + _type + ", attributes=" + _attributes + "]";
+        return "ConfiguredObjectRecord [id=" + _id + ", type=" + _type + ", attributes=" + _attributes + ", parents=" + _parents + "]";
     }
 
     @Override

@@ -62,7 +62,7 @@ class TCPandSSLTransport implements AcceptingTransport
     @Override
     public void start()
     {
-        String bindingAddress = (String) _port.getAttribute(Port.BINDING_ADDRESS);
+        String bindingAddress = ((AmqpPort<?>)_port).getBindingAddress();
         if (WILDCARD_ADDRESS.equals(bindingAddress))
         {
             bindingAddress = null;
