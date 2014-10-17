@@ -35,4 +35,8 @@ public interface ChannelMethodProcessor
     void receiveMessageHeader(BasicContentHeaderProperties properties, long bodySize);
 
     boolean ignoreAllButCloseOk();
+
+    void receiveBasicNack(long deliveryTag, boolean multiple, boolean requeue);
+
+    void receiveBasicAck(long deliveryTag, boolean multiple);
 }

@@ -197,6 +197,15 @@ public class ServerDecoder extends AMQDecoder<ServerMethodProcessor<? extends Se
                 case 0x003c006e:
                     BasicRecoverSyncBody.process(in, channelMethodProcessor);
                     break;
+                case 0x003c0078:
+                    BasicNackBody.process(in, channelMethodProcessor);
+                    break;
+
+                // CONFIRM CLASS:
+
+                case 0x0055000a:
+                    ConfirmSelectBody.process(in, channelMethodProcessor);
+                    break;
 
                 // TX_CLASS:
 
@@ -218,6 +227,7 @@ public class ServerDecoder extends AMQDecoder<ServerMethodProcessor<? extends Se
                         channelMethodProcessor.receiveTxRollback();
                     }
                     break;
+
 
                 default:
                     throw newUnknownMethodException(classId, methodId,

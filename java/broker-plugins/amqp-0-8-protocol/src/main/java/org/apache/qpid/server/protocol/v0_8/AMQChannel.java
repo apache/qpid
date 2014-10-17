@@ -201,6 +201,8 @@ public class AMQChannel
     private final ConfigurationChangeListener _consumerClosedListener = new ConsumerClosedListener();
     private final CopyOnWriteArrayList<ConsumerListener> _consumerListeners = new CopyOnWriteArrayList<ConsumerListener>();
     private Session<?> _modelObject;
+    private boolean _confirmOnPublish;
+    private long _confirmedMessageCounter;
 
 
     public AMQChannel(AMQProtocolEngine connection, int channelId, final MessageStore messageStore)
@@ -394,6 +396,11 @@ public class AMQChannel
         // check and deliver if header says body length is zero
         if (_currentMessage.allContentReceived())
         {
+            if(_confirmOnPublish)
+            {
+                _confirmedMessageCounter++;
+            }
+
             try
             {
 
@@ -421,6 +428,10 @@ public class AMQChannel
 
                     if(!checkMessageUserId(_currentMessage.getContentHeader()))
                     {
+                        if(_confirmOnPublish)
+                        {
+                            _connection.writeFrame(new AMQFrame(_channelId, new BasicNackBody(_confirmedMessageCounter, false, false)));
+                        }
                         _transaction.addPostTransactionAction(new WriteReturnAction(AMQConstant.ACCESS_REFUSED, "Access Refused", amqMessage));
                     }
                     else
@@ -461,6 +472,12 @@ public class AMQChannel
                         }
                         else
                         {
+                            if(_confirmOnPublish)
+                            {
+                                BasicAckBody responseBody = _connection.getMethodRegistry()
+                                        .createBasicAckBody(_confirmedMessageCounter, false);
+                                _connection.writeFrame(responseBody.generateFrame(_channelId));
+                            }
                             incrementOutstandingTxnsIfNecessary();
                         }
                     }
@@ -503,7 +520,7 @@ public class AMQChannel
                     description, mandatory, isTransactional(), closeOnNoRoute));
         }
 
-        if (mandatory && isTransactional() && _connection.isCloseWhenNoRoute())
+        if (mandatory && isTransactional() && !_confirmOnPublish && _connection.isCloseWhenNoRoute())
         {
             _connection.closeConnection(AMQConstant.NO_ROUTE,
                     "No route for message " + currentMessageDescription(), _channelId);
@@ -512,6 +529,10 @@ public class AMQChannel
         {
             if (mandatory || message.isImmediate())
             {
+                if(_confirmOnPublish)
+                {
+                    _connection.writeFrame(new AMQFrame(_channelId, new BasicNackBody(_confirmedMessageCounter, false, false)));
+                }
                 _transaction.addPostTransactionAction(new WriteReturnAction(AMQConstant.NO_ROUTE,
                                                                             "No Route for message "
                                                                             + currentMessageDescription(),
@@ -2236,8 +2257,6 @@ public class AMQChannel
 
                 if (requeue)
                 {
-                    //this requeue represents a message rejected from the pre-dispatch queue
-                    //therefore we need to amend the delivery counter.
                     message.decrementDeliveryCount();
 
                     requeue(deliveryTag);
@@ -2356,6 +2375,85 @@ public class AMQChannel
     public boolean ignoreAllButCloseOk()
     {
         return _connection.ignoreAllButCloseOk() || _connection.channelAwaitingClosure(_channelId);
+    }
+
+    @Override
+    public void receiveBasicNack(final long deliveryTag, final boolean multiple, final boolean requeue)
+    {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] BasicNack[" +" deliveryTag: " + deliveryTag + " multiple: " + multiple + " requeue: " + requeue + " ]");
+        }
+
+        Map<Long, MessageInstance> nackedMessageMap = new LinkedHashMap<>();
+        _unacknowledgedMessageMap.collect(deliveryTag, multiple, nackedMessageMap);
+
+        for(MessageInstance message : nackedMessageMap.values())
+        {
+
+            if (message == null)
+            {
+                _logger.warn("Ignoring nack request as message is null for tag:" + deliveryTag);
+            }
+            else
+            {
+
+                if (message.getMessage() == null)
+                {
+                    _logger.warn("Message has already been purged, unable to nack.");
+                }
+                else
+                {
+                    if (_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Nack-ing: DT:" + deliveryTag
+                                      + "-" + message.getMessage() +
+                                      ": Requeue:" + requeue
+                                      +
+                                      " on channel:" + debugIdentity());
+                    }
+
+                    if (requeue)
+                    {
+                        message.decrementDeliveryCount();
+
+                        requeue(deliveryTag);
+                    }
+                    else
+                    {
+                        message.reject();
+
+                        final boolean maxDeliveryCountEnabled = isMaxDeliveryCountEnabled(deliveryTag);
+                        _logger.debug("maxDeliveryCountEnabled: "
+                                      + maxDeliveryCountEnabled
+                                      + " deliveryTag "
+                                      + deliveryTag);
+                        if (maxDeliveryCountEnabled)
+                        {
+                            final boolean deliveredTooManyTimes = isDeliveredTooManyTimes(deliveryTag);
+                            _logger.debug("deliveredTooManyTimes: "
+                                          + deliveredTooManyTimes
+                                          + " deliveryTag "
+                                          + deliveryTag);
+                            if (deliveredTooManyTimes)
+                            {
+                                deadLetter(deliveryTag);
+                            }
+                            else
+                            {
+                                message.incrementDeliveryCount();
+                            }
+                        }
+                        else
+                        {
+                            requeue(deliveryTag);
+                        }
+                    }
+                }
+            }
+
+        }
+
     }
 
     @Override
@@ -3353,6 +3451,21 @@ public class AMQChannel
         //(Must be done after the TxnRollback-ok response).
         // Why, are we not allowed to send messages back to client before the ok method?
         resend();
+    }
+
+    @Override
+    public void receiveConfirmSelect(final boolean nowait)
+    {
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("RECV[" + _channelId + "] ConfirmSelect [ nowait: " + nowait + " ]");
+        }
+        _confirmOnPublish = true;
+
+        if(!nowait)
+        {
+            _connection.writeFrame(new AMQFrame(_channelId, ConfirmSelectOkBody.INSTANCE));
+        }
     }
 
 

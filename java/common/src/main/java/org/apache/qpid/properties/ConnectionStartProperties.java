@@ -60,6 +60,8 @@ public class ConnectionStartProperties
 
     public static final String SESSION_FLOW = "qpid.session_flow";
 
+    public static final String QPID_CONFIRMED_PUBLISH_SUPPORTED = "qpid.confirmed_publish_supported";
+
     public static int _pid;
 
     public static final String _platformInfo;

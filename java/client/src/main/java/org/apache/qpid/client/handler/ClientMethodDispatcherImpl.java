@@ -53,6 +53,7 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     private static final Logger _logger = LoggerFactory.getLogger(ClientMethodDispatcherImpl.class);
 
+
     private static interface DispatcherFactory
     {
         public ClientMethodDispatcherImpl createMethodDispatcher(AMQProtocolSession session);
@@ -142,6 +143,13 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
 
     @Override
     public boolean dispatchChannelAlert(final ChannelAlertBody channelAlertBody, final int channelId)
+            throws AMQException
+    {
+        return false;
+    }
+
+    @Override
+    public boolean dispatchConfirmSelectOk(final ConfirmSelectOkBody confirmSelectOkBody, final int channelId)
             throws AMQException
     {
         return false;
@@ -271,10 +279,18 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
         throw new AMQMethodNotImplementedException(body);
     }
 
+    @Override
     public boolean dispatchBasicAck(BasicAckBody body, int channelId) throws AMQException
     {
-        throw new AMQMethodNotImplementedException(body);
+        return false;
     }
+
+    @Override
+    public boolean dispatchBasicNack(final BasicNackBody basicNackBody, final int channelId)
+    {
+        return false;
+    }
+
 
     public boolean dispatchBasicCancel(BasicCancelBody body, int channelId) throws AMQException
     {
@@ -398,6 +414,12 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
             throws AMQException
     {
         return false;
+    }
+
+    @Override
+    public boolean dispatchConfirmSelect(final ConfirmSelectBody body, final int channelId) throws AMQException
+    {
+        throw new AMQMethodNotImplementedException(body);
     }
 
     public boolean dispatchExchangeBoundOk(ExchangeBoundOkBody body, int channelId) throws AMQException

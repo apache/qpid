@@ -32,14 +32,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_8;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.QpidMessageProperties;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.protocol.BlockingMethodFrameListener;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicAckBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.BasicNackBody;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.CompositeAMQDataBlock;
 import org.apache.qpid.framing.ContentBody;
@@ -211,9 +216,6 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
         }
 
 
-        // TODO: This is a hacky way of getting the AMQP class-id for the Basic class
-        int classIfForBasic = getSession().getMethodRegistry().createBasicQosOkBody().getClazz();
-
         AMQFrame contentHeaderFrame =
             ContentHeaderBody.createAMQFrame(getChannelId(),
                                              contentHeaderProperties, size);
@@ -232,7 +234,7 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
 
         frames[0] = publishFrame;
         frames[1] = contentHeaderFrame;
-        CompositeAMQDataBlock compositeFrame = new CompositeAMQDataBlock(frames);
+        final CompositeAMQDataBlock compositeFrame = new CompositeAMQDataBlock(frames);
 
         try
         {
@@ -246,7 +248,40 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
             throw jmse;
         }
 
-        getConnection().getProtocolHandler().writeFrame(compositeFrame);
+        AMQConnectionDelegate_8_0 connectionDelegate80 = (AMQConnectionDelegate_8_0) (getConnection().getDelegate());
+
+        boolean useConfirms = getPublishMode() == PublishMode.SYNC_PUBLISH_ALL
+                              && (connectionDelegate80.isConfirmedPublishSupported()
+                               || (!getSession().isTransacted() && connectionDelegate80.isConfirmedPublishNonTransactionalSupported()));
+
+        if(!useConfirms)
+        {
+            getConnection().getProtocolHandler().writeFrame(compositeFrame);
+        }
+        else
+        {
+            final PublishConfirmMessageListener frameListener = new PublishConfirmMessageListener(getChannelId());
+            try
+            {
+
+                getConnection().getProtocolHandler().writeCommandFrameAndWaitForReply(compositeFrame,
+                                                                                      frameListener);
+
+                if(frameListener.isRejected())
+                {
+                    throw new JMSException("The message was not accepted by the server (e.g. because the address was no longer valid)");
+                }
+            }
+            catch (AMQException e)
+            {
+                throw new JMSAMQException(e);
+            }
+            catch (FailoverException e)
+            {
+                throw new JMSAMQException("Fail-over interrupted send. Status of the send is uncertain.", e);
+
+            }
+        }
     }
 
     /**
@@ -290,7 +325,7 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
 
     private int calculateContentBodyFrameCount(ByteBuffer payload)
     {
-        // we substract one from the total frame maximum size to account for the end of frame marker in a body frame
+        // we subtract one from the total frame maximum size to account for the end of frame marker in a body frame
         // (0xCE byte).
         int frameCount;
         if ((payload == null) || (payload.remaining() == 0))
@@ -312,5 +347,43 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
     public AMQSession_0_8 getSession()
     {
         return (AMQSession_0_8) super.getSession();
+    }
+
+    private static class PublishConfirmMessageListener extends BlockingMethodFrameListener
+    {
+        private boolean _rejected;
+
+        /**
+         * Creates a new method listener, that filters incoming method to just those that match the specified channel id.
+         *
+         * @param channelId The channel id to filter incoming methods with.
+         */
+        public PublishConfirmMessageListener(final int channelId)
+        {
+            super(channelId);
+        }
+
+        @Override
+        public boolean processMethod(final int channelId, final AMQMethodBody frame)
+        {
+            if (frame instanceof BasicAckBody)
+            {
+                return true;
+            }
+            else if (frame instanceof BasicNackBody)
+            {
+                _rejected = true;
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public boolean isRejected()
+        {
+            return _rejected;
+        }
     }
 }

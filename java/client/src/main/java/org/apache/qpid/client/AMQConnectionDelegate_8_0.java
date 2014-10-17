@@ -46,6 +46,8 @@ import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.ChannelOpenBody;
 import org.apache.qpid.framing.ChannelOpenOkBody;
+import org.apache.qpid.framing.ConfirmSelectBody;
+import org.apache.qpid.framing.ConfirmSelectOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.TxSelectBody;
@@ -68,6 +70,8 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     private final AMQConnection _conn;
     private boolean _messageCompressionSupported;
     private boolean _addrSyntaxSupported;
+    private boolean _confirmedPublishSupported;
+    private boolean _confirmedPublishNonTransactionalSupported;
 
     public void closeConnection(long timeout) throws JMSException, AMQException
     {
@@ -92,6 +96,11 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         }
 
         return ((cause instanceof ConnectException) || (cause instanceof UnresolvedAddressException));
+    }
+
+    public boolean isConfirmedPublishSupported()
+    {
+        return _confirmedPublishSupported;
     }
 
     public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws AMQException, IOException
@@ -146,6 +155,8 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             _conn.setConnected(true);
             _conn.logConnected(network.getLocalAddress(), network.getRemoteAddress());
             _messageCompressionSupported = checkMessageCompressionSupported();
+            _confirmedPublishSupported = checkConfirmedPublishSupported();
+            _confirmedPublishNonTransactionalSupported = checkConfirmedPublishNonTransactionalSupported();
             return null;
         }
         else
@@ -153,6 +164,32 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             return _conn.getProtocolHandler().getSuggestedProtocolVersion();
         }
 
+    }
+
+    // RabbitMQ supports confirmed publishing, but only on non transactional sessions
+    private boolean checkConfirmedPublishNonTransactionalSupported()
+    {
+        FieldTable serverProperties = _conn.getProtocolHandler().getProtocolSession().getConnectionStartServerProperties();
+        if( serverProperties != null
+            && serverProperties.containsKey("capabilities")
+            && serverProperties.get("capabilities") instanceof FieldTable)
+        {
+            FieldTable capabilities = serverProperties.getFieldTable("capabilities");
+            if(capabilities.containsKey("publisher_confirms")
+               && capabilities.get("publisher_confirms") instanceof Boolean
+               && capabilities.getBoolean("publisher_confirms"))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        else
+        {
+            return false;
+        }
     }
 
     public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode, final int prefetch)
@@ -266,8 +303,20 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             }
             TxSelectBody body = _conn.getProtocolHandler().getMethodRegistry().createTxSelectBody();
 
-            // TODO: Be aware of possible changes to parameter order as versions change.
+
             _conn.getProtocolHandler().syncWrite(body.generateFrame(channelId), TxSelectOkBody.class);
+        }
+        boolean useConfirms = (_confirmedPublishSupported || (!transacted && _confirmedPublishNonTransactionalSupported))
+                              && "all".equals(_conn.getSyncPublish());
+        if(useConfirms)
+        {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Issuing ConfirmSelect for " + channelId);
+            }
+            ConfirmSelectBody body = new ConfirmSelectBody(false);
+
+            _conn.getProtocolHandler().syncWrite(body.generateFrame(channelId), ConfirmSelectOkBody.class);
         }
     }
 
@@ -340,7 +389,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                 }
                 catch (IllegalStateException e)
                 {
-                    if (!(e.getMessage().startsWith("Fail-over interupted no-op failover support")))
+                    if (!(e.getMessage().startsWith("Fail-over interrupted no-op failover support")))
                     {
                         throw e;
                     }
@@ -424,6 +473,14 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
     }
 
+    private boolean checkConfirmedPublishSupported()
+    {
+        FieldTable serverProperties = _conn.getProtocolHandler().getProtocolSession().getConnectionStartServerProperties();
+        return serverProperties != null
+               && Boolean.parseBoolean(serverProperties.getString(ConnectionStartProperties.QPID_CONFIRMED_PUBLISH_SUPPORTED));
+
+    }
+
     public boolean isMessageCompressionSupported()
     {
         return _messageCompressionSupported;
@@ -432,5 +489,10 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     public boolean isAddrSyntaxSupported()
     {
         return _addrSyntaxSupported;
+    }
+
+    public boolean isConfirmedPublishNonTransactionalSupported()
+    {
+        return _confirmedPublishNonTransactionalSupported;
     }
 }

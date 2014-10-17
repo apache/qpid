@@ -68,7 +68,7 @@ public class FailoverNoopSupport<T, E extends Exception> implements FailoverSupp
         }
         catch (FailoverException e)
         {
-            throw new IllegalStateException("Fail-over interupted no-op failover support. "
+            throw new IllegalStateException("Fail-over interrupted no-op failover support. "
                 + "No-op support should only be used where the caller is certain fail-over cannot occur.", e);
         }
     }

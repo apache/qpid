@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol.v0_8;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.qpid.AMQException;
@@ -63,7 +64,7 @@ public interface UnacknowledgedMessageMap
     Set<Long> getDeliveryTags();
 
     Collection<MessageInstance> acknowledge(long deliveryTag, boolean multiple);
-
+    void collect(long key, boolean multiple, Map<Long, MessageInstance> msgs);
 }
 
 

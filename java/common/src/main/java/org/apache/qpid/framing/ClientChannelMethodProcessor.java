@@ -75,4 +75,5 @@ public interface ClientChannelMethodProcessor extends ChannelMethodProcessor
 
     void receiveTxRollbackOk();
 
+    void receiveConfirmSelectOk();
 }

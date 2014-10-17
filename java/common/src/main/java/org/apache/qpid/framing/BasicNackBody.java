@@ -33,33 +33,39 @@ import java.io.IOException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.MarkableDataInput;
 
-public class BasicAckBody extends AMQMethodBodyImpl implements EncodableAMQDataBlock, AMQMethodBody
+public class BasicNackBody extends AMQMethodBodyImpl implements EncodableAMQDataBlock, AMQMethodBody
 {
 
     public static final int CLASS_ID =  60;
-    public static final int METHOD_ID = 80;
+    public static final int METHOD_ID = 120;
 
     // Fields declared in specification
     private final long _deliveryTag; // [deliveryTag]
     private final byte _bitfield0; // [multiple]
 
     // Constructor
-    public BasicAckBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
+    public BasicNackBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
         _deliveryTag = buffer.readLong();
         _bitfield0 = buffer.readByte();
     }
 
-    public BasicAckBody(
+    public BasicNackBody(
             long deliveryTag,
-            boolean multiple
-                       )
+            boolean multiple,
+            boolean requeue
+                        )
     {
         _deliveryTag = deliveryTag;
         byte bitfield0 = (byte)0;
         if( multiple )
         {
-            bitfield0 = (byte) (((int) bitfield0) | (1 << 0));
+            bitfield0 = (byte) (((int) bitfield0) | 1);
+
+        }
+        if( requeue )
+        {
+            bitfield0 = (byte) (((int) bitfield0) | 2);
         }
         _bitfield0 = bitfield0;
     }
@@ -78,9 +84,15 @@ public class BasicAckBody extends AMQMethodBodyImpl implements EncodableAMQDataB
     {
         return _deliveryTag;
     }
+
     public final boolean getMultiple()
     {
-        return (((int)(_bitfield0)) & ( 1 << 0)) != 0;
+        return (((int)(_bitfield0)) &  1) != 0;
+    }
+
+    public final boolean getRequeue()
+    {
+        return (((int)(_bitfield0)) &  2 ) != 0;
     }
 
     protected int getBodySize()
@@ -97,17 +109,20 @@ public class BasicAckBody extends AMQMethodBodyImpl implements EncodableAMQDataB
 
     public boolean execute(MethodDispatcher dispatcher, int channelId) throws AMQException
 	{
-        return dispatcher.dispatchBasicAck(this, channelId);
+        return dispatcher.dispatchBasicNack(this, channelId);
 	}
 
     public String toString()
     {
-        StringBuilder buf = new StringBuilder("[BasicAckBodyImpl: ");
+        StringBuilder buf = new StringBuilder("[BasicNackBodyImpl: ");
         buf.append( "deliveryTag=" );
         buf.append(  getDeliveryTag() );
         buf.append( ", " );
         buf.append( "multiple=" );
         buf.append(  getMultiple() );
+        buf.append( ", " );
+        buf.append( "requeue=" );
+        buf.append(  getRequeue() );
         buf.append("]");
         return buf.toString();
     }
@@ -117,10 +132,12 @@ public class BasicAckBody extends AMQMethodBodyImpl implements EncodableAMQDataB
     {
 
         long deliveryTag = buffer.readLong();
-        boolean multiple = (buffer.readByte() & 0x01) != 0;
+        byte bitfield = buffer.readByte();
+        boolean multiple = (bitfield & 0x01) != 0;
+        boolean requeue = (bitfield & 0x02) != 0;
         if(!dispatcher.ignoreAllButCloseOk())
         {
-            dispatcher.receiveBasicAck(deliveryTag, multiple);
+            dispatcher.receiveBasicNack(deliveryTag, multiple, requeue);
         }
     }
 }
