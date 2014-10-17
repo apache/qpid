@@ -45,6 +45,7 @@ import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.security.SSLStatus;
 import org.apache.qpid.transport.network.security.ssl.SSLBufferingSender;
 import org.apache.qpid.transport.network.security.ssl.SSLReceiver;
+import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class MultiVersionProtocolEngine implements ServerProtocolEngine
 {
@@ -480,6 +481,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
             _engine = _sslContext.createSSLEngine();
             _engine.setUseClientMode(false);
+            SSLUtil.removeSSLv3Support(_engine);
 
             if(_needClientAuth)
             {

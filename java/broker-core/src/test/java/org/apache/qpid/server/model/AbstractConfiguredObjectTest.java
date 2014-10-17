@@ -24,16 +24,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.testmodel.TestChildCategory;
 import org.apache.qpid.server.model.testmodel.TestConfiguredObject;
 import org.apache.qpid.server.model.testmodel.TestModel;
 import org.apache.qpid.server.model.testmodel.TestRootCategory;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class AbstractConfiguredObjectTest extends TestCase
+public class AbstractConfiguredObjectTest extends QpidTestCase
 {
     private final Model _model = TestModel.getInstance();
 
@@ -167,6 +166,27 @@ public class AbstractConfiguredObjectTest extends TestCase
 
         // System property not set
         System.clearProperty(sysPropertyName);
+    }
+
+
+    public void testDefaultContextIsInContextKeys()
+    {
+        final String objectName = "myName";
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(ConfiguredObject.NAME, objectName);
+
+
+        TestRootCategory object = _model.getObjectFactory().create(TestRootCategory.class,
+                                                                    attributes);
+
+
+        assertTrue("context default not in contextKeys", object.getContextKeys(true).contains(TestRootCategory.TEST_CONTEXT_DEFAULT));
+        assertEquals(object.getContextValue(String.class, TestRootCategory.TEST_CONTEXT_DEFAULT), "default");
+
+        setTestSystemProperty(TestRootCategory.TEST_CONTEXT_DEFAULT, "notdefault");
+        assertTrue("context default not in contextKeys", object.getContextKeys(true).contains(TestRootCategory.TEST_CONTEXT_DEFAULT));
+        assertEquals(object.getContextValue(String.class, TestRootCategory.TEST_CONTEXT_DEFAULT), "notdefault");
     }
 
     public void testStringAttributeValueFromContextVariableProvidedObjectsContext()

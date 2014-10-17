@@ -51,7 +51,6 @@
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-jms_1.1_spec</artifactId>
       <version>${geronimo-jms-1-1-version}</version>
-      <scope>provided</scope>
     </dependency>
   </dependencies>
    

@@ -60,12 +60,8 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
     @ManagedAttribute
     Collection<TrustStore> getTrustStores();
 
-    //children
-    Collection<VirtualHostAlias> getVirtualHostBindings();
     Collection<Connection> getConnections();
 
     void start();
-
-    boolean isLocalMachine(final String host);
 
 }

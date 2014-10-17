@@ -854,6 +854,9 @@ public class ConfiguredObjectTypeRegistry
         return map != null ? Collections.unmodifiableMap(map) : Collections.<State, Map<State, Method>>emptyMap();
     }
 
-
+    public Map<String,String> getDefaultContext()
+    {
+        return Collections.unmodifiableMap(_defaultContext);
+    }
 
 }

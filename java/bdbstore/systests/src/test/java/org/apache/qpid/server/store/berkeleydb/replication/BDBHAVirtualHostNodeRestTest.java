@@ -65,6 +65,7 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
     public void setUp() throws Exception
     {
         setTestSystemProperty(ReplicatedEnvironmentFacade.REMOTE_NODE_MONITOR_INTERVAL_PROPERTY_NAME, "1000");
+        setTestClientSystemProperty("log4j.configuration", getBrokerCommandLog4JFile().toURI().toString());
 
         super.setUp();
         _hostName = getTestName();

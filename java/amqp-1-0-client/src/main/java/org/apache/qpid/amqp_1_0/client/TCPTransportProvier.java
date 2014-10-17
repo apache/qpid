@@ -74,8 +74,8 @@ class TCPTransportProvier implements TransportProvider
             if(sslContext != null)
             {
                 final SSLSocketFactory socketFactory = sslContext.getSocketFactory();
-
                 SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(address, port);
+                SSLUtil.removeSSLv3Support(sslSocket);
                 sslSocket.startHandshake();
                 conn.setExternalPrincipal(sslSocket.getSession().getLocalPrincipal());
                 _socket=sslSocket;

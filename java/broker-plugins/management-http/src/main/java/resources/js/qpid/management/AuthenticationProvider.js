@@ -139,6 +139,7 @@ define(["dojo/_base/xhr",
                this.editPreferencesProviderButton = query(".editPreferencesProviderButton", node)[0];
                this.deletePreferencesProviderButton = query(".deletePreferencesProviderButton", node)[0];
                this.preferencesProviderAttributes = dom.byId("preferencesProviderAttributes")
+               this.preferencesNode = query(".preferencesProviderDetails", node)[0];
 
                this.query = "api/latest/authenticationprovider/" + encodeURIComponent(authProviderObj.name);
 
@@ -171,7 +172,7 @@ define(["dojo/_base/xhr",
                              else
                              {
                                var preferencesProviderData = that.authProviderData.preferencesproviders? that.authProviderData.preferencesproviders[0]: null;
-                               that.preferencesNode = query(".preferencesProviderDetails", node)[0];
+
                                that.updatePreferencesProvider(preferencesProviderData);
                              }
                          });

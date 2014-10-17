@@ -28,6 +28,8 @@ import static org.mockito.Mockito.when;
 
 import java.net.SocketAddress;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -110,16 +112,27 @@ public class BrokerTestHelper
     }
 
     public static VirtualHostImpl<?,?,?> createVirtualHost(Map<String, Object> attributes)
-            throws Exception
     {
 
         Broker<?> broker = createBrokerMock();
+        return createVirtualHost(attributes, broker);
+    }
+
+    public static VirtualHostImpl<?, ?, ?> createVirtualHost(final Map<String, Object> attributes,
+                                                                final Broker<?> broker)
+    {
         ConfiguredObjectFactory objectFactory = broker.getObjectFactory();
 
         VirtualHostNode virtualHostNode = mock(VirtualHostNode.class);
+        when(virtualHostNode.getName()).thenReturn((String) attributes.get(VirtualHostNode.NAME));
         when(virtualHostNode.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
 
         when(virtualHostNode.getParent(eq(Broker.class))).thenReturn(broker);
+
+        Collection<VirtualHostNode<?>> nodes = broker.getVirtualHostNodes();
+        nodes = new ArrayList<>(nodes != null ?  nodes : Collections.<VirtualHostNode<?>>emptyList());
+        nodes.add(virtualHostNode);
+        when(broker.getVirtualHostNodes()).thenReturn(nodes);
 
         DurableConfigurationStore dcs = mock(DurableConfigurationStore.class);
         when(virtualHostNode.getConfigurationStore()).thenReturn(dcs);
@@ -128,19 +141,26 @@ public class BrokerTestHelper
         when(virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
         when(virtualHostNode.getCategoryClass()).thenReturn(VirtualHostNode.class);
         when(virtualHostNode.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
-        AbstractVirtualHost host = (AbstractVirtualHost) objectFactory.create(VirtualHost.class, attributes, virtualHostNode );
+        AbstractVirtualHost
+                host = (AbstractVirtualHost) objectFactory.create(VirtualHost.class, attributes, virtualHostNode );
         host.start();
-
+        when(virtualHostNode.getVirtualHost()).thenReturn(host);
         return host;
     }
 
+
     public static VirtualHostImpl<?,?,?> createVirtualHost(String name) throws Exception
+    {
+        return createVirtualHost(name, createBrokerMock());
+    }
+
+    public static VirtualHostImpl<?,?,?> createVirtualHost(String name, Broker<?> broker) throws Exception
     {
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(org.apache.qpid.server.model.VirtualHost.TYPE, TestMemoryVirtualHost.VIRTUAL_HOST_TYPE);
         attributes.put(org.apache.qpid.server.model.VirtualHost.NAME, name);
 
-        return createVirtualHost(attributes);
+        return createVirtualHost(attributes, broker);
     }
 
     public static AMQSessionModel<?,?> createSession(int channelId, AMQConnectionModel<?,?> connection)

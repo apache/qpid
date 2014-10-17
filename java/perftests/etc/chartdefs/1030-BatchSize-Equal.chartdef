@@ -20,7 +20,7 @@
 chartType=XYLINE
 chartTitle=Transaction Batch Sizes Equal
 chartSubtitle=Persistent 1KB messages
-chartDescription=1P 1C, persistent, transacted with message payload 1KB with producer/consumer batch size varying between 1-400 messages for both P and C, single queue.
+chartDescription=1P 1C, single queue, persistent, transacted with message payload 1KB with producer/consumer batch size varying between 1-400 messages for both P and C.
 
 xAxisTitle=Batch Size
 yAxisTitle=Throughput (messages/s)

@@ -21,7 +21,7 @@
 {
   "name": "Broker",
   "defaultVirtualHost" : "test",
-  "modelVersion": "2.0",
+  "modelVersion": "2.1",
   "authenticationproviders" : [ {
     "name" : "plain",
     "type" : "PlainPasswordFile",
@@ -41,7 +41,17 @@
     "name" : "amqp",
     "authenticationProvider" : "plain",
     "port" : "${test.port}",
-    "protocols" : "${test.amqp_port_protocols}"
+    "protocols" : "${test.amqp_port_protocols}",
+    "virtualhostaliases" : [ {
+        "name" : "nameAlias",
+        "type" : "nameAlias"
+    }, {
+        "name" : "defaultAlias",
+        "type" : "defaultAlias"
+    }, {
+        "name" : "hostnameAlias",
+        "type" : "hostnameAlias"
+    } ]
   }, {
     "name" : "http",
     "authenticationProvider" : "plain",

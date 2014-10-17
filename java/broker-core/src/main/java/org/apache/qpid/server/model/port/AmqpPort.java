@@ -20,15 +20,16 @@
  */
 package org.apache.qpid.server.model.port;
 
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 @ManagedObject( category = false, type = "AMQP")
@@ -80,4 +81,5 @@ public interface AmqpPort<X extends AmqpPort<X>> extends ClientAuthCapablePort<X
 
     VirtualHostImpl getVirtualHost(String name);
 
+    VirtualHostAlias createVirtualHostAlias(Map<String, Object> attributes);
 }

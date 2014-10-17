@@ -32,7 +32,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.util.FileUtils;
 
 public class DerbyUtils
 {

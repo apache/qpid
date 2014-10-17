@@ -179,7 +179,10 @@
           </arguments>
           <systemProperties>
             <systemProperty>
-              <key>qpid.amqp</key><value>0-91</value>
+              <key>log4j.configuration</key><value>file:log4j.properties</value>
+            </systemProperty>
+            <systemProperty>
+              <key>qpid.amqp.version</key><value>0-91</value>
             </systemProperty>
             <systemProperty>
               <key>qpid.dest_syntax</key><value>BURL</value>

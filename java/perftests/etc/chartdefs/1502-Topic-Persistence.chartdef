@@ -20,7 +20,7 @@
 chartType=BAR
 chartTitle=Topic transient/durable subscriptions
 chartSubtitle=1KB messages
-chartDescription=1P 10C, transacted, message payload 1KB, transient messages on non-durable sub, persistent messages on durable sub, single topic,
+chartDescription=1P 10C, single topic, transacted, message payload 1KB, transient messages on non-durable sub, persistent messages on durable sub.
 
 xAxisTitle=Subscription type (true durable, false non durable)
 yAxisTitle=Throughput (messages/s)

@@ -454,7 +454,7 @@ public class Main
 
     protected void startBroker(final BrokerOptions options) throws Exception
     {
-        Broker broker = new Broker();
+        Broker broker = new Broker(true);
         broker.startup(options);
     }
 

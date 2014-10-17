@@ -29,10 +29,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.xml.bind.DatatypeConverter;
 
 import org.apache.commons.codec.binary.Base64;
 import org.codehaus.jackson.JsonParseException;
@@ -41,7 +44,6 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.security.auth.manager.Base64MD5PasswordDatabaseAuthenticationManager;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
-import org.apache.qpid.tools.security.Passwd;
 
 public class SaslRestTest extends QpidRestTestCase
 {
@@ -353,7 +355,12 @@ public class SaslRestTest extends QpidRestTestCase
         String passwordFileEntry;
         try
         {
-            passwordFileEntry = new Passwd().getOutput("admin", "admin");
+
+            MessageDigest md = MessageDigest.getInstance("MD5");
+
+            md.update("admin".getBytes("utf-8"));
+
+            passwordFileEntry = "admin" + ":" + DatatypeConverter.printBase64Binary(md.digest());
         }
         catch (NoSuchAlgorithmException e)
         {

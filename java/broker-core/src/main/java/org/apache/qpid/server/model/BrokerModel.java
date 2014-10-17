@@ -44,7 +44,7 @@ public final class BrokerModel extends Model
      * 2.0 Introduce VirtualHostNode as a child of a Broker instead of VirtualHost
      */
     public static final int MODEL_MAJOR_VERSION = 2;
-    public static final int MODEL_MINOR_VERSION = 0;
+    public static final int MODEL_MINOR_VERSION = 1;
     public static final String MODEL_VERSION = MODEL_MAJOR_VERSION + "." + MODEL_MINOR_VERSION;
     private static final Model MODEL_INSTANCE = new BrokerModel();
     private final Map<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>> _parents =
@@ -81,7 +81,6 @@ public final class BrokerModel extends Model
         addRelationship(VirtualHost.class, Exchange.class);
         addRelationship(VirtualHost.class, Queue.class);
         addRelationship(VirtualHost.class, Connection.class);
-        addRelationship(VirtualHost.class, VirtualHostAlias.class);
 
         addRelationship(Port.class, VirtualHostAlias.class);
 

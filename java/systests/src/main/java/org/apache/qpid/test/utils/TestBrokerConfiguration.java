@@ -57,6 +57,8 @@ import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.model.UUIDGenerator;
+import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.model.adapter.FileBasedGroupProvider;
 import org.apache.qpid.server.model.adapter.FileBasedGroupProviderImpl;
 import org.apache.qpid.server.plugin.PluggableFactoryLoader;
@@ -254,12 +256,47 @@ public class TestBrokerConfiguration
     }
 
     public UUID[] removeObjectConfiguration(final Class<? extends ConfiguredObject> category,
-                                            String name)
+                                            final String name)
     {
         final ConfiguredObjectRecord entry = findObject(category, name);
+
         if (entry != null)
         {
+
+            if(category == VirtualHostNode.class)
+            {
+                final List<ConfiguredObjectRecord> aliasRecords = new ArrayList<>();
+                // remove vhost aliases associated with the vhost
+                final ConfiguredObjectRecordHandler visitor = new ConfiguredObjectRecordHandler()
+                {
+                    @Override
+                    public void begin()
+                    {
+
+                    }
+
+                    @Override
+                    public boolean handle(final ConfiguredObjectRecord record)
+                    {
+                        if (record.getType().equals(VirtualHostAlias.class.getSimpleName())
+                            && name.equals(record.getAttributes().get(ConfiguredObject.NAME)))
+                        {
+                            aliasRecords.add(record);
+                        }
+                        return true;
+                    }
+
+                    @Override
+                    public void end()
+                    {
+
+                    }
+                };
+                _store.visitConfiguredObjectRecords(visitor);
+                _store.remove(aliasRecords.toArray(new ConfiguredObjectRecord[aliasRecords.size()]));
+            }
             return _store.remove(entry);
+
         }
         return null;
     }
@@ -268,6 +305,18 @@ public class TestBrokerConfiguration
     {
         UUID id = UUIDGenerator.generateRandomUUID();
         addObjectConfiguration(id, type.getSimpleName(), attributes);
+        return id;
+    }
+
+    public UUID addObjectConfiguration(final Class<? extends ConfiguredObject> parentCategory, final String parentName,
+                                       Class<? extends ConfiguredObject> type, Map<String, Object> attributes)
+    {
+        UUID id = UUIDGenerator.generateRandomUUID();
+        ConfiguredObjectRecord entry =
+                new ConfiguredObjectRecordImpl(id, type.getSimpleName(), attributes,
+                                               Collections.singletonMap(parentCategory.getSimpleName(), findObject(parentCategory,parentName).getId()));
+
+        _store.update(true, entry);
         return id;
     }
 

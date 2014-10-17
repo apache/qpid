@@ -27,12 +27,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
-import java.security.Principal;
+
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocket;
+
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.configuration.CommonProperties;
 import org.apache.qpid.protocol.ProtocolEngine;
@@ -41,9 +41,11 @@ import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.transport.network.*;
-
-import org.slf4j.LoggerFactory;
+import org.apache.qpid.transport.network.IncomingNetworkTransport;
+import org.apache.qpid.transport.network.NetworkConnection;
+import org.apache.qpid.transport.network.OutgoingNetworkTransport;
+import org.apache.qpid.transport.network.TransportActivity;
+import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNetworkTransport
 {
@@ -150,6 +152,11 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
         }
     }
 
+    public int getAcceptingPort()
+    {
+        return _acceptor == null ? -1 : _acceptor.getPort();
+    }
+
     private class AcceptingThread extends Thread
     {
         private volatile boolean _closed = false;
@@ -179,14 +186,19 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                 SSLServerSocketFactory socketFactory = _sslContext.getServerSocketFactory();
                 _serverSocket = socketFactory.createServerSocket();
 
+                SSLServerSocket sslServerSocket = (SSLServerSocket) _serverSocket;
+
+                SSLUtil.removeSSLv3Support(sslServerSocket);
+
                 if(config.needClientAuth())
                 {
-                    ((SSLServerSocket)_serverSocket).setNeedClientAuth(true);
+                    sslServerSocket.setNeedClientAuth(true);
                 }
                 else if(config.wantClientAuth())
                 {
-                    ((SSLServerSocket)_serverSocket).setWantClientAuth(true);
+                    sslServerSocket.setWantClientAuth(true);
                 }
+
             }
 
             _serverSocket.setReuseAddress(true);
@@ -213,6 +225,11 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                     throw new TransportException(e);
                 }
             }
+        }
+
+        private int getPort()
+        {
+            return _serverSocket.getLocalPort();
         }
 
         @Override

@@ -61,6 +61,7 @@ public class VirtualHostStoreUpgraderAndRecoverer
         register(new Upgrader_0_2_to_0_3());
         register(new Upgrader_0_3_to_0_4());
         register(new Upgrader_0_4_to_2_0());
+        register(new Upgrader_2_0_to_2_1());
 
         Map<String, UUID> defaultExchangeIds = new HashMap<String, UUID>();
         for (String exchangeName : DEFAULT_EXCHANGES.keySet())
@@ -395,6 +396,32 @@ public class VirtualHostStoreUpgraderAndRecoverer
 
             }
 
+            getNextUpgrader().complete();
+        }
+
+    }
+
+    private class Upgrader_2_0_to_2_1 extends StoreUpgraderPhase
+    {
+        public Upgrader_2_0_to_2_1()
+        {
+            super("modelVersion", "2.0", "2.1");
+        }
+
+        @Override
+        public void configuredObject(ConfiguredObjectRecord record)
+        {
+
+            if("VirtualHost".equals(record.getType()))
+            {
+                record = upgradeRootRecord(record);
+            }
+            getNextUpgrader().configuredObject(record);
+        }
+
+        @Override
+        public void complete()
+        {
             getNextUpgrader().complete();
         }
 

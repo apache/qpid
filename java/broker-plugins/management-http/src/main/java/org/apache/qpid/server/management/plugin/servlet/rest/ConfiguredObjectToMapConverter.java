@@ -268,7 +268,8 @@ public class ConfiguredObjectToMapConverter
 
                     if (!childObjects.isEmpty())
                     {
-                        object.put(childClass.getSimpleName().toLowerCase() + "s", childObjects);
+                        String childTypeSingular = childClass.getSimpleName().toLowerCase();
+                        object.put(childTypeSingular + (childTypeSingular.endsWith("s") ? "es" : "s"), childObjects);
                     }
                 }
             }

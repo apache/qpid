@@ -24,15 +24,15 @@ import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.port.AmqpPort;
 
 public interface TransportProvider
 {
     AcceptingTransport createTransport(Set<Transport> transports,
                                        SSLContext sslContext,
-                                       Port port,
+                                       AmqpPort<?> port,
                                        Set<Protocol> supported,
                                        Protocol defaultSupportedProtocolReply);
 }

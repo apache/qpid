@@ -28,6 +28,7 @@ import java.security.NoSuchAlgorithmException;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
+import javax.xml.bind.DatatypeConverter;
 
 import junit.framework.TestCase;
 
@@ -35,7 +36,6 @@ import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrinci
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexInitialiser;
 import org.apache.qpid.test.utils.TestFileUtils;
-import org.apache.qpid.tools.security.Passwd;
 
 /**
  * These tests ensure that the Hex wrapping that the initialiser performs does actually operate when the handle method is called.
@@ -73,7 +73,13 @@ public class CRAMMD5HexInitialiserTest extends TestCase
     public void setUp() throws Exception
     {
         super.setUp();
-        _file = TestFileUtils.createTempFile(this, "password-file", new Passwd().getOutput(TEST_USER , TEST_PASSWORD));
+
+        MessageDigest md = MessageDigest.getInstance("MD5");
+
+        md.update(TEST_PASSWORD.getBytes("utf-8"));
+
+        _file = TestFileUtils.createTempFile(this, "password-file",
+                                             TEST_USER + ":" + DatatypeConverter.printBase64Binary(md.digest()));
     }
 
     public void tearDown() throws Exception

@@ -20,7 +20,7 @@
 chartType=XYLINE
 chartTitle=Varying number of producers - auto ack
 chartSubtitle=Persistent 1KB messages
-chartDescription=1,2,5,10 P/Cs, persistent, auto-ack, with message payload 1KB, single queue.
+chartDescription=1,2,5,10 P/Cs, single queue, persistent, auto-ack, with message payload 1KB.
 
 xAxisTitle=Producers
 yAxisTitle=Throughput (messages/s)

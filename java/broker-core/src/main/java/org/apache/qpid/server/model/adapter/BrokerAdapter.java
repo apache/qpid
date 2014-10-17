@@ -969,7 +969,8 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             BrokerShutdownProvider shutdownProvider = systemConfig.getBrokerShutdownProvider();
             if (shutdownProvider != null)
             {
-                shutdownProvider.shutdown();
+                _eventLogger.message(BrokerMessages.FATAL_ERROR(e.getMessage()));
+                shutdownProvider.shutdown(1);
             }
             else
             {

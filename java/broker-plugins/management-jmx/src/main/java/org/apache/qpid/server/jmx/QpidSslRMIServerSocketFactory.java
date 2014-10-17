@@ -30,6 +30,8 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
 
+import org.apache.qpid.transport.network.security.ssl.SSLUtil;
+
 public class QpidSslRMIServerSocketFactory extends SslRMIServerSocketFactory
 {
     private final SSLContext _sslContext;
@@ -74,7 +76,7 @@ public class QpidSslRMIServerSocketFactory extends SslRMIServerSocketFactory
                                                          socket.getPort(),
                                                          true);
                 sslSocket.setUseClientMode(false);
-
+                SSLUtil.removeSSLv3Support(sslSocket);
                 return sslSocket;
             }
         };

@@ -107,6 +107,11 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
         return LifetimePolicy.PERMANENT;
     }
 
+    @Override
+    protected void onCreate()
+    {
+        super.onCreate();
+    }
 
     @StateTransition( currentState = {State.UNINITIALIZED, State.STOPPED, State.ERRORED }, desiredState = State.ACTIVE )
     protected void doActivate()

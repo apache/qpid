@@ -35,8 +35,11 @@ import javax.jms.JMSException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.DefaultVirtualHostAlias;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.model.VirtualHostNameAlias;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
@@ -60,6 +63,17 @@ public class MultipleAuthenticationManagersTest extends QpidBrokerTestCase
         sslPortAttributes.put(Port.TRUST_STORES, Collections.singleton(TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE));
         sslPortAttributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_ANONYMOUS_PROVIDER);
         config.addObjectConfiguration(Port.class, sslPortAttributes);
+
+        Map<String, Object> aliasAttributes = new HashMap<>();
+        aliasAttributes.put(VirtualHostAlias.NAME, "defaultAlias");
+        aliasAttributes.put(VirtualHostAlias.TYPE, DefaultVirtualHostAlias.TYPE_NAME);
+        config.addObjectConfiguration(Port.class, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, VirtualHostAlias.class, aliasAttributes);
+
+        aliasAttributes = new HashMap<>();
+        aliasAttributes.put(VirtualHostAlias.NAME, "nameAlias");
+        aliasAttributes.put(VirtualHostAlias.TYPE, VirtualHostNameAlias.TYPE_NAME);
+        getBrokerConfiguration().addObjectConfiguration(Port.class, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, VirtualHostAlias.class, aliasAttributes);
+
 
         // set the ssl system properties
         setSystemProperty("javax.net.ssl.keyStore", KEYSTORE);

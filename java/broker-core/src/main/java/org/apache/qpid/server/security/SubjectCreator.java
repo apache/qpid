@@ -53,10 +53,10 @@ public class SubjectCreator
 {
     private final boolean _secure;
     private AuthenticationProvider<?> _authenticationProvider;
-    private Collection<GroupProvider> _groupProviders;
+    private Collection<GroupProvider<?>> _groupProviders;
 
     public SubjectCreator(AuthenticationProvider<?> authenticationProvider,
-                          Collection<GroupProvider> groupProviders,
+                          Collection<GroupProvider<?>> groupProviders,
                           final boolean secure)
     {
         _authenticationProvider = authenticationProvider;

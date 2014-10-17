@@ -24,12 +24,12 @@ import java.util.Set;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.ManagedObject;
 
 @ManagedObject
 public interface TestChildCategory<X extends TestChildCategory<X>> extends ConfiguredObject<X>
 {
-
     String NON_INTERPOLATED_VALID_VALUE = "${file.separator}";
 
     @ManagedAttribute(validValues = { NON_INTERPOLATED_VALID_VALUE }, defaultValue = "")
