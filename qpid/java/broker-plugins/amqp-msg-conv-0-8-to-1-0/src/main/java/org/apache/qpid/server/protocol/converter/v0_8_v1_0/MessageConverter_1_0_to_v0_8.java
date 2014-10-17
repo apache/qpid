@@ -28,7 +28,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.protocol.v0_8.AMQMessage;
@@ -137,45 +137,13 @@ public class MessageConverter_1_0_to_v0_8 implements MessageConverter<Message_1_
     {
 
         final MessageMetaData_1_0.MessageHeader_1_0 header = serverMsg.getMessageHeader();
+        String key = header.getTo();
+        if(key == null)
+        {
+            key = header.getSubject();
+        }
 
-        MessagePublishInfo publishInfo = new MessagePublishInfo()
-                                            {
-                                                @Override
-                                                public AMQShortString getExchange()
-                                                {
-                                                    return null;
-                                                }
-
-                                                @Override
-                                                public void setExchange(final AMQShortString amqShortString)
-                                                {
-                                                    throw new UnsupportedOperationException();
-                                                }
-
-                                                @Override
-                                                public boolean isImmediate()
-                                                {
-                                                    return false;
-                                                }
-
-                                                @Override
-                                                public boolean isMandatory()
-                                                {
-                                                    return false;
-                                                }
-
-                                                @Override
-                                                public AMQShortString getRoutingKey()
-                                                {
-                                                    String key = header.getTo();
-                                                    if(key == null)
-                                                    {
-                                                        key = header.getSubject();
-                                                    }
-
-                                                    return AMQShortString.valueOf(key);
-                                                }
-                                            };
+        MessagePublishInfo publishInfo = new MessagePublishInfo(null, false, false, AMQShortString.valueOf(key));
 
 
         final BasicContentHeaderProperties props = new BasicContentHeaderProperties();
@@ -204,7 +172,7 @@ public class MessageConverter_1_0_to_v0_8 implements MessageConverter<Message_1_
 
         props.setHeaders(FieldTable.convertToFieldTable(headerProps));
 
-        final ContentHeaderBody chb = new ContentHeaderBody(props, BASIC_CLASS_ID);
+        final ContentHeaderBody chb = new ContentHeaderBody(props);
         chb.setBodySize(size);
 
         return new MessageMetaData(publishInfo, chb, serverMsg.getArrivalTime());

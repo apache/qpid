@@ -21,16 +21,15 @@
 package org.apache.qpid.framing;
 
 
-import org.apache.qpid.AMQChannelException;
-import org.apache.qpid.AMQConnectionException;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.codec.MarkableDataInput;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+
+import org.apache.qpid.AMQChannelException;
+import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 public abstract class AMQMethodBodyImpl implements AMQMethodBody
 {
@@ -67,31 +66,26 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
      *
      * @param channelId The channel id that is not found
      *
+     * @param methodRegistry
      * @return new AMQChannelException
      */
-    public AMQChannelException getChannelNotFoundException(int channelId)
+    public AMQChannelException getChannelNotFoundException(int channelId, final MethodRegistry methodRegistry)
     {
-        return getChannelException(AMQConstant.NOT_FOUND, "Channel not found for id:" + channelId);
+        return getChannelException(AMQConstant.NOT_FOUND, "Channel not found for id:" + channelId, methodRegistry);
     }
 
-    public AMQChannelException getChannelException(AMQConstant code, String message)
+    public AMQChannelException getChannelException(AMQConstant code,
+                                                   String message,
+                                                   final MethodRegistry methodRegistry)
     {
-        return new AMQChannelException(code, message, getClazz(), getMethod(), getMajor(), getMinor(), null);
+        return new AMQChannelException(code, message, getClazz(), getMethod(), methodRegistry);
     }
 
-    public AMQChannelException getChannelException(AMQConstant code, String message, Throwable cause)
+    public AMQConnectionException getConnectionException(AMQConstant code,
+                                                         String message,
+                                                         final MethodRegistry methodRegistry)
     {
-        return new AMQChannelException(code, message, getClazz(), getMethod(), getMajor(), getMinor(), cause);
-    }
-
-    public AMQConnectionException getConnectionException(AMQConstant code, String message)
-    {
-        return new AMQConnectionException(code, message, getClazz(), getMethod(), getMajor(), getMinor(), null);
-    }
-
-    public AMQConnectionException getConnectionException(AMQConstant code, String message, Throwable cause)
-    {
-        return new AMQConnectionException(code, message, getClazz(), getMethod(), getMajor(), getMinor(), cause);
+        return new AMQConnectionException(code, message, this, methodRegistry);
     }
 
     public void handle(final int channelId, final AMQVersionAwareProtocolSession session) throws AMQException
@@ -111,17 +105,6 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
         writeMethodPayload(buffer);
     }
 
-
-    protected byte readByte(DataInput buffer) throws IOException
-    {
-        return buffer.readByte();
-    }
-
-    protected AMQShortString readAMQShortString(MarkableDataInput buffer) throws IOException
-    {
-        AMQShortString str = buffer.readAMQShortString();
-        return str == null ? null : str.intern(false);
-    }
 
     protected int getSizeOf(AMQShortString string)
     {
@@ -148,11 +131,6 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
         buffer.writeInt(i);
     }
 
-    protected FieldTable readFieldTable(DataInput buffer) throws AMQFrameDecodingException, IOException
-    {
-        return EncodingUtils.readFieldTable(buffer);
-    }
-
     protected int getSizeOf(FieldTable table)
     {
         return EncodingUtils.encodedFieldTableLength(table);  //To change body of created methods use File | Settings | File Templates.
@@ -161,11 +139,6 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
     protected void writeFieldTable(DataOutput buffer, FieldTable table) throws IOException
     {
         EncodingUtils.writeFieldTableBytes(buffer, table);
-    }
-
-    protected long readLong(DataInput buffer) throws IOException
-    {
-        return buffer.readLong();
     }
 
     protected void writeLong(DataOutput buffer, long l) throws IOException
@@ -183,11 +156,6 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
         EncodingUtils.writeBytes(buffer,data);
     }
 
-    protected byte[] readBytes(DataInput buffer) throws IOException
-    {
-        return EncodingUtils.readBytes(buffer);
-    }
-
     protected short readShort(DataInput buffer) throws IOException
     {
         return EncodingUtils.readShort(buffer);
@@ -196,30 +164,6 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
     protected void writeShort(DataOutput buffer, short s) throws IOException
     {
         EncodingUtils.writeShort(buffer, s);
-    }
-
-    protected Content readContent(DataInput buffer)
-    {
-        return null;
-    }
-
-    protected int getSizeOf(Content body)
-    {
-        return 0;
-    }
-
-    protected void writeContent(DataOutput buffer, Content body)
-    {
-    }
-
-    protected byte readBitfield(DataInput buffer) throws IOException
-    {
-        return readByte(buffer);
-    }
-
-    protected int readUnsignedShort(DataInput buffer) throws IOException
-    {
-        return buffer.readUnsignedShort();
     }
 
     protected void writeBitfield(DataOutput buffer, byte bitfield0) throws IOException
@@ -232,20 +176,11 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
         EncodingUtils.writeUnsignedShort(buffer, s);
     }
 
-    protected long readUnsignedInteger(DataInput buffer) throws IOException
-    {
-        return EncodingUtils.readUnsignedInteger(buffer);
-    }
     protected void writeUnsignedInteger(DataOutput buffer, long i) throws IOException
     {
         EncodingUtils.writeUnsignedInteger(buffer, i);
     }
 
-
-    protected short readUnsignedByte(DataInput buffer) throws IOException
-    {
-        return (short) buffer.readUnsignedByte();
-    }
 
     protected void writeUnsignedByte(DataOutput buffer, short unsignedByte) throws IOException
     {

@@ -41,8 +41,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
+import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
 import org.apache.qpid.server.connection.SessionPrincipal;
@@ -597,9 +596,9 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         headers.setString("Test", "MST");
         properties.setHeaders(headers);
 
-        MessagePublishInfo messageInfo = new TestMessagePublishInfo(exchange, false, false, routingKey);
+        MessagePublishInfo messageInfo = new MessagePublishInfo(new AMQShortString(exchange.getName()), false, false, new AMQShortString(routingKey));
 
-        ContentHeaderBody headerBody = new ContentHeaderBody(BasicConsumeBodyImpl.CLASS_ID,0,properties,0l);
+        ContentHeaderBody headerBody = new ContentHeaderBody(properties,0l);
 
         MessageMetaData mmd = new MessageMetaData(messageInfo, headerBody, System.currentTimeMillis());
 
@@ -824,52 +823,4 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
 
         assertEquals("Incorrect Message count on queue:" + queueName, messageCount, queue.getQueueDepthMessages());
     }
-
-    private class TestMessagePublishInfo implements MessagePublishInfo
-    {
-
-        ExchangeImpl<?> _exchange;
-        boolean _immediate;
-        boolean _mandatory;
-        String _routingKey;
-
-        TestMessagePublishInfo(ExchangeImpl<?> exchange, boolean immediate, boolean mandatory, String routingKey)
-        {
-            _exchange = exchange;
-            _immediate = immediate;
-            _mandatory = mandatory;
-            _routingKey = routingKey;
-        }
-
-        @Override
-        public AMQShortString getExchange()
-        {
-            return new AMQShortString(_exchange.getName());
-        }
-
-        @Override
-        public void setExchange(AMQShortString exchange)
-        {
-            //no-op
-        }
-
-        @Override
-        public boolean isImmediate()
-        {
-            return _immediate;
-        }
-
-        @Override
-        public boolean isMandatory()
-        {
-            return _mandatory;
-        }
-
-        @Override
-        public AMQShortString getRoutingKey()
-        {
-            return new AMQShortString(_routingKey);
-        }
-    }
-
 }

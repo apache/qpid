@@ -25,7 +25,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -33,17 +33,21 @@ import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.AMQProtocolVersionException;
+import org.apache.qpid.framing.FrameCreatingMethodProcessor;
 import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.framing.ProtocolVersion;
 
 public class AMQDecoderTest extends TestCase
 {
 
     private AMQDecoder _decoder;
+    private FrameCreatingMethodProcessor _methodProcessor;
 
 
     public void setUp()
     {
-        _decoder = new AMQDecoder(false, null);
+        _methodProcessor = new FrameCreatingMethodProcessor(ProtocolVersion.v0_91);
+        _decoder = new ClientDecoder(_methodProcessor);
     }
    
     
@@ -57,7 +61,8 @@ public class AMQDecoderTest extends TestCase
     public void testSingleFrameDecode() throws AMQProtocolVersionException, AMQFrameDecodingException, IOException
     {
         ByteBuffer msg = getHeartbeatBodyBuffer();
-        ArrayList<AMQDataBlock> frames = _decoder.decodeBuffer(msg);
+        _decoder.decodeBuffer(msg);
+        List<AMQDataBlock> frames = _methodProcessor.getProcessedMethods();
         if (frames.get(0) instanceof AMQFrame)
         {
             assertEquals(HeartbeatBody.FRAME.getBodyFrame().getFrameType(), ((AMQFrame) frames.get(0)).getBodyFrame().getFrameType());
@@ -77,9 +82,12 @@ public class AMQDecoderTest extends TestCase
         msgA.limit(msgaLimit);
         msg.position(msgbPos);
         ByteBuffer msgB = msg.slice();
-        ArrayList<AMQDataBlock> frames = _decoder.decodeBuffer(msgA);
+
+        _decoder.decodeBuffer(msgA);
+        List<AMQDataBlock> frames = _methodProcessor.getProcessedMethods();
         assertEquals(0, frames.size());
-        frames = _decoder.decodeBuffer(msgB);
+
+        _decoder.decodeBuffer(msgB);
         assertEquals(1, frames.size());
         if (frames.get(0) instanceof AMQFrame)
         {
@@ -99,7 +107,8 @@ public class AMQDecoderTest extends TestCase
         msg.put(msgA);
         msg.put(msgB);
         msg.flip();
-        ArrayList<AMQDataBlock> frames = _decoder.decodeBuffer(msg);
+        _decoder.decodeBuffer(msg);
+        List<AMQDataBlock> frames = _methodProcessor.getProcessedMethods();
         assertEquals(2, frames.size());
         for (AMQDataBlock frame : frames)
         {
@@ -136,12 +145,15 @@ public class AMQDecoderTest extends TestCase
         sliceB.put(msgC);
         sliceB.flip();
         msgC.limit(limit);
-        
-        ArrayList<AMQDataBlock> frames = _decoder.decodeBuffer(sliceA);
+
+        _decoder.decodeBuffer(sliceA);
+        List<AMQDataBlock> frames = _methodProcessor.getProcessedMethods();
         assertEquals(1, frames.size());
-        frames = _decoder.decodeBuffer(sliceB);
+        frames.clear();
+        _decoder.decodeBuffer(sliceB);
         assertEquals(1, frames.size());
-        frames = _decoder.decodeBuffer(msgC);
+        frames.clear();
+        _decoder.decodeBuffer(msgC);
         assertEquals(1, frames.size());
         for (AMQDataBlock frame : frames)
         {

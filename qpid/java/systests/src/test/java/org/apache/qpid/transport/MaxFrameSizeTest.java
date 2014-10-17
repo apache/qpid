@@ -26,8 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -41,22 +41,19 @@ import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 
-import org.apache.qpid.codec.MarkableDataInput;
-import org.apache.qpid.framing.AMQBody;
-import org.apache.qpid.framing.AMQDataBlockDecoder;
+import org.apache.qpid.codec.AMQDecoder;
+import org.apache.qpid.codec.ClientDecoder;
+import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.AMQProtocolVersionException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BodyFactory;
-import org.apache.qpid.framing.ByteArrayDataInput;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.ConnectionTuneOkBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.amqp_0_91.ConnectionStartOkBodyImpl;
-import org.apache.qpid.framing.amqp_0_91.ConnectionTuneOkBodyImpl;
-import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
+import org.apache.qpid.framing.FrameCreatingMethodProcessor;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
@@ -114,11 +111,11 @@ public class MaxFrameSizeTest extends QpidBrokerTestCase
                                 {
 
                                     @Override
-                                    public void evaluate(final Socket socket, final List<AMQFrame> frames)
+                                    public void evaluate(final Socket socket, final List<AMQDataBlock> frames)
                                     {
                                         if(!socket.isClosed())
                                         {
-                                            AMQFrame lastFrame = frames.get(frames.size() - 1);
+                                            AMQFrame lastFrame = (AMQFrame) frames.get(frames.size() - 1);
                                             assertTrue("Connection should not be possible with a frame size < " + Constant.MIN_MAX_FRAME_SIZE, lastFrame.getBodyFrame() instanceof ConnectionCloseBody);
                                         }
                                     }
@@ -163,11 +160,11 @@ public class MaxFrameSizeTest extends QpidBrokerTestCase
                                 {
 
                                     @Override
-                                    public void evaluate(final Socket socket, final List<AMQFrame> frames)
+                                    public void evaluate(final Socket socket, final List<AMQDataBlock> frames)
                                     {
                                         if(!socket.isClosed())
                                         {
-                                            AMQFrame lastFrame = frames.get(frames.size() - 1);
+                                            AMQFrame lastFrame = (AMQFrame) frames.get(frames.size() - 1);
                                             assertTrue("Connection should not be possible with a frame size larger than the broker requested", lastFrame.getBodyFrame() instanceof ConnectionCloseBody);
                                         }
                                     }
@@ -177,7 +174,7 @@ public class MaxFrameSizeTest extends QpidBrokerTestCase
 
     private static interface ResultEvaluator
     {
-        void evaluate(Socket socket, List<AMQFrame> frames);
+        void evaluate(Socket socket, List<AMQDataBlock> frames);
     }
 
     private void doAMQP08test(int frameSize, ResultEvaluator evaluator)
@@ -220,12 +217,12 @@ public class MaxFrameSizeTest extends QpidBrokerTestCase
             response[i++] = b;
         }
 
-        ConnectionStartOkBody startOK = new ConnectionStartOkBodyImpl(new FieldTable(), AMQShortString.valueOf("PLAIN"), response, AMQShortString.valueOf("en_US"));
+        ConnectionStartOkBody startOK = new ConnectionStartOkBody(new FieldTable(), AMQShortString.valueOf("PLAIN"), response, AMQShortString.valueOf("en_US"));
 
         DataOutputStream dos = new DataOutputStream(os);
         new AMQFrame(0, startOK).writePayload(dos);
         dos.flush();
-        ConnectionTuneOkBody tuneOk = new ConnectionTuneOkBodyImpl(256, frameSize, 0);
+        ConnectionTuneOkBody tuneOk = new ConnectionTuneOkBody(256, frameSize, 0);
         new AMQFrame(0, tuneOk).writePayload(dos);
         dos.flush();
         socket.setSoTimeout(5000);
@@ -238,26 +235,11 @@ public class MaxFrameSizeTest extends QpidBrokerTestCase
         }
 
         byte[] serverData = baos.toByteArray();
-        ByteArrayDataInput badi = new ByteArrayDataInput(serverData);
-        AMQDataBlockDecoder datablockDecoder = new AMQDataBlockDecoder();
-        final MethodRegistry_0_91 methodRegistry_0_91 = new MethodRegistry_0_91();
-        BodyFactory methodBodyFactory = new BodyFactory()
-        {
-            @Override
-            public AMQBody createBody(final MarkableDataInput in, final long bodySize)
-                    throws AMQFrameDecodingException, IOException
-            {
-                return methodRegistry_0_91.convertToBody(in, bodySize);
-            }
-        };
+        final FrameCreatingMethodProcessor methodProcessor = new FrameCreatingMethodProcessor(ProtocolVersion.v0_91);
+        AMQDecoder decoder = new ClientDecoder(methodProcessor);
+        decoder.decodeBuffer(ByteBuffer.wrap(serverData));
 
-        List<AMQFrame> frames = new ArrayList<>();
-        while (datablockDecoder.decodable(badi))
-        {
-            frames.add(datablockDecoder.createAndPopulateFrame(methodBodyFactory, badi));
-        }
-
-        evaluator.evaluate(socket, frames);
+        evaluator.evaluate(socket, methodProcessor.getProcessedMethods());
     }
 
     private static class TestClientDelegate extends ClientDelegate

@@ -27,6 +27,7 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.MessageCounter;
 import org.apache.qpid.server.store.MessageStore;
@@ -77,7 +78,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
 
     private InternalTestProtocolSession getSession()
     {
-        return (InternalTestProtocolSession)_channel.getProtocolSession();
+        return (InternalTestProtocolSession)_channel.getConnection();
     }
 
     private AMQQueue getQueue()
@@ -144,6 +145,6 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
         FieldTable filters = new FieldTable();
         filters.put(AMQPFilterTypes.NO_CONSUME.getValue(), true);
 
-        return channel.consumeFromSource(null, Collections.singleton(queue), true, filters, true, false);
+        return channel.consumeFromSource(null, Collections.<MessageSource>singleton(queue), true, filters, true, false);
     }
 }

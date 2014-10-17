@@ -20,15 +20,14 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
-import org.apache.qpid.AMQException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.server.message.MessageDestination;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class IncomingMessage
 {
@@ -58,7 +57,7 @@ public class IncomingMessage
         return _messagePublishInfo;
     }
 
-    public void addContentBodyFrame(final ContentBody contentChunk) throws AMQException
+    public void addContentBodyFrame(final ContentBody contentChunk)
     {
         _bodyLengthReceived += contentChunk.getSize();
         _contentChunks.add(contentChunk);
@@ -94,7 +93,7 @@ public class IncomingMessage
         _messageDestination = e;
     }
 
-    public int getBodyCount() throws AMQException
+    public int getBodyCount()
     {
         return _contentChunks.size();
     }

@@ -23,7 +23,7 @@ package org.apache.qpid.client;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.transport.TestNetworkConnection;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.amqp_0_91.QueueDeclareOkBodyImpl;
+import org.apache.qpid.framing.QueueDeclareOkBody;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.url.AMQBindingURL;
@@ -50,7 +50,7 @@ public class AMQSession_0_8Test extends QpidTestCase
             {
                 try
                 {
-                    _connection.getProtocolHandler().methodBodyReceived(1, new QueueDeclareOkBodyImpl(testQueueName, 0, 0));
+                    _connection.getProtocolHandler().methodBodyReceived(1, new QueueDeclareOkBody(testQueueName, 0, 0));
                 }
                 catch (AMQException e)
                 {

@@ -20,10 +20,7 @@
  */
 package org.apache.qpid;
 
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQConstant;
 
 /**
@@ -34,24 +31,35 @@ public class AMQChannelException extends AMQException
     private final int _classId;
     private final int _methodId;
     /* AMQP version for which exception ocurred */
-    private final byte major;
-    private final byte minor;
+    private final MethodRegistry _methodRegistry;
 
-    public AMQChannelException(AMQConstant errorCode, String msg, int classId, int methodId, byte major, byte minor,
-        Throwable cause)
+
+    public AMQChannelException(AMQConstant errorCode,
+                               String msg,
+                               int classId,
+                               int methodId,
+                               MethodRegistry methodRegistry)
     {
-        super(errorCode, msg, cause);
+        super(errorCode, msg);
         _classId = classId;
         _methodId = methodId;
-        this.major = major;
-        this.minor = minor;
+        _methodRegistry = methodRegistry;
+
     }
 
-    public AMQFrame getCloseFrame(int channel)
+    public int getClassId()
     {
-        MethodRegistry reg = MethodRegistry.getMethodRegistry(new ProtocolVersion(major,minor));
-        return new AMQFrame(channel, reg.createChannelCloseBody(getErrorCode() == null ? AMQConstant.INTERNAL_ERROR.getCode() : getErrorCode().getCode(),
-                AMQShortString.validValueOf(getMessage()),_classId,_methodId));
+        return _classId;
+    }
+
+    public int getMethodId()
+    {
+        return _methodId;
+    }
+
+    public MethodRegistry getMethodRegistry()
+    {
+        return _methodRegistry;
     }
 
 }

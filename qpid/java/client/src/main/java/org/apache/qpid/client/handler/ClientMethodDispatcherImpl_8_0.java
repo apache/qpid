@@ -22,28 +22,19 @@
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
-import org.apache.qpid.framing.BasicRecoverOkBody;
+import org.apache.qpid.client.state.AMQMethodNotImplementedException;
+import org.apache.qpid.framing.BasicRecoverSyncBody;
+import org.apache.qpid.framing.BasicRecoverSyncOkBody;
 import org.apache.qpid.framing.ChannelAlertBody;
-import org.apache.qpid.framing.TestContentBody;
-import org.apache.qpid.framing.TestContentOkBody;
-import org.apache.qpid.framing.TestIntegerBody;
-import org.apache.qpid.framing.TestIntegerOkBody;
-import org.apache.qpid.framing.TestStringBody;
-import org.apache.qpid.framing.TestStringOkBody;
-import org.apache.qpid.framing.TestTableBody;
-import org.apache.qpid.framing.TestTableOkBody;
-import org.apache.qpid.framing.amqp_8_0.MethodDispatcher_8_0;
+import org.apache.qpid.framing.MethodDispatcher;
+import org.apache.qpid.framing.QueueUnbindBody;
+import org.apache.qpid.framing.QueueUnbindOkBody;
 
-public class ClientMethodDispatcherImpl_8_0 extends ClientMethodDispatcherImpl implements MethodDispatcher_8_0
+public class ClientMethodDispatcherImpl_8_0 extends ClientMethodDispatcherImpl implements MethodDispatcher
 {
     public ClientMethodDispatcherImpl_8_0(AMQProtocolSession session)
     {
         super(session);
-    }
-
-    public boolean dispatchBasicRecoverOk(BasicRecoverOkBody body, int channelId) throws AMQException
-    {
-        return false;
     }
 
     public boolean dispatchChannelAlert(ChannelAlertBody body, int channelId) throws AMQException
@@ -51,43 +42,29 @@ public class ClientMethodDispatcherImpl_8_0 extends ClientMethodDispatcherImpl i
         return false;
     }
 
-    public boolean dispatchTestContent(TestContentBody body, int channelId) throws AMQException
+    @Override
+    public boolean dispatchQueueUnbindOk(final QueueUnbindOkBody queueUnbindOkBody, final int channelId)
     {
         return false;
     }
 
-    public boolean dispatchTestContentOk(TestContentOkBody body, int channelId) throws AMQException
+    @Override
+    public boolean dispatchBasicRecoverSyncOk(final BasicRecoverSyncOkBody basicRecoverSyncOkBody,
+                                              final int channelId)
     {
         return false;
     }
 
-    public boolean dispatchTestInteger(TestIntegerBody body, int channelId) throws AMQException
+    @Override
+    public boolean dispatchQueueUnbind(final QueueUnbindBody body, final int channelId) throws AMQException
     {
-        return false;
+        throw new AMQMethodNotImplementedException(body);
     }
 
-    public boolean dispatchTestIntegerOk(TestIntegerOkBody body, int channelId) throws AMQException
+    @Override
+    public boolean dispatchBasicRecoverSync(final BasicRecoverSyncBody body, final int channelId)
+            throws AMQException
     {
-        return false;
-    }
-
-    public boolean dispatchTestString(TestStringBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchTestStringOk(TestStringOkBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchTestTable(TestTableBody body, int channelId) throws AMQException
-    {
-        return false;
-    }
-
-    public boolean dispatchTestTableOk(TestTableOkBody body, int channelId) throws AMQException
-    {
-        return false;  
+        throw new AMQMethodNotImplementedException(body);
     }
 }

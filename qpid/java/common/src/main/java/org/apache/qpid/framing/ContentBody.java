@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-
 import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.codec.MarkableDataInput;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 public class ContentBody implements AMQBody
 {
@@ -72,23 +72,20 @@ public class ContentBody implements AMQBody
         session.contentBodyReceived(channelId, this);
     }
 
-    protected void populateFromBuffer(DataInputStream buffer, long size) throws AMQFrameDecodingException, IOException
-    {
-        if (size > 0)
-        {
-            _payload = new byte[(int)size];
-            buffer.read(getPayload());
-        }
-
-    }
-
-    public void reduceBufferToFit()
-    {
-    }
-
     public byte[] getPayload()
     {
         return _payload;
+    }
+
+    public static void process(final MarkableDataInput in,
+                               final ChannelMethodProcessor methodProcessor, final long bodySize)
+            throws IOException
+    {
+
+        byte[] payload = new byte[(int)bodySize];
+        in.readFully(payload);
+
+        methodProcessor.receiveMessageContent(payload);
     }
 
     private static class BufferContentBody implements AMQBody

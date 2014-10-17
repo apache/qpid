@@ -30,9 +30,7 @@ import java.util.Arrays;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaDataType_0_10;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
@@ -234,44 +232,14 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
 
     private MessagePublishInfo createPublishInfoBody_0_8()
     {
-        return new MessagePublishInfo()
-        {
-            public AMQShortString getExchange()
-            {
-                return new AMQShortString("exchange12345");
-            }
-
-            @Override
-            public void setExchange(AMQShortString exchange)
-            {
-            }
-
-            @Override
-            public boolean isImmediate()
-            {
-                return false;
-            }
-
-            @Override
-            public boolean isMandatory()
-            {
-                return true;
-            }
-
-            @Override
-            public AMQShortString getRoutingKey()
-            {
-                return new AMQShortString("routingKey12345");
-            }
-        };
+        return new MessagePublishInfo(new AMQShortString("exchange12345"), false, true,
+                                      new AMQShortString("routingKey12345"));
 
     }
 
     private ContentHeaderBody createContentHeaderBody_0_8(BasicContentHeaderProperties props, int length)
     {
-        MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(ProtocolVersion.v0_9);
-        int classForBasic = methodRegistry.createBasicQosOkBody().getClazz();
-        return new ContentHeaderBody(classForBasic, 1, props, length);
+        return new ContentHeaderBody(props, length);
     }
 
     private BasicContentHeaderProperties createContentHeaderProperties_0_8()

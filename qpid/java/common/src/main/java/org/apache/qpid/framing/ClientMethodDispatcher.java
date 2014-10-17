@@ -63,4 +63,13 @@ public interface ClientMethodDispatcher
     public boolean dispatchTxRollbackOk(TxRollbackOkBody body, int channelId) throws AMQException;
     public boolean dispatchTxSelectOk(TxSelectOkBody body, int channelId) throws AMQException;
 
+    boolean dispatchConnectionRedirect(ConnectionRedirectBody connectionRedirectBody, int channelId) throws AMQException;
+    boolean dispatchAccessRequestOk(AccessRequestOkBody accessRequestOkBody, int channelId) throws AMQException;
+
+    boolean dispatchQueueUnbindOk(QueueUnbindOkBody queueUnbindOkBody, int channelId) throws AMQException;
+
+    boolean dispatchBasicRecoverSyncOk(BasicRecoverSyncOkBody basicRecoverSyncOkBody, int channelId)
+            throws AMQException;
+
+    boolean dispatchChannelAlert(ChannelAlertBody channelAlertBody, int channelId) throws AMQException;
 }
