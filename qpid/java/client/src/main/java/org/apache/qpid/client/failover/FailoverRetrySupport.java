@@ -45,19 +45,13 @@ import org.apache.qpid.client.AMQConnection;
  * <p>
  * Wrapping a synchronous method in a FailoverRetrySupport will have the effect that the operation will not be
  * started during fail-over, but be delayed until any current fail-over has completed. Should a fail-over process want
- * to start whilst waiting for the synchrnous reply, the FailoverRetrySupport will detect this and rety the operation
+ * to start whilst waiting for the synchronous reply, the FailoverRetrySupport will detect this and retry the operation
  * until it succeeds. Synchronous methods are usually coordinated with a
  * {@link org.apache.qpid.client.protocol.BlockingMethodFrameListener} which is notified when a fail-over process wants
  * to start and throws a FailoverException in response to this.
  * <p>
  * Wrapping an asynchronous method in a FailoverRetrySupport will have the effect that the operation will not be
  * started during fail-over, but be delayed until any current fail-over has completed.
- * <p>
- * TODO  Another continuation. Could use an interface Continuation (as described in other todos)
- *      Then have a wrapping continuation (this), which blocks on an arbitrary
- *      Condition or Latch (specified in constructor call), that this blocks on before calling the wrapped Continuation.
- *      Must work on Java 1.4, so check retrotranslator works on Lock/Condition or latch first. Argument and return type
- *      to match wrapped condition as type parameters. Rename to AsyncConditionalContinuation or something like that.
  * <p>
  * TODO  InterruptedException not handled well.
  */

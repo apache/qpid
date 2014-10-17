@@ -33,35 +33,24 @@ import java.io.IOException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.MarkableDataInput;
 
-public class BasicAckBody extends AMQMethodBodyImpl implements EncodableAMQDataBlock, AMQMethodBody
+public class ConfirmSelectBody extends AMQMethodBodyImpl implements EncodableAMQDataBlock, AMQMethodBody
 {
 
-    public static final int CLASS_ID =  60;
-    public static final int METHOD_ID = 80;
+    public static final int CLASS_ID =  85;
+    public static final int METHOD_ID = 10;
 
     // Fields declared in specification
-    private final long _deliveryTag; // [deliveryTag]
-    private final byte _bitfield0; // [multiple]
+    private final boolean _nowait; // [active]
 
     // Constructor
-    public BasicAckBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
+    public ConfirmSelectBody(MarkableDataInput buffer) throws AMQFrameDecodingException, IOException
     {
-        _deliveryTag = buffer.readLong();
-        _bitfield0 = buffer.readByte();
+        _nowait = (buffer.readByte() & 0x01) == 0x01;
     }
 
-    public BasicAckBody(
-            long deliveryTag,
-            boolean multiple
-                       )
+    public ConfirmSelectBody(boolean nowait)
     {
-        _deliveryTag = deliveryTag;
-        byte bitfield0 = (byte)0;
-        if( multiple )
-        {
-            bitfield0 = (byte) (((int) bitfield0) | (1 << 0));
-        }
-        _bitfield0 = bitfield0;
+        _nowait = nowait;
     }
 
     public int getClazz()
@@ -74,53 +63,43 @@ public class BasicAckBody extends AMQMethodBodyImpl implements EncodableAMQDataB
         return METHOD_ID;
     }
 
-    public final long getDeliveryTag()
+    public final boolean getNowait()
     {
-        return _deliveryTag;
-    }
-    public final boolean getMultiple()
-    {
-        return (((int)(_bitfield0)) & ( 1 << 0)) != 0;
+        return _nowait;
     }
 
     protected int getBodySize()
     {
-        int size = 9;
-        return size;
+        return 1;
     }
 
     public void writeMethodPayload(DataOutput buffer) throws IOException
     {
-        writeLong( buffer, _deliveryTag );
-        writeBitfield( buffer, _bitfield0 );
+        writeBitfield( buffer, _nowait ? (byte)1 : (byte)0 );
     }
 
     public boolean execute(MethodDispatcher dispatcher, int channelId) throws AMQException
 	{
-        return dispatcher.dispatchBasicAck(this, channelId);
+        return dispatcher.dispatchConfirmSelect(this, channelId);
 	}
 
     public String toString()
     {
-        StringBuilder buf = new StringBuilder("[BasicAckBodyImpl: ");
-        buf.append( "deliveryTag=" );
-        buf.append(  getDeliveryTag() );
-        buf.append( ", " );
-        buf.append( "multiple=" );
-        buf.append(  getMultiple() );
+        StringBuilder buf = new StringBuilder("[ConfirmSelectBody: ");
+        buf.append( "active=" );
+        buf.append(  getNowait() );
         buf.append("]");
         return buf.toString();
     }
 
     public static void process(final MarkableDataInput buffer,
-                               final ChannelMethodProcessor dispatcher) throws IOException
+                               final ServerChannelMethodProcessor dispatcher)
+            throws IOException
     {
-
-        long deliveryTag = buffer.readLong();
-        boolean multiple = (buffer.readByte() & 0x01) != 0;
+        boolean nowait = (buffer.readByte() & 0x01) == 0x01;
         if(!dispatcher.ignoreAllButCloseOk())
         {
-            dispatcher.receiveBasicAck(deliveryTag, multiple);
+            dispatcher.receiveConfirmSelect(nowait);
         }
     }
 }

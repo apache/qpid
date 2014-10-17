@@ -76,3 +76,5 @@ org.apache.qpid.systest.management.jmx.QueueManagementTest#testExclusiveQueueHas
 org.apache.qpid.test.unit.client.AMQSessionTest#testQueueDepthForQueueThatDoesNotExistLegacyBehaviour_08_091
 
 org.apache.qpid.client.prefetch.PrefetchBehaviourTest#testPrefetchWindowExpandsOnReceiveTransaction
+
+org.apache.qpid.client.SyncPublishTest#*

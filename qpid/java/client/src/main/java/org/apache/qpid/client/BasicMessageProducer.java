@@ -122,7 +122,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
                             ? System.getProperty("qpid.default_mandatory")
                             : "false"));
 
-    private PublishMode publishMode = PublishMode.ASYNC_PUBLISH_ALL;
+    private PublishMode _publishMode = PublishMode.ASYNC_PUBLISH_ALL;
 
     protected BasicMessageProducer(Logger logger,AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
                                    AMQSession session, long producerId, Boolean immediate, Boolean mandatory) throws AMQException
@@ -165,16 +165,16 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         // Support for deprecated option sync_persistence
         if (syncPub.equals("persistent") || _connection.getSyncPersistence())
         {
-            publishMode = PublishMode.SYNC_PUBLISH_PERSISTENT;
+            _publishMode = PublishMode.SYNC_PUBLISH_PERSISTENT;
         }
         else if (syncPub.equals("all"))
         {
-            publishMode = PublishMode.SYNC_PUBLISH_ALL;
+            _publishMode = PublishMode.SYNC_PUBLISH_ALL;
         }
 
         if (_logger.isDebugEnabled())
         {
-        	_logger.debug("MessageProducer " + toString() + " using publish mode : " + publishMode);
+        	_logger.debug("MessageProducer " + toString() + " using publish mode : " + _publishMode);
         }
     }
 
@@ -720,12 +720,12 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     protected PublishMode getPublishMode()
     {
-        return publishMode;
+        return _publishMode;
     }
 
     protected void setPublishMode(PublishMode publishMode)
     {
-        this.publishMode = publishMode;
+        _publishMode = publishMode;
     }
 
     Logger getLogger()

@@ -85,6 +85,7 @@ import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.util.BytesDataOutput;
@@ -432,6 +433,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                     String.valueOf(_closeWhenNoRoute));
             serverProperties.setString(ConnectionStartProperties.QPID_MESSAGE_COMPRESSION_SUPPORTED,
                                        String.valueOf(_broker.isMessageCompressionEnabled()));
+            serverProperties.setString(ConnectionStartProperties.QPID_CONFIRMED_PUBLISH_SUPPORTED, Boolean.TRUE.toString());
 
             AMQMethodBody responseBody = getMethodRegistry().createConnectionStartBody((short) getProtocolMajorVersion(),
                                                                                        (short) pv.getActualMinorVersion(),
@@ -1119,9 +1121,17 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                                                                                              _currentClassId,
                                                                                              _currentMethodId);
 
-                writeFrame(closeBody.generateFrame(0));
+                try
+                {
+                    writeFrame(closeBody.generateFrame(0));
 
-                _sender.close();
+                    _sender.close();
+                }
+                catch(SenderException e)
+                {
+                    // ignore
+                }
+
             }
             finally
             {

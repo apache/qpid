@@ -32,4 +32,6 @@ package org.apache.qpid.framing;
 public interface MethodDispatcher extends
                      ClientMethodDispatcher, ServerMethodDispatcher
 {
+
+    boolean dispatchBasicNack(BasicNackBody basicNackBody, int channelId);
 }

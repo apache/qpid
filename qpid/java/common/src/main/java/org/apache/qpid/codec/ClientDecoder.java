@@ -209,6 +209,9 @@ public class ClientDecoder extends AMQDecoder<ClientMethodProcessor<? extends Cl
                 case 0x003c0048:
                     BasicGetEmptyBody.process(in, channelMethodProcessor);
                     break;
+                case 0x003c0050:
+                    BasicAckBody.process(in, channelMethodProcessor);
+                    break;
                 case 0x003c0065:
                     if(!channelMethodProcessor.ignoreAllButCloseOk())
                     {
@@ -219,6 +222,18 @@ public class ClientDecoder extends AMQDecoder<ClientMethodProcessor<? extends Cl
                     if(!channelMethodProcessor.ignoreAllButCloseOk())
                     {
                         channelMethodProcessor.receiveBasicRecoverSyncOk();
+                    }
+                    break;
+                case 0x003c0078:
+                    BasicNackBody.process(in, channelMethodProcessor);
+                    break;
+
+                // CONFIRM CLASS:
+
+                case 0x0055000b:
+                    if(!channelMethodProcessor.ignoreAllButCloseOk())
+                    {
+                        channelMethodProcessor.receiveConfirmSelectOk();
                     }
                     break;
 

@@ -72,4 +72,6 @@ public interface ClientMethodDispatcher
             throws AMQException;
 
     boolean dispatchChannelAlert(ChannelAlertBody channelAlertBody, int channelId) throws AMQException;
+
+    boolean dispatchConfirmSelectOk(ConfirmSelectOkBody confirmSelectOkBody, int channelId) throws AMQException;
 }

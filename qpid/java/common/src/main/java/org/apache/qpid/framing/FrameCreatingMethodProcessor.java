@@ -358,6 +358,12 @@ public class FrameCreatingMethodProcessor implements MethodProcessor<FrameCreati
         }
 
         @Override
+        public void receiveConfirmSelectOk()
+        {
+            _processedMethods.add(new AMQFrame(_channelId, ConfirmSelectOkBody.INSTANCE));
+        }
+
+        @Override
         public void receiveAccessRequest(final AMQShortString realm,
                                          final boolean exclusive,
                                          final boolean passive,
@@ -564,6 +570,12 @@ public class FrameCreatingMethodProcessor implements MethodProcessor<FrameCreati
         }
 
         @Override
+        public void receiveConfirmSelect(final boolean nowait)
+        {
+            _processedMethods.add(new AMQFrame(_channelId, new ConfirmSelectBody(nowait)));
+        }
+
+        @Override
         public void receiveChannelFlow(final boolean active)
         {
             _processedMethods.add(new AMQFrame(_channelId, new ChannelFlowBody(active)));
@@ -606,6 +618,12 @@ public class FrameCreatingMethodProcessor implements MethodProcessor<FrameCreati
         public boolean ignoreAllButCloseOk()
         {
             return false;
+        }
+
+        @Override
+        public void receiveBasicNack(final long deliveryTag, final boolean multiple, final boolean requeue)
+        {
+            _processedMethods.add(new AMQFrame(_channelId, new BasicNackBody(deliveryTag, multiple, requeue)));
         }
     }
 }

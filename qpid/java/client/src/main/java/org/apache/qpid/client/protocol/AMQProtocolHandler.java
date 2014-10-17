@@ -661,7 +661,7 @@ public class AMQProtocolHandler implements ProtocolEngine
      * @param frame
      * @param listener the blocking listener. Note the calling thread will block.
      */
-    public AMQMethodEvent writeCommandFrameAndWaitForReply(AMQFrame frame, BlockingMethodFrameListener listener)
+    public AMQMethodEvent writeCommandFrameAndWaitForReply(AMQDataBlock frame, BlockingMethodFrameListener listener)
             throws AMQException, FailoverException
     {
         return writeCommandFrameAndWaitForReply(frame, listener, DEFAULT_SYNC_TIMEOUT);
@@ -674,7 +674,7 @@ public class AMQProtocolHandler implements ProtocolEngine
      * @param frame
      * @param listener the blocking listener. Note the calling thread will block.
      */
-    public AMQMethodEvent writeCommandFrameAndWaitForReply(AMQFrame frame, BlockingMethodFrameListener listener,
+    public AMQMethodEvent writeCommandFrameAndWaitForReply(AMQDataBlock frame, BlockingMethodFrameListener listener,
                                                            long timeout) throws AMQException, FailoverException
     {
         try

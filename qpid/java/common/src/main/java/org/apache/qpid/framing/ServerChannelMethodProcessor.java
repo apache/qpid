@@ -89,4 +89,5 @@ public interface ServerChannelMethodProcessor extends ChannelMethodProcessor
 
     void receiveTxRollback();
 
+    void receiveConfirmSelect(boolean nowait);
 }
