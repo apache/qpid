@@ -97,6 +97,7 @@ public class BrokerTestHelper
         when(broker.getEventLogger()).thenReturn(eventLogger);
         when(broker.getCategoryClass()).thenReturn(Broker.class);
         when(broker.getParent(SystemConfig.class)).thenReturn(systemConfig);
+        when(broker.getContextValue(eq(Long.class), eq(Broker.CHANNEL_FLOW_CONTROL_ENFORCEMENT_TIMEOUT))).thenReturn(0l);
 
         when(broker.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
         when(systemConfig.getTaskExecutor()).thenReturn(TASK_EXECUTOR);

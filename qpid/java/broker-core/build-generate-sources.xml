@@ -79,7 +79,7 @@
 
       <echo message="logmessages is ${logmessages}"/>
 
-      <java classname="org.apache.qpid.server.logging.GenerateLogMessages" fork="true" dir="${gentools.classes}" failonerror="true">
+      <java classname="org.apache.qpid.server.logging.GenerateLogMessages" fork="true" failonerror="true">
         <arg line="'${logmessages}'"/>
           <arg value="-j"/>
           <arg value="-o"/>

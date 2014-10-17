@@ -79,6 +79,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Consumer;
@@ -201,6 +202,8 @@ public class AMQChannel
     private final ConfigurationChangeListener _consumerClosedListener = new ConsumerClosedListener();
     private final CopyOnWriteArrayList<ConsumerListener> _consumerListeners = new CopyOnWriteArrayList<ConsumerListener>();
     private Session<?> _modelObject;
+    private long _blockTime;
+    private long _blockingTimeout;
     private boolean _confirmOnPublish;
     private long _confirmedMessageCounter;
 
@@ -217,7 +220,8 @@ public class AMQChannel
         _logSubject = new ChannelLogSubject(this);
 
         _messageStore = messageStore;
-
+        _blockingTimeout = connection.getBroker().getContextValue(Long.class,
+                                                                  Broker.CHANNEL_FLOW_CONTROL_ENFORCEMENT_TIMEOUT);
         // by default the session is non-transactional
         _transaction = new AsyncAutoCommitTransaction(_messageStore, this);
 
@@ -1317,7 +1321,7 @@ public class AMQChannel
     }
 
     @Override
-    public int compareTo(AMQChannel o)
+    public int compareTo(AMQSessionModel o)
     {
         return getId().compareTo(o.getId());
     }
@@ -1554,6 +1558,7 @@ public class AMQChannel
                 getVirtualHost().getEventLogger().message(_logSubject,
                                                           ChannelMessages.FLOW_ENFORCED("** All Queues **"));
                 flow(false);
+                _blockTime = System.currentTimeMillis();
             }
         }
     }
@@ -1580,6 +1585,8 @@ public class AMQChannel
             {
                 getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW_ENFORCED(queue.getName()));
                 flow(false);
+                _blockTime = System.currentTimeMillis();
+
             }
         }
     }
@@ -2146,42 +2153,59 @@ public class AMQChannel
                           " immediate: " + immediate + " ]");
         }
 
+
+
         VirtualHostImpl vHost = _connection.getVirtualHost();
 
-        MessageDestination destination;
-
-        if (isDefaultExchange(exchangeName))
+        if(blockingTimeoutExceeded())
         {
-            destination = vHost.getDefaultDestination();
+            getVirtualHost().getEventLogger().message(ChannelMessages.FLOW_CONTROL_IGNORED());
+            closeChannel(AMQConstant.MESSAGE_TOO_LARGE,
+                         "Channel flow control was requested, but not enforced by sender");
         }
         else
         {
-            destination = vHost.getMessageDestination(exchangeName.toString());
-        }
+            MessageDestination destination;
 
-        // if the exchange does not exist we raise a channel exception
-        if (destination == null)
-        {
-            closeChannel(AMQConstant.NOT_FOUND, "Unknown exchange name: " + exchangeName);
-        }
-        else
-        {
-
-            MessagePublishInfo info = new MessagePublishInfo(exchangeName,
-                                                             immediate,
-                                                             mandatory,
-                                                             routingKey);
-
-            try
+            if (isDefaultExchange(exchangeName))
             {
-                setPublishFrame(info, destination);
+                destination = vHost.getDefaultDestination();
             }
-            catch (AccessControlException e)
+            else
             {
-                _connection.closeConnection(AMQConstant.ACCESS_REFUSED, e.getMessage(), getChannelId());
+                destination = vHost.getMessageDestination(exchangeName.toString());
+            }
 
+            // if the exchange does not exist we raise a channel exception
+            if (destination == null)
+            {
+                closeChannel(AMQConstant.NOT_FOUND, "Unknown exchange name: " + exchangeName);
+            }
+            else
+            {
+
+                MessagePublishInfo info = new MessagePublishInfo(exchangeName,
+                                                                 immediate,
+                                                                 mandatory,
+                                                                 routingKey);
+
+                try
+                {
+                    setPublishFrame(info, destination);
+                }
+                catch (AccessControlException e)
+                {
+                    _connection.closeConnection(AMQConstant.ACCESS_REFUSED, e.getMessage(), getChannelId());
+
+                }
             }
         }
+    }
+
+    private boolean blockingTimeoutExceeded()
+    {
+
+        return _blocking.get() && (System.currentTimeMillis() - _blockTime) > _blockingTimeout;
     }
 
     @Override

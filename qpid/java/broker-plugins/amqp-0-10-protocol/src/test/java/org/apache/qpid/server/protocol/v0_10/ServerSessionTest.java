@@ -18,13 +18,15 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.Binary;
-
-import static org.mockito.Mockito.mock;
 
 public class ServerSessionTest extends QpidTestCase
 {
@@ -59,6 +61,8 @@ public class ServerSessionTest extends QpidTestCase
     public void testCompareTo() throws Exception
     {
         final Broker broker = mock(Broker.class);
+        when(broker.getContextValue(eq(Long.class), eq(Broker.CHANNEL_FLOW_CONTROL_ENFORCEMENT_TIMEOUT))).thenReturn(0l);
+
         ServerConnection connection = new ServerConnection(1, broker);
         connection.setVirtualHost(_virtualHost);
         ServerSession session1 = new ServerSession(connection, new ServerSessionDelegate(),

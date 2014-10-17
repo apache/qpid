@@ -22,13 +22,14 @@ package org.apache.qpid.server.logging.messages;
 
 import static org.apache.qpid.server.logging.AbstractMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.logging.LogMessage;
-
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
+
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.logging.LogMessage;
 
 /**
  * DO NOT EDIT DIRECTLY, THIS FILE WAS GENERATED.
@@ -53,6 +54,7 @@ public class ChannelMessages
     public static final String DEADLETTERMSG_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "channel.deadlettermsg";
     public static final String DISCARDMSG_NOALTEXCH_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "channel.discardmsg_noaltexch";
     public static final String IDLE_TXN_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "channel.idle_txn";
+    public static final String FLOW_CONTROL_IGNORED_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "channel.flow_control_ignored";
     public static final String DISCARDMSG_NOROUTE_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "channel.discardmsg_noroute";
     public static final String OPEN_TXN_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "channel.open_txn";
     public static final String FLOW_REMOVED_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "channel.flow_removed";
@@ -69,6 +71,7 @@ public class ChannelMessages
         Logger.getLogger(DEADLETTERMSG_LOG_HIERARCHY);
         Logger.getLogger(DISCARDMSG_NOALTEXCH_LOG_HIERARCHY);
         Logger.getLogger(IDLE_TXN_LOG_HIERARCHY);
+        Logger.getLogger(FLOW_CONTROL_IGNORED_LOG_HIERARCHY);
         Logger.getLogger(DISCARDMSG_NOROUTE_LOG_HIERARCHY);
         Logger.getLogger(OPEN_TXN_LOG_HIERARCHY);
         Logger.getLogger(FLOW_REMOVED_LOG_HIERARCHY);
@@ -350,6 +353,33 @@ public class ChannelMessages
             public String getLogHierarchy()
             {
                 return IDLE_TXN_LOG_HIERARCHY;
+            }
+        };
+    }
+
+    /**
+     * Log a Channel message of the Format:
+     * <pre>CHN-1012 : Flow Control Ignored. Channel will be closed.</pre>
+     * Optional values are contained in [square brackets] and are numbered
+     * sequentially in the method call.
+     *
+     */
+    public static LogMessage FLOW_CONTROL_IGNORED()
+    {
+        String rawMessage = _messages.getString("FLOW_CONTROL_IGNORED");
+
+        final String message = rawMessage;
+
+        return new LogMessage()
+        {
+            public String toString()
+            {
+                return message;
+            }
+
+            public String getLogHierarchy()
+            {
+                return FLOW_CONTROL_IGNORED_LOG_HIERARCHY;
             }
         };
     }

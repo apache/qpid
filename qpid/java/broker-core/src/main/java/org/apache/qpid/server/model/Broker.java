@@ -51,6 +51,8 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String MODEL_VERSION = "modelVersion";
     String CONFIDENTIAL_CONFIGURATION_ENCRYPTION_PROVIDER = "confidentialConfigurationEncryptionProvider";
 
+    String CHANNEL_FLOW_CONTROL_ENFORCEMENT_TIMEOUT = "channel.flowControlEnforcementTimeout";
+
     String CONNECTION_SESSION_COUNT_LIMIT = "connection.sessionCountLimit";
     String CONNECTION_HEART_BEAT_DELAY = "connection.heartBeatDelay";
     String CONNECTION_CLOSE_WHEN_NO_ROUTE = "connection.closeWhenNoRoute";
@@ -63,19 +65,22 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String QPID_JMX_PORT  = "qpid.jmx_port";
 
     @ManagedContextDefault(name = "broker.name")
-    static final String DEFAULT_BROKER_NAME = "Broker";
+    String DEFAULT_BROKER_NAME = "Broker";
 
     @ManagedContextDefault(name = QPID_AMQP_PORT)
-    public static final String DEFAULT_AMQP_PORT_NUMBER = "5672";
+    String DEFAULT_AMQP_PORT_NUMBER = "5672";
     @ManagedContextDefault(name = QPID_HTTP_PORT)
-    public static final String DEFAULT_HTTP_PORT_NUMBER = "8080";
+    String DEFAULT_HTTP_PORT_NUMBER = "8080";
     @ManagedContextDefault(name = QPID_RMI_PORT)
-    public static final String DEFAULT_RMI_PORT_NUMBER  = "8999";
+    String DEFAULT_RMI_PORT_NUMBER  = "8999";
     @ManagedContextDefault(name = QPID_JMX_PORT)
-    public static final String DEFAULT_JMX_PORT_NUMBER  = "9099";
+    String DEFAULT_JMX_PORT_NUMBER  = "9099";
 
     @ManagedContextDefault(name = BROKER_FLOW_TO_DISK_THRESHOLD)
-    public static final long DEFAULT_FLOW_TO_DISK_THRESHOLD = (long)(0.4 * (double)Runtime.getRuntime().maxMemory());
+    long DEFAULT_FLOW_TO_DISK_THRESHOLD = (long)(0.4 * (double)Runtime.getRuntime().maxMemory());
+
+    @ManagedContextDefault(name = CHANNEL_FLOW_CONTROL_ENFORCEMENT_TIMEOUT)
+    long DEFAULT_CHANNEL_FLOW_CONTROL_ENFORCEMENT_TIMEOUT = 5000l;
 
     String BROKER_FRAME_SIZE = "qpid.broker_frame_size";
     @ManagedContextDefault(name = BROKER_FRAME_SIZE)

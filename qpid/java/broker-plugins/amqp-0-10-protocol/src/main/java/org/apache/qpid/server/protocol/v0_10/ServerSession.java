@@ -62,6 +62,7 @@ import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageDestination;
 import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Consumer;
@@ -131,6 +132,8 @@ public class ServerSession extends Session
     private final CopyOnWriteArrayList<ConsumerListener> _consumerListeners = new CopyOnWriteArrayList<ConsumerListener>();
     private final ConfigurationChangeListener _consumerClosedListener = new ConsumerClosedListener();
     private org.apache.qpid.server.model.Session<?> _modelObject;
+    private long _blockTime;
+    private long _blockingTimeout;
 
 
     public static interface MessageDispositionChangeListener
@@ -182,6 +185,9 @@ public class ServerSession extends Session
                 getConnectionModel().closeSession(ServerSession.this, AMQConstant.RESOURCE_ERROR, reason);
             }
         }, getVirtualHost());
+
+        _blockingTimeout = ((ServerConnection)connection).getBroker().getContextValue(Long.class,
+                                                                  Broker.CHANNEL_FLOW_CONTROL_ENFORCEMENT_TIMEOUT);
     }
 
     protected void setState(final State state)
@@ -774,6 +780,7 @@ public class ServerSession extends Session
                     {
                         invokeBlock();
                     }
+                    _blockTime = System.currentTimeMillis();
                     getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW_ENFORCED(name));
                 }
 
@@ -798,7 +805,7 @@ public class ServerSession extends Session
         {
             if(_blocking.compareAndSet(true,false) && !isClosing())
             {
-
+                _blockTime = 0l;
                 getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW_REMOVED());
                 MessageFlow mf = new MessageFlow();
                 mf.setUnit(MessageCreditUnit.MESSAGE);
@@ -810,6 +817,17 @@ public class ServerSession extends Session
 
             }
         }
+    }
+
+    boolean blockingTimeoutExceeded()
+    {
+        long blockTime = _blockTime;
+        boolean b = _blocking.get() && blockTime != 0 && (System.currentTimeMillis() - blockTime) > _blockingTimeout;
+        if(b)
+        {
+            System.err.println(_blockingTimeout);
+        }
+        return b;
     }
 
     @Override
@@ -1065,7 +1083,7 @@ public class ServerSession extends Session
     }
 
     @Override
-    public int compareTo(ServerSession o)
+    public int compareTo(AMQSessionModel o)
     {
         return getId().compareTo(o.getId());
     }
