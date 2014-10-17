@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE entities [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                    "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd"
+[
 <!ENTITY %  entities SYSTEM  "commonEntities.xml">
 %entities;
 ]>
@@ -193,9 +195,7 @@ com.sun.security.jgss.accept {
   <section id="Java-Broker-Security-ScramSha-Providers">
     <title>SCRAM SHA Providers</title>
     <para>The SCRAM SHA Providers uses the Broker configuration itself to store the database of
-      users. (Unlike the <link linkend="Java-Broker-Security-PlainPasswordFile-Provider"
-        >Plain</link> and <link linkend="Java-Broker-Security-Base64MD5PasswordFile-Provider"
-        >Base64MD5</link> providers that follow, there is no separate password file). The users'
+      users. The users'
       passwords are stored as salted SHA digested password. This can be further encrypted using the
       facilities described in <xref linkend="Java-Broker-Security-Configuration-Encryption"
       />.</para>
@@ -206,13 +206,28 @@ com.sun.security.jgss.accept {
       Management.</para>
   </section>
 
+  <section id="Java-Broker-Security-Plain-Provider">
+    <title>Plain</title>
+    <para>The Plain Provider uses the Broker configuration itself to store the database of
+      users (unlike the <link linkend="Java-Broker-Security-PlainPasswordFile-Provider"
+        >PlainPasswordFile</link>, there is no separate password file).  As the name suggests, the
+        user data (including password) is not hashed in any way.  In order to provide encryption, the
+        facilities described in <xref linkend="Java-Broker-Security-Configuration-Encryption"/> must
+        be used.</para>
+    <para>For this provider user credentials can be added, removed or changed using
+      Management.</para>
+        </section>
+        
   <section id="Java-Broker-Security-PlainPasswordFile-Provider">
-    <title>Plain Password File</title>
+    <title>Plain Password File <emphasis>(Deprecated)</emphasis></title>
+    <para><emphasis>This provider is deprecated and will be removed in a future release.  The
+    <link linkend="Java-Broker-Security-Plain-Provider">Plain</link> provider should be used
+    instead.</emphasis></para>
     <para> The PlainPasswordFile Provider uses local file to store and manage user credentials. When
       creating an authentication provider the path to the file needs to be specified. If specified
       file does not exist an empty file is created automatically on Authentication Provider
       creation. On Provider deletion the password file is deleted as well.</para>
-    <para>For these providers user credentials can be added, removed or changed using
+    <para>For this provider user credentials can be added, removed or changed using
       Management.</para>
 
     <section>
@@ -228,14 +243,34 @@ guest:guest
     </section>
   </section>
 
+  
+  <section id="Java-Broker-Security-MD5-Provider">
+    <title>MD5 Provider</title>
+    
+    <para> MD5 Provider  uses the Broker configuration itself to store the database of
+      users (unlike the <link linkend="Java-Broker-Security-Base64MD5PasswordFile-Provider"
+        >Base64MD5 Password File</link>, there is no separate password file). Rather than store the
+        unencrypted user password (as the Plain provider does) it instead stores the MD5 password 
+        digest.  This can be further encrypted using the
+      facilities described in <xref linkend="Java-Broker-Security-Configuration-Encryption"
+      />.</para>
+      <para>For this provider user credentials can be added, removed or changed using
+      Management.</para>
+  </section>
+  
   <section id="Java-Broker-Security-Base64MD5PasswordFile-Provider">
-    <title>Base64MD5 Password File</title>
+    <title>Base64MD5 Password File <emphasis>(Deprecated)</emphasis></title>
+    <para><emphasis>This provider is deprecated and will be removed in a future release.  The
+    <link linkend="Java-Broker-Security-MD5-Provider">MD5</link> provider should be used
+    instead.</emphasis></para>
     <para> Base64MD5PasswordFile Provider uses local file to store and manage user credentials
       similar to PlainPasswordFile but instead of storing a password the MD5 password digest encoded
       with Base64 encoding is stored in the file. When creating an authentication provider the path
       to the file needs to be specified. If specified file does not exist an empty file is created
       automatically on Authentication Provider creation. On Base64MD5PasswordFile Provider deletion
       the password file is deleted as well.</para>
+      <para>For this provider user credentials can be added, removed or changed using
+      Management.</para>
     <section>
       <title>Base64MD5 File Format</title>
       <para> The user credentials are stored on the single file line as user name and user password
@@ -243,4 +278,5 @@ guest:guest
         file must not be modified externally whilst the Broker is running.</para>
     </section>
   </section>
-</section>
+ </section>
+

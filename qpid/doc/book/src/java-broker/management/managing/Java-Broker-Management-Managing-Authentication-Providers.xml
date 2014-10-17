@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                    "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
 <!--
 
  Licensed to the Apache Software Foundation (ASF) under one
@@ -46,16 +48,22 @@
                 <listitem><para><link linkend="Java-Broker-Security-ScramSha-Providers"
                             >ScramSha</link>: authenticate users against credentials stored in a
                         local database</para></listitem>
+                <listitem><para><link linkend="Java-Broker-Security-Plain-Provider"
+                            >Plain</link>: authenticate users against credentials stored in a local 
+                            database.</para></listitem>
                 <listitem><para><link linkend="Java-Broker-Security-PlainPasswordFile-Provider"
                             >PlainPasswordFile</link>: authenticate users against credentials stored
                         in plain text in a local file.</para></listitem>
+                <listitem><para><link linkend="Java-Broker-Security-MD5-Provider"
+                            >MD5</link>: authenticate users against credentials
+                        stored in a local database.</para></listitem>
                 <listitem><para><link linkend="Java-Broker-Security-Base64MD5PasswordFile-Provider"
                             >Base64MD5PasswordFile</link>: authenticate users against credentials
                         stored encoded in a local file.</para></listitem>
             </itemizedlist>
-            <para>The last three providers offer user management facilities too, that is, users can
+            </para>
+            <para>The last five providers offer user management facilities too, that is, users can
                 be created, deleted and passwords reset.</para>
-        </para>
     </section>
 
     <section id="Java-Broker-Management-Managing-Authentication-Providers-Attributes">
