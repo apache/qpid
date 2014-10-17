@@ -34,11 +34,13 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
+import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageDestination;
@@ -331,84 +333,103 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void messageTransfer(Session ssn, final MessageTransfer xfr)
     {
-        final MessageDestination exchange = getDestinationForMessage(ssn, xfr);
-
-        final DeliveryProperties delvProps = xfr.getHeader() == null ? null : xfr.getHeader().getDeliveryProperties();
-        if(delvProps != null && delvProps.hasTtl() && !delvProps.hasExpiration())
+        if(((ServerSession)ssn).blockingTimeoutExceeded())
         {
-            delvProps.setExpiration(System.currentTimeMillis() + delvProps.getTtl());
-        }
+            getVirtualHost(ssn).getEventLogger().message(ChannelMessages.FLOW_CONTROL_IGNORED());
 
-        final MessageMetaData_0_10 messageMetaData = new MessageMetaData_0_10(xfr);
-
-        final VirtualHostImpl virtualHost = getVirtualHost(ssn);
-        try
-        {
-            virtualHost.getSecurityManager().authorisePublish(messageMetaData.isImmediate(), messageMetaData.getRoutingKey(), exchange.getName(), virtualHost.getName());
-        }
-        catch (AccessControlException e)
-        {
-            ExecutionErrorCode errorCode = ExecutionErrorCode.UNAUTHORIZED_ACCESS;
-            exception(ssn, xfr, errorCode, e.getMessage());
-
-            return;
-        }
-
-        final MessageStore store = virtualHost.getMessageStore();
-        final StoredMessage<MessageMetaData_0_10> storeMessage = createStoreMessage(xfr, messageMetaData, store);
-        final ServerSession serverSession = (ServerSession) ssn;
-        final MessageTransferMessage message = new MessageTransferMessage(storeMessage, serverSession.getReference());
-        MessageReference<MessageTransferMessage> reference = message.newReference();
-
-        final InstanceProperties instanceProperties = new InstanceProperties()
-        {
-            @Override
-            public Object getProperty(final Property prop)
-            {
-                switch(prop)
-                {
-                    case EXPIRATION:
-                        return message.getExpiration();
-                    case IMMEDIATE:
-                        return message.isImmediate();
-                    case MANDATORY:
-                        return (delvProps == null || !delvProps.getDiscardUnroutable()) && xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT;
-                    case PERSISTENT:
-                        return message.isPersistent();
-                    case REDELIVERED:
-                        return delvProps.getRedelivered();
-                }
-                return null;
-            }
-        };
-
-        int enqueues = serverSession.enqueue(message, instanceProperties, exchange);
-
-        if(enqueues == 0)
-        {
-            if((delvProps == null || !delvProps.getDiscardUnroutable()) && xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT)
-            {
-                RangeSet rejects = RangeSetFactory.createRangeSet();
-                rejects.add(xfr.getId());
-                MessageReject reject = new MessageReject(rejects, MessageRejectCode.UNROUTABLE, "Unroutable");
-                ssn.invoke(reject);
-            }
-            else
-            {
-                virtualHost.getEventLogger().message(ExchangeMessages.DISCARDMSG(exchange.getName(),
-                                                                                 messageMetaData.getRoutingKey()));
-            }
-        }
-
-        if(serverSession.isTransactional())
-        {
-            serverSession.processed(xfr);
+            ((ServerSession) ssn).close(AMQConstant.MESSAGE_TOO_LARGE,
+                                        "Session flow control was requested, but not enforced by sender");
         }
         else
         {
-            serverSession.recordFuture(StoreFuture.IMMEDIATE_FUTURE, new CommandProcessedAction(serverSession, xfr));
+            final MessageDestination exchange = getDestinationForMessage(ssn, xfr);
+
+            final DeliveryProperties delvProps =
+                    xfr.getHeader() == null ? null : xfr.getHeader().getDeliveryProperties();
+            if (delvProps != null && delvProps.hasTtl() && !delvProps.hasExpiration())
+            {
+                delvProps.setExpiration(System.currentTimeMillis() + delvProps.getTtl());
+            }
+
+            final MessageMetaData_0_10 messageMetaData = new MessageMetaData_0_10(xfr);
+
+            final VirtualHostImpl virtualHost = getVirtualHost(ssn);
+            try
+            {
+                virtualHost.getSecurityManager()
+                        .authorisePublish(messageMetaData.isImmediate(),
+                                          messageMetaData.getRoutingKey(),
+                                          exchange.getName(),
+                                          virtualHost.getName());
+            }
+            catch (AccessControlException e)
+            {
+                ExecutionErrorCode errorCode = ExecutionErrorCode.UNAUTHORIZED_ACCESS;
+                exception(ssn, xfr, errorCode, e.getMessage());
+
+                return;
+            }
+
+            final MessageStore store = virtualHost.getMessageStore();
+            final StoredMessage<MessageMetaData_0_10> storeMessage = createStoreMessage(xfr, messageMetaData, store);
+            final ServerSession serverSession = (ServerSession) ssn;
+            final MessageTransferMessage message =
+                    new MessageTransferMessage(storeMessage, serverSession.getReference());
+            MessageReference<MessageTransferMessage> reference = message.newReference();
+
+            final InstanceProperties instanceProperties = new InstanceProperties()
+            {
+                @Override
+                public Object getProperty(final Property prop)
+                {
+                    switch (prop)
+                    {
+                        case EXPIRATION:
+                            return message.getExpiration();
+                        case IMMEDIATE:
+                            return message.isImmediate();
+                        case MANDATORY:
+                            return (delvProps == null || !delvProps.getDiscardUnroutable())
+                                   && xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT;
+                        case PERSISTENT:
+                            return message.isPersistent();
+                        case REDELIVERED:
+                            return delvProps.getRedelivered();
+                    }
+                    return null;
+                }
+            };
+
+            int enqueues = serverSession.enqueue(message, instanceProperties, exchange);
+
+            if (enqueues == 0)
+            {
+                if ((delvProps == null || !delvProps.getDiscardUnroutable())
+                    && xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT)
+                {
+                    RangeSet rejects = RangeSetFactory.createRangeSet();
+                    rejects.add(xfr.getId());
+                    MessageReject reject = new MessageReject(rejects, MessageRejectCode.UNROUTABLE, "Unroutable");
+                    ssn.invoke(reject);
+                }
+                else
+                {
+                    virtualHost.getEventLogger().message(ExchangeMessages.DISCARDMSG(exchange.getName(),
+                                                                                     messageMetaData.getRoutingKey()));
+                }
+            }
+
+            if (serverSession.isTransactional())
+            {
+                serverSession.processed(xfr);
+            }
+            else
+            {
+                serverSession.recordFuture(StoreFuture.IMMEDIATE_FUTURE,
+                                           new CommandProcessedAction(serverSession, xfr));
+            }
+            reference.release();
         }
-        reference.release();
     }
 
     private StoredMessage<MessageMetaData_0_10> createStoreMessage(final MessageTransfer xfr,

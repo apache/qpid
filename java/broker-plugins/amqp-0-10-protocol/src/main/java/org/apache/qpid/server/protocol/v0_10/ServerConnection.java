@@ -65,7 +65,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
                                                             LogSubject, AuthorizationHolder
 {
 
-    private final Broker _broker;
+    private final Broker<?> _broker;
     private Runnable _onOpenTask;
     private AtomicBoolean _logClosed = new AtomicBoolean(false);
 
@@ -104,6 +104,11 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     public Object getReference()
     {
         return _reference;
+    }
+
+    public Broker<?> getBroker()
+    {
+        return _broker;
     }
 
     @Override

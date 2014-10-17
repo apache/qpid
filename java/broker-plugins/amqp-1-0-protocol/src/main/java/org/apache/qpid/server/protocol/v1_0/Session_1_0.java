@@ -722,7 +722,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     }
 
     @Override
-    public int compareTo(Session_1_0 o)
+    public int compareTo(AMQSessionModel o)
     {
         return getId().compareTo(o.getId());
     }

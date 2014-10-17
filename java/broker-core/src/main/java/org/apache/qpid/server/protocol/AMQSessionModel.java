@@ -36,7 +36,7 @@ import org.apache.qpid.server.util.Deletable;
  * Extends {@link Comparable} to allow objects to be inserted into a {@link ConcurrentSkipListSet}
  * when monitoring the blocking and blocking of queues/sessions in {@link AMQQueue}.
  */
-public interface AMQSessionModel<T extends AMQSessionModel<T,C>, C extends AMQConnectionModel<C,T>> extends Comparable<T>, Deletable<T>
+public interface AMQSessionModel<T extends AMQSessionModel<T,C>, C extends AMQConnectionModel<C,T>> extends Comparable<AMQSessionModel>, Deletable<T>
 {
     public UUID getId();
 
