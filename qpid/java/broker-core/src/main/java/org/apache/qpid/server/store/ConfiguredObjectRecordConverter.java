@@ -98,7 +98,8 @@ public class ConfiguredObjectRecordConverter
         for(Class<? extends ConfiguredObject> childClass : childClasses)
         {
             final String childType = childClass.getSimpleName();
-            String attrName = childType.toLowerCase() + "s";
+            String singularName = childType.toLowerCase();
+            String attrName = singularName + (singularName.endsWith("s") ? "es" : "s");
             Object children = data.remove(attrName);
             if(children != null)
             {

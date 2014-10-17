@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.amqp_1_0.framing;
 
-import org.apache.qpid.amqp_1_0.codec.BinaryWriter;
+import java.nio.ByteBuffer;
+import java.util.Formatter;
+
 import org.apache.qpid.amqp_1_0.codec.ProtocolHandler;
 import org.apache.qpid.amqp_1_0.codec.ValueHandler;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
@@ -29,9 +31,6 @@ import org.apache.qpid.amqp_1_0.type.ErrorCondition;
 import org.apache.qpid.amqp_1_0.type.transport.ConnectionError;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
-
-import java.nio.ByteBuffer;
-import java.util.Formatter;
 
 public class FrameHandler implements ProtocolHandler
 {
@@ -122,7 +121,7 @@ public class FrameHandler implements ProtocolHandler
 
                     if(size < 8)
                     {
-                        frameParsingError = createFramingError("specified frame size %d smaller than minimum frame header size %d", _size, 8);
+                        frameParsingError = createFramingError("specified frame size %d smaller than minimum frame header size %d", size, 8);
                         state = State.ERROR;
                         break;
                     }

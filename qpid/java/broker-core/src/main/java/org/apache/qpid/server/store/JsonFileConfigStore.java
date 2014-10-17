@@ -445,7 +445,8 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             // only add if this is the "first" parent
             if(_parent.getModel().getParentTypes(childClass).iterator().next() == type)
             {
-                String attrName = childClass.getSimpleName().toLowerCase() + "s";
+                String singularName = childClass.getSimpleName().toLowerCase();
+                String attrName = singularName + (singularName.endsWith("s") ? "es" : "s");
                 List<UUID> childIds = _idsByType.get(childClass.getSimpleName());
                 if(childIds != null)
                 {

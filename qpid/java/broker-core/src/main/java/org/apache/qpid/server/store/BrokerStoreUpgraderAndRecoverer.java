@@ -19,6 +19,7 @@
  *
  */
 package org.apache.qpid.server.store;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,12 +27,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.SystemConfig;
+import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.util.Action;
 
 public class BrokerStoreUpgraderAndRecoverer
@@ -49,6 +53,7 @@ public class BrokerStoreUpgraderAndRecoverer
         register(new Upgrader_1_1_to_1_2());
         register(new Upgrader_1_2_to_1_3());
         register(new Upgrader_1_3_to_2_0());
+        register(new Upgrader_2_0_to_2_1());
     }
 
     private void register(StoreUpgraderPhase upgrader)
@@ -198,6 +203,64 @@ public class BrokerStoreUpgraderAndRecoverer
 
             getNextUpgrader().configuredObject(record);
 
+        }
+
+        @Override
+        public void complete()
+        {
+            getNextUpgrader().complete();
+        }
+
+    }
+    private class Upgrader_2_0_to_2_1 extends StoreUpgraderPhase
+    {
+        public Upgrader_2_0_to_2_1()
+        {
+            super("modelVersion", "2.0", "2.1");
+        }
+
+        @Override
+        public void configuredObject(ConfiguredObjectRecord record)
+        {
+            if(record.getType().equals("Port") && isAmqpPort(record.getAttributes()))
+            {
+                createAliasRecord(record, "nameAlias", "nameAlias");
+                createAliasRecord(record, "defaultAlias", "defaultAlias");
+                createAliasRecord(record, "hostnameAlias", "hostnameAlias");
+
+            }
+            else if (record.getType().equals("Broker"))
+            {
+                record = upgradeRootRecord(record);
+            }
+
+            getNextUpgrader().configuredObject(record);
+        }
+
+        private boolean isAmqpPort(final Map<String, Object> attributes)
+        {
+            Object type = attributes.get(ConfiguredObject.TYPE);
+            Object protocols = attributes.get(Port.PROTOCOLS);
+            String protocolString = protocols == null ? null : protocols.toString();
+            return "AMQP".equals(type)
+                   || protocolString == null
+                   || !protocolString.matches(".*\\w.*")
+                   || protocolString.contains("AMQP");
+
+        }
+
+        private void createAliasRecord(ConfiguredObjectRecord parent, String name, String type)
+        {
+            Map<String,Object> attributes = new HashMap<>();
+            attributes.put(VirtualHostAlias.NAME, name);
+            attributes.put(VirtualHostAlias.TYPE, type);
+
+            final ConfiguredObjectRecord record = new ConfiguredObjectRecordImpl(UUID.randomUUID(),
+                                                                                 "VirtualHostAlias",
+                                                                                 attributes,
+                                                                                 Collections.singletonMap("Port", parent.getId()));
+            getUpdateMap().put(record.getId(), record);
+            getNextUpgrader().configuredObject(record);
         }
 
         @Override

@@ -20,17 +20,17 @@
  */
 package org.apache.qpid.server.model;
 
-@ManagedObject( creatable = false )
-public interface VirtualHostAlias<X extends VirtualHostAlias<X>> extends ConfiguredObject<X>
+@ManagedObject( category = false, type = PatternMatchingAlias.TYPE_NAME)
+public interface PatternMatchingAlias<X extends PatternMatchingAlias<X>> extends FixedVirtualHostNodeAlias<X>
 {
-    String PRIORITY = "priority";
 
-    // parents
-    Port getPort();
+    String TYPE_NAME = "patternMatchingAlias";
 
-    @ManagedAttribute( defaultValue = "100" )
+    String PATTERN = "pattern";
+
+    @ManagedAttribute( defaultValue = "200" )
     int getPriority();
 
-
-    VirtualHostNode getVirtualHostNode(String name);
+    @ManagedAttribute( mandatory = true)
+    public String getPattern();
 }

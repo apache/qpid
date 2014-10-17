@@ -42,8 +42,11 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQTestConnection_0_10;
 import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.server.model.DefaultVirtualHostAlias;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.model.VirtualHostNameAlias;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
@@ -216,7 +219,7 @@ public class SSLTest extends QpidBrokerTestCase
             AMQTestConnection_0_10 con = new AMQTestConnection_0_10(url);
             org.apache.qpid.transport.Connection transportCon = con.getConnection();
             String userID = transportCon.getSecurityLayer().getUserID();
-            assertEquals("The correct certificate was not choosen","app1@acme.org",userID);
+            assertEquals("The correct certificate was not chosen","app1@acme.org",userID);
             con.close();
 
             url = "amqp://guest:guest@test/?brokerlist='tcp://localhost:" +
@@ -226,7 +229,7 @@ public class SSLTest extends QpidBrokerTestCase
             con = new AMQTestConnection_0_10(url);
             transportCon = con.getConnection();
             userID = transportCon.getSecurityLayer().getUserID();
-            assertEquals("The correct certificate was not choosen","app2@acme.org",userID);
+            assertEquals("The correct certificate was not chosen","app2@acme.org",userID);
             con.close();
         }
     }
@@ -465,6 +468,17 @@ public class SSLTest extends QpidBrokerTestCase
             sslPortAttributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
             sslPortAttributes.put(Port.TRUST_STORES, Collections.singleton(TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE));
             getBrokerConfiguration().addObjectConfiguration(Port.class,sslPortAttributes);
+
+            Map<String, Object> aliasAttributes = new HashMap<>();
+            aliasAttributes.put(VirtualHostAlias.NAME, "defaultAlias");
+            aliasAttributes.put(VirtualHostAlias.TYPE, DefaultVirtualHostAlias.TYPE_NAME);
+            getBrokerConfiguration().addObjectConfiguration(Port.class, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, VirtualHostAlias.class, aliasAttributes);
+
+            aliasAttributes = new HashMap<>();
+            aliasAttributes.put(VirtualHostAlias.NAME, "nameAlias");
+            aliasAttributes.put(VirtualHostAlias.TYPE, VirtualHostNameAlias.TYPE_NAME);
+            getBrokerConfiguration().addObjectConfiguration(Port.class, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT, VirtualHostAlias.class, aliasAttributes);
+
         }
     }
 
