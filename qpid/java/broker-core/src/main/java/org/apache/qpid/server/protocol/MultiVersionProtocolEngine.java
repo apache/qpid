@@ -33,12 +33,13 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -55,24 +56,31 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     private final SSLContext _sslContext;
     private final boolean _wantClientAuth;
     private final boolean _needClientAuth;
-    private final Port _port;
+    private final AmqpPort<?> _port;
     private final Transport _transport;
     private final ProtocolEngineCreator[] _creators;
+    private final Runnable _onCloseTask;
 
     private Set<Protocol> _supported;
     private String _fqdn;
-    private final Broker _broker;
+    private final Broker<?> _broker;
     private NetworkConnection _network;
     private Sender<ByteBuffer> _sender;
     private final Protocol _defaultSupportedReply;
 
     private volatile ServerProtocolEngine _delegate = new SelfDelegateProtocolEngine();
 
-    public MultiVersionProtocolEngine(final Broker broker,
-                                      SSLContext sslContext, boolean wantClientAuth, boolean needClientAuth,
+    public MultiVersionProtocolEngine(final Broker<?> broker,
+                                      SSLContext sslContext,
+                                      boolean wantClientAuth,
+                                      boolean needClientAuth,
                                       final Set<Protocol> supported,
                                       final Protocol defaultSupportedReply,
-                                      Port port, Transport transport, final long id, ProtocolEngineCreator[] creators)
+                                      AmqpPort<?> port,
+                                      Transport transport,
+                                      final long id,
+                                      ProtocolEngineCreator[] creators,
+                                      final Runnable onCloseTask)
     {
         if(defaultSupportedReply != null && !supported.contains(defaultSupportedReply))
         {
@@ -90,6 +98,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         _port = port;
         _transport = transport;
         _creators = creators;
+        _onCloseTask = onCloseTask;
     }
 
 
@@ -115,7 +124,17 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
     public void closed()
     {
-        _delegate.closed();
+        try
+        {
+            _delegate.closed();
+        }
+        finally
+        {
+            if(_onCloseTask != null)
+            {
+                _onCloseTask.run();
+            }
+        }
     }
 
     public void writerIdle()
@@ -477,7 +496,8 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         {
 
             _decryptEngine = new MultiVersionProtocolEngine(_broker, null, false, false, _supported,
-                                                            _defaultSupportedReply, _port, Transport.SSL, _id, _creators);
+                                                            _defaultSupportedReply, _port, Transport.SSL, _id, _creators,
+                                                            null);
 
             _engine = _sslContext.createSSLEngine();
             _engine.setUseClientMode(false);
@@ -485,11 +505,11 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
             if(_needClientAuth)
             {
-                _engine.setNeedClientAuth(_needClientAuth);
+                _engine.setNeedClientAuth(true);
             }
             else if(_wantClientAuth)
             {
-                _engine.setWantClientAuth(_wantClientAuth);
+                _engine.setWantClientAuth(true);
             }
 
             SSLStatus sslStatus = new SSLStatus();

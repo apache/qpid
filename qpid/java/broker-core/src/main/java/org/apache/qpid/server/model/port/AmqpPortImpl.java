@@ -21,6 +21,7 @@ package org.apache.qpid.server.model.port;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.net.SocketAddress;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,6 +31,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.TreeSet;
 
 import javax.net.ssl.KeyManager;
@@ -42,6 +45,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
+import org.apache.qpid.server.logging.messages.PortMessages;
+import org.apache.qpid.server.logging.subjects.PortLogSubject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.DefaultVirtualHostAlias;
 import org.apache.qpid.server.model.HostNameAlias;
@@ -105,6 +110,12 @@ public class AmqpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<
     @ManagedAttributeField
     private String _bindingAddress;
 
+    @ManagedAttributeField
+    private int _maxOpenConnections;
+
+    private final AtomicInteger _connectionCount = new AtomicInteger();
+    private final AtomicBoolean _connectionCountWarningGiven = new AtomicBoolean();
+
     private final Broker<?> _broker;
     private AcceptingTransport _transport;
 
@@ -138,6 +149,12 @@ public class AmqpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<
     public int getReceiveBufferSize()
     {
         return _receiveBufferSize;
+    }
+
+    @Override
+    public int getMaxOpenConnections()
+    {
+        return _maxOpenConnections;
     }
 
     @Override
@@ -451,5 +468,55 @@ public class AmqpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<
         {
             throw new ServerScopedRuntimeException(e);
         }
+    }
+
+    @Override
+    public int incrementConnectionCount()
+    {
+        int openConnections = _connectionCount.incrementAndGet();
+        int maxOpenConnections = getMaxOpenConnections();
+        if(maxOpenConnections > 0
+           && openConnections > (maxOpenConnections * getContextValue(Integer.class, OPEN_CONNECTIONS_WARN_PERCENT)) / 100
+           && _connectionCountWarningGiven.compareAndSet(false, true))
+        {
+            _broker.getEventLogger().message(new PortLogSubject(this),
+                                             PortMessages.CONNECTION_COUNT_WARN(openConnections,
+                                                                                getContextValue(Integer.class, OPEN_CONNECTIONS_WARN_PERCENT),
+                                                                                maxOpenConnections));
+        }
+        return openConnections;
+    }
+
+    @Override
+    public int decrementConnectionCount()
+    {
+
+        int openConnections = _connectionCount.decrementAndGet();
+        int maxOpenConnections = getMaxOpenConnections();
+
+        if(maxOpenConnections > 0
+           && openConnections < (maxOpenConnections * square(getContextValue(Integer.class, OPEN_CONNECTIONS_WARN_PERCENT))) / 10000)
+        {
+           _connectionCountWarningGiven.compareAndSet(true,false);
+        }
+
+        return openConnections;
+    }
+
+    private static int square(int val)
+    {
+        return val * val;
+    }
+
+    @Override
+    public boolean canAcceptNewConnection(final SocketAddress remoteSocketAddress)
+    {
+        return _maxOpenConnections < 0 || _connectionCount.get() < _maxOpenConnections;
+    }
+
+    @Override
+    public int getConnectionCount()
+    {
+        return _connectionCount.get();
     }
 }

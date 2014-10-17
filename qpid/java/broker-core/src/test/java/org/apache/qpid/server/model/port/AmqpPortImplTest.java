@@ -19,7 +19,11 @@
 
 package org.apache.qpid.server.model.port;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -34,6 +38,8 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.LogMessage;
+import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
@@ -119,5 +125,42 @@ public class AmqpPortImplTest extends QpidTestCase
         serverSocket.setReuseAddress(true);
         serverSocket.bind(new InetSocketAddress(findFreePort()));
         return serverSocket;
+    }
+
+    public void testConnectionCounting()
+    {
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(AmqpPort.PORT, 0);
+        attributes.put(AmqpPort.NAME, getTestName());
+        attributes.put(AmqpPort.AUTHENTICATION_PROVIDER, AUTHENTICATION_PROVIDER_NAME);
+        attributes.put(AmqpPort.MAX_OPEN_CONNECTIONS, 10);
+        attributes.put(AmqpPort.CONTEXT, Collections.singletonMap(AmqpPort.OPEN_CONNECTIONS_WARN_PERCENT, "80"));
+        _port = new AmqpPortImpl(attributes, _broker);
+        _port.create();
+        EventLogger mockLogger = mock(EventLogger.class);
+
+        when(_broker.getEventLogger()).thenReturn(mockLogger);
+
+        for(int i = 0; i < 8; i++)
+        {
+            assertTrue(_port.canAcceptNewConnection(new InetSocketAddress("example.org", 0)));
+            _port.incrementConnectionCount();
+            assertEquals(i + 1, _port.getConnectionCount());
+            verify(mockLogger, never()).message(any(LogSubject.class), any(LogMessage.class));
+        }
+
+        assertTrue(_port.canAcceptNewConnection(new InetSocketAddress("example.org", 0)));
+        _port.incrementConnectionCount();
+        assertEquals(9, _port.getConnectionCount());
+        verify(mockLogger, times(1)).message(any(LogSubject.class), any(LogMessage.class));
+
+        assertTrue(_port.canAcceptNewConnection(new InetSocketAddress("example.org", 0)));
+        _port.incrementConnectionCount();
+        assertEquals(10, _port.getConnectionCount());
+        verify(mockLogger, times(1)).message(any(LogSubject.class), any(LogMessage.class));
+
+        assertFalse(_port.canAcceptNewConnection(new InetSocketAddress("example.org", 0)));
+
+
     }
 }

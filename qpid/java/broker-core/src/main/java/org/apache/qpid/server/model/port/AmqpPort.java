@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model.port;
 
+import java.net.SocketAddress;
 import java.util.Map;
 import java.util.Set;
 
@@ -27,6 +28,7 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedStatistic;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.VirtualHostAlias;
@@ -41,13 +43,27 @@ public interface AmqpPort<X extends AmqpPort<X>> extends ClientAuthCapablePort<X
 
     String DEFAULT_AMQP_NEED_CLIENT_AUTH = "false";
     String DEFAULT_AMQP_WANT_CLIENT_AUTH = "false";
+
     String SEND_BUFFER_SIZE                     = "sendBufferSize";
     String RECEIVE_BUFFER_SIZE                  = "receiveBufferSize";
+    String MAX_OPEN_CONNECTIONS = "maxOpenConnections";
+
 
     String DEFAULT_AMQP_PROTOCOLS = "qpid.port.default_amqp_protocols";
 
     @ManagedContextDefault(name = DEFAULT_AMQP_PROTOCOLS)
     String INSTALLED_PROTOCOLS = AmqpPortImpl.getInstalledProtocolsAsString();
+
+    String PORT_MAX_OPEN_CONNECTIONS = "qpid.port.max_open_connections";
+
+    @ManagedContextDefault(name = PORT_MAX_OPEN_CONNECTIONS)
+    int DEFAULT_MAX_OPEN_CONNECTIONS = -1;
+
+    String OPEN_CONNECTIONS_WARN_PERCENT = "qpid.port.open_connections_warn_percent";
+
+    @ManagedContextDefault(name = OPEN_CONNECTIONS_WARN_PERCENT)
+    int DEFAULT_OPEN_CONNECTIONS_WARN_PERCENT = 80;
+
 
     @ManagedAttribute(defaultValue = "*")
     String getBindingAddress();
@@ -79,7 +95,19 @@ public interface AmqpPort<X extends AmqpPort<X>> extends ClientAuthCapablePort<X
     @ManagedAttribute( defaultValue = "${" + DEFAULT_AMQP_PROTOCOLS + "}", validValues = {"org.apache.qpid.server.model.port.AmqpPortImpl#getAllAvailableProtocolCombinations()"} )
     Set<Protocol> getProtocols();
 
+    @ManagedAttribute( defaultValue = "${" + PORT_MAX_OPEN_CONNECTIONS + "}" )
+    int getMaxOpenConnections();
+
+    @ManagedStatistic
+    int getConnectionCount();
+
     VirtualHostImpl getVirtualHost(String name);
+
+    boolean canAcceptNewConnection(final SocketAddress remoteSocketAddress);
+
+    int incrementConnectionCount();
+
+    int decrementConnectionCount();
 
     VirtualHostAlias createVirtualHostAlias(Map<String, Object> attributes);
 }
