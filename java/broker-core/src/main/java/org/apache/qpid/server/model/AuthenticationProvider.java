@@ -48,13 +48,13 @@ public interface AuthenticationProvider<X extends AuthenticationProvider<X>> ext
      * Returns the preferences provider associated with this authentication provider
      * @return PreferencesProvider
      */
-    PreferencesProvider getPreferencesProvider();
+    PreferencesProvider<?> getPreferencesProvider();
 
     /**
      * Sets the preferences provider
      * @param preferencesProvider
      */
-    void setPreferencesProvider(PreferencesProvider preferencesProvider);
+    void setPreferencesProvider(PreferencesProvider<?> preferencesProvider);
 
     void recoverUser(User user);
 

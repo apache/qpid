@@ -44,10 +44,10 @@ public class SubjectCreatorTest extends TestCase
     private static final String USERNAME = "username";
     private static final String PASSWORD = "password";
 
-    private AuthenticationProvider _authenticationProvider = mock(AuthenticationProvider.class);
+    private AuthenticationProvider<?> _authenticationProvider = mock(AuthenticationProvider.class);
 
-    private GroupProvider _groupManager1 = mock(GroupProvider.class);
-    private GroupProvider _groupManager2 = mock(GroupProvider.class);
+    private GroupProvider<?> _groupManager1 = mock(GroupProvider.class);
+    private GroupProvider<?> _groupManager2 = mock(GroupProvider.class);
 
     private Principal _userPrincipal = mock(Principal.class);
     private Principal _group1 = mock(Principal.class);
@@ -64,7 +64,7 @@ public class SubjectCreatorTest extends TestCase
         when(_groupManager1.getGroupPrincipalsForUser(USERNAME)).thenReturn(Collections.singleton(_group1));
         when(_groupManager2.getGroupPrincipalsForUser(USERNAME)).thenReturn(Collections.singleton(_group2));
 
-        _subjectCreator = new SubjectCreator(_authenticationProvider, new HashSet<GroupProvider>(Arrays.asList(_groupManager1, _groupManager2)),
+        _subjectCreator = new SubjectCreator(_authenticationProvider, new HashSet<GroupProvider<?>>(Arrays.asList(_groupManager1, _groupManager2)),
                                              false);
         _authenticationResult = new AuthenticationResult(_userPrincipal);
         when(_authenticationProvider.authenticate(USERNAME, PASSWORD)).thenReturn(_authenticationResult);

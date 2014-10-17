@@ -53,13 +53,13 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
 {
     private static final Logger LOGGER = Logger.getLogger(AbstractAuthenticationManager.class);
 
-    private final Broker _broker;
-    private PreferencesProvider _preferencesProvider;
+    private final Broker<?> _broker;
+    private PreferencesProvider<?> _preferencesProvider;
 
     @ManagedAttributeField
     private List<String> _secureOnlyMechanisms;
 
-    protected AbstractAuthenticationManager(final Map<String, Object> attributes, final Broker broker)
+    protected AbstractAuthenticationManager(final Map<String, Object> attributes, final Broker<?> broker)
     {
         super(parentsMap(broker), attributes);
         _broker = broker;
@@ -120,13 +120,13 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     }
 
     @Override
-    public PreferencesProvider getPreferencesProvider()
+    public PreferencesProvider<?> getPreferencesProvider()
     {
         return _preferencesProvider;
     }
 
     @Override
-    public void setPreferencesProvider(final PreferencesProvider preferencesProvider)
+    public void setPreferencesProvider(final PreferencesProvider<?> preferencesProvider)
     {
         _preferencesProvider = preferencesProvider;
     }
@@ -143,8 +143,8 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     {
         if(childClass == PreferencesProvider.class)
         {
-            attributes = new HashMap<String, Object>(attributes);
-            PreferencesProvider pp = getObjectFactory().create(PreferencesProvider.class, attributes, this);
+            attributes = new HashMap<>(attributes);
+            PreferencesProvider<?> pp = getObjectFactory().create(PreferencesProvider.class, attributes, this);
 
             _preferencesProvider = pp;
             return (C)pp;

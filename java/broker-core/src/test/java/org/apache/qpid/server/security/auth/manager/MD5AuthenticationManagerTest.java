@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,24 +16,38 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-package org.apache.qpid.tools.security;
+package org.apache.qpid.server.security.auth.manager;
 
-import junit.framework.TestCase;
+import java.util.Map;
 
-public class PasswdTest extends TestCase
+public class MD5AuthenticationManagerTest extends ManagedAuthenticationManagerTestBase
 {
-    public void testUserGuestAndPasswordGuest() throws Exception
+    @Override
+    public void setUp() throws Exception
     {
-        Passwd passwd = new Passwd();
-        String output = passwd.getOutput("guest", "guest");
-        assertEquals("guest:CE4DQ6BIb/BVMN9scFyLtA==", output);
+        super.setUp();
     }
 
-    public void testUser1AndPasswordFoo() throws Exception
+    @Override
+    protected ConfigModelPasswordManagingAuthenticationProvider<?> createAuthManager(final Map<String, Object> attributesMap)
     {
-        Passwd passwd = new Passwd();
-        String output = passwd.getOutput("user1", "foo");
-        assertEquals("user1:rL0Y20zC+Fzt72VPzMSk2A==", output);
+        return new MD5AuthenticationProvider(attributesMap, getBroker());
     }
+
+    @Override
+    protected boolean isPlain()
+    {
+        return false;
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        super.tearDown();
+    }
+
+
+
 }
