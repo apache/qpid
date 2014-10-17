@@ -352,7 +352,7 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?key_store='/path/to/app1
           url="&oracleJeeDocUrl;javax/jms/Session.html#createQueue(java.lang.String)"
           >Session#createQueue()</ulink> accepts either a queue name, or a Binding URL. If only name
         is specified the destination will be resolved into binding URL:
-        direct://amq.direct//&lt;queue name&gt;?routingkey=’&lt;queue name&gt;’&amp;durable=’true’. </para>
+        direct://amq.direct//&lt;queue name&gt;?routingkey=&apos;&lt;queue name&gt;&apos;&amp;durable=&apos;true&apos;. </para>
       <para>Calling Session#createQueue() has no effect on the Broker.</para>
       <para>Reiterating the advice from the JMS javadoc, it is suggested that this method is not
         generally used. Instead, application should lookup Destinations declared within JNDI.</para>
@@ -363,7 +363,7 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?key_store='/path/to/app1
           url="&oracleJeeDocUrl;javax/jms/Session.html#createTopic(java.lang.String)"
           >Session#createTopic()</ulink> accepts either a topic name, or a Binding URL. If only name
         is specified the destination will be resolved into binding URL: topic://amq.topic//&lt;topic
-        name&gt;?routingkey=’&lt;topic name&gt;’.</para>
+        name&gt;?routingkey=&apos;&lt;topic name&gt;&apos;.</para>
       <para>Calling Session#createTopic() has no effect on the Broker.</para>
       <para>Reiterating the advice from the JMS javadoc, it is suggested that this method is not
         generally used. Instead, application should lookup Destinations declared within JNDI.</para>
@@ -378,8 +378,8 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?key_store='/path/to/app1
     <para>To understand how this mechanism is used to deliver messages to queues and topics, see
         <ulink url="&qpidJavaBrokerBook;Java-Broker-Concepts-Exchanges.html">Exchanges</ulink>
       within the Java Broker book.</para>
-    <para>It is important to understand that when not used on a transactional session, <ulink
-        url="&oracleJeeDocUrl;javax/jms/MessageProducer.html#send(javax.jms.Message)"
+    <para>It is important to understand that when synchronous publish is not exlicitly enabled, 
+      <ulink url="&oracleJeeDocUrl;javax/jms/MessageProducer.html#send(javax.jms.Message)"
         >MessageProducer#send()</ulink> is <emphasis>asynchronous</emphasis> in nature. When #send()
       returns to the application, the application cannot be certain if the Broker has received the
       message. The Qpid JMS client may not have yet started to send the message, the message could
@@ -387,7 +387,10 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?key_store='/path/to/app1
       Broker. If the application requires certainty the message has been received by the Broker, a
         <ulink url="&oracleJeeDocUrl;javax/jms/Session.html#SESSION_TRANSACTED">transactional
         session</ulink>
-      <emphasis>must</emphasis> be used.</para>
+      <emphasis>must</emphasis> be used, or synchronous publishing must be enabled using either the 
+      <link linkend="JMS-Client-0-8-System-Properties-SyncPublish">system property</link> or the 
+      <link linkend="JMS-Client-0-8-Connection-URL-ConnectionOptions-SyncPublish">connection URL 
+      option</link>.</para>
     <para>Qpid JMS MessageProducers have a number of features above that required by JMS. These are
       described in the sub-sections that follow.</para>
     <section id="JMS-Client-0-8-Client-Understanding-MessageProducer-MandatoryMessage">
@@ -403,6 +406,10 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?key_store='/path/to/app1
         The returned message is available to the application by calling
         AMQNoRouteException#getUndeliveredMessage(). The ExceptionListener will be invoked exactly
         once for each returned message.</para>
+      <para>If synchronous publishing has been enabled, and a mandatory message is returned, the 
+      <ulink url="&oracleJeeDocUrl;javax/jms/MessageProducer.html#send(javax.jms.Message)"
+      >MessageProducer#send()</ulink> method will throw a JMSException.
+      </para>
       <para>The mandatory message feature is turned <emphasis>on</emphasis> by default for Queue
         destinations and <emphasis>off</emphasis> for Topic destinations. This can be overridden
         using system properties <link linkend="JMS-Client-0-8-System-Properties-DefaultMandatory"
@@ -441,6 +448,10 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?key_store='/path/to/app1
           >AMQNoConsumersException</ulink>. The returned message is available to the application by
         calling AMQNoConsumersException#getUndeliveredMessage(). The ExceptionListener will be
         invoked exactly once for each returned message.</para>
+      <para>If synchronous publishing has been enabled, and an immediate message is returned, the 
+      <ulink url="&oracleJeeDocUrl;javax/jms/MessageProducer.html#send(javax.jms.Message)"
+      >MessageProducer#send()</ulink> method will throw a JMSException.
+      </para>
       <para>The immediate message feature is turned <emphasis>off</emphasis> by default. It can be
         enabled with system property <link
           linkend="JMS-Client-0-8-System-Properties-DefaultImmediate"

@@ -74,23 +74,25 @@
 						</para>
 					</entry>
 				</row>
-				<!-- 0-10 only
-				<row>
+				<row id="JMS-Client-0-8-Connection-URL-ConnectionOptions-SyncPublish">
 					<entry> sync_publish </entry>
-					<entry> {'persistent' | 'all'} </entry>
-					<entry> A sync command is sent after every persistent message to guarantee that
-						it has been received; if the value is 'persistent', this is done only for
-						persistent messages. </entry>
+					<entry> String </entry>
+					<entry> 
+					  <para>
+					    If the value is 'all' the client library waits for confirmation
+                        before returning from a send(), and if the send is unsuccessful the
+                        send() will throw a JMSException. (Note this option requires an 
+                        extension to the AMQP protocol and will only work against a broker of
+                        the 0.32 release or later.)
+					  </para>
+					</entry>
 				</row>
-				-->
-				<!-- 0-10 only
 				<row>
 					<entry> sync_ack </entry>
 					<entry> Boolean </entry>
 					<entry> A sync command is sent after every acknowledgement to guarantee that it
 						has been received. </entry>
 				</row>
-				-->
 				<row id="JMS-Client-0-8-Connection-URL-ConnectionOptions-UseLegacyMap">
 					<entry> use_legacy_map_msg_format </entry>
 					<entry> Boolean </entry>

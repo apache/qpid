@@ -319,17 +319,22 @@
 							/>. The frequency at which the log message informing that the producer
 							is flow controlled .</para></entry>
 				</row>
-				<!--
-				<row>
+				
+				<row id="JMS-Client-0-8-System-Properties-SyncPublish">
 					<entry>sync_publish</entry>
 					<entry>string</entry>
 					<entry>"" (disabled)</entry>
-					<entry><para>If one of {persistent|all} is set then persistent messages or all
-							messages will be sent synchronously.</para><para>This can also be set
-							per connection using the <link linkend="section-jms-connection-url"
-								>Connection URL</link> options.</para></entry>
+					<entry>
+					  <para>If 'all' is set then messages will be sent synchronously.</para>
+                      <para>This can also be set per connection using the 
+                        <link linkend="JMS-Client-0-8-Connection-URL-ConnectionOptions-SyncPublish">
+                          Connection URL
+                        </link> 
+                        options.
+                      </para>
+                    </entry>
 				</row>
-				-->
+				
 			</tbody>
 		</tgroup>
 	</table>
