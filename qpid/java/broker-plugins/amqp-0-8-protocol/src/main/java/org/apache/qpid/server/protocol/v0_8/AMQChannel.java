@@ -2781,11 +2781,11 @@ public class AMQChannel
 
                     if (!nowait)
                     {
+                        sync();
                         MethodRegistry methodRegistry = _connection.getMethodRegistry();
                         AMQMethodBody responseBody = methodRegistry.createExchangeDeclareOkBody();
                         _connection.writeFrame(responseBody.generateFrame(
                                 getChannelId()));
-                        sync();
                     }
 
                 }
