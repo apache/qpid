@@ -2783,9 +2783,9 @@ public class AMQChannel
                     {
                         MethodRegistry methodRegistry = _connection.getMethodRegistry();
                         AMQMethodBody responseBody = methodRegistry.createExchangeDeclareOkBody();
-                        sync();
                         _connection.writeFrame(responseBody.generateFrame(
                                 getChannelId()));
+                        sync();
                     }
 
                 }
