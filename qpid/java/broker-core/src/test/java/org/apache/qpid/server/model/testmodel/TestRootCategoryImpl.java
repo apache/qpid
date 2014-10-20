@@ -21,6 +21,7 @@
 package org.apache.qpid.server.model.testmodel;
 
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -28,7 +29,6 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.model.State;
 
 @ManagedObject( category = false , type = "test" )
 public class TestRootCategoryImpl extends AbstractConfiguredObject<TestRootCategoryImpl>
@@ -51,6 +51,12 @@ public class TestRootCategoryImpl extends AbstractConfiguredObject<TestRootCateg
 
     @ManagedAttributeField
     private String _validValue;
+
+    @ManagedAttributeField
+    private TestEnum _enumValue;
+
+    @ManagedAttributeField
+    private Set<TestEnum> _enumSetValues;
 
 
     @ManagedObjectFactoryConstructor
@@ -101,6 +107,18 @@ public class TestRootCategoryImpl extends AbstractConfiguredObject<TestRootCateg
     public Map<String, String> getMapValue()
     {
         return _mapValue;
+    }
+
+    @Override
+    public TestEnum getEnumValue()
+    {
+        return _enumValue;
+    }
+
+    @Override
+    public Set<TestEnum> getEnumSetValues()
+    {
+        return _enumSetValues;
     }
 
     @Override

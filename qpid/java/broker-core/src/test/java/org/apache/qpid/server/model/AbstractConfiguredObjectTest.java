@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +28,7 @@ import java.util.Map;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.testmodel.TestChildCategory;
 import org.apache.qpid.server.model.testmodel.TestConfiguredObject;
+import org.apache.qpid.server.model.testmodel.TestEnum;
 import org.apache.qpid.server.model.testmodel.TestModel;
 import org.apache.qpid.server.model.testmodel.TestRootCategory;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -102,6 +104,36 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
 
         assertEquals(objectName, object2.getName());
         assertEquals("override", object2.getDefaultedValue());
+    }
+
+    public void testEnumAttributeValueFromString()
+    {
+        final String objectName = "myName";
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(ConfiguredObject.NAME, objectName);
+        attributes.put(TestRootCategory.ENUM_VALUE, TestEnum.TEST_ENUM1.name());
+
+        TestRootCategory object1 = _model.getObjectFactory().create(TestRootCategory.class,
+                                                                    attributes);
+
+        assertEquals(objectName, object1.getName());
+        assertEquals(TestEnum.TEST_ENUM1, object1.getEnumValue());
+    }
+
+    public void testEnumAttributeValueFromEnum()
+    {
+        final String objectName = "myName";
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(ConfiguredObject.NAME, objectName);
+        attributes.put(TestRootCategory.ENUM_VALUE, TestEnum.TEST_ENUM1);
+
+        TestRootCategory object1 = _model.getObjectFactory().create(TestRootCategory.class,
+                                                                    attributes);
+
+        assertEquals(objectName, object1.getName());
+        assertEquals(TestEnum.TEST_ENUM1, object1.getEnumValue());
     }
 
     public void testStringAttributeValueFromContextVariableProvidedBySystemProperty()
@@ -181,11 +213,13 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
                                                                     attributes);
 
 
-        assertTrue("context default not in contextKeys", object.getContextKeys(true).contains(TestRootCategory.TEST_CONTEXT_DEFAULT));
+        assertTrue("context default not in contextKeys",
+                   object.getContextKeys(true).contains(TestRootCategory.TEST_CONTEXT_DEFAULT));
         assertEquals(object.getContextValue(String.class, TestRootCategory.TEST_CONTEXT_DEFAULT), "default");
 
         setTestSystemProperty(TestRootCategory.TEST_CONTEXT_DEFAULT, "notdefault");
-        assertTrue("context default not in contextKeys", object.getContextKeys(true).contains(TestRootCategory.TEST_CONTEXT_DEFAULT));
+        assertTrue("context default not in contextKeys",
+                   object.getContextKeys(true).contains(TestRootCategory.TEST_CONTEXT_DEFAULT));
         assertEquals(object.getContextValue(String.class, TestRootCategory.TEST_CONTEXT_DEFAULT), "notdefault");
     }
 
@@ -465,7 +499,7 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
         assertEquals("Unexpected child1 state", State.ERRORED, child1.getState());
     }
 
-    public void testConstructionEnforcesAttributeValidValues() throws Exception
+    public void testCreateEnforcesAttributeValidValues() throws Exception
     {
         final String objectName = getName();
         Map<String, Object> illegalCreateAttributes = new HashMap<>();
@@ -486,9 +520,8 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
         legalCreateAttributes.put(ConfiguredObject.NAME, objectName);
         legalCreateAttributes.put(TestRootCategory.VALID_VALUE, TestRootCategory.VALID_VALUE1);
 
-        _model.getObjectFactory().create(TestRootCategory.class, legalCreateAttributes);
-        // PASS
-
+        TestRootCategory object = _model.getObjectFactory().create(TestRootCategory.class, legalCreateAttributes);
+        assertEquals(TestRootCategory.VALID_VALUE1, object.getValidValue());
     }
 
     public void testChangeEnforcesAttributeValidValues() throws Exception
@@ -516,6 +549,43 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
 
         assertEquals(TestRootCategory.VALID_VALUE2, object.getValidValue());
 
+    }
+
+    public void testCreateEnforcesAttributeValidValuesWithSets() throws Exception
+    {
+        final String objectName = getName();
+        final Map<String, Object> name = Collections.singletonMap(ConfiguredObject.NAME, (Object)objectName);
+
+        Map<String, Object> illegalCreateAttributes = new HashMap<>(name);
+        illegalCreateAttributes.put(TestRootCategory.ENUMSET_VALUES, Collections.singleton(TestEnum.TEST_ENUM3));
+
+        try
+        {
+            _model.getObjectFactory().create(TestRootCategory.class, illegalCreateAttributes);
+            fail("Exception not thrown");
+        }
+        catch (IllegalConfigurationException ice)
+        {
+            // PASS
+        }
+
+        {
+            Map<String, Object> legalCreateAttributesEnums = new HashMap<>(name);
+            legalCreateAttributesEnums.put(TestRootCategory.ENUMSET_VALUES,
+                                           Arrays.asList(TestEnum.TEST_ENUM2, TestEnum.TEST_ENUM3));
+
+            TestRootCategory obj = _model.getObjectFactory().create(TestRootCategory.class, legalCreateAttributesEnums);
+            assertTrue(obj.getEnumSetValues().containsAll(Arrays.asList(TestEnum.TEST_ENUM2, TestEnum.TEST_ENUM3)));
+        }
+
+        {
+            Map<String, Object> legalCreateAttributesStrings = new HashMap<>(name);
+            legalCreateAttributesStrings.put(TestRootCategory.ENUMSET_VALUES,
+                                             Arrays.asList(TestEnum.TEST_ENUM2.name(), TestEnum.TEST_ENUM3.name()));
+
+            TestRootCategory obj = _model.getObjectFactory().create(TestRootCategory.class, legalCreateAttributesStrings);
+            assertTrue(obj.getEnumSetValues().containsAll(Arrays.asList(TestEnum.TEST_ENUM2, TestEnum.TEST_ENUM3)));
+        }
     }
 
 }
