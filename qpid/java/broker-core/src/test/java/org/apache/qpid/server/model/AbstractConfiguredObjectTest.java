@@ -539,7 +539,7 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
 
         try
         {
-            object.setAttribute(TestRootCategory.VALID_VALUE, TestRootCategory.VALID_VALUE2, "illegal");
+            object.setAttributes(Collections.singletonMap(TestRootCategory.VALID_VALUE, "illegal"));
             fail("Exception not thrown");
         }
         catch (IllegalConfigurationException iae)
