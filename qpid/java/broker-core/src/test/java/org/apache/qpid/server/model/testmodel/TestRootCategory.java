@@ -35,6 +35,7 @@ public interface TestRootCategory<X extends TestRootCategory<X>> extends Configu
     String DEFAULTED_VALUE = "defaultedValue";
     String STRING_VALUE = "stringValue";
     String MAP_VALUE = "mapValue";
+    String VALID_VALUE = "validValue";
 
 
     String TEST_CONTEXT_DEFAULT = "TEST_CONTEXT_DEFAULT";

@@ -142,7 +142,15 @@ public class ConfiguredAutomatedAttribute<C extends ConfiguredObject, T>  extend
                 return Collections.emptySet();
             }
         }
-        return Arrays.asList(_annotation.validValues());
+        else
+        {
+            return Arrays.asList(_annotation.validValues());
+        }
     }
 
+    /** Returns true iff this attribute has valid values defined */
+    public boolean hasValidValues()
+    {
+        return validValues() != null && validValues().size() > 0;
+    }
 }

@@ -382,7 +382,23 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 field.getPreSettingAction().invoke(this);
             }
-            field.getField().set(this, attribute.convert(value, this));
+
+            Object desiredValue = attribute.convert(value, this);
+
+            if (attribute.hasValidValues())
+            {
+                if (!checkValidValues(attribute, desiredValue))
+                {
+                    throw new IllegalConfigurationException("Attribute '" + attribute.getName()
+                                                       + "' of instance of "+ getClass().getName()
+                                                       + " named '" + getName() + "'"
+                                                       + " cannot have value '" + desiredValue + "'"
+                                                       + ". Valid values are: "
+                                                       + attribute.validValues());
+                }
+            }
+
+            field.getField().set(this, desiredValue);
 
             if(field.getPostSettingAction() != null)
             {
@@ -401,6 +417,21 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
             throw new ServerScopedRuntimeException("Unable to set the automated attribute " + name + " on the configure object type " + getClass().getName(),e);
         }
+    }
+
+    private boolean checkValidValues(final ConfiguredAutomatedAttribute attribute, final Object desiredValue)
+    {
+        for (Object validValue : attribute.validValues())
+        {
+            Object convertedValidValue = attribute.getConverter().convert(validValue, this);
+
+            if (convertedValidValue.equals(desiredValue))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
