@@ -464,4 +464,58 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
         assertFalse("Child1 should not be opened", child1.isOpened());
         assertEquals("Unexpected child1 state", State.ERRORED, child1.getState());
     }
+
+    public void testConstructionEnforcesAttributeValidValues() throws Exception
+    {
+        final String objectName = getName();
+        Map<String, Object> illegalCreateAttributes = new HashMap<>();
+        illegalCreateAttributes.put(ConfiguredObject.NAME, objectName);
+        illegalCreateAttributes.put(TestRootCategory.VALID_VALUE, "illegal");
+
+        try
+        {
+            _model.getObjectFactory().create(TestRootCategory.class, illegalCreateAttributes);
+            fail("Exception not thrown");
+        }
+        catch (IllegalConfigurationException ice)
+        {
+            // PASS
+        }
+
+        Map<String, Object> legalCreateAttributes = new HashMap<>();
+        legalCreateAttributes.put(ConfiguredObject.NAME, objectName);
+        legalCreateAttributes.put(TestRootCategory.VALID_VALUE, TestRootCategory.VALID_VALUE1);
+
+        _model.getObjectFactory().create(TestRootCategory.class, legalCreateAttributes);
+        // PASS
+
+    }
+
+    public void testChangeEnforcesAttributeValidValues() throws Exception
+    {
+        final String objectName = getName();
+        Map<String, Object> legalCreateAttributes = new HashMap<>();
+        legalCreateAttributes.put(ConfiguredObject.NAME, objectName);
+        legalCreateAttributes.put(TestRootCategory.VALID_VALUE, TestRootCategory.VALID_VALUE1);
+
+        TestRootCategory object = _model.getObjectFactory().create(TestRootCategory.class, legalCreateAttributes);
+        assertEquals(TestRootCategory.VALID_VALUE1, object.getValidValue());
+
+        object.setAttribute(TestRootCategory.VALID_VALUE, TestRootCategory.VALID_VALUE1, TestRootCategory.VALID_VALUE2);
+        assertEquals(TestRootCategory.VALID_VALUE2, object.getValidValue());
+
+        try
+        {
+            object.setAttribute(TestRootCategory.VALID_VALUE, TestRootCategory.VALID_VALUE2, "illegal");
+            fail("Exception not thrown");
+        }
+        catch (IllegalConfigurationException iae)
+        {
+            // PASS
+        }
+
+        assertEquals(TestRootCategory.VALID_VALUE2, object.getValidValue());
+
+    }
+
 }

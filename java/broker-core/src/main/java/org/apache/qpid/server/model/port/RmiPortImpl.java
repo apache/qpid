@@ -48,12 +48,6 @@ public class RmiPortImpl extends AbstractPort<RmiPortImpl> implements RmiPort<Rm
         super.onValidate();
 
         validateOnlyOneInstance();
-
-        if (getTransports().contains(Transport.SSL))
-        {
-            throw new IllegalConfigurationException("Can't create RMI registry port which requires SSL");
-        }
-
     }
 
     public void setPortManager(PortManager manager)
