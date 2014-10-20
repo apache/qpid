@@ -85,7 +85,10 @@ public class ContentBody implements AMQBody
         byte[] payload = new byte[(int)bodySize];
         in.readFully(payload);
 
-        methodProcessor.receiveMessageContent(payload);
+        if(!methodProcessor.ignoreAllButCloseOk())
+        {
+            methodProcessor.receiveMessageContent(payload);
+        }
     }
 
     private static class BufferContentBody implements AMQBody
