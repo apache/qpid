@@ -78,7 +78,7 @@ for(i=0; i < numbersOfSessions.length ; i++)
                     {
                       "_name": "client__CONSUMING_CLIENT_INDEXConsumer1Session1",
                       "_destinationName": queueName,
-                      "_acknowledgeMode": 1,
+                      "_acknowledgeMode": 0,
                       "_maximumDuration": duration
                     }
                   ]

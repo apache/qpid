@@ -45,9 +45,6 @@ for(producersIndex=0; producersIndex < numbersOfProducers.length; producersIndex
          "_iterations":[
             {
               "_acknowledgeMode": 0
-            },
-            {
-              "_acknowledgeMode": 1
             }
           ],
           "_clients":
