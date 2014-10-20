@@ -174,6 +174,9 @@ public class ContentHeaderBody implements AMQBody
         properties = new BasicContentHeaderProperties();
         properties.populatePropertiesFromBuffer(buffer, propertyFlags, (int)(size-14));
 
-        methodProcessor.receiveMessageHeader(properties, bodySize);
+        if(!methodProcessor.ignoreAllButCloseOk())
+        {
+            methodProcessor.receiveMessageHeader(properties, bodySize);
+        }
     }
 }
