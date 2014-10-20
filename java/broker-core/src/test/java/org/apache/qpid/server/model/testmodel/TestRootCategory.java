@@ -20,7 +20,11 @@
  */
 package org.apache.qpid.server.model.testmodel;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttribute;
@@ -36,7 +40,8 @@ public interface TestRootCategory<X extends TestRootCategory<X>> extends Configu
     String STRING_VALUE = "stringValue";
     String MAP_VALUE = "mapValue";
     String VALID_VALUE = "validValue";
-
+    String ENUM_VALUE = "enumValue";
+    String ENUMSET_VALUES = "enumSetValues";
 
     String TEST_CONTEXT_DEFAULT = "TEST_CONTEXT_DEFAULT";
 
@@ -57,13 +62,19 @@ public interface TestRootCategory<X extends TestRootCategory<X>> extends Configu
     @ManagedAttribute( defaultValue = DEFAULTED_VALUE_DEFAULT)
     String getDefaultedValue();
 
-    @ManagedAttribute(validValues = {VALID_VALUE1, VALID_VALUE2} )
-    String getValidValue();
-
     @ManagedAttribute
     String getStringValue();
 
     @ManagedAttribute
     Map<String,String> getMapValue();
+
+    @ManagedAttribute
+    TestEnum getEnumValue();
+
+    @ManagedAttribute(validValues = {VALID_VALUE1, VALID_VALUE2} )
+    String getValidValue();
+
+    @ManagedAttribute( validValues = {"[\"TEST_ENUM1\"]", "[\"TEST_ENUM2\", \"TEST_ENUM3\"]"})
+    Set<TestEnum> getEnumSetValues();
 
 }

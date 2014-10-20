@@ -23,6 +23,7 @@ package org.apache.qpid.server.model.testmodel;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -30,7 +31,6 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.model.State;
 
 @ManagedObject( category = false , type = "test2" )
 public class Test2RootCategoryImpl extends AbstractConfiguredObject<Test2RootCategoryImpl>
@@ -53,6 +53,12 @@ public class Test2RootCategoryImpl extends AbstractConfiguredObject<Test2RootCat
 
     @ManagedAttributeField
     private String _validValue;
+
+    @ManagedAttributeField
+    private TestEnum _enumValue;
+
+    @ManagedAttributeField
+    private Set<TestEnum> _enumSetValues;
 
     @ManagedObjectFactoryConstructor
     public Test2RootCategoryImpl(final Map<String, Object> attributes)
@@ -113,6 +119,18 @@ public class Test2RootCategoryImpl extends AbstractConfiguredObject<Test2RootCat
     public Map<String, String> getMapValue()
     {
         return _mapValue;
+    }
+
+    @Override
+    public TestEnum getEnumValue()
+    {
+        return _enumValue;
+    }
+
+    @Override
+    public Set<TestEnum> getEnumSetValues()
+    {
+        return _enumSetValues;
     }
 
     public static Collection<String> functionGeneratedValidValues()
