@@ -384,20 +384,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
 
             Object desiredValue = attribute.convert(value, this);
-
-            if (attribute.hasValidValues())
-            {
-                if (!checkValidValues(attribute, desiredValue))
-                {
-                    throw new IllegalConfigurationException("Attribute '" + attribute.getName()
-                                                       + "' of instance of "+ getClass().getName()
-                                                       + " named '" + getName() + "'"
-                                                       + " cannot have value '" + desiredValue + "'"
-                                                       + ". Valid values are: "
-                                                       + attribute.validValues());
-                }
-            }
-
             field.getField().set(this, desiredValue);
 
             if(field.getPostSettingAction() != null)
@@ -757,6 +743,28 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public void onValidate()
     {
+        for(ConfiguredObjectAttribute<?,?> attr : _attributeTypes.values())
+        {
+            if (attr.isAutomated())
+            {
+                ConfiguredAutomatedAttribute autoAttr = (ConfiguredAutomatedAttribute) attr;
+                if (autoAttr.hasValidValues())
+                {
+                    Object desiredValueOrDefault = autoAttr.getValue(this);
+
+                    if (desiredValueOrDefault != null && !checkValidValues(autoAttr, desiredValueOrDefault))
+                    {
+                        throw new IllegalConfigurationException("Attribute '" + autoAttr.getName()
+                                                                + "' of instance of "+ getClass().getName()
+                                                                + " named '" + getName() + "'"
+                                                                + " cannot have value '" + desiredValueOrDefault + "'"
+                                                                + ". Valid values are: "
+                                                                + autoAttr.validValues());
+                    }
+                }
+
+            }
+        }
     }
 
     protected void setEncrypter(final ConfigurationSecretEncrypter encrypter)
@@ -1163,6 +1171,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
+    // TODO setAttribute does not validate. Do we need this method?
     public Object setAttribute(final String name, final Object expected, final Object desired)
             throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
@@ -1186,6 +1195,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
         });
     }
+
 
     protected boolean changeAttribute(final String name, final Object expected, final Object desired)
     {
@@ -1524,6 +1534,30 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         {
             throw new IllegalConfigurationException("Cannot change existing configured object id");
         }
+
+        for(ConfiguredObjectAttribute<?,?> attr : _attributeTypes.values())
+        {
+            if (attr.isAutomated() && changedAttributes.contains(attr.getName()))
+            {
+                ConfiguredAutomatedAttribute autoAttr = (ConfiguredAutomatedAttribute) attr;
+                if (autoAttr.hasValidValues())
+                {
+                    Object desiredValue = autoAttr.getValue(proxyForValidation);
+
+                    if (!checkValidValues(autoAttr, desiredValue))
+                    {
+                        throw new IllegalConfigurationException("Attribute '" + autoAttr.getName()
+                                                                + "' of instance of "+ getClass().getName()
+                                                                + " named '" + getName() + "'"
+                                                                + " cannot have value '" + desiredValue + "'"
+                                                                + ". Valid values are: "
+                                                                + autoAttr.validValues());
+                    }
+                }
+
+            }
+        }
+
     }
 
     private ConfiguredObject<?> createProxyForValidation(final Map<String, Object> attributes)
