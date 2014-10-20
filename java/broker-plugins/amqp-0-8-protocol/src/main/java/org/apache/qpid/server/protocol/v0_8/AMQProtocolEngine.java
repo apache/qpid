@@ -313,9 +313,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                 {
                     _decoder.decodeBuffer(msg);
                     receivedComplete();
-
-                    _sender.flush();
-
                 }
                 catch (ConnectionScopedRuntimeException e)
                 {

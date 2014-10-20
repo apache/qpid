@@ -2808,6 +2808,17 @@ public class AMQChannel
                                                                                  + " to " + type + ".", getChannelId());
 
                     }
+                    else
+                    {
+                        if (!nowait)
+                        {
+                            sync();
+                            MethodRegistry methodRegistry = _connection.getMethodRegistry();
+                            AMQMethodBody responseBody = methodRegistry.createExchangeDeclareOkBody();
+                            _connection.writeFrame(responseBody.generateFrame(
+                                    getChannelId()));
+                        }
+                    }
                 }
                 catch (NoFactoryForTypeException e)
                 {
