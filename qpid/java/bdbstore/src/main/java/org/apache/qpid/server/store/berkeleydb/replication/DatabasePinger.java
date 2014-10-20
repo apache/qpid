@@ -27,8 +27,9 @@ import com.sleepycat.bind.tuple.LongBinding;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.Durability;
 import com.sleepycat.je.Transaction;
+import com.sleepycat.je.TransactionConfig;
 import org.apache.log4j.Logger;
 
 public class DatabasePinger
@@ -39,6 +40,16 @@ public class DatabasePinger
     private static final DatabaseConfig DATABASE_CONFIG =
             DatabaseConfig.DEFAULT.setAllowCreate(true).setTransactional(true);
     private static final int ID = 0;
+    private final TransactionConfig _pingTransactionConfig = new TransactionConfig();
+
+    public DatabasePinger()
+    {
+        // The ping merely needs to establish that the sufficient remote nodes are available,
+        // we don't need to await the data being written/synch'd
+        _pingTransactionConfig.setDurability(new Durability(Durability.SyncPolicy.NO_SYNC,
+                                                            Durability.SyncPolicy.NO_SYNC,
+                                                            Durability.ReplicaAckPolicy.SIMPLE_MAJORITY));
+    }
 
     public void pingDb(EnvironmentFacade facade)
     {
@@ -60,7 +71,7 @@ public class DatabasePinger
             Transaction txn = null;
             try
             {
-                txn = facade.beginTransaction();
+                txn = facade.getEnvironment().beginTransaction(null, _pingTransactionConfig);
                 db.put(txn, key, value);
                 txn.commit();
 
