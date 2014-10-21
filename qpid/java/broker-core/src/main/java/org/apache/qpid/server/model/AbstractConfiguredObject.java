@@ -755,7 +755,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                     if (desiredValueOrDefault != null && !checkValidValues(autoAttr, desiredValueOrDefault))
                     {
                         throw new IllegalConfigurationException("Attribute '" + autoAttr.getName()
-                                                                + "' of instance of "+ getClass().getName()
+                                                                + "' instance of "+ getClass().getName()
                                                                 + " named '" + getName() + "'"
                                                                 + " cannot have value '" + desiredValueOrDefault + "'"
                                                                 + ". Valid values are: "
@@ -1544,10 +1544,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 {
                     Object desiredValue = autoAttr.getValue(proxyForValidation);
 
-                    if (!checkValidValues(autoAttr, desiredValue))
+                    if ((autoAttr.isMandatory() || desiredValue != null)
+                        && !checkValidValues(autoAttr, desiredValue))
                     {
                         throw new IllegalConfigurationException("Attribute '" + autoAttr.getName()
-                                                                + "' of instance of "+ getClass().getName()
+                                                                + "' instance of "+ getClass().getName()
                                                                 + " named '" + getName() + "'"
                                                                 + " cannot have value '" + desiredValue + "'"
                                                                 + ". Valid values are: "

@@ -99,11 +99,30 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
         attributes.put(ConfiguredObject.NAME, objectName);
         attributes.put(TestRootCategory.DEFAULTED_VALUE, "override");
 
-        TestRootCategory object2 = _model.getObjectFactory().create(TestRootCategory.class,
+        TestRootCategory object = _model.getObjectFactory().create(TestRootCategory.class,
                                                                    attributes);
 
-        assertEquals(objectName, object2.getName());
-        assertEquals("override", object2.getDefaultedValue());
+        assertEquals(objectName, object.getName());
+        assertEquals("override", object.getDefaultedValue());
+
+    }
+
+    public void testOverriddenDefaultedAttributeValueRevertedToDefault()
+    {
+        final String objectName = "myName";
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(ConfiguredObject.NAME, objectName);
+        attributes.put(TestRootCategory.DEFAULTED_VALUE, "override");
+
+        TestRootCategory object = _model.getObjectFactory().create(TestRootCategory.class,
+                                                                   attributes);
+
+        assertEquals(objectName, object.getName());
+        assertEquals("override", object.getDefaultedValue());
+
+        object.setAttributes(Collections.singletonMap(TestRootCategory.DEFAULTED_VALUE, null));
+        assertEquals(TestRootCategory.DEFAULTED_VALUE_DEFAULT, object.getDefaultedValue());
     }
 
     public void testEnumAttributeValueFromString()
@@ -534,7 +553,7 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
         TestRootCategory object = _model.getObjectFactory().create(TestRootCategory.class, legalCreateAttributes);
         assertEquals(TestRootCategory.VALID_VALUE1, object.getValidValue());
 
-        object.setAttribute(TestRootCategory.VALID_VALUE, TestRootCategory.VALID_VALUE1, TestRootCategory.VALID_VALUE2);
+        object.setAttributes(Collections.singletonMap(TestRootCategory.VALID_VALUE,TestRootCategory.VALID_VALUE2));
         assertEquals(TestRootCategory.VALID_VALUE2, object.getValidValue());
 
         try
@@ -548,6 +567,9 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
         }
 
         assertEquals(TestRootCategory.VALID_VALUE2, object.getValidValue());
+
+        object.setAttributes(Collections.singletonMap(TestRootCategory.VALID_VALUE,null));
+        assertNull(object.getValidValue());
 
     }
 
