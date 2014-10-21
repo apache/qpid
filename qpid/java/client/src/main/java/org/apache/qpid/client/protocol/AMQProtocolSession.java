@@ -63,7 +63,6 @@ import org.apache.qpid.transport.TransportException;
  */
 public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 {
-    protected static final int LAST_WRITE_FUTURE_JOIN_TIMEOUT = 1000 * 60 * 2;
 
     protected static final Logger _logger = LoggerFactory.getLogger(AMQProtocolSession.class);
 
