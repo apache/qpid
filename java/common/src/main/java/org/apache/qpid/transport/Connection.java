@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.sasl.SaslClient;
@@ -115,7 +116,7 @@ public class Connection extends ConnectionInvoker
     private Sender<ProtocolEvent> sender;
 
     final private Map<Binary,Session> sessions = new HashMap<Binary,Session>();
-    final private Map<Integer,Session> channels = new HashMap<Integer,Session>();
+    final private Map<Integer,Session> channels = new ConcurrentHashMap<Integer,Session>();
 
     private State state = NEW;
     final private Object lock = new Object();
@@ -731,7 +732,7 @@ public class Connection extends ConnectionInvoker
 
     protected Collection<Session> getChannels()
     {
-        return channels.values();
+        return new ArrayList<>(channels.values());
     }
 
     public boolean hasSessionWithName(final byte[] name)
@@ -741,8 +742,7 @@ public class Connection extends ConnectionInvoker
 
     public void notifyFailoverRequired()
     {
-        List<Session> values = new ArrayList<Session>(channels.values());
-        for (Session ssn : values)
+        for (Session ssn : getChannels())
         {
             ssn.notifyFailoverRequired();
         }
