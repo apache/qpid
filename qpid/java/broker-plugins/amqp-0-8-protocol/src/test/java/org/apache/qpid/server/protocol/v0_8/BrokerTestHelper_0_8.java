@@ -20,12 +20,17 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.server.message.MessageDestination;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
@@ -58,7 +63,10 @@ public class BrokerTestHelper_0_8 extends BrokerTestHelper
     public static InternalTestProtocolSession createProtocolSession(String hostName) throws Exception
     {
         VirtualHostImpl virtualHost = createVirtualHost(hostName);
-        return new InternalTestProtocolSession(virtualHost, createBrokerMock());
+
+        AmqpPort port = mock(AmqpPort.class);
+        when(port.getContextValue(eq(Integer.class), eq(AmqpPort.PORT_MAX_MESSAGE_SIZE))).thenReturn(AmqpPort.DEFAULT_MAX_MESSAGE_SIZE);
+        return new InternalTestProtocolSession(virtualHost, createBrokerMock(), port);
     }
 
     public static void publishMessages(AMQChannel channel, int numberOfMessages, String queueName, String exchangeName)

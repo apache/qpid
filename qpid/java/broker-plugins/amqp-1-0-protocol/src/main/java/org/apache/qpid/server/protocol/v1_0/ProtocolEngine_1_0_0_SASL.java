@@ -35,6 +35,7 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.amqp_1_0.codec.FrameWriter;
 import org.apache.qpid.amqp_1_0.codec.ProtocolHandler;
 import org.apache.qpid.amqp_1_0.framing.AMQFrame;
@@ -53,8 +54,8 @@ import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -67,14 +68,14 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     private static final org.apache.log4j.Logger
             _logger = org.apache.log4j.Logger.getLogger(ProtocolEngine_1_0_0_SASL.class);
 
-    private final Port _port;
+    private final AmqpPort<?> _port;
     private final Transport _transport;
     private long _readBytes;
     private long _writtenBytes;
 
     private long _lastReadTime;
     private long _lastWriteTime;
-    private final Broker _broker;
+    private final Broker<?> _broker;
     private long _createTime = System.currentTimeMillis();
     private ConnectionEndpoint _endpoint;
     private long _connectionId;
@@ -134,8 +135,8 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     private State _state = State.A;
 
 
-    public ProtocolEngine_1_0_0_SASL(final NetworkConnection networkDriver, final Broker broker,
-                                     long id, Port port, Transport transport)
+    public ProtocolEngine_1_0_0_SASL(final NetworkConnection networkDriver, final Broker<?> broker,
+                                     long id, AmqpPort<?> port, Transport transport)
     {
         _connectionId = id;
         _broker = broker;

@@ -47,7 +47,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -62,8 +61,8 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 public class Connection_1_0 implements ConnectionEventListener, AMQConnectionModel<Connection_1_0,Session_1_0>
 {
 
-    private final Port<?> _port;
-    private final Broker _broker;
+    private final AmqpPort<?> _port;
+    private final Broker<?> _broker;
     private final SubjectCreator _subjectCreator;
     private VirtualHostImpl _vhost;
     private final Transport _transport;
@@ -102,10 +101,10 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     private boolean _closedOnOpen;
 
 
-    public Connection_1_0(Broker broker,
+    public Connection_1_0(Broker<?> broker,
                           ConnectionEndpoint conn,
                           long connectionId,
-                          Port port,
+                          AmqpPort<?> port,
                           Transport transport, final SubjectCreator subjectCreator)
     {
         _broker = broker;
@@ -359,7 +358,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     }
 
     @Override
-    public Port<?> getPort()
+    public AmqpPort<?> getPort()
     {
         return _port;
     }

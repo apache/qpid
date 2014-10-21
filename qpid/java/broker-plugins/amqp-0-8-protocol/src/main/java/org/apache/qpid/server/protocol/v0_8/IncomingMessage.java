@@ -57,10 +57,11 @@ public class IncomingMessage
         return _messagePublishInfo;
     }
 
-    public void addContentBodyFrame(final ContentBody contentChunk)
+    public long addContentBodyFrame(final ContentBody contentChunk)
     {
         _bodyLengthReceived += contentChunk.getSize();
         _contentChunks.add(contentChunk);
+        return _bodyLengthReceived;
     }
 
     public boolean allContentReceived()

@@ -21,18 +21,18 @@ package org.apache.qpid.server.plugin;/*
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.transport.network.NetworkConnection;
 
 public interface ProtocolEngineCreator extends Pluggable
 {
     Protocol getVersion();
     byte[] getHeaderIdentifier();
-    ServerProtocolEngine newProtocolEngine(Broker broker,
+    ServerProtocolEngine newProtocolEngine(Broker<?> broker,
                                            NetworkConnection network,
-                                           Port port,
+                                           AmqpPort<?> port,
                                            Transport transport,
                                            long id);
 }

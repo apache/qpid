@@ -157,6 +157,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 
         AmqpPort<?> port = mock(AmqpPort.class);
         when(port.canAcceptNewConnection(any(SocketAddress.class))).thenReturn(true);
+        when(port.getContextValue(eq(Integer.class), eq(AmqpPort.PORT_MAX_MESSAGE_SIZE))).thenReturn(AmqpPort.DEFAULT_MAX_MESSAGE_SIZE);
 
         when(port.getContextValue(eq(Long.class),eq(Port.CONNECTION_MAXIMUM_AUTHENTICATION_DELAY))).thenReturn(10000l);
         MultiVersionProtocolEngineFactory factory =

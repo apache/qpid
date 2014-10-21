@@ -333,16 +333,22 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void messageTransfer(Session ssn, final MessageTransfer xfr)
     {
-        if(((ServerSession)ssn).blockingTimeoutExceeded())
+        ServerSession serverSession = (ServerSession) ssn;
+        if(serverSession.blockingTimeoutExceeded())
         {
             getVirtualHost(ssn).getEventLogger().message(ChannelMessages.FLOW_CONTROL_IGNORED());
 
-            ((ServerSession) ssn).close(AMQConstant.MESSAGE_TOO_LARGE,
-                                        "Session flow control was requested, but not enforced by sender");
+            serverSession.close(AMQConstant.MESSAGE_TOO_LARGE,
+                       "Session flow control was requested, but not enforced by sender");
+        }
+        else if(xfr.getBodySize() > serverSession.getConnection().getMaxMessageSize())
+        {
+            exception(ssn, xfr, ExecutionErrorCode.RESOURCE_LIMIT_EXCEEDED,
+                      "Message size of " + xfr.getBodySize() + " greater than allowed maximum of " + serverSession.getConnection().getMaxMessageSize());
         }
         else
         {
-            final MessageDestination exchange = getDestinationForMessage(ssn, xfr);
+            final MessageDestination destination = getDestinationForMessage(ssn, xfr);
 
             final DeliveryProperties delvProps =
                     xfr.getHeader() == null ? null : xfr.getHeader().getDeliveryProperties();
@@ -359,7 +365,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 virtualHost.getSecurityManager()
                         .authorisePublish(messageMetaData.isImmediate(),
                                           messageMetaData.getRoutingKey(),
-                                          exchange.getName(),
+                                          destination.getName(),
                                           virtualHost.getName());
             }
             catch (AccessControlException e)
@@ -372,7 +378,6 @@ public class ServerSessionDelegate extends SessionDelegate
 
             final MessageStore store = virtualHost.getMessageStore();
             final StoredMessage<MessageMetaData_0_10> storeMessage = createStoreMessage(xfr, messageMetaData, store);
-            final ServerSession serverSession = (ServerSession) ssn;
             final MessageTransferMessage message =
                     new MessageTransferMessage(storeMessage, serverSession.getReference());
             MessageReference<MessageTransferMessage> reference = message.newReference();
@@ -400,7 +405,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 }
             };
 
-            int enqueues = serverSession.enqueue(message, instanceProperties, exchange);
+            int enqueues = serverSession.enqueue(message, instanceProperties, destination);
 
             if (enqueues == 0)
             {
@@ -414,7 +419,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 }
                 else
                 {
-                    virtualHost.getEventLogger().message(ExchangeMessages.DISCARDMSG(exchange.getName(),
+                    virtualHost.getEventLogger().message(ExchangeMessages.DISCARDMSG(destination.getName(),
                                                                                      messageMetaData.getRoutingKey()));
                 }
             }

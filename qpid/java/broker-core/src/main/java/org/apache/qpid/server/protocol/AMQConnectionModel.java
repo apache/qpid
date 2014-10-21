@@ -26,9 +26,9 @@ import java.util.List;
 
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.util.Deletable;
 
@@ -89,7 +89,7 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
 
     long getLastIoTime();
 
-    Port<?> getPort();
+    AmqpPort<?> getPort();
 
     Transport getTransport();
 

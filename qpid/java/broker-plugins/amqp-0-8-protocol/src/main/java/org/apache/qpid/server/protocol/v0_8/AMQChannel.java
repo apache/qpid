@@ -207,7 +207,6 @@ public class AMQChannel
     private boolean _confirmOnPublish;
     private long _confirmedMessageCounter;
 
-
     public AMQChannel(AMQProtocolEngine connection, int channelId, final MessageStore messageStore)
     {
         _connection = connection;
@@ -578,9 +577,17 @@ public class AMQChannel
 
         try
         {
-            _currentMessage.addContentBodyFrame(contentBody);
-
-            deliverCurrentMessageIfComplete();
+            long currentSize = _currentMessage.addContentBodyFrame(contentBody);
+            if(currentSize > _currentMessage.getSize())
+            {
+                _connection.closeConnection(AMQConstant.FRAME_ERROR,
+                                            "More message data received than content header defined",
+                                            _channelId);
+            }
+            else
+            {
+                deliverCurrentMessageIfComplete();
+            }
         }
         catch (RuntimeException e)
         {
@@ -2385,6 +2392,11 @@ public class AMQChannel
 
         if(hasCurrentMessage())
         {
+            if(bodySize > _connection.getMaxMessageSize())
+            {
+                closeChannel(AMQConstant.MESSAGE_TOO_LARGE,
+                             "Message size of " + bodySize + " greater than allowed maximum of " + _connection.getMaxMessageSize());
+            }
             publishContentHeader(new ContentHeaderBody(properties, bodySize));
         }
         else
