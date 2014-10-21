@@ -47,6 +47,7 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
@@ -175,7 +176,17 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
             _logger.info("Starting up web server on " + ports);
         }
         _allowPortActivation = true;
+
         Server server = new Server();
+
+        QueuedThreadPool threadPool = new QueuedThreadPool();
+        threadPool.setName("HttpManagement");
+        threadPool.setMaxQueued(getContextValue(Integer.class, JETTY_THREAD_POOL_MAX_QUEUED));
+        threadPool.setMaxThreads(getContextValue(Integer.class, JETTY_THREAD_POOL_MAX_THREADS));
+        threadPool.setMinThreads(getContextValue(Integer.class, JETTY_THREAD_POOL_MIN_THREADS));
+
+        server.setThreadPool(threadPool);
+
         int lastPort = -1;
         for (Port<?> port : ports)
         {

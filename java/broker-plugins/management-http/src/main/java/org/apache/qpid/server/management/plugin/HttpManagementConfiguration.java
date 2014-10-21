@@ -56,5 +56,21 @@ public interface HttpManagementConfiguration<X extends HttpManagementConfigurati
     @ManagedContextDefault( name = MAX_HTTP_FILE_UPLOAD_SIZE_CONTEXT_NAME)
     static final long DEFAULT_MAX_UPLOAD_SIZE = 100 * 1024;
 
+
+    String JETTY_THREAD_POOL_MAX_QUEUED = "jetty.threadPool.maxQueued";
+    @ManagedContextDefault( name = JETTY_THREAD_POOL_MAX_QUEUED)
+    static final long DEFAULT_JETTY_THREAD_POOL_MAX_QUEUED = 1000;
+
+    String JETTY_THREAD_POOL_MAX_THREADS = "jetty.threadPool.maxThreads";
+    @ManagedContextDefault( name = JETTY_THREAD_POOL_MAX_THREADS)
+    static final long DEFAULT_JETTY_THREAD_POOL_MAX_THREADS = 10;
+
+
+    String JETTY_THREAD_POOL_MIN_THREADS = "jetty.threadPool.minThreads";
+    @ManagedContextDefault( name = JETTY_THREAD_POOL_MIN_THREADS)
+    static final long DEFAULT_JETTY_THREAD_POOL_MIN_THREADS = 1;
+
+
+
     AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress);
 }
