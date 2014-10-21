@@ -225,7 +225,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         if(idObj == null)
         {
             uuid = UUID.randomUUID();
-            attributes = new HashMap<String, Object>(attributes);
+            attributes = new LinkedHashMap<>(attributes);
             attributes.put(ID, uuid);
         }
         else
@@ -246,6 +246,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         {
             throw new IllegalConfigurationException("Provided type is " + attributes.get(TYPE)
                                                     + " but calculated type is " + _type);
+        }
+        else if(attributes.get(TYPE) == null)
+        {
+            attributes = new LinkedHashMap<>(attributes);
+            attributes.put(TYPE, _type);
         }
 
         for (Class<? extends ConfiguredObject> childClass : getModel().getChildTypes(getCategoryClass()))
