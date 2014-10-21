@@ -20,20 +20,28 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.MessagePublishInfo;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -52,7 +60,10 @@ public class AMQChannelTest extends QpidTestCase
         BrokerTestHelper.setUp();
         _virtualHost = BrokerTestHelper.createVirtualHost(getTestName());
         _broker = BrokerTestHelper.createBrokerMock();
-        _protocolSession = new InternalTestProtocolSession(_virtualHost, _broker)
+        AmqpPort port = mock(AmqpPort.class);
+        when(port.getContextValue(eq(Integer.class), eq(AmqpPort.PORT_MAX_MESSAGE_SIZE))).thenReturn(AmqpPort.DEFAULT_MAX_MESSAGE_SIZE);
+
+        _protocolSession = new InternalTestProtocolSession(_virtualHost, _broker, port)
         {
             @Override
             public void writeReturn(MessagePublishInfo messagePublishInfo,
@@ -86,8 +97,10 @@ public class AMQChannelTest extends QpidTestCase
     {
         AMQChannel channel1 = new AMQChannel(_protocolSession, 1, _virtualHost.getMessageStore());
 
+        AmqpPort port = mock(AmqpPort.class);
+        when(port.getContextValue(eq(Integer.class), eq(AmqpPort.PORT_MAX_MESSAGE_SIZE))).thenReturn(AmqpPort.DEFAULT_MAX_MESSAGE_SIZE);
         // create a channel with the same channelId but on a different session
-        AMQChannel channel2 = new AMQChannel(new InternalTestProtocolSession(_virtualHost, _broker), 1, _virtualHost.getMessageStore());
+        AMQChannel channel2 = new AMQChannel(new InternalTestProtocolSession(_virtualHost, _broker, port), 1, _virtualHost.getMessageStore());
         assertFalse("Unexpected compare result", channel1.compareTo(channel2) == 0);
         assertEquals("Unexpected compare result", 0, channel1.compareTo(channel1));
     }
@@ -133,6 +146,35 @@ public class AMQChannelTest extends QpidTestCase
         channel.commit(null, false);
 
         assertEquals("Unexpected number of replies", 0, _replies.size());
+    }
+
+    public void testOverlargeMessage() throws Exception
+    {
+
+        AmqpPort port = mock(AmqpPort.class);
+        when(port.getContextValue(eq(Integer.class), eq(AmqpPort.PORT_MAX_MESSAGE_SIZE))).thenReturn(1024);
+        final List<AMQDataBlock> frames = new ArrayList<>();
+        _protocolSession = new InternalTestProtocolSession(_virtualHost, _broker, port)
+        {
+            @Override
+            public synchronized void writeFrame(final AMQDataBlock frame)
+            {
+                frames.add(frame);
+            }
+        };
+
+        AMQChannel channel = new AMQChannel(_protocolSession, 1, _virtualHost.getMessageStore());
+
+        channel.receiveBasicPublish(AMQShortString.EMPTY_STRING, AMQShortString.EMPTY_STRING, false, false);
+
+        final BasicContentHeaderProperties properties = new BasicContentHeaderProperties();
+        channel.receiveMessageHeader(properties, 2048l);
+
+        frames.toString();
+
+        assertEquals(1, frames.size());
+        assertEquals(ChannelCloseBody.class, ((AMQFrame) frames.get(0)).getBodyFrame().getClass());
+        assertEquals(AMQConstant.MESSAGE_TOO_LARGE.getCode(), ((ChannelCloseBody)((AMQFrame)frames.get(0)).getBodyFrame()).getReplyCode());
     }
 
 }

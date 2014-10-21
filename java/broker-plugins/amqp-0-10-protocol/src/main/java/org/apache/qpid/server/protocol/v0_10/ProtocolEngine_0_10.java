@@ -32,7 +32,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.transport.Constant;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.Assembler;
@@ -57,14 +56,10 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     private long _lastWriteTime;
 
     public ProtocolEngine_0_10(ServerConnection conn,
-                               NetworkConnection network,
-                               Port port,
-                               Transport transport)
+                               NetworkConnection network)
     {
         super(new Assembler(conn));
         _connection = conn;
-        _connection.setPort(port);
-        _connection.setTransport(transport);
 
         if(network != null)
         {

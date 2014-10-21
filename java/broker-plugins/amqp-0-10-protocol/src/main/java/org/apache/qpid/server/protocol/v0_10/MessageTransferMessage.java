@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
+import java.nio.ByteBuffer;
+
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.AbstractServerMessageImpl;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.transport.Header;
-
-import java.nio.ByteBuffer;
 
 
 public class MessageTransferMessage extends AbstractServerMessageImpl<MessageTransferMessage, MessageMetaData_0_10>
@@ -49,13 +49,6 @@ public class MessageTransferMessage extends AbstractServerMessageImpl<MessageTra
     public AMQMessageHeader getMessageHeader()
     {
         return getMetaData().getMessageHeader();
-    }
-
-    public boolean isRedelivered()
-    {
-        // The *Message* is never redelivered, only queue entries are... this is here so that filters
-        // can run against the message on entry to an exchange
-        return false;
     }
 
     public long getSize()

@@ -42,8 +42,8 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.SessionModelListener;
@@ -75,7 +75,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     private final long _connectionId;
     private final Object _reference = new Object();
     private VirtualHostImpl<?,?,?> _virtualHost;
-    private Port<?> _port;
+    private AmqpPort<?> _port;
     private AtomicLong _lastIoTime = new AtomicLong();
     private boolean _blocking;
     private Transport _transport;
@@ -88,12 +88,23 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
 
     private volatile boolean _stopped;
     private int _messageCompressionThreshold;
+    private int _maxMessageSize;
 
-    public ServerConnection(final long connectionId, Broker broker)
+    public ServerConnection(final long connectionId,
+                            Broker<?> broker,
+                            final AmqpPort<?> port,
+                            final Transport transport)
     {
         _connectionId = connectionId;
         _authorizedSubject.getPrincipals().add(new ConnectionPrincipal(this));
         _broker = broker;
+
+        _port = port;
+        _transport = transport;
+
+        int maxMessageSize = port.getContextValue(Integer.class, AmqpPort.PORT_MAX_MESSAGE_SIZE);
+        _maxMessageSize = (maxMessageSize > 0) ? maxMessageSize : Integer.MAX_VALUE;
+
 
         _messagesDelivered = new StatisticsCounter("messages-delivered-" + getConnectionId());
         _dataDelivered = new StatisticsCounter("data-delivered-" + getConnectionId());
@@ -203,14 +214,9 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     }
 
     @Override
-    public Port<?> getPort()
+    public AmqpPort<?> getPort()
     {
         return _port;
-    }
-
-    public void setPort(Port<?> port)
-    {
-        _port = port;
     }
 
     @Override
@@ -229,11 +235,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     public boolean isStopped()
     {
         return _stopped;
-    }
-
-    public void setTransport(Transport transport)
-    {
-        _transport = transport;
     }
 
     public void onOpen(final Runnable task)
@@ -657,5 +658,10 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     public int getMessageCompressionThreshold()
     {
         return _messageCompressionThreshold;
+    }
+
+    public int getMaxMessageSize()
+    {
+        return _maxMessageSize;
     }
 }

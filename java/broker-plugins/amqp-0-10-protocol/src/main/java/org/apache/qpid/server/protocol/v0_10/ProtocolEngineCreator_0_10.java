@@ -25,9 +25,9 @@ import java.net.SocketAddress;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
 import org.apache.qpid.transport.ConnectionDelegate;
@@ -64,9 +64,9 @@ public class ProtocolEngineCreator_0_10 implements ProtocolEngineCreator
         return AMQP_0_10_HEADER;
     }
 
-    public ServerProtocolEngine newProtocolEngine(Broker broker,
+    public ServerProtocolEngine newProtocolEngine(Broker<?> broker,
                                                   NetworkConnection network,
-                                                  Port port,
+                                                  AmqpPort<?> port,
                                                   Transport transport,
                                                   long id)
     {
@@ -80,12 +80,13 @@ public class ProtocolEngineCreator_0_10 implements ProtocolEngineCreator
                 fqdn, broker.getSubjectCreator(address, transport.isSecure())
         );
 
-        ServerConnection conn = new ServerConnection(id,broker);
+        ServerConnection conn = new ServerConnection(id,broker, port, transport);
 
         conn.setConnectionDelegate(connDelegate);
         conn.setRemoteAddress(network.getRemoteAddress());
         conn.setLocalAddress(network.getLocalAddress());
-        return new ProtocolEngine_0_10( conn, network, port, transport);
+
+        return new ProtocolEngine_0_10( conn, network);
     }
 
 

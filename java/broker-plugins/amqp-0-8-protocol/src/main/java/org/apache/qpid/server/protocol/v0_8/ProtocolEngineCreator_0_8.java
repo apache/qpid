@@ -22,9 +22,9 @@ package org.apache.qpid.server.protocol.v0_8;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -58,9 +58,9 @@ public class ProtocolEngineCreator_0_8 implements ProtocolEngineCreator
         return AMQP_0_8_HEADER;
     }
 
-    public ServerProtocolEngine newProtocolEngine(Broker broker,
+    public ServerProtocolEngine newProtocolEngine(Broker<?> broker,
                                                   NetworkConnection network,
-                                                  Port port,
+                                                  AmqpPort<?> port,
                                                   Transport transport,
                                                   long id)
     {

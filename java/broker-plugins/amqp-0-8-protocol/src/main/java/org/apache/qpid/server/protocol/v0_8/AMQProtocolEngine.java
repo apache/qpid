@@ -102,7 +102,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     private static final int REUSABLE_BYTE_BUFFER_CAPACITY = 65 * 1024;
     public static final String BROKER_DEBUG_BINARY_DATA_LENGTH = "broker.debug.binaryDataLength";
     public static final int DEFAULT_DEBUG_BINARY_DATA_LENGTH = 80;
-    private final Port<?> _port;
+    private final AmqpPort<?> _port;
     private final long _creationTime;
 
     private AMQShortString _contextKey;
@@ -184,11 +184,12 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     private int _currentClassId;
     private int _currentMethodId;
     private int _binaryDataLimit;
+    private long _maxMessageSize;
 
-    public AMQProtocolEngine(Broker broker,
+    public AMQProtocolEngine(Broker<?> broker,
                              final NetworkConnection network,
                              final long connectionId,
-                             Port port,
+                             AmqpPort<?> port,
                              Transport transport)
     {
         _broker = broker;
@@ -202,6 +203,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         _binaryDataLimit = _broker.getContextKeys(false).contains(BROKER_DEBUG_BINARY_DATA_LENGTH)
                 ? _broker.getContextValue(Integer.class, BROKER_DEBUG_BINARY_DATA_LENGTH)
                 : DEFAULT_DEBUG_BINARY_DATA_LENGTH;
+
+        int maxMessageSize = port.getContextValue(Integer.class, AmqpPort.PORT_MAX_MESSAGE_SIZE);
+        _maxMessageSize = (maxMessageSize > 0) ? (long) maxMessageSize : Long.MAX_VALUE;
+
         _authorizedSubject.getPrincipals().add(new ConnectionPrincipal(this));
         runAsSubject(new PrivilegedAction<Void>()
         {
@@ -1164,7 +1169,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     }
 
     @Override
-    public Port<?> getPort()
+    public AmqpPort<?> getPort()
     {
         return _port;
     }
@@ -1751,6 +1756,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     public int getBinaryDataLimit()
     {
         return _binaryDataLimit;
+    }
+
+    public long getMaxMessageSize()
+    {
+        return _maxMessageSize;
     }
 
     public final class WriteDeliverMethod
