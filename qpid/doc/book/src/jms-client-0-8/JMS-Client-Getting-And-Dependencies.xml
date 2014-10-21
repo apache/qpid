@@ -52,7 +52,7 @@
     <para>The Qpid JMS client has minimal set of external dependencies. </para>
     <para> It requires: <itemizedlist>
         <listitem>
-          <para>JDK 1.6 or higher. (An up to date JDK 1.7 is recommended)</para>
+          <para>JDK 1.7 or higher.</para>
         </listitem>
         <listitem>
           <para>JMS 1.1 specification (such as geronimo-jms_1.1_spec JAR)</para>
