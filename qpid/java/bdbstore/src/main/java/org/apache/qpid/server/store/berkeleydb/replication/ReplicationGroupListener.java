@@ -55,4 +55,9 @@ public interface ReplicationGroupListener
 
     void onNoMajority();
 
+    /**
+     * Signifies that node need to discard one or more transactions in order to rejoin the group.  Most likely
+     * caused by use of the weak durability options such as node priority zero.
+     */
+    void onNodeRolledback();
 }

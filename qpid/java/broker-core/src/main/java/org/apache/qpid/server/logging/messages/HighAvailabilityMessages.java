@@ -57,6 +57,7 @@ public class HighAvailabilityMessages
     public static final String DELETED_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "highavailability.deleted";
     public static final String ROLE_CHANGED_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "highavailability.role_changed";
     public static final String DESIGNATED_PRIMARY_CHANGED_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "highavailability.designated_primary_changed";
+    public static final String NODE_ROLLEDBACK_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "highavailability.node_rolledback";
 
     static
     {
@@ -74,6 +75,7 @@ public class HighAvailabilityMessages
         Logger.getLogger(DELETED_LOG_HIERARCHY);
         Logger.getLogger(ROLE_CHANGED_LOG_HIERARCHY);
         Logger.getLogger(DESIGNATED_PRIMARY_CHANGED_LOG_HIERARCHY);
+        Logger.getLogger(NODE_ROLLEDBACK_LOG_HIERARCHY);
 
         _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.HighAvailability_logmessages", _currentLocale);
     }
@@ -475,6 +477,33 @@ public class HighAvailabilityMessages
             public String getLogHierarchy()
             {
                 return DESIGNATED_PRIMARY_CHANGED_LOG_HIERARCHY;
+            }
+        };
+    }
+
+    /**
+     * Log a HighAvailability message of the Format:
+     * <pre>HA-1014 : Diverged transactions discarded</pre>
+     * Optional values are contained in [square brackets] and are numbered
+     * sequentially in the method call.
+     *
+     */
+    public static LogMessage NODE_ROLLEDBACK()
+    {
+        String rawMessage = _messages.getString("NODE_ROLLEDBACK");
+
+        final String message = rawMessage;
+
+        return new LogMessage()
+        {
+            public String toString()
+            {
+                return message;
+            }
+
+            public String getLogHierarchy()
+            {
+                return NODE_ROLLEDBACK_LOG_HIERARCHY;
             }
         };
     }
