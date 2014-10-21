@@ -72,6 +72,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
 
     private static final UUID ANY_UUID = UUID.randomUUID();
     private static final Map ANY_MAP = new HashMap();
+    public static final String STANDARD = "standard";
 
 
     private String _storePath;
@@ -203,6 +204,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         map.put(Binding.NAME, ROUTING_KEY);
         map.put(Binding.ARGUMENTS,_bindingArgs);
         map.put(Binding.DURABLE,true);
+        map.put(Binding.TYPE, Binding.class.getSimpleName());
 
         Map<String,UUID> parents = new HashMap<String, UUID>();
 
@@ -308,6 +310,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.put(Queue.OWNER, getName()+"Owner");
         queueAttributes.put(Queue.EXCLUSIVE, ExclusivityPolicy.CONTAINER.name());
+        queueAttributes.put(Queue.TYPE, STANDARD);
         verify(_handler).handle(matchesRecord(_queueId, QUEUE, queueAttributes));
     }
 
@@ -316,6 +319,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
+        attributes.put(Queue.TYPE, STANDARD);
         AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, attributes);
 
         _configStore.create(queue.asObjectRecord());
@@ -348,7 +352,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.OWNER, getName()+"Owner");
         queueAttributes.put(Queue.EXCLUSIVE, ExclusivityPolicy.CONTAINER.name());
         queueAttributes.put(Queue.ALTERNATE_EXCHANGE, alternateExchange.getId().toString());
-
+        queueAttributes.put(Queue.TYPE, STANDARD);
         verify(_handler).handle(matchesRecord(_queueId, QUEUE, queueAttributes));
     }
 
@@ -366,6 +370,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(AbstractVirtualHost.CREATE_DLQ_ON_CREATION, Boolean.TRUE);
         attributes.put(Queue.MAXIMUM_DELIVERY_ATTEMPTS, 10);
+        attributes.put(Queue.TYPE, STANDARD);
         AMQQueue queue = createTestQueue(getName(), getName() + "Owner", true, attributes);
 
         _configStore.create(queue.asObjectRecord());
@@ -410,7 +415,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         queueAttributes.put(Queue.NAME, getName());
         queueAttributes.putAll(attributes);
         queueAttributes.put(Queue.ALTERNATE_EXCHANGE, alternateExchange.getId().toString());
-
+        queueAttributes.put(Queue.TYPE, STANDARD);
         verify(_handler).handle(matchesRecord(_queueId, QUEUE, queueAttributes));
     }
 
@@ -447,6 +452,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(queue.getName()).thenReturn(queueName);
         when(queue.isExclusive()).thenReturn(exclusive);
         when(queue.getId()).thenReturn(_queueId);
+        when(queue.getType()).thenReturn(STANDARD);
         when(queue.getAlternateExchange()).thenReturn(alternateExchange);
         when(queue.getCategoryClass()).thenReturn((Class)Queue.class);
         when(queue.isDurable()).thenReturn(true);
@@ -457,6 +463,7 @@ public abstract class AbstractDurableConfigurationStoreTestCase extends QpidTest
         when(queue.getVirtualHost()).thenReturn(vh);
         final Map<String,Object> attributes = arguments == null ? new LinkedHashMap<String, Object>() : new LinkedHashMap<String, Object>(arguments);
         attributes.put(Queue.NAME, queueName);
+        attributes.put(Queue.TYPE, STANDARD);
         if(alternateExchange != null)
         {
             attributes.put(Queue.ALTERNATE_EXCHANGE, alternateExchange);
