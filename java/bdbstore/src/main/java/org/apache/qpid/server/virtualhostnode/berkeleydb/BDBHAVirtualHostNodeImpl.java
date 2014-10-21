@@ -1108,6 +1108,12 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.QUORUM_LOST());
         }
 
+        @Override
+        public void onNodeRolledback()
+        {
+            getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.NODE_ROLLEDBACK());
+        }
+
         private Map<String, Object> nodeToAttributes(ReplicationNode replicationNode)
         {
             Map<String, Object> attributes = new HashMap<String, Object>();

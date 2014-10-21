@@ -346,21 +346,27 @@
         </row>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1014">
           <entry morerows="1">BRK-1014</entry>
-          <entry>Message flow to disk active :  Message memory use <replaceable>size of all messages</replaceable> exceeds threshold <replaceable>threshold size</replaceable></entry>
+          <entry>Message flow to disk active : Message memory use <replaceable>size of all
+              messages</replaceable> exceeds threshold <replaceable>threshold
+            size</replaceable></entry>
         </row>
         <row>
           <entry>
-            <para>Indicates that the heap memory space occupied by messages has exceeded the threshold so the flow to disk feature has been activated.</para>
+            <para>Indicates that the heap memory space occupied by messages has exceeded the
+              threshold so the flow to disk feature has been activated.</para>
           </entry>
         </row>
-        
+
         <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1015">
           <entry morerows="1">BRK-1015</entry>
-          <entry>Message flow to disk inactive :  Message memory use <replaceable>size of all messages</replaceable> within threshold <replaceable>threshold size</replaceable></entry>
+          <entry>Message flow to disk inactive : Message memory use <replaceable>size of all
+              messages</replaceable> within threshold <replaceable>threshold
+            size</replaceable></entry>
         </row>
         <row>
           <entry>
-            <para>Indicates that the heap memory space occupied by messages has fallen below the threshold so the flow to disk feature has been deactivated.</para>
+            <para>Indicates that the heap memory space occupied by messages has fallen below the
+              threshold so the flow to disk feature has been deactivated.</para>
           </entry>
         </row>
       </tbody>
@@ -1196,9 +1202,9 @@
         </row>
         <row>
           <entry>
-            <para>The node is no longer reachable. This may be as a result of the node being
-              stopped or a network partition may be preventing it from being connected. The node is
-              still a member of the group.</para>
+            <para>The node is no longer reachable. This may be as a result of the node being stopped
+              or a network partition may be preventing it from being connected. The node is still a
+              member of the group.</para>
           </entry>
         </row>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1007">
@@ -1273,6 +1279,24 @@
               node groups only.</para>
           </entry>
         </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-HA-1014">
+          <entry morerows="1">HA-1014</entry>
+          <entry>HA-1014 : Diverged transactions discarded</entry>
+        </row>
+        <row>
+          <entry>
+            <para>This node is in the process of rejoining the group but has discovered that some
+              of its transactions differ from those of the current master. The node will
+              automatically roll-back (i.e. discard) the diverging transactions in order to be
+              allowed to rejoin the group. This situation can only usually occur as a result of use
+              of the weak durability options. These allow the group to operate with fewer than
+              quorum nodes and therefore allow the inconsistencies to develop. </para>
+            <para>On encountering this condition, it is <emphasis>strongly</emphasis> recommendend
+              to run an application level reconcilation to determine the data that has been
+              lost.</para>
+          </entry>
+        </row>
+
       </tbody>
     </tgroup>
   </table>

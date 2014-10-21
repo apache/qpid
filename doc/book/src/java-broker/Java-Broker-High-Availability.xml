@@ -120,9 +120,9 @@
             complete, all nodes will be considered equal.</para>
         </listitem>
         <listitem>
+          <para>Click the <literal>Add</literal> button on the Virtualhost Panel on the Broker
+            tab.</para>
           <para>
-            <para>Click the <literal>Add</literal> button on the Virtualhost Panel on the Broker
-              tab.</para>
             <orderedlist>
               <listitem>
                 <para>Give the Virtualhost node a unique name e.g. <literal>weather1</literal>. The
@@ -157,25 +157,23 @@
                   master.</para>
               </listitem>
             </orderedlist>
-            <para>
-              <figure>
-                <title>Creating 1st node in a group</title>
-                <mediaobject>
-                  <imageobject>
-                    <imagedata fileref="images/HA-Create-1.png" format="PNG" scalefit="1"/>
-                  </imageobject>
-                  <textobject>
-                    <phrase>Creating 1st node in a group</phrase>
-                  </textobject>
-                </mediaobject>
-              </figure>
-            </para>
+            <figure>
+              <title>Creating 1st node in a group</title>
+              <mediaobject>
+                <imageobject>
+                  <imagedata fileref="images/HA-Create-1.png" format="PNG" scalefit="1"/>
+                </imageobject>
+                <textobject>
+                  <phrase>Creating 1st node in a group</phrase>
+                </textobject>
+              </mediaobject>
+            </figure>
           </para>
         </listitem>
         <listitem>
+          <para>Now move to the second Broker to be the group. Click the <literal>Add</literal>
+            button on the Virtualhost Panel on the Broker tab of the second Broker.</para>
           <para>
-            <para>Now move to the second Broker to be the group. Click the <literal>Add</literal>
-              button on the Virtualhost Panel on the Broker tab of the second Broker.</para>
             <orderedlist>
               <listitem>
                 <para>Give the Virtualhost node a unique name e.g.
@@ -202,19 +200,17 @@
                 <para>Repeat these steps until you have added all the nodes to the group.</para>
               </listitem>
             </orderedlist>
-            <para>
-              <figure>
-                <title>Adding subsequent nodes to the group</title>
-                <mediaobject>
-                  <imageobject>
-                    <imagedata fileref="images/HA-Create-2.png" format="PNG" scalefit="1"/>
-                  </imageobject>
-                  <textobject>
-                    <phrase>Adding subsequent nodes to the group</phrase>
-                  </textobject>
-                </mediaobject>
-              </figure>
-            </para>
+            <figure>
+              <title>Adding subsequent nodes to the group</title>
+              <mediaobject>
+                <imageobject>
+                  <imagedata fileref="images/HA-Create-2.png" format="PNG" scalefit="1"/>
+                </imageobject>
+                <textobject>
+                  <phrase>Adding subsequent nodes to the group</phrase>
+                </textobject>
+              </mediaobject>
+            </figure>
           </para>
         </listitem>
 
@@ -351,6 +347,8 @@
           running behind for some reason (perhaps a full-GC). If a Master failure were to occur at
           that moment, the replicas would elect Replica-1 even though Replica-2 had the most recent
           transaction.</para>
+        <para>Transaction loss is reported by message <link
+            linkend="Java-Broker-Appendix-Operation-Logging-Message-HA-1014">HA-1014</link>.</para>
       </important>
     </section>
     <section id="Java-Broker-High-Availability-Behaviour-MinimumNumberOfNodes">
@@ -378,6 +376,8 @@
             >split-brain</ulink> in the event of a network partition. If used to temporarily restore
           service from fewer than quorum nodes, it is <emphasis>imperative</emphasis> to revert it
           to the Default value as the failed nodes are restored.</para>
+        <para>Transaction loss is reported by message <link
+          linkend="Java-Broker-Appendix-Operation-Logging-Message-HA-1014">HA-1014</link>.</para>
       </important>
     </section>
     <section id="Java-Broker-High-Availability-Behaviour-DesignatedPrimary">
@@ -397,7 +397,9 @@
         <para>It is imperative not to allow designated primary to be set on both nodes at once. To
           do so will mean, in the event of a network partition, a <ulink
             url="http://en.wikipedia.org/wiki/Split-brain_(computing)">split-brain</ulink> will
-          occur.</para>
+            occur.</para>
+        <para>Transaction loss is reported by message <link
+          linkend="Java-Broker-Appendix-Operation-Logging-Message-HA-1014">HA-1014</link>.</para>
       </important>
     </section>
   </section>

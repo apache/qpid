@@ -53,27 +53,12 @@ import com.sleepycat.je.Durability.ReplicaAckPolicy;
 import com.sleepycat.je.Durability.SyncPolicy;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentFailureException;
+import com.sleepycat.je.ExceptionEvent;
 import com.sleepycat.je.Sequence;
 import com.sleepycat.je.SequenceConfig;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.TransactionConfig;
-import com.sleepycat.je.rep.AppStateMonitor;
-import com.sleepycat.je.rep.InsufficientAcksException;
-import com.sleepycat.je.rep.InsufficientLogException;
-import com.sleepycat.je.rep.InsufficientReplicasException;
-import com.sleepycat.je.rep.NetworkRestore;
-import com.sleepycat.je.rep.NetworkRestoreConfig;
-import com.sleepycat.je.rep.NodeState;
-import com.sleepycat.je.rep.NodeType;
-import com.sleepycat.je.rep.RepInternal;
-import com.sleepycat.je.rep.ReplicatedEnvironment;
-import com.sleepycat.je.rep.ReplicationConfig;
-import com.sleepycat.je.rep.ReplicationGroup;
-import com.sleepycat.je.rep.ReplicationMutableConfig;
-import com.sleepycat.je.rep.ReplicationNode;
-import com.sleepycat.je.rep.RestartRequiredException;
-import com.sleepycat.je.rep.StateChangeEvent;
-import com.sleepycat.je.rep.StateChangeListener;
+import com.sleepycat.je.rep.*;
 import com.sleepycat.je.rep.util.DbPing;
 import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 import com.sleepycat.je.rep.utilint.HostPortPair;
@@ -90,7 +75,6 @@ import org.apache.qpid.server.store.StoreFuture;
 import org.apache.qpid.server.store.berkeleydb.CoalescingCommiter;
 import org.apache.qpid.server.store.berkeleydb.EnvHomeRegistry;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
-import org.apache.qpid.server.store.berkeleydb.LoggingAsyncExceptionListener;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.DaemonThreadFactory;
 
@@ -200,6 +184,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private volatile long _joinTime;
     private volatile ReplicatedEnvironment.State _lastKnownEnvironmentState;
     private volatile long _envSetupTimeoutMillis;
+    /** Flag set true when JE need to discard transactions in order to rejoin the group */
+    private volatile boolean _nodeRolledback;
 
     public ReplicatedEnvironmentFacade(ReplicatedEnvironmentConfiguration configuration)
     {
@@ -410,7 +396,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     private void tryToRestartEnvironment(final DatabaseException dbe)
     {
-        if (_state.compareAndSet(State.OPEN, State.RESTARTING))
+        if (_state.compareAndSet(State.OPEN, State.RESTARTING) || _state.compareAndSet(State.OPENING, State.RESTARTING))
         {
             if (dbe != null && LOGGER.isDebugEnabled())
             {
@@ -1100,7 +1086,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         EnvironmentConfig envConfig = new EnvironmentConfig();
         envConfig.setAllowCreate(true);
         envConfig.setTransactional(true);
-        envConfig.setExceptionListener(new LoggingAsyncExceptionListener());
+        envConfig.setExceptionListener(new ExceptionListener());
         envConfig.setDurability(_defaultDurability);
 
         for (Map.Entry<String, String> configItem : environmentParameters.entrySet())
@@ -1229,6 +1215,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         if (_replicationGroupListener.compareAndSet(null, replicationGroupListener))
         {
             notifyExistingRemoteReplicationNodes(replicationGroupListener);
+            notifyNodeRolledbackIfNecessary(replicationGroupListener);
         }
         else
         {
@@ -1459,6 +1446,15 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
+    private void notifyNodeRolledbackIfNecessary(ReplicationGroupListener listener)
+    {
+        if (_nodeRolledback)
+        {
+            listener.onNodeRolledback();
+            _nodeRolledback = false;
+        }
+    }
+
     private class RemoteNodeStateLearner implements Callable<Void>
     {
         private Map<String, ReplicatedEnvironment.State> _previousGroupState = Collections.emptyMap();
@@ -1491,7 +1487,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
                         executeDatabasePingerOnNodeChangesIfMaster(nodeStates, currentDesignatedPrimary, currentElectableGroupSizeOverride);
 
-                       notifyGroupListenerAboutNodeStates(nodeStates);
+                        notifyGroupListenerAboutNodeStates(nodeStates);
                     }
                 }
             }
@@ -1774,6 +1770,30 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                     ", _host='" + _host + '\'' +
                     ", _port=" + _port +
                     '}';
+        }
+    }
+
+    private class ExceptionListener implements com.sleepycat.je.ExceptionListener
+    {
+        @Override
+        public void exceptionThrown(final ExceptionEvent event)
+        {
+            if (event.getException() instanceof RollbackException)
+            {
+                // Usually caused use of weak durability options: node priority zero,
+                // designated primary, electable group override.
+                RollbackException re = (RollbackException) event.getException();
+
+                LOGGER.warn(_prettyGroupNodeName + " has transaction(s) ahead of the current master. These"
+                            + " must be discarded to allow this node to rejoin the group."
+                           + " This condition is normally caused by the use of weak durability options.");
+                _nodeRolledback = true;
+                tryToRestartEnvironment(re);
+            }
+            else
+            {
+                LOGGER.error("Asynchronous exception thrown by BDB thread '" + event.getThreadName() + "'", event.getException());
+            }
         }
     }
 }
