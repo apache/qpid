@@ -22,6 +22,7 @@ package org.apache.qpid.server.virtualhost.berkeleydb;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
@@ -95,6 +96,14 @@ public class BDBHAReplicaVirtualHost extends AbstractConfiguredObject<BDBHARepli
         _messagesReceived = new StatisticsCounter("messages-received-" + getName());
         _dataReceived = new StatisticsCounter("bytes-received-" + getName());
         setState(State.UNAVAILABLE);
+    }
+
+    @Override
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
+    {
+        super.validateChange(proxyForValidation, changedAttributes);
+
+        throwUnsupportedForReplica();
     }
 
     @Override
