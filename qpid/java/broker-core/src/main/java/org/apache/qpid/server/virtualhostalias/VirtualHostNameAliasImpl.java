@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNameAlias;
 import org.apache.qpid.server.model.VirtualHostNode;
 
@@ -44,7 +45,8 @@ public final class VirtualHostNameAliasImpl
         Broker<?> broker = getPort().getParent(Broker.class);
         for(VirtualHostNode<?> vhn : broker.getVirtualHostNodes())
         {
-            if(vhn.getName().equals(name))
+            VirtualHost<?, ?, ?> vh = vhn.getVirtualHost();
+            if(vh != null && vh.getName().equals(name))
             {
                 return vhn;
             }

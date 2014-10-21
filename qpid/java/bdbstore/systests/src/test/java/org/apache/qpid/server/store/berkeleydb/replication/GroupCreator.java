@@ -52,11 +52,9 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.server.management.plugin.HttpManagement;
-import org.apache.qpid.server.model.PatternMatchingAlias;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.virtualhost.berkeleydb.BDBHAVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.AbstractVirtualHostNode;
@@ -159,17 +157,6 @@ public class GroupCreator
             brokerConfiguration.addHttpManagementConfiguration();
             brokerConfiguration.setObjectAttribute(Plugin.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, true);
             brokerConfiguration.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PORT, _testcase.getHttpManagementPort(brokerPort));
-
-            final Map<String, Object> aliasAttributes  = new HashMap<>();
-            aliasAttributes.put(VirtualHostAlias.NAME, "testAlias");
-            aliasAttributes.put(VirtualHostAlias.TYPE, PatternMatchingAlias.TYPE_NAME);
-            aliasAttributes.put(PatternMatchingAlias.PATTERN, "test");
-            aliasAttributes.put(PatternMatchingAlias.VIRTUAL_HOST_NODE, nodeName);
-            brokerConfiguration.addObjectConfiguration(Port.class,
-                                                       TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT,
-                                                       VirtualHostAlias.class,
-                                                       aliasAttributes);
-
 
             brokerConfiguration.setObjectAttributes(VirtualHostNode.class, _virtualHostName, virtualHostNodeAttributes);
 
