@@ -24,12 +24,12 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.store.StoreFuture;
-
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.Transaction;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.store.StoreFuture;
 
 public class CoalescingCommiter implements Committer
 {
@@ -309,17 +309,30 @@ public class CoalescingCommiter implements Committer
             synchronized (_lock)
             {
                 _stopped.set(true);
-                BDBCommitFuture commit = null;
-                int abortedCommits = 0;
-                while ((commit = _jobQueue.poll()) != null)
+                Environment environment = _environmentFacade.getEnvironment();
+                BDBCommitFuture commit;
+                if (environment != null && environment.isValid())
                 {
-                    abortedCommits++;
-                    commit.abort(e);
+                    environment.flushLog(true);
+                    while ((commit = _jobQueue.poll()) != null)
+                    {
+                        commit.complete();
+                    }
                 }
-                if (LOGGER.isDebugEnabled() && abortedCommits > 0)
+                else
                 {
-                    LOGGER.debug(abortedCommits + " commit(s) were aborted during close.");
+                    int abortedCommits = 0;
+                    while ((commit = _jobQueue.poll()) != null)
+                    {
+                        abortedCommits++;
+                        commit.abort(e);
+                    }
+                    if (LOGGER.isDebugEnabled() && abortedCommits > 0)
+                    {
+                        LOGGER.debug(abortedCommits + " commit(s) were aborted during close.");
+                    }
                 }
+
                 _lock.notifyAll();
             }
         }
