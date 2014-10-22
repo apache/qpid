@@ -112,7 +112,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     private String _clientProduct = null;
     private String _remoteProcessPid = null;
 
-    private VirtualHostImpl<?,?,?> _virtualHost;
+    private volatile VirtualHostImpl<?,?,?> _virtualHost;
 
     private final Map<Integer, AMQChannel> _channelMap =
             new HashMap<>();
