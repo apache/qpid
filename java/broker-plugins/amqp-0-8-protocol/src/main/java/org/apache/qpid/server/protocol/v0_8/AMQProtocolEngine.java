@@ -853,20 +853,23 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
 
     private void closeConnection(int channelId, AMQFrame frame)
     {
-        try
-        {
-            markChannelAwaitingCloseOk(channelId);
-            closeSession();
-        }
-        finally
+        if(!_closing.get())
         {
             try
             {
-                writeFrame(frame);
+                markChannelAwaitingCloseOk(channelId);
+                closeSession();
             }
             finally
             {
-                closeProtocolSession();
+                try
+                {
+                    writeFrame(frame);
+                }
+                finally
+                {
+                    closeProtocolSession();
+                }
             }
         }
 
