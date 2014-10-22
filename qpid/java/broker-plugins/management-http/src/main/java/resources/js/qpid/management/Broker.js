@@ -53,6 +53,10 @@ define(["dojo/_base/xhr",
        function (xhr, parser, query, json, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, entities,
         addAuthenticationProvider, addVirtualHostNodeAndVirtualHost, addPort, addKeystore, addGroupProvider, addAccessControlProvider, editBroker) {
 
+           var brokerAttributeNames = ["name", "operatingSystem", "platform", "productVersion", "modelVersion",
+                                        "defaultVirtualHost", "statisticsReportingPeriod", "statisticsReportingResetEnabled",
+                                        "connection.sessionCountLimit", "connection.heartBeatDelay"];
+
            function Broker(name, parent, controller) {
                this.name = name;
                this.controller = controller;
@@ -63,6 +67,7 @@ define(["dojo/_base/xhr",
                     this.modelObj.parent[ parent.type] = parent;
                }
            }
+
 
            Broker.prototype.getTitle = function()
            {
@@ -78,7 +83,7 @@ define(["dojo/_base/xhr",
                             contentPane.containerNode.innerHTML = data;
                             parser.parse(contentPane.containerNode);
 
-                            that.brokerUpdater = new BrokerUpdater(contentPane.containerNode, that.modelObj, that.controller, that.attributeWidgetFactories);
+                            that.brokerUpdater = new BrokerUpdater(contentPane.containerNode, that.modelObj, that.controller);
 
                             updater.add( that.brokerUpdater );
 
@@ -226,11 +231,10 @@ define(["dojo/_base/xhr",
                updater.remove( this.brokerUpdater );
            };
 
-           function BrokerUpdater(node, brokerObj, controller, attributes)
+           function BrokerUpdater(node, brokerObj, controller)
            {
                this.controller = controller;
                this.query = "api/latest/broker?depth=2";
-               this.attributes = attributes;
                this.accessControlProvidersWarn = query(".broker-access-control-providers-warning", node)[0]
                var that = this;
 
@@ -553,12 +557,12 @@ define(["dojo/_base/xhr",
 
            BrokerUpdater.prototype.updateHeader = function()
            {
-               this.showReadOnlyAttributes();
                var brokerData = this.brokerData;
                window.document.title = "Qpid: " + brokerData.name + " Management";
-               for(var i in this.attributes)
+
+               for(var i in brokerAttributeNames)
                {
-                 var propertyName = this.attributes[i].name;
+                 var propertyName = brokerAttributeNames[i];
                  var element = dojo.byId("brokerAttribute." + propertyName);
                  if (element)
                  {
@@ -622,52 +626,42 @@ define(["dojo/_base/xhr",
                var that = this;
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
-                                                                                   {
-                                                                                       that.brokerData = data[0];
-                                                                                       util.flattenStatistics( that.brokerData );
+                   {
+                       that.brokerData = data[0];
+                       util.flattenStatistics( that.brokerData );
 
-                                                                                       that.updateHeader();
+                       that.updateHeader();
 
-                                                                                       if (that.vhostsGrid.update(that.brokerData.virtualhostnodes))
-                                                                                       {
-                                                                                           that.vhostsGrid.grid._refresh();
-                                                                                           that.toggleVirtualHostNodeNodeMenus();
-                                                                                       }
+                       if (that.vhostsGrid.update(that.brokerData.virtualhostnodes))
+                       {
+                           that.vhostsGrid.grid._refresh();
+                           that.toggleVirtualHostNodeNodeMenus();
+                       }
 
-                                                                                       that.portsGrid.update(that.brokerData.ports);
+                       that.portsGrid.update(that.brokerData.ports);
 
-                                                                                       that.authenticationProvidersGrid.update(that.brokerData.authenticationproviders);
+                       that.authenticationProvidersGrid.update(that.brokerData.authenticationproviders);
 
-                                                                                       if (that.keyStoresGrid)
-                                                                                       {
-                                                                                         that.keyStoresGrid.update(that.brokerData.keystores);
-                                                                                       }
-                                                                                       if (that.trustStoresGrid)
-                                                                                       {
-                                                                                         that.trustStoresGrid.update(that.brokerData.truststores);
-                                                                                       }
-                                                                                       if (that.groupProvidersGrid)
-                                                                                       {
-                                                                                         that.groupProvidersGrid.update(that.brokerData.groupproviders);
-                                                                                       }
-                                                                                       if (that.accessControlProvidersGrid)
-                                                                                       {
-                                                                                         var data = that.brokerData.accesscontrolproviders ? that.brokerData.accesscontrolproviders :[];
-                                                                                         that.accessControlProvidersGrid.update(data);
-                                                                                         that.displayACLWarnMessage(data);
-                                                                                       }
-                                                                                   });
+                       if (that.keyStoresGrid)
+                       {
+                         that.keyStoresGrid.update(that.brokerData.keystores);
+                       }
+                       if (that.trustStoresGrid)
+                       {
+                         that.trustStoresGrid.update(that.brokerData.truststores);
+                       }
+                       if (that.groupProvidersGrid)
+                       {
+                         that.groupProvidersGrid.update(that.brokerData.groupproviders);
+                       }
+                       if (that.accessControlProvidersGrid)
+                       {
+                         var data = that.brokerData.accesscontrolproviders ? that.brokerData.accesscontrolproviders :[];
+                         that.accessControlProvidersGrid.update(data);
+                         that.displayACLWarnMessage(data);
+                       }
+                   });
            };
-
-           BrokerUpdater.prototype.showReadOnlyAttributes = function()
-           {
-               var brokerData = this.brokerData;
-               dojo.byId("brokerAttribute.name").innerHTML = entities.encode(String(brokerData.name));
-               dojo.byId("brokerAttribute.operatingSystem").innerHTML = entities.encode(String(brokerData.operatingSystem));
-               dojo.byId("brokerAttribute.platform").innerHTML = entities.encode(String(brokerData.platform));
-               dojo.byId("brokerAttribute.productVersion").innerHTML = entities.encode(String(brokerData.productVersion));
-               dojo.byId("brokerAttribute.modelVersion").innerHTML = entities.encode(String(brokerData.modelVersion));
-           }
 
            BrokerUpdater.prototype.toggleVirtualHostNodeNodeMenus = function(rowIndex)
            {
