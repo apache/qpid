@@ -63,12 +63,12 @@ public interface HttpManagementConfiguration<X extends HttpManagementConfigurati
 
     String JETTY_THREAD_POOL_MAX_THREADS = "jetty.threadPool.maxThreads";
     @ManagedContextDefault( name = JETTY_THREAD_POOL_MAX_THREADS)
-    static final long DEFAULT_JETTY_THREAD_POOL_MAX_THREADS = 10;
+    static final long DEFAULT_JETTY_THREAD_POOL_MAX_THREADS = 50;
 
 
     String JETTY_THREAD_POOL_MIN_THREADS = "jetty.threadPool.minThreads";
     @ManagedContextDefault( name = JETTY_THREAD_POOL_MIN_THREADS)
-    static final long DEFAULT_JETTY_THREAD_POOL_MIN_THREADS = 1;
+    static final long DEFAULT_JETTY_THREAD_POOL_MIN_THREADS = 5;
 
 
 
