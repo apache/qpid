@@ -223,7 +223,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         boolean success = false;
         try
         {
-            _environment = createEnvironment(true);
+            createEnvironment(true);
             success = true;
         }
         finally
@@ -942,7 +942,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
         closeEnvironmentOnRestart();
 
-        _environment = createEnvironment(false);
+        createEnvironment(false);
 
         registerAppStateMonitorIfPermittedNodesSpecified();
 
@@ -1035,7 +1035,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    private ReplicatedEnvironment createEnvironment(boolean createEnvironmentInSeparateThread)
+    private void createEnvironment(boolean createEnvironmentInSeparateThread)
     {
         String groupName = _configuration.getGroupName();
         String helperHostPort = _configuration.getHelperHostPort();
@@ -1100,22 +1100,23 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
         if (createEnvironmentInSeparateThread)
         {
-            return createEnvironmentInSeparateThread(_environmentDirectory, envConfig, replicationConfig);
+            createEnvironmentInSeparateThread(_environmentDirectory, envConfig, replicationConfig);
         }
         else
         {
-            return createEnvironment(_environmentDirectory, envConfig, replicationConfig);
+            createEnvironment(_environmentDirectory, envConfig, replicationConfig);
         }
     }
 
-    private ReplicatedEnvironment createEnvironmentInSeparateThread(final File environmentPathFile, final EnvironmentConfig envConfig,
+    private void createEnvironmentInSeparateThread(final File environmentPathFile, final EnvironmentConfig envConfig,
             final ReplicationConfig replicationConfig)
     {
-        Future<ReplicatedEnvironment> environmentFuture = _environmentJobExecutor.submit(new Callable<ReplicatedEnvironment>(){
+        Future<Void> environmentFuture = _environmentJobExecutor.submit(new Callable<Void>(){
             @Override
-            public ReplicatedEnvironment call() throws Exception
+            public Void call() throws Exception
             {
-                return createEnvironment(environmentPathFile, envConfig, replicationConfig);
+                createEnvironment(environmentPathFile, envConfig, replicationConfig);
+                return null;
             }});
 
         final long setUpTimeOutMillis = extractEnvSetupTimeoutMillis(replicationConfig);
@@ -1125,7 +1126,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             try
             {
-                return environmentFuture.get(initialTimeOutMillis, TimeUnit.MILLISECONDS);
+                environmentFuture.get(initialTimeOutMillis, TimeUnit.MILLISECONDS);
             }
             catch (TimeoutException te)
             {
@@ -1134,7 +1135,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                     LOGGER.warn("Slow replicated environment creation for " + _prettyGroupNodeName
                                 + ". Will continue to wait for further " + remainingTimeOutMillis
                                 + "ms. for environment creation to complete.");
-                    return environmentFuture.get(remainingTimeOutMillis, TimeUnit.MILLISECONDS);
+                    environmentFuture.get(remainingTimeOutMillis, TimeUnit.MILLISECONDS);
                 }
                 else
                 {
@@ -1158,16 +1159,14 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
-    private ReplicatedEnvironment createEnvironment(File environmentPathFile, EnvironmentConfig envConfig,
+    private void createEnvironment(File environmentPathFile, EnvironmentConfig envConfig,
             final ReplicationConfig replicationConfig)
     {
-        ReplicatedEnvironment environment = null;
-
         String originalThreadName = Thread.currentThread().getName();
         try
         {
             _envSetupTimeoutMillis = extractEnvSetupTimeoutMillis(replicationConfig);
-            environment = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
+            _environment = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
         }
         catch (final InsufficientLogException ile)
         {
@@ -1177,7 +1176,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
             config.setRetainLogFiles(false);
             restore.execute(ile, config);
             LOGGER.warn("Network restore complete.");
-            environment = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
+            _environment = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
         }
         finally
         {
@@ -1188,7 +1187,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             LOGGER.info("Environment is created for node " + _prettyGroupNodeName);
         }
-        return environment;
     }
 
     private long extractEnvSetupTimeoutMillis(ReplicationConfig replicationConfig)
