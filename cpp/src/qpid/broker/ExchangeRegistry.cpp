@@ -168,10 +168,10 @@ void ExchangeRegistry::checkType(const std::string& type)
 
 namespace
 {
-const std::string empty;
+const std::string EMPTY;
 }
 
 Exchange::shared_ptr ExchangeRegistry::getDefault()
 {
-    return get(empty);
+    return get(EMPTY);
 }
