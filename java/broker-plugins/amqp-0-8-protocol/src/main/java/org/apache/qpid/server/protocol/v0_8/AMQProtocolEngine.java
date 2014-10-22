@@ -80,6 +80,7 @@ import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 import org.apache.qpid.server.stats.StatisticsCounter;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -343,6 +344,17 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                 {
                     _logger.error("I/O Exception", e);
                     closeProtocolSession();
+                }
+                catch (StoreException e)
+                {
+                    if(_virtualHost.getState() == State.ACTIVE)
+                    {
+                        throw e;
+                    }
+                    else
+                    {
+                        _logger.error("Store Exception ignored as virtual host no longer active", e);
+                    }
                 }
                 finally
                 {
