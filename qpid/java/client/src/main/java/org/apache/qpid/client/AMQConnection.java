@@ -64,6 +64,7 @@ import org.apache.qpid.AMQUnresolvedAddressException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -444,6 +445,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 retryAllowed = _failoverPolicy.failoverAllowed();
                 brokerDetails = _failoverPolicy.getNextBrokerDetails();
+                _protocolHandler.setStateManager(new AMQStateManager(_protocolHandler.getProtocolSession()));
+
             }
         }
         verifyClientID();
