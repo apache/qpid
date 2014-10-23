@@ -125,7 +125,7 @@ public class VirtualHostManagerMBeanTest extends TestCase
         when(_mockVirtualHost.getChildByName(eq(Queue.class), eq(QUEUE_1_NAME))).thenReturn(mockQueue);
 
         _virtualHostManagerMBean.deleteQueue(QUEUE_1_NAME);
-        verify(mockQueue).deleteAndReturnCount();
+        verify(mockQueue).delete();
     }
 
     public void testDeleteQueueWhenQueueDoesNotExist() throws Exception
