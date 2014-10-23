@@ -202,3 +202,10 @@ org.apache.qpid.transport.MaxFrameSizeTest#*
 
 // QPID-6000 : Tests Java specific message compression functionality, and uses the REST API to test it
 org.apache.qpid.systest.MessageCompressionTest#*
+
+
+org.apache.qpid.test.unit.client.AMQSessionTest#testQueueDepthForQueueThatDoesNotExistLegacyBehaviour_08_091
+
+org.apache.qpid.client.prefetch.PrefetchBehaviourTest#testPrefetchWindowExpandsOnReceiveTransaction
+
+org.apache.qpid.client.SyncPublishTest#*
