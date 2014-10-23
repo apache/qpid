@@ -43,6 +43,7 @@ import javax.security.auth.Subject;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.pool.SuppressingInheritedAccessControlContextThreadFactory;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.connection.ConnectionRegistry;
@@ -1386,7 +1387,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @StateTransition( currentState = { State.UNINITIALIZED,State.ERRORED }, desiredState = State.ACTIVE )
     private void onActivate()
     {
-        _houseKeepingTasks = new ScheduledThreadPoolExecutor(getHousekeepingThreadCount());
+        _houseKeepingTasks = new ScheduledThreadPoolExecutor(getHousekeepingThreadCount(), new SuppressingInheritedAccessControlContextThreadFactory());
 
         MessageStore messageStore = getMessageStore();
         messageStore.openMessageStore(this);
