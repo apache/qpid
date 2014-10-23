@@ -29,8 +29,7 @@ from cmd         import Cmd
 from shlex       import split
 from threading   import Lock
 from time        import strftime, gmtime
-from qpid.disp   import Display
-from qpid.peer   import Closed
+from qpidtoollibs import Display
 from qmf.console import Session, Console, SchemaClass, ObjectId
 
 class Mcli(Cmd):
@@ -594,6 +593,12 @@ class QmfData(Console):
   #=====================
   # Methods from Console
   #=====================
+  def brokerConnectionFailed(self, broker):
+    """ Invoked when a connection to a broker fails """
+    if self.first_connect:
+      self.first_connect = None
+      print "Failed to connect: ", broker.error
+
   def brokerConnected(self, broker):
     """ Invoked when a connection is established to a broker """
     try:
