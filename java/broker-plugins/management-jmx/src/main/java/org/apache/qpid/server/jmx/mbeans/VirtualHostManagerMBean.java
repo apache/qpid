@@ -291,7 +291,7 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
         {
             throw new OperationsException("No such queue \""+ queueName +"\"");
         }
-        queue.deleteAndReturnCount();
+        queue.delete();
     }
 
     @Override
