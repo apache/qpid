@@ -464,7 +464,7 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
 
     if (node.queue) {
         authorise.outgoing(node.queue);
-        SubscriptionType type = pn_terminus_get_distribution_mode(source) == PN_DIST_MODE_COPY ? BROWSER : CONSUMER;
+        SubscriptionType type = (pn_terminus_get_distribution_mode(source) == PN_DIST_MODE_COPY) || (node.queue->isBrowseOnly()) ? BROWSER : CONSUMER;
         if (type == CONSUMER && node.queue->hasExclusiveOwner() && !node.queue->isExclusiveOwner(this)) {
             throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, std::string("Cannot consume from exclusive queue ") + node.queue->getName());
         }
@@ -472,6 +472,7 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         q->init();
         filter.apply(q);
         outgoing[link] = q;
+        pn_terminus_set_distribution_mode(pn_link_source(link), type == BROWSER ? PN_DIST_MODE_COPY : PN_DIST_MODE_MOVE);
     } else if (node.exchange) {
         authorise.access(node.exchange);//do separate access check before trying to create the queue
         bool shared = is_capability_requested(SHARED, pn_terminus_capabilities(source));
