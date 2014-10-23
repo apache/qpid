@@ -21,7 +21,6 @@
 package org.apache.qpid.pool;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -82,10 +81,8 @@ public class ReferenceCountingExecutorService
     /** Holds the number of executor threads to create. */
     private int _poolSize = Integer.getInteger("amqj.read_write_pool_size", DEFAULT_POOL_SIZE);
 
-    /** Thread Factory used to create thread of the pool.   Uses the default implementation provided by
-     *  {@link java.util.concurrent.Executors#defaultThreadFactory()} unless reset by the caller.
-     */
-    private ThreadFactory _threadFactory = Executors.defaultThreadFactory();
+    /** Thread Factory used to create thread of the pool. */
+    private ThreadFactory _threadFactory = new SuppressingInheritedAccessControlContextThreadFactory();
 
     /**
      * Retrieves the singleton instance of this reference counter.
