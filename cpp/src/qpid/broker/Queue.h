@@ -387,6 +387,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     inline const QueueSettings& getSettings() const { return settings; }
     inline const qpid::framing::FieldTable& getEncodableSettings() const { return encodableSettings; }
     inline bool isAutoDelete() const { return settings.autodelete; }
+    inline bool isBrowseOnly() const { return settings.isBrowseOnly; }
     QPID_BROKER_EXTERN bool canAutoDelete() const;
     QPID_BROKER_EXTERN void scheduleAutoDelete();
     QPID_BROKER_EXTERN bool isDeleted() const;
