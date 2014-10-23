@@ -89,6 +89,7 @@ public class RestTestHelper
     private File _passwdFile;
     private boolean _useSslAuth;
     static final String[] EXPECTED_QUEUES = { "queue", "ping" };
+    private final int _connectTimeout = Integer.getInteger("qpid.resttest_connection_timeout", 30000);
 
     public RestTestHelper(int httpPort)
     {
@@ -128,6 +129,7 @@ public class RestTestHelper
         }
         URL url = getManagementURL(path);
         HttpURLConnection httpCon = (HttpURLConnection) url.openConnection();
+        httpCon.setConnectTimeout(_connectTimeout);
 
         if(_useSslAuth)
         {
