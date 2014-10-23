@@ -403,7 +403,7 @@ public class AMQChannel
             {
                 _confirmedMessageCounter++;
             }
-
+            Runnable finallyAction = null;
             try
             {
 
@@ -471,7 +471,7 @@ public class AMQChannel
                                                                             );
                         if(enqueues == 0)
                         {
-                            handleUnroutableMessage(amqMessage);
+                            finallyAction = handleUnroutableMessage(amqMessage);
                         }
                         else
                         {
@@ -488,6 +488,10 @@ public class AMQChannel
                 finally
                 {
                     reference.release();
+                    if(finallyAction != null)
+                    {
+                        finallyAction.run();
+                    }
                 }
 
             }
@@ -510,12 +514,12 @@ public class AMQChannel
      * @throws AMQConnectionException if the message is mandatory close-on-no-route
      * @see AMQProtocolEngine#isCloseWhenNoRoute()
      */
-    private void handleUnroutableMessage(AMQMessage message)
+    private Runnable handleUnroutableMessage(AMQMessage message)
     {
         boolean mandatory = message.isMandatory();
         String description = currentMessageDescription();
         boolean closeOnNoRoute = _connection.isCloseWhenNoRoute();
-
+        Runnable returnVal = null;
         if(_logger.isDebugEnabled())
         {
             _logger.debug(String.format(
@@ -525,8 +529,16 @@ public class AMQChannel
 
         if (mandatory && isTransactional() && !_confirmOnPublish && _connection.isCloseWhenNoRoute())
         {
-            _connection.closeConnection(AMQConstant.NO_ROUTE,
-                    "No route for message " + currentMessageDescription(), _channelId);
+            returnVal = new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                _connection.closeConnection(AMQConstant.NO_ROUTE,
+                                        "No route for message " + currentMessageDescription(), _channelId);
+
+                            }
+                        };
         }
         else
         {
@@ -551,6 +563,7 @@ public class AMQChannel
                                                     routingKey == null ? null : routingKey.asString()));
             }
         }
+        return returnVal;
     }
 
     private String currentMessageDescription()
