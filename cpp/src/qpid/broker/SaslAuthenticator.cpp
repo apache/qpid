@@ -192,13 +192,10 @@ void NullAuthenticator::getMechanisms(Array& mechanisms)
 void NullAuthenticator::start(const string& mechanism, const string* response)
 {
     if (encrypt) {
-#if HAVE_SASL
         // encryption required - check to see if we are running over an
         // encrypted SSL connection.
         SecuritySettings external = connection.getExternalSecuritySettings();
-        sasl_ssf_t external_ssf = (sasl_ssf_t) external.ssf;
-        if (external_ssf < 1)    // < 1 == unencrypted
-#endif
+        if (external.ssf < 1)    // < 1 == unencrypted
         {
             QPID_LOG(error, "Rejected un-encrypted connection.");
             throw ConnectionForcedException("Connection must be encrypted.");
