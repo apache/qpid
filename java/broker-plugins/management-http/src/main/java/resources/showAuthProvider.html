@@ -18,31 +18,33 @@
  - under the License.
  -
  -->
-<div class="authorizationProvider" data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Authentication Provider Attributes', open: true">
-    <div class="clear">
-        <div class="formLabel-labelCell">Name:</div>
-        <div class="name"></div>
-    </div>
-    <div class="clear">
-        <div class="formLabel-labelCell">Type:</div>
-        <div class="type"></div>
-    </div>
-    <div class="clear">
-        <div class="formLabel-labelCell">State:</div>
-        <div class="state"></div>
-    </div>
+<div>
+    <div class="authorizationProvider" data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Authentication Provider Attributes', open: true">
+        <div class="clear">
+            <div class="formLabel-labelCell">Name:</div>
+            <div class="name"></div>
+        </div>
+        <div class="clear">
+            <div class="formLabel-labelCell">Type:</div>
+            <div class="type"></div>
+        </div>
+        <div class="clear">
+            <div class="formLabel-labelCell">State:</div>
+            <div class="state"></div>
+        </div>
 
-    <div class="clear"></div>
-    <div class="clear dijitDialogPaneActionBar">
-        <button data-dojo-type="dijit.form.Button" class="editAuthenticationProviderButton" type="button">Edit</button>
-        <button data-dojo-type="dijit.form.Button" class="deleteAuthenticationProviderButton" type="button">Delete</button>
+        <div class="clear"></div>
+        <div class="clear dijitDialogPaneActionBar">
+            <button data-dojo-type="dijit.form.Button" class="editAuthenticationProviderButton" type="button">Edit</button>
+            <button data-dojo-type="dijit.form.Button" class="deleteAuthenticationProviderButton" type="button">Delete</button>
+        </div>
+        <br/>
+        <br/>
+        <div class="clear"></div>
+        <div class="clear preferencesPanel" data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Preferences Provider',  open: true">
+          <div class="preferencesProviderDetails"></div>
+          <button data-dojo-type="dijit.form.Button" class="addPreferencesProviderButton">Add</button>
+        </div>
+        <br/>
     </div>
-    <br/>
-    <br/>
-    <div class="clear"></div>
-    <div class="clear preferencesPanel" data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Preferences Provider',  open: true">
-      <div class="preferencesProviderDetails"></div>
-      <button data-dojo-type="dijit.form.Button" class="addPreferencesProviderButton">Add</button>
-    </div>
-    <br/>
 </div>
