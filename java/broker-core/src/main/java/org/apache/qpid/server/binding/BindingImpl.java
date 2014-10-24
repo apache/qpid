@@ -228,6 +228,8 @@ public class BindingImpl
             }
             getEventLogger().message(_logSubject, BindingMessages.DELETED());
         }
+
+        deleted();
         setState(State.DELETED);
     }
 
