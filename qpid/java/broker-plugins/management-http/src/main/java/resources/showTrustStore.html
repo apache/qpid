@@ -19,26 +19,30 @@
  -
  -->
 <div class="truststore">
-    <div class="trustStoreContainer">
+    <div class="trustStoreContainer" data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'TrustStore Attributes', open: true">
 
        <div class="formLabel-labelCell">Name:</div>
-       <div class="nameValue"></div><br/>
+       <div class="nameValue"></div>
 
        <div class="formLabel-labelCell">Type:</div>
-       <div class="trustStoreTypeValue"></div><br/>
+       <div class="trustStoreTypeValue"></div>
+
+       <div class="formLabel-labelCell">State:</div>
+       <div class="trustStoreStateValue"></div>
 
        <div class="formLabel-labelCell">Trust Manager Factory Algorithm:</div>
-       <div class="trustManagerFactoryAlgorithmValue"></div><br/>
+       <div class="trustManagerFactoryAlgorithmValue"></div>
 
        <div class="formLabel-labelCell">Path:</div>
-       <div class="pathValue"></div><br/>
+       <div class="pathValue"></div>
 
        <div class="peersOnly">
           <div class="formLabel-labelCell">Peer store:</div>
           <div class="peersOnlyValue"></div>
        </div>
-
+       <div class="clear"></div>
     </div>
+
     <br/>
     <div class="dijitDialogPaneActionBar">
         <button data-dojo-type="dijit.form.Button" class="editTrustStoreButton" type="button">Edit</button>

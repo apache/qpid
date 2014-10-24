@@ -482,8 +482,9 @@ define(["dojo/_base/xhr",
                              that.keyStoresGrid =
                                new UpdatableStore(that.brokerData.keystores, query(".broker-key-stores")[0],
                                                [ { name: "Name",    field: "name",      width: "20%"},
-                                                 { name: "Type", field: "type", width: "20%"},
-                                                 { name: "Description", field: "description", width: "60%"}
+                                                 { name: "State",    field: "state",      width: "10%"},
+                                                 { name: "Type", field: "type", width: "10%"},
+                                                 { name: "Path", field: "path", width: "60%"}
                                                ], function(obj) {
                                                        connect.connect(obj.grid, "onRowDblClick", obj.grid,
                                                        function(evt){
@@ -497,9 +498,9 @@ define(["dojo/_base/xhr",
                              that.trustStoresGrid =
                                new UpdatableStore(that.brokerData.truststores, query(".broker-trust-stores")[0],
                                                [ { name: "Name",    field: "name",      width: "20%"},
-                                                 { name: "Path", field: "path", width: "40%"},
-                                                 { name: "Type", field: "trustStoreType", width: "5%"},
-                                                 { name: "Trust Manager Algorithm", field: "trustManagerFactoryAlgorithm", width: "25%"},
+                                                 { name: "State",    field: "state",      width: "10%"},
+                                                 { name: "Type", field: "type", width: "10%"},
+                                                 { name: "Path", field: "path", width: "50%"},
                                                  { name: "Peers only", field: "peersOnly", width: "10%",
                                                    formatter: function(val){
                                                      return "<input type='radio' disabled='disabled' "+(val ? "checked='checked'": "")+" />";

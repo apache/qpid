@@ -18,16 +18,27 @@
  - under the License.
  -
  -->
-<div class="accessControlProvider">
-    <span style="">Name:</span><span class="name" style="position:absolute; left:6em"></span>
-    <br/>
-    <span style="">Type:</span><span class="type" style="position:absolute; left:6em"></span>
-    <br/>
-    <span style="">State:</span><span class="state" style="position:absolute; left:6em"></span>
-    <br/>
-    <div class="providerDetails"></div>
-    <div class="dijitDialogPaneActionBar">
-        <input class="deleteAccessControlProviderButton" type="button" value="Delete Access Control provider" label="Delete Access Control Provider" dojoType="dijit.form.Button" />
+<div>
+    <div class="accessControlProvider" data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Access Control Provider Attributes', open: true">
+        <div class="clear">
+            <div class="formLabel-labelCell">Name:</div>
+            <div class="name"></div>
+        </div>
+        <div class="clear">
+            <div class="formLabel-labelCell">Type:</div>
+            <div class="type"></div>
+        </div>
+        <div class="clear">
+            <div class="formLabel-labelCell">State:</div>
+            <div class="state"></div>
+        </div>
+        <div class="clear"></div>
+
+        <div class="providerDetails"></div>
+
+
+        <div class="dijitDialogPaneActionBar">
+            <input class="deleteAccessControlProviderButton" type="button" value="Delete Access Control provider" label="Delete Access Control Provider" dojoType="dijit.form.Button" />
+        </div>
     </div>
 </div>
-<br/>

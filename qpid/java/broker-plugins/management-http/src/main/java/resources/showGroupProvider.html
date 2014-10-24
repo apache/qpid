@@ -18,16 +18,26 @@
  - under the License.
  -
  -->
-<div class="groupProvider">
-    <span style="">Name:</span><span class="name" style="position:absolute; left:6em"></span>
-    <br/>
-    <span style="">Type:</span><span class="type" style="position:absolute; left:6em"></span>
-    <br/>
-    <span style="">State:</span><span class="state" style="position:absolute; left:6em"></span>
-    <br/>
-    <div class="providerDetails"></div>
-    <div class="dijitDialogPaneActionBar">
-        <input class="deleteGroupProviderButton" type="button" value="Delete Group provider" label="Delete Group Provider" dojoType="dijit.form.Button" />
+<div>
+    <div class="groupProvider" data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Group Provider Attributes', open: true">
+        <div class="clear">
+            <div class="formLabel-labelCell">Name:</div>
+            <div class="name"></div>
+        </div>
+        <div class="clear">
+            <div class="formLabel-labelCell">Type:</div>
+            <div class="type"></div>
+        </div>
+        <div class="clear">
+            <div class="formLabel-labelCell">State:</div>
+            <div class="state"></div>
+        </div>
+        <div class="clear"></div>
+
+        <div class="providerDetails"></div>
+
+        <div class="dijitDialogPaneActionBar">
+            <input class="deleteGroupProviderButton" type="button" value="Delete Group provider" label="Delete Group Provider" dojoType="dijit.form.Button" />
+        </div>
     </div>
 </div>
-<br/>
