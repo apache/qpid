@@ -21,6 +21,7 @@
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -504,10 +505,11 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
             throw new IllegalConfigurationException(String.format("Store path '%s' is not a folder", getStorePath()));
         }
 
-        if (!Files.isWritable(storePath.toPath()))
+        if (!storePath.canWrite())
         {
             throw new IllegalConfigurationException(String.format("Store path '%s' is not writable", getStorePath()));
         }
+
     }
 
     private void validateAddress()
