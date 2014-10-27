@@ -24,6 +24,7 @@
 #include "qpid/amqp/CharSequence.h"
 #include "qpid/sys/IntegerTypes.h"
 #include <ostream>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace amqp {
@@ -41,11 +42,13 @@ struct Descriptor
         NUMERIC,
         SYMBOLIC
     } type;
+    boost::shared_ptr<Descriptor> nested;
 
     QPID_COMMON_EXTERN Descriptor(uint64_t code);
     QPID_COMMON_EXTERN Descriptor(const CharSequence& symbol);
     QPID_COMMON_EXTERN bool match(const std::string&, uint64_t) const;
     QPID_COMMON_EXTERN size_t getSize() const;
+    QPID_COMMON_EXTERN Descriptor* nest(const Descriptor& d);
 };
 
 QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& os, const Descriptor& d);

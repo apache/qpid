@@ -51,6 +51,13 @@ size_t Descriptor::getSize() const
     return size;
 }
 
+Descriptor* Descriptor::nest(const Descriptor& d)
+{
+    nested = boost::shared_ptr<Descriptor>(new Descriptor(0));
+    *nested = d;
+    return nested.get();
+}
+
 std::ostream& operator<<(std::ostream& os, const Descriptor& d)
 {
     switch (d.type) {
@@ -61,6 +68,9 @@ std::ostream& operator<<(std::ostream& os, const Descriptor& d)
       case Descriptor::NUMERIC:
         os << "0x" << std::hex << d.value.code;
         break;
+    }
+    if (d.nested.get()) {
+        os << " ->(" << *d.nested << ")";
     }
     return os;
 }

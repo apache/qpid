@@ -102,6 +102,18 @@ const uint64_t DELETE_ON_NO_MESSAGES_CODE(0x2D);
 const uint64_t DELETE_ON_NO_LINKS_OR_MESSAGES_CODE(0x2E);
 }
 
+namespace transaction {
+const std::string DECLARE_SYMBOL("amqp:declare:list");
+const std::string DISCHARGE_SYMBOL("amqp:discharge:list");
+const std::string DECLARED_SYMBOL("amqp:declared:list");
+const std::string TRANSACTIONAL_STATE_SYMBOL("amqp:transactional-state:list");
+
+const uint64_t DECLARE_CODE(0x31);
+const uint64_t DISCHARGE_CODE(0x32);
+const uint64_t DECLARED_CODE(0x33);
+const uint64_t TRANSACTIONAL_STATE_CODE(0x34);
+}
+
 namespace error_conditions {
 //note these are not actually descriptors
 const std::string INTERNAL_ERROR("amqp:internal-error");
@@ -113,6 +125,10 @@ const std::string NOT_IMPLEMENTED("amqp:not-implemented");
 const std::string RESOURCE_LIMIT_EXCEEDED("amqp:resource-limit-exceeded");
 const std::string RESOURCE_DELETED("amqp:resource-deleted");
 const std::string PRECONDITION_FAILED("amqp:precondition-failed");
+namespace transaction {
+const std::string UNKNOWN_ID("amqp:transaction:unknown-id");
+const std::string ROLLBACK("amqp:transaction:rolback");
+}
 }
 }} // namespace qpid::amqp
 
