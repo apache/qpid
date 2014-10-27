@@ -138,8 +138,8 @@ class EncodedMessage
 
         void onData(const qpid::amqp::CharSequence&);
         void onAmqpSequence(const qpid::amqp::CharSequence&);
-        void onAmqpValue(const qpid::amqp::CharSequence&, const std::string& type);
-        void onAmqpValue(const qpid::types::Variant&);
+        void onAmqpValue(const qpid::amqp::CharSequence&, const std::string& type, const qpid::amqp::Descriptor*);
+        void onAmqpValue(const qpid::types::Variant&, const qpid::amqp::Descriptor*);
 
         void onFooter(const qpid::amqp::CharSequence&, const qpid::amqp::CharSequence&);
       private:

@@ -23,6 +23,7 @@
  */
 #include "qpid/broker/Message.h"
 #include "qpid/amqp/CharSequence.h"
+#include "qpid/amqp/Descriptor.h"
 #include "qpid/amqp/MessageId.h"
 #include "qpid/amqp/MessageReader.h"
 #include <boost/optional.hpp>
@@ -67,6 +68,7 @@ class Message : public qpid::broker::Message::SharedStateImpl, private qpid::amq
     qpid::amqp::CharSequence getFooter() const;
     bool isTypedBody() const;
     qpid::types::Variant getTypedBody() const;
+    const qpid::amqp::Descriptor& getBodyDescriptor() const;
 
     Message(size_t size);
     char* getData();
@@ -114,6 +116,7 @@ class Message : public qpid::broker::Message::SharedStateImpl, private qpid::amq
     qpid::amqp::CharSequence body;
     qpid::types::Variant typedBody;
     std::string bodyType;
+    qpid::amqp::Descriptor bodyDescriptor;
 
     //footer:
     qpid::amqp::CharSequence footer;
@@ -147,8 +150,8 @@ class Message : public qpid::broker::Message::SharedStateImpl, private qpid::amq
 
     void onData(const qpid::amqp::CharSequence&);
     void onAmqpSequence(const qpid::amqp::CharSequence&);
-    void onAmqpValue(const qpid::amqp::CharSequence&, const std::string& type);
-    void onAmqpValue(const qpid::types::Variant&);
+    void onAmqpValue(const qpid::amqp::CharSequence&, const std::string& type, const qpid::amqp::Descriptor*);
+    void onAmqpValue(const qpid::types::Variant&, const qpid::amqp::Descriptor*);
 
     void onFooter(const qpid::amqp::CharSequence&, const qpid::amqp::CharSequence&);
 };

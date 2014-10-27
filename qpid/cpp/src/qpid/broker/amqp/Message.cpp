@@ -217,7 +217,7 @@ std::string Message::getContent() const
     return std::string(body.data, body.size);
 }
 
-Message::Message(size_t size) : data(size)
+Message::Message(size_t size) : data(size), bodyDescriptor(0)
 {
     deliveryAnnotations.init();
     messageAnnotations.init();
@@ -329,7 +329,7 @@ void Message::onMessageAnnotations(const qpid::amqp::CharSequence&, const qpid::
 
 void Message::onData(const qpid::amqp::CharSequence& v) { body = v; }
 void Message::onAmqpSequence(const qpid::amqp::CharSequence& v) { body = v; bodyType = qpid::amqp::typecodes::LIST_NAME; }
-void Message::onAmqpValue(const qpid::amqp::CharSequence& v, const std::string& t)
+void Message::onAmqpValue(const qpid::amqp::CharSequence& v, const std::string& t, const qpid::amqp::Descriptor* d)
 {
     body = v;
     if (t == qpid::amqp::typecodes::STRING_NAME) {
@@ -341,8 +341,17 @@ void Message::onAmqpValue(const qpid::amqp::CharSequence& v, const std::string& 
     } else {
         bodyType = t;
     }
+    if (d) {
+        bodyDescriptor = *d;
+    }
 }
-void Message::onAmqpValue(const qpid::types::Variant& v) { typedBody = v; }
+void Message::onAmqpValue(const qpid::types::Variant& v, const qpid::amqp::Descriptor* d)
+{
+    typedBody = v;
+    if (d) {
+        bodyDescriptor = *d;
+    }
+}
 
 void Message::onFooter(const qpid::amqp::CharSequence&, const qpid::amqp::CharSequence& v) { footer = v; }
 
@@ -372,6 +381,10 @@ qpid::types::Variant Message::getTypedBody() const
     }
 }
 
+const qpid::amqp::Descriptor& Message::getBodyDescriptor() const
+{
+    return bodyDescriptor;
+}
 
 //PersistableMessage interface:
 void Message::encode(framing::Buffer& buffer) const

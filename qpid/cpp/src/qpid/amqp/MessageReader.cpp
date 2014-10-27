@@ -54,6 +54,12 @@ const size_t GROUP_ID(10);
 const size_t GROUP_SEQUENCE(11);
 const size_t REPLY_TO_GROUP_ID(12);
 
+
+const Descriptor* nested(const Descriptor* d)
+{
+    if (d && d->nested) return d->nested.get();
+    else return 0;
+}
 }
 
 MessageReader::HeaderReader::HeaderReader(MessageReader& p) : parent(p), index(0) {}
@@ -269,7 +275,7 @@ bool MessageReader::onStartList(uint32_t count, const CharSequence& elements, co
             onAmqpSequence(raw);
             return false;
         } else if (descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
-            onAmqpValue(elements, qpid::amqp::typecodes::LIST_NAME);
+            onAmqpValue(elements, qpid::amqp::typecodes::LIST_NAME, nested(descriptor));
             return false;
         } else {
             QPID_LOG(warning, "Unexpected described list: " << *descriptor);
@@ -310,7 +316,7 @@ bool MessageReader::onStartMap(uint32_t count, const CharSequence& elements, con
             onApplicationProperties(elements, raw);
             return false;
         } else if (descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
-            onAmqpValue(elements, qpid::amqp::typecodes::MAP_NAME);
+            onAmqpValue(elements, qpid::amqp::typecodes::MAP_NAME, nested(descriptor));
             return false;
         } else {
             QPID_LOG(warning, "Unexpected described map: " << *descriptor);
@@ -337,7 +343,7 @@ void MessageReader::onBinary(const CharSequence& bytes, const Descriptor* descri
         } else if (descriptor->match(DATA_SYMBOL, DATA_CODE)) {
             onData(bytes);
         } else if (descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
-            onAmqpValue(bytes, qpid::amqp::typecodes::BINARY_NAME);
+            onAmqpValue(bytes, qpid::amqp::typecodes::BINARY_NAME, nested(descriptor));
         } else {
             QPID_LOG(warning, "Unexpected binary value with descriptor: " << *descriptor);
         }
@@ -353,7 +359,7 @@ void MessageReader::onNull(const Descriptor* descriptor)
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
             qpid::types::Variant v;
-            onAmqpValue(v);
+            onAmqpValue(v, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got null value with no descriptor.");
@@ -369,7 +375,7 @@ void MessageReader::onString(const CharSequence& v, const Descriptor* descriptor
         delegate->onString(v, descriptor);
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
-            onAmqpValue(v, qpid::amqp::typecodes::STRING_NAME);
+            onAmqpValue(v, qpid::amqp::typecodes::STRING_NAME, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got string value with no descriptor.");
@@ -385,7 +391,7 @@ void MessageReader::onSymbol(const CharSequence& v, const Descriptor* descriptor
         delegate->onSymbol(v, descriptor);
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
-            onAmqpValue(v, qpid::amqp::typecodes::SYMBOL_NAME);
+            onAmqpValue(v, qpid::amqp::typecodes::SYMBOL_NAME, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got symbol value with no descriptor.");
@@ -403,7 +409,7 @@ void MessageReader::onBoolean(bool v, const Descriptor* descriptor)
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
             qpid::types::Variant body = v;
-            onAmqpValue(body);
+            onAmqpValue(body, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got boolean value with no descriptor.");
@@ -421,7 +427,7 @@ void MessageReader::onUByte(uint8_t v, const Descriptor* descriptor)
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
             qpid::types::Variant body = v;
-            onAmqpValue(body);
+            onAmqpValue(body, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got ubyte value with no descriptor.");
@@ -439,7 +445,7 @@ void MessageReader::onUShort(uint16_t v, const Descriptor* descriptor)
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
             qpid::types::Variant body = v;
-            onAmqpValue(body);
+            onAmqpValue(body, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got ushort value with no descriptor.");
@@ -457,7 +463,7 @@ void MessageReader::onUInt(uint32_t v, const Descriptor* descriptor)
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
             qpid::types::Variant body = v;
-            onAmqpValue(body);
+            onAmqpValue(body, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got uint value with no descriptor.");
@@ -475,7 +481,7 @@ void MessageReader::onULong(uint64_t v, const Descriptor* descriptor)
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
             qpid::types::Variant body = v;
-            onAmqpValue(body);
+            onAmqpValue(body, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got ulong value with no descriptor.");
@@ -493,7 +499,7 @@ void MessageReader::onByte(int8_t v, const Descriptor* descriptor)
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
             qpid::types::Variant body = v;
-            onAmqpValue(body);
+            onAmqpValue(body, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got byte value with no descriptor.");
@@ -511,7 +517,7 @@ void MessageReader::onShort(int16_t v, const Descriptor* descriptor)
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
             qpid::types::Variant body = v;
-            onAmqpValue(body);
+            onAmqpValue(body, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got short value with no descriptor.");
@@ -529,7 +535,7 @@ void MessageReader::onInt(int32_t v, const Descriptor* descriptor)
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
             qpid::types::Variant body = v;
-            onAmqpValue(body);
+            onAmqpValue(body, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got int value with no descriptor.");
@@ -547,7 +553,7 @@ void MessageReader::onLong(int64_t v, const Descriptor* descriptor)
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
             qpid::types::Variant body = v;
-            onAmqpValue(body);
+            onAmqpValue(body, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got long value with no descriptor.");
@@ -565,7 +571,7 @@ void MessageReader::onFloat(float v, const Descriptor* descriptor)
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
             qpid::types::Variant body = v;
-            onAmqpValue(body);
+            onAmqpValue(body, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got float value with no descriptor.");
@@ -583,7 +589,7 @@ void MessageReader::onDouble(double v, const Descriptor* descriptor)
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
             qpid::types::Variant body = v;
-            onAmqpValue(body);
+            onAmqpValue(body, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got double value with no descriptor.");
@@ -600,7 +606,7 @@ void MessageReader::onUuid(const CharSequence& v, const Descriptor* descriptor)
         delegate->onUuid(v, descriptor);
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
-            onAmqpValue(v, qpid::amqp::typecodes::UUID_NAME);
+            onAmqpValue(v, qpid::amqp::typecodes::UUID_NAME, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got uuid value with no descriptor.");
@@ -618,7 +624,7 @@ void MessageReader::onTimestamp(int64_t v, const Descriptor* descriptor)
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
             qpid::types::Variant body = v;
-            onAmqpValue(body);
+            onAmqpValue(body, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got timestamp value with no descriptor.");
@@ -636,7 +642,7 @@ bool MessageReader::onStartArray(uint32_t count, const CharSequence& raw, const 
     } else {
         if (descriptor && descriptor->match(AMQP_VALUE_SYMBOL, AMQP_VALUE_CODE)) {
             //TODO: might be better to decode this here
-            onAmqpValue(raw, qpid::amqp::typecodes::ARRAY_NAME);
+            onAmqpValue(raw, qpid::amqp::typecodes::ARRAY_NAME, nested(descriptor));
         } else {
             if (!descriptor) {
                 QPID_LOG(warning, "Expected described type but got array with no descriptor.");

@@ -345,7 +345,7 @@ void EncodedMessage::InitialScan::onAmqpSequence(const qpid::amqp::CharSequence&
     em.body = v;
     em.bodyType = qpid::amqp::typecodes::LIST_NAME;
 }
-void EncodedMessage::InitialScan::onAmqpValue(const qpid::amqp::CharSequence& v, const std::string& type)
+void EncodedMessage::InitialScan::onAmqpValue(const qpid::amqp::CharSequence& v, const std::string& type, const qpid::amqp::Descriptor*)
 {
     em.body = v;
     if (type == qpid::amqp::typecodes::STRING_NAME) {
@@ -356,7 +356,7 @@ void EncodedMessage::InitialScan::onAmqpValue(const qpid::amqp::CharSequence& v,
         em.bodyType = type;
     }
 }
-void EncodedMessage::InitialScan::onAmqpValue(const qpid::types::Variant& v)
+void EncodedMessage::InitialScan::onAmqpValue(const qpid::types::Variant& v, const qpid::amqp::Descriptor*)
 {
     em.content = v;
 }
