@@ -36,6 +36,7 @@
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/Selector.h"
 #include "qpid/broker/TransactionObserver.h"
+#include "qpid/broker/TxDequeue.h"
 
 //TODO: get rid of this
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
@@ -959,6 +960,24 @@ void Queue::dequeueFromStore(boost::intrusive_ptr<PersistableMessage> msg)
         store->dequeue(0, msg, *this);
     }
 }
+
+void Queue::dequeue(const QueueCursor& cursor, TxBuffer* txn)
+{
+    if (txn) {
+        TxOp::shared_ptr op;
+        {
+            Mutex::ScopedLock locker(messageLock);
+            Message* msg = messages->find(cursor);
+            if (msg) {
+                op = TxOp::shared_ptr(new TxDequeue(cursor, shared_from_this(), msg->getSequence(), msg->getReplicationId()));
+            }
+        }
+        if (op) txn->enlist(op);
+    } else {
+        dequeue(0, cursor);
+    }
+}
+
 
 void Queue::dequeue(TransactionContext* ctxt, const QueueCursor& cursor)
 {

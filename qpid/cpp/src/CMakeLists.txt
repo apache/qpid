@@ -1124,6 +1124,8 @@ set (qpidbroker_SOURCES
      qpid/broker/TopicExchange.cpp
      qpid/broker/TxAccept.cpp
      qpid/broker/TxBuffer.cpp
+     qpid/broker/TxDequeue.h
+     qpid/broker/TxDequeue.cpp
      qpid/broker/Vhost.cpp
      qpid/broker/amqp_0_10/MessageTransfer.cpp
      qpid/management/ManagementAgent.cpp
