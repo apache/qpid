@@ -394,9 +394,16 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     const QueueBindings& getBindings() const { return bindings; }
 
     /**
+     * Dequeue message referenced by cursor. If txn is specified, this will
+     * occur only when txn is committed.
+     */
+    QPID_BROKER_EXTERN void dequeue(const QueueCursor& cursor, TxBuffer* txn);
+
+    /**
      * dequeue from store (only done once messages is acknowledged)
      */
     QPID_BROKER_EXTERN void dequeue(TransactionContext* ctxt, const QueueCursor&);
+
     /**
      * Inform the queue that a previous transactional dequeue
      * committed.
