@@ -274,6 +274,9 @@ Constructor Decoder::readConstructor()
         result.isDescribed = true;
         result.descriptor = readDescriptor();
         result.code = readCode();
+        for (Descriptor* d = &result.descriptor; result.code == DESCRIPTOR; result.code = readCode()) {
+            d = d->nest(readDescriptor());
+        }
     } else {
         result.isDescribed = false;
     }
