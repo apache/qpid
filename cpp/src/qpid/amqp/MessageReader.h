@@ -100,8 +100,8 @@ class MessageReader : public Reader
 
     virtual void onData(const CharSequence&) = 0;
     virtual void onAmqpSequence(const CharSequence&) = 0;
-    virtual void onAmqpValue(const CharSequence&, const std::string& type) = 0;
-    virtual void onAmqpValue(const qpid::types::Variant&) = 0;
+    virtual void onAmqpValue(const CharSequence&, const std::string& type, const Descriptor*) = 0;
+    virtual void onAmqpValue(const qpid::types::Variant&, const Descriptor*) = 0;
 
     virtual void onFooter(const CharSequence& /*values*/, const CharSequence& /*full*/) = 0;
 
