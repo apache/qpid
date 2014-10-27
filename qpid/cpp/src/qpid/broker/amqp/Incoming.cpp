@@ -107,7 +107,7 @@ namespace {
 }
 
 DecodingIncoming::DecodingIncoming(pn_link_t* link, Broker& broker, Session& parent, const std::string& source, const std::string& target, const std::string& name)
-    : Incoming(link, broker, parent, source, target, name), session(parent.shared_from_this()) {}
+    : Incoming(link, broker, parent, source, target, name), sessionPtr(parent.shared_from_this()) {}
 DecodingIncoming::~DecodingIncoming() {}
 
 void DecodingIncoming::readable(pn_delivery_t* delivery)
@@ -135,16 +135,20 @@ void DecodingIncoming::readable(pn_delivery_t* delivery)
 
         received->scan();
         pn_link_advance(link);
-        received->setPublisher(&session->getParent());
+        received->setPublisher(&session.getParent());
         received->computeExpiration();
-
-        qpid::broker::Message message(received, received);
-        userid.verify(message.getUserId());
-        handle(message);
         --window;
-        received->begin();
-        Transfer t(delivery, session);
-        received->end(t);
+        deliver(received, delivery);
     }
+}
+
+void DecodingIncoming::deliver(boost::intrusive_ptr<qpid::broker::amqp::Message> received, pn_delivery_t* delivery)
+{
+    qpid::broker::Message message(received, received);
+    userid.verify(message.getUserId());
+    handle(message, session.getTransaction(delivery));
+    received->begin();
+    Transfer t(delivery, sessionPtr);
+    received->end(t);
 }
 }}} // namespace qpid::broker::amqp

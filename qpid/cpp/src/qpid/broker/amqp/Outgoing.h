@@ -77,7 +77,7 @@ class Outgoing : public ManagedOutgoingLink
     virtual void handle(pn_delivery_t* delivery) = 0;
     void wakeup();
     virtual ~Outgoing() {}
-  private:
+  protected:
     Session& session;
 };
 

@@ -112,6 +112,12 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
     if (pn_delivery_updated(delivery)) {
         assert(r.delivery == delivery);
         r.disposition = pn_delivery_remote_state(delivery);
+
+        std::pair<TxBuffer*,uint64_t> txn = session.getTransactionalState(delivery);
+        if (txn.first) {
+            r.disposition = txn.second;
+        }
+
         if (!r.disposition && pn_delivery_settled(delivery)) {
             //if peer has settled without setting state, assume accepted
             r.disposition = PN_ACCEPTED;
@@ -119,7 +125,7 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
         if (r.disposition) {
             switch (r.disposition) {
               case PN_ACCEPTED:
-                if (preAcquires()) queue->dequeue(0, r.cursor);
+                if (preAcquires()) queue->dequeue(r.cursor, txn.first);
                 outgoingMessageAccepted();
                 break;
               case PN_REJECTED:

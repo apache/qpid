@@ -23,12 +23,14 @@
 #include "Outgoing.h"
 #include "Message.h"
 #include "Connection.h"
+#include "DataReader.h"
 #include "Domain.h"
 #include "Exception.h"
 #include "Interconnects.h"
 #include "NodePolicy.h"
 #include "Relay.h"
 #include "Topic.h"
+#include "qpid/amqp/Descriptor.h"
 #include "qpid/amqp/descriptors.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/DeliverableMessage.h"
@@ -176,7 +178,7 @@ class IncomingToQueue : public DecodingIncoming
         queue->markInUse(isControllingLink);
     }
     ~IncomingToQueue() { queue->releaseFromUse(isControllingLink); }
-    void handle(qpid::broker::Message& m);
+    void handle(qpid::broker::Message& m, qpid::broker::TxBuffer*);
   private:
     boost::shared_ptr<qpid::broker::Queue> queue;
     bool isControllingLink;
@@ -194,17 +196,28 @@ class IncomingToExchange : public DecodingIncoming
     {
         exchange->decOtherUsers(isControllingLink);
     }
-    void handle(qpid::broker::Message& m);
+    void handle(qpid::broker::Message& m, qpid::broker::TxBuffer*);
   private:
     boost::shared_ptr<qpid::broker::Exchange> exchange;
     Authorise& authorise;
     bool isControllingLink;
 };
 
+class IncomingToCoordinator : public DecodingIncoming
+{
+  public:
+    IncomingToCoordinator(pn_link_t* link, Broker& broker, Session& parent)
+        : DecodingIncoming(link, broker, parent, std::string(), "txn-ctrl", pn_link_name(link)) {}
+    ~IncomingToCoordinator() { session.abort(); }
+    void deliver(boost::intrusive_ptr<qpid::broker::amqp::Message>, pn_delivery_t*);
+    void handle(qpid::broker::Message&, qpid::broker::TxBuffer*) {}
+  private:
+};
+
 Session::Session(pn_session_t* s, Connection& c, qpid::sys::OutputControl& o)
     : ManagedSession(c.getBroker(), c, (boost::format("%1%") % s).str()), session(s), connection(c), out(o), deleted(false),
       authorise(connection.getUserId(), connection.getBroker().getAcl()),
-      detachRequested() {}
+      detachRequested(), txnId((boost::format("%1%") % s).str()) {}
 
 
 Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* terminus, bool incoming)
@@ -386,6 +399,11 @@ void Session::attach(pn_link_t* link)
         std::string name;
         if (pn_terminus_get_type(target) == PN_UNSPECIFIED) {
             throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, "No target specified!");
+        } else if (pn_terminus_get_type(target) == PN_COORDINATOR) {
+            QPID_LOG(debug, "Received attach request for incoming link to transaction coordinator on " << this);
+            boost::shared_ptr<Incoming> i(new IncomingToCoordinator(link, connection.getBroker(), *this));
+            incoming[link] = i;
+            return;
         } else if (pn_terminus_is_dynamic(target)) {
             name = generateName(link);
             QPID_LOG(debug, "Received attach request for incoming link to " << name);
@@ -623,6 +641,9 @@ void Session::writable(pn_link_t* link, pn_delivery_t* delivery)
 bool Session::dispatch()
 {
     bool output(false);
+    if (commitPending.boolCompareAndSwap(true, false)) {
+        committed(true);
+    }
     for (OutgoingLinks::iterator s = outgoing.begin(); s != outgoing.end();) {
         try {
             if (s->second->doWork()) output = true;
@@ -706,7 +727,117 @@ void Session::detachedByManagement()
     wakeup();
 }
 
-void IncomingToQueue::handle(qpid::broker::Message& message)
+TxBuffer* Session::getTransaction(const std::string& id)
+{
+    return  (txn.get() && id == txnId) ? txn.get() : 0;
+}
+
+TxBuffer* Session::getTransaction(pn_delivery_t* delivery)
+{
+    return getTransactionalState(delivery).first;
+}
+
+std::pair<TxBuffer*,uint64_t> Session::getTransactionalState(pn_delivery_t* delivery)
+{
+    std::pair<TxBuffer*,uint64_t> result(0, 0);
+    if (pn_delivery_remote_state(delivery) == qpid::amqp::transaction::TRANSACTIONAL_STATE_CODE) {
+        pn_data_t* data = pn_disposition_data(pn_delivery_remote(delivery));
+        if (data && pn_data_next(data)) {
+            size_t count = pn_data_get_list(data);
+            if (count > 0) {
+                pn_data_enter(data);
+                pn_data_next(data);
+                std::string id = convert(pn_data_get_binary(data));
+                result.first = getTransaction(id);
+                if (!result.first) {
+                    QPID_LOG(error, "Transaction not found for id: " << id);
+                }
+                if (count > 1 && pn_data_next(data)) {
+                    result.second = pn_data_get_ulong(data);
+                }
+                pn_data_exit(data);
+            }
+        } else {
+            QPID_LOG(error, "Transactional delivery " << delivery << " appears to have no data");
+        }
+    }
+    return result;
+}
+
+std::string Session::declare()
+{
+    if (txn.get()) {
+        //not sure what the error code should be; none in spec really fit well.
+        throw Exception(qpid::amqp::error_conditions::transaction::ROLLBACK, "Session only supports one transaction active at a time");
+    }
+    txn = boost::intrusive_ptr<TxBuffer>(new TxBuffer());
+    connection.getBroker().getBrokerObservers().startTx(txn);
+    txStarted();
+    return txnId;
+}
+
+namespace {
+    class AsyncCommit : public qpid::broker::AsyncCompletion::Callback
+    {
+      public:
+        AsyncCommit(boost::shared_ptr<Session> s) : session(s) {}
+        void completed(bool sync) { session->committed(sync); }
+        boost::intrusive_ptr<qpid::broker::AsyncCompletion::Callback> clone()
+        {
+            boost::intrusive_ptr<qpid::broker::AsyncCompletion::Callback> copy(new AsyncCommit(session));
+            return copy;
+        }
+      private:
+        boost::shared_ptr<Session> session;
+    };
+}
+
+void Session::discharge(const std::string& id, bool failed)
+{
+    if (!txn.get() || id != txnId) {
+        throw Exception(qpid::amqp::error_conditions::transaction::UNKNOWN_ID, "No transaction declared with that id");
+    }
+    if (failed) {
+        abort();
+    } else {
+        txn->begin();
+        txn->startCommit(&connection.getBroker().getStore());
+        AsyncCommit callback(shared_from_this());
+        txn->end(callback);
+    }
+}
+
+void Session::abort()
+{
+    if (txn) {
+        txn->rollback();
+        txAborted();
+    }
+}
+
+void Session::committed(bool sync)
+{
+    if (sync) {
+        //this is on IO thread
+        if (txn.get()) {
+            txn->endCommit(&connection.getBroker().getStore());
+            txCommitted();
+            txn = boost::intrusive_ptr<TxBuffer>();
+        } else {
+            throw Exception(qpid::amqp::error_conditions::transaction::ROLLBACK, "tranaction vanished during async commit");
+        }
+    } else {
+        //this is not on IO thread, need to delay processing until on IO thread
+        if (commitPending.boolCompareAndSwap(false, true)) {
+            qpid::sys::Mutex::ScopedLock l(lock);
+            if (!deleted) {
+                out.activateOutput();
+            }
+        }
+    }
+}
+
+void IncomingToQueue::handle(qpid::broker::Message& message, qpid::broker::TxBuffer* transaction)
 {
     if (queue->isDeleted()) {
         std::stringstream msg;
@@ -714,22 +845,53 @@ void IncomingToQueue::handle(qpid::broker::Message& message)
         throw Exception(qpid::amqp::error_conditions::RESOURCE_DELETED, msg.str());
     }
     try {
-        queue->deliver(message);
+        queue->deliver(message, transaction);
     } catch (const qpid::SessionException& e) {
         throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, e.what());
     }
 }
 
-void IncomingToExchange::handle(qpid::broker::Message& message)
+void IncomingToExchange::handle(qpid::broker::Message& message, qpid::broker::TxBuffer* transaction)
 {
     if (exchange->isDestroyed())
         throw qpid::framing::ResourceDeletedException(QPID_MSG("Exchange " << exchange->getName() << " has been deleted."));
     authorise.route(exchange, message);
-    DeliverableMessage deliverable(message, 0);
+    DeliverableMessage deliverable(message, transaction);
     exchange->route(deliverable);
     if (!deliverable.delivered) {
         if (exchange->getAlternate()) {
             exchange->getAlternate()->route(deliverable);
+        }
+    }
+}
+
+void IncomingToCoordinator::deliver(boost::intrusive_ptr<qpid::broker::amqp::Message> message, pn_delivery_t* delivery)
+{
+    if (message && message->isTypedBody()) {
+        QPID_LOG(debug, "Coordinator got message: @" << message->getBodyDescriptor() << " " << message->getTypedBody());
+        if (message->getBodyDescriptor().match(qpid::amqp::transaction::DECLARE_SYMBOL, qpid::amqp::transaction::DECLARE_CODE)) {
+            std::string id = session.declare();
+            //encode the txn id in a 'declared' list on the disposition
+            pn_data_t* data = pn_disposition_data(pn_delivery_local(delivery));
+            pn_data_put_list(data);
+            pn_data_enter(data);
+            pn_data_put_binary(data, convert(id));
+            pn_data_exit(data);
+            pn_data_exit(data);
+            pn_delivery_update(delivery, qpid::amqp::transaction::DECLARED_CODE);
+            pn_delivery_settle(delivery);
+            session.incomingMessageAccepted();
+        } else if (message->getBodyDescriptor().match(qpid::amqp::transaction::DISCHARGE_SYMBOL, qpid::amqp::transaction::DISCHARGE_CODE)) {
+            if (message->getTypedBody().getType() == qpid::types::VAR_LIST) {
+                qpid::types::Variant::List args = message->getTypedBody().asList();
+                qpid::types::Variant::List::const_iterator i = args.begin();
+                if (i != args.end()) {
+                    std::string id = *i;
+                    bool failed = ++i != args.end() ? i->asBool() : false;
+                    session.discharge(id, failed);
+                    DecodingIncoming::deliver(message, delivery);//ensures async completion of commit is taken care of
+                }
+            }
         }
     }
 }

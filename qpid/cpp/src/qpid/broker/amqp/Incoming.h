@@ -31,6 +31,7 @@ namespace qpid {
 namespace broker {
 class Broker;
 class Message;
+class TxBuffer;
 namespace amqp {
 class Session;
 
@@ -74,9 +75,10 @@ class DecodingIncoming : public Incoming
     DecodingIncoming(pn_link_t*, Broker& broker, Session& parent, const std::string& source, const std::string& target, const std::string& name);
     virtual ~DecodingIncoming();
     void readable(pn_delivery_t* delivery);
-    virtual void handle(qpid::broker::Message&) = 0;
+    virtual void deliver(boost::intrusive_ptr<qpid::broker::amqp::Message> received, pn_delivery_t* delivery);
+    virtual void handle(qpid::broker::Message&, qpid::broker::TxBuffer*) = 0;
   private:
-    boost::shared_ptr<Session> session;
+    boost::shared_ptr<Session> sessionPtr;
     boost::intrusive_ptr<Message> partial;
 };
 
