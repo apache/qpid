@@ -21,12 +21,11 @@
 package org.apache.qpid.server.protocol.v1_0;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.amqp_1_0.type.Outcome;
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
-
-import org.apache.qpid.server.message.MessageSource;
+import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.queue.AMQQueue;
-
 import org.apache.qpid.server.txn.ServerTransaction;
 
 public class QueueDestination extends MessageSourceDestination implements SendingDestination, ReceivingDestination
@@ -51,16 +50,24 @@ public class QueueDestination extends MessageSourceDestination implements Sendin
 
         txn.enqueue(getQueue(),message, new ServerTransaction.Action()
         {
+            MessageReference _reference = message.newReference();
 
 
             public void postCommit()
             {
-                getQueue().enqueue(message,null);
+                try
+                {
+                    getQueue().enqueue(message, null);
+                }
+                finally
+                {
+                    _reference.release();
+                }
             }
 
             public void onRollback()
             {
-                // NO-OP
+                _reference.release();
             }
         });
 
