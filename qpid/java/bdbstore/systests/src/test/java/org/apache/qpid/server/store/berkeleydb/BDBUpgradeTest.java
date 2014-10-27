@@ -360,9 +360,6 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
     }
 
     /**
-     *
-     * TODO (QPID-5650) Resolve so this test can be reenabled.
-     *
      * Test that the queue configured to have a DLQ was recovered and has the alternate exchange
      * and max delivery count, the DLE exists, the DLQ exists with no max delivery count, the
      * DLQ is bound to the DLE, and that the DLQ does not itself have a DLQ.
@@ -370,7 +367,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
      * DLQs are NOT enabled at the virtualhost level, we are testing recovery of the arguments
      * that turned it on for this specific queue.
      */
-    public void xtestRecoveryOfQueueWithDLQ() throws Exception
+    public void testRecoveryOfQueueWithDLQ() throws Exception
     {
         JMXTestUtils jmxUtils = null;
         try
