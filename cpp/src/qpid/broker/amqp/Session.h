@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/OutputControl.h"
 #include "qpid/broker/amqp/Authorise.h"
@@ -29,6 +30,7 @@
 #include <deque>
 #include <map>
 #include <set>
+#include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
@@ -43,6 +45,7 @@ namespace broker {
 class Broker;
 class Exchange;
 class Queue;
+class TxBuffer;
 
 namespace amqp {
 
@@ -76,10 +79,20 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
 
     //called when a transfer is completly processed (e.g.including stored on disk)
     void accepted(pn_delivery_t*, bool sync);
+    //called when async transaction completes
+    void committed(bool sync);
 
     void wakeup();
 
     Authorise& getAuthorise();
+
+    TxBuffer* getTransaction(const std::string&);
+    TxBuffer* getTransaction(pn_delivery_t*);
+    std::pair<TxBuffer*,uint64_t> getTransactionalState(pn_delivery_t*);
+    //transaction coordination:
+    std::string declare();
+    void discharge(const std::string& id, bool failed);
+    void abort();
   protected:
     void detachedByManagement();
   private:
@@ -96,6 +109,9 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     std::set< boost::shared_ptr<Queue> > exclusiveQueues;
     Authorise authorise;
     bool detachRequested;
+    boost::intrusive_ptr<TxBuffer> txn;
+    std::string txnId;
+    qpid::sys::AtomicValue<bool> commitPending;
 
     struct ResolvedNode
     {

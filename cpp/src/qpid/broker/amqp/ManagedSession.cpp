@@ -90,6 +90,29 @@ void ManagedSession::incomingMessageRejected()
 {
 
 }
+void ManagedSession::txStarted()
+{
+    if (session) {
+        session->inc_TxnStarts();
+    }
+}
+
+void ManagedSession::txCommitted()
+{
+    if (session) {
+        session->inc_TxnCommits();
+        session->inc_TxnCount();
+    }
+}
+
+void ManagedSession::txAborted()
+{
+    if (session) {
+        session->inc_TxnRejects();
+        session->inc_TxnCount();
+    }
+}
+
 ManagedConnection& ManagedSession::getParent()
 {
     return parent;

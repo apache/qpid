@@ -47,6 +47,9 @@ class ManagedSession : public qpid::management::Manageable, public OwnershipToke
     void outgoingMessageSent();
     void outgoingMessageAccepted();
     void outgoingMessageRejected();
+    void txStarted();
+    void txCommitted();
+    void txAborted();
     ManagedConnection& getParent();
 
     qpid::management::Manageable::status_t ManagementMethod (uint32_t, qpid::management::Args&, std::string&);
