@@ -25,17 +25,22 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.AMQProtocolVersionException;
+import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.FrameCreatingMethodProcessor;
 import org.apache.qpid.framing.HeartbeatBody;
 import org.apache.qpid.framing.ProtocolVersion;
+import org.apache.qpid.util.BytesDataOutput;
 
 public class AMQDecoderTest extends TestCase
 {
@@ -66,6 +71,35 @@ public class AMQDecoderTest extends TestCase
         if (frames.get(0) instanceof AMQFrame)
         {
             assertEquals(HeartbeatBody.FRAME.getBodyFrame().getFrameType(), ((AMQFrame) frames.get(0)).getBodyFrame().getFrameType());
+        }
+        else
+        {
+            fail("decode was not a frame");
+        }
+    }
+
+
+    public void testDecodeWithManyBuffers() throws AMQProtocolVersionException, AMQFrameDecodingException, IOException
+    {
+        Random random = new Random();
+        final byte[] payload = new byte[2048];
+        random.nextBytes(payload);
+        final AMQBody body = new ContentBody(payload);
+        AMQFrame frame = new AMQFrame(1, body);
+        byte[] outputBuf = new byte[4096];
+        BytesDataOutput dataOutput = new BytesDataOutput(outputBuf);
+        frame.writePayload(dataOutput);
+        for(int i = 0 ; i < dataOutput.length(); i++)
+        {
+            _decoder.decodeBuffer(ByteBuffer.wrap(outputBuf, i, 1));
+
+        }
+        List<AMQDataBlock> frames = _methodProcessor.getProcessedMethods();
+        if (frames.get(0) instanceof AMQFrame)
+        {
+            assertEquals(ContentBody.TYPE, ((AMQFrame) frames.get(0)).getBodyFrame().getFrameType());
+            ContentBody decodedBody = (ContentBody) ((AMQFrame) frames.get(0)).getBodyFrame();
+            assertTrue("Body was corrupted", Arrays.equals(payload, decodedBody.getPayload()));
         }
         else
         {

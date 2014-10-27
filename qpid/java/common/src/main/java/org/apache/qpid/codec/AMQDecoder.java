@@ -47,6 +47,7 @@ import org.apache.qpid.protocol.AMQConstant;
  */
 public abstract class AMQDecoder<T extends MethodProcessor>
 {
+    private static final int MAX_BUFFERS_LIMIT = 10;
     private final T _methodProcessor;
 
     /** Holds the protocol initiation decoder. */
@@ -297,6 +298,25 @@ public abstract class AMQDecoder<T extends MethodProcessor>
                         bais.read(remaining);
                         _remainingBufs.add(new ByteArrayInputStream(remaining));
                     }
+                }
+
+                if(_remainingBufs.size() > MAX_BUFFERS_LIMIT)
+                {
+                    int totalSize = 0;
+                    for(ByteArrayInputStream stream : _remainingBufs)
+                    {
+                        totalSize += stream.available();
+                    }
+
+                    byte[] completeBuffer = new byte[totalSize];
+                    int pos = 0;
+                    for(ByteArrayInputStream stream : _remainingBufs)
+                    {
+                        pos += stream.read(completeBuffer, pos, stream.available());
+                    }
+
+                    _remainingBufs.clear();
+                    _remainingBufs.add(new ByteArrayInputStream(completeBuffer));
                 }
             }
         }
