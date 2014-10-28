@@ -458,7 +458,22 @@ void SslAsynchIO::idle(qpid::sys::AsynchIO&) {
     }
 }
 
-  /**************************************************/
+/**************************************************/
+
+namespace {
+
+bool unsafeNegotiatedTlsVersion(CtxtHandle &ctxtHandle) {
+    // See if SChannel ultimately negotiated <= SSL3, perhaps due to
+    // global registry settings.
+    SecPkgContext_ConnectionInfo info;
+    ::QueryContextAttributes(&ctxtHandle, SECPKG_ATTR_CONNECTION_INFO, &info);
+    // Ascending bit patterns denote newer SSL/TLS protocol versions
+    return (info.dwProtocol < SP_PROT_TLS1_SERVER) ? true : false;
+}
+
+} // namespace
+
+/**************************************************/
 
 ClientSslAsynchIO::ClientSslAsynchIO(const std::string& brokerHost,
                                      const qpid::sys::Socket& s,
@@ -589,6 +604,13 @@ void ClientSslAsynchIO::negotiateStep(BufferBase* buff) {
     }
     // Nothing to send back to the server...
     aio->queueReadBuffer(sendbuff);
+
+    if (status == SEC_E_OK && unsafeNegotiatedTlsVersion(ctxtHandle)) {
+        // Refuse a connection that negotiates to less than TLS 1.0.
+        QPID_LOG(notice, "client SSL negotiation to unsafe protocol version.");
+        status = SEC_E_UNSUPPORTED_FUNCTION;
+    }
+
     // SEC_I_CONTEXT_EXPIRED means session stop complete; SEC_E_OK can be
     // either session stop or negotiation done (session up).
     if (status == SEC_E_OK || status == SEC_I_CONTEXT_EXPIRED)
@@ -690,6 +712,12 @@ void ServerSslAsynchIO::negotiateStep(BufferBase* buff) {
     else
         // Nothing to send back to the server...
         aio->queueReadBuffer(sendbuff);
+
+    if (status == SEC_E_OK && unsafeNegotiatedTlsVersion(ctxtHandle)) {
+        // Refuse a connection that negotiates to less than TLS 1.0.
+        QPID_LOG(notice, "server SSL negotiation to unsafe protocol version.");
+        status = SEC_E_UNSUPPORTED_FUNCTION;
+    }
 
     // SEC_I_CONTEXT_EXPIRED means session stop complete; SEC_E_OK can be
     // either session stop or negotiation done (session up).
