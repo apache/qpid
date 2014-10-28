@@ -1923,6 +1923,12 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                         sub.releaseSendLock();
                     }
                 }
+
+                if (_virtualHost.getState() != State.ACTIVE)
+                {
+                    _logger.debug("Subscription flush halted owing to virtualhost state " + _virtualHost.getState());
+                    return true;
+                }
             }
         }
         finally
@@ -1967,12 +1973,13 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         boolean atTail = false;
 
         boolean subActive = sub.isActive() && !sub.isSuspended();
+
         if (subActive)
         {
 
             QueueEntry node  = getNextAvailableEntry(sub);
 
-            if (node != null && node.isAvailable())
+            if (_virtualHost.getState() == State.ACTIVE && node != null && node.isAvailable())
             {
                 if (sub.hasInterest(node) && mightAssign(sub, node))
                 {
@@ -2176,6 +2183,12 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                                 if(--iterations == 0)
                                 {
                                     sub.flushBatched();
+                                    break;
+                                }
+                                if (_virtualHost.getState() != State.ACTIVE)
+                                {
+                                    _logger.debug("Queue process halted owing to virtualhost state " + _virtualHost.getState());
+
                                     break;
                                 }
                             }

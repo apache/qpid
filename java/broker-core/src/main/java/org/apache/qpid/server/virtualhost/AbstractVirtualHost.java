@@ -664,9 +664,15 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _broker.getSecurityManager();
     }
 
-    protected void onClose()
+    @Override
+    protected void beforeClose()
     {
         setState(State.UNAVAILABLE);
+    }
+
+    @Override
+    protected void onClose()
+    {
         //Stop Connections
         _connectionRegistry.close();
         _dtxRegistry.close();
