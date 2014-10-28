@@ -89,13 +89,13 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     private final Container _container;
     private Principal _user;
 
-    private static final short DEFAULT_CHANNEL_MAX = Integer.getInteger("amqp.channel_max", 255).shortValue();
+    private static final int DEFAULT_CHANNEL_MAX = Math.min(Integer.getInteger("amqp.channel_max", 255), 0xFFFF);
     private static final int DEFAULT_MAX_FRAME = Integer.getInteger("amqp.max_frame_size", 1 << 15);
     private static final long DEFAULT_SYNC_TIMEOUT = Long.getLong("amqp.connection_sync_timeout", 5000l);
 
 
     private ConnectionState _state = ConnectionState.UNOPENED;
-    private short _channelMax = DEFAULT_CHANNEL_MAX;
+    private int _channelMax = DEFAULT_CHANNEL_MAX;
     private int _maxFrameSize = 4096;
     private String _remoteContainerId;
 
@@ -259,7 +259,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         return _user;
     }
 
-    public short getChannelMax()
+    public int getChannelMax()
     {
         return _channelMax;
     }
@@ -274,7 +274,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         return _remoteContainerId;
     }
 
-    private void sendOpen(final short channelMax, final int maxFrameSize)
+    private void sendOpen(final int channelMax, final int maxFrameSize)
     {
         Open open = new Open();
 
@@ -287,7 +287,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         {
             _channelMax = channelMax;
         }
-        open.setChannelMax(UnsignedShort.valueOf(channelMax));
+        open.setChannelMax(UnsignedShort.valueOf((short) channelMax));
         open.setContainerId(_container.getId());
         open.setMaxFrameSize(getDesiredMaxFrameSize());
         open.setHostname(getRemoteHostname());
@@ -349,8 +349,8 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     {
 
         _channelMax = open.getChannelMax() == null ? _channelMax
-                : open.getChannelMax().shortValue() < _channelMax
-                        ? open.getChannelMax().shortValue()
+                : open.getChannelMax().intValue() < _channelMax
+                        ? open.getChannelMax().intValue()
                         : _channelMax;
 
         if (_receivingSessions == null)
@@ -429,7 +429,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         switch (_state)
         {
             case UNOPENED:
-                sendOpen((short) 0, 0);
+                sendOpen(0, 0);
                 sendClose(close);
                 _state = ConnectionState.CLOSED;
                 break;
