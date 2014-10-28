@@ -26,6 +26,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -48,6 +49,8 @@ import org.apache.qpid.server.virtualhostnode.TestVirtualHostNode;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+
+import javax.security.auth.Subject;
 
 public class VirtualHostStoreUpgraderAndRecovererTest extends QpidTestCase
 {
@@ -114,40 +117,17 @@ public class VirtualHostStoreUpgraderAndRecovererTest extends QpidTestCase
         VirtualHostStoreUpgraderAndRecoverer upgraderAndRecoverer = new VirtualHostStoreUpgraderAndRecoverer(_virtualHostNode);
         upgraderAndRecoverer.perform(_durableConfigurationStore);
 
-        VirtualHost<?,?,?>  host = _virtualHostNode.getVirtualHost();
-        host.open();
-
-        assertNotNull("Virtual host is not recovered", host);
-        Queue<?> recoveredQueue = host.findConfiguredObject(Queue.class, "test");
-        assertNotNull("Queue is not recovered", recoveredQueue);
-
-        Queue<?> recoveredDLQ = host.findConfiguredObject(Queue.class, "test_DLQ");
-        assertNotNull("DLQ queue is not recovered", recoveredDLQ);
-
-        Exchange<?> recoveredDLE = host.findConfiguredObject(Exchange.class, "test_DLE");
-        assertNotNull("DLE exchange is not recovered", recoveredDLE);
-
-        assertEquals("Unexpected alternative exchange", recoveredDLE, recoveredQueue.getAlternateExchange());
-    }
-
-    public void testRecoverQueueWithDLQEnabledOnVirtualHost() throws Exception
-    {
-        _hostRecord.getAttributes().put(VirtualHost.QUEUE_DEAD_LETTER_QUEUE_ENABLED, "true");
-
-        ConfiguredObjectRecord queue = mockQueue("test", null);
-        ConfiguredObjectRecord dlq = mockQueue("test_DLQ", Collections.<String,Object>singletonMap("x-qpid-dlq-enabled", "false"));
-        ConfiguredObjectRecord dle = mockExchange("test_DLE", "fanout");
-        ConfiguredObjectRecord dlqBinding = mockBinding("dlq", dlq, dle);
-        ConfiguredObjectRecord directExchange = mock(ConfiguredObjectRecord.class);
-        when(directExchange.getId()).thenReturn(UUIDGenerator.generateExchangeUUID("amq.direct", "test"));
-        ConfiguredObjectRecord queueBinding =  mockBinding("test", queue, directExchange);
-        setUpVisit(_hostRecord, queue, dlq, dle, queueBinding, dlqBinding);
-
-        VirtualHostStoreUpgraderAndRecoverer upgraderAndRecoverer = new VirtualHostStoreUpgraderAndRecoverer(_virtualHostNode);
-        upgraderAndRecoverer.perform(_durableConfigurationStore);
-
-        VirtualHost<?,?,?>  host = _virtualHostNode.getVirtualHost();
-        host.open();
+        final VirtualHost<?,?,?>  host = _virtualHostNode.getVirtualHost();
+        Subject.doAs(org.apache.qpid.server.security.SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Void>()
+                {
+                    @Override
+                    public Void run()
+                    {
+                        host.open();
+                        return null;
+                    }
+                }
+        );
 
         assertNotNull("Virtual host is not recovered", host);
         Queue<?> recoveredQueue = host.findConfiguredObject(Queue.class, "test");
