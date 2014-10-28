@@ -35,6 +35,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.Exchange;
@@ -142,7 +143,55 @@ public class VirtualHostStoreUpgraderAndRecovererTest extends QpidTestCase
         assertEquals("Unexpected alternative exchange", recoveredDLE, recoveredQueue.getAlternateExchange());
     }
 
+    public void testRecordUpdatedInOneUpgraderAndRemovedInAnotherUpgraderIsNotRecovered()
+    {
+        ConfiguredObjectRecord queue = mockQueue("test-queue", null);
+        ConfiguredObjectRecord exchange = mockExchange("test-direct", "direct");
+        ConfiguredObjectRecord queueBinding1 =  mockBinding("test-binding", queue, exchange);
+        ConfiguredObjectRecord nonExistingExchange = mock(ConfiguredObjectRecord.class);
+
+        // selector on non-topic exchange should be removed from binding arguments in upgrader 0.0->0.1
+        // binding to non-existing exchange is removed in upgrader 0.1->0.2
+        when(nonExistingExchange.getId()).thenReturn(UUIDGenerator.generateExchangeUUID("non-existing", "test"));
+        Map<String, Object> arguments = Collections.<String, Object>singletonMap("x-filter-jms-selector", "id=1");
+        ConfiguredObjectRecord queueBinding2 =  mockBinding("test-non-existing", queue, nonExistingExchange, arguments);
+        setUpVisit(_hostRecord, queue, exchange, queueBinding1, queueBinding2);
+
+        VirtualHostStoreUpgraderAndRecoverer upgraderAndRecoverer = new VirtualHostStoreUpgraderAndRecoverer(_virtualHostNode);
+        upgraderAndRecoverer.perform(_durableConfigurationStore);
+
+        final VirtualHost<?,?,?>  host = _virtualHostNode.getVirtualHost();
+        Subject.doAs(org.apache.qpid.server.security.SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Void>()
+                {
+                    @Override
+                    public Void run()
+                    {
+                        host.open();
+                        return null;
+                    }
+                }
+        );
+
+        assertNotNull("Virtual host is not recovered", host);
+        Queue<?> recoveredQueue = host.findConfiguredObject(Queue.class, "test-queue");
+        assertNotNull("Queue is not recovered", recoveredQueue);
+
+        Exchange<?> recoveredExchange= host.findConfiguredObject(Exchange.class, "test-direct");
+        assertNotNull("Exchange is not recovered", recoveredExchange);
+
+        Binding<?> recoveredBinding1 = recoveredQueue.findConfiguredObject(Binding.class, "test-binding");
+        assertNotNull("Correct binding is not recovered", recoveredBinding1);
+
+        Binding<?> recoveredBinding2 = recoveredQueue.findConfiguredObject(Binding.class, "test-non-existing");
+        assertNull("Incorrect binding is recovered", recoveredBinding2);
+    }
+
     private ConfiguredObjectRecord mockBinding(String bindingName, ConfiguredObjectRecord queue, ConfiguredObjectRecord exchange)
+    {
+        return mockBinding(bindingName, queue, exchange, null);
+    }
+
+    private ConfiguredObjectRecord mockBinding(String bindingName, ConfiguredObjectRecord queue, ConfiguredObjectRecord exchange, Map<String, Object> arguments)
     {
         ConfiguredObjectRecord binding = mock(ConfiguredObjectRecord.class);
         when(binding.getId()).thenReturn(UUID.randomUUID());
@@ -156,6 +205,10 @@ public class VirtualHostStoreUpgraderAndRecovererTest extends QpidTestCase
         Map<String, Object> attributes = new HashMap<>();
         attributes.put("durable", true);
         attributes.put("name", bindingName);
+        if (arguments != null)
+        {
+            attributes.put("arguments", arguments);
+        }
         when(binding.getAttributes()).thenReturn(attributes);
         return binding;
     }
