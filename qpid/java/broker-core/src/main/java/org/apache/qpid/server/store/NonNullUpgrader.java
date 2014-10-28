@@ -61,6 +61,7 @@ public abstract class NonNullUpgrader implements DurableConfigurationStoreUpgrad
     {
         final Map<UUID, ConfiguredObjectRecord> updates = new HashMap<UUID, ConfiguredObjectRecord>(_updates);
         updates.putAll(_nextUpgrader.getUpdatedRecords());
+        updates.keySet().removeAll(getDeletedRecords().keySet());
         return updates;
     }
 
