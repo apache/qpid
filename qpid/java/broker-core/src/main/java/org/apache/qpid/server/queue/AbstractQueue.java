@@ -499,7 +499,11 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     {
         try
         {
-            _asyncDelivery.execute(runnable);
+
+            if (_virtualHost.getState() != State.UNAVAILABLE)
+            {
+                _asyncDelivery.execute(runnable);
+            }
         }
         catch (RejectedExecutionException ree)
         {
@@ -1923,12 +1927,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                         sub.releaseSendLock();
                     }
                 }
-
-                if (_virtualHost.getState() != State.ACTIVE)
-                {
-                    _logger.debug("Subscription flush halted owing to virtualhost state " + _virtualHost.getState());
-                    return true;
-                }
             }
         }
         finally
@@ -1979,7 +1977,14 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
             QueueEntry node  = getNextAvailableEntry(sub);
 
-            if (_virtualHost.getState() == State.ACTIVE && node != null && node.isAvailable())
+
+            if (_virtualHost.getState() != State.ACTIVE)
+            {
+                throw new ConnectionScopedRuntimeException("Delivery halted owing to " +
+                                                           "virtualhost state " + _virtualHost.getState());
+            }
+
+            if (node != null && node.isAvailable())
             {
                 if (sub.hasInterest(node) && mightAssign(sub, node))
                 {
@@ -2183,12 +2188,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                                 if(--iterations == 0)
                                 {
                                     sub.flushBatched();
-                                    break;
-                                }
-                                if (_virtualHost.getState() != State.ACTIVE)
-                                {
-                                    _logger.debug("Queue process halted owing to virtualhost state " + _virtualHost.getState());
-
                                     break;
                                 }
                             }
@@ -2544,6 +2543,11 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                                                                                         final ServerTransaction txn,
                                                                                         final Action<? super MessageInstance> postEnqueueAction)
     {
+        if (_virtualHost.getState() != State.ACTIVE)
+        {
+            throw new ConnectionScopedRuntimeException("Virtualhost state " + _virtualHost.getState() + " prevents the message from being sent");
+        }
+
         if(!message.isReferenced(this))
         {
             txn.enqueue(this, message, new ServerTransaction.Action()
