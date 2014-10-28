@@ -490,11 +490,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         if(_dynamicState.compareAndSet(DynamicState.OPENED, DynamicState.CLOSED))
         {
+            beforeClose();
             closeChildren();
             onClose();
             unregister(false);
 
         }
+    }
+
+    protected void beforeClose()
+    {
     }
 
     protected void onClose()

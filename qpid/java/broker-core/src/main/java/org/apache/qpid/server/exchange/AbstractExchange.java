@@ -507,8 +507,13 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                                                                                         final ServerTransaction txn,
                                                                                         final Action<? super MessageInstance> postEnqueueAction)
     {
-        List<? extends BaseQueue> queues = route(message, routingAddress, instanceProperties);
+        if (_virtualHost.getState() != State.ACTIVE)
+        {
+            _logger.debug("Virtualhost state " + _virtualHost.getState() + " prevents the message from being sent");
+            return 0;
+        }
 
+        List<? extends BaseQueue> queues = route(message, routingAddress, instanceProperties);
         if(queues == null || queues.isEmpty())
         {
             Exchange altExchange = getAlternateExchange();
