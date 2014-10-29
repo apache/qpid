@@ -38,8 +38,6 @@ import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
-import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class VirtualHostStoreUpgraderAndRecoverer
 {
@@ -351,6 +349,8 @@ public class VirtualHostStoreUpgraderAndRecoverer
     private class Upgrader_0_4_to_2_0 extends StoreUpgraderPhase
     {
         private static final String ALTERNATE_EXCHANGE = "alternateExchange";
+        private static final String DLQ_ENABLED_ARGUMENT = "x-qpid-dlq-enabled";
+        private static final String  DEFAULT_DLE_NAME_SUFFIX = "_DLE";
 
         private Map<String, String> _missingAmqpExchanges = new HashMap<String, String>(DEFAULT_EXCHANGES);
         private ConfiguredObjectRecord _virtualHostRecord;
@@ -430,7 +430,7 @@ public class VirtualHostStoreUpgraderAndRecoverer
         private ConfiguredObjectRecord updateQueueRecordIfNecessary(ConfiguredObjectRecord record)
         {
             Map<String, Object> attributes = record.getAttributes();
-            boolean queueDLQEnabled = Boolean.parseBoolean(String.valueOf(attributes.get(AbstractVirtualHost.CREATE_DLQ_ON_CREATION)));
+            boolean queueDLQEnabled = Boolean.parseBoolean(String.valueOf(attributes.get(DLQ_ENABLED_ARGUMENT)));
             if(queueDLQEnabled && attributes.get(ALTERNATE_EXCHANGE) == null)
             {
                 Object queueName =  attributes.get("name");
@@ -439,7 +439,7 @@ public class VirtualHostStoreUpgraderAndRecoverer
                     throw new IllegalConfigurationException("Queue name is not found in queue configuration entry attributes: " + attributes);
                 }
 
-                String dleSuffix = System.getProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, VirtualHostImpl.DEFAULT_DLE_NAME_SUFFIX);
+                String dleSuffix = System.getProperty(BrokerProperties.PROPERTY_DEAD_LETTER_EXCHANGE_SUFFIX, DEFAULT_DLE_NAME_SUFFIX);
                 String dleExchangeName = queueName + dleSuffix;
 
                 ConfiguredObjectRecord exchangeRecord = findConfiguredObjectRecordInUpdateMap("Exchange", dleExchangeName);
