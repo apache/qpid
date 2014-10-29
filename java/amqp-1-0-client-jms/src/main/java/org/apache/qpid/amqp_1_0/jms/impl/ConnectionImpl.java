@@ -196,6 +196,14 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                     jmsEx.initCause(e);
                     throw jmsEx;
                 }
+                finally
+                {
+                    if(_conn == null)
+                    {
+                        _state = State.UNCONNECTED;
+                    }
+                }
+
             }
         }
     }
