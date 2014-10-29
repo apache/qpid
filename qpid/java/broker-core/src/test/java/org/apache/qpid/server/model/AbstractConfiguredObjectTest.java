@@ -24,6 +24,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.testmodel.TestChildCategory;
@@ -610,4 +616,121 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
         }
     }
 
+    public void testCreateConcurrentlyChildrenWithTheSameName() throws Exception
+    {
+        final TestConfiguredObject parent = new TestConfiguredObject("parent");
+        parent.create();
+
+        short numberOfThreads = 300;
+        ExecutorService executor = Executors.newFixedThreadPool(numberOfThreads);
+
+        final CountDownLatch startLatch = new CountDownLatch(1);
+        final CountDownLatch endLatch = new CountDownLatch(numberOfThreads);
+        final AtomicInteger duplicateNameExceptionCounter = new AtomicInteger();
+        final AtomicInteger successCounter = new AtomicInteger();
+        try
+        {
+            for (int i = 0; i < numberOfThreads; i++)
+            {
+                executor.submit(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        TestConfiguredObject child = new TestConfiguredObject("child", parent, parent.getTaskExecutor());
+                        try
+                        {
+                            startLatch.await();
+                            child.create();
+                            successCounter.incrementAndGet();
+                        }
+                        catch(AbstractConfiguredObject.DuplicateNameException e)
+                        {
+                            duplicateNameExceptionCounter.incrementAndGet();
+                        }
+                        catch (InterruptedException e)
+                        {
+                            // ignore
+                        }
+                        finally
+                        {
+                            endLatch.countDown();
+                        }
+                    }
+                });
+            }
+            startLatch.countDown();
+            assertTrue("Waiting interval expired", endLatch.await(10, TimeUnit.SECONDS));
+        }
+        finally
+        {
+            executor.shutdownNow();
+        }
+
+        assertEquals("Unexpected number of children", 1, parent.getChildren(TestConfiguredObject.class).size());
+        assertEquals("Unexpected number of successful creations", 1, successCounter.get());
+        assertEquals("Unexpected number of DuplicateNameException", numberOfThreads - 1, duplicateNameExceptionCounter.get());
+    }
+
+    public void testCreateConcurrentlyChildrenWithTheSameId() throws Exception
+    {
+        final TestConfiguredObject parent = new TestConfiguredObject("parent");
+        parent.create();
+
+        short numberOfThreads = 300;
+        ExecutorService executor = Executors.newFixedThreadPool(numberOfThreads);
+
+        final CountDownLatch startLatch = new CountDownLatch(1);
+        final CountDownLatch endLatch = new CountDownLatch(numberOfThreads);
+        final AtomicInteger duplicateIdExceptionCounter = new AtomicInteger();
+        final AtomicInteger successCounter = new AtomicInteger();
+        final UUID id = UUID.randomUUID();
+        try
+        {
+            for (int i = 0; i < numberOfThreads; i++)
+            {
+                final int iteration = i;
+                executor.submit(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        Map<String, Object> attributes = new HashMap<>();
+                        attributes.put(ConfiguredObject.NAME, "child-" + iteration);
+                        attributes.put(ConfiguredObject.ID, id);
+                        TestConfiguredObject child = new TestConfiguredObject(parent, attributes);
+
+                        try
+                        {
+                            startLatch.await();
+                            child.create();
+                            successCounter.incrementAndGet();
+                        }
+                        catch(AbstractConfiguredObject.DuplicateIdException e)
+                        {
+                            duplicateIdExceptionCounter.incrementAndGet();
+                        }
+                        catch (InterruptedException e)
+                        {
+                            // ignore
+                        }
+                        finally
+                        {
+                            endLatch.countDown();
+                        }
+                    }
+                });
+            }
+            startLatch.countDown();
+            assertTrue("Waiting interval expired", endLatch.await(10, TimeUnit.SECONDS));
+        }
+        finally
+        {
+            executor.shutdownNow();
+        }
+
+        assertEquals("Unexpected number of children", 1, parent.getChildren(TestConfiguredObject.class).size());
+        assertEquals("Unexpected number of successful creations", 1, successCounter.get());
+        assertEquals("Unexpected number of DuplicateIdException", numberOfThreads - 1, duplicateIdExceptionCounter.get());
+    }
 }
