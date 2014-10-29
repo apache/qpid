@@ -46,6 +46,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -439,6 +440,9 @@ public class MultiNodeTest extends QpidBrokerTestCase
 
     public void testClusterCannotStartWithIntruder() throws Exception
     {
+        //set property explicitly as test requires broker to start to enable check for ERRORED nodes
+        setSystemProperty(Broker.BROKER_FAIL_STARTUP_WITH_ERRORED_CHILD, String.valueOf(Boolean.FALSE));
+
         int intruderPort = getNextAvailable(Collections.max(_groupCreator.getBdbPortNumbers()) + 1);
         String nodeName = "intruder";
         String nodeHostPort = _groupCreator.getIpAddressOfBrokerHost() + ":" + intruderPort;
