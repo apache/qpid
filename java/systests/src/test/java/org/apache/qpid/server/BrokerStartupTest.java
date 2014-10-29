@@ -24,6 +24,7 @@ import java.io.File;
 import java.util.List;
 
 import javax.jms.Connection;
+import javax.jms.JMSException;
 import javax.jms.Queue;
 import javax.jms.Session;
 
@@ -179,6 +180,52 @@ public class BrokerStartupTest extends AbstractTestLogging
                 }
 
                 throw afe;
+            }
+        }
+    }
+
+    public void testStartupWithErroredChildrenCanBeConfigured() throws Exception
+    {
+        if (isJavaBroker())
+        {
+            int port = getPort(0);
+            int managementPort = getManagementPort(port);
+            int connectorServerPort = managementPort + JMXPORT_CONNECTORSERVER_OFFSET;
+
+            setTestSystemProperty("qpid.amqp_port",String.valueOf(port));
+            setTestSystemProperty("qpid.jmx_port",String.valueOf(managementPort));
+            setTestSystemProperty("qpid.rmi_port",String.valueOf(connectorServerPort));
+
+            //Purposely set the HTTP port to be the same as the AMQP port so that the port object becomes ERRORED
+            setTestSystemProperty("qpid.http_port",String.valueOf(port));
+
+            // Set broker to fail on startup if it has ERRORED children
+            setTestSystemProperty("broker.failStartupWithErroredChild", String.valueOf(Boolean.TRUE));
+
+            File brokerConfigFile = new File(getTestConfigFile(port));
+            if (brokerConfigFile.exists())
+            {
+                // Config exists from previous test run, delete it.
+                brokerConfigFile.delete();
+            }
+
+            startBroker(port, null);
+
+            AMQConnectionURL url = new AMQConnectionURL(String.format("amqp://"
+                    + GUEST_USERNAME
+                    + ":"
+                    + GUEST_PASSWORD
+                    + "@clientid/?brokerlist='localhost:%d'", port));
+
+            try
+            {
+                Connection conn = getConnection(url);
+                fail("Connection should fail as broker startup should have failed due to ERRORED children (port)");
+                conn.close();
+            }
+            catch (JMSException jmse)
+            {
+                //pass
             }
         }
     }

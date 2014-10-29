@@ -235,41 +235,42 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             _managementModeAuthenticationProvider.open();
         }
 
-        for(KeyStore<?> keyStore : getChildren(KeyStore.class))
+        boolean hasBrokerAnyErroredChildren = false;
+
+        for (final Class<? extends ConfiguredObject> childClass : getModel().getChildTypes(getCategoryClass()))
         {
-            addKeyStore(keyStore);
+            final Collection<? extends ConfiguredObject> children = getChildren(childClass);
+            if (children != null) {
+                for (final ConfiguredObject<?> child : children) {
+
+                    if (child instanceof  AccessControlProvider)
+                    {
+                        addAccessControlProvider((AccessControlProvider)child);
+                    }
+                    else
+                    {
+                        child.addChangeListener(this);
+                    }
+
+                    if (child.getState() == State.ERRORED )
+                    {
+                        hasBrokerAnyErroredChildren = true;
+                        LOGGER.warn(String.format("Broker child object '%s' of type '%s' is %s",
+                                                    child.getName(), childClass.getSimpleName(), State.ERRORED ));
+                    }
+                }
+            }
         }
-        for(TrustStore<?> trustStore : getChildren(TrustStore.class))
+
+        final boolean brokerShutdownOnErroredChild = getContextValue(Boolean.class, BROKER_FAIL_STARTUP_WITH_ERRORED_CHILD);
+        if (!_brokerOptions.isManagementMode() && brokerShutdownOnErroredChild && hasBrokerAnyErroredChildren)
         {
-            addTrustStore(trustStore);
-        }
-        for(AuthenticationProvider<?> authenticationProvider : getChildren(AuthenticationProvider.class))
-        {
-            addAuthenticationProvider(authenticationProvider);
-        }
-        for(Port<?> port : getChildren(Port.class))
-        {
-            addPort(port);
-        }
-        for(Plugin<?> plugin : getChildren(Plugin.class))
-        {
-            addPlugin(plugin);
-        }
-        for(GroupProvider<?> groupProvider : getChildren(GroupProvider.class))
-        {
-            addGroupProvider(groupProvider);
-        }
-        for(AccessControlProvider<?> accessControlProvider : getChildren(AccessControlProvider.class))
-        {
-            addAccessControlProvider(accessControlProvider);
-        }
-        for(VirtualHostNode<?> virtualHostNode : getChildren(VirtualHostNode.class))
-        {
-            addVirtualHostNode(virtualHostNode);
+            throw new IllegalStateException(String.format("Broker context variable %s is set and the broker has %s children",
+                    BROKER_FAIL_STARTUP_WITH_ERRORED_CHILD, State.ERRORED));
         }
 
         initialiseStatisticsReporting();
-       // changeChildState(State.ACTIVE, false);
+
         if (isManagementMode())
         {
             _eventLogger.message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME,
