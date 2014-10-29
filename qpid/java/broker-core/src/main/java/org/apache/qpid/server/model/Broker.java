@@ -58,6 +58,7 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String CONNECTION_CLOSE_WHEN_NO_ROUTE = "connection.closeWhenNoRoute";
 
     String BROKER_FLOW_TO_DISK_THRESHOLD = "broker.flowToDiskThreshold";
+    String BROKER_FAIL_STARTUP_WITH_ERRORED_CHILD = "broker.failStartupWithErroredChild";
 
     String QPID_AMQP_PORT = "qpid.amqp_port";
     String QPID_HTTP_PORT = "qpid.http_port";
@@ -86,6 +87,8 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     @ManagedContextDefault(name = BROKER_FRAME_SIZE)
     int DEFAULT_FRAME_SIZE = 65535;
 
+    @ManagedContextDefault(name = BROKER_FAIL_STARTUP_WITH_ERRORED_CHILD)
+    boolean DEFAULT_BROKER_FAIL_STARTUP_WITH_ERRORED_CHILD = false;
 
     @DerivedAttribute
     String getBuildVersion();
