@@ -66,6 +66,11 @@ public class TestConfiguredObject extends AbstractConfiguredObject
         this(createParents(parent), Collections.<String, Object>singletonMap(ConfiguredObject.NAME, name), taskExecutor, TestConfiguredObjectModel.INSTANCE);
     }
 
+    public TestConfiguredObject(ConfiguredObject<?> parent, Map<String, Object> attributes)
+    {
+        this(createParents(parent), attributes, parent.getTaskExecutor(), TestConfiguredObjectModel.INSTANCE);
+    }
+
     public TestConfiguredObject(Map parents, Map<String, Object> attributes, TaskExecutor taskExecutor, Model model)
     {
         super(parents, attributes, taskExecutor, model);

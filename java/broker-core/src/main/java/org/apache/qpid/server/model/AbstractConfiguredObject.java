@@ -1379,25 +1379,26 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private <C extends ConfiguredObject> void registerChild(final C child)
     {
-
-        Class categoryClass = child.getCategoryClass();
-        UUID childId = child.getId();
-        String name = child.getName();
-        if(_childrenById.get(categoryClass).containsKey(childId))
+        synchronized(_children)
         {
-            throw new DuplicateIdException(child);
-        }
-        if(getModel().getParentTypes(categoryClass).size() == 1)
-        {
-            if (_childrenByName.get(categoryClass).containsKey(name))
+            Class categoryClass = child.getCategoryClass();
+            UUID childId = child.getId();
+            String name = child.getName();
+            if(_childrenById.get(categoryClass).containsKey(childId))
             {
-                throw new DuplicateNameException(child);
+                throw new DuplicateIdException(child);
             }
-            _childrenByName.get(categoryClass).put(name, child);
+            if(getModel().getParentTypes(categoryClass).size() == 1)
+            {
+                if (_childrenByName.get(categoryClass).containsKey(name))
+                {
+                    throw new DuplicateNameException(child);
+                }
+                _childrenByName.get(categoryClass).put(name, child);
+            }
+            _children.get(categoryClass).add(child);
+            _childrenById.get(categoryClass).put(childId,child);
         }
-        _children.get(categoryClass).add(child);
-        _childrenById.get(categoryClass).put(childId,child);
-
     }
 
     public final void stop()
