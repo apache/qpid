@@ -29,6 +29,8 @@
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/Time.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/sys/OutputControl.h"
 #include "config.h"
 #include <sstream>
@@ -89,6 +91,28 @@ void Connection::trace(const char* message) const
     QPID_LOG_CAT(trace, protocol, "[" << id << "]: " << message);
 }
 
+namespace {
+struct ConnectionTickerTask : public qpid::sys::TimerTask
+{
+    qpid::sys::Timer& timer;
+    Connection& connection;
+    ConnectionTickerTask(uint64_t interval, qpid::sys::Timer& t, Connection& c) :
+        TimerTask(qpid::sys::Duration(interval*qpid::sys::TIME_MSEC), "ConnectionTicker"),
+        timer(t),
+        connection(c)
+    {}
+
+    void fire() {
+        // Setup next firing
+        setupNextFire();
+        timer.add(this);
+
+        // Send Ticker
+        connection.requestIO();
+    }
+};
+}
+
 Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, BrokerContext& b, bool saslInUse, bool brokerInitiated)
     : BrokerContext(b), ManagedConnection(getBroker(), i, brokerInitiated),
       connection(pn_connection()),
@@ -122,9 +146,14 @@ Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, Broker
     }
 }
 
+void Connection::requestIO()
+{
+    out.activateOutput();
+}
 
 Connection::~Connection()
 {
+    if (ticker) ticker->cancel();
     getBroker().getConnectionObservers().closed(*this);
     pn_transport_free(transport);
     pn_connection_free(connection);
@@ -161,7 +190,7 @@ size_t Connection::decode(const char* buffer, size_t size)
             pn_condition_set_description(error, e.what());
             close();
         }
-        pn_transport_tick(transport, 0);
+        pn_transport_tick(transport, qpid::sys::Duration::FromEpoch() / qpid::sys::TIME_MSEC);
         if (!haveOutput) {
             haveOutput = true;
             out.activateOutput();
@@ -245,8 +274,7 @@ bool Connection::canEncode()
     } else {
         QPID_LOG(info, "Connection " << id << " has been closed locally");
     }
-    //TODO: proper handling of time in and out of tick
-    pn_transport_tick(transport, 0);
+    pn_transport_tick(transport, qpid::sys::Duration::FromEpoch() / qpid::sys::TIME_MSEC);
     QPID_LOG_CAT(trace, network, id << " canEncode(): " << haveOutput)
     return haveOutput;
 }
@@ -256,6 +284,12 @@ void Connection::open()
     readPeerProperties();
 
     pn_connection_set_container(connection, getBroker().getFederationTag().c_str());
+    uint32_t timeout = pn_transport_get_remote_idle_timeout(transport);
+    if (timeout) {
+        ticker = boost::intrusive_ptr<qpid::sys::TimerTask>(new ConnectionTickerTask(timeout, getBroker().getTimer(), *this));
+        pn_transport_set_idle_timeout(transport, timeout);
+    }
+
     pn_connection_open(connection);
     out.connectionEstablished();
     opened();
@@ -271,6 +305,7 @@ void Connection::readPeerProperties()
 
 void Connection::closed()
 {
+    if (ticker) ticker->cancel();
     for (Sessions::iterator i = sessions.begin(); i != sessions.end(); ++i) {
         i->second->close();
     }
@@ -372,7 +407,12 @@ void Connection::process()
         pn_connection_close(connection);
     }
 }
-
+namespace {
+std::string convert(pn_delivery_tag_t in)
+{
+    return std::string(in.bytes, in.size);
+}
+}
 void Connection::processDeliveries()
 {
     //handle deliveries
@@ -382,6 +422,7 @@ void Connection::processDeliveries()
             if (pn_link_is_receiver(link)) {
                 Sessions::iterator i = sessions.find(pn_link_session(link));
                 if (i != sessions.end()) {
+                    QPID_LOG(notice, "Processing delivery with tag " << convert(pn_delivery_tag(delivery)));
                     i->second->readable(link, delivery);
                 } else {
                     pn_delivery_update(delivery, PN_REJECTED);
