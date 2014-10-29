@@ -25,6 +25,7 @@
 #include "qpid/broker/amqp/BrokerContext.h"
 #include "qpid/broker/amqp/ManagedConnection.h"
 #include <map>
+#include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 
 struct pn_connection_t;
@@ -32,6 +33,9 @@ struct pn_session_t;
 struct pn_transport_t;
 
 namespace qpid {
+namespace sys {
+class TimerTask;
+}
 namespace broker {
 
 class Broker;
@@ -60,6 +64,7 @@ class Connection : public BrokerContext, public sys::ConnectionCodec, public Man
     void setUserId(const std::string&);
     void abort();
     void trace(const char*) const;
+    void requestIO();
   protected:
     typedef std::map<pn_session_t*, boost::shared_ptr<Session> > Sessions;
     pn_connection_t* connection;
@@ -70,6 +75,7 @@ class Connection : public BrokerContext, public sys::ConnectionCodec, public Man
     Sessions sessions;
     bool closeInitiated;
     bool closeRequested;
+    boost::intrusive_ptr<sys::TimerTask> ticker;
 
     virtual void process();
     void doOutput(size_t);
