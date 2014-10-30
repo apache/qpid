@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                    "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+<section id="Java-Broker-Security-Kerberos-Provider">
+    <title>Kerberos</title>
+
+    <para> Kereberos Authentication Provider uses java GSS-API SASL mechanism to authenticate the
+        connections. </para>
+
+    <para> Configuration of kerberos is done through system properties (there doesn't seem to be a
+        way around this unfortunately). </para>
+
+    <programlisting>
+    export JAVA_OPTS=-Djavax.security.auth.useSubjectCredsOnly=false -Djava.security.auth.login.config=qpid.conf
+    ${QPID_HOME}/bin/qpid-server
+  </programlisting>
+
+    <para>Where qpid.conf would look something like this:</para>
+
+    <programlisting><![CDATA[
+com.sun.security.jgss.accept {
+    com.sun.security.auth.module.Krb5LoginModule required
+    useKeyTab=true
+    storeKey=true
+    doNotPrompt=true
+    realm="EXAMPLE.COM"
+    useSubjectCredsOnly=false
+    kdc="kerberos.example.com"
+    keyTab="/path/to/keytab-file"
+    principal="<name>/<host>";
+};]]></programlisting>
+
+    <para> Where realm, kdc, keyTab and principal should obviously be set correctly for the
+        environment where you are running (see the existing documentation for the C++ broker about
+        creating a keytab file). </para>
+
+    <para> Note: You may need to install the "Java Cryptography Extension (JCE) Unlimited Strength
+        Jurisdiction Policy Files" appropriate for your JDK in order to get Kerberos support working. </para>
+
+    <para> Since Kerberos support only works where SASL authentication is available (e.g. not for
+        JMX authentication) you may wish to also include an alternative Authentication Provider
+        configuration, and use this for JMX and HTTP ports. </para>
+
+</section>
