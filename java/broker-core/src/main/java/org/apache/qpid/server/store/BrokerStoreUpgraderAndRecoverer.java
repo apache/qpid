@@ -40,6 +40,7 @@ import org.apache.qpid.server.util.Action;
 
 public class BrokerStoreUpgraderAndRecoverer
 {
+    public static final String VIRTUALHOSTS = "virtualhosts";
     private final SystemConfig<?> _systemConfig;
     private final Map<String, StoreUpgraderPhase> _upgraders = new HashMap<String, StoreUpgraderPhase>();
 
@@ -74,6 +75,7 @@ public class BrokerStoreUpgraderAndRecoverer
             if (record.getType().equals("Broker"))
             {
                 record = upgradeRootRecord(record);
+                record = createVirtualHostsRecordsFromBrokerRecordForModel_1_x(record, this);
             }
             else if (record.getType().equals("VirtualHost") && record.getAttributes().containsKey("storeType"))
             {
@@ -107,6 +109,7 @@ public class BrokerStoreUpgraderAndRecoverer
             if (record.getType().equals("Broker"))
             {
                 record = upgradeRootRecord(record);
+                record = createVirtualHostsRecordsFromBrokerRecordForModel_1_x(record, this);
             }
 
             getNextUpgrader().configuredObject(record);
@@ -150,6 +153,7 @@ public class BrokerStoreUpgraderAndRecoverer
             else if (record.getType().equals("Broker"))
             {
                 record = upgradeRootRecord(record);
+                record = createVirtualHostsRecordsFromBrokerRecordForModel_1_x(record, this);
             }
 
             getNextUpgrader().configuredObject(record);
@@ -199,6 +203,7 @@ public class BrokerStoreUpgraderAndRecoverer
             else if (record.getType().equals("Broker"))
             {
                 record = upgradeRootRecord(record);
+                record = createVirtualHostsRecordsFromBrokerRecordForModel_1_x(record, this);
             }
 
             getNextUpgrader().configuredObject(record);
@@ -542,6 +547,61 @@ public class BrokerStoreUpgraderAndRecoverer
         {
             return _value;
         }
+    }
+
+    private static ConfiguredObjectRecord createVirtualHostsRecordsFromBrokerRecordForModel_1_x(ConfiguredObjectRecord brokerRecord, StoreUpgraderPhase upgrader)
+    {
+        Map<String, Object> attributes = brokerRecord.getAttributes();
+        if (attributes.containsKey(VIRTUALHOSTS) && attributes.get(VIRTUALHOSTS) instanceof Collection)
+        {
+            Collection<?> virtualHosts = (Collection<?>)attributes.get(VIRTUALHOSTS);
+            for (Object virtualHost: virtualHosts)
+            {
+                if (virtualHost instanceof Map)
+                {
+                    Map<String, Object> virtualHostAttributes = (Map)virtualHost;
+                    if (virtualHostAttributes.containsKey("configPath"))
+                    {
+                        throw new IllegalConfigurationException("Auto-upgrade of virtual host " + attributes.get("name")
+                                + " having XML configuration is not supported. Virtual host configuration file is " + attributes.get("configPath"));
+                    }
+
+                    virtualHostAttributes = new HashMap<>(virtualHostAttributes);
+                    Object nameAttribute = virtualHostAttributes.get("name");
+                    Object idAttribute = virtualHostAttributes.remove("id");
+                    UUID id;
+                    if (idAttribute == null)
+                    {
+                        id = UUID.randomUUID();
+                    }
+                    else
+                    {
+                        if (idAttribute instanceof String)
+                        {
+                            id = UUID.fromString((String)idAttribute);
+                        }
+                        else if (idAttribute instanceof UUID)
+                        {
+                            id = (UUID)idAttribute;
+                        }
+                        else
+                        {
+                            throw new IllegalConfigurationException("Illegal ID value '" + idAttribute + "' for virtual host " + nameAttribute);
+                        }
+                    }
+
+                    ConfiguredObjectRecord nodeRecord = new ConfiguredObjectRecordImpl(id, "VirtualHost", virtualHostAttributes, Collections.singletonMap("Broker", brokerRecord.getId()));
+
+                    upgrader.getUpdateMap().put(nodeRecord.getId(), nodeRecord);
+                    upgrader.configuredObject(nodeRecord);
+                }
+            }
+            attributes = new HashMap<>(attributes);
+            attributes.remove(VIRTUALHOSTS);
+            brokerRecord = new ConfiguredObjectRecordImpl(brokerRecord.getId(), brokerRecord.getType(), attributes, brokerRecord.getParents());
+            upgrader.getUpdateMap().put(brokerRecord.getId(), brokerRecord);
+        }
+        return brokerRecord;
     }
 
     public Broker<?> perform(final DurableConfigurationStore store)

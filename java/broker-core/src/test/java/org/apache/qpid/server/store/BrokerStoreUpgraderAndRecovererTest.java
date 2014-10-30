@@ -21,7 +21,9 @@
 package org.apache.qpid.server.store;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +34,7 @@ import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.BrokerShutdownProvider;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.JsonSystemConfigImpl;
@@ -42,20 +45,37 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
 {
+    private static final long BROKER_CREATE_TIME = 1401385808828l;
+    private static final String BROKER_NAME = "Broker";
+    private static final String VIRTUALHOST_NAME = "test";
+    private static final long VIRTUALHOST_CREATE_TIME = 1401385905260l;
+    private static final String VIRTUALHOST_CREATED_BY = "webadmin";
+
     private ConfiguredObjectRecord _brokerRecord;
     private CurrentThreadTaskExecutor _taskExecutor;
     private SystemConfig<?> _systemConfig;
+    private List<Map<String, Object>> _virtaulHosts;
+    private UUID _hostId;
+    private UUID _brokerId;
 
     public void setUp() throws Exception
     {
         super.setUp();
+        _virtaulHosts = new ArrayList<>();
+        _hostId = UUID.randomUUID();
+        _brokerId = UUID.randomUUID();
         Map<String, Object> brokerAttributes = new HashMap<>();
-        brokerAttributes.put("createdTime", 1401385808828l);
-        brokerAttributes.put("defaultVirtualHost", "test");
+        brokerAttributes.put("createdTime", BROKER_CREATE_TIME);
+        brokerAttributes.put("defaultVirtualHost", VIRTUALHOST_NAME);
         brokerAttributes.put("modelVersion", "1.3");
-        brokerAttributes.put("name", "Broker");
+        brokerAttributes.put("name", BROKER_NAME);
+        brokerAttributes.put("virtualhosts", _virtaulHosts);
 
-        _brokerRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), "Broker", brokerAttributes);
+        _brokerRecord = mock(ConfiguredObjectRecord.class);
+        when(_brokerRecord.getId()).thenReturn(_brokerId);
+        when(_brokerRecord.getType()).thenReturn("Broker");
+        when(_brokerRecord.getAttributes()).thenReturn(brokerAttributes);
+
         _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
         _systemConfig = new JsonSystemConfigImpl(_taskExecutor,
@@ -68,12 +88,12 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
     public void testUpgradeVirtualHostWithJDBCStoreAndBoneCPPool()
     {
         Map<String, Object> hostAttributes = new HashMap<>();
-        hostAttributes.put("name", "test");
+        hostAttributes.put("name", VIRTUALHOST_NAME);
         hostAttributes.put("modelVersion", "0.4");
         hostAttributes.put("connectionPool", "BONECP");
         hostAttributes.put("connectionURL", "jdbc:derby://localhost:1527/tmp/vh/test;create=true");
-        hostAttributes.put("createdBy", "webadmin");
-        hostAttributes.put("createdTime", 1401385905260l);
+        hostAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        hostAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
         hostAttributes.put("maxConnectionsPerPartition", 7);
         hostAttributes.put("minConnectionsPerPartition", 6);
         hostAttributes.put("partitionCount", 2);
@@ -97,9 +117,9 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         Map<String,Object> expectedAttributes = new HashMap<>();
         expectedAttributes.put("connectionPoolType", "BONECP");
         expectedAttributes.put("connectionUrl", "jdbc:derby://localhost:1527/tmp/vh/test;create=true");
-        expectedAttributes.put("createdBy", "webadmin");
-        expectedAttributes.put("createdTime", 1401385905260l);
-        expectedAttributes.put("name", "test");
+        expectedAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        expectedAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
+        expectedAttributes.put("name", VIRTUALHOST_NAME);
         expectedAttributes.put("type", "JDBC");
 
         final Map<String, Object> context = new HashMap<>();
@@ -114,17 +134,18 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         expectedAttributes.put("context", context);
 
         assertEquals("Unexpected attributes", expectedAttributes, upgradedVirtualHostNodeRecord.getAttributes());
+        assertBrokerRecord(records);
     }
 
     public void testUpgradeVirtualHostWithJDBCStoreAndDefaultPool()
     {
         Map<String, Object> hostAttributes = new HashMap<>();
-        hostAttributes.put("name", "test");
+        hostAttributes.put("name", VIRTUALHOST_NAME);
         hostAttributes.put("modelVersion", "0.4");
         hostAttributes.put("connectionPool", "DEFAULT");
         hostAttributes.put("connectionURL", "jdbc:derby://localhost:1527/tmp/vh/test;create=true");
-        hostAttributes.put("createdBy", "webadmin");
-        hostAttributes.put("createdTime", 1401385905260l);
+        hostAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        hostAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
         hostAttributes.put("storeType", "jdbc");
         hostAttributes.put("type", "STANDARD");
         hostAttributes.put("jdbcBigIntType", "mybigint");
@@ -145,9 +166,9 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         Map<String,Object> expectedAttributes = new HashMap<>();
         expectedAttributes.put("connectionPoolType", "NONE");
         expectedAttributes.put("connectionUrl", "jdbc:derby://localhost:1527/tmp/vh/test;create=true");
-        expectedAttributes.put("createdBy", "webadmin");
-        expectedAttributes.put("createdTime", 1401385905260l);
-        expectedAttributes.put("name", "test");
+        expectedAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        expectedAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
+        expectedAttributes.put("name", VIRTUALHOST_NAME);
         expectedAttributes.put("type", "JDBC");
 
         final Map<String, Object> context = new HashMap<>();
@@ -159,17 +180,18 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         expectedAttributes.put("context", context);
 
         assertEquals("Unexpected attributes", expectedAttributes, upgradedVirtualHostNodeRecord.getAttributes());
+        assertBrokerRecord(records);
     }
 
     public void testUpgradeVirtualHostWithDerbyStore()
     {
         Map<String, Object> hostAttributes = new HashMap<>();
-        hostAttributes.put("name", "test");
+        hostAttributes.put("name", VIRTUALHOST_NAME);
         hostAttributes.put("modelVersion", "0.4");
         hostAttributes.put("storePath", "/tmp/vh/derby");
         hostAttributes.put("storeType", "derby");
-        hostAttributes.put("createdBy", "webadmin");
-        hostAttributes.put("createdTime", 1401385905260l);
+        hostAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        hostAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
         hostAttributes.put("type", "STANDARD");
 
         ConfiguredObjectRecord virtualHostRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), "VirtualHost",
@@ -183,22 +205,23 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         assertEquals("Unexpected type", "VirtualHostNode", upgradedVirtualHostNodeRecord.getType());
         Map<String,Object> expectedAttributes = new HashMap<>();
         expectedAttributes.put("storePath", "/tmp/vh/derby");
-        expectedAttributes.put("createdBy", "webadmin");
-        expectedAttributes.put("createdTime", 1401385905260l);
-        expectedAttributes.put("name", "test");
+        expectedAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        expectedAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
+        expectedAttributes.put("name", VIRTUALHOST_NAME);
         expectedAttributes.put("type", "DERBY");
         assertEquals("Unexpected attributes", expectedAttributes, upgradedVirtualHostNodeRecord.getAttributes());
+        assertBrokerRecord(records);
     }
 
     public void testUpgradeVirtualHostWithBDBStore()
     {
         Map<String, Object> hostAttributes = new HashMap<>();
-        hostAttributes.put("name", "test");
+        hostAttributes.put("name", VIRTUALHOST_NAME);
         hostAttributes.put("modelVersion", "0.4");
         hostAttributes.put("storePath", "/tmp/vh/bdb");
         hostAttributes.put("storeType", "bdb");
-        hostAttributes.put("createdBy", "webadmin");
-        hostAttributes.put("createdTime", 1401385905260l);
+        hostAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        hostAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
         hostAttributes.put("type", "STANDARD");
         hostAttributes.put("bdbEnvironmentConfig", Collections.singletonMap("je.stats.collect", "false"));
 
@@ -214,21 +237,22 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         assertEquals("Unexpected type", "VirtualHostNode", upgradedVirtualHostNodeRecord.getType());
         Map<String,Object> expectedAttributes = new HashMap<>();
         expectedAttributes.put("storePath", "/tmp/vh/bdb");
-        expectedAttributes.put("createdBy", "webadmin");
-        expectedAttributes.put("createdTime", 1401385905260l);
-        expectedAttributes.put("name", "test");
+        expectedAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        expectedAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
+        expectedAttributes.put("name", VIRTUALHOST_NAME);
         expectedAttributes.put("type", "BDB");
         expectedAttributes.put("context", Collections.singletonMap("je.stats.collect", "false"));
         assertEquals("Unexpected attributes", expectedAttributes, upgradedVirtualHostNodeRecord.getAttributes());
+        assertBrokerRecord(records);
     }
 
     public void testUpgradeVirtualHostWithBDBHAStore()
     {
         Map<String, Object> hostAttributes = new HashMap<>();
-        hostAttributes.put("name", "test");
+        hostAttributes.put("name", VIRTUALHOST_NAME);
         hostAttributes.put("modelVersion", "0.4");
-        hostAttributes.put("createdBy", "webadmin");
-        hostAttributes.put("createdTime", 1401385905260l);
+        hostAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        hostAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
         hostAttributes.put("type", "BDB_HA");
         hostAttributes.put("storePath", "/tmp/vh/bdbha");
         hostAttributes.put("haCoalescingSync", "true");
@@ -255,8 +279,8 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         expectedContext.put("je.rep.feederTimeout", "1 m");
 
         Map<String,Object> expectedAttributes = new HashMap<>();
-        expectedAttributes.put("createdBy", "webadmin");
-        expectedAttributes.put("createdTime", 1401385905260l);
+        expectedAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        expectedAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
         expectedAttributes.put("type", "BDB_HA");
         expectedAttributes.put("storePath", "/tmp/vh/bdbha");
         expectedAttributes.put("designatedPrimary", "true");
@@ -267,16 +291,17 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         expectedAttributes.put("context", expectedContext);
 
         assertEquals("Unexpected attributes", expectedAttributes, upgradedVirtualHostNodeRecord.getAttributes());
+        assertBrokerRecord(records);
     }
 
     public void testUpgradeVirtualHostWithMemoryStore()
     {
         Map<String, Object> hostAttributes = new HashMap<>();
-        hostAttributes.put("name", "test");
+        hostAttributes.put("name", VIRTUALHOST_NAME);
         hostAttributes.put("modelVersion", "0.4");
         hostAttributes.put("storeType", "memory");
-        hostAttributes.put("createdBy", "webadmin");
-        hostAttributes.put("createdTime", 1401385905260l);
+        hostAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        hostAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
         hostAttributes.put("type", "STANDARD");
 
         ConfiguredObjectRecord virtualHostRecord = new ConfiguredObjectRecordImpl(UUID.randomUUID(), "VirtualHost",
@@ -289,11 +314,113 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         ConfiguredObjectRecord upgradedVirtualHostNodeRecord = findRecordById(virtualHostRecord.getId(), records);
         assertEquals("Unexpected type", "VirtualHostNode", upgradedVirtualHostNodeRecord.getType());
         Map<String,Object> expectedAttributes = new HashMap<>();
-        expectedAttributes.put("createdBy", "webadmin");
-        expectedAttributes.put("createdTime", 1401385905260l);
-        expectedAttributes.put("name", "test");
+        expectedAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        expectedAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
+        expectedAttributes.put("name", VIRTUALHOST_NAME);
         expectedAttributes.put("type", "Memory");
         assertEquals("Unexpected attributes", expectedAttributes, upgradedVirtualHostNodeRecord.getAttributes());
+        assertBrokerRecord(records);
+    }
+
+    public void testUpgradeBrokerRecordWithModelVersion1_0()
+    {
+        _brokerRecord.getAttributes().put("modelVersion", "1.0");
+        _brokerRecord.getAttributes().put("virtualhosts", _virtaulHosts);
+        Map<String, Object> hostAttributes = new HashMap<>();
+        hostAttributes.put("name", VIRTUALHOST_NAME);
+        hostAttributes.put("modelVersion", "0.1");
+        hostAttributes.put("storeType", "memory");
+        hostAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        hostAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
+        hostAttributes.put("id", _hostId);
+        _virtaulHosts.add(hostAttributes);
+
+
+        upgradeBrokerRecordAndAssertUpgradeResults();
+    }
+
+    public void testUpgradeBrokerRecordWithModelVersion1_1()
+    {
+        _brokerRecord.getAttributes().put("modelVersion", "1.1");
+        _brokerRecord.getAttributes().put("virtualhosts", _virtaulHosts);
+        Map<String, Object> hostAttributes = new HashMap<>();
+        hostAttributes.put("name", VIRTUALHOST_NAME);
+        hostAttributes.put("modelVersion", "0.2");
+        hostAttributes.put("storeType", "memory");
+        hostAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        hostAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
+        hostAttributes.put("type", "STANDARD");
+        hostAttributes.put("id", _hostId);
+        _virtaulHosts.add(hostAttributes);
+
+        upgradeBrokerRecordAndAssertUpgradeResults();
+    }
+
+    public void testUpgradeBrokerRecordWithModelVersion1_2()
+    {
+        _brokerRecord.getAttributes().put("modelVersion", "1.2");
+        _brokerRecord.getAttributes().put("virtualhosts", _virtaulHosts);
+        Map<String, Object> hostAttributes = new HashMap<>();
+        hostAttributes.put("name", VIRTUALHOST_NAME);
+        hostAttributes.put("modelVersion", "0.3");
+        hostAttributes.put("storeType", "memory");
+        hostAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        hostAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
+        hostAttributes.put("type", "STANDARD");
+        hostAttributes.put("id", _hostId);
+        _virtaulHosts.add(hostAttributes);
+
+        upgradeBrokerRecordAndAssertUpgradeResults();
+    }
+
+    public void testUpgradeBrokerRecordWithModelVersion1_3()
+    {
+        _brokerRecord.getAttributes().put("modelVersion", "1.3");
+        _brokerRecord.getAttributes().put("virtualhosts", _virtaulHosts);
+        Map<String, Object> hostAttributes = new HashMap<>();
+        hostAttributes.put("name", VIRTUALHOST_NAME);
+        hostAttributes.put("modelVersion", "0.4");
+        hostAttributes.put("storeType", "memory");
+        hostAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        hostAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
+        hostAttributes.put("type", "STANDARD");
+        hostAttributes.put("id", _hostId);
+        _virtaulHosts.add(hostAttributes);
+
+        upgradeBrokerRecordAndAssertUpgradeResults();
+    }
+
+    private void upgradeBrokerRecordAndAssertUpgradeResults()
+    {
+        DurableConfigurationStore dcs = new DurableConfigurationStoreStub(_brokerRecord);
+        List<ConfiguredObjectRecord> records = new BrokerStoreUpgraderAndRecoverer(_systemConfig).upgrade(dcs);
+
+        assertVirtualHost(records);
+        assertBrokerRecord(records);
+    }
+
+    private void assertVirtualHost(List<ConfiguredObjectRecord> records)
+    {
+        ConfiguredObjectRecord upgradedVirtualHostNodeRecord = findRecordById(_hostId, records);
+        assertEquals("Unexpected type", "VirtualHostNode", upgradedVirtualHostNodeRecord.getType());
+        Map<String,Object> expectedAttributes = new HashMap<>();
+        expectedAttributes.put("createdBy", VIRTUALHOST_CREATED_BY);
+        expectedAttributes.put("createdTime", VIRTUALHOST_CREATE_TIME);
+        expectedAttributes.put("name", VIRTUALHOST_NAME);
+        expectedAttributes.put("type", "Memory");
+        assertEquals("Unexpected attributes", expectedAttributes, upgradedVirtualHostNodeRecord.getAttributes());
+    }
+
+    private void assertBrokerRecord(List<ConfiguredObjectRecord> records)
+    {
+        ConfiguredObjectRecord upgradedBrokerRecord = findRecordById(_brokerId, records);
+        assertEquals("Unexpected type", "Broker", upgradedBrokerRecord.getType());
+        Map<String,Object> expectedAttributes = new HashMap<>();
+        expectedAttributes.put("defaultVirtualHost", "test");
+        expectedAttributes.put("name", "Broker");
+        expectedAttributes.put("modelVersion", BrokerModel.MODEL_VERSION);
+        expectedAttributes.put("createdTime", 1401385808828l);
+        assertEquals("Unexpected broker attributes", expectedAttributes, upgradedBrokerRecord.getAttributes());
     }
 
     private ConfiguredObjectRecord findRecordById(UUID id, List<ConfiguredObjectRecord> records)
