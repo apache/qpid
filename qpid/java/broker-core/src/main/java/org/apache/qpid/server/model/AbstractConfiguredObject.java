@@ -1443,9 +1443,12 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     private <C extends ConfiguredObject> void unregisterChild(final C child)
     {
         Class categoryClass = child.getCategoryClass();
-        _children.get(categoryClass).remove(child);
-        _childrenById.get(categoryClass).remove(child.getId());
-        _childrenByName.get(categoryClass).remove(child.getName());
+        synchronized(_children)
+        {
+            _children.get(categoryClass).remove(child);
+            _childrenById.get(categoryClass).remove(child.getId());
+            _childrenByName.get(categoryClass).remove(child.getName());
+        }
     }
 
     @Override
