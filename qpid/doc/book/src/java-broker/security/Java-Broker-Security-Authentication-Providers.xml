@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                    "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="Java-Broker-Security-Authentication-Providers">
+  <title>Authentication Providers</title>
+
+  <para> In order to successfully establish a connection to the Java Broker, the connection must be
+    authenticated. The Java Broker supports a number of different authentication schemes, each with
+    its own "authentication provider". Any number of Authentication Providers can be configured on
+    the Broker at the same time. </para>
+
+  <important>
+    <para> Only unused Authentication Provider can be deleted. For delete requests attempting to
+      delete Authentication Provider associated with the Ports, the errors will be returned and
+      delete operations will be aborted. It is possible to change the Authentication Provider on
+      Port at runtime. However, the Broker restart is required for changes on Port to take effect.
+    </para>
+  </important>
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Authentication-Providers-LDAP.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Authentication-Providers-Kerberos.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Authentication-Providers-External.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Authentication-Providers-Anonymous.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Authentication-Providers-ScramSha.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Authentication-Providers-Plain.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Authentication-Providers-PlainPasswordFile.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Authentication-Providers-MD5.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Security-Authentication-Providers-Base64MD5PasswordFile.xml"/>
+ </section>
+

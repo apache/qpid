@@ -172,11 +172,5 @@ WARN   Message send delayed by 10s due to broker enforced flow control
 -Dqpid.flow_control_wait_failure=60000
 -Dqpid.flow_control_wait_notify_period=10000
         </programlisting>
-        <section role="h3">
-            <title>Older Clients</title>
-            <para>
-                The flow control feature was first added to the Java broker/client in the 0.6 release. If an older client connects to the broker then the flow control commands will be ignored by it and it will not be blocked. So to fully benefit from this feature both Client and Broker need to be at least version 0.6.
-            </para>
-        </section>
     </section> <!-- Client impact and configuration -->
 </section>

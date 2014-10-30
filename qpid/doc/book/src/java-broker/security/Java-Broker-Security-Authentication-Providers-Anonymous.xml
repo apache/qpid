@@ -1,4 +1,6 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                    "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
 <!--
 
  Licensed to the Apache Software Foundation (ASF) under one
@@ -19,11 +21,10 @@
  under the License.
 
 -->
+<section id="Java-Broker-Security-Anonymous-Provider">
+  <title>Anonymous</title>
 
-<chapter id="Java-Broker-Security">
-  <title>Security</title>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="security/Java-Broker-Security-Authentication-Providers.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="security/Java-Broker-Security-Group-Providers.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="security/Java-Broker-Security-ACLs.xml"/>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="security/Java-Broker-Security-Configuration-Encryption.xml"/>
-</chapter>
+  <para> The Anonymous Authentication Provider will allow users to connect with or without
+    credentials and result in their identification on the broker as the user ANONYMOUS. This
+    Provider does not require specification of any additional attributes on creation. </para>
+</section>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                    "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+<section id="Java-Broker-Security-External-Provider">
+    <title>External (SSL Client Certificates)</title>
+
+    <para> When <link linkend="Java-Broker-Management-Managing-Truststores"> requiring SSL Client
+        Certificates</link> be presented the External Authentication Provider can be used, such that
+        the user is authenticated based on trust of their certificate alone, and the X500Principal
+        from the SSL session is then used as the username for the connection, instead of also
+        requiring the user to present a valid username and password. </para>
+
+    <para>
+        <emphasis role="bold">Note:</emphasis> The External Authentication Provider should typically
+        only be used on the AMQP/HTTP ports, in conjunction with <link
+            linkend="Java-Broker-Management-Managing-Ports">SSL client certificate
+            authentication</link>. It is not intended for other uses such as the JMX management port and
+        will treat any non-sasl authentication processes on these ports as successful with the given
+        username. As such you should configure another Authentication Provider for use on JMX
+        ports.</para>
+
+    <para>On creation of External Provider the use of full DN or username CN as a principal name can
+        be configured. If attribute "Use the full DN as the Username" is set to "true" the full DN is
+        used as an authenticated principal name. If attribute "Use the full DN as the Username" is set
+        to "false" the user name CN part is used as the authenticated principal name. Setting the
+        field to "false" is particular useful when <link linkend="Java-Broker-Security-ACLs"
+            >ACL</link> is required, as at the moment, ACL does not support commas in the user name.
+    </para>
+</section>
+
