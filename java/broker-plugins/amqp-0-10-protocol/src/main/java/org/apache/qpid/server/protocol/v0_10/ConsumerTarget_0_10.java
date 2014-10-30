@@ -329,6 +329,10 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
 
 
         _session.sendMessage(xfr, _postIdSettingAction);
+
+        _postIdSettingAction.setAction(null);
+        _postIdSettingAction.setXfr(null);
+
         entry.incrementDeliveryCount();
         if(_acceptMode == MessageAcceptMode.NONE && _acquireMode == MessageAcquireMode.PRE_ACQUIRED)
         {
