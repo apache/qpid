@@ -727,17 +727,41 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
      */
     private void closeAllChannels()
     {
-        for (AMQChannel channel : getChannels())
+        try
         {
-            channel.close();
+            RuntimeException firstException = null;
+            for (AMQChannel channel : getChannels())
+            {
+                try
+                {
+                    channel.close();
+                }
+                catch (RuntimeException re)
+                {
+                    if (!(re instanceof ConnectionScopedRuntimeException))
+                    {
+                        _logger.error("Unexpected exception closing channel", re);
+                    }
+                    firstException = re;
+                }
+            }
+
+            if (firstException != null)
+            {
+                throw firstException;
+            }
         }
-        synchronized (_channelMap)
+        finally
         {
-            _channelMap.clear();
-        }
-        for (int i = 0; i <= CHANNEL_CACHE_SIZE; i++)
-        {
-            _cachedChannels[i] = null;
+            synchronized (_channelMap)
+            {
+                _channelMap.clear();
+            }
+            for (int i = 0; i <= CHANNEL_CACHE_SIZE; i++)
+            {
+                _cachedChannels[i] = null;
+            }
+
         }
     }
 
@@ -767,19 +791,24 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                         _virtualHost.getConnectionRegistry().deregisterConnection(this);
                     }
 
-                    closeAllChannels();
-
-                    for (Action<? super AMQProtocolEngine> task : _taskList)
+                    try
                     {
-                        task.performAction(this);
+                        closeAllChannels();
                     }
-
-                    synchronized(this)
+                    finally
                     {
-                        _closed = true;
-                        notifyAll();
+                        for (Action<? super AMQProtocolEngine> task : _taskList)
+                        {
+                            task.performAction(this);
+                        }
+
+                        synchronized (this)
+                        {
+                            _closed = true;
+                            notifyAll();
+                        }
+                        getEventLogger().message(_logSubject, ConnectionMessages.CLOSE());
                     }
-                    getEventLogger().message(_logSubject, ConnectionMessages.CLOSE());
                 }
             }
             else
