@@ -167,6 +167,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     private final File _environmentDirectory;
 
     private final ExecutorService _environmentJobExecutor;
+    private final ExecutorService _stateChangeExecutor;
     private final ScheduledExecutorService _groupChangeExecutor;
     private final AtomicReference<State> _state = new AtomicReference<State>(State.OPENING);
     private final ConcurrentMap<String, ReplicationNode> _remoteReplicationNodes = new ConcurrentHashMap<String, ReplicationNode>();
@@ -216,6 +217,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
         // we relay on this executor being single-threaded as we need to restart and mutate the environment in one thread
         _environmentJobExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("Environment-" + _prettyGroupNodeName));
+        _stateChangeExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("StateChange-" + _prettyGroupNodeName));
         _groupChangeExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1, new DaemonThreadFactory("Group-Change-Learner:" + _prettyGroupNodeName));
 
         // create environment in a separate thread to avoid renaming of the current thread by JE
@@ -298,6 +300,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                                                 timeout,
                                                 TimeUnit.MILLISECONDS);
                 shutdownAndAwaitExecutorService(_groupChangeExecutor, _executorShutdownTimeout, TimeUnit.MILLISECONDS);
+                shutdownAndAwaitExecutorService(_stateChangeExecutor, _executorShutdownTimeout, TimeUnit.MILLISECONDS);
 
                 try
                 {
@@ -562,7 +565,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
         if (_state.get() != State.CLOSING && _state.get() != State.CLOSED)
         {
-            _groupChangeExecutor.submit(new Runnable()
+            _stateChangeExecutor.submit(new Runnable()
             {
                 @Override
                 public void run()
