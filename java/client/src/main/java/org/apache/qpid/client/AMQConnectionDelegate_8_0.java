@@ -143,7 +143,8 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         _conn.getProtocolHandler().setNetworkConnection(network, securityLayer.sender(network.getSender()));
 
         StateWaiter waiter = _conn.getProtocolHandler().createWaiter(openOrClosedStates);
-        _conn.getProtocolHandler().getProtocolSession().init(settings);
+        _conn.getProtocolHandler().init(settings);
+
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up
 

@@ -66,6 +66,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.thread.Threading;
+import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -194,7 +195,6 @@ public class AMQProtocolHandler implements ProtocolEngine
         _connection = con;
         _protocolSession = new AMQProtocolSession(this, _connection);
         _stateManager = new AMQStateManager(_protocolSession);
-        _decoder = new ClientDecoder(_protocolSession.getMethodProcessor());
         _failoverHandler = new FailoverHandler(this);
     }
 
@@ -957,5 +957,11 @@ public class AMQProtocolHandler implements ProtocolEngine
     public void setMaxFrameSize(final long frameMax)
     {
         _decoder.setMaxFrameSize(frameMax == 0l || frameMax > (long) Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) frameMax);
+    }
+
+    public void init(final ConnectionSettings settings)
+    {
+        _decoder = new ClientDecoder(_protocolSession.getMethodProcessor());
+        _protocolSession.init(settings);
     }
 }
