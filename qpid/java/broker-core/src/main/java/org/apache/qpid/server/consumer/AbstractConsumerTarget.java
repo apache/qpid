@@ -20,8 +20,11 @@
  */
 package org.apache.qpid.server.consumer;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -37,6 +40,7 @@ public abstract class AbstractConsumerTarget implements ConsumerTarget
             CopyOnWriteArraySet<>();
 
     private final Lock _stateChangeLock = new ReentrantLock();
+    private final AtomicInteger _stateActivates = new AtomicInteger();
 
 
     protected AbstractConsumerTarget(final State initialState)
@@ -54,9 +58,40 @@ public abstract class AbstractConsumerTarget implements ConsumerTarget
     {
         if(_state.compareAndSet(from, to))
         {
-            for (StateChangeListener<ConsumerTarget, State> listener : _stateChangeListeners)
+            if (to == State.ACTIVE && _stateChangeListeners.size() > 1)
             {
-                listener.stateChanged(this, from, to);
+                int offset = _stateActivates.incrementAndGet();
+                if (offset >= _stateChangeListeners.size())
+                {
+                    _stateActivates.set(0);
+                    offset = 0;
+                }
+
+                List<StateChangeListener<ConsumerTarget, State>> holdovers = new ArrayList<>();
+                int pos = 0;
+                for (StateChangeListener<ConsumerTarget, State> listener : _stateChangeListeners)
+                {
+                    if (pos++ < offset)
+                    {
+                        holdovers.add(listener);
+                    }
+                    else
+                    {
+                        listener.stateChanged(this, from, to);
+                    }
+                }
+                for (StateChangeListener<ConsumerTarget, State> listener : holdovers)
+                {
+                    listener.stateChanged(this, from, to);
+                }
+
+            }
+            else
+            {
+                for (StateChangeListener<ConsumerTarget, State> listener : _stateChangeListeners)
+                {
+                    listener.stateChanged(this, from, to);
+                }
             }
             return true;
         }
@@ -68,6 +103,7 @@ public abstract class AbstractConsumerTarget implements ConsumerTarget
 
     public final void notifyCurrentState()
     {
+
         for (StateChangeListener<ConsumerTarget, State> listener : _stateChangeListeners)
         {
             State state = getState();
