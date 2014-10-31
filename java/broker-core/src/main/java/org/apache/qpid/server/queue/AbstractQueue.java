@@ -191,7 +191,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             Collections.synchronizedSet(EnumSet.noneOf(NotificationCheck.class));
 
 
-    static final int MAX_ASYNC_DELIVERIES = 80;
+    private int _maxAsyncDeliveries;
 
 
     private final AtomicLong _stateChangeCount = new AtomicLong(Long.MIN_VALUE);
@@ -445,6 +445,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             _messageGroupManager = null;
         }
 
+        _maxAsyncDeliveries = getContextValue(Integer.class, Queue.MAX_ASYNCHRONOUS_DELIVERIES);
         updateAlertChecks();
     }
 
@@ -1536,7 +1537,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         return _virtualHost.getEventLogger();
     }
 
-
     public static interface QueueEntryFilter
     {
         public boolean accept(QueueEntry entry);
@@ -1892,7 +1892,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     boolean flushConsumer(QueueConsumer<?> sub, long iterations)
     {
         boolean atTail = false;
-        final boolean keepSendLockHeld = iterations <=  AbstractQueue.MAX_ASYNC_DELIVERIES;
+        final boolean keepSendLockHeld = iterations <=  getMaxAsyncDeliveries();
         boolean queueEmpty = false;
 
         try
@@ -2128,7 +2128,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         boolean deliveryIncomplete = true;
 
         boolean lastLoop = false;
-        int iterations = MAX_ASYNC_DELIVERIES;
+        int iterations = getMaxAsyncDeliveries();
 
         final int numSubs = _consumerList.size();
 
@@ -2955,6 +2955,13 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     {
         _virtualHost.getSecurityManager().authoriseUpdate(this);
     }
+
+    int getMaxAsyncDeliveries()
+    {
+        return _maxAsyncDeliveries;
+    }
+
+
 
     private static final String[] NON_NEGATIVE_NUMBERS = {
         ALERT_REPEAT_GAP,

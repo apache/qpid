@@ -49,7 +49,6 @@ class SubFlushRunner implements Runnable
     private final AtomicInteger _scheduled = new AtomicInteger(IDLE);
 
 
-    private static final long ITERATIONS = AbstractQueue.MAX_ASYNC_DELIVERIES;
     private final AtomicBoolean _stateChange = new AtomicBoolean();
 
     public SubFlushRunner(QueueConsumerImpl sub)
@@ -70,7 +69,7 @@ class SubFlushRunner implements Runnable
                     _stateChange.set(false);
                     try
                     {
-                        complete = getQueue().flushConsumer(_sub, ITERATIONS);
+                        complete = getQueue().flushConsumer(_sub, getQueue().getMaxAsyncDeliveries());
                     }
                     catch (ConnectionScopedRuntimeException | TransportException  e)
                     {
@@ -102,9 +101,9 @@ class SubFlushRunner implements Runnable
         }
     }
 
-    private AbstractQueue getQueue()
+    private AbstractQueue<?> getQueue()
     {
-        return (AbstractQueue) _sub.getQueue();
+        return (AbstractQueue<?>) _sub.getQueue();
     }
 
     public String toString()
