@@ -57,6 +57,10 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     @ManagedContextDefault( name = QUEUE_ESTIMATED_MESSAGE_MEMORY_OVERHEAD)
     long DEFAULT_ESTIMATED_MESSAGE_MEMORY_OVERHEAD = 1024l;
 
+    String MAX_ASYNCHRONOUS_DELIVERIES = "queue.maxAsynchronousDeliveries";
+    @ManagedContextDefault(name = MAX_ASYNCHRONOUS_DELIVERIES )
+    int DEFAULT_MAX_ASYNCHRONOUS_DELIVERIES = 80;
+
     @ManagedAttribute
     Exchange getAlternateExchange();
 
