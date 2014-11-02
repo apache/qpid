@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client;
 
-import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
 import java.text.MessageFormat;
@@ -103,7 +102,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         return _confirmedPublishSupported;
     }
 
-    public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws AMQException, IOException
+    public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws AMQException
     {
         if (_logger.isDebugEnabled())
         {
@@ -140,29 +139,37 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn.getProtocolHandler()),
                                                       _conn.getProtocolHandler());
 
-        _conn.getProtocolHandler().setNetworkConnection(network, securityLayer.sender(network.getSender()));
-
-        StateWaiter waiter = _conn.getProtocolHandler().createWaiter(openOrClosedStates);
-        _conn.getProtocolHandler().init(settings);
-
-        // this blocks until the connection has been set up or when an error
-        // has prevented the connection being set up
-
-        AMQState state = waiter.await();
-
-        if(state == AMQState.CONNECTION_OPEN)
+        try
         {
-            _conn.getFailoverPolicy().attainedConnection();
-            _conn.setConnected(true);
-            _conn.logConnected(network.getLocalAddress(), network.getRemoteAddress());
-            _messageCompressionSupported = checkMessageCompressionSupported();
-            _confirmedPublishSupported = checkConfirmedPublishSupported();
-            _confirmedPublishNonTransactionalSupported = checkConfirmedPublishNonTransactionalSupported();
-            return null;
+            _conn.getProtocolHandler().setNetworkConnection(network, securityLayer.sender(network.getSender()));
+
+            StateWaiter waiter = _conn.getProtocolHandler().createWaiter(openOrClosedStates);
+            _conn.getProtocolHandler().init(settings);
+
+            // this blocks until the connection has been set up or when an error
+            // has prevented the connection being set up
+
+            AMQState state = waiter.await();
+
+            if (state == AMQState.CONNECTION_OPEN)
+            {
+                _conn.getFailoverPolicy().attainedConnection();
+                _conn.setConnected(true);
+                _conn.logConnected(network.getLocalAddress(), network.getRemoteAddress());
+                _messageCompressionSupported = checkMessageCompressionSupported();
+                _confirmedPublishSupported = checkConfirmedPublishSupported();
+                _confirmedPublishNonTransactionalSupported = checkConfirmedPublishNonTransactionalSupported();
+                return null;
+            }
+            else
+            {
+                return _conn.getProtocolHandler().getSuggestedProtocolVersion();
+            }
         }
-        else
+        catch(AMQException | RuntimeException e)
         {
-            return _conn.getProtocolHandler().getSuggestedProtocolVersion();
+            network.close();
+            throw e;
         }
 
     }
