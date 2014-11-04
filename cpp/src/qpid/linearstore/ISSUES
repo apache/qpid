@@ -25,31 +25,24 @@ Current/pending:
  ------ -------  ----------------------
    5359 -        Linearstore: Implement new management schema and wire into store
    5360 -        Linearstore: Evaluate and rework logging to produce a consistent log output
-   5361 -        Linearstore: No tests for linearstore functionality currently exist
+   5361 1145359  Linearstore: No tests for linearstore functionality currently exist
                    svn r.1564893 2014-02-05: Added tx-test-soak.sh
                    svn r.1564935 2014-02-05: Added license text to tx-test-soak.sh
+                   svn r.1625283 2014-09-16: Basic python tests from legacystore ported over to linearstore
                    * No existing tests for linearstore:
                    ** Basic broker-level tests for txn and non-txn recovery
                    ** Store-level tests which check write boundary conditions
                    ** EFP tests, including file recovery, error management
                    ** Unit tests
                    ** Basic performance tests
-   5362 -        Linearstore: No store tools exist for examining the journals
-                   svn r.1556888 2014-01-09: WIP checkin for linearstore version of qpid_qls_analyze. Needs testing and tidy-up.
-                   svn r.1560530 2014-01-22: Bugfixes for qpid_qls_analyze
-                   svn r.1561848 2014-01-27: Bugfixes and enhancements for qpid_qls_analyze
-                   svn r.1564808 2014-02-05: Bugfixes and enhancements for qpid_qls_analyze
-                   svn r.1578899 2014-03-18: Bugfixes and enhancements for qpid_qls_analyze
-                   svn r.1583778 2014-04-01: Bugfix for qpid_qls_analyze
-                   * Store analysis and status
-                   * Recovery/reading of message content
-                   * Empty file pool status and management
    5464 -        [linearstore] Incompletely created journal files accumulate in EFP
-   -    1088944  [Linearstore] store does not return all files to EFP after purging big queue
-   -    1078937  [linearstore] Installation and tests for new store analysis tool qpid-qls-analyze
-                   svn r.1596633 2014-05-21: Modified to run from installed location
-*  6043 1066256  [LinearStore] changing efp size after using store broke the new durable nodes creation
-*  -    1089652  [RFE]: Configuration option for linear store to delete the used journal files instead of recycling them.
+   -    1088944  [Linearstore] store does not return all files to EFP after purging big queue <queue purge issue>
+   6043 1066256  [LinearStore] changing efp size after using store broke the new durable nodes creation
+   -    1067480  [LinearStore] Provide a way to limit max count/size of empty files in EFP
+   -    1067429  [LinearStore] last file from deleted queue is not moved to EFP  <queue delete issue>
+   -    1067482  [LinearStore] Provide a way to prealocate empty pages in EFP
+   5671          [linearstore] Add ability to use disk partitions and select per-queue EFPs
+
 
 
 Fixed/closed:
@@ -118,12 +111,24 @@ NO-JIRA -        Added missing Apache copyright/license text
    5651       -  [C++ broker] segfault in qpid::linearstore::journal::jdir::clear_dir when declaring durable queue
                    svn r.1582730 2014-03-28 Proposed fix by Pavel Moravec
                    * Bug introduced by r.1578899.
+   5362 1145363  Linearstore: No store tools exist for examining the journals
+                   svn r.1556888 2014-01-09: WIP checkin for linearstore version of qpid_qls_analyze. Needs testing and tidy-up.
+                   svn r.1560530 2014-01-22: Bugfixes for qpid_qls_analyze
+                   svn r.1561848 2014-01-27: Bugfixes and enhancements for qpid_qls_analyze
+                   svn r.1564808 2014-02-05: Bugfixes and enhancements for qpid_qls_analyze
+                   svn r.1578899 2014-03-18: Bugfixes and enhancements for qpid_qls_analyze
+                   svn r.1583778 2014-04-01: Bugfix for qpid_qls_analyze
+                   * Store analysis and status
+                   * Recovery/reading of message content
+                   * Empty file pool status and management
    5661       -  [linearstore] Set default cmake build to exclude linearstore
                    svn r.1584379 2014-04-03 Proposed solution.
                    * Run ccmake, select BUILD_LINEARSTORE to change its value to ON to build.
    5750 1078142  [linearstore] qpidd closes connection with (distributed) transactional client while checking previous transaction, broker signals error (closed by error: Queue Ve0-2: async_dequeue() failed: exception 0x0103 wmgr::get_events() threw JERR__AIO: AIO error)
                    svn r.1594215 2014-05-13 Proposed solution.
                    * jexception 0x0103 wmgr::get_events() threw JERR__AIO: AIO error. (AIO write operation failed: Invalid argument (-22) [pg=0 size=8192 offset=4096 fh=22])
+   5655 1078937  [linearstore] Installation and tests for new store analysis tool qpid-qls-analyze
+                   svn r.1596633 2014-05-21: Modified to run from installed location
    5767 1098118  [linearstore] broker segfaults when recovering journal file with damaged header
                    svn r.1596509 2014-05-21 Proposed solution (committed by pmoravec)
                    svn r.1599243 2014-06-02 Solution to additional case of file header corruption
@@ -134,6 +139,10 @@ NO-JIRA -        Added missing Apache copyright/license text
                    This turned out to be an AMQP error, fix does not affect store code.
    6043 1089652  [RFE]: Configuration option for linear store to delete or overwrite the used journal files.
                    svn r.1620426 2014-08-25 Proposed solution
+   6147 1152012  [C++ broker linearstore] missing journal id in "trace Mgmt create journal." log
+                   svn r.1631360 2014-10-13 Proposed solution
+   6157 1150397  linearstore: segfault when 2 journals request new journal file from empty EFP
+                   svn r.1632504 2014-10-17 Proposed solution by pmoravec
                    
 
 Ordered checkin list:
@@ -175,6 +184,8 @@ no.   svn r  Q-JIRA     RHBZ       Date Alt Committer
 30. 1599243    5767  1098118 2014-06-02
 31. 1614665    5924  1124906 2014-07-30
 32. 1620426    6043  1089652 2014-08-25
+33. 1631360    6147  1152012 2014-10-13 (pmoravec)
+34. 1632504    6157  1150397 2014-10-17 (pmoravec)
 
 See above sections for details on these checkins.
 

@@ -112,6 +112,7 @@ const uint32_t jerrno::JERR_EFP_BADPARTITIONDIR  = 0x0d02;
 const uint32_t jerrno::JERR_EFP_BADEFPDIRNAME    = 0x0d03;
 const uint32_t jerrno::JERR_EFP_NOEFP            = 0x0d04;
 const uint32_t jerrno::JERR_EFP_EMPTY            = 0x0d05;
+const uint32_t jerrno::JERR_EFP_SYMLINK          = 0x0d06;
 
 // Negative returns for some functions
 const int32_t jerrno::AIO_TIMEOUT                = -1;
@@ -206,6 +207,7 @@ jerrno::__init()
     _err_map[JERR_EFP_BADPARTITIONDIR] = "JERR_EFP_BADPARTITIONDIR: Invalid partition directory";
     _err_map[JERR_EFP_NOEFP] = "JERR_EFP_NOEFP: No Empty File Pool found for given partition and empty file size";
     _err_map[JERR_EFP_EMPTY] = "JERR_EFP_EMPTY: Empty File Pool is empty";
+    _err_map[JERR_EFP_SYMLINK] = "JERR_EFP_SYMLINK: Symbolic link operation failed";
 
     //_err_map[] = "";
 

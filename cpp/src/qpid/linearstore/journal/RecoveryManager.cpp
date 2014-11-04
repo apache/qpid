@@ -322,36 +322,7 @@ void RecoveryManager::setLinearFileControllerJournals(lfcAddJournalFileFn fnPtr,
     }
 }
 
-std::string RecoveryManager::toString(const std::string& jid) {
-    std::ostringstream oss;
-    oss << "Recovery journal analysis (jid=\"" << jid << "\"):" << std::endl;
-    oss << "  Number of journal files = " << fileNumberMap_.size() << std::endl;
-    oss << "  Journal File List:" << std::endl;
-    for (fileNumberMapConstItr_t k=fileNumberMap_.begin(); k!=fileNumberMap_.end(); ++k) {
-        std::string fqFileName = k->second->journalFilePtr_->getFqFileName();
-        oss << "    " << k->first << ": " << fqFileName.substr(fqFileName.rfind('/')+1) << std::endl;
-    }
-    oss << "  Enqueue Counts: [ ";
-    for (fileNumberMapConstItr_t l=fileNumberMap_.begin(); l!=fileNumberMap_.end(); ++l) {
-        if (l != fileNumberMap_.begin()) {
-            oss << ", ";
-        }
-        oss << l->second->journalFilePtr_->getEnqueuedRecordCount();
-    }
-    oss << " ]" << std::endl;
-    oss << "  Journal empty = " << (journalEmptyFlag_ ? "TRUE" : "FALSE") << std::endl;
-    oss << "  First record offset in first file = 0x" << std::hex << firstRecordOffset_ <<
-            std::dec << " (" << (firstRecordOffset_/QLS_DBLK_SIZE_BYTES) << " dblks)" << std::endl;
-    oss << "  End offset = 0x" << std::hex << endOffset_ << std::dec << " ("  <<
-            (endOffset_/QLS_DBLK_SIZE_BYTES) << " dblks)" << std::endl;
-    oss << "  Highest rid = 0x" << std::hex << highestRecordId_ << std::dec << std::endl;
-    oss << "  Highest file number = 0x" << std::hex << highestFileNumber_ << std::dec << std::endl;
-    oss << "  Last file full = " << (lastFileFullFlag_ ? "TRUE" : "FALSE") << std::endl;
-    oss << "  Enqueued records (txn & non-txn):" << std::endl;
-    return oss.str();
-}
-
-std::string RecoveryManager::toLog(const std::string& jid, const int indent) {
+std::string RecoveryManager::toString(const std::string& jid, const uint16_t indent) const {
     std::string indentStr(indent, ' ');
     std::ostringstream oss;
     oss << std::endl << indentStr  << "Journal recovery analysis (jid=\"" << jid << "\"):" << std::endl;
@@ -360,18 +331,17 @@ std::string RecoveryManager::toLog(const std::string& jid, const int indent) {
     } else {
         oss << indentStr << std::setw(7) << "file_id"
                          << std::setw(43) << "file_name"
-                         << std::setw(16) << "fro"
                          << std::setw(12) << "record_cnt"
-                         << std::setw(5) << "ptn"
-                         << std::setw(10) << "efp"
+                         << std::setw(16) << "fro"
+                         << std::setw(12) << "efp_id"
                          << std::endl;
         oss << indentStr << std::setw(7) << "-------"
                          << std::setw(43) << "-----------------------------------------"
+                         << std::setw(12) << "----------"
                          << std::setw(16) << "--------------"
                          << std::setw(12) << "----------"
-                         << std::setw(5) << "---"
-                         << std::setw(10) << "--------"
                          << std::endl;
+        uint32_t totalRecordCount(0UL);
         for (fileNumberMapConstItr_t k=fileNumberMap_.begin(); k!=fileNumberMap_.end(); ++k) {
             std::string fqFileName = k->second->journalFilePtr_->getFqFileName();
             std::ostringstream fid;
@@ -380,19 +350,20 @@ std::string RecoveryManager::toLog(const std::string& jid, const int indent) {
             fro << std::hex << "0x" << k->second->journalFilePtr_->getFirstRecordOffset();
             oss << indentStr << std::setw(7) << fid.str()
                              << std::setw(43) << fqFileName.substr(fqFileName.rfind('/')+1)
-                             << std::setw(16) << fro.str()
                              << std::setw(12) << k->second->journalFilePtr_->getEnqueuedRecordCount()
-                             << std::setw(5) << k->second->journalFilePtr_->getEfpIdentity().pn_
-                             << std::setw(9) << k->second->journalFilePtr_->getEfpIdentity().ds_ << "k"
+                             << std::setw(16) << fro.str()
+                             << std::setw(12) << k->second->journalFilePtr_->getEfpIdentity()
                              << std::endl;
+            totalRecordCount += k->second->journalFilePtr_->getEnqueuedRecordCount();
         }
+        oss << indentStr << std::setw(62) << "----------" << std::endl;
+        oss << indentStr << std::setw(62) << totalRecordCount << std::endl;
         oss << indentStr << "First record offset in first file = 0x" << std::hex << firstRecordOffset_ <<
                 std::dec << " (" << (firstRecordOffset_/QLS_DBLK_SIZE_BYTES) << " dblks)" << std::endl;
         oss << indentStr << "End offset in last file = 0x" << std::hex << endOffset_ << std::dec << " ("  <<
                 (endOffset_/QLS_DBLK_SIZE_BYTES) << " dblks)" << std::endl;
         oss << indentStr << "Highest rid found = 0x" << std::hex << highestRecordId_ << std::dec << std::endl;
         oss << indentStr << "Last file full = " << (lastFileFullFlag_ ? "TRUE" : "FALSE") << std::endl;
-        //oss << indentStr << "Enqueued records (txn & non-txn):"; // TODO: complete report
     }
     return oss.str();
 }
@@ -942,7 +913,7 @@ bool RecoveryManager::readJournalFileHeader(const std::string& journalFileName,
 void RecoveryManager::removeEmptyFiles(EmptyFilePool* emptyFilePoolPtr) {
     while (fileNumberMap_.begin()->second->journalFilePtr_->getEnqueuedRecordCount() == 0 && fileNumberMap_.size() > 1) {
         RecoveredFileData_t* rfdp = fileNumberMap_.begin()->second;
-        emptyFilePoolPtr->returnEmptyFile(rfdp->journalFilePtr_->getFqFileName());
+        emptyFilePoolPtr->returnEmptyFileSymlink(rfdp->journalFilePtr_->getFqFileName());
         delete rfdp->journalFilePtr_;
         delete rfdp;
         fileNumberMap_.erase(fileNumberMap_.begin()->first);
