@@ -1590,6 +1590,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
             for (final ReplicationNode node : electableNodes)
             {
+                nodeStates.put(node, null);
+
                 Future<Void> future = _groupChangeExecutor.submit(new Callable<Void>()
                 {
                     @Override
