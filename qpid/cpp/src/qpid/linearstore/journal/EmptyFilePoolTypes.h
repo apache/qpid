@@ -23,6 +23,7 @@
 #define QPID_LINEARSTORE_JOURNAL_EMPTYFILEPOOLTYPES_H_
 
 #include <iostream>
+#include <sstream>
 #include <stdint.h>
 
 namespace qpid {
@@ -42,7 +43,13 @@ typedef struct efpIdentity_t {
     efpIdentity_t() : pn_(0), ds_(0) {}
     efpIdentity_t(efpPartitionNumber_t pn, efpDataSize_kib_t ds) : pn_(pn), ds_(ds) {}
     efpIdentity_t(const efpIdentity_t& ei) : pn_(ei.pn_), ds_(ei.ds_) {}
-    friend std::ostream& operator<<(std::ostream& os, efpIdentity_t& id) { os << "[" << id.pn_ << "," << id.ds_ << "]"; return os; }
+    friend std::ostream& operator<<(std::ostream& os, const efpIdentity_t& id) {
+        // This two-stage write allows this << operator to be used with std::setw() for formatted writes
+        std::ostringstream oss;
+        oss << id.pn_ << "," << id.ds_;
+        os << oss.str();
+        return os;
+    }
 } efpIdentity_t;
 
 }}}

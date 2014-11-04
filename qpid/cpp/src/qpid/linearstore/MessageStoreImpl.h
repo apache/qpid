@@ -157,7 +157,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     static qpid::linearstore::journal::efpDataSize_kib_t chkEfpFileSizeKiB(const qpid::linearstore::journal::efpDataSize_kib_t efpFileSizeKiB,
                                                               const std::string& paramName);
 
-    void init();
+    void init(const bool truncateFlag);
 
     void recoverQueues(TxnCtxt& txn,
                        qpid::broker::RecoveryManager& recovery,

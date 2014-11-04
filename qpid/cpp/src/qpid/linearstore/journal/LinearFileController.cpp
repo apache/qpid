@@ -96,7 +96,7 @@ uint64_t LinearFileController::getNextRecordId() {
 
 void LinearFileController::removeFileToEfp(const std::string& fileName) {
     if (emptyFilePoolPtr_) {
-        emptyFilePoolPtr_->returnEmptyFile(fileName);
+        emptyFilePoolPtr_->returnEmptyFileSymlink(fileName);
     }
 }
 
@@ -108,7 +108,7 @@ void LinearFileController::restoreEmptyFile(const std::string& fileName) {
 void LinearFileController::purgeEmptyFilesToEfp() {
     slock l(journalFileListMutex_);
     while (journalFileList_.front()->isNoEnqueuedRecordsRemaining() && journalFileList_.size() > 1) { // Can't purge last file, even if it has no enqueued records
-        emptyFilePoolPtr_->returnEmptyFile(journalFileList_.front()->getFqFileName());
+        emptyFilePoolPtr_->returnEmptyFileSymlink(journalFileList_.front()->getFqFileName());
         delete journalFileList_.front();
         journalFileList_.pop_front();
     }

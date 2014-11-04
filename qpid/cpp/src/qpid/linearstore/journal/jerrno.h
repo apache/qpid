@@ -130,6 +130,7 @@ namespace journal {
         static const uint32_t JERR_EFP_BADPARTITIONDIR; ///< Invalid partition directory
         static const uint32_t JERR_EFP_NOEFP;           ///< No EFP found for given partition and file size
         static const uint32_t JERR_EFP_EMPTY;           ///< EFP empty
+        static const uint32_t JERR_EFP_SYMLINK;         ///< Symbolic Link operation failed
 
         // Negative returns for some functions
         static const int32_t AIO_TIMEOUT;               ///< Timeout waiting for AIO return

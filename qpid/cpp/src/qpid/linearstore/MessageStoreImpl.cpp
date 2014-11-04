@@ -201,8 +201,7 @@ bool MessageStoreImpl::init(const std::string& storeDir_,
 
     if (truncateFlag_)
         truncateInit();
-    else
-        init();
+    init(truncateFlag_);
 
     QLS_LOG(info, "Store module initialized; store-dir=" << storeDir_);
     QLS_LOG(info,   "> Default EFP partition: " << defaultEfpPartitionNumber);
@@ -218,7 +217,7 @@ bool MessageStoreImpl::init(const std::string& storeDir_,
     return isInit;
 }
 
-void MessageStoreImpl::init()
+void MessageStoreImpl::init(const bool truncateFlag)
 {
     const int retryMax = 3;
     int bdbRetryCnt = 0;
@@ -296,6 +295,7 @@ void MessageStoreImpl::init()
                                                           defaultEfpPartitionNumber,
                                                           defaultEfpFileSize_kib,
                                                           overwriteBeforeReturnFlag,
+                                                          truncateFlag,
                                                           jrnlLog));
     efpMgr->findEfpPartitions();
 }
@@ -337,13 +337,12 @@ void MessageStoreImpl::truncateInit()
         isInit = false;
     }
 
-    // TODO: Linearstore: harvest all discareded journal files into the empy file pool(s).
-
     qpid::linearstore::journal::jdir::delete_dir(getBdbBaseDir());
+
+    // TODO: Linearstore: harvest all discarded journal files into the empty file pool(s).
     qpid::linearstore::journal::jdir::delete_dir(getJrnlBaseDir());
     qpid::linearstore::journal::jdir::delete_dir(getTplBaseDir());
     QLS_LOG(info, "Store directory " << getStoreTopLevelDir() << " was truncated.");
-    init();
 }
 
 void MessageStoreImpl::chkTplStoreInit()

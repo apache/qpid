@@ -37,8 +37,6 @@ class JournalLog;
 
 class EmptyFilePoolPartition
 {
-public:
-    static const std::string s_efpTopLevelDir_;
 protected:
     typedef std::map<efpDataSize_kib_t, EmptyFilePool*> efpMap_t;
     typedef efpMap_t::iterator efpMapItr_t;
@@ -47,6 +45,7 @@ protected:
     const efpPartitionNumber_t partitionNum_;
     const std::string partitionDir_;
     const bool overwriteBeforeReturnFlag_;
+    const bool truncateFlag_;
     JournalLog& journalLogRef_;
     efpMap_t efpMap_;
     smutex efpMapMutex_;
@@ -55,6 +54,7 @@ public:
     EmptyFilePoolPartition(const efpPartitionNumber_t partitionNum,
                            const std::string& partitionDir,
                            const bool overwriteBeforeReturnFlag,
+                           const bool truncateFlag,
                            JournalLog& journalLogRef);
     virtual ~EmptyFilePoolPartition();
 
@@ -62,9 +62,9 @@ public:
     EmptyFilePool* getEmptyFilePool(const efpDataSize_kib_t efpDataSize_kib);
     void getEmptyFilePools(std::vector<EmptyFilePool*>& efpList);
     void getEmptyFilePoolSizes_kib(std::vector<efpDataSize_kib_t>& efpDataSizesList) const;
-    bool getOverwriteBeforeReturnFlag() const;
     std::string getPartitionDirectory() const;
     efpPartitionNumber_t getPartitionNumber() const;
+    std::string toString(const uint16_t indent) const;
 
     static std::string getPartionDirectoryName(const efpPartitionNumber_t partitionNumber);
     static efpPartitionNumber_t getPartitionNumber(const std::string& name);

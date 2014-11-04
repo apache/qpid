@@ -44,11 +44,16 @@ class EmptyFilePool
 {
 protected:
     typedef std::deque<std::string> emptyFileList_t;
-    typedef emptyFileList_t::iterator emptyFileListItr_t;
+    typedef emptyFileList_t::const_iterator emptyFileListConstItr_t;
+
+    static std::string s_inuseFileDirectory_;
+    static std::string s_returnedFileDirectory_;
 
     const std::string efpDirectory_;
     const efpDataSize_kib_t efpDataSize_kib_;
     const EmptyFilePoolPartition* partitionPtr_;
+    const bool overwriteBeforeReturnFlag_;
+    const bool truncateFlag_;
     JournalLog& journalLogRef_;
 
 private:
@@ -58,6 +63,8 @@ private:
 public:
     EmptyFilePool(const std::string& efpDirectory,
                   const EmptyFilePoolPartition* partitionPtr,
+                  const bool overwriteBeforeReturnFlag,
+                  const bool truncateFlag,
                   JournalLog& journalLogRef);
     virtual ~EmptyFilePool();
 
@@ -73,23 +80,28 @@ public:
     const efpIdentity_t getIdentity() const;
 
     std::string takeEmptyFile(const std::string& destDirectory);
-    void returnEmptyFile(const std::string& srcFile);
+    void returnEmptyFileSymlink(const std::string& emptyFileSymlink);
 
     static std::string dirNameFromDataSize(const efpDataSize_kib_t efpDataSize_kib);
     static efpDataSize_kib_t dataSizeFromDirName_kib(const std::string& dirName,
                                                      const efpPartitionNumber_t partitionNumber);
 
 protected:
-    void createEmptyFile();
+    std::string createEmptyFile();
     std::string getEfpFileName();
-    std::string popEmptyFile();
+    void initializeSubDirectory(const std::string& fqDirName);
     bool overwriteFileContents(const std::string& fqFileName);
+    std::string popEmptyFile();
     void pushEmptyFile(const std::string fqFileName);
+    void returnEmptyFile(const std::string& emptyFileName);
     void resetEmptyFileHeader(const std::string& fqFileName);
     bool validateEmptyFile(const std::string& emptyFileName) const;
 
-    static int moveEmptyFile(const std::string& fromFqPath,
-                             const std::string& toFqPath);
+    static int moveFile(const std::string& fromFqPath,
+                        const std::string& toFqPath);
+    static int createSymLink(const std::string& fqFileName,
+                             const std::string& fqLinkName);
+    static std::string deleteSymlink(const std::string& fqLinkName);
 };
 
 }}}

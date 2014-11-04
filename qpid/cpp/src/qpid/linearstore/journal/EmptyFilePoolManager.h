@@ -46,6 +46,7 @@ protected:
     const efpPartitionNumber_t defaultPartitionNumber_;
     const efpDataSize_kib_t defaultEfpDataSize_kib_;
     const bool overwriteBeforeReturnFlag_;
+    const bool truncateFlag_;
     JournalLog& journalLogRef_;
     partitionMap_t partitionMap_;
     smutex partitionMapMutex_;
@@ -55,6 +56,7 @@ public:
                          const efpPartitionNumber_t defaultPartitionNumber,
                          const efpDataSize_kib_t defaultEfpDataSize_kib,
                          const bool overwriteBeforeReturnFlag,
+                         const bool truncateFlag,
                          JournalLog& journalLogRef_);
     virtual ~EmptyFilePoolManager();
 
@@ -72,6 +74,8 @@ public:
     void getEmptyFilePools(std::vector<EmptyFilePool*>& emptyFilePoolList,
                            const efpPartitionNumber_t efpPartitionNumber = 0);
     uint16_t getNumEfpPartitions() const;
+protected:
+    EmptyFilePoolPartition* insertPartition(const efpPartitionNumber_t pn, const std::string& fullPartitionPath);
 };
 
 }}}

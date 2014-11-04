@@ -26,22 +26,19 @@
 #include "qpid/linearstore/journal/jdir.h"
 #include "qpid/linearstore/journal/slock.h"
 
-//#include <iostream> // DEBUG
-
 namespace qpid {
 namespace linearstore {
 namespace journal {
 
-// static
-const std::string EmptyFilePoolPartition::s_efpTopLevelDir_("efp"); // Sets the top-level efp dir within a partition
-
 EmptyFilePoolPartition::EmptyFilePoolPartition(const efpPartitionNumber_t partitionNum,
                                                const std::string& partitionDir,
                                                const bool overwriteBeforeReturnFlag,
+                                               const bool truncateFlag,
                                                JournalLog& journalLogRef) :
                 partitionNum_(partitionNum),
                 partitionDir_(partitionDir),
                 overwriteBeforeReturnFlag_(overwriteBeforeReturnFlag),
+                truncateFlag_(truncateFlag),
                 journalLogRef_(journalLogRef)
 {
     validatePartitionDir();
@@ -57,25 +54,13 @@ EmptyFilePoolPartition::~EmptyFilePoolPartition() {
 
 void
 EmptyFilePoolPartition::findEmptyFilePools() {
-//std::cout << "Reading " << partitionDir << std::endl; // DEBUG
+//std::cout << "*** Reading " << partitionDir_ << std::endl; // DEBUG
     std::vector<std::string> dirList;
-    jdir::read_dir(partitionDir_, dirList, true, false, false, false);
-    bool foundEfpDir = false;
-    for (std::vector<std::string>::iterator i = dirList.begin(); i != dirList.end(); ++i) {
-        if (i->compare(s_efpTopLevelDir_) == 0) {
-            foundEfpDir = true;
-            break;
-        }
-    }
-    if (foundEfpDir) {
-        std::string efpDir(partitionDir_ + "/" + s_efpTopLevelDir_);
-//std::cout << "Reading " << efpDir << std::endl; // DEBUG
-        dirList.clear();
-        jdir::read_dir(efpDir, dirList, true, false, false, true);
+        jdir::read_dir(partitionDir_, dirList, true, false, false, true);
         for (std::vector<std::string>::iterator i = dirList.begin(); i != dirList.end(); ++i) {
             EmptyFilePool* efpp = 0;
             try {
-                efpp = new EmptyFilePool(*i, this, journalLogRef_);
+                efpp = new EmptyFilePool(*i, this, overwriteBeforeReturnFlag_, truncateFlag_, journalLogRef_);
                 {
                     slock l(efpMapMutex_);
                     efpMap_[efpp->dataSize_kib()] = efpp;
@@ -88,13 +73,14 @@ EmptyFilePoolPartition::findEmptyFilePools() {
                 }
                 //std::cerr << "WARNING: " << e.what() << std::endl;
             }
-            if (efpp != 0)
+            if (efpp != 0) {
                 efpp->initialize();
+            }
         }
-    }
 }
 
 EmptyFilePool* EmptyFilePoolPartition::getEmptyFilePool(const efpDataSize_kib_t efpDataSize_kib) {
+    slock l(efpMapMutex_);
     efpMapItr_t i = efpMap_.find(efpDataSize_kib);
     if (i == efpMap_.end())
         return 0;
@@ -102,19 +88,17 @@ EmptyFilePool* EmptyFilePoolPartition::getEmptyFilePool(const efpDataSize_kib_t 
 }
 
 void EmptyFilePoolPartition::getEmptyFilePools(std::vector<EmptyFilePool*>& efpList) {
+    slock l(efpMapMutex_);
     for (efpMapItr_t i=efpMap_.begin(); i!=efpMap_.end(); ++i) {
         efpList.push_back(i->second);
     }
 }
 
 void EmptyFilePoolPartition::getEmptyFilePoolSizes_kib(std::vector<efpDataSize_kib_t>& efpDataSizesList_kib) const {
+    slock l(efpMapMutex_);
     for (efpMapConstItr_t i=efpMap_.begin(); i!=efpMap_.end(); ++i) {
         efpDataSizesList_kib.push_back(i->first);
     }
-}
-
-bool EmptyFilePoolPartition::getOverwriteBeforeReturnFlag() const {
-    return overwriteBeforeReturnFlag_;
 }
 
 std::string EmptyFilePoolPartition::getPartitionDirectory() const {
@@ -123,6 +107,32 @@ std::string EmptyFilePoolPartition::getPartitionDirectory() const {
 
 efpPartitionNumber_t EmptyFilePoolPartition::getPartitionNumber() const {
     return partitionNum_;
+}
+
+std::string EmptyFilePoolPartition::toString(const uint16_t indent) const {
+    std::string indentStr(indent, ' ');
+    std::stringstream oss;
+    oss << "EFP Partition " <<  partitionNum_ << ":" << std::endl;
+    oss << indentStr  << "EFP Partition Analysis (partition " << partitionNum_ << " at \"" << partitionDir_ << "\"):" << std::endl;
+    if (efpMap_.empty()) {
+        oss << indentStr << "<Partition empty, no EFPs found>" << std::endl;
+    } else {
+        oss << indentStr << std::setw(12) << "efp_size_kib"
+                         << std::setw(12) << "num_files"
+                         << std::setw(18) << "tot_capacity_kib" << std::endl;
+        oss << indentStr << std::setw(12) << "------------"
+                         << std::setw(12) << "----------"
+                         << std::setw(18) << "----------------" << std::endl;
+        {
+            slock l(efpMapMutex_);
+            for (efpMapConstItr_t i=efpMap_.begin(); i!= efpMap_.end(); ++i) {
+                oss << indentStr << std::setw(12) << i->first
+                                 << std::setw(12) << i->second->numEmptyFiles()
+                                 << std::setw(18) << i->second->cumFileSize_kib() << std::endl;
+            }
+        }
+    }
+    return oss.str();
 }
 
 // static
