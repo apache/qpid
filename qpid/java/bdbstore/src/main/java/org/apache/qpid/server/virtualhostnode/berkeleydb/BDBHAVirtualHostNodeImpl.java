@@ -1026,17 +1026,26 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                     if (NodeRole.MASTER == newRole)
                     {
                         byte[] applicationState = nodeState.getAppState();
-                        Set<String> permittedNodes = ReplicatedEnvironmentFacade.convertApplicationStateBytesToPermittedNodeList(applicationState);
-                        if (_permittedNodes.size() != permittedNodes.size() || !_permittedNodes.containsAll(permittedNodes))
+                        if (applicationState != null)
                         {
-                            if (_permittedNodes.contains(remoteNode.getAddress()))
+                            Set<String> permittedNodes = ReplicatedEnvironmentFacade.convertApplicationStateBytesToPermittedNodeList(applicationState);
+                            if (_permittedNodes.size() != permittedNodes.size() || !_permittedNodes.containsAll(permittedNodes))
                             {
-                                setAttribute(PERMITTED_NODES, _permittedNodes, new ArrayList<String>(permittedNodes));
+                                if (_permittedNodes.contains(remoteNode.getAddress()))
+                                {
+                                    setAttribute(PERMITTED_NODES, _permittedNodes, new ArrayList<String>(permittedNodes));
+                                } else
+                                {
+                                    LOGGER.warn("Cannot change permitted nodes from Master as existing master node '" + remoteNode.getName()
+                                            + "' (" + remoteNode.getAddress() + ") is not in list of trusted nodes " + _permittedNodes);
+                                }
                             }
-                            else
+                        }
+                        else
+                        {
+                            if (LOGGER.isDebugEnabled())
                             {
-                                LOGGER.warn("Cannot change permitted nodes from Master as existing master node '" + remoteNode.getName()
-                                        + "' (" + remoteNode.getAddress() + ") is not in list of trusted nodes " + _permittedNodes);
+                                LOGGER.debug(String.format("Application state returned by JE was 'null' so skipping permitted node handling: s%", nodeState));
                             }
                         }
                     }
