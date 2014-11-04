@@ -82,6 +82,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.ExclusivityPolicy;
@@ -206,6 +207,9 @@ public class AMQChannel
     private long _blockingTimeout;
     private boolean _confirmOnPublish;
     private long _confirmedMessageCounter;
+    private volatile long _uncommittedMessageSize;
+    private final List<StoredMessage<MessageMetaData>> _uncommittedMessages = new ArrayList<>();
+    private long _maxUncommittedInMemorySize;
 
     public AMQChannel(AMQProtocolEngine connection, int channelId, final MessageStore messageStore)
     {
@@ -216,6 +220,7 @@ public class AMQChannel
                                connection.getAuthorizedSubject().getPublicCredentials(),
                                connection.getAuthorizedSubject().getPrivateCredentials());
         _subject.getPrincipals().add(new SessionPrincipal(this));
+        _maxUncommittedInMemorySize = connection.getVirtualHost().getContextValue(Long.class, Connection.MAX_UNCOMMITTED_IN_MEMORY_SIZE);
         _logSubject = new ChannelLogSubject(this);
 
         _messageStore = messageStore;
@@ -481,6 +486,7 @@ public class AMQChannel
                                         .createBasicAckBody(_confirmedMessageCounter, false);
                                 _connection.writeFrame(responseBody.generateFrame(_channelId));
                             }
+                            incrementUncommittedMessageSize(handle);
                             incrementOutstandingTxnsIfNecessary();
                         }
                     }
@@ -504,6 +510,36 @@ public class AMQChannel
             }
         }
 
+    }
+
+    private void incrementUncommittedMessageSize(final StoredMessage<MessageMetaData> handle)
+    {
+        if (isTransactional())
+        {
+            _uncommittedMessageSize += handle.getMetaData().getContentSize();
+            if (_uncommittedMessageSize > getMaxUncommittedInMemorySize())
+            {
+                handle.flowToDisk();
+                if(!_uncommittedMessages.isEmpty() || _uncommittedMessageSize == handle.getMetaData().getContentSize())
+                {
+                    getVirtualHost().getEventLogger()
+                            .message(_logSubject, ChannelMessages.LARGE_TRANSACTION_WARN(_uncommittedMessageSize));
+                }
+
+                if(!_uncommittedMessages.isEmpty())
+                {
+                    for (StoredMessage<MessageMetaData> uncommittedHandle : _uncommittedMessages)
+                    {
+                        uncommittedHandle.flowToDisk();
+                    }
+                    _uncommittedMessages.clear();
+                }
+            }
+            else
+            {
+                _uncommittedMessages.add(handle);
+            }
+        }
     }
 
     /**
@@ -1182,6 +1218,13 @@ public class AMQChannel
             _txnStarts.incrementAndGet();
             decrementOutstandingTxnsIfNecessary();
         }
+        resetUncommittedMessages();
+    }
+
+    private void resetUncommittedMessages()
+    {
+        _uncommittedMessageSize = 0l;
+        _uncommittedMessages.clear();
     }
 
     public void rollback(Runnable postRollbackTask)
@@ -1209,6 +1252,7 @@ public class AMQChannel
             _txnRejects.incrementAndGet();
             _txnStarts.incrementAndGet();
             decrementOutstandingTxnsIfNecessary();
+            resetUncommittedMessages();
         }
 
         postRollbackTask.run();
@@ -1366,6 +1410,11 @@ public class AMQChannel
     public boolean hasCurrentMessage()
     {
         return _currentMessage != null;
+    }
+
+    public long getMaxUncommittedInMemorySize()
+    {
+        return _maxUncommittedInMemorySize;
     }
 
     private class GetDeliveryMethod implements ClientDeliveryMethod

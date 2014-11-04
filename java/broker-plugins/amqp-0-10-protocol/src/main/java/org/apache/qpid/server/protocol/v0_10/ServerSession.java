@@ -27,6 +27,7 @@ import java.security.AccessController;
 import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -74,6 +75,7 @@ import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.AlreadyKnownDtxException;
 import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
@@ -135,7 +137,6 @@ public class ServerSession extends Session
     private long _blockTime;
     private long _blockingTimeout;
 
-
     public static interface MessageDispositionChangeListener
     {
         public void onAccept();
@@ -168,6 +169,11 @@ public class ServerSession extends Session
 
     private AtomicReference<LogMessage> _forcedCloseLogMessage = new AtomicReference<LogMessage>();
 
+    private volatile long _uncommittedMessageSize;
+    private final List<StoredMessage<MessageMetaData_0_10>> _uncommittedMessages = new ArrayList<>();
+    private long _maxUncommittedInMemorySize;
+
+
     public ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry)
     {
         super(connection, delegate, name, expiry);
@@ -188,6 +194,8 @@ public class ServerSession extends Session
 
         _blockingTimeout = ((ServerConnection)connection).getBroker().getContextValue(Long.class,
                                                                   Broker.CHANNEL_FLOW_CONTROL_ENFORCEMENT_TIMEOUT);
+        _maxUncommittedInMemorySize = getVirtualHost().getContextValue(Long.class, org.apache.qpid.server.model.Connection.MAX_UNCOMMITTED_IN_MEMORY_SIZE);
+
     }
 
     protected void setState(final State state)
@@ -258,7 +266,44 @@ public class ServerSession extends Session
                                     );
         getConnectionModel().registerMessageReceived(message.getSize(), message.getArrivalTime());
         incrementOutstandingTxnsIfNecessary();
+        incrementUncommittedMessageSize(message.getStoredMessage());
         return enqueues;
+    }
+
+    private void resetUncommittedMessages()
+    {
+        _uncommittedMessageSize = 0l;
+        _uncommittedMessages.clear();
+    }
+
+    private void incrementUncommittedMessageSize(final StoredMessage<MessageMetaData_0_10> handle)
+    {
+        if (isTransactional() && !(_transaction instanceof DistributedTransaction))
+        {
+            _uncommittedMessageSize += handle.getMetaData().getContentSize();
+            if (_uncommittedMessageSize > getMaxUncommittedInMemorySize())
+            {
+                handle.flowToDisk();
+                if(!_uncommittedMessages.isEmpty() || _uncommittedMessageSize == handle.getMetaData().getContentSize())
+                {
+                    getVirtualHost().getEventLogger()
+                            .message(_logSubject, ChannelMessages.LARGE_TRANSACTION_WARN(_uncommittedMessageSize));
+                }
+
+                if(!_uncommittedMessages.isEmpty())
+                {
+                    for (StoredMessage<MessageMetaData_0_10> uncommittedHandle : _uncommittedMessages)
+                    {
+                        uncommittedHandle.flowToDisk();
+                    }
+                    _uncommittedMessages.clear();
+                }
+            }
+            else
+            {
+                _uncommittedMessages.add(handle);
+            }
+        }
     }
 
 
@@ -620,6 +665,7 @@ public class ServerSession extends Session
         _txnCommits.incrementAndGet();
         _txnStarts.incrementAndGet();
         decrementOutstandingTxnsIfNecessary();
+        resetUncommittedMessages();
     }
 
     public void rollback()
@@ -629,6 +675,7 @@ public class ServerSession extends Session
         _txnRejects.incrementAndGet();
         _txnStarts.incrementAndGet();
         decrementOutstandingTxnsIfNecessary();
+        resetUncommittedMessages();
     }
 
 
@@ -707,7 +754,7 @@ public class ServerSession extends Session
         return getVirtualHost().getMessageStore();
     }
 
-    public VirtualHostImpl getVirtualHost()
+    public VirtualHostImpl<?,?,?> getVirtualHost()
     {
         return getConnection().getVirtualHost();
     }
@@ -1080,6 +1127,12 @@ public class ServerSession extends Session
         {
             l.consumerRemoved(consumer);
         }
+    }
+
+
+    public final long getMaxUncommittedInMemorySize()
+    {
+        return _maxUncommittedInMemorySize;
     }
 
     @Override

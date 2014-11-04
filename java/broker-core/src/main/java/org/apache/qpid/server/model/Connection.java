@@ -44,6 +44,11 @@ public interface Connection<X extends Connection<X>> extends ConfiguredObject<X>
     String PORT = "port";
 
 
+    String MAX_UNCOMMITTED_IN_MEMORY_SIZE = "connection.maxUncommittedInMemorySize";
+
+    @ManagedContextDefault(name = MAX_UNCOMMITTED_IN_MEMORY_SIZE)
+    long DEFAULT_MAX_UNCOMMITTED_IN_MEMORY_SIZE = 10l * 1024l * 1024l;
+
     @DerivedAttribute
     String getClientId();
 

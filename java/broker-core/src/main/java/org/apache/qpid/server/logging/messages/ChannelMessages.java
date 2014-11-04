@@ -22,14 +22,13 @@ package org.apache.qpid.server.logging.messages;
 
 import static org.apache.qpid.server.logging.AbstractMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX;
 
+import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.logging.LogMessage;
+
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
-
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.logging.LogMessage;
 
 /**
  * DO NOT EDIT DIRECTLY, THIS FILE WAS GENERATED.
@@ -51,6 +50,7 @@ public class ChannelMessages
     public static final String CLOSE_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "channel.close";
     public static final String PREFETCH_SIZE_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "channel.prefetch_size";
     public static final String CLOSE_FORCED_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "channel.close_forced";
+    public static final String LARGE_TRANSACTION_WARN_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "channel.large_transaction_warn";
     public static final String DEADLETTERMSG_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "channel.deadlettermsg";
     public static final String DISCARDMSG_NOALTEXCH_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "channel.discardmsg_noaltexch";
     public static final String IDLE_TXN_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "channel.idle_txn";
@@ -68,6 +68,7 @@ public class ChannelMessages
         Logger.getLogger(CLOSE_LOG_HIERARCHY);
         Logger.getLogger(PREFETCH_SIZE_LOG_HIERARCHY);
         Logger.getLogger(CLOSE_FORCED_LOG_HIERARCHY);
+        Logger.getLogger(LARGE_TRANSACTION_WARN_LOG_HIERARCHY);
         Logger.getLogger(DEADLETTERMSG_LOG_HIERARCHY);
         Logger.getLogger(DISCARDMSG_NOALTEXCH_LOG_HIERARCHY);
         Logger.getLogger(IDLE_TXN_LOG_HIERARCHY);
@@ -257,6 +258,38 @@ public class ChannelMessages
             public String getLogHierarchy()
             {
                 return CLOSE_FORCED_LOG_HIERARCHY;
+            }
+        };
+    }
+
+    /**
+     * Log a Channel message of the Format:
+     * <pre>CHN-1013 : Uncommitted transaction contains {0,number} bytes of incoming message data.</pre>
+     * Optional values are contained in [square brackets] and are numbered
+     * sequentially in the method call.
+     *
+     */
+    public static LogMessage LARGE_TRANSACTION_WARN(Number param1)
+    {
+        String rawMessage = _messages.getString("LARGE_TRANSACTION_WARN");
+
+        final Object[] messageArguments = {param1};
+        // Create a new MessageFormat to ensure thread safety.
+        // Sharing a MessageFormat and using applyPattern is not thread safe
+        MessageFormat formatter = new MessageFormat(rawMessage, _currentLocale);
+
+        final String message = formatter.format(messageArguments);
+
+        return new LogMessage()
+        {
+            public String toString()
+            {
+                return message;
+            }
+
+            public String getLogHierarchy()
+            {
+                return LARGE_TRANSACTION_WARN_LOG_HIERARCHY;
             }
         };
     }
