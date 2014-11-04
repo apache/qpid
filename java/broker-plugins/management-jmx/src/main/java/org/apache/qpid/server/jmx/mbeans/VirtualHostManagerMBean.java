@@ -50,6 +50,7 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
+import org.apache.qpid.server.virtualhost.QueueExistsException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 
@@ -246,7 +247,14 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
         attributes.put(Queue.DURABLE, durable);
         attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
 
-        getConfiguredObject().createQueue(attributes);
+        try
+        {
+            getConfiguredObject().createQueue(attributes);
+        }
+        catch (QueueExistsException qee)
+        {
+            throw new IllegalArgumentException("Queue with name '" + queueName + "' already exists");
+        }
     }
 
 

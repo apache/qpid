@@ -25,6 +25,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
 
 import java.util.Collections;
 import java.util.Map;
@@ -41,6 +43,7 @@ import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
+import org.apache.qpid.server.virtualhost.QueueExistsException;
 
 public class VirtualHostManagerMBeanTest extends TestCase
 {
@@ -115,6 +118,22 @@ public class VirtualHostManagerMBeanTest extends TestCase
         assertEquals(Boolean.TRUE,actualAttributes.get(Queue.DURABLE));
         assertEquals(null,actualAttributes.get(Queue.OWNER));
         assertEquals(TEST_DESCRIPTION, actualAttributes.get(Queue.DESCRIPTION));
+    }
+
+    public void testCreateQueueThatAlreadyExists() throws Exception
+    {
+        doThrow(new QueueExistsException("mocked exception", null)).when(_mockVirtualHost).createQueue(any(Map.class));
+
+        try
+        {
+            _virtualHostManagerMBean.createNewQueue(TEST_QUEUE_NAME, TEST_OWNER, true);
+            fail("Exception not thrown");
+        }
+        catch (IllegalArgumentException iae)
+        {
+            // PASS
+        }
+
     }
 
     public void testDeleteQueue() throws Exception
