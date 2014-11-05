@@ -74,6 +74,7 @@ void QueueCleaner::setTimer(qpid::sys::Timer* timer) {
 void QueueCleaner::fired()
 {
     queues.eachQueue(boost::bind(&PurgeSet::push, &purging, _1));
+    QPID_LOG(debug, "Requested purge of queues");
 }
 
 QueueCleaner::QueuePtrs::const_iterator QueueCleaner::purge(const QueueCleaner::QueuePtrs& batch)
@@ -81,8 +82,12 @@ QueueCleaner::QueuePtrs::const_iterator QueueCleaner::purge(const QueueCleaner::
     for (QueuePtrs::const_iterator i = batch.begin(); i != batch.end(); ++i) {
         (*i)->purgeExpired(period);
     }
-    task->restart();
-    timer->add(task);
+    QPID_LOG(debug, "Purged " << batch.size() << " queues");
+    if (purging.empty()) {
+        task->restart();
+        timer->add(task);
+        QPID_LOG(debug, "Restarted purge timer");
+    }
     return batch.end();
 }
 
