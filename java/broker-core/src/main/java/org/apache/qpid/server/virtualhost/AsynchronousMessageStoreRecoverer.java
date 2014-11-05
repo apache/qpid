@@ -27,6 +27,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
@@ -56,17 +59,28 @@ import org.apache.qpid.transport.util.Functions;
 public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
 {
     private static final Logger _logger = Logger.getLogger(AsynchronousMessageStoreRecoverer.class);
+    private AsynchronousRecoverer _asynchronousRecoverer;
 
     @Override
     public void recover(final VirtualHostImpl virtualHost)
     {
-        AsynchronousRecoverer asynchronousRecoverer = new AsynchronousRecoverer(virtualHost);
+        _asynchronousRecoverer = new AsynchronousRecoverer(virtualHost);
 
-        asynchronousRecoverer.recover();
+        _asynchronousRecoverer.recover();
+    }
+
+    @Override
+    public void cancel()
+    {
+        if (_asynchronousRecoverer != null)
+        {
+            _asynchronousRecoverer.cancel();
+        }
     }
 
     private static class AsynchronousRecoverer
     {
+        public static final int THREAD_POOL_SHUTDOWN_TIMEOUT = 5000;
         private final VirtualHostImpl<?, ?, ?> _virtualHost;
         private final EventLogger _eventLogger;
         private final MessageStore _store;
@@ -75,7 +89,8 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
         private final Set<AMQQueue<?>> _recoveringQueues = new CopyOnWriteArraySet<>();
         private final AtomicBoolean _recoveryComplete = new AtomicBoolean();
         private final Map<Long, MessageReference<? extends ServerMessage<?>>> _recoveredMessages = new HashMap<>();
-
+        private final ExecutorService _queueRecoveryExecutor = Executors.newCachedThreadPool();
+        private AtomicBoolean _continueRecovery = new AtomicBoolean(true);
 
         private AsynchronousRecoverer(final VirtualHostImpl<?, ?, ?> virtualHost)
         {
@@ -95,8 +110,7 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
 
             for(AMQQueue<?> queue : _recoveringQueues)
             {
-                Thread queueThread = new Thread(new QueueRecoveringTask(queue), "Queue Recoverer : " + queue.getName() + " (vh: " + getVirtualHost().getName() + ")");
-                queueThread.start();
+                _queueRecoveryExecutor.submit(new QueueRecoveringTask(queue));
             }
         }
 
@@ -161,14 +175,18 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
                     {
                         messagesToDelete.add(storedMessage);
                     }
-                    return messageNumber <_maxMessageId-1;
+                    return _continueRecovery.get() && messageNumber <_maxMessageId-1;
                 }
             });
             for(StoredMessage<?> storedMessage : messagesToDelete)
             {
-
-                _logger.info("Message id " + storedMessage.getMessageNumber() + " in store, but not in any queue - removing....");
-                storedMessage.remove();
+                if (_continueRecovery.get())
+                {
+                    _logger.info("Message id "
+                                 + storedMessage.getMessageNumber()
+                                 + " in store, but not in any queue - removing....");
+                    storedMessage.remove();
+                }
             }
 
             messagesToDelete.clear();
@@ -196,6 +214,25 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
                 }
             }
             return ref == null ? null : ref.getMessage();
+        }
+
+        public void cancel()
+        {
+            _continueRecovery.set(false);
+            _queueRecoveryExecutor.shutdown();
+            try
+            {
+                boolean wasShutdown = _queueRecoveryExecutor.awaitTermination(THREAD_POOL_SHUTDOWN_TIMEOUT, TimeUnit.MILLISECONDS);
+                if (!wasShutdown)
+                {
+                    _logger.warn("Failed to gracefully shutdown queue recovery executor within permitted time period");
+                    _queueRecoveryExecutor.shutdownNow();
+                }
+            }
+            catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+            }
         }
 
 
@@ -335,7 +372,7 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
                 branch.setState(DtxBranch.State.PREPARED);
                 branch.prePrepareTransaction();
 
-                return true;
+                return _continueRecovery.get();
             }
 
             private StringBuilder xidAsString(Xid id)
@@ -364,7 +401,17 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
             @Override
             public void run()
             {
-                recoverQueue(_queue);
+                String originalThreadName = Thread.currentThread().getName();
+                Thread.currentThread().setName("Queue Recoverer : " + _queue.getName() + " (vh: " + getVirtualHost().getName() + ")");
+
+                try
+                {
+                    recoverQueue(_queue);
+                }
+                finally
+                {
+                    Thread.currentThread().setName(originalThreadName);
+                }
             }
         }
 
@@ -408,7 +455,7 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
                         txn.dequeueMessage(_queue, new DummyMessage(messageId));
                         txn.commitTranAsync();
                     }
-                    return true;
+                    return _continueRecovery.get();
                 }
                 else
                 {

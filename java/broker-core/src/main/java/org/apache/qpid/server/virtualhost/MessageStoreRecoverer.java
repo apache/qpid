@@ -23,4 +23,10 @@ package org.apache.qpid.server.virtualhost;
 public interface MessageStoreRecoverer
 {
     void recover(VirtualHostImpl virtualHost);
+
+    /**
+     * Cancels any in-progress message store recovery.  If message store recovery has already
+     * completed, this method call has no effect.
+     */
+    void cancel();
 }
