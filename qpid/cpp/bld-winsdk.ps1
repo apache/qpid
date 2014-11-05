@@ -42,9 +42,15 @@
 #     Pick VS2008, VS2010, or VS2012. Defaults to VS2008.
 #  4. Args[3] holds the architecture handle              "x86"
 #     Either x86 or x64. Defaults to x86.
+#  4a. Args[4] optionally holds relative path to proton  "..\..\proton\install"
+#      install root from the directory in which cmake
+#      is run. If this arg is specified then the
+#      shared directory is used. If this arg is blank
+#      or absent then the kit is built without proton.
+#      The path is relative to <kitroot>\<arch>-<vSversion> described below.
 #  5. This file exists in directory kitroot/qpid/cpp.
 #     The kit is built in a directory <kitroot>\<arch>-<VSversion>.
-#	  For example: <kitroot>\x86-VS2008
+#     For example: <kitroot>\x86-VS2008
 #  6. The <arch>-<VSversion> dirs are where cmake will run.
 #  7. Boost must have been built with the same version of Visual Studio 
 #     and the same architecture as this build.
@@ -84,6 +90,7 @@ $ErrorActionPreference='Stop'
 [string] $global:currentDirectory   = Split-Path -parent $global:sourceDirectory
 [string] $global:vsVersion          = "VS2008"
 [string] $global:vsArch             = "x86"
+[string] $global:sharedBuildDir     = ""
 
 
 ################################
@@ -124,10 +131,15 @@ function BuildAPlatform
         [string] $vsTargetRelease,
         [string] $boostRoot,
         [string] $randomness,
-        [string] $vsName
+        [string] $vsName,
+        [string] $sharedInstallDir
     )
 
-    [string] $install_dir   = "install_$randomness"
+    [string] $install_dir   = $sharedInstallDir
+    if ($install_dir -eq "") {
+        # If proton shared install not specified use some local random dir
+        $install_dir = "install_$randomness"
+    }
     [string] $preserve_dir  = "preserve_$randomness"
     [string] $zipfile       = "qpid-cpp-$platform-$vsName-$ver.zip"
     [string] $platform_dir  = "$global:currentDirectory/$platform-$vsName"
@@ -144,6 +156,7 @@ function BuildAPlatform
     Write-Host " boostRoot      : $boostRoot"
     Write-Host " randomness     : $randomness"
     Write-Host " vsName         : $vsName"
+    Write-Host " installDir     : $installDir"
     
     #
     # Compute msvcVer string from the given vsName
@@ -185,6 +198,8 @@ function BuildAPlatform
     #
     # Run cmake
     #
+    Write-Host "Running cmake:  cmake -G ""$cmakeGenerator"" ""-DCMAKE_INSTALL_PREFIX=$install_dir"" $qpid_cpp_src"
+    Write-Host "From directory: " $(Get-Location)
     cmake -G "$cmakeGenerator" "-DCMAKE_INSTALL_PREFIX=$install_dir" $qpid_cpp_src
 
     #
@@ -229,7 +244,7 @@ function BuildAPlatform
         ('bin/*-gd-*.dll',       'bin/Debug'),
         ('bin/boost*.dll',       'bin/Release'),
         ('bin/Microsoft*',       'bin/Release'),
-        ('bin/msvc*d.dll',       'bin/Debug') ,
+        ('bin/msvc*d.dll',       'bin/Debug'),
         ('bin/msvc*.dll',        'bin/Release') ,
         ('bin/*d.dll',           'bin/Debug'),
         ('bin/*.dll',            'bin/Release'),
@@ -257,14 +272,19 @@ function BuildAPlatform
         'bin/*PDB/qpidxarm*.*',
         'bin/*.exe',
         'bin/qmf-gen',
-		'bin/Debug/msvc*',
+        'bin/Debug/msvc*',
         'conf',
         'examples/*.sln',
         'examples/*.vcproj',
         'examples/messaging/*.vcproj',
         'include',
-        'plugins',
-		'lib/pkgconfig')
+        'plugins')
+
+    $removeProtonShared=(
+        'lib/cmake',
+        'lib/pkgconfig',
+        'proton',
+        'share')
 
     # Move some files around in the install tree
     foreach ($pattern in $move) {
@@ -285,6 +305,11 @@ function BuildAPlatform
     # Remove everything to remove
     foreach ($pattern in $remove) {
         Remove-Item -recurse "$install_dir/$pattern"
+    }
+    if ($sharedInstallDir -ne "") {
+        foreach ($pattern in $removeProtonShared) {
+            Remove-Item -recurse "$install_dir/$pattern"
+        }
     }
 
     # Copy back the preserved things
@@ -328,10 +353,10 @@ function BuildAPlatform
     $src = Resolve-Path "$global:sourceDirectory/cpp/examples/winsdk-cmake"
     $dst = Join-Path $install_dir "examples\examples-cmake"
     Copy-Item "$src\*" -destination "$dst\"
-	
-	# Create a batch file that will run examples-cmake with the correct generator
-	$dst = Join-Path $install_dir "examples\examples-cmake\run-cmake.bat"
-	"REM"                                                       | Out-File -filepath $dst -encoding ASCII
+
+    # Create a batch file that will run examples-cmake with the correct generator
+    $dst = Join-Path $install_dir "examples\examples-cmake\run-cmake.bat"
+    "REM"                                                       | Out-File -filepath $dst -encoding ASCII
     "REM  run-cmake.bat"                                        | Out-File -filepath $dst -encoding ASCII -append
     "REM"                                                       | Out-File -filepath $dst -encoding ASCII -append
     "REM  Runs cmake to build native C++ example solution and"  | Out-File -filepath $dst -encoding ASCII -append
@@ -365,8 +390,8 @@ function BuildAPlatform
 #
 
 if ($args.length -lt 3) {
-    Write-Host 'Usage: bld-winsdk.ps1 boost_root  buildVersion [VisualStudioVersion [architecture]]'
-    Write-Host '       bld-winsdk.ps1 d:\boost-32 1.2.3.4       VS2008               x86'
+    Write-Host 'Usage: bld-winsdk.ps1 boost_root  buildVersion [VisualStudioVersion [architecture [relative-path-to-proton-install-dir]]]'
+    Write-Host '       bld-winsdk.ps1 d:\boost-32 1.2.3.4       VS2008               x86           ..\..\git-proton\install'
     exit
 }
 
@@ -411,6 +436,11 @@ if ( !($global:vsArch -eq $null) ) {
     $global:vsArch = "x86"
 }
 
+$global:sharedBuildDir = $args[4]
+if ($global:sharedBuildDir -eq $null) {
+    $global:sharedBuildDir = ""
+}
+
 Write-Host "bld-winsdk.ps1"
 Write-Host " qpid_src    : $qpid_src"
 Write-Host " boostRoot   : $boostRoot"
@@ -418,6 +448,7 @@ Write-Host " ver         : $ver"
 Write-Host " cmake gene  : $generator"
 Write-Host " vsVersion   : $global:vsVersion"
 Write-Host " vsArch      : $global:vsArch"
+Write-Host " sharedBuild : $global:sharedBuildDir"
 
 #
 # Verify that Boost is not in PATH
@@ -445,7 +476,8 @@ if ($global:vsArch -eq "x86") {
                    "RelWithDebInfo|Win32" `
                    $boostRoot `
                    $randomness `
-                   $global:vsVersion
+                   $global:vsVersion `
+                   $global:sharedBuildDir
 } else {
     BuildAPlatform $qpid_cpp_src `
                    "x64" `
@@ -454,5 +486,6 @@ if ($global:vsArch -eq "x86") {
                    "RelWithDebInfo|x64" `
                    $boostRoot `
                    $randomness `
-                   $global:vsVersion
+                   $global:vsVersion `
+                   $global:sharedBuildDir
 }
