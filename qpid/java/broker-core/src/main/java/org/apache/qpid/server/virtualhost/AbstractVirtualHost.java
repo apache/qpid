@@ -161,7 +161,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     private MessageDestination _defaultDestination;
 
     private MessageStore _messageStore;
-
+    private MessageStoreRecoverer _messageStoreRecoverer;
 
     public AbstractVirtualHost(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
     {
@@ -688,6 +688,11 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             try
             {
+                if (_messageStoreRecoverer != null)
+                {
+                    _messageStoreRecoverer.cancel();
+                }
+
                 getMessageStore().closeMessageStore();
             }
             catch (StoreException e)
@@ -1411,16 +1416,15 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             createDefaultExchanges();
         }
 
-        MessageStoreRecoverer messageStoreRecoverer;
         if(getContextValue(Boolean.class, USE_ASYNC_RECOVERY))
         {
-            messageStoreRecoverer = new AsynchronousMessageStoreRecoverer();
+            _messageStoreRecoverer = new AsynchronousMessageStoreRecoverer();
         }
         else
         {
-           messageStoreRecoverer = new SynchronousMessageStoreRecoverer();
+           _messageStoreRecoverer = new SynchronousMessageStoreRecoverer();
         }
-        messageStoreRecoverer.recover(this);
+        _messageStoreRecoverer.recover(this);
 
 
         State finalState = State.ERRORED;

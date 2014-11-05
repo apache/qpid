@@ -113,6 +113,12 @@ public class SynchronousMessageStoreRecoverer implements MessageStoreRecoverer
 
     }
 
+    @Override
+    public void cancel()
+    {
+        // No-op
+    }
+
     private static class MessageVisitor implements MessageHandler
     {
 
