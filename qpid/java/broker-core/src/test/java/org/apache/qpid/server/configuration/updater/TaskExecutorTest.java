@@ -105,23 +105,31 @@ public class TaskExecutorTest extends TestCase
                 }
             }
         };
-        new Thread(runnable).start();
-        new Thread(runnable).start();
-        assertTrue("Tasks have not been submitted", submitLatch.await(1000, TimeUnit.MILLISECONDS));
-        assertTrue("The first task has not been triggered", waitForCallLatch.await(1000, TimeUnit.MILLISECONDS));
+        Thread t1 = new Thread(runnable);
+        t1.start();
+        Thread t2 = new Thread(runnable);
+        t2.start();
+
+        final long timeout = 2000l;
+        boolean awaitSubmissions = submitLatch.await(timeout, TimeUnit.MILLISECONDS);
+        assertTrue(submitLatch.getCount() + " task(s) have not been submitted within expected time", awaitSubmissions);
+        assertTrue("The first task has not been triggered", waitForCallLatch.await(timeout, TimeUnit.MILLISECONDS));
 
         _executor.stopImmediately();
         assertFalse("Unexpected stopped state", _executor.isRunning());
 
-        Exception e = submitExceptions.poll(1000l, TimeUnit.MILLISECONDS);
+        Exception e = submitExceptions.poll(timeout, TimeUnit.MILLISECONDS);
         assertNotNull("The task execution was not interrupted or cancelled", e);
-        Exception e2 = submitExceptions.poll(1000l, TimeUnit.MILLISECONDS);
+        Exception e2 = submitExceptions.poll(timeout, TimeUnit.MILLISECONDS);
         assertNotNull("The task execution was not interrupted or cancelled", e2);
 
         assertTrue("One of the exceptions should be CancellationException:", e2 instanceof CancellationException
                 || e instanceof CancellationException);
         assertTrue("One of the exceptions should be InterruptedException:", e2 instanceof InterruptedException
                 || e instanceof InterruptedException);
+
+        t1.join(timeout);
+        t2.join(timeout);
     }
 
     public void testStop()
