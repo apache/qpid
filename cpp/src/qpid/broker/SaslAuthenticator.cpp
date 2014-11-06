@@ -35,6 +35,7 @@
 #if HAVE_SASL
 #include <sys/stat.h>
 #include <sasl/sasl.h>
+#include <sasl/saslplug.h>
 #include "qpid/sys/cyrus/CyrusSecurityLayer.h"
 using qpid::sys::cyrus::CyrusSecurityLayer;
 #endif
@@ -97,6 +98,37 @@ bool SaslAuthenticator::available(void) {
     return true;
 }
 
+// Called by sasl_server_init() when config file name is constructed to allow clients to verify file
+// Returning SASL_FAIL here will cause sasl_server_init() to fail and an exception will be thrown
+int _sasl_verifyfile_callback(void *, const char *configFileName, sasl_verify_type_t type)
+{
+    if (type == SASL_VRFY_CONF) {
+        struct stat st;
+        // verify the file exists
+        if ( ::stat ( configFileName, & st) ) {
+            QPID_LOG(error, "SASL: config file doesn't exist: " << configFileName);
+            return SASL_FAIL;
+        }
+        // verify the file can be read by the broker
+        if ( ::access ( configFileName, R_OK ) ) {
+            QPID_LOG(error, "SASL: broker unable to read the config file. Check file permissions: " << configFileName);
+            return SASL_FAIL;
+        }
+    }
+    return SASL_OK;
+}
+
+#ifndef sasl_callback_ft
+typedef int (*sasl_callback_ft)(void);
+#endif
+
+// passed to sasl_server_init()
+static sasl_callback_t callbacks[] =
+{
+        {   SASL_CB_VERIFYFILE, (sasl_callback_ft)&_sasl_verifyfile_callback, NULL },
+    {   SASL_CB_LIST_END,   NULL,                                         NULL }
+};
+
 // Initialize the SASL mechanism; throw if it fails.
 void SaslAuthenticator::init(const std::string& saslName, std::string const & saslConfigPath )
 {
@@ -120,6 +152,11 @@ void SaslAuthenticator::init(const std::string& saslName, std::string const & sa
           throw Exception ( QPID_MSG ( "SASL: sasl_set_path failed: cannot stat: " << saslConfigPath ) );
         }
 
+        // Make sure that saslConfigPath is a directory.
+        if (!S_ISDIR(st.st_mode)) {
+            throw Exception ( QPID_MSG ( "SASL: not a directory: " << saslConfigPath ) );
+        }
+
         // Make sure the directory is readable.
         if ( ::access ( saslConfigPath.c_str(), R_OK ) ) {
             throw Exception ( QPID_MSG ( "SASL: sasl_set_path failed: directory not readable:" << saslConfigPath ) );
@@ -134,11 +171,11 @@ void SaslAuthenticator::init(const std::string& saslName, std::string const & sa
     }
 #endif
 
-    int code = sasl_server_init(NULL, saslName.c_str());
+    int code = sasl_server_init(callbacks, saslName.c_str());
     if (code != SASL_OK) {
         // TODO: Figure out who owns the char* returned by
         // sasl_errstring, though it probably does not matter much
-        throw Exception(QPID_MSG("SASL: failed to parse SASL configuration file, error: " << sasl_errstring(code, NULL, NULL)));
+        throw Exception(QPID_MSG("SASL: failed to parse SASL configuration file in (" << saslConfigPath << "), error: " << sasl_errstring(code, NULL, NULL)));
     }
 }
 
