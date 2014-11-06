@@ -462,15 +462,24 @@ public class MultiNodeTest extends QpidBrokerTestCase
         envConfig.setDurability(new Durability(Durability.SyncPolicy.SYNC, Durability.SyncPolicy.WRITE_NO_SYNC, Durability.ReplicaAckPolicy.SIMPLE_MAJORITY));
 
         ReplicatedEnvironment intruder = null;
+        final String currentThreadName = Thread.currentThread().getName();
         try
         {
+
             intruder = new ReplicatedEnvironment(environmentPathFile, replicationConfig, envConfig);
         }
         finally
         {
-            if (intruder != null)
+            try
             {
-                intruder.close();
+                if (intruder != null)
+                {
+                    intruder.close();
+                }
+            }
+            finally
+            {
+                Thread.currentThread().setName(currentThreadName);
             }
         }
 
