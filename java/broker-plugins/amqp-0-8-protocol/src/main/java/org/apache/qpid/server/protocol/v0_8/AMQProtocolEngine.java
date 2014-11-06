@@ -103,6 +103,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     private static final int REUSABLE_BYTE_BUFFER_CAPACITY = 65 * 1024;
     public static final String BROKER_DEBUG_BINARY_DATA_LENGTH = "broker.debug.binaryDataLength";
     public static final int DEFAULT_DEBUG_BINARY_DATA_LENGTH = 80;
+    private static final long AWAIT_CLOSED_TIMEOUT = 60000;
     private final AmqpPort<?> _port;
     private final long _creationTime;
 
@@ -765,7 +766,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         }
     }
 
-    /** This must be called when the session is _closed in order to free up any resources managed by the session. */
     public void closeSession()
     {
 
@@ -813,34 +813,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             }
             else
             {
-                synchronized(this)
-                {
-
-                    boolean lockHeld = _receivedLock.isHeldByCurrentThread();
-
-                    while(!_closed)
-                    {
-                        try
-                        {
-                            if(lockHeld)
-                            {
-                                _receivedLock.unlock();
-                            }
-                            wait(1000);
-                        }
-                        catch (InterruptedException e)
-                        {
-                            // do nothing
-                        }
-                        finally
-                        {
-                            if(lockHeld)
-                            {
-                                _receivedLock.lock();
-                            }
-                        }
-                    }
-                }
+                awaitClosed();
             }
         }
         else
@@ -855,6 +828,44 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                 }
             });
 
+        }
+    }
+
+    private void awaitClosed()
+    {
+        synchronized(this)
+        {
+            final boolean lockHeld = _receivedLock.isHeldByCurrentThread();
+            final long endTime = System.currentTimeMillis() + AWAIT_CLOSED_TIMEOUT;
+
+            while(!_closed && endTime > System.currentTimeMillis())
+            {
+                try
+                {
+                    if(lockHeld)
+                    {
+                        _receivedLock.unlock();
+                    }
+                    wait(1000);
+                }
+                catch (InterruptedException e)
+                {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+                finally
+                {
+                    if(lockHeld)
+                    {
+                        _receivedLock.lock();
+                    }
+                }
+            }
+
+            if (!_closed)
+            {
+                throw new ConnectionScopedRuntimeException("Connection " + this + " failed to become closed within " + AWAIT_CLOSED_TIMEOUT + "ms.");
+            }
         }
     }
 
@@ -901,8 +912,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                 }
             }
         }
-
-
+        else
+        {
+            awaitClosed();
+        }
     }
 
     public void closeProtocolSession()
