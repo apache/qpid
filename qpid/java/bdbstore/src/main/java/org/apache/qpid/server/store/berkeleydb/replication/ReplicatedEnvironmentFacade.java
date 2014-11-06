@@ -59,6 +59,7 @@ import com.sleepycat.je.SequenceConfig;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.TransactionConfig;
 import com.sleepycat.je.rep.*;
+import com.sleepycat.je.rep.impl.node.NameIdPair;
 import com.sleepycat.je.rep.util.DbPing;
 import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 import com.sleepycat.je.rep.utilint.HostPortPair;
@@ -943,13 +944,28 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     {
         LOGGER.info("Restarting environment");
 
+        StateChangeListener stateChangeListener = _stateChangeListener.get();
+
+        if (stateChangeListener != null)
+        {
+            _stateChangeExecutor.submit(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    StateChangeEvent detached = new StateChangeEvent(ReplicatedEnvironment.State.DETACHED, NameIdPair.NULL);
+                    stateChanged(detached);
+                }
+            });
+        }
+
         closeEnvironmentOnRestart();
 
         createEnvironment(false);
 
         registerAppStateMonitorIfPermittedNodesSpecified();
 
-        if (_stateChangeListener.get() != null)
+        if (stateChangeListener != null)
         {
             _environment.setStateChangeListener(this);
         }
