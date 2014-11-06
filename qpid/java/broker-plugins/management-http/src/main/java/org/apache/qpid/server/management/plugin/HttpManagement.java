@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.management.plugin;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.net.SocketAddress;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -35,11 +37,13 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.servlet.DispatcherType;
 import javax.servlet.MultipartConfigElement;
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.SessionManager;
+import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSocketConnector;
@@ -53,6 +57,7 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.management.plugin.connector.TcpAndSslSelectChannelConnector;
 import org.apache.qpid.server.management.plugin.filter.ForbiddingAuthorisationFilter;
+import org.apache.qpid.server.management.plugin.filter.ForbiddingTraceFilter;
 import org.apache.qpid.server.management.plugin.filter.RedirectingAuthorisationFilter;
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
@@ -242,11 +247,28 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         ServletContextHandler root = new ServletContextHandler(ServletContextHandler.SESSIONS);
         root.setContextPath("/");
         server.setHandler(root);
+        server.setSendServerVersion(false);
+        final ErrorHandler errorHandler = new ErrorHandler()
+        {
+            @Override
+            protected void writeErrorPageBody(HttpServletRequest request, Writer writer, int code, String message, boolean showStacks)
+                    throws IOException
+            {
+                String uri= request.getRequestURI();
+
+                writeErrorPageMessage(request,writer,code,message,uri);
+
+                for (int i= 0; i < 20; i++)
+                    writer.write("<br/>                                                \n");
+            }
+        };
+        root.setErrorHandler(errorHandler);
 
         // set servlet context attributes for broker and configuration
         root.getServletContext().setAttribute(HttpManagementUtil.ATTR_BROKER, getBroker());
         root.getServletContext().setAttribute(HttpManagementUtil.ATTR_MANAGEMENT_CONFIGURATION, this);
 
+        root.addFilter(new FilterHolder(new ForbiddingTraceFilter()), "/*", EnumSet.of(DispatcherType.REQUEST));
         FilterHolder restAuthorizationFilter = new FilterHolder(new ForbiddingAuthorisationFilter());
         restAuthorizationFilter.setInitParameter(ForbiddingAuthorisationFilter.INIT_PARAM_ALLOWED, "/service/sasl");
         root.addFilter(restAuthorizationFilter, "/api/*", EnumSet.of(DispatcherType.REQUEST));
