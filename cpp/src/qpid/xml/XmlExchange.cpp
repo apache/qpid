@@ -36,6 +36,7 @@
 #include "qpid/Plugin.h"
 
 #include <xercesc/framework/MemBufInputSource.hpp>
+#include <xercesc/util/XMLEntityResolver.hpp>
 
 #ifdef XQ_EFFECTIVE_BOOLEAN_VALUE_HPP
 #include <xqilla/ast/XQEffectiveBooleanValue.hpp>
@@ -59,6 +60,23 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 namespace qpid {
 namespace broker {            
+
+namespace {
+const char* DUMMY("dummy");
+}
+class XmlNullResolver : public XERCES_CPP_NAMESPACE::XMLEntityResolver
+{
+ public:
+    XERCES_CPP_NAMESPACE::InputSource* resolveEntity(XERCES_CPP_NAMESPACE::XMLResourceIdentifier* xmlri)
+    {
+        if (xmlri->getResourceIdentifierType() == XERCES_CPP_NAMESPACE::XMLResourceIdentifier::ExternalEntity) {
+            return new XERCES_CPP_NAMESPACE::MemBufInputSource(0, 0, DUMMY);
+        } else {
+            return 0;
+        }
+    }
+};
+
     
 XQilla XmlBinding::xqilla;
 
@@ -111,7 +129,7 @@ XmlExchange::XmlExchange(const std::string& _name, Manageable* _parent, Broker* 
 
 XmlExchange::XmlExchange(const std::string& _name, bool _durable, bool autodelete,
                          const FieldTable& _args, Manageable* _parent, Broker* b) :
-    Exchange(_name, _durable, autodelete, _args, _parent, b)
+    Exchange(_name, _durable, autodelete, _args, _parent, b), resolver(new XmlNullResolver)
 {
     if (mgmtExchange != 0)
         mgmtExchange->set_type (typeName);
@@ -269,6 +287,7 @@ bool XmlExchange::matches(Query& query, Deliverable& msg, bool parse_message_con
 
         if (parse_message_content) {
 
+            if (resolver) context->setXMLEntityResolver(resolver.get());
             msgContent = msg.getMessage().getContent();
 
             QPID_LOG(trace, "matches: message content is [" << msgContent << "]");
