@@ -58,12 +58,15 @@ struct XmlBinding : public Exchange::Binding {
         
 };
 
+class XmlNullResolver;
+
 class XmlExchange : public virtual Exchange {
 
     typedef std::map<std::string, XmlBinding::vector> XmlBindingsMap;
     XmlBindingsMap bindingsMap;
 
     qpid::sys::RWlock lock;
+    boost::shared_ptr<XmlNullResolver> resolver;
 
     bool matches(Query& query, Deliverable& msg, bool parse_message_content);
 
