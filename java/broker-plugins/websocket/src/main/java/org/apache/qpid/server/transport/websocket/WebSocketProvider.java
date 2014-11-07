@@ -30,10 +30,14 @@ import java.util.Collections;
 import java.util.Set;
 
 import javax.net.ssl.SSLContext;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -43,11 +47,9 @@ import org.eclipse.jetty.websocket.WebSocketHandler;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.port.AmqpPort;
-import org.apache.qpid.server.model.port.HttpPort;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.server.transport.AcceptingTransport;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -58,6 +60,7 @@ import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 class WebSocketProvider implements AcceptingTransport
 {
     public static final String AMQP_WEBSOCKET_SUBPROTOCOL = "AMQPWSB10";
+    public static final String X509_CERTIFICATES = "javax.servlet.request.X509Certificate";
     private final Transport _transport;
     private final SSLContext _sslContext;
     private final AmqpPort<?> _port;
@@ -79,8 +82,8 @@ class WebSocketProvider implements AcceptingTransport
         _defaultSupportedProtocolReply = defaultSupportedProtocolReply;
         _factory = new MultiVersionProtocolEngineFactory(
                         _port.getParent(Broker.class), null,
-                        (Boolean)_port.getAttribute(Port.WANT_CLIENT_AUTH),
-                        (Boolean)_port.getAttribute(Port.NEED_CLIENT_AUTH),
+                        _port.getWantClientAuth(),
+                        _port.getNeedClientAuth(),
                         _supported,
                         _defaultSupportedProtocolReply,
                         _port,
@@ -105,7 +108,8 @@ class WebSocketProvider implements AcceptingTransport
             SslContextFactory factory = new SslContextFactory();
             factory.setSslContext(_sslContext);
             factory.addExcludeProtocols(SSLUtil.SSLV3_PROTOCOL);
-            factory.setNeedClientAuth(true);
+            factory.setNeedClientAuth(_port.getNeedClientAuth());
+            factory.setWantClientAuth(_port.getWantClientAuth());
             connector = new SslSelectChannelConnector(factory);
         }
         else
@@ -114,14 +118,8 @@ class WebSocketProvider implements AcceptingTransport
         }
 
         String bindingAddress = null;
-        if (_port instanceof HttpPort)
-        {
-            bindingAddress = ((HttpPort)_port).getBindingAddress();
-        }
-        else if (_port instanceof AmqpPort)
-        {
-            bindingAddress = ((AmqpPort)_port).getBindingAddress();
-        }
+
+        bindingAddress = _port.getBindingAddress();
 
         if (bindingAddress != null && !bindingAddress.trim().equals("") && !bindingAddress.trim().equals("*"))
         {
@@ -138,12 +136,13 @@ class WebSocketProvider implements AcceptingTransport
             {
 
                 Principal principal = null;
-                if(Collections.list(request.getAttributeNames()).contains("javax.servlet.request.X509Certificate"))
+                if(Collections.list(request.getAttributeNames()).contains(X509_CERTIFICATES))
                 {
                     X509Certificate[] certificates =
-                            (X509Certificate[]) request.getAttribute("javax.servlet.request.X509Certificate");
+                            (X509Certificate[]) request.getAttribute(X509_CERTIFICATES);
                     if(certificates != null && certificates.length != 0)
                     {
+
                         principal = certificates[0].getSubjectDN();
                     }
                 }
@@ -155,6 +154,26 @@ class WebSocketProvider implements AcceptingTransport
         };
 
         _server.setHandler(wshandler);
+        _server.setSendServerVersion(false);
+        wshandler.setHandler(new AbstractHandler()
+        {
+            @Override
+            public void handle(final String target,
+                               final Request baseRequest,
+                               final HttpServletRequest request,
+                               final HttpServletResponse response)
+                    throws IOException, ServletException
+            {
+                if (response.isCommitted() || baseRequest.isHandled())
+                {
+                    return;
+                }
+                baseRequest.setHandled(true);
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+
+
+            }
+        });
         try
         {
             _server.start();
