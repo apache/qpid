@@ -143,6 +143,13 @@ public class Broker implements BrokerShutdownProvider
 
     private void startupImpl(final BrokerOptions options) throws Exception
     {
+        //Allow skipping the logging configuration for people who are
+        //embedding the broker and want to configure it themselves.
+        if(!options.isSkipLoggingConfiguration())
+        {
+            configureLogging(new File(options.getLogConfigFileLocation()), options.getLogWatchFrequency());
+        }
+
         String storeLocation = options.getConfigurationStoreLocation();
         String storeType = options.getConfigurationStoreType();
 
@@ -156,12 +163,6 @@ public class Broker implements BrokerShutdownProvider
 
         _eventLogger.message(BrokerMessages.CONFIG(storeLocation));
 
-        //Allow skipping the logging configuration for people who are
-        //embedding the broker and want to configure it themselves.
-        if(!options.isSkipLoggingConfiguration())
-        {
-            configureLogging(new File(options.getLogConfigFileLocation()), options.getLogWatchFrequency());
-        }
 
         LogRecorder logRecorder = new LogRecorder();
 

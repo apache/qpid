@@ -87,12 +87,12 @@
         </layout>
     </appender>
 
-    <!-- Provide warnings to standard output -->
+    <!-- General logging hierarchy -->
     <logger additivity="true" name="org.apache.qpid">
         <level value="warn"/>
     </logger>
 
-    <!-- Enable info messages for the status-logging hierarchy -->
+    <!-- Operational logging hierarchy -->
     <logger additivity="true" name="qpid.message">
       <level value="info"/>
     </logger>
