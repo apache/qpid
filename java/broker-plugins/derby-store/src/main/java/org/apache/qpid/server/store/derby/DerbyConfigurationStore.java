@@ -217,7 +217,7 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
         @Override
         public String getStoreLocation()
         {
-            return ((FileBasedSettings)_parent).getStorePath();
+            return ((FileBasedSettings)(DerbyConfigurationStore.this._parent)).getStorePath();
         }
 
         @Override
