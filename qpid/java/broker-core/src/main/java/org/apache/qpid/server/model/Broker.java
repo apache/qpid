@@ -60,6 +60,8 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
     String BROKER_FLOW_TO_DISK_THRESHOLD = "broker.flowToDiskThreshold";
     String BROKER_FAIL_STARTUP_WITH_ERRORED_CHILD = "broker.failStartupWithErroredChild";
 
+    String STORE_FILESYSTEM_MAX_USAGE_PERCENT = "store.filesystem.maxUsagePercent";
+
     String QPID_AMQP_PORT = "qpid.amqp_port";
     String QPID_HTTP_PORT = "qpid.http_port";
     String QPID_RMI_PORT  = "qpid.rmi_port";
@@ -82,6 +84,9 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
 
     @ManagedContextDefault(name = CHANNEL_FLOW_CONTROL_ENFORCEMENT_TIMEOUT)
     long DEFAULT_CHANNEL_FLOW_CONTROL_ENFORCEMENT_TIMEOUT = 5000l;
+
+    @ManagedContextDefault(name = STORE_FILESYSTEM_MAX_USAGE_PERCENT)
+    int DEFAULT_FILESYSTEM_MAX_USAGE_PERCENT = 90;
 
     String BROKER_FRAME_SIZE = "qpid.broker_frame_size";
     @ManagedContextDefault(name = BROKER_FRAME_SIZE)

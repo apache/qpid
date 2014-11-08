@@ -221,6 +221,12 @@ public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
         }
 
         @Override
+        public File getStoreLocationAsFile()
+        {
+            return DerbyUtils.isInMemoryDatabase(getStoreLocation()) ? null : new File(getStoreLocation());
+        }
+
+        @Override
         protected Logger getLogger()
         {
             return DerbyConfigurationStore.this.getLogger();

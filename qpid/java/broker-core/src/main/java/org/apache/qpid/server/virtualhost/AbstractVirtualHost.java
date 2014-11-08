@@ -20,11 +20,13 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.io.File;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -92,6 +94,8 @@ import org.apache.qpid.server.util.MapValueConverter;
 public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> extends AbstractConfiguredObject<X>
         implements VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>, IConnectionRegistry.RegistryChangeListener, EventListener
 {
+    private static enum BlockingType { STORE, FILESYSTEM };
+
     private static final String USE_ASYNC_RECOVERY = "use_async_message_store_recovery";
 
     public static final String DEFAULT_DLQ_NAME_SUFFIX = "_DLQ";
@@ -116,7 +120,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     private final Map<String, LinkRegistry> _linkRegistry = new HashMap<String, LinkRegistry>();
-    private boolean _blocked;
+    private AtomicBoolean _blocked = new AtomicBoolean();
 
     private final Map<String, MessageDestination> _systemNodeDestinations =
             Collections.synchronizedMap(new HashMap<String,MessageDestination>());
@@ -133,6 +137,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     private final AtomicLong _targetSize = new AtomicLong(1024*1024);
 
     private MessageStoreLogSubject _messageStoreLogSubject;
+
+    private final Set<BlockingType> _blockingReasons = Collections.synchronizedSet(EnumSet.noneOf(BlockingType.class));
+
 
     @ManagedAttributeField
     private boolean _queue_deadLetterQueueEnabled;
@@ -162,6 +169,8 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private MessageStore _messageStore;
     private MessageStoreRecoverer _messageStoreRecoverer;
+    private final FileSystemSpaceChecker _fileSystemSpaceChecker = new FileSystemSpaceChecker();
+    private int _fileSystemMaxUsagePercent;
 
     public AbstractVirtualHost(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
     {
@@ -285,6 +294,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
 
         addChangeListener(new StoreUpdatingChangeListener());
+
+
+        _fileSystemMaxUsagePercent = getContextValue(Integer.class, Broker.STORE_FILESYSTEM_MAX_USAGE_PERCENT);
     }
 
     private void checkVHostStateIsActive()
@@ -694,6 +706,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                 }
 
                 getMessageStore().closeMessageStore();
+
             }
             catch (StoreException e)
             {
@@ -770,13 +783,13 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _dtxRegistry;
     }
 
-    public void block()
+    private void block(BlockingType blockingType)
     {
         synchronized (_connectionRegistry)
         {
-            if(!_blocked)
+            _blockingReasons.add(blockingType);
+            if(!_blocked.compareAndSet(false,true))
             {
-                _blocked = true;
                 for(AMQConnectionModel conn : _connectionRegistry.getConnections())
                 {
                     conn.block();
@@ -786,13 +799,14 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
 
-    public void unblock()
+    private void unblock(BlockingType blockingType)
     {
+
         synchronized (_connectionRegistry)
         {
-            if(_blocked)
+            _blockingReasons.remove(blockingType);
+            if(_blockingReasons.isEmpty() && _blocked.compareAndSet(true,false))
             {
-                _blocked = false;
                 for(AMQConnectionModel conn : _connectionRegistry.getConnections())
                 {
                     conn.unblock();
@@ -803,7 +817,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     public void connectionRegistered(final AMQConnectionModel connection)
     {
-        if(_blocked)
+        if(_blocked.get())
         {
             connection.block();
         }
@@ -824,11 +838,11 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         switch(event)
         {
             case PERSISTENT_MESSAGE_SIZE_OVERFULL:
-                block();
+                block(BlockingType.STORE);
                 _eventLogger.message(getMessageStoreLogSubject(), MessageStoreMessages.OVERFULL());
                 break;
             case PERSISTENT_MESSAGE_SIZE_UNDERFULL:
-                unblock();
+                unblock(BlockingType.STORE);
                 _eventLogger.message(getMessageStoreLogSubject(), MessageStoreMessages.UNDERFULL());
                 break;
         }
@@ -1403,6 +1417,9 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         MessageStore messageStore = getMessageStore();
         messageStore.openMessageStore(this);
 
+        startFileSystemSpaceChecking();
+
+
         if (!(_virtualHostNode.getConfigurationStore() instanceof MessageStoreProvider))
         {
             getEventLogger().message(getMessageStoreLogSubject(), MessageStoreMessages.CREATED());
@@ -1437,6 +1454,17 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             setState(finalState);
             reportIfError(getState());
+        }
+    }
+
+    protected void startFileSystemSpaceChecking()
+    {
+        File storeLocationAsFile = _messageStore.getStoreLocationAsFile();
+        if (storeLocationAsFile != null && _fileSystemMaxUsagePercent > 0)
+        {
+            _fileSystemSpaceChecker.setFileSystem(storeLocationAsFile);
+
+            scheduleHouseKeepingTask(getHousekeepingCheckPeriod(), _fileSystemSpaceChecker);
         }
     }
 
@@ -1527,6 +1555,48 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             {
                 getDurableConfigurationStore().update(false, asObjectRecord());
             }
+        }
+    }
+
+    private class FileSystemSpaceChecker extends HouseKeepingTask
+    {
+        private boolean _fileSystemFull;
+        private File _fileSystem;
+
+        public FileSystemSpaceChecker()
+        {
+            super(AbstractVirtualHost.this);
+
+        }
+
+        @Override
+        public void execute()
+        {
+            long totalSpace = _fileSystem.getTotalSpace();
+            long freeSpace = _fileSystem.getFreeSpace();
+
+            long usagePercent = (100l * (totalSpace - freeSpace)) / totalSpace;
+
+            if (_fileSystemFull && (usagePercent < _fileSystemMaxUsagePercent))
+            {
+                _fileSystemFull = false;
+                getEventLogger().message(getMessageStoreLogSubject(), VirtualHostMessages.FILESYSTEM_NOTFULL(
+                        _fileSystemMaxUsagePercent));
+                unblock(BlockingType.FILESYSTEM);
+            }
+            else if(!_fileSystemFull && usagePercent > _fileSystemMaxUsagePercent)
+            {
+                _fileSystemFull = true;
+                getEventLogger().message(getMessageStoreLogSubject(), VirtualHostMessages.FILESYSTEM_FULL(
+                        _fileSystemMaxUsagePercent));
+                block(BlockingType.FILESYSTEM);
+            }
+
+        }
+
+        public void setFileSystem(final File fileSystem)
+        {
+            _fileSystem = fileSystem;
         }
     }
 

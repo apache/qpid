@@ -21,6 +21,8 @@
 package org.apache.qpid.server.store;
 
 
+import java.io.File;
+
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
 import org.apache.qpid.server.store.handler.MessageHandler;
@@ -35,6 +37,8 @@ public interface MessageStore
     long getNextMessageId();
 
     String getStoreLocation();
+
+    File getStoreLocationAsFile();
 
     void addEventListener(EventListener eventListener, Event... events);
 

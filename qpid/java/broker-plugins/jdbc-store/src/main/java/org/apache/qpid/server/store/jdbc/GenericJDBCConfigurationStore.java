@@ -19,6 +19,7 @@
 package org.apache.qpid.server.store.jdbc;
 
 
+import java.io.File;
 import java.nio.charset.Charset;
 import java.security.PrivilegedAction;
 import java.sql.Blob;
@@ -284,6 +285,12 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
         public String getStoreLocation()
         {
             return GenericJDBCConfigurationStore.this._connectionURL;
+        }
+
+        @Override
+        public File getStoreLocationAsFile()
+        {
+            return null;
         }
 
         @Override

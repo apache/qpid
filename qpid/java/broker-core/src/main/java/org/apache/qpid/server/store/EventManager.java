@@ -60,4 +60,9 @@ public class EventManager
             }
         }
     }
+
+    public synchronized boolean hasListeners(Event event)
+    {
+        return _listeners.containsKey(event);
+    }
 }
