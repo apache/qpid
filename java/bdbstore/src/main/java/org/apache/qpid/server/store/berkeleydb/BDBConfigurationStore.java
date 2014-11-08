@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.sleepycat.je.Cursor;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.Transaction;
@@ -567,6 +566,12 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         public String getStoreLocation()
         {
             return ((FileBasedSettings)_parent).getStorePath();
+        }
+
+        @Override
+        public File getStoreLocationAsFile()
+        {
+            return new File(getStoreLocation());
         }
 
         @Override

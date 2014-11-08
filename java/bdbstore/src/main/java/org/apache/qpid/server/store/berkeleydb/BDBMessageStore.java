@@ -165,4 +165,10 @@ public class BDBMessageStore extends AbstractBDBMessageStore
     {
         return ((FileBasedSettings)_parent).getStorePath();
     }
+
+    @Override
+    public File getStoreLocationAsFile()
+    {
+        return new File(getStoreLocation());
+    }
 }

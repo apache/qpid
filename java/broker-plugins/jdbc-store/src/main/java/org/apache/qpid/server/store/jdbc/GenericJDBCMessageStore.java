@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store.jdbc;
 
 
+import java.io.File;
 import java.security.PrivilegedAction;
 import java.sql.Blob;
 import java.sql.Connection;
@@ -175,6 +176,12 @@ public class GenericJDBCMessageStore extends GenericAbstractJDBCMessageStore
     public String getStoreLocation()
     {
         return _connectionURL;
+    }
+
+    @Override
+    public File getStoreLocationAsFile()
+    {
+        return null;
     }
 
     protected String getPlainTextPassword(final JDBCSettings settings)

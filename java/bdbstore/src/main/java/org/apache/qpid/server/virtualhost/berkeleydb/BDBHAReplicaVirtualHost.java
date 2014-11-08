@@ -413,18 +413,6 @@ public class BDBHAReplicaVirtualHost extends AbstractConfiguredObject<BDBHARepli
     }
 
     @Override
-    public void block()
-    {
-        throwUnsupportedForReplica();
-    }
-
-    @Override
-    public void unblock()
-    {
-        throwUnsupportedForReplica();
-    }
-
-    @Override
     public boolean getDefaultDeadLetterQueueEnabled()
     {
         return false;

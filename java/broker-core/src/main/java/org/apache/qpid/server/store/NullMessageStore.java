@@ -19,6 +19,7 @@
  */
 package org.apache.qpid.server.store;
 
+import java.io.File;
 import java.util.UUID;
 
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -112,6 +113,12 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
 
     @Override
     public String getStoreLocation()
+    {
+        return null;
+    }
+
+    @Override
+    public File getStoreLocationAsFile()
     {
         return null;
     }

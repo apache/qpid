@@ -57,7 +57,7 @@ public class DerbyUtils
     public static String createConnectionUrl(final String name, final String databasePath)
     {
         // Derby wont use an existing directory, so we append parent name
-        if (MEMORY_STORE_LOCATION.equals(databasePath))
+        if (isInMemoryDatabase(databasePath))
         {
             return "jdbc:derby:" + MEMORY_STORE_LOCATION + "/" + name + ";create=true";
         }
@@ -77,6 +77,11 @@ public class DerbyUtils
             return "jdbc:derby:" +  databasePath + "/" + name + ";create=true";
         }
 
+    }
+
+    public static boolean isInMemoryDatabase(final String databasePath)
+    {
+        return MEMORY_STORE_LOCATION.equals(databasePath);
     }
 
     public static void shutdownDatabase(String connectionURL) throws SQLException

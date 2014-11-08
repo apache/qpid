@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.store;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -255,6 +256,12 @@ public class MemoryMessageStore implements MessageStore
 
     @Override
     public String getStoreLocation()
+    {
+        return null;
+    }
+
+    @Override
+    public File getStoreLocationAsFile()
     {
         return null;
     }

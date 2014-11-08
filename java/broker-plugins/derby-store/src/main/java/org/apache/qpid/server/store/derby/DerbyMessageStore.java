@@ -109,5 +109,9 @@ public class DerbyMessageStore extends AbstractDerbyMessageStore
         return ((FileBasedSettings)_parent).getStorePath();
     }
 
-
+    @Override
+    public File getStoreLocationAsFile()
+    {
+        return DerbyUtils.isInMemoryDatabase(getStoreLocation()) ? null : new File(getStoreLocation());
+    }
 }

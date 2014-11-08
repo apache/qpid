@@ -104,10 +104,6 @@ public interface VirtualHostImpl< X extends VirtualHostImpl<X,Q,E>, Q extends AM
 
     ScheduledFuture<?> scheduleTask(long delay, Runnable timeoutTask);
 
-    public void block();
-
-    public void unblock();
-
     boolean getDefaultDeadLetterQueueEnabled();
 
     EventLogger getEventLogger();

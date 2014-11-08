@@ -145,7 +145,7 @@ public class PortMessages
 
     /**
      * Log a Port message of the Format:
-     * <pre>PRT-1005 : Connection from {0} reject as connection limit reached</pre>
+     * <pre>PRT-1005 : Connection from {0} rejected</pre>
      * Optional values are contained in [square brackets] and are numbered
      * sequentially in the method call.
      *

@@ -47,6 +47,8 @@ public class VirtualHostMessages
     public static final String CLOSED_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "virtualhost.closed";
     public static final String STATS_DATA_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "virtualhost.stats_data";
     public static final String STATS_MSGS_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "virtualhost.stats_msgs";
+    public static final String FILESYSTEM_FULL_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "virtualhost.filesystem_full";
+    public static final String FILESYSTEM_NOTFULL_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "virtualhost.filesystem_notfull";
     public static final String CREATED_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "virtualhost.created";
     public static final String ERRORED_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "virtualhost.errored";
 
@@ -56,6 +58,8 @@ public class VirtualHostMessages
         Logger.getLogger(CLOSED_LOG_HIERARCHY);
         Logger.getLogger(STATS_DATA_LOG_HIERARCHY);
         Logger.getLogger(STATS_MSGS_LOG_HIERARCHY);
+        Logger.getLogger(FILESYSTEM_FULL_LOG_HIERARCHY);
+        Logger.getLogger(FILESYSTEM_NOTFULL_LOG_HIERARCHY);
         Logger.getLogger(CREATED_LOG_HIERARCHY);
         Logger.getLogger(ERRORED_LOG_HIERARCHY);
 
@@ -154,6 +158,70 @@ public class VirtualHostMessages
             public String getLogHierarchy()
             {
                 return STATS_MSGS_LOG_HIERARCHY;
+            }
+        };
+    }
+
+    /**
+     * Log a VirtualHost message of the Format:
+     * <pre>VHT-1006 : Filesystem is over {0,number} per cent full, enforcing flow control.</pre>
+     * Optional values are contained in [square brackets] and are numbered
+     * sequentially in the method call.
+     *
+     */
+    public static LogMessage FILESYSTEM_FULL(Number param1)
+    {
+        String rawMessage = _messages.getString("FILESYSTEM_FULL");
+
+        final Object[] messageArguments = {param1};
+        // Create a new MessageFormat to ensure thread safety.
+        // Sharing a MessageFormat and using applyPattern is not thread safe
+        MessageFormat formatter = new MessageFormat(rawMessage, _currentLocale);
+
+        final String message = formatter.format(messageArguments);
+
+        return new LogMessage()
+        {
+            public String toString()
+            {
+                return message;
+            }
+
+            public String getLogHierarchy()
+            {
+                return FILESYSTEM_FULL_LOG_HIERARCHY;
+            }
+        };
+    }
+
+    /**
+     * Log a VirtualHost message of the Format:
+     * <pre>VHT-1007 : Filesystem is no longer over {0,number} per cent full.</pre>
+     * Optional values are contained in [square brackets] and are numbered
+     * sequentially in the method call.
+     *
+     */
+    public static LogMessage FILESYSTEM_NOTFULL(Number param1)
+    {
+        String rawMessage = _messages.getString("FILESYSTEM_NOTFULL");
+
+        final Object[] messageArguments = {param1};
+        // Create a new MessageFormat to ensure thread safety.
+        // Sharing a MessageFormat and using applyPattern is not thread safe
+        MessageFormat formatter = new MessageFormat(rawMessage, _currentLocale);
+
+        final String message = formatter.format(messageArguments);
+
+        return new LogMessage()
+        {
+            public String toString()
+            {
+                return message;
+            }
+
+            public String getLogHierarchy()
+            {
+                return FILESYSTEM_NOTFULL_LOG_HIERARCHY;
             }
         };
     }
