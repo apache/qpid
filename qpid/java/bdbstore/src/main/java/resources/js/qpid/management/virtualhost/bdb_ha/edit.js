@@ -19,12 +19,10 @@
 define(["qpid/common/util", "qpid/common/metadata", "dijit/registry", "dojo/domReady!"],
    function (util, metadata, registry, win)
    {
-       var fieldNames = ["storeUnderfullSize", "storeOverfullSize",
-                         "localTransactionSynchronizationPolicy", "remoteTransactionSynchronizationPolicy"];
        return {
            show: function(data)
            {
-              util.buildEditUI(data.containerNode, "virtualhost/bdb_ha/edit.html", "editVirtualHost.", fieldNames, data.data);
+              util.buildEditUI(data.containerNode, "virtualhost/bdb_ha/edit.html", "editVirtualHost.", null, null);
 
               registry.byId("editVirtualHost.storeUnderfullSize").set("regExpGen", util.numericOrContextVarRegexp);
               registry.byId("editVirtualHost.storeOverfullSize").set("regExpGen", util.numericOrContextVarRegexp);

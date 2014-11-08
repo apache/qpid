@@ -572,11 +572,16 @@ define(["dojo/_base/xhr",
 
            util.applyMetadataToWidgets = function(domRoot, category, type)
            {
+             this.applyToWidgets(domRoot, category, type, null);
+           }
+
+           util.applyToWidgets = function(domRoot, category, type, data)
+           {
              var widgets = util.findAllWidgets(domRoot);
              array.forEach(widgets,
                function (widget)
                {
-                 widgetconfigurer.config(widget, category, type);
+                 widgetconfigurer.config(widget, category, type, data);
                });
            }
 

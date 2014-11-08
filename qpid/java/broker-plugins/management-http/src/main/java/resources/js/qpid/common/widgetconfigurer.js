@@ -95,26 +95,49 @@ define(["dojo/_base/xhr",
          }
        }
      },
-     _processWidgetValue: function (widget, category, type)
+     _processWidgetValue: function (widget, category, type, data)
      {
        var widgetName = widget.name;
 
-       if (widgetName && (widget instanceof dijit.form.FilteringSelect || widget instanceof dojox.form.CheckedMultiSelect))
+       if (widgetName)
        {
-           if (!widget.get("value"))
+         var defaultValue = metadata.getDefaultValueForAttribute(category, type, widgetName);
+         var dataValue = data && widgetName in data ? data[widgetName] : null;
+
+         // Stash the default value and initial value so we can later differentiate
+         // when sending updates to the server
+
+         if (defaultValue)
+         {
+           widget.defaultValue = defaultValue;
+         }
+
+         if (dataValue)
+         {
+           widget.initialValue = dataValue;
+         }
+
+         if (widget instanceof dijit.form.FilteringSelect || widget instanceof dojox.form.CheckedMultiSelect)
+         {
+           var widgetValue = dataValue ? dataValue : defaultValue;
+           if (widgetValue)
            {
-               var defaultValue = metadata.getDefaultValueForAttribute(category, type, widgetName);
-               if (defaultValue)
-               {
-                   widget.set("value", defaultValue);
-               }
+             widget.set("value", widgetValue);
            }
+         }
+         else
+         {
+           if (dataValue)
+           {
+             widget.set("value", dataValue);
+           }
+         }
        }
      },
-     config: function (widget, category, type)
+     config: function (widget, category, type, data)
      {
          this._processWidgetPrompt(widget, category, type);
-         this._processWidgetValue(widget, category, type);
+         this._processWidgetValue(widget, category, type, data);
      }
    };
 
