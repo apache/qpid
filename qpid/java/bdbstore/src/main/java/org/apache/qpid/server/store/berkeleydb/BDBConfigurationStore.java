@@ -565,7 +565,7 @@ public class BDBConfigurationStore implements MessageStoreProvider, DurableConfi
         @Override
         public String getStoreLocation()
         {
-            return ((FileBasedSettings)_parent).getStorePath();
+            return ((FileBasedSettings)(BDBConfigurationStore.this._parent)).getStorePath();
         }
 
         @Override
