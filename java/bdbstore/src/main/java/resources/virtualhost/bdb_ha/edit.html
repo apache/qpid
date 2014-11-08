@@ -54,25 +54,39 @@
             <div>
                 <div class="haOptionLabel">Master transaction sync policy</div>
 
-                <select id="editVirtualHost.localTransactionSynchronizationPolicy"
-                        name="localTransactionSynchronizationPolicy"
-                        data-dojo-type="dojox/form/CheckedMultiSelect">
-                    <option value="SYNC">SYNC (the transaction will be written and synchronized to the disk; highest durability)</option>
-                    <option value="WRITE_NO_SYNC">WRITE_NO_SYNC (the transaction will be written only; the synchronization will be performed later)</option>
-                    <option value="NO_SYNC">NO_SYNC (write later; the transaction will be written and synchronized later; lowest durability)</option>
-                </select>
+                <span id="editVirtualHost.localTransactionSynchronizationPolicy.span">
+                    <select id="editVirtualHost.localTransactionSynchronizationPolicy"
+                            name="localTransactionSynchronizationPolicy"
+                            data-dojo-type="dojox/form/CheckedMultiSelect">
+                        <option value="SYNC">SYNC (the transaction will be written and synchronized to the disk; highest durability)</option>
+                        <option value="WRITE_NO_SYNC">WRITE_NO_SYNC (the transaction will be written only; the synchronization will be performed later)</option>
+                        <option value="NO_SYNC">NO_SYNC (write later; the transaction will be written and synchronized later; lowest durability)</option>
+                    </select>
+                </span>
+                <div id="editVirtualHost.localTransactionSynchronizationPolicy.tooltip"
+                     data-dojo-type="dijit/Tooltip"
+                     data-dojo-props="connectId: ['editVirtualHost.localTransactionSynchronizationPolicy', 'editVirtualHost.localTransactionSynchronizationPolicy.span'],
+                                          label: 'Synchronization policy applied at a node that is currently a master'">
+                </div>
             </div>
             <br/>
             <div>
                 <div class="haOptionLabel">Replica transaction sync policy</div>
 
-                <select id="editVirtualHost.remoteTransactionSynchronizationPolicy"
-                        name="remoteTransactionSynchronizationPolicy"
-                        data-dojo-type="dojox/form/CheckedMultiSelect">
-                    <option value="SYNC">SYNC (the transaction will be written and synchronized to the disk; highest durability)</option>
-                    <option value="WRITE_NO_SYNC">WRITE_NO_SYNC (the transaction will be written only; the synchronization will be performed later)</option>
-                    <option value="NO_SYNC">NO_SYNC (write later; the transaction will be written and synchronized later; lowest durability)</option>
-                </select>
+                <span id="editVirtualHost.remoteTransactionSynchronizationPolicy.span">
+                    <select id="editVirtualHost.remoteTransactionSynchronizationPolicy"
+                            name="remoteTransactionSynchronizationPolicy"
+                            data-dojo-type="dojox/form/CheckedMultiSelect">
+                        <option value="SYNC">SYNC (the transaction will be written and synchronized to the disk; highest durability)</option>
+                        <option value="WRITE_NO_SYNC">WRITE_NO_SYNC (the transaction will be written only; the synchronization will be performed later)</option>
+                        <option value="NO_SYNC">NO_SYNC (write later; the transaction will be written and synchronized later; lowest durability)</option>
+                    </select>
+                </span>
+                <div id="editVirtualHost.remoteTransactionSynchronizationPolicy.tooltip"
+                     data-dojo-type="dijit/Tooltip"
+                     data-dojo-props="connectId: ['editVirtualHost.remoteTransactionSynchronizationPolicy', 'editVirtualHost.remoteTransactionSynchronizationPolicy.span'],
+                                          label: 'Synchronization policy applied at a node that is currently a replica'">
+                </div>
             </div>
         </fieldset>
     </div>
