@@ -143,6 +143,11 @@ public class Broker implements BrokerShutdownProvider
 
     private void startupImpl(final BrokerOptions options) throws Exception
     {
+        String storeLocation = options.getConfigurationStoreLocation();
+        String storeType = options.getConfigurationStoreType();
+
+        _eventLogger.message(BrokerMessages.CONFIG(storeLocation));
+
         //Allow skipping the logging configuration for people who are
         //embedding the broker and want to configure it themselves.
         if(!options.isSkipLoggingConfiguration())
@@ -150,8 +155,6 @@ public class Broker implements BrokerShutdownProvider
             configureLogging(new File(options.getLogConfigFileLocation()), options.getLogWatchFrequency());
         }
 
-        String storeLocation = options.getConfigurationStoreLocation();
-        String storeType = options.getConfigurationStoreType();
 
         PluggableFactoryLoader<SystemConfigFactory> configFactoryLoader = new PluggableFactoryLoader<>(SystemConfigFactory.class);
         SystemConfigFactory configFactory = configFactoryLoader.get(storeType);
@@ -161,7 +164,6 @@ public class Broker implements BrokerShutdownProvider
             throw new IllegalArgumentException("Unknown config store type '"+storeType+"', only the following types are supported: " + configFactoryLoader.getSupportedTypes());
         }
 
-        _eventLogger.message(BrokerMessages.CONFIG(storeLocation));
 
 
         LogRecorder logRecorder = new LogRecorder();
