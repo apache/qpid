@@ -144,7 +144,15 @@ std::string EmptyFilePool::takeEmptyFile(const std::string& destDirectory) {
 }
 
 void EmptyFilePool::returnEmptyFileSymlink(const std::string& emptyFileSymlink) {
-    returnEmptyFile(deleteSymlink(emptyFileSymlink));
+    if (isFile(emptyFileSymlink)) {
+        returnEmptyFile(emptyFileSymlink);
+    } else if(isSymlink(emptyFileSymlink)) {
+        returnEmptyFile(deleteSymlink(emptyFileSymlink));
+    } else {
+        std::ostringstream oss;
+        oss << "File \"" << emptyFileSymlink << "\" is neither a file nor a symlink";
+        throw jexception(jerrno::JERR_EFP_BADFILETYPE, oss.str(), "EmptyFilePool", "returnEmptyFileSymlink");
+    }
 }
 
 //static
@@ -420,6 +428,29 @@ std::string EmptyFilePool::deleteSymlink(const std::string& fqLinkName) {
     }
     ::unlink(fqLinkName.c_str());
     return std::string(buff, len);
+}
+
+//static
+bool EmptyFilePool::isFile(const std::string& fqName) {
+    struct stat buff;
+    if (::lstat(fqName.c_str(), &buff)) {
+        std::ostringstream oss;
+        oss << "lstat file=\"" << fqName << "\"" << FORMAT_SYSERR(errno);
+        throw jexception(jerrno::JERR_EFP_LSTAT, oss.str(), "EmptyFilePool", "isFile");
+    }
+    return S_ISREG(buff.st_mode);
+}
+
+//static
+bool EmptyFilePool::isSymlink(const std::string& fqName) {
+    struct stat buff;
+    if (::lstat(fqName.c_str(), &buff)) {
+        std::ostringstream oss;
+        oss << "lstat file=\"" << fqName << "\"" << FORMAT_SYSERR(errno);
+        throw jexception(jerrno::JERR_EFP_LSTAT, oss.str(), "EmptyFilePool", "isSymlink");
+    }
+    return S_ISLNK(buff.st_mode);
+
 }
 
 }}}

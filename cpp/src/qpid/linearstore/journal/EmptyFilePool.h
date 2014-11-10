@@ -102,6 +102,8 @@ protected:
     static int createSymLink(const std::string& fqFileName,
                              const std::string& fqLinkName);
     static std::string deleteSymlink(const std::string& fqLinkName);
+    static bool isFile(const std::string& fqName);
+    static bool isSymlink(const std::string& fqName);
 };
 
 }}}

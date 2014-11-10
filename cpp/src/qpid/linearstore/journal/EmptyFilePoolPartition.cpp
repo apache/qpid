@@ -24,7 +24,9 @@
 #include <iomanip>
 #include "qpid/linearstore/journal/EmptyFilePool.h"
 #include "qpid/linearstore/journal/jdir.h"
+#include "qpid/linearstore/journal/JournalLog.h"
 #include "qpid/linearstore/journal/slock.h"
+#include <unistd.h>
 
 namespace qpid {
 namespace linearstore {
@@ -54,13 +56,38 @@ EmptyFilePoolPartition::~EmptyFilePoolPartition() {
 
 void
 EmptyFilePoolPartition::findEmptyFilePools() {
-//std::cout << "*** Reading " << partitionDir_ << std::endl; // DEBUG
+//std::cout << "*** EmptyFilePoolPartition::findEmptyFilePools(): Reading " << partitionDir_ << std::endl; // DEBUG
     std::vector<std::string> dirList;
-        jdir::read_dir(partitionDir_, dirList, true, false, false, true);
+    bool upgradeDirStructureFlag = false;
+    std::string oldPartitionDir;
+        jdir::read_dir(partitionDir_, dirList, true, false, false, false);
+//std::cout << "*** dirList.size()=" << dirList.size() << "; dirList.front()=" << dirList.front() << std::endl; // DEBUG
+        if (dirList.size() == 1 && dirList.front().compare("efp") == 0) {
+            upgradeDirStructureFlag = true;
+            oldPartitionDir = partitionDir_ + "/efp";
+//std::cout << "*** oldPartitionDir=" << oldPartitionDir << std::endl; // DEBUG
+            dirList.clear();
+            jdir::read_dir(oldPartitionDir, dirList, true, false, false, false);
+        }
         for (std::vector<std::string>::iterator i = dirList.begin(); i != dirList.end(); ++i) {
+            std::string fqFileName(partitionDir_ + "/" + *i);
+            if (upgradeDirStructureFlag) {
+                std::string fqOldFileName(partitionDir_ + "/efp/" + *i);
+                if (::rename(fqOldFileName.c_str(), fqFileName.c_str())) {
+                    // File move failed
+                    std::ostringstream oss;
+                    oss << "File \'" << fqOldFileName << "\' could not be renamed to \'" << fqFileName << "\' (" << FORMAT_SYSERR(errno) << "); file deleted";
+                    journalLogRef_.log(JournalLog::LOG_WARN, oss.str());
+                    if (::unlink(fqOldFileName.c_str())) {
+                        std::ostringstream oss;
+                        oss << "File \'" << fqOldFileName << "\' could not be deleted (" << FORMAT_SYSERR(errno) << "\'; file orphaned";
+                        journalLogRef_.log(JournalLog::LOG_WARN, oss.str());
+                    }
+                }
+            }
             EmptyFilePool* efpp = 0;
             try {
-                efpp = new EmptyFilePool(*i, this, overwriteBeforeReturnFlag_, truncateFlag_, journalLogRef_);
+                efpp = new EmptyFilePool(fqFileName, this, overwriteBeforeReturnFlag_, truncateFlag_, journalLogRef_);
                 {
                     slock l(efpMapMutex_);
                     efpMap_[efpp->dataSize_kib()] = efpp;
@@ -71,10 +98,21 @@ EmptyFilePoolPartition::findEmptyFilePools() {
                     delete efpp;
                     efpp = 0;
                 }
-                //std::cerr << "WARNING: " << e.what() << std::endl;
+                std::ostringstream oss;
+                oss << "EmptyFilePool create failed: " << e.what();
+                journalLogRef_.log(JournalLog::LOG_WARN, oss.str());
             }
             if (efpp != 0) {
                 efpp->initialize();
+            }
+        }
+        if (upgradeDirStructureFlag) {
+            std::string oldEfpDir(partitionDir_ + "/efp");
+            if (::rmdir(oldEfpDir.c_str())) {
+                // Unable to delete old "efp" dir
+                std::ostringstream oss;
+                oss << "Unable to delete old EFP directory \'" << oldEfpDir << "\' (" << FORMAT_SYSERR(errno) << "\'; directory orphaned";
+                journalLogRef_.log(JournalLog::LOG_WARN, oss.str());
             }
         }
 }
