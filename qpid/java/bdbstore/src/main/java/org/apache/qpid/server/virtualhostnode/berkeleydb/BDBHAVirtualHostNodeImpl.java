@@ -1036,8 +1036,8 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                                     setAttribute(PERMITTED_NODES, _permittedNodes, new ArrayList<String>(permittedNodes));
                                 } else
                                 {
-                                    LOGGER.warn("Cannot change permitted nodes from Master as existing master node '" + remoteNode.getName()
-                                            + "' (" + remoteNode.getAddress() + ") is not in list of trusted nodes " + _permittedNodes);
+                                    LOGGER.warn("Cannot accept the new permitted node list from the master as the master '" + remoteNode.getName()
+                                            + "' (" + remoteNode.getAddress() + ") was not in previous permitted list " + _permittedNodes);
                                 }
                             }
                         }
@@ -1045,7 +1045,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                         {
                             if (LOGGER.isDebugEnabled())
                             {
-                                LOGGER.debug(String.format("Application state returned by JE was 'null' so skipping permitted node handling: s%", nodeState));
+                                LOGGER.debug(String.format("Application state returned by JE was 'null' so skipping permitted node handling: %s", nodeState));
                             }
                         }
                     }
