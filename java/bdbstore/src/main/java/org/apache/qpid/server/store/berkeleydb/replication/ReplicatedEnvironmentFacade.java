@@ -963,8 +963,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
         createEnvironment(false);
 
-        registerAppStateMonitorIfPermittedNodesSpecified();
-
         if (stateChangeListener != null)
         {
             _environment.setStateChangeListener(this);
@@ -1279,7 +1277,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         if (permittedNodes != null)
         {
             _permittedNodes.addAll(permittedNodes);
-            registerAppStateMonitorIfPermittedNodesSpecified();
+            // We register an app state monitor containing with permitted node list on
+            // all nodes so that any node can be used as the helper when adding more nodes
+            // to the group
+            registerAppStateMonitorIfPermittedNodesSpecified(_permittedNodes);
 
             ReplicationGroupListener listener = _replicationGroupListener.get();
             int count = 0;
@@ -1296,11 +1297,6 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 LOGGER.debug(_prettyGroupNodeName + " checked  " + count + " node(s)");
             }
         }
-    }
-
-    Set<String> getPermittedNodes()
-    {
-        return Collections.unmodifiableSet(_permittedNodes);
     }
 
     static NodeState getRemoteNodeState(String groupName, ReplicationNode repNode, int dbPingSocketTimeout) throws IOException, ServiceConnectFailedException
@@ -1379,11 +1375,11 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         return permittedNodes;
     }
 
-    private void registerAppStateMonitorIfPermittedNodesSpecified()
+    private void registerAppStateMonitorIfPermittedNodesSpecified(final Set<String> permittedNodes)
     {
-        if (!_permittedNodes.isEmpty())
+        if (!permittedNodes.isEmpty())
         {
-            byte[] data = permittedNodeListToBytes(_permittedNodes);
+            byte[] data = permittedNodeListToBytes(permittedNodes);
             _environment.registerAppStateMonitor(new EnvironmentStateHolder(data));
         }
     }
