@@ -85,7 +85,7 @@ char* readPasswordFromFile(PK11SlotInfo*, PRBool retry, void*)
     if (!file) return 0;
 
     std::string password;
-    file >> password;
+    getline(file, password);
     return PL_strdup(password.c_str());
 }
 
