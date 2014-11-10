@@ -422,7 +422,6 @@ void Connection::processDeliveries()
             if (pn_link_is_receiver(link)) {
                 Sessions::iterator i = sessions.find(pn_link_session(link));
                 if (i != sessions.end()) {
-                    QPID_LOG(notice, "Processing delivery with tag " << convert(pn_delivery_tag(delivery)));
                     i->second->readable(link, delivery);
                 } else {
                     pn_delivery_update(delivery, PN_REJECTED);
