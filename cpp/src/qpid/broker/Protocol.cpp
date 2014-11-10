@@ -19,22 +19,63 @@
  *
  */
 #include "Protocol.h"
-#include "qpid/sys/ConnectionCodec.h"
 #include "qpid/broker/RecoverableMessageImpl.h"
+#include "qpid/amqp_0_10/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/amqp_0_10/MessageTransfer.h"
+#include "qpid/broker/SecureConnection.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace broker {
+namespace {
+const std::string AMQP_0_10("amqp0-10");
+}
+ProtocolRegistry::ProtocolRegistry(const std::set<std::string>& e, Broker* b) : enabled(e), broker(b) {}
 
 qpid::sys::ConnectionCodec* ProtocolRegistry::create(const qpid::framing::ProtocolVersion& v, qpid::sys::OutputControl& o, const std::string& id, const qpid::sys::SecuritySettings& s)
 {
+    if (v == qpid::framing::ProtocolVersion(0, 10) && isEnabled(AMQP_0_10)) {
+        return create_0_10(o, id, s, false);
+    }
     qpid::sys::ConnectionCodec* codec = 0;
     for (Protocols::const_iterator i = protocols.begin(); !codec && i != protocols.end(); ++i) {
-        codec = i->second->create(v, o, id, s);
+        if (isEnabled(i->first)) {
+            codec = i->second->create(v, o, id, s);
+        }
     }
     return codec;
 }
+qpid::sys::ConnectionCodec* ProtocolRegistry::create(qpid::sys::OutputControl& o, const std::string& id, const qpid::sys::SecuritySettings& s)
+{
+    return create_0_10(o, id, s, true);
+}
+
+bool ProtocolRegistry::isEnabled(const std::string& name)
+{
+    return enabled.empty()/*if nothing is explicitly enabled, assume everything is*/ || enabled.find(name) != enabled.end();
+}
+
+
+typedef std::auto_ptr<qpid::amqp_0_10::Connection> CodecPtr;
+typedef std::auto_ptr<SecureConnection> SecureConnectionPtr;
+typedef std::auto_ptr<qpid::broker::amqp_0_10::Connection> ConnectionPtr;
+typedef std::auto_ptr<sys::ConnectionInputHandler> InputPtr;
+
+sys::ConnectionCodec*
+ProtocolRegistry::create_0_10(qpid::sys::OutputControl& out, const std::string& id,
+                              const qpid::sys::SecuritySettings& external, bool brokerActsAsClient)
+{
+    assert(broker);
+    SecureConnectionPtr sc(new SecureConnection());
+    CodecPtr c(new qpid::amqp_0_10::Connection(out, id, brokerActsAsClient));
+    ConnectionPtr i(new broker::amqp_0_10::Connection(c.get(), *broker, id, external, brokerActsAsClient));
+    i->setSecureConnection(sc.get());
+    c->setInputHandler(InputPtr(i.release()));
+    sc->setCodec(std::auto_ptr<sys::ConnectionCodec>(c));
+    return sc.release();
+}
+
 boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> ProtocolRegistry::translate(const Message& m)
 {
     boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> transfer;

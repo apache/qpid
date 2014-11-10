@@ -91,7 +91,7 @@ struct ProtocolPlugin : public Plugin
         if (broker) {
             policies = new NodePolicyRegistry();
             ProtocolImpl* impl = new ProtocolImpl(new Interconnects(), new TopicRegistry(), policies, *broker, options.domain);
-            broker->getProtocolRegistry().add("AMQP 1.0", impl);//registry deletes on shutdown
+            broker->getProtocolRegistry().add("amqp1.0", impl);//registry deletes on shutdown
         }
     }
 

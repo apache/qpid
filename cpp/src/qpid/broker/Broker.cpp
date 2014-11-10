@@ -32,7 +32,6 @@
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/RecoveryManagerImpl.h"
 #include "qpid/broker/SaslAuthenticator.h"
-#include "qpid/broker/SecureConnectionFactory.h"
 #include "qpid/broker/TopicExchange.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/PersistableObject.h"
@@ -90,6 +89,7 @@
 
 #include <iostream>
 #include <memory>
+#include <set>
 
 using qpid::sys::TransportAcceptor;
 using qpid::sys::TransportConnector;
@@ -168,6 +168,7 @@ BrokerOptions::BrokerOptions(const std::string& name) :
         ("port,p", optValue(port,"PORT"), "Tells the broker to listen on PORT")
         ("interface", optValue(listenInterfaces, "<interface name>|<interface address>"), "Which network interfaces to use to listen for incoming connections")
         ("listen-disable", optValue(listenDisabled, "<transport name>"), "Transports to disable listening")
+        ("protocols", optValue(protocols, "<protocol name+version>"), "Which protocol versions to allow")
         ("worker-threads", optValue(workerThreads, "N"), "Sets the broker thread pool size")
         ("connection-backlog", optValue(connectionBacklog, "N"), "Sets the connection backlog limit for the server socket")
         ("mgmt-enable,m", optValue(enableMgmt,"yes|no"), "Enable Management")
@@ -233,7 +234,6 @@ Broker::Broker(const BrokerOptions& conf) :
     queues(this),
     exchanges(this),
     links(this),
-    factory(new SecureConnectionFactory(*this)),
     dtxManager(*timer.get(), conf.dtxDefaultTimeout),
     sessionManager(
         qpid::SessionState::Configuration(
@@ -242,6 +242,7 @@ Broker::Broker(const BrokerOptions& conf) :
         *this),
     queueCleaner(queues, poller, timer.get()),
     recoveryInProgress(false),
+    protocolRegistry(std::set<std::string>(conf.protocols.begin(), conf.protocols.end()), this),
     timestampRcvMsgs(conf.timestampRcvMsgs),
     getKnownBrokers(boost::bind(&Broker::getKnownBrokersImpl, this))
 {
@@ -1327,7 +1328,7 @@ void Broker::accept() {
     unsigned accepting = 0;
     for (TransportMap::const_iterator i = transportMap.begin(); i != transportMap.end(); i++) {
         if (i->second.acceptor) {
-            i->second.acceptor->accept(poller, factory.get());
+            i->second.acceptor->accept(poller, &protocolRegistry);
             ++accepting;
         }
     }
@@ -1341,7 +1342,7 @@ void Broker::connect(
     const std::string& host, const std::string& port, const std::string& transport,
     boost::function2<void, int, std::string> failed)
 {
-    connect(name, host, port, transport, factory.get(), failed);
+    connect(name, host, port, transport, &protocolRegistry, failed);
 }
 
 void Broker::connect(

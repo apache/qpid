@@ -149,7 +149,6 @@ class Broker : public sys::Runnable, public Plugin::Target,
     QueueRegistry queues;
     ExchangeRegistry exchanges;
     LinkRegistry links;
-    boost::shared_ptr<sys::ConnectionCodec::Factory> factory;
     DtxManager dtxManager;
     SessionManager sessionManager;
     qmf::org::apache::qpid::broker::Broker::shared_ptr mgmtObject;

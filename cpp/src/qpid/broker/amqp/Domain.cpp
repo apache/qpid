@@ -138,7 +138,7 @@ class InterconnectFactory : public BrokerContext, public qpid::sys::ConnectionCo
                         boost::shared_ptr<Domain>, BrokerContext&);
     InterconnectFactory(bool incoming, const std::string& name, const std::string& source, const std::string& target,
                         boost::shared_ptr<Domain>, BrokerContext&, boost::shared_ptr<Relay>);
-    qpid::sys::ConnectionCodec* create(framing::ProtocolVersion, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
+    qpid::sys::ConnectionCodec* create(const framing::ProtocolVersion&, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
     qpid::sys::ConnectionCodec* create(qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
     bool connect();
     void failed(int, std::string);
@@ -170,7 +170,7 @@ InterconnectFactory::InterconnectFactory(bool i, const std::string& n, const std
     next = url.begin();
 }
 
-qpid::sys::ConnectionCodec* InterconnectFactory::create(qpid::framing::ProtocolVersion, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&)
+qpid::sys::ConnectionCodec* InterconnectFactory::create(const qpid::framing::ProtocolVersion&, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&)
 {
     throw qpid::Exception("Not implemented!");
 }
