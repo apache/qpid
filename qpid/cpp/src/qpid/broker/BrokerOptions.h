@@ -48,6 +48,7 @@ struct BrokerOptions : public qpid::Options
     uint16_t port;
     std::vector<std::string> listenInterfaces;
     std::vector<std::string> listenDisabled;
+    std::vector<std::string> protocols;
     int workerThreads;
     int connectionBacklog;
     bool enableMgmt;

@@ -1099,7 +1099,6 @@ set (qpidbroker_SOURCES
      qpid/broker/RecoveredDequeue.cpp
      qpid/broker/RetryList.cpp
      qpid/broker/SecureConnection.cpp
-     qpid/broker/SecureConnectionFactory.cpp
      qpid/broker/Selector.h
      qpid/broker/Selector.cpp
      qpid/broker/SelectorExpression.h

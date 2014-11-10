@@ -61,7 +61,7 @@ QPID_AUTO_TEST_CASE(testEncodeDecode)
     qpid::framing::Buffer buffer(&bytes[0], bytes.size());
     msg.getPersistentContext()->encode(buffer);
     buffer.reset();
-    ProtocolRegistry registry;
+    ProtocolRegistry registry(std::set<std::string>(), 0);
     msg = registry.decode(buffer);
 
     BOOST_CHECK_EQUAL(routingKey, msg.getRoutingKey());

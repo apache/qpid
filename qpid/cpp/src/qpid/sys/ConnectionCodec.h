@@ -52,7 +52,7 @@ class ConnectionCodec : public Codec {
 
         /** Return 0 if version unknown */
         virtual ConnectionCodec* create(
-            framing::ProtocolVersion, OutputControl&, const std::string& id,
+            const framing::ProtocolVersion&, OutputControl&, const std::string& id,
             const SecuritySettings&
         ) = 0;
 
