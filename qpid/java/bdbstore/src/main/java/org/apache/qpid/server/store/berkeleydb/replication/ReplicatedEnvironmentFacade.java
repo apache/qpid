@@ -54,6 +54,7 @@ import com.sleepycat.je.Durability.SyncPolicy;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.EnvironmentFailureException;
 import com.sleepycat.je.ExceptionEvent;
+import com.sleepycat.je.LogWriteException;
 import com.sleepycat.je.Sequence;
 import com.sleepycat.je.SequenceConfig;
 import com.sleepycat.je.Transaction;
@@ -69,6 +70,7 @@ import com.sleepycat.je.utilint.PropUtil;
 import com.sleepycat.je.utilint.VLSN;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -364,6 +366,13 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     @Override
     public RuntimeException handleDatabaseException(String contextMessage, final RuntimeException dbe)
     {
+        if (dbe instanceof LogWriteException)
+        {
+            // something wrong with the disk (for example, no space left on device)
+            // store cannot operate
+            throw new ServerScopedRuntimeException("Cannot save data into the store", dbe);
+        }
+
         if (dbe instanceof StoreException || dbe instanceof ConnectionScopedRuntimeException)
         {
             return dbe;
@@ -1468,6 +1477,22 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         }
     }
 
+    private void onException(final Exception e)
+    {
+        _groupChangeExecutor.submit(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                ReplicationGroupListener listener = _replicationGroupListener.get();
+                if (listener != null)
+                {
+                    listener.onException(e);
+                }
+            }
+        });
+    }
+
     private class RemoteNodeStateLearner implements Callable<Void>
     {
         private Map<String, ReplicatedEnvironment.State> _previousGroupState = Collections.emptyMap();
@@ -1793,11 +1818,18 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         @Override
         public void exceptionThrown(final ExceptionEvent event)
         {
-            if (event.getException() instanceof RollbackException)
+            Exception exception = event.getException();
+
+            if (exception instanceof LogWriteException)
+            {
+                onException(exception);
+            }
+
+            if (exception instanceof RollbackException)
             {
                 // Usually caused use of weak durability options: node priority zero,
                 // designated primary, electable group override.
-                RollbackException re = (RollbackException) event.getException();
+                RollbackException re = (RollbackException) exception;
 
                 LOGGER.warn(_prettyGroupNodeName + " has transaction(s) ahead of the current master. These"
                             + " must be discarded to allow this node to rejoin the group."

@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.security.auth.Subject;
 
 import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.LogWriteException;
 import com.sleepycat.je.rep.NodeState;
 import com.sleepycat.je.rep.NodeType;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
@@ -1123,6 +1124,18 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         public void onNodeRolledback()
         {
             getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.NODE_ROLLEDBACK());
+        }
+
+        @Override
+        public void onException(Exception e)
+        {
+            if (e instanceof LogWriteException)
+            {
+                // something wrong with the disk (for example, no space left on device)
+                // broker and store cannot operate
+                // TODO: VHN can be transitioned into ERRORED state
+                throw new ServerScopedRuntimeException("Cannot save data into the store", e);
+            }
         }
 
         private Map<String, Object> nodeToAttributes(ReplicationNode replicationNode)

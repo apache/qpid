@@ -976,5 +976,10 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
         {
         }
 
+        @Override
+        public void onException(Exception e)
+        {
+        }
+
     }
 }
