@@ -60,4 +60,10 @@ public interface ReplicationGroupListener
      * caused by use of the weak durability options such as node priority zero.
      */
     void onNodeRolledback();
+
+    /**
+     * Callback method to invoke on critical JE exceptions
+     * @param e je exception
+     */
+    void onException(Exception e);
 }
