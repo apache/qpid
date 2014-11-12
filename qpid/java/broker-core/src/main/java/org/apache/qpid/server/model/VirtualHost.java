@@ -90,15 +90,7 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     long getStoreTransactionOpenTimeoutWarn();
 
     @ManagedContextDefault( name = "virtualhost.housekeepingThreadCount")
-    public static final RuntimeDefault<Integer> DEFAULT_HOUSEKEEPING_THREAD_COUNT =
-            new RuntimeDefault<Integer>()
-            {
-                @Override
-                public Integer value()
-                {
-                    return Runtime.getRuntime().availableProcessors();
-                }
-            };
+    public static final int DEFAULT_HOUSEKEEPING_THREAD_COUNT = 1;
 
     @ManagedAttribute( defaultValue = "${virtualhost.housekeepingThreadCount}")
     int getHousekeepingThreadCount();
