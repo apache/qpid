@@ -70,6 +70,7 @@ import com.sleepycat.je.utilint.PropUtil;
 import com.sleepycat.je.utilint.VLSN;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.store.berkeleydb.BDBUtils;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -919,7 +920,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             if (_environment.isValid())
             {
-                _environment.cleanLog();
+                BDBUtils.runCleaner(_environment);
             }
         }
         finally
