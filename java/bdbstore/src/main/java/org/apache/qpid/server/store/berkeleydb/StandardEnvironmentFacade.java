@@ -256,7 +256,7 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
             // not get a chance to finish.
             try
             {
-                _environment.cleanLog();
+                BDBUtils.runCleaner(_environment);
             }
             finally
             {

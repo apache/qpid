@@ -32,12 +32,9 @@ import java.util.UUID;
 
 import com.sleepycat.bind.tuple.ByteBinding;
 import com.sleepycat.bind.tuple.LongBinding;
-import com.sleepycat.je.CheckpointConfig;
 import com.sleepycat.je.Cursor;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.DatabaseException;
-import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.LockConflictException;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
@@ -1030,21 +1027,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
     private void reduceSizeOnDisk()
     {
-        getEnvironmentFacade().getEnvironment().getConfig().setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, "false");
-        boolean cleaned = false;
-        while (getEnvironmentFacade().getEnvironment().cleanLog() > 0)
-        {
-            cleaned = true;
-        }
-        if (cleaned)
-        {
-            CheckpointConfig force = new CheckpointConfig();
-            force.setForce(true);
-            getEnvironmentFacade().getEnvironment().checkpoint(force);
-        }
-
-
-        getEnvironmentFacade().getEnvironment().getConfig().setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, "true");
+        BDBUtils.runCleaner(getEnvironmentFacade().getEnvironment());
     }
 
     private long getSizeOnDisk()

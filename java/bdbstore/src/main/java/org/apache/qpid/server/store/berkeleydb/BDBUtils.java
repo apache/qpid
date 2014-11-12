@@ -19,15 +19,20 @@
 
 package org.apache.qpid.server.store.berkeleydb;
 
+import com.sleepycat.je.CheckpointConfig;
 import com.sleepycat.je.Cursor;
 import com.sleepycat.je.DatabaseConfig;
-import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.Environment;
+import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.Transaction;
+import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.store.StoreException;
 
 public class BDBUtils
 {
+    private static final Logger LOGGER = Logger.getLogger(BDBUtils.class);
+
     public static final DatabaseConfig DEFAULT_DATABASE_CONFIG = new DatabaseConfig().setTransactional(true).setAllowCreate(true);
 
     public static void closeCursorSafely(Cursor cursor, final EnvironmentFacade environmentFacade) throws StoreException
@@ -60,5 +65,47 @@ public class BDBUtils
             // We need the possible side effect of the facade restarting the environment but don't care about the exception
             environmentFacade.handleDatabaseException("Cannot abort transaction", e);
         }
+    }
+
+    public synchronized static void runCleaner(final Environment environment)
+    {
+        boolean cleanerWasRunning = Boolean.parseBoolean(environment.getConfig().getConfigParam(EnvironmentConfig.ENV_RUN_CLEANER));
+
+        try
+        {
+            if (cleanerWasRunning)
+            {
+                environment.getConfig().setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, Boolean.FALSE.toString());
+            }
+
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Cleaning logs");
+            }
+
+            boolean cleaned = false;
+            while (environment.cleanLog() > 0)
+            {
+                cleaned = true;
+            }
+            if (cleaned)
+            {
+                LOGGER.debug("Cleaned log");
+
+                CheckpointConfig force = new CheckpointConfig();
+                force.setForce(true);
+                environment.checkpoint(force);
+
+                LOGGER.debug("Checkpoint force complete");
+            }
+        }
+        finally
+        {
+            if (cleanerWasRunning)
+            {
+                environment.getConfig().setConfigParam(EnvironmentConfig.ENV_RUN_CLEANER, Boolean.TRUE.toString());
+            }
+        }
+
     }
 }
