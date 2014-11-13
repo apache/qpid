@@ -123,11 +123,12 @@ typedef int (*sasl_callback_ft)(void);
 #endif
 
 // passed to sasl_server_init()
-static sasl_callback_t callbacks[] =
+static sasl_callback_t _callbacks[] =
 {
         {   SASL_CB_VERIFYFILE, (sasl_callback_ft)&_sasl_verifyfile_callback, NULL },
     {   SASL_CB_LIST_END,   NULL,                                         NULL }
 };
+sasl_callback_t *callbacks = _callbacks;
 
 // Initialize the SASL mechanism; throw if it fails.
 void SaslAuthenticator::init(const std::string& saslName, std::string const & saslConfigPath )
@@ -136,6 +137,8 @@ void SaslAuthenticator::init(const std::string& saslName, std::string const & sa
 #if (SASL_VERSION_FULL >= ((2<<16)|(1<<8)|22))
     //  If we are not given a sasl path, do nothing and allow the default to be used.
     if ( saslConfigPath.empty() ) {
+        // don't pass callbacks if there is no config path
+        callbacks = NULL;
         QPID_LOG ( info, "SASL: no config path set - using default." );
     }
     else {
