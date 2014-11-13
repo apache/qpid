@@ -308,7 +308,7 @@ public class StressTestClient
 
                                 if(closeConsumers)
                                 {
-                                    consumer.close();
+                                    sess.close();
                                 }
                             }
 
