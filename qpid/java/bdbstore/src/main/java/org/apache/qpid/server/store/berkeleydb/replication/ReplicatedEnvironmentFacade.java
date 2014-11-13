@@ -1496,6 +1496,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
 
     private class RemoteNodeStateLearner implements Callable<Void>
     {
+        private static final long TIMEOUT_WARN_GAP = 1000 * 60 * 5;
+        private final Map<ReplicationNode, Long> _currentlyTimedOutNodes = new HashMap<>();
         private Map<String, ReplicatedEnvironment.State> _previousGroupState = Collections.emptyMap();
         private boolean _previousDesignatedPrimary;
         private int _previousElectableGroupOverride;
@@ -1624,7 +1626,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         private Map<ReplicationNode, NodeState> discoverNodeStates(Collection<ReplicationNode> electableNodes)
         {
             final Map<ReplicationNode, NodeState> nodeStates = new HashMap<ReplicationNode, NodeState>();
-            Set<Future<Void>> futures = new HashSet<Future<Void>>();
+            Map<ReplicationNode, Future<Void>> futureMap = new HashMap<ReplicationNode, Future<Void>>();
 
             for (final ReplicationNode node : electableNodes)
             {
@@ -1649,14 +1651,24 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                         return null;
                     }
                 });
-                futures.add(future);
+                futureMap.put(node, future);
             }
 
-            for (Future<Void> future : futures)
+            boolean atLeastOneNodeTimesOut = false;
+
+            for (Map.Entry<ReplicationNode, Future<Void>> entry : futureMap.entrySet())
             {
+                ReplicationNode node = entry.getKey();
+                String nodeName = node.getName();
+                Future<Void> future = entry.getValue();
                 try
                 {
                     future.get(_remoteNodeMonitorInterval, TimeUnit.MILLISECONDS);
+                    if (_currentlyTimedOutNodes.remove(node) != null)
+                    {
+                        LOGGER.warn("Node '" + nodeName + "' from group " + _configuration.getGroupName()
+                                    + " is responding again.");
+                    }
                 }
                 catch (InterruptedException e)
                 {
@@ -1664,13 +1676,33 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 }
                 catch (ExecutionException e)
                 {
-                    LOGGER.warn("Cannot update node state for group " + _configuration.getGroupName(), e.getCause());
+                    LOGGER.warn("Cannot determine state for node '" + nodeName + "' from group "
+                                + _configuration.getGroupName(), e.getCause());
                 }
                 catch (TimeoutException e)
                 {
-                    LOGGER.warn("Timeout whilst updating node state for group " + _configuration.getGroupName());
+                    atLeastOneNodeTimesOut = true;
+                    if (! _currentlyTimedOutNodes.containsKey(node))
+                    {
+                        LOGGER.warn("Timeout whilst determining state for node '" + nodeName + "' from group "
+                                    + _configuration.getGroupName());
+                        _currentlyTimedOutNodes.put(node, System.currentTimeMillis());
+                    }
+                    else if (_currentlyTimedOutNodes.get(node) > (System.currentTimeMillis() + TIMEOUT_WARN_GAP))
+                    {
+                        LOGGER.warn("Node '" + nodeName + "' from group "
+                                    + _configuration.getGroupName()
+                                    + " is still timing out.");
+                        _currentlyTimedOutNodes.put(node, System.currentTimeMillis());
+                    }
+
                     future.cancel(true);
                 }
+            }
+
+            if (!atLeastOneNodeTimesOut)
+            {
+                _currentlyTimedOutNodes.clear();
             }
             return nodeStates;
         }
