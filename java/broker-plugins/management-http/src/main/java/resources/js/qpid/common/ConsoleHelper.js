@@ -20,10 +20,8 @@
  */
 define(["dojo/_base/xhr", "dojo/domReady!"], function (xhr) {
 
-    var qpidHelpLocation = "http://qpid.apache.org/releases/qpid-";
     var preferencesDialog = null;
     var helpURL = null;
-    var qpidVersion = null;
 
     return {
         showPreferencesDialog: function () {
@@ -41,25 +39,26 @@ define(["dojo/_base/xhr", "dojo/domReady!"], function (xhr) {
               preferencesDialog.showDialog();
           }
         },
-        getVersion: function()
-        {
-          if (!qpidVersion)
-          {
-            xhr.get({
-              sync: true,
-              url: "service/helper?action=version",
-              handleAs: "json"
-             }).then(function(version) {
-               qpidVersion = version;
-             });
-          }
-          return qpidVersion;
-        },
         getHelpUrl: function()
         {
           if (!helpURL)
           {
-            helpURL = qpidHelpLocation + this.getVersion() + "/java-broker/book/index.html";
+            xhr.get({
+              sync: true,
+              url: "api/latest/broker",
+              content: { "depth" : 1, "includeSysContext" : true },
+              handleAs: "json"
+             }).then(function(data) {
+              var broker = data[0];
+              if ("context" in broker && "qpid.helpURL" in broker["context"] )
+              {
+                helpURL = broker["context"]["qpid.helpURL"];
+              }
+              else
+              {
+                helpURL = "http://qpid.apache.org/";
+              }
+             });
           }
           return helpURL;
         },
