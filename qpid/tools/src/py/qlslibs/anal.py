@@ -420,6 +420,8 @@ class Journal(object):
         self.file_num_list = sorted(self.files.keys())
         self.file_num_itr = iter(self.file_num_list)
     def _check_alignment(self): # TODO: Move into JournalFile
+        if self.last_record_offset is None: # Empty file, _check_file() never run
+            return
         remaining_sblks = self.last_record_offset % qlslibs.utils.DEFAULT_SBLK_SIZE
         if remaining_sblks == 0:
             self.num_filler_records_required = 0
