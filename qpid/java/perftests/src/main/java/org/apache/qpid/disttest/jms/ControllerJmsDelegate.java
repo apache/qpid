@@ -54,7 +54,8 @@ public class ControllerJmsDelegate
     private final Map<String, Destination> _clientNameToQueueMap = new ConcurrentHashMap<String, Destination>();
     private final Connection _connection;
     private final Destination _controllerQueue;
-    private final Session _session;
+    private final Session _controllerQueueListenerSession;
+    private final Session _commandSession;
     private QueueCreator _queueCreator;
 
     private List<CommandListener> _commandListeners = new CopyOnWriteArrayList<CommandListener>();
@@ -65,7 +66,8 @@ public class ControllerJmsDelegate
         _connection = connectionFactory.createConnection();
         _connection.start();
         _controllerQueue = (Destination) context.lookup("controllerqueue");
-        _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        _controllerQueueListenerSession = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        _commandSession = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         createVendorSpecificQueueCreator();
     }
@@ -105,7 +107,7 @@ public class ControllerJmsDelegate
     {
         try
         {
-            final MessageConsumer consumer = _session.createConsumer(_controllerQueue);
+            final MessageConsumer consumer = _controllerQueueListenerSession.createConsumer(_controllerQueue);
             consumer.setMessageListener(new MessageListener()
             {
                 @Override
@@ -138,13 +140,25 @@ public class ControllerJmsDelegate
     /** ensures connections are closed, otherwise the JVM may be prevented from terminating */
     public void closeConnections()
     {
+        if (_commandSession != null)
+        {
+            try
+            {
+                _commandSession.close();
+            }
+            catch (JMSException e)
+            {
+                LOGGER.error("Unable to close command session", e);
+            }
+        }
+
         try
         {
-            _session.close();
+            _controllerQueueListenerSession.close();
         }
         catch (JMSException e)
         {
-            LOGGER.error("Unable to close session", e);
+            LOGGER.error("Unable to close controller queue listener session", e);
         }
 
         try
@@ -182,16 +196,31 @@ public class ControllerJmsDelegate
                             + _clientNameToQueueMap.keySet());
         }
 
+        MessageProducer producer = null;
         try
         {
-            final MessageProducer producer = _session.createProducer(clientQueue);
-            final Message message = JmsMessageAdaptor.commandToMessage(_session, command);
+            producer =_commandSession.createProducer(clientQueue);
+            Message message = JmsMessageAdaptor.commandToMessage(_commandSession, command);
 
             producer.send(message);
         }
         catch (final JMSException e)
         {
             throw new DistributedTestException(e);
+        }
+        finally
+        {
+            if (producer != null)
+            {
+                try
+                {
+                    producer.close();
+                }
+                catch (final JMSException e)
+                {
+                    throw new DistributedTestException(e);
+                }
+            }
         }
     }
 
@@ -214,7 +243,7 @@ public class ControllerJmsDelegate
         Destination clientIntructionQueue;
         try
         {
-            clientIntructionQueue = _session.createQueue(clientQueueName);
+            clientIntructionQueue = _commandSession.createQueue(clientQueueName);
         }
         catch (JMSException e)
         {
@@ -225,12 +254,12 @@ public class ControllerJmsDelegate
 
     public void createQueues(List<QueueConfig> queues)
     {
-        _queueCreator.createQueues(_connection, _session, queues);
+        _queueCreator.createQueues(_connection, _commandSession, queues);
     }
 
     public void deleteQueues(List<QueueConfig> queues)
     {
-        _queueCreator.deleteQueues(_connection, _session, queues);
+        _queueCreator.deleteQueues(_connection, _commandSession, queues);
     }
 
     public void addCommandListener(CommandListener commandListener)

@@ -38,7 +38,6 @@ public class QpidQueueCreator implements QueueCreator
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(QpidQueueCreator.class);
     private static final FieldTable EMPTY_QUEUE_BIND_ARGUMENTS = new FieldTable();
-    private static final String QUEUE_CREATOR_DRAIN_POLL_TIMEOUT = "qpid.disttest.queue.creator.drainPollTime";
     private static int _drainPollTimeout = Integer.getInteger(QUEUE_CREATOR_DRAIN_POLL_TIMEOUT, 500);
 
     @Override

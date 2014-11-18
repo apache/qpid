@@ -19,12 +19,14 @@
  */
 package org.apache.qpid.disttest.jms;
 
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
+import javax.jms.ConnectionMetaData;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -63,6 +65,7 @@ public class ClientJmsDelegate
     private final Context _context;
     private final Destination _controllerQueue;
     private final Connection _controllerConnection;
+    private final Session _instructionListenerSession;
     private final Session _controllerSession;
     private final MessageProducer _controlQueueProducer;
 
@@ -87,6 +90,7 @@ public class ClientJmsDelegate
             _controllerConnection = connectionFactory.createConnection();
             _controllerConnection.start();
             _controllerQueue = (Destination) context.lookup(DistributedTestConstants.CONTROLLER_QUEUE_JNDI_NAME);
+            _instructionListenerSession = _controllerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             _controllerSession = _controllerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             _controlQueueProducer = _controllerSession.createProducer(_controllerQueue);
             _clientName = UUID.randomUUID().toString();
@@ -112,8 +116,8 @@ public class ClientJmsDelegate
     {
         try
         {
-            _instructionQueue = _controllerSession.createTemporaryQueue();
-            final MessageConsumer instructionConsumer = _controllerSession.createConsumer(_instructionQueue);
+            _instructionQueue = _instructionListenerSession.createTemporaryQueue();
+            final MessageConsumer instructionConsumer = _instructionListenerSession.createConsumer(_instructionQueue);
             instructionConsumer.setMessageListener(new MessageListener()
             {
                 @Override
@@ -170,6 +174,10 @@ public class ClientJmsDelegate
                             .getConnectionFactoryName());
             final Connection newConnection = connectionFactory.createConnection();
             addConnection(command.getConnectionName(), newConnection);
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Connection " + command.getConnectionName() + " is created " + metaDataToString(newConnection.getMetaData()));
+            }
         }
         catch (final NamingException ne)
         {
@@ -181,6 +189,26 @@ public class ClientJmsDelegate
             throw new DistributedTestException("Unable to create connection: " + command.getConnectionName()
                             + " (using factory name: " + command.getConnectionFactoryName() + ")", jmse);
         }
+    }
+
+    private String metaDataToString(ConnectionMetaData metaData) throws JMSException
+    {
+        StringBuilder sb = new StringBuilder("ConnectionMetaData[");
+        sb.append(" JMSProviderName : " + metaData.getJMSProviderName());
+        sb.append(" JMSVersion : " + metaData.getJMSVersion() + " (" + metaData.getJMSMajorVersion() + "." + metaData.getJMSMinorVersion() +")");
+        sb.append(" ProviderVersion : " + metaData.getProviderVersion()+ " (" + metaData.getProviderMajorVersion()+ "." + metaData.getProviderMinorVersion() +")" );
+        sb.append(" JMSXPropertyNames : [");
+        Enumeration en = metaData.getJMSXPropertyNames();
+        while(en.hasMoreElements())
+        {
+            sb.append(" ").append(en.nextElement());
+            if( en.hasMoreElements())
+            {
+                sb.append(",");
+            }
+        }
+        sb.append("]]");
+        return sb.toString();
     }
 
     public void createSession(final CreateSessionCommand command)
@@ -312,6 +340,10 @@ public class ClientJmsDelegate
             // finish.
             _controllerConnection.stop();
 
+            if (_instructionListenerSession != null)
+            {
+                _instructionListenerSession.close();
+            }
             if (_controllerSession != null)
             {
                 _controllerSession.close();
