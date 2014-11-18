@@ -152,20 +152,54 @@ class QueueTests(TestBase010):
             self.assertEquals(405, e.args[0].error_code)
 
     def test_declare_passive(self):
+      """
+      Test that the passive field is honoured in queue.declare
+      """
+      s1 = self.session
+      s2 = self.conn.session("other")
+
+      s1.queue_declare(queue="passive-queue-1")
+
+      #ensure that same/separate sessions can passively declare same queue
+      s1.queue_declare(queue="passive-queue-1", passive=True)
+      s2.queue_declare(queue="passive-queue-1", passive=True)
+
+      s1.queue_delete(queue="passive-queue-1")
+
+    def test_declare_passive_queue_not_found(self):
+      """
+      Test that the passive field is honoured in queue.declare
+      """
+      s1 = self.session
+
+      try:
+        s1.queue_declare(queue="passive-queue-not-found", passive=True)
+        self.fail("Expected passive declaration of non-existent queue to raise a channel exception")
+      except SessionException, e:
+        self.assertEquals(404, e.args[0].error_code) #not-found
+
+
+    def test_declare_passive_with_exclusive(self):
         """
         Test that the passive field is honoured in queue.declare
         """
-        session = self.session
-        #declare an exclusive queue:
-        session.queue_declare(queue="passive-queue-1", exclusive=True, auto_delete=True)
-        session.queue_declare(queue="passive-queue-1", passive=True)
-        try:
-            #other connection should not be allowed to declare this:
-            session.queue_declare(queue="passive-queue-2", passive=True)
-            self.fail("Expected passive declaration of non-existant queue to raise a channel exception")
-        except SessionException, e:
-            self.assertEquals(404, e.args[0].error_code) #not-found
+        s1 = self.session
+        s2 = self.conn.session("other")
 
+        #declare exclusive/non-exclusive queues:
+        s1.queue_declare(queue="passive-queue-exc", exclusive=True, auto_delete=True)
+        s1.queue_declare(queue="passive-queue-nonexc", exclusive=False, auto_delete=True)
+
+        #ensure that same/separate sessions can passively declare same queue *without* the exclusive flag
+        #this is important for the request/reply pattern
+        s1.queue_declare(queue="passive-queue-exc", passive=True)
+        s2.queue_declare(queue="passive-queue-exc", passive=True)
+
+        try:
+          s2.queue_declare(queue="passive-queue-nonexc", exclusive=True, passive=True)
+          self.fail("Expected exclusive passive declaration of existing queue to raise a channel exception")
+        except SessionException, e:
+          self.assertEquals(405, e.args[0].error_code) # resource locked
 
     def test_bind(self):
         """
