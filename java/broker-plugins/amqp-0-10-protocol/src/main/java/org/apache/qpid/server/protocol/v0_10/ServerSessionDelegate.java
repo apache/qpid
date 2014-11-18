@@ -53,7 +53,6 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.UnknownConfiguredObjectException;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
-import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoreFuture;
@@ -1291,7 +1290,6 @@ public class ServerSessionDelegate extends SessionDelegate
     {
 
         final VirtualHostImpl virtualHost = getVirtualHost(session);
-        DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
 
         String queueName = method.getQueue();
         AMQQueue queue;
@@ -1312,15 +1310,25 @@ public class ServerSessionDelegate extends SessionDelegate
                 exception(session, method, errorCode, description);
 
             }
-            else if (!verifySessionAccess((ServerSession) session, queue))
+            else if (exclusive)
             {
-                String description = "Cannot declare queue('" + queueName + "'),"
-                                                                       + " as exclusive queue with same name "
-                                                                       + "declared on another session";
-                ExecutionErrorCode errorCode = ExecutionErrorCode.RESOURCE_LOCKED;
+                if (queue.getExclusive() == ExclusivityPolicy.NONE)
+                {
+                    String description = "Cannot passively declare queue ('" + queueName + "')"
+                                         + " as exclusive as queue with same name is" +
+                                         " already declared as non-exclusive";
+                    ExecutionErrorCode errorCode = ExecutionErrorCode.RESOURCE_LOCKED;
+                    exception(session, method, errorCode, description);
 
-                exception(session, method, errorCode, description);
-
+                }
+                else if (!verifySessionAccess((ServerSession) session, queue))
+                {
+                    String description = "Cannot passively declare queue('" + queueName + "'),"
+                                         + " as exclusive queue with same name "
+                                         + "declared on another session";
+                    ExecutionErrorCode errorCode = ExecutionErrorCode.RESOURCE_LOCKED;
+                    exception(session, method, errorCode, description);
+                }
             }
         }
         else
@@ -1385,30 +1393,6 @@ public class ServerSessionDelegate extends SessionDelegate
                 exception(session, method, ExecutionErrorCode.UNAUTHORIZED_ACCESS, e.getMessage());
             }
         }
-    }
-
-    /**
-     * Converts a queue argument into a boolean value.  For compatibility with the C++
-     * and the clients, accepts with Boolean, String, or Number types.
-     * @param argValue  argument value.
-     *
-     * @return true if set
-     */
-    private boolean convertBooleanValue(Object argValue)
-    {
-        if(argValue instanceof Boolean && ((Boolean)argValue))
-        {
-            return true;
-        }
-        else if (argValue instanceof String && Boolean.parseBoolean((String)argValue))
-        {
-            return true;
-        }
-        else if (argValue instanceof Number && ((Number)argValue).intValue() != 0)
-        {
-            return true;
-        }
-        return false;
     }
 
     @Override
