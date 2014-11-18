@@ -57,10 +57,12 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.Task;
+import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.HighAvailabilityMessages;
 import org.apache.qpid.server.logging.subjects.BDBHAVirtualHostNodeLogSubject;
 import org.apache.qpid.server.logging.subjects.GroupLogSubject;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -70,6 +72,7 @@ import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
+import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -103,6 +106,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     private final AtomicReference<ReplicatedEnvironmentFacade> _environmentFacade = new AtomicReference<>();
 
     private final AtomicReference<NodeRole> _lastRole = new AtomicReference<>(NodeRole.DETACHED);
+    private final SystemConfig _systemConfig;
     private BDBHAVirtualHostNodeLogSubject _virtualHostNodeLogSubject;
     private GroupLogSubject _groupLogSubject;
     private String _virtualHostNodePrincipalName;
@@ -141,6 +145,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     public BDBHAVirtualHostNodeImpl(Map<String, Object> attributes, Broker<?> broker)
     {
         super(broker, attributes);
+        _systemConfig = broker.getParent(SystemConfig.class);
     }
 
     @Override
@@ -1132,10 +1137,19 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         {
             if (e instanceof LogWriteException)
             {
-                // something wrong with the disk (for example, no space left on device)
-                // broker and store cannot operate
-                // TODO: VHN can be transitioned into ERRORED state
-                throw new ServerScopedRuntimeException("Cannot save data into the store", e);
+                // TODO: Used when the node is a replica and it runs out of disk. Currently we cause the whole Broker
+                // to stop as that is what happens when a master runs out of disk.  In the long term, we should
+                // close the node / transition to actual state ERROR.
+
+                try
+                {
+                    close();
+                }
+                finally
+                {
+                    _systemConfig.getEventLogger().message(BrokerMessages.FATAL_ERROR(e.getMessage()));
+                    _systemConfig.getBrokerShutdownProvider().shutdown(1);
+                }
             }
         }
 
