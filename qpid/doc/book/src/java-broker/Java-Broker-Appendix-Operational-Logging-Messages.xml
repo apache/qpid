@@ -369,6 +369,15 @@
               threshold so the flow to disk feature has been deactivated.</para>
           </entry>
         </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1016">
+          <entry morerows="1">BRK-1016</entry>
+          <entry>Fatal error : <replaceable>root cause</replaceable> : See log file for more information</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that broker was shut down due to fatal error.</para>
+          </entry>
+        </row>
       </tbody>
     </tgroup>
   </table>
@@ -526,6 +535,26 @@
           <entry>
             <para>Virtualhost has suffered an unexpected fatal error, check the logs for more
               details.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-VHT-1006">
+          <entry morerows="1">VHT-1006</entry>
+          <entry>Filesystem is over <replaceable>size in %</replaceable> per cent full, enforcing flow control.</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that virtual host flow control is activated
+                  when the usage of file system containing Virtualhost  message store exceeded predefined limit.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-VHT-1007">
+          <entry morerows="1">VHT-1007</entry>
+          <entry>Filesystem is no longer over <replaceable>size in %</replaceable> per cent full.</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that virtual host flow control is deactivated
+                  when the usage of file system containing Virtualhost message falls under predefined limit.</para>
           </entry>
         </row>
       </tbody>
@@ -846,6 +875,26 @@
           <entry>
             <para>Indicates that a channel has moved a message to the named dead letter queue
             </para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1012">
+          <entry morerows="1">CHN-1012</entry>
+          <entry>Flow Control Ignored. Channel will be closed.</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Indicates that a channel violating the imposed flow control has been closed
+            </para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-CHN-1013">
+          <entry morerows="1">CHN-1013</entry>
+          <entry>Uncommitted transaction contains <replaceable>size</replaceable> bytes of incoming message data.</entry>
+        </row>
+        <row>
+          <entry>
+              <para>Warns about uncommitted transaction with large message(s)
+              </para>
           </entry>
         </row>
       </tbody>
@@ -1300,5 +1349,65 @@
       </tbody>
     </tgroup>
   </table>
+
+  <table pgwide="1" id="Java-Broker-Appendix-Operation-Logging-Message-List-Port">
+    <title>Port Log Messages</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Message Id</entry>
+          <entry>Message Text / Purpose</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-PRT-1001">
+          <entry morerows="1">PRT-1001</entry>
+          <entry>Create</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Port has been created.</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-PRT-1002">
+          <entry morerows="1">PRT-1002</entry>
+          <entry>Open</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Port has been open</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-PRT-1003">
+          <entry morerows="1">PRT-1003</entry>
+          <entry>Close</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Port has been closed</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-PRT-1004">
+          <entry morerows="1">PRT-1004</entry>
+          <entry>Connection count <replaceable>number</replaceable> within <replaceable>warn limit</replaceable> % of maximum <replaceable>limit</replaceable>
+          </entry>
+        </row>
+        <row>
+          <entry>
+            <para>Warns that number of open connections approaches maximum allowed limit</para>
+          </entry>
+        </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-PRT-1005">
+          <entry morerows="1">PRT-1005</entry>
+          <entry>Connection from <replaceable>host</replaceable> rejected</entry>
+        </row>
+        <row>
+          <entry>
+            <para>Connection from given host is rejected because of reaching the maximum allowed limit</para>
+          </entry>
+        </row>
+        </tbody>
+    </tgroup>
+</table>
 
 </appendix>
