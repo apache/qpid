@@ -133,6 +133,7 @@ namespace journal {
         static const uint32_t JERR_EFP_SYMLINK;         ///< Symbolic Link operation failed
         static const uint32_t JERR_EFP_LSTAT;           ///< lstat operation failed
         static const uint32_t JERR_EFP_BADFILETYPE;     ///< Bad file type
+        static const uint32_t JERR_EFP_FOPEN;           ///< Unable to fopen file for write
 
         // Negative returns for some functions
         static const int32_t AIO_TIMEOUT;               ///< Timeout waiting for AIO return
