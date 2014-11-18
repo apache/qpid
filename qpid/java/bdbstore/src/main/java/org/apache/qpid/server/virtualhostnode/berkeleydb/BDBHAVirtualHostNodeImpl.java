@@ -289,7 +289,8 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         super.onCreate();
         if (!isFirstNodeInAGroup())
         {
-            _permittedNodes = new ArrayList<>(getPermittedNodesFromHelper());
+            List<String> permittedNodes = new ArrayList<>(getPermittedNodesFromHelper());
+            setAttribute(PERMITTED_NODES, null, permittedNodes);
         }
         getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.CREATED());
     }
