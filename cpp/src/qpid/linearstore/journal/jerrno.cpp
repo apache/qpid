@@ -115,6 +115,7 @@ const uint32_t jerrno::JERR_EFP_EMPTY            = 0x0d05;
 const uint32_t jerrno::JERR_EFP_SYMLINK          = 0x0d06;
 const uint32_t jerrno::JERR_EFP_LSTAT            = 0x0d07;
 const uint32_t jerrno::JERR_EFP_BADFILETYPE      = 0x0d08;
+const uint32_t jerrno::JERR_EFP_FOPEN            = 0x0d09;
 
 // Negative returns for some functions
 const int32_t jerrno::AIO_TIMEOUT                = -1;
@@ -212,6 +213,7 @@ jerrno::__init()
     _err_map[JERR_EFP_SYMLINK] = "JERR_EFP_SYMLINK: Symbolic link operation failed";
     _err_map[JERR_EFP_LSTAT] = "JERR_EFP_LSTAT: lstat() operation failed";
     _err_map[JERR_EFP_BADFILETYPE] = "JERR_EFP_BADFILETYPE: File type incorrect for operation";
+    _err_map[JERR_EFP_FOPEN] = "JERR_EFP_FOPEN: Unable to fopen file for write";
 
     //_err_map[] = "";
 

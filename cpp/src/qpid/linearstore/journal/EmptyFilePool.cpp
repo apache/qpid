@@ -239,7 +239,9 @@ bool EmptyFilePool::overwriteFileContents(const std::string& fqFileName) {
         return true;
 //std::cout << "*** WARNING: EFP " << efpDirectory_ << " is empty - created new journal file " << fqFileName.substr(fqFileName.rfind('/') + 1) << " on the fly" << std::endl; // DEBUG
     } else {
-//std::cerr << "*** ERROR: Unable to open file \"" << fqFileName << "\"" << std::endl; // DEBUG
+        std::ostringstream oss;
+        oss << "std::ofstream ofs: file=\"" << fqFileName.c_str() << "\"" << " failed to be open";
+        throw jexception(jerrno::JERR_EFP_FOPEN, oss.str(), "EmptyFilePool", "overwriteFileContents");
     }
     return false;
 }
