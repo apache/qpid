@@ -31,6 +31,7 @@ import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.Visitor;
 import org.apache.qpid.disttest.jms.ClientJmsDelegate;
 import org.apache.qpid.disttest.message.Command;
+import org.apache.qpid.disttest.message.CommandType;
 import org.apache.qpid.disttest.message.ParticipantResult;
 import org.apache.qpid.disttest.message.Response;
 import org.slf4j.Logger;
@@ -66,6 +67,7 @@ public class Client
 
     public void stop()
     {
+        _clientJmsDelegate.sendResponseMessage(new Response(_clientJmsDelegate.getClientName(), CommandType.STOP_CLIENT, null));
         _state.set(ClientState.STOPPED);
         _latch.countDown();
     }
@@ -119,7 +121,10 @@ public class Client
         }
         finally
         {
-            _clientJmsDelegate.sendResponseMessage(new Response(_clientJmsDelegate.getClientName(), command.getType(), responseMessage));
+            if (_state.get() != ClientState.STOPPED)
+            {
+                _clientJmsDelegate.sendResponseMessage(new Response(_clientJmsDelegate.getClientName(), command.getType(), responseMessage));
+            }
         }
     }
 

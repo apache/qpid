@@ -45,6 +45,7 @@ public class ClientCommandVisitor extends Visitor
 
     public void visit(final StopClientCommand command)
     {
+
         _client.stop();
     }
 
