@@ -752,7 +752,9 @@ std::pair<TxBuffer*,uint64_t> Session::getTransactionalState(pn_delivery_t* deli
                 if (!result.first) {
                     QPID_LOG(error, "Transaction not found for id: " << id);
                 }
-                if (count > 1 && pn_data_next(data)) {
+                if (count > 1 && pn_data_next(data) && pn_data_is_described(data)) {
+                    pn_data_enter(data);
+                    pn_data_next(data);
                     result.second = pn_data_get_ulong(data);
                 }
                 pn_data_exit(data);
