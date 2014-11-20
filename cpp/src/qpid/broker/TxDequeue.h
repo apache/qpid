@@ -46,6 +46,8 @@ class TxDequeue: public TxOp
     boost::shared_ptr<Queue> queue;
     qpid::framing::SequenceNumber messageId;
     qpid::framing::SequenceNumber replicationId;
+    bool releaseOnAbort;
+    bool redeliveredOnAbort;
 };
 }} // namespace qpid::broker
 
