@@ -812,6 +812,7 @@ void Session::abort()
     if (txn) {
         txn->rollback();
         txAborted();
+        txn = boost::intrusive_ptr<TxBuffer>();
     }
 }
 

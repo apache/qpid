@@ -28,7 +28,7 @@ namespace broker {
 
 TxDequeue::TxDequeue(QueueCursor m, boost::shared_ptr<Queue> q,
                      qpid::framing::SequenceNumber mId, qpid::framing::SequenceNumber rId)
-    : message(m), queue(q), messageId(mId), replicationId(rId) {}
+    : message(m), queue(q), messageId(mId), replicationId(rId), releaseOnAbort(true), redeliveredOnAbort(true) {}
 
 bool TxDequeue::prepare(TransactionContext* ctxt) throw()
 {
@@ -55,7 +55,10 @@ void TxDequeue::commit() throw()
     }
 }
 
-void TxDequeue::rollback() throw() {}
+void TxDequeue::rollback() throw()
+{
+    if (releaseOnAbort) queue->release(message, redeliveredOnAbort);
+}
 
 void TxDequeue::callObserver(const boost::shared_ptr<TransactionObserver>& observer)
 {

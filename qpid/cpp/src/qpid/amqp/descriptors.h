@@ -127,7 +127,7 @@ const std::string RESOURCE_DELETED("amqp:resource-deleted");
 const std::string PRECONDITION_FAILED("amqp:precondition-failed");
 namespace transaction {
 const std::string UNKNOWN_ID("amqp:transaction:unknown-id");
-const std::string ROLLBACK("amqp:transaction:rolback");
+const std::string ROLLBACK("amqp:transaction:rollback");
 }
 }
 }} // namespace qpid::amqp
