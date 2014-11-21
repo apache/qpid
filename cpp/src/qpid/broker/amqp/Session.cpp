@@ -739,7 +739,7 @@ TxBuffer* Session::getTransaction(pn_delivery_t* delivery)
 
 std::pair<TxBuffer*,uint64_t> Session::getTransactionalState(pn_delivery_t* delivery)
 {
-    std::pair<TxBuffer*,uint64_t> result(0, 0);
+    std::pair<TxBuffer*,uint64_t> result((TxBuffer*)0, 0);
     if (pn_delivery_remote_state(delivery) == qpid::amqp::transaction::TRANSACTIONAL_STATE_CODE) {
         pn_data_t* data = pn_disposition_data(pn_delivery_remote(delivery));
         if (data && pn_data_next(data)) {
