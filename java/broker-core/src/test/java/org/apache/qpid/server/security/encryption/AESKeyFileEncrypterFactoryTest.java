@@ -35,6 +35,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.security.NoSuchAlgorithmException;
 import java.util.Collections;
@@ -87,7 +89,7 @@ public class AESKeyFileEncrypterFactoryTest extends QpidTestCase
 
     public void testCreateKeyInDefaultLocation() throws Exception
     {
-        if(isStrongEncryptionEnabled())
+        if(isStrongEncryptionEnabled() && supportsPosixFileAttributes())
         {
             ConfigurationSecretEncrypter encrypter = _factory.createEncrypter(_broker);
 
@@ -120,7 +122,7 @@ public class AESKeyFileEncrypterFactoryTest extends QpidTestCase
 
     public void testSettingContextKeyLeadsToFileCreation() throws Exception
     {
-        if(isStrongEncryptionEnabled())
+        if(isStrongEncryptionEnabled() && supportsPosixFileAttributes())
         {
             String filename = UUID.randomUUID().toString() + ".key";
             String subdirName = getTestName() + File.separator + "test";
@@ -169,7 +171,7 @@ public class AESKeyFileEncrypterFactoryTest extends QpidTestCase
 
     public void testPermissionsAreChecked() throws Exception
     {
-        if(isStrongEncryptionEnabled())
+        if(isStrongEncryptionEnabled() && supportsPosixFileAttributes())
         {
 
             String filename = UUID.randomUUID().toString() + ".key";
@@ -201,7 +203,7 @@ public class AESKeyFileEncrypterFactoryTest extends QpidTestCase
 
     public void testInvalidKey() throws Exception
     {
-        if(isStrongEncryptionEnabled())
+        if(isStrongEncryptionEnabled() && supportsPosixFileAttributes())
         {
             String filename = UUID.randomUUID().toString() + ".key";
             String subdirName = getTestName() + File.separator + "test";
@@ -231,6 +233,11 @@ public class AESKeyFileEncrypterFactoryTest extends QpidTestCase
                 // pass
             }
         }
+    }
+
+    private boolean supportsPosixFileAttributes() throws IOException
+    {
+        return Files.getFileStore(_tmpDir).supportsFileAttributeView(PosixFileAttributeView.class);
     }
 
     @Override
