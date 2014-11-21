@@ -39,6 +39,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.berkeleydb.logging.Log4jLoggingHandler;
 
 public class StandardEnvironmentFacade implements EnvironmentFacade
 {
@@ -76,6 +77,10 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
         envConfig.setAllowCreate(true);
         envConfig.setTransactional(true);
 
+        envConfig.setConfigParam(EnvironmentConfig.FILE_LOGGING_LEVEL, "OFF");
+        envConfig.setConfigParam(EnvironmentConfig.CONSOLE_LOGGING_LEVEL, "OFF");
+        envConfig.setLoggingHandler(new Log4jLoggingHandler("["+configuration.getName()+"]"));
+
         Map<String, String> params = new HashMap<>(EnvironmentFacade.ENVCONFIG_DEFAULTS);
         params.putAll(configuration.getParameters());
 
@@ -95,6 +100,7 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
         envConfig.setExceptionListener(new LoggingAsyncExceptionListener());
 
         EnvHomeRegistry.getInstance().registerHome(_environmentPath);
+
         boolean success = false;
         try
         {
