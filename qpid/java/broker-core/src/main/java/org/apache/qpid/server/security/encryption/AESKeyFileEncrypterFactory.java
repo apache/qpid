@@ -25,13 +25,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.Path;
+import java.nio.file.attribute.*;
 import java.security.NoSuchAlgorithmException;
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -89,18 +86,7 @@ public class AESKeyFileEncrypterFactory implements ConfigurationSecretEncrypterF
         }
         try
         {
-            Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(file.toPath());
-
-            if (permissions.contains(PosixFilePermission.GROUP_READ)
-                || permissions.contains(PosixFilePermission.OTHERS_READ)
-                || permissions.contains(PosixFilePermission.GROUP_WRITE)
-                || permissions.contains(PosixFilePermission.OTHERS_WRITE))
-            {
-                throw new IllegalArgumentException("Key file '"
-                                                + fileLocation
-                                                + "' has incorrect permissions.  Only the owner "
-                                                + "should be able to read or write this file.");
-            }
+            checkFilePermissions(fileLocation, file);
             if(Files.size(file.toPath()) != AES_KEY_SIZE_BYTES)
             {
                 throw new IllegalArgumentException("Key file '" + fileLocation + "' contains an incorrect about of data");
@@ -129,17 +115,76 @@ public class AESKeyFileEncrypterFactory implements ConfigurationSecretEncrypterF
         }
     }
 
+    private void checkFilePermissions(String fileLocation, File file) throws IOException
+    {
+        if(isPosixFileSystem(file))
+        {
+            Set<PosixFilePermission> permissions = Files.getPosixFilePermissions(file.toPath());
+
+            if (permissions.contains(PosixFilePermission.GROUP_READ)
+                    || permissions.contains(PosixFilePermission.OTHERS_READ)
+                    || permissions.contains(PosixFilePermission.GROUP_WRITE)
+                    || permissions.contains(PosixFilePermission.OTHERS_WRITE)) {
+                throw new IllegalArgumentException("Key file '"
+                        + fileLocation
+                        + "' has incorrect permissions.  Only the owner "
+                        + "should be able to read or write this file.");
+            }
+        }
+        else if(isAclFileSystem(file))
+        {
+            AclFileAttributeView attributeView = Files.getFileAttributeView(file.toPath(), AclFileAttributeView.class);
+            ArrayList<AclEntry> acls = new ArrayList<>(attributeView.getAcl());
+            ListIterator<AclEntry> iter = acls.listIterator();
+            UserPrincipal owner = Files.getOwner(file.toPath());
+            while(iter.hasNext())
+            {
+                AclEntry acl = iter.next();
+                if(acl.type() == AclEntryType.ALLOW)
+                {
+                    Set<AclEntryPermission> originalPermissions = acl.permissions();
+                    Set<AclEntryPermission> updatedPermissions = EnumSet.copyOf(originalPermissions);
+
+
+                    if (updatedPermissions.removeAll(EnumSet.of(AclEntryPermission.APPEND_DATA,
+                            AclEntryPermission.EXECUTE,
+                            AclEntryPermission.WRITE_ACL,
+                            AclEntryPermission.WRITE_DATA,
+                            AclEntryPermission.WRITE_OWNER))) {
+                        throw new IllegalArgumentException("Key file '"
+                                + fileLocation
+                                + "' has incorrect permissions.  The file should not be modifiable by any user.");
+                    }
+                    if (!owner.equals(acl.principal()) && updatedPermissions.removeAll(EnumSet.of(AclEntryPermission.READ_DATA))) {
+                        throw new IllegalArgumentException("Key file '"
+                                + fileLocation
+                                + "' has incorrect permissions.  Only the owner should be able to read from the file.");
+                    }
+                }
+            }
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unable to determine a mechanism to protect access to the key file on this filesystem");
+        }
+    }
+
+    private boolean isPosixFileSystem(File file) throws IOException
+    {
+        return Files.getFileStore(file.toPath().getRoot()).supportsFileAttributeView(PosixFileAttributeView.class);
+    }
+
+    private boolean isAclFileSystem(File file) throws IOException
+    {
+        return Files.getFileStore(file.toPath().getRoot()).supportsFileAttributeView(AclFileAttributeView.class);
+    }
+
+
     private void createAndPopulateKeyFile(final File file)
     {
         try
         {
-            Set<PosixFilePermission> ownerOnly = EnumSet.of(PosixFilePermission.OWNER_READ,
-                                                            PosixFilePermission.OWNER_WRITE,
-                                                            PosixFilePermission.OWNER_EXECUTE);
-            Files.createDirectories(file.getParentFile().toPath(), PosixFilePermissions.asFileAttribute(ownerOnly));
-
-            Files.createFile(file.toPath(), PosixFilePermissions.asFileAttribute(
-                    EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)));
+            createEmptyKeyFile(file);
 
             KeyGenerator keyGenerator = KeyGenerator.getInstance(AES_ALGORITHM);
             keyGenerator.init(AES_KEY_SIZE_BITS);
@@ -149,13 +194,116 @@ public class AESKeyFileEncrypterFactory implements ConfigurationSecretEncrypterF
                 os.write(key.getEncoded());
             }
 
-            Files.setPosixFilePermissions(file.toPath(), EnumSet.of(PosixFilePermission.OWNER_READ));
+            makeKeyFileReadOnly(file);
         }
         catch (NoSuchAlgorithmException | IOException e)
         {
             throw new IllegalArgumentException("Cannot create key file: " + e.getMessage(), e);
         }
 
+    }
+
+    private void makeKeyFileReadOnly(File file) throws IOException
+    {
+        if(isPosixFileSystem(file))
+        {
+            Files.setPosixFilePermissions(file.toPath(), EnumSet.of(PosixFilePermission.OWNER_READ));
+        }
+        else if(isAclFileSystem(file))
+        {
+            AclFileAttributeView attributeView = Files.getFileAttributeView(file.toPath(), AclFileAttributeView.class);
+            ArrayList<AclEntry> acls = new ArrayList<>(attributeView.getAcl());
+            ListIterator<AclEntry> iter = acls.listIterator();
+            file.setReadOnly();
+            while(iter.hasNext())
+            {
+                AclEntry acl = iter.next();
+                Set<AclEntryPermission> originalPermissions = acl.permissions();
+                Set<AclEntryPermission> updatedPermissions = EnumSet.copyOf(originalPermissions);
+
+                if(updatedPermissions.removeAll(EnumSet.of(AclEntryPermission.APPEND_DATA,
+                                                           AclEntryPermission.DELETE,
+                                                           AclEntryPermission.EXECUTE,
+                                                           AclEntryPermission.WRITE_ACL,
+                                                           AclEntryPermission.WRITE_DATA,
+                                                           AclEntryPermission.WRITE_ATTRIBUTES,
+                                                           AclEntryPermission.WRITE_NAMED_ATTRS,
+                                                           AclEntryPermission.WRITE_OWNER)))
+                {
+                    AclEntry.Builder builder = AclEntry.newBuilder(acl);
+                    builder.setPermissions(updatedPermissions);
+                    iter.set(builder.build());
+                }
+            }
+            attributeView.setAcl(acls);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unable to determine a mechanism to protect access to the key file on this filesystem");
+        }
+    }
+
+    private void createEmptyKeyFile(File file) throws IOException
+    {
+        final Path parentFilePath = file.getParentFile().toPath();
+
+        if(isPosixFileSystem(file)) {
+            Set<PosixFilePermission> ownerOnly = EnumSet.of(PosixFilePermission.OWNER_READ,
+                    PosixFilePermission.OWNER_WRITE,
+                    PosixFilePermission.OWNER_EXECUTE);
+            Files.createDirectories(parentFilePath, PosixFilePermissions.asFileAttribute(ownerOnly));
+
+            Files.createFile(file.toPath(), PosixFilePermissions.asFileAttribute(
+                    EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE)));
+        }
+        else if(isAclFileSystem(file))
+        {
+            Files.createDirectories(parentFilePath);
+            final UserPrincipal owner = Files.getOwner(parentFilePath);
+            AclFileAttributeView attributeView = Files.getFileAttributeView(parentFilePath, AclFileAttributeView.class);
+            List<AclEntry> acls = new ArrayList<>(attributeView.getAcl());
+            Iterator<AclEntry> iter = acls.iterator();
+            while(iter.hasNext())
+            {
+                AclEntry acl = iter.next();
+                if(!owner.equals(acl.principal()))
+                {
+                    iter.remove();
+                }
+            }
+            attributeView.setAcl(acls);
+
+            Files.createFile(file.toPath(), new FileAttribute<List<AclEntry>>()
+            {
+                @Override
+                public String name()
+                {
+                    return "acl:acl";
+                }
+
+                @Override
+                public List<AclEntry> value() {
+                    AclEntry.Builder builder = AclEntry.newBuilder();
+                    builder.setType(AclEntryType.ALLOW);
+                    builder.setPermissions(AclEntryPermission.APPEND_DATA,
+                            AclEntryPermission.DELETE,
+                            AclEntryPermission.READ_ACL,
+                            AclEntryPermission.READ_ATTRIBUTES,
+                            AclEntryPermission.READ_DATA,
+                            AclEntryPermission.READ_NAMED_ATTRS,
+                            AclEntryPermission.WRITE_ACL,
+                            AclEntryPermission.WRITE_ATTRIBUTES,
+                            AclEntryPermission.WRITE_DATA);
+                    builder.setPrincipal(owner);
+                    return Collections.singletonList(builder.build());
+                }
+            });
+
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unable to determine a mechanism to protect access to the key file on this filesystem");
+        }
     }
 
     @Override
