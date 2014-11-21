@@ -22,6 +22,8 @@ package org.apache.qpid.server.store.derby;
 
 
 import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.sql.Blob;
 import java.sql.Connection;
@@ -30,6 +32,9 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.store.StoreException;
 
@@ -41,17 +46,29 @@ public class DerbyUtils
     private static final String TABLE_EXISTENCE_QUERY = "SELECT 1 FROM SYS.SYSTABLES WHERE TABLENAME = ?";
     private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
+    private static final Logger DERBY_LOG = Logger.getLogger("DERBY");
+    public static final DerbyLogWriter DERBY_LOG_WRITER = new DerbyLogWriter();
+    public static final String DERBY_STREAM_ERROR_METHOD = "derby.stream.error.method";
 
     public static void loadDerbyDriver()
     {
         try
         {
+            // set the error log output
+            System.setProperty(DERBY_STREAM_ERROR_METHOD,
+                               "org.apache.qpid.server.store.derby.DerbyUtils.getDerbyLogWriter");
+
             Class<Driver> driverClass = (Class<Driver>) Class.forName(SQL_DRIVER_NAME);
         }
         catch (ClassNotFoundException e)
         {
             throw new StoreException("Failed to load driver " + SQL_DRIVER_NAME, e);
         }
+    }
+
+    public static Writer getDerbyLogWriter()
+    {
+        return DERBY_LOG_WRITER;
     }
 
     public static String createConnectionUrl(final String name, final String databasePath)
@@ -145,5 +162,72 @@ public class DerbyUtils
     }
 
 
+    private static class DerbyLogWriter extends Writer
+    {
+
+        public static final String DERBY_STARTUP_MESSAGE = "Booting Derby version ";
+        public static final String DERBY_SHUTDOWN_MESSAGE = "Shutting down instance ";
+        public static final String DERBY_CLASS_LOADER_STARTED_MESSAGE = "Database Class Loader started";
+        public static final String DERBY_SYSTEM_HOME = "derby.system.home";
+        public static final String DASHED_LINE = "\\s*-*\\s*";
+
+        private final ThreadLocal<StringBuilder> _threadLocalBuffer = new ThreadLocal<StringBuilder>()
+        {
+            @Override
+            protected StringBuilder initialValue()
+            {
+                return new StringBuilder();
+            }
+        };
+
+        @Override
+        public void write(final char[] cbuf, final int off, final int len) throws IOException
+        {
+            _threadLocalBuffer.get().append(cbuf, off, len);
+        }
+
+        @Override
+        public void flush() throws IOException
+        {
+            String logMessage = _threadLocalBuffer.get().toString();
+            if(!logMessage.matches(DASHED_LINE))
+            {
+                if(logMessage.contains(DERBY_STARTUP_MESSAGE))
+                {
+                    // the first line of the message containing the startup message is the current date/time, which
+                    // we can remove
+                    logMessage = logMessage.substring(logMessage.indexOf('\n') + 1);
+                }
+
+                // This is pretty hideous, but since the Derby logging doesn't have any way of informing us of priority
+                // we simply have to assume everything is a warning except known startup / shutdown messages
+                // which we match using known prefixes.
+
+                Level logLevel = Level.WARN;
+
+                if(logMessage.startsWith(DERBY_STARTUP_MESSAGE)
+                   || logMessage.startsWith(DERBY_SHUTDOWN_MESSAGE))
+                {
+                    logLevel = Level.INFO;
+                }
+                else if(logMessage.startsWith(DERBY_SYSTEM_HOME)
+                   || logMessage.startsWith(DERBY_STREAM_ERROR_METHOD)
+                   || logMessage.startsWith("java.vendor")
+                   || logMessage.startsWith(DERBY_CLASS_LOADER_STARTED_MESSAGE))
+                {
+                    logLevel = Level.DEBUG;
+                }
+
+                DERBY_LOG.log(logLevel, logMessage);
+            }
+            _threadLocalBuffer.set(new StringBuilder());
+        }
+
+        @Override
+        public void close() throws IOException
+        {
+
+        }
+    }
 }
 

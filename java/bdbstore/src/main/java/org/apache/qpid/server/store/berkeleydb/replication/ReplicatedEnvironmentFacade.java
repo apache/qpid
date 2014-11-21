@@ -69,18 +69,19 @@ import com.sleepycat.je.rep.vlsn.VLSNRange;
 import com.sleepycat.je.utilint.PropUtil;
 import com.sleepycat.je.utilint.VLSN;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.server.store.berkeleydb.BDBUtils;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.store.berkeleydb.BDBUtils;
 import org.apache.qpid.server.store.berkeleydb.CoalescingCommiter;
 import org.apache.qpid.server.store.berkeleydb.EnvHomeRegistry;
 import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
+import org.apache.qpid.server.store.berkeleydb.logging.Log4jLoggingHandler;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.DaemonThreadFactory;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChangeListener
 {
@@ -1115,6 +1116,10 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         envConfig.setTransactional(true);
         envConfig.setExceptionListener(new ExceptionListener());
         envConfig.setDurability(_defaultDurability);
+
+        envConfig.setConfigParam(EnvironmentConfig.FILE_LOGGING_LEVEL, "OFF");
+        envConfig.setConfigParam(EnvironmentConfig.CONSOLE_LOGGING_LEVEL, "OFF");
+        envConfig.setLoggingHandler(new Log4jLoggingHandler("[" + _configuration.getName() + "]"));
 
         for (Map.Entry<String, String> configItem : environmentParameters.entrySet())
         {
