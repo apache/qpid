@@ -40,7 +40,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.util.FileUtils;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.Version;
@@ -54,6 +53,7 @@ import org.codehaus.jackson.map.module.SimpleModule;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
+import org.apache.qpid.util.FileUtils;
 
 public class JsonFileConfigStore implements DurableConfigurationStore
 {
@@ -92,6 +92,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     private FileLock _fileLock;
     private String _configFileName;
     private String _backupFileName;
+    private String _tempFileName;
     private String _lockFileName;
 
     private static final Module _module;
@@ -172,6 +173,8 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             _directoryName = fileFromSettings.getParent();
             _configFileName = fileFromSettings.getName();
             _backupFileName = fileFromSettings.getName() + ".bak";
+            _tempFileName = fileFromSettings.getName() + ".tmp";;
+
             _lockFileName = fileFromSettings.getName() + ".lck";
         }
         else
@@ -179,6 +182,8 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             _directoryName = configurationStoreSettings.getStorePath();
             _configFileName = _name + ".json";
             _backupFileName = _name + ".bak";
+            _tempFileName = _name + ".tmp";
+
             _lockFileName = _name + ".lck";
         }
 
@@ -205,9 +210,21 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                 renameFile(_backupFileName, _configFileName);
             }
         }
+        deleteFileIfExists(_backupFileName);
     }
 
     private void renameFile(String fromFileName, String toFileName)
+    {
+        File toFile = deleteFileIfExists(toFileName);
+        File fromFile = new File(_directoryName, fromFileName);
+
+        if(!fromFile.renameTo(toFile))
+        {
+            throw new StoreException("Cannot rename file " + fromFile.getAbsolutePath() + " to " + toFile.getAbsolutePath());
+        }
+    }
+
+    private File deleteFileIfExists(final String toFileName)
     {
         File toFile = new File(_directoryName, toFileName);
         if(toFile.exists())
@@ -217,12 +234,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
                 throw new StoreException("Cannot delete file " + toFile.getAbsolutePath());
             }
         }
-        File fromFile = new File(_directoryName, fromFileName);
-
-        if(!fromFile.renameTo(toFile))
-        {
-            throw new StoreException("Cannot rename file " + fromFile.getAbsolutePath() + " to " + toFile.getAbsolutePath());
-        }
+        return toFile;
     }
 
     private boolean fileExists(String fileName)
@@ -397,14 +409,15 @@ public class JsonFileConfigStore implements DurableConfigurationStore
 
         try
         {
-            File tmpFile = File.createTempFile("cfg","tmp", new File(_directoryName));
-            tmpFile.deleteOnExit();
+            deleteFileIfExists(_tempFileName);
+            deleteFileIfExists(_backupFileName);
+
+            File tmpFile = new File(_directoryName, _tempFileName);
             _objectMapper.writeValue(tmpFile, data);
             renameFile(_configFileName, _backupFileName);
             renameFile(tmpFile.getName(),_configFileName);
             tmpFile.delete();
-            File backupFile = new File(_directoryName, _backupFileName);
-            backupFile.delete();
+            deleteFileIfExists(_backupFileName);
         }
         catch (IOException e)
         {
