@@ -78,6 +78,8 @@ op.add_option("--connection-options", type="str",
               help="Connection options for senders & receivers")
 op.add_option("--durable", default=False, action="store_true",
               help="Use durable queues and messages")
+op.add_option("-t", "--timeout", default=1.0, type="float", metavar="SECONDS",
+              help="Timeout for fetch operations (default %default)")
 op.add_option("--save-received", default=False, action="store_true",
               help="Save received message content to files <queuename>-receiver-<n>.msg")
 op.add_option("--verbose", default=False, action="store_true",
@@ -195,7 +197,11 @@ def drain(queue, session, opts):
     n = 0
     try:
         while True:
-            r.fetch(timeout=0)
+            # FIXME aconway 2014-11-21: activemq broker does not respect the drain flag
+            # so fetch on an empty queue will hang forever, use get with timeout instead.
+            # r.fetch(timeout=0)
+            m = qm.Message()
+            r.get(timeout=opts.timeout)
             n += 1
             if n % 500 == 0: r.session.acknowledge()
         r.session.acknowledge()
@@ -271,7 +277,7 @@ class ReadyReceiver:
         self.connection = connect(broker, opts)
         self.receiver = self.connection.session().receiver(queue)
         self.receiver.session.sync()
-        self.timeout=10
+        self.timeout=opts.timeout
 
     def wait(self, receivers):
         try:
