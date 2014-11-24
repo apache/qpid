@@ -26,9 +26,25 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.*;
+import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclEntryPermission;
+import java.nio.file.attribute.AclEntryType;
+import java.nio.file.attribute.AclFileAttributeView;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.attribute.UserPrincipal;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -262,7 +278,8 @@ public class AESKeyFileEncrypterFactory implements ConfigurationSecretEncrypterF
             final UserPrincipal owner = Files.getOwner(parentFilePath);
             AclFileAttributeView attributeView = Files.getFileAttributeView(parentFilePath, AclFileAttributeView.class);
             List<AclEntry> acls = new ArrayList<>(attributeView.getAcl());
-            Iterator<AclEntry> iter = acls.iterator();
+            ListIterator<AclEntry> iter = acls.listIterator();
+            boolean found = false;
             while(iter.hasNext())
             {
                 AclEntry acl = iter.next();
@@ -270,6 +287,23 @@ public class AESKeyFileEncrypterFactory implements ConfigurationSecretEncrypterF
                 {
                     iter.remove();
                 }
+                else if(acl.type() == AclEntryType.ALLOW)
+                {
+                    found = true;
+                    AclEntry.Builder builder = AclEntry.newBuilder(acl);
+                    Set<AclEntryPermission> permissions = EnumSet.copyOf(acl.permissions());
+                    permissions.addAll(Arrays.asList(AclEntryPermission.ADD_FILE, AclEntryPermission.ADD_SUBDIRECTORY, AclEntryPermission.LIST_DIRECTORY));
+                    builder.setPermissions(permissions);
+                    iter.set(builder.build());
+                }
+            }
+            if(!found)
+            {
+                AclEntry.Builder builder = AclEntry.newBuilder();
+                builder.setPermissions(AclEntryPermission.ADD_FILE, AclEntryPermission.ADD_SUBDIRECTORY, AclEntryPermission.LIST_DIRECTORY);
+                builder.setType(AclEntryType.ALLOW);
+                builder.setPrincipal(owner);
+                acls.add(builder.build());
             }
             attributeView.setAcl(acls);
 
