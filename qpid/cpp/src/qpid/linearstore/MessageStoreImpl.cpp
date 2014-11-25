@@ -203,7 +203,7 @@ bool MessageStoreImpl::init(const std::string& storeDir_,
         truncateInit();
     init(truncateFlag_);
 
-    QLS_LOG(info, "Store module initialized; store-dir=" << storeDir_);
+    QLS_LOG(notice, "Store module initialized; store-dir=" << storeDir_);
     QLS_LOG(info,   "> Default EFP partition: " << defaultEfpPartitionNumber);
     QLS_LOG(info,   "> Default EFP file size: " << defaultEfpFileSize_kib << " (KiB)");
     QLS_LOG(info,   "> Default write cache page size: " << wCachePageSizeKib_ << " (KiB)");
