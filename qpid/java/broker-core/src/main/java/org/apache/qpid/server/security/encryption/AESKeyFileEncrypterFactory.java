@@ -319,15 +319,7 @@ public class AESKeyFileEncrypterFactory implements ConfigurationSecretEncrypterF
                 public List<AclEntry> value() {
                     AclEntry.Builder builder = AclEntry.newBuilder();
                     builder.setType(AclEntryType.ALLOW);
-                    builder.setPermissions(AclEntryPermission.APPEND_DATA,
-                            AclEntryPermission.DELETE,
-                            AclEntryPermission.READ_ACL,
-                            AclEntryPermission.READ_ATTRIBUTES,
-                            AclEntryPermission.READ_DATA,
-                            AclEntryPermission.READ_NAMED_ATTRS,
-                            AclEntryPermission.WRITE_ACL,
-                            AclEntryPermission.WRITE_ATTRIBUTES,
-                            AclEntryPermission.WRITE_DATA);
+                    builder.setPermissions(EnumSet.allOf(AclEntryPermission.class));
                     builder.setPrincipal(owner);
                     return Collections.singletonList(builder.build());
                 }
