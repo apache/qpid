@@ -53,6 +53,21 @@ struct StorePlugin : public Plugin {
                 throw Exception ("linearstore: If broker option --data-dir is blank or --no-data-dir is specified, linearstore option --store-dir must be present.");
 
             options.storeDir = dataDir.getPath ();
+        } else {
+            // Check if store dir is absolute. If not, make it absolute using qpidd executable dir as base
+            if (options.storeDir.at(0) != '/') {
+                char buf[1024];
+                if (::getcwd(buf, sizeof(buf)-1) == 0) {
+                    std::ostringstream oss;
+                    oss << "linearstore: getcwd() unable to read current directory: errno=" << errno << " (" << strerror(errno) << ")";
+                    throw Exception(oss.str());
+                }
+                std::string newStoreDir = std::string(buf) + "/" + options.storeDir;
+                std::ostringstream oss;
+                oss << "store-dir option \"" << options.storeDir << "\" is not absolute, changed to \"" << newStoreDir << "\"";
+                QLS_LOG(warning, oss.str());
+                options.storeDir = newStoreDir;
+            }
         }
         store->init(&options);
         boost::shared_ptr<qpid::broker::MessageStore> brokerStore(store);
