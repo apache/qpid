@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+
+-->
+
+<section id="Java-Broker-Runtime-Connection-Limit">
+  <title>Connection Limits</title>
+  <para>
+     Each connection to the Broker consumes resources while it is connected. In order to protect
+     the Broker against malfunctioning (or malicious) client processes, it is possible to limit the
+     number of connections that can be active on any given port.
+   </para>
+   <para>
+       Connection limits on AMQP ports are controlled by an attribute "maxOpenConnections" on
+       the port. By default this takes the value of the context variable 
+       <literal>qpid.port.max_open_connections</literal> which in itself is defaulted to the
+       value <literal>-1</literal> meaning there is no limit.
+   </para>
+   <para>
+       If the interpolated value of <literal>maxOpenConnections</literal> on an AMQP port is a
+       positive integer, then when that many active connections have been established no new
+       connections will be allowed (until an existing connection has been closed). Any such 
+       rejection of a connection will be accompanied by the operational log message
+       <link linkend="Java-Broker-Appendix-Operation-Logging-Message-PRT-1005">PRT-1005</link>.
+   </para>
+   <para>
+       The context variable <literal>qpid.port.open_connections_warn_percent</literal> can be 
+       used to control when a warning log message is generated as the number of open connections
+       approaches the limit for the port. The default value of this variable is 
+       <literal>80</literal> meaning that if more the number of open connections to the port
+       has exceeded 80% of the given limit then the operatinal log message 
+       <link linkend="Java-Broker-Appendix-Operation-Logging-Message-PRT-1004">PRT-1004</link>
+       will be generated.
+   </para>
+</section>
