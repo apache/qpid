@@ -22,15 +22,27 @@ package org.apache.qpid.server.model;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.server.model.testmodel.TestManagedClass0;
+import org.apache.qpid.server.model.testmodel.TestManagedClass1;
+import org.apache.qpid.server.model.testmodel.TestManagedClass2;
+import org.apache.qpid.server.model.testmodel.TestManagedClass3;
+import org.apache.qpid.server.model.testmodel.TestManagedClass4;
+import org.apache.qpid.server.model.testmodel.TestManagedClass5;
+import org.apache.qpid.server.model.testmodel.TestManagedInterface1;
+import org.apache.qpid.server.model.testmodel.TestManagedInterface2;
 import org.apache.qpid.server.model.testmodel.Test2RootCategory;
 import org.apache.qpid.server.model.testmodel.Test2RootCategoryImpl;
 import org.apache.qpid.server.model.testmodel.TestChildCategory;
 import org.apache.qpid.server.model.testmodel.TestModel;
 import org.apache.qpid.server.model.testmodel.TestRootCategory;
 import org.apache.qpid.server.model.testmodel.TestRootCategoryImpl;
+import org.apache.qpid.server.plugin.ConfiguredObjectRegistration;
 
 public class ConfigureObjectTypeRegistryTest extends TestCase
 {
@@ -91,6 +103,66 @@ public class ConfigureObjectTypeRegistryTest extends TestCase
                          Arrays.asList(TestChildCategory.NON_INTERPOLATED_VALID_VALUE));
 
 
+    }
+
+    public void testGetManagedInterfacesForTypeNotImplementingManagedInterfaceAndNotHavingManagedAnnotation()
+    {
+        ConfiguredObjectTypeRegistry typeRegistry = createConfiguredObjectTypeRegistry(TestRootCategoryImpl.class);
+        assertEquals("Unexpected interfaces from object not implementing Managed interfaces",
+                Collections.emptySet(), typeRegistry.getManagedInterfaces(TestRootCategory.class));
+    }
+
+    public void testGetManagedInterfacesForTypeImplementingManagedInterfaceButNotHavingManagedAnnotation()
+    {
+        ConfiguredObjectTypeRegistry typeRegistry = createConfiguredObjectTypeRegistry(TestRootCategoryImpl.class, TestManagedClass5.class);
+        assertEquals("Unexpected interfaces from object not implementing Managed interfaces",
+                Collections.emptySet(), typeRegistry.getManagedInterfaces(TestManagedClass5.class));
+    }
+
+    public void testGetManagedInterfacesForTypesImplementingManagedInterfacesWithManagedAnnotation()
+    {
+        ConfiguredObjectTypeRegistry typeRegistry = createConfiguredObjectTypeRegistry(TestRootCategoryImpl.class, TestManagedClass0.class, TestManagedClass1.class, TestManagedClass4.class);
+        Set<Class<?>> expected = Collections.<Class<?>>singleton(TestManagedInterface1.class);
+        assertEquals("Unexpected interfaces on child class", expected, typeRegistry.getManagedInterfaces(TestManagedClass1.class));
+        assertEquals("Unexpected interfaces on super class", expected, typeRegistry.getManagedInterfaces(TestManagedClass0.class));
+        assertEquals("Unexpected interfaces on class implementing  interface with annotation twice",
+                expected, typeRegistry.getManagedInterfaces(TestManagedClass4.class));
+    }
+
+    public void testGetManagedInterfacesForTypeHavingDirectManagedAnnotation()
+    {
+        ConfiguredObjectTypeRegistry typeRegistry = createConfiguredObjectTypeRegistry(TestRootCategoryImpl.class, TestManagedClass2.class, TestManagedClass3.class);
+
+        assertEquals("Unexpected interfaces on class implementing 2 interfaces with annotation",
+                new HashSet<>(Arrays.asList(TestManagedInterface2.class, TestManagedInterface1.class)), typeRegistry.getManagedInterfaces(TestManagedClass2.class));
+        assertEquals("Unexpected interfaces on class implementing 2 direct interfaces with annotation",
+                new HashSet<>(Arrays.asList(TestManagedInterface2.class, TestManagedInterface1.class)), typeRegistry.getManagedInterfaces(TestManagedClass3.class));
+
+    }
+
+    private ConfiguredObjectTypeRegistry createConfiguredObjectTypeRegistry(Class<? extends ConfiguredObject>... supportedTypes)
+    {
+        ConfiguredObjectRegistration configuredObjectRegistration = createConfiguredObjectRegistration(supportedTypes);
+
+        return new ConfiguredObjectTypeRegistry(Arrays.asList(configuredObjectRegistration), Arrays.asList(TestRootCategory.class, TestChildCategory.class));
+    }
+
+    private ConfiguredObjectRegistration createConfiguredObjectRegistration(final Class<? extends ConfiguredObject>... supportedTypes)
+    {
+        return new ConfiguredObjectRegistration()
+            {
+                @Override
+                public Collection<Class<? extends ConfiguredObject>> getConfiguredObjectClasses()
+                {
+                    return Arrays.asList(supportedTypes);
+                }
+
+                @Override
+                public String getType()
+                {
+                    return "test";
+                }
+            };
     }
 
     private void checkDefaultedValue(final Collection<ConfiguredObjectAttribute<?, ?>> attrs,
