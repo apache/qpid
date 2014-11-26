@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -291,7 +292,7 @@ public class AESKeyFileEncrypterFactory implements ConfigurationSecretEncrypterF
                 {
                     found = true;
                     AclEntry.Builder builder = AclEntry.newBuilder(acl);
-                    Set<AclEntryPermission> permissions = EnumSet.copyOf(acl.permissions());
+                    Set<AclEntryPermission> permissions = acl.permissions().isEmpty() ? new HashSet<AclEntryPermission>() : EnumSet.copyOf(acl.permissions());
                     permissions.addAll(Arrays.asList(AclEntryPermission.ADD_FILE, AclEntryPermission.ADD_SUBDIRECTORY, AclEntryPermission.LIST_DIRECTORY));
                     builder.setPermissions(permissions);
                     iter.set(builder.build());
