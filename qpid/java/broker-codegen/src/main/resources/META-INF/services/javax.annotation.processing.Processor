@@ -22,3 +22,4 @@ org.apache.qpid.server.plugin.PluggableProcessor
 org.apache.qpid.server.model.ConfiguredObjectRegistrationGenerator
 org.apache.qpid.server.model.validation.AttributeAnnotationValidator
 org.apache.qpid.server.model.validation.AttributeFieldValidation
+org.apache.qpid.server.model.validation.ManagedAnnotationValidator
