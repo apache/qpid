@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -172,6 +173,9 @@ public class ConfiguredObjectTypeRegistry
     private final Map<Class<? extends ConfiguredObject>, Map<State, Map<State, Method>>> _stateChangeMethods =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<State, Map<State, Method>>>());
 
+    private final Map<Class<? extends ConfiguredObject>,Set<Class<? extends ManagedInterface>>> _allManagedInterfaces =
+            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Set<Class<? extends ManagedInterface>>>());
+
     public ConfiguredObjectTypeRegistry(Iterable<ConfiguredObjectRegistration> configuredObjectRegistrations, Collection<Class<? extends ConfiguredObject>> categoriesRestriction)
     {
 
@@ -258,8 +262,8 @@ public class ConfiguredObjectTypeRegistry
                     }
                     _typeSpecificAttributes.put(typeClass, attributes);
                 }
-
             }
+
         }
     }
 
@@ -545,6 +549,8 @@ public class ConfiguredObjectTypeRegistry
             processDefaultContext(clazz);
 
             processStateChangeMethods(clazz);
+
+            processManagedInterfaces(clazz);
         }
     }
 
@@ -857,6 +863,62 @@ public class ConfiguredObjectTypeRegistry
     public Map<String,String> getDefaultContext()
     {
         return Collections.unmodifiableMap(_defaultContext);
+    }
+
+
+    public Set<Class<? extends ManagedInterface>> getManagedInterfaces(final Class<? extends ConfiguredObject> classObject)
+    {
+        if (!_allManagedInterfaces.containsKey(classObject))
+        {
+            process(classObject);
+        }
+        Set<Class<? extends ManagedInterface>> interfaces = _allManagedInterfaces.get(classObject);
+        return interfaces == null ? Collections.<Class<? extends ManagedInterface>>emptySet() : interfaces;
+    }
+
+
+    private <X extends ConfiguredObject> void processManagedInterfaces(Class<X> clazz)
+    {
+        Set<Class<? extends ManagedInterface>> managedInterfaces = new HashSet<>();
+        if (checkManagedAnnotationAndFindManagedInterfaces(clazz, managedInterfaces, false))
+        {
+            _allManagedInterfaces.put(clazz, Collections.unmodifiableSet(managedInterfaces));
+        }
+        else
+        {
+            _allManagedInterfaces.put(clazz, Collections.<Class<? extends ManagedInterface>>emptySet());
+        }
+    }
+
+    private boolean checkManagedAnnotationAndFindManagedInterfaces(Class<?> type, Set<Class<? extends ManagedInterface>> managedInterfaces, boolean hasManagedAnnotation)
+    {
+        while(type != null && ManagedInterface.class.isAssignableFrom(type))
+        {
+            Annotation[] annotations = type.getAnnotations();
+            for (Annotation annotation : annotations)
+            {
+                if (annotation instanceof ManagedAnnotation)
+                {
+                    hasManagedAnnotation = true;
+                }
+            }
+
+            if (hasManagedAnnotation && type.isInterface() && ManagedInterface.class.isAssignableFrom(type) && type != ManagedInterface.class)
+            {
+                managedInterfaces.add((Class<? extends ManagedInterface>)type);
+            }
+
+            Class<?>[] interfaceClasses = type.getInterfaces();
+            for (Class<?> interfaceClass : interfaceClasses)
+            {
+                if (checkManagedAnnotationAndFindManagedInterfaces(interfaceClass, managedInterfaces, hasManagedAnnotation))
+                {
+                    hasManagedAnnotation = true;
+                }
+            }
+            type = type.getSuperclass();
+        }
+        return hasManagedAnnotation;
     }
 
 }

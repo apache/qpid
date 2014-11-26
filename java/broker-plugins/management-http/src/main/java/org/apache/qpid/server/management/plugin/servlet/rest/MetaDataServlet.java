@@ -24,8 +24,10 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import javax.servlet.ServletException;
@@ -98,7 +100,18 @@ public class MetaDataServlet extends AbstractServlet
     {
         Map<String,Object> typeDetails = new LinkedHashMap<>();
         typeDetails.put("attributes", processAttributes(type));
+        typeDetails.put("managedInterfaces", getManagedInterfaces(type));
         return typeDetails;
+    }
+
+    private Set<String> getManagedInterfaces(Class<? extends ConfiguredObject> type)
+    {
+        Set<String> interfaces = new HashSet<>();
+        for(Class<?> classObject: _instance.getTypeRegistry().getManagedInterfaces(type))
+        {
+            interfaces.add(classObject.getSimpleName());
+        }
+        return interfaces;
     }
 
     private Map<String,Map> processAttributes(final Class<? extends ConfiguredObject> type)
