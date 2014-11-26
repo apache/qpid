@@ -33,4 +33,5 @@
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Runtime-Flow-To-Disk.xml"/>
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Runtime-Background-Recovery.xml"/>
   <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Runtime-Message-Compression.xml"/>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Runtime-Connection-Limit.xml"/>
 </chapter>

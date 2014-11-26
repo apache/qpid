@@ -28,7 +28,7 @@
     take considerable time. During this time no messaging can be performed.</para>
   <para>The Broker has a background recovery feature allows the system to return to operation
     sooner. If enabled the recovery process takes place in the background allow producers and
-    consumers to being work earlier.</para>
+    consumers to begin work earlier.</para>
   <para>The feature respects the message delivery order requirements of standard queues, that is any
     messages arriving whilst the background recovery is in flight won't overtake older messages
     still to be recovered from disk. There is an exception for the out of order queue types whilst
