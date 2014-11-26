@@ -28,6 +28,9 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.server.model.testmodel.Test2RootCategory;
+import org.apache.qpid.server.model.testmodel.Test2RootCategoryImpl;
+import org.apache.qpid.server.model.testmodel.TestChildCategory;
 import org.apache.qpid.server.model.testmodel.TestManagedClass0;
 import org.apache.qpid.server.model.testmodel.TestManagedClass1;
 import org.apache.qpid.server.model.testmodel.TestManagedClass2;
@@ -35,16 +38,13 @@ import org.apache.qpid.server.model.testmodel.TestManagedClass3;
 import org.apache.qpid.server.model.testmodel.TestManagedClass4;
 import org.apache.qpid.server.model.testmodel.TestManagedClass5;
 import org.apache.qpid.server.model.testmodel.TestManagedInterface1;
-import org.apache.qpid.server.model.testmodel.TestManagedInterface2;
-import org.apache.qpid.server.model.testmodel.Test2RootCategory;
-import org.apache.qpid.server.model.testmodel.Test2RootCategoryImpl;
-import org.apache.qpid.server.model.testmodel.TestChildCategory;
+import org.apache.qpid.server.model.testmodel.TestManagedInterface3;
 import org.apache.qpid.server.model.testmodel.TestModel;
 import org.apache.qpid.server.model.testmodel.TestRootCategory;
 import org.apache.qpid.server.model.testmodel.TestRootCategoryImpl;
 import org.apache.qpid.server.plugin.ConfiguredObjectRegistration;
 
-public class ConfigureObjectTypeRegistryTest extends TestCase
+public class ConfiguredObjectTypeRegistryTest extends TestCase
 {
     private ConfiguredObjectTypeRegistry _typeRegistry;
 
@@ -133,10 +133,10 @@ public class ConfigureObjectTypeRegistryTest extends TestCase
     {
         ConfiguredObjectTypeRegistry typeRegistry = createConfiguredObjectTypeRegistry(TestRootCategoryImpl.class, TestManagedClass2.class, TestManagedClass3.class);
 
+        assertEquals("Unexpected interfaces on class implementing 1 interface with annotation",
+                new HashSet<>(Arrays.asList(TestManagedInterface1.class)), typeRegistry.getManagedInterfaces(TestManagedClass2.class));
         assertEquals("Unexpected interfaces on class implementing 2 interfaces with annotation",
-                new HashSet<>(Arrays.asList(TestManagedInterface2.class, TestManagedInterface1.class)), typeRegistry.getManagedInterfaces(TestManagedClass2.class));
-        assertEquals("Unexpected interfaces on class implementing 2 direct interfaces with annotation",
-                new HashSet<>(Arrays.asList(TestManagedInterface2.class, TestManagedInterface1.class)), typeRegistry.getManagedInterfaces(TestManagedClass3.class));
+                new HashSet<>(Arrays.asList(TestManagedInterface3.class, TestManagedInterface1.class)), typeRegistry.getManagedInterfaces(TestManagedClass3.class));
 
     }
 

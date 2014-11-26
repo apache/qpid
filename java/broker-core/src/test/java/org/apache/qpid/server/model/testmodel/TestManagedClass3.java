@@ -22,16 +22,14 @@ package org.apache.qpid.server.model.testmodel;
 
 import java.util.Map;
 
-import org.apache.qpid.server.model.ManagedAnnotation;
 import org.apache.qpid.server.model.ManagedObject;
 
 /**
- * This is a test managed type implementing managed interface TestManagedInterface1 and TestManagedInterface2.
- * The instances of this class will be managed entities of types TestManagedInterface1 and TestManagedInterface2.
+ * This is a test managed type implementing managed interface TestManagedInterface1 and TestManagedInterface3.
+ * The instances of this class will be managed entities of types TestManagedInterface1 and TestManagedInterface3.
  */
 @ManagedObject( category = false , type = "ChildClass3" )
-@ManagedAnnotation
-public class TestManagedClass3 extends TestChildCategoryImpl implements TestManagedInterface1,TestManagedInterface2
+public class TestManagedClass3 extends TestChildCategoryImpl implements TestManagedInterface1,TestManagedInterface3
 {
     public TestManagedClass3(final Map<String, Object> attributes, TestRootCategory<?> parent)
     {

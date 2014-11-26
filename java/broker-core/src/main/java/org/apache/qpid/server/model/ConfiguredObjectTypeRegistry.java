@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.model;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -41,6 +40,7 @@ import java.util.TreeSet;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.plugin.ConfiguredObjectRegistration;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.util.Strings;
 
@@ -385,6 +385,7 @@ public class ConfiguredObjectTypeRegistry
             }
         }
 
+
         for(Class<?> iface : clazz.getInterfaces() )
         {
             if(ConfiguredObject.class.isAssignableFrom(iface))
@@ -455,94 +456,37 @@ public class ConfiguredObjectTypeRegistry
                 return;
             }
 
-
-            for(Class<?> parent : clazz.getInterfaces())
+            doWithAllParents(clazz, new Action<Class<? extends ConfiguredObject>>()
             {
-                if(ConfiguredObject.class.isAssignableFrom(parent))
+                @Override
+                public void performAction(final Class<? extends ConfiguredObject> parent)
                 {
-                    process((Class<? extends ConfiguredObject>) parent);
+                    process(parent);
                 }
-            }
-            final Class<? super X> superclass = clazz.getSuperclass();
-            if(superclass != null && ConfiguredObject.class.isAssignableFrom(superclass))
-            {
-                process((Class<? extends ConfiguredObject>) superclass);
-            }
+            });
 
             final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet = new TreeSet<>(OBJECT_NAME_COMPARATOR);
             final SortedSet<ConfiguredObjectStatistic<?, ?>> statisticSet = new TreeSet<>(OBJECT_NAME_COMPARATOR);
+            final Set<Class<? extends ManagedInterface>> managedInterfaces = new HashSet<>();
 
             _allAttributes.put(clazz, attributeSet);
             _allStatistics.put(clazz, statisticSet);
+            _allManagedInterfaces.put(clazz, managedInterfaces);
 
-            for(Class<?> parent : clazz.getInterfaces())
+            doWithAllParents(clazz, new Action<Class<? extends ConfiguredObject>>()
             {
-                if(ConfiguredObject.class.isAssignableFrom(parent))
+                @Override
+                public void performAction(final Class<? extends ConfiguredObject> parent)
                 {
                     initialiseWithParentAttributes(attributeSet,
                                                    statisticSet,
-                                                   (Class<? extends ConfiguredObject>) parent);
-                }
-            }
-            if(superclass != null && ConfiguredObject.class.isAssignableFrom(superclass))
-            {
-                initialiseWithParentAttributes(attributeSet,
-                                               statisticSet,
-                                               (Class<? extends ConfiguredObject>) superclass);
-            }
-
-
-            for(Method m : clazz.getDeclaredMethods())
-            {
-
-                if(m.isAnnotationPresent(ManagedAttribute.class))
-                {
-                    ManagedAttribute annotation = m.getAnnotation(ManagedAttribute.class);
-
-                    if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
-                    {
-                        throw new ServerScopedRuntimeException("Can only define ManagedAttributes on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
-                    }
-
-                    ConfiguredObjectAttribute<?,?> attribute = new ConfiguredAutomatedAttribute<>(clazz, m, annotation);
-                    if(attributeSet.contains(attribute))
-                    {
-                        attributeSet.remove(attribute);
-                    }
-                    attributeSet.add(attribute);
-                }
-                else if(m.isAnnotationPresent(DerivedAttribute.class))
-                {
-                    DerivedAttribute annotation = m.getAnnotation(DerivedAttribute.class);
-
-                    if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
-                    {
-                        throw new ServerScopedRuntimeException("Can only define DerivedAttributes on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
-                    }
-
-                    ConfiguredObjectAttribute<?,?> attribute = new ConfiguredDerivedAttribute<>(clazz, m, annotation);
-                    if(attributeSet.contains(attribute))
-                    {
-                        attributeSet.remove(attribute);
-                    }
-                    attributeSet.add(attribute);
+                                                   managedInterfaces,
+                                                   parent);
 
                 }
-                else if(m.isAnnotationPresent(ManagedStatistic.class))
-                {
-                    ManagedStatistic statAnnotation = m.getAnnotation(ManagedStatistic.class);
-                    if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
-                    {
-                        throw new ServerScopedRuntimeException("Can only define ManagedStatistics on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
-                    }
-                    ConfiguredObjectStatistic statistic = new ConfiguredObjectStatistic(clazz, m);
-                    if(statisticSet.contains(statistic))
-                    {
-                        statisticSet.remove(statistic);
-                    }
-                    statisticSet.add(statistic);
-                }
-            }
+            });
+
+            processMethods(clazz, attributeSet, statisticSet);
 
             processAttributesTypesAndFields(clazz);
 
@@ -554,26 +498,115 @@ public class ConfiguredObjectTypeRegistry
         }
     }
 
-    private void initialiseWithParentAttributes(final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet,
-                                                       final SortedSet<ConfiguredObjectStatistic<?, ?>> statisticSet,
-                                                       final Class<? extends ConfiguredObject> parent)
+    private static void doWithAllParents(Class<?> clazz, Action<Class<? extends ConfiguredObject>> action)
     {
-        Collection<ConfiguredObjectAttribute<?, ?>> attrs = _allAttributes.get(parent);
-        for(ConfiguredObjectAttribute<?,?> attr : attrs)
+        for(Class<?> parent : clazz.getInterfaces())
         {
-            if(!attributeSet.contains(attr))
+            if(ConfiguredObject.class.isAssignableFrom(parent))
             {
-                attributeSet.add(attr);
+                action.performAction((Class<? extends ConfiguredObject>) parent);
             }
         }
-        Collection<ConfiguredObjectStatistic<?, ?>> stats = _allStatistics.get(parent);
-        for(ConfiguredObjectStatistic<?,?> stat : stats)
+        final Class<?> superclass = clazz.getSuperclass();
+        if(superclass != null && ConfiguredObject.class.isAssignableFrom(superclass))
         {
-            if(!statisticSet.contains(stat))
-            {
-                statisticSet.add(stat);
-            }
+            action.performAction((Class<? extends ConfiguredObject>) superclass);
         }
+    }
+
+    private <X extends ConfiguredObject> void processMethods(final Class<X> clazz,
+                                                             final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet,
+                                                             final SortedSet<ConfiguredObjectStatistic<?, ?>> statisticSet)
+    {
+        for(Method method : clazz.getDeclaredMethods())
+        {
+            processMethod(clazz, attributeSet, statisticSet, method);
+        }
+    }
+
+    private <X extends ConfiguredObject> void processMethod(final Class<X> clazz,
+                                                            final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet,
+                                                            final SortedSet<ConfiguredObjectStatistic<?, ?>> statisticSet,
+                                                            final Method m)
+    {
+        if(m.isAnnotationPresent(ManagedAttribute.class))
+        {
+            processManagedAttribute(clazz, attributeSet, m);
+        }
+        else if(m.isAnnotationPresent(DerivedAttribute.class))
+        {
+            processDerivedAttribute(clazz, attributeSet, m);
+
+        }
+        else if(m.isAnnotationPresent(ManagedStatistic.class))
+        {
+            processManagedStatistic(clazz, statisticSet, m);
+        }
+    }
+
+    private <X extends ConfiguredObject> void processManagedStatistic(final Class<X> clazz,
+                                                                      final SortedSet<ConfiguredObjectStatistic<?, ?>> statisticSet,
+                                                                      final Method m)
+    {
+        ManagedStatistic statAnnotation = m.getAnnotation(ManagedStatistic.class);
+        if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
+        {
+            throw new ServerScopedRuntimeException("Can only define ManagedStatistics on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
+        }
+        ConfiguredObjectStatistic statistic = new ConfiguredObjectStatistic(clazz, m);
+        if(statisticSet.contains(statistic))
+        {
+            statisticSet.remove(statistic);
+        }
+        statisticSet.add(statistic);
+    }
+
+    private <X extends ConfiguredObject> void processDerivedAttribute(final Class<X> clazz,
+                                                                      final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet,
+                                                                      final Method m)
+    {
+        DerivedAttribute annotation = m.getAnnotation(DerivedAttribute.class);
+
+        if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
+        {
+            throw new ServerScopedRuntimeException("Can only define DerivedAttributes on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
+        }
+
+        ConfiguredObjectAttribute<?,?> attribute = new ConfiguredDerivedAttribute<>(clazz, m, annotation);
+        if(attributeSet.contains(attribute))
+        {
+            attributeSet.remove(attribute);
+        }
+        attributeSet.add(attribute);
+    }
+
+    private <X extends ConfiguredObject> void processManagedAttribute(final Class<X> clazz,
+                                                                      final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet,
+                                                                      final Method m)
+    {
+        ManagedAttribute annotation = m.getAnnotation(ManagedAttribute.class);
+
+        if(!clazz.isInterface() || !ConfiguredObject.class.isAssignableFrom(clazz))
+        {
+            throw new ServerScopedRuntimeException("Can only define ManagedAttributes on interfaces which extend " + ConfiguredObject.class.getSimpleName() + ". " + clazz.getSimpleName() + " does not meet these criteria.");
+        }
+
+        ConfiguredObjectAttribute<?,?> attribute = new ConfiguredAutomatedAttribute<>(clazz, m, annotation);
+        if(attributeSet.contains(attribute))
+        {
+            attributeSet.remove(attribute);
+        }
+        attributeSet.add(attribute);
+    }
+
+    private void initialiseWithParentAttributes(final SortedSet<ConfiguredObjectAttribute<?, ?>> attributeSet,
+                                                final SortedSet<ConfiguredObjectStatistic<?, ?>> statisticSet,
+                                                final Set<Class<? extends ManagedInterface>> managedInterfaces,
+                                                final Class<? extends ConfiguredObject> parent)
+    {
+        attributeSet.addAll(_allAttributes.get(parent));
+        statisticSet.addAll(_allStatistics.get(parent));
+        managedInterfaces.addAll(_allManagedInterfaces.get(parent));
     }
 
     private <X extends ConfiguredObject> void processAttributesTypesAndFields(final Class<X> clazz)
@@ -625,25 +658,20 @@ public class ConfiguredObjectTypeRegistry
 
     private void processStateChangeMethods(Class<? extends ConfiguredObject> clazz)
     {
-        Map<State, Map<State, Method>> map = new HashMap<>();
+        final Map<State, Map<State, Method>> map = new HashMap<>();
 
         _stateChangeMethods.put(clazz, map);
 
         addStateTransitions(clazz, map);
-        for(Class<?> parent : clazz.getInterfaces())
+
+        doWithAllParents(clazz, new Action<Class<? extends ConfiguredObject>>()
         {
-            if(ConfiguredObject.class.isAssignableFrom(parent))
+            @Override
+            public void performAction(final Class<? extends ConfiguredObject> parent)
             {
-                inheritTransitions((Class<? extends ConfiguredObject>) parent, map);
+                inheritTransitions(parent, map);
             }
-        }
-
-        Class<?> superclass = clazz.getSuperclass();
-
-        if(superclass != null && ConfiguredObject.class.isAssignableFrom(superclass))
-        {
-            inheritTransitions((Class<? extends ConfiguredObject>) superclass, map);
-        }
+        });
     }
 
     private void inheritTransitions(final Class<? extends ConfiguredObject> parent,
@@ -811,21 +839,23 @@ public class ConfiguredObjectTypeRegistry
 
     protected <X extends ConfiguredObject> Collection<ConfiguredObjectAttribute<? super X, ?>> getAttributes(final Class<X> clazz)
     {
-        if(!_allAttributes.containsKey(clazz))
-        {
-            process(clazz);
-        }
+        processClassIfNecessary(clazz);
         final Collection<ConfiguredObjectAttribute<? super X, ?>> attributes = (Collection) _allAttributes.get(clazz);
         return attributes;
     }
 
-
-    protected Collection<ConfiguredObjectStatistic> getStatistics(final Class<? extends ConfiguredObject> clazz)
+    private <X extends ConfiguredObject> void processClassIfNecessary(final Class<X> clazz)
     {
         if(!_allAttributes.containsKey(clazz))
         {
             process(clazz);
         }
+    }
+
+
+    protected Collection<ConfiguredObjectStatistic> getStatistics(final Class<? extends ConfiguredObject> clazz)
+    {
+        processClassIfNecessary(clazz);
         final Collection<ConfiguredObjectStatistic> statistics = (Collection) _allStatistics.get(clazz);
         return statistics;
     }
@@ -833,28 +863,19 @@ public class ConfiguredObjectTypeRegistry
 
     public Map<String, ConfiguredObjectAttribute<?, ?>> getAttributeTypes(final Class<? extends ConfiguredObject> clazz)
     {
-        if(!_allAttributes.containsKey(clazz))
-        {
-            process(clazz);
-        }
+        processClassIfNecessary(clazz);
         return _allAttributeTypes.get(clazz);
     }
 
     Map<String, AutomatedField> getAutomatedFields(Class<? extends ConfiguredObject> clazz)
     {
-        if(!_allAttributes.containsKey(clazz))
-        {
-            process(clazz);
-        }
+        processClassIfNecessary(clazz);
         return _allAutomatedFields.get(clazz);
     }
 
     Map<State, Map<State, Method>> getStateChangeMethods(final Class<? extends ConfiguredObject> objectClass)
     {
-        if(!_allAttributes.containsKey(objectClass))
-        {
-            process(objectClass);
-        }
+        processClassIfNecessary(objectClass);
         Map<State, Map<State, Method>> map = _stateChangeMethods.get(objectClass);
 
         return map != null ? Collections.unmodifiableMap(map) : Collections.<State, Map<State, Method>>emptyMap();
@@ -868,10 +889,7 @@ public class ConfiguredObjectTypeRegistry
 
     public Set<Class<? extends ManagedInterface>> getManagedInterfaces(final Class<? extends ConfiguredObject> classObject)
     {
-        if (!_allManagedInterfaces.containsKey(classObject))
-        {
-            process(classObject);
-        }
+        processClassIfNecessary(classObject);
         Set<Class<? extends ManagedInterface>> interfaces = _allManagedInterfaces.get(classObject);
         return interfaces == null ? Collections.<Class<? extends ManagedInterface>>emptySet() : interfaces;
     }
@@ -879,46 +897,14 @@ public class ConfiguredObjectTypeRegistry
 
     private <X extends ConfiguredObject> void processManagedInterfaces(Class<X> clazz)
     {
-        Set<Class<? extends ManagedInterface>> managedInterfaces = new HashSet<>();
-        if (checkManagedAnnotationAndFindManagedInterfaces(clazz, managedInterfaces, false))
+        final Set<Class<? extends ManagedInterface>> managedInterfaces = _allManagedInterfaces.get(clazz);
+        for(Class<?> iface : clazz.getInterfaces())
         {
-            _allManagedInterfaces.put(clazz, Collections.unmodifiableSet(managedInterfaces));
-        }
-        else
-        {
-            _allManagedInterfaces.put(clazz, Collections.<Class<? extends ManagedInterface>>emptySet());
-        }
-    }
-
-    private boolean checkManagedAnnotationAndFindManagedInterfaces(Class<?> type, Set<Class<? extends ManagedInterface>> managedInterfaces, boolean hasManagedAnnotation)
-    {
-        while(type != null && ManagedInterface.class.isAssignableFrom(type))
-        {
-            Annotation[] annotations = type.getAnnotations();
-            for (Annotation annotation : annotations)
+            if (iface.isAnnotationPresent(ManagedAnnotation.class) && ManagedInterface.class.isAssignableFrom(iface))
             {
-                if (annotation instanceof ManagedAnnotation)
-                {
-                    hasManagedAnnotation = true;
-                }
+                managedInterfaces.add((Class<? extends ManagedInterface>) iface);
             }
-
-            if (hasManagedAnnotation && type.isInterface() && ManagedInterface.class.isAssignableFrom(type) && type != ManagedInterface.class)
-            {
-                managedInterfaces.add((Class<? extends ManagedInterface>)type);
-            }
-
-            Class<?>[] interfaceClasses = type.getInterfaces();
-            for (Class<?> interfaceClass : interfaceClasses)
-            {
-                if (checkManagedAnnotationAndFindManagedInterfaces(interfaceClass, managedInterfaces, hasManagedAnnotation))
-                {
-                    hasManagedAnnotation = true;
-                }
-            }
-            type = type.getSuperclass();
         }
-        return hasManagedAnnotation;
     }
 
 }

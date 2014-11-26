@@ -20,19 +20,10 @@
  */
 package org.apache.qpid.server.model.testmodel;
 
-import java.util.Map;
+import org.apache.qpid.server.model.ManagedAnnotation;
+import org.apache.qpid.server.model.ManagedInterface;
 
-import org.apache.qpid.server.model.ManagedObject;
-
-/**
- * This is a test managed type implementing managed interface TestManagedInterface2 and having ManagedAnnotation set.
- * The instances of this class will be managed entities of type TestManagedInterface1
- */
-@ManagedObject( category = false , type = "ChildClass2" )
-public class TestManagedClass2 extends TestManagedClass0 implements TestManagedInterface2
+@ManagedAnnotation
+public interface TestManagedInterface3 extends ManagedInterface
 {
-    public TestManagedClass2(final Map<String, Object> attributes, TestRootCategory<?> parent)
-    {
-        super(attributes, parent);
-    }
 }
