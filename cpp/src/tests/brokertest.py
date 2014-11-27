@@ -314,7 +314,7 @@ class Broker(Popen):
         if test_store: cmd += ["--load-module", BrokerTest.test_store_lib,
                                "--test-store-events", self.store_log]
 
-        self.datadir = self.name
+        self.datadir = os.path.abspath(self.name)
         cmd += ["--data-dir", self.datadir]
         if show_cmd: print cmd
         Popen.__init__(self, cmd, expect, stdout=PIPE)
