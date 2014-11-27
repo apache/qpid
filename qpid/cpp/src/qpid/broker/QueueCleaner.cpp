@@ -23,6 +23,7 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/sys/Timer.h"
+#include "qpid/sys/Time.h"
 
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
@@ -74,19 +75,35 @@ void QueueCleaner::setTimer(qpid::sys::Timer* timer) {
 void QueueCleaner::fired()
 {
     queues.eachQueue(boost::bind(&PurgeSet::push, &purging, _1));
-    QPID_LOG(debug, "Requested purge of queues");
+    if (purging.size() == 0) {
+        QueuePtr nullQueuePtr;
+        purging.push(nullQueuePtr);
+    }
+    QPID_LOG(debug, "QueueCleaner requested purge of " << purging.size() << " queues");
 }
 
 QueueCleaner::QueuePtrs::const_iterator QueueCleaner::purge(const QueueCleaner::QueuePtrs& batch)
 {
+    // Purge for one second at most
+    // If running overtime then reschedule through pollable queue
+    sys::AbsTime tmoTime = sys::AbsTime(sys::AbsTime::now(), 1 * sys::TIME_SEC);
+    int nPurged = 0;
     for (QueuePtrs::const_iterator i = batch.begin(); i != batch.end(); ++i) {
-        (*i)->purgeExpired(period);
+        if (sys::AbsTime::now() < tmoTime) {
+            nPurged++;
+            if (*i) {
+                (*i)->purgeExpired(period);
+            }
+        } else {
+            purging.push(*i);
+        }
     }
-    QPID_LOG(debug, "Purged " << batch.size() << " queues");
+    QPID_LOG(debug, "QueueCleaner purged " << nPurged << " of " << batch.size()
+        << " queues in this timeslice");
     if (purging.empty()) {
         task->restart();
         timer->add(task);
-        QPID_LOG(debug, "Restarted purge timer");
+        QPID_LOG(debug, "QueueCleaner restarted purge timer");
     }
     return batch.end();
 }
