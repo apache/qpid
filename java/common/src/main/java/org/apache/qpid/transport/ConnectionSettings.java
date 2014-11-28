@@ -61,8 +61,8 @@ public class ConnectionSettings
     private String protocol = "tcp";
     private String host = "localhost";
     private String vhost;
-    private String username = "guest";
-    private String password = "guest";
+    private String username;
+    private String password;
     private int port = 5672;
     private boolean tcpNodelay = QpidProperty.booleanProperty(Boolean.TRUE, QPID_TCP_NODELAY_PROP_NAME, AMQJ_TCP_NODELAY_PROP_NAME).get();
     private int maxChannelCount = 32767;
