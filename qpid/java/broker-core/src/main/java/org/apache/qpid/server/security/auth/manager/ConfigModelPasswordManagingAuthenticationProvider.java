@@ -37,6 +37,7 @@ import org.apache.qpid.server.configuration.updater.VoidTaskWithException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
+import org.apache.qpid.server.model.PreferencesSupportingAuthenticationProvider;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
@@ -45,7 +46,7 @@ import org.apache.qpid.server.security.auth.UsernamePrincipal;
 
 public abstract class ConfigModelPasswordManagingAuthenticationProvider<X extends ConfigModelPasswordManagingAuthenticationProvider<X>>
         extends AbstractAuthenticationManager<X>
-        implements PasswordCredentialManagingAuthenticationProvider<X>
+        implements PasswordCredentialManagingAuthenticationProvider<X>, PreferencesSupportingAuthenticationProvider
 {
     static final Charset ASCII = Charset.forName("ASCII");
     protected Map<String, ManagedUser> _users = new ConcurrentHashMap<>();

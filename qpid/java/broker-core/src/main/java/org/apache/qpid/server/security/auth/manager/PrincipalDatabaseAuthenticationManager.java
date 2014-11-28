@@ -47,6 +47,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ExternalFileBasedAuthenticationManager;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.PreferencesProvider;
+import org.apache.qpid.server.model.PreferencesSupportingAuthenticationProvider;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.User;
@@ -58,7 +59,7 @@ import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
 public abstract class PrincipalDatabaseAuthenticationManager<T extends PrincipalDatabaseAuthenticationManager<T>>
         extends AbstractAuthenticationManager<T>
-        implements ExternalFileBasedAuthenticationManager<T>
+        implements ExternalFileBasedAuthenticationManager<T>, PreferencesSupportingAuthenticationProvider
 {
 
     private static final Logger LOGGER = Logger.getLogger(PrincipalDatabaseAuthenticationManager.class);
