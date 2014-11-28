@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,21 +15,22 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.security.auth.manager;
 
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.model.ManagedObject;
-import org.apache.qpid.server.model.PreferencesSupportingAuthenticationProvider;
+package org.apache.qpid.server.model;
 
-@ManagedObject( category = false, type = "External" )
-public interface ExternalAuthenticationManager<T extends ExternalAuthenticationManager<T>> extends AuthenticationProvider<T>, PreferencesSupportingAuthenticationProvider
+@ManagedAnnotation
+public interface PreferencesSupportingAuthenticationProvider extends ManagedInterface
 {
-    String PROVIDER_TYPE = "External";
-    String ATTRIBUTE_USE_FULL_DN = "useFullDN";
+    /**
+     * Returns the preferences provider associated with this authentication provider
+     * @return PreferencesProvider
+     */
+    PreferencesProvider<?> getPreferencesProvider();
 
-    @ManagedAttribute( description = "Use the full DN as the Username")
-    boolean getUseFullDN();
+    /**
+     * Sets the preferences provider
+     * @param preferencesProvider
+     */
+    void setPreferencesProvider(PreferencesProvider<?> preferencesProvider);
 }

@@ -24,10 +24,11 @@ import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.PreferencesSupportingAuthenticationProvider;
 import org.apache.qpid.server.model.TrustStore;
 
 @ManagedObject( category = false, type = "SimpleLDAP" )
-public interface SimpleLDAPAuthenticationManager<X extends SimpleLDAPAuthenticationManager<X>> extends AuthenticationProvider<X>
+public interface SimpleLDAPAuthenticationManager<X extends SimpleLDAPAuthenticationManager<X>> extends AuthenticationProvider<X>, PreferencesSupportingAuthenticationProvider
 {
     String PROVIDER_TYPE = "SimpleLDAP";
     String PROVIDER_URL = "providerUrl";
