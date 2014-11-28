@@ -15,17 +15,14 @@
   ~ limitations under the License.
   -->
 <div class="dijitHidden">
-    <div data-dojo-type="dijit.Dialog" data-dojo-props="title:'Preferences Provider'" id="addPreferencesProvider">
-        <form id="formAddPreferencesProvider" method="post" data-dojo-type="dijit.form.Form">
-            <input type="hidden" id="preferencesProvider.id" name="id"/>
-            <div style="width:420px; overflow: auto">
-                <div id="addPreferencesProvider.preferencesProvider"></div>
-            </div>
-            <div class="dijitDialogPaneActionBar">
-                <!-- submit buttons -->
-                <input type="submit" value="Save Preferences Provider" data-dojo-props="label: 'Save Preferences Provider'" data-dojo-type="dijit.form.Button" />
-                <input type="button" value="Cancel" data-dojo-props="label: 'Cancel'" data-dojo-type="dijit.form.Button" id="addPreferencesProvider.cancelButton"/>
-            </div>
-        </form>
+    <div data-dojo-type="dijit/Dialog" data-dojo-props="title:'Preferences Provider'" id="addPreferencesProvider">
+
+        <div id="addPreferencesProvider.preferencesProvider" data-dojo-type="qpid/management/preferencesprovider/PreferencesProviderForm"></div>
+
+        <div class="dijitDialogPaneActionBar">
+            <!-- submit buttons -->
+            <input type="button" value="Save" data-dojo-props="label: 'Save'" data-dojo-type="dijit/form/Button" id="addPreferencesProvider.saveButton"/>
+            <input type="button" value="Cancel" data-dojo-props="label: 'Cancel'" data-dojo-type="dijit/form/Button" id="addPreferencesProvider.cancelButton"/>
+        </div>
     </div>
 </div>
