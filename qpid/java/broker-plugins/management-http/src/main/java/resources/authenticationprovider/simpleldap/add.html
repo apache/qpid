@@ -1,0 +1,129 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+<div>
+    <div class="clear">
+        <div class="formLabel-labelCell tableContainer-labelCell">LDAP server URL*:</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" class="providerUrl"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'providerUrl',
+                              required: true,
+                              placeHolder: 'ldap://host:port',
+                              title: 'Enter LDAP server URL',
+                              promptMessage: 'LDAP server URL'"/>
+        </div>
+    </div>
+    <div class="clear">
+        <div class="formLabel-labelCell tableContainer-labelCell">Search context*:</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" class="searchContext"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'searchContext',
+                              required: true,
+                              placeHolder: 'dc=users,dc=example,dc=com',
+                              title: 'Enter search context',
+                              promptMessage: 'The distinguished name of the search base object'"/>
+        </div>
+    </div>
+    <div class="clear">
+        <div class="formLabel-labelCell tableContainer-labelCell">Search filter*:</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" class="searchFilter"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'searchFilter',
+                              required: true,
+                              placeHolder: '(uid={0})',
+                              title: 'Enter user search filter ',
+                              promptMessage: 'DN template to find an LDAP user entry by provided user name'"/>
+        </div>
+    </div>
+    <div class="clear">
+        <div class="formLabel-labelCell tableContainer-labelCell">Search username:</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" class="searchUsername"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'searchUsername',
+                              placeHolder: 'username',
+                              title: 'Enter username for authenticated search',
+                              promptMessage: 'Username for authenticated search'"/>
+        </div>
+    </div>
+    <div class="clear">
+        <div class="formLabel-labelCell tableContainer-labelCell">Search password:</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" class="searchPassword"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'searchPassword',
+                              placeHolder: '****',
+                              title: 'Enter password for authenticated search',
+                              promptMessage: 'Password for authenticated search'"/>
+        </div>
+    </div>
+    <div class="clear">
+        <div class="formLabel-labelCell tableContainer-labelCell">Trust Store:</div>
+        <div class="tableContainer-valueCell formLabel-controlCell">
+            <select class="trustStore" data-dojo-type="dijit/form/FilteringSelect"
+                    data-dojo-props="
+                                    required: false,
+                                    name: 'trustStore',
+                                    placeHolder: 'Select trust store',
+                                    promptMessage: 'Trust store containing certificate for SSL transport',
+                                    title: 'Select trust store for secure connection',
+                                    searchAttr: 'name'">
+            </select>
+        </div>
+    </div>
+    <div class="clear">
+        <div class="formLabel-labelCell tableContainer-labelCell">Bind without search:</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" class="bindWithoutSearch"
+                   data-dojo-type="dijit/form/CheckBox"
+                   data-dojo-props=" name: 'bindWithoutSearch' " />
+        </div>
+    </div>
+    <div class="clear">
+        <div class="formLabel-labelCell tableContainer-labelCell">LDAP Context Factory:</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" class="ldapContextFactory"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'ldapContextFactory',
+                              placeHolder: 'com.sun.jndi.ldap.LdapCtxFactory',
+                              title: 'Enter fully qualified class name for LDAP Context Factory',
+                              promptMessage: 'Fully qualified class name for LDAP Context Factory'"/>
+        </div>
+    </div>
+    <div class="clear">
+        <div class="formLabel-labelCell tableContainer-labelCell">LDAP authentication URL</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" class="providerAuthUrl"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'providerAuthUrl',
+                              placeHolder: 'ldap://host:port',
+                              title: 'Enter optional LDAP authentication URL',
+                              promptMessage: 'URL of LDAP server for performing \'ldap bind\'. If not specified, the LDAP server URL will be used for both searches and authentications'"/>
+        </div>
+    </div>
+</div>

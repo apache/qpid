@@ -152,8 +152,12 @@ define(["dojo/_base/xhr",
 
            util.isProviderManagingUsers = function(type)
            {
-               return (type === "PlainPasswordFile" || type === "Base64MD5PasswordFile" || type === "SCRAM-SHA-1"
-                        || type === "SCRAM-SHA-256" || type === "Plain" || type === "MD5" );
+               return metadata.implementsManagedInterface("AuthenticationProvider", type, "PasswordCredentialManagingAuthenticationProvider");
+           };
+
+           util.supportsPreferencesProvider = function(type)
+           {
+               return metadata.implementsManagedInterface("AuthenticationProvider", type, "PreferencesSupportingAuthenticationProvider");
            };
 
            util.showSetAttributesDialog = function(attributeWidgetFactories, data, putURL, dialogTitle, category, type, appendNameToUrl)

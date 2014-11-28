@@ -26,13 +26,15 @@ define(["dojo/_base/xhr",
         "dojo/parser",
         "dojo/_base/array",
         "dojo/_base/event",
-        'dojo/_base/json',
+        'dojo/json',
         "dojo/store/Memory",
         "dijit/form/FilteringSelect",
         "dojo/_base/connect",
         "dojo/dom-style",
-        "qpid/management/PreferencesProviderFields",
         "qpid/common/util",
+        "qpid/common/metadata",
+        "dojo/text!addAuthenticationProvider.html",
+        "qpid/management/preferencesprovider/PreferencesProviderForm",
         /* dojox/ validate resources */
         "dojox/validate/us", "dojox/validate/web",
         /* basic dijit classes */
@@ -46,252 +48,136 @@ define(["dojo/_base/xhr",
         "dojox/form/BusyButton", "dojox/form/CheckedMultiSelect",
         "dojox/layout/TableContainer",
         "dojo/domReady!"],
-    function (xhr, dom, construct, win, registry, parser, array, event, json, Memory, FilteringSelect, connect, domStyle, PreferencesProviderFields, util) {
-
-        var addAuthenticationProvider = {};
-
-        var node = construct.create("div", null, win.body(), "last");
-
-        var convertToAuthenticationProvider = function convertToAuthenticationProvider(formValues)
+    function (xhr, dom, construct, win, registry, parser, array, event, json, Memory, FilteringSelect, connect, domStyle, util, metadata, template)
+    {
+        var addAuthenticationProvider =
         {
-            var newProvider = {};
+            init:function()
+            {
+                var that=this;
+                this.containerNode = construct.create("div", {innerHTML: template});
+                parser.parse(this.containerNode);
 
-            newProvider.name = dijit.byId("formAddAuthenticationProvider.name").value;
-            newProvider.type = dijit.byId("authenticationProviderType").value;
-            var id = dojo.byId("formAddAuthenticationProvider.id").value;
-            if (id)
+                var authenticationProviderName = registry.byId("addAuthenticationProvider.name");
+                authenticationProviderName.set("regExpGen", util.nameOrContextVarRegexp);
+
+                this.dialog = registry.byId("addAuthenticationProvider");
+                this.addButton = registry.byId("addAuthenticationProvider.addButton");
+                this.cancelButton = registry.byId("addAuthenticationProvider.cancelButton");
+                this.cancelButton.on("click", function(e){that._cancel(e);});
+                this.addButton.on("click", function(e){that._add(e);});
+
+                this.authenticationProviderTypeFieldsContainer = dom.byId("addAuthenticationProvider.typeFields");
+                this.authenticationProviderForm = registry.byId("addAuthenticationProvider.form");
+                this.authenticationProviderType = registry.byId("addAuthenticationProvider.type");
+                this.supportedAuthenticationProviderTypes = metadata.getTypesForCategory("AuthenticationProvider");
+                this.supportedAuthenticationProviderTypes.sort();
+                var authenticationProviderTypeStore = util.makeTypeStore(this.supportedAuthenticationProviderTypes);
+                this.authenticationProviderType.set("store", authenticationProviderTypeStore);
+                this.authenticationProviderType.on("change", function(type){that._authenticationProviderTypeChanged(type);});
+
+                this.preferencesProviderForm = new qpid.preferencesprovider.PreferencesProviderForm({disabled: true});
+                this.preferencesProviderForm.placeAt(dom.byId("addPreferencesProvider.form"));
+            },
+            show:function(providerName)
             {
-                newProvider.id = id;
-            }
-            for(var propName in formValues)
-            {
-                if(formValues.hasOwnProperty(propName))
+                this.authenticationProviderForm.reset();
+                this.preferencesProviderForm.reset();
+
+                this.dialog.show();
+                if (!this.resizeEventRegistered)
                 {
-                    if (propName.indexOf("preferencesProvider") == 0)
+                    this.resizeEventRegistered = true;
+                    util.resizeContentAreaAndRepositionDialog(dom.byId("addAuthenticationProvider.contentPane"), this.dialog);
+                }
+            },
+            _cancel: function(e)
+            {
+                event.stop(e);
+                this.dialog.hide();
+            },
+            _add: function(e)
+            {
+                event.stop(e);
+                this._submit();
+            },
+            _submit: function()
+            {
+                if(this.authenticationProviderForm.validate() && this.preferencesProviderForm.validate())
+                {
+                    var success = false,failureReason=null;
+
+                    var authenticationProviderData = util.getFormWidgetValues(this.authenticationProviderForm); // TODO initialValues
+
+                    var encodedAuthenticationProviderName = encodeURIComponent(authenticationProviderData.name);
+                    xhr.put({
+                        url: "api/latest/authenticationprovider/" + encodedAuthenticationProviderName,
+                        sync: true,
+                        handleAs: "json",
+                        headers: { "Content-Type": "application/json"},
+                        putData: json.stringify(authenticationProviderData),
+                        load: function(x) {success = true; },
+                        error: function(error) {success = false; failureReason = error;}
+                    });
+
+                    if(success === true)
                     {
-                      continue;
-                    }
-                    if(formValues[ propName ] !== "") {
-                        newProvider[ propName ] = formValues[propName];
+                        var preferencesProviderResult = this.preferencesProviderForm.submit(encodedAuthenticationProviderName);
+                        success = preferencesProviderResult.success;
+                        failureReason = preferencesProviderResult.failureReason;
                     }
 
+                    if (success == true)
+                    {
+                        this.dialog.hide();
+                    }
+                    else
+                    {
+                        util.xhrErrorHandler(failureReason);
+                    }
+                }
+                else
+                {
+                    alert('Form contains invalid data. Please correct first');
+                }
+            },
+            _authenticationProviderTypeChanged: function(type)
+            {
+                this._typeChanged(type, this.authenticationProviderTypeFieldsContainer, "qpid/management/authenticationprovider/", "AuthenticationProvider" );
+            },
+            _typeChanged: function(type, typeFieldsContainer, baseUrl, category )
+            {
+                var widgets = registry.findWidgets(typeFieldsContainer);
+                array.forEach(widgets, function(item) { item.destroyRecursive();});
+                this.preferencesProviderForm.set("disabled", !type || !util.supportsPreferencesProvider(type));
+                if (type)
+                {
+                    var that = this;
+                    require([ baseUrl + type.toLowerCase() + "/add"], function(typeUI)
+                    {
+                        try
+                        {
+                            typeUI.show({containerNode:typeFieldsContainer, parent: that});
+                            util.applyMetadataToWidgets(typeFieldsContainer, category, type);
+                        }
+                        catch(e)
+                        {
+                            console.warn(e);
+                        }
+                    });
                 }
             }
-            return newProvider;
-        }
+        };
 
-        var showFieldSets = function showFieldSets(providerType, fieldSets)
+        try
         {
-            for(var key in fieldSets)
-            {
-                var layout = fieldSets[key];
-                var disabled = key != providerType;
-                var displayValue = key == providerType ? "block" : "none";
-                var widgets = layout.getDescendants();
-                array.forEach(widgets, function(widget)
-                {
-                    widget.set("disabled", disabled);
-                });
-
-                domStyle.set(fieldSets[key].domNode, "display", displayValue);
-            }
-            if (fieldSets[providerType])
-            {
-                fieldSets[providerType].getParent().resize();
-            }
+            addAuthenticationProvider.init();
         }
-
-        var getAuthenticationProviderWidgetId = function getAuthenticationProviderWidgetId(providerType, attribute)
+        catch(e)
         {
-            return "ap_" + providerType + "Field" + attribute;
+            console.warn(e);
         }
-
-        var showPreferencesProviderFields = function showPreferencesProviderFields(provider)
-        {
-          var preferencesProviderDiv = dojo.byId("addAuthenticationProvider.preferencesProvider");
-          var preferencesProviderPanel = dijit.byId("addAuthenticationProvider.preferencesProviderPanel");
-          if (provider && provider.type == "Anonymous")
-          {
-            preferencesProviderPanel.domNode.style.display = 'none';
-          }
-          else
-          {
-            preferencesProviderPanel.domNode.style.display = 'block';
-            PreferencesProviderFields.show(preferencesProviderDiv, provider && provider.preferencesproviders ? provider.preferencesproviders[0] : null);
-          }
-        }
-
-        var loadProviderAndDisplayForm = function loadProviderAndDisplayForm(providerName, dialog)
-        {
-            if (providerName)
-            {
-                xhr.get({
-                    url: "api/latest/authenticationprovider/" + encodeURIComponent(providerName),
-                    content: { actuals: true },
-                    handleAs: "json"
-                }).then(
-                   function(data) {
-                       var provider = data[0];
-                       var providerType = provider.type;
-                       var nameField = dijit.byId("formAddAuthenticationProvider.name");
-                       nameField.set("value", provider.name);
-                       nameField.set("disabled", true);
-                       nameField.set("regExpGen", util.nameOrContextVarRegexp);
-                       dialog.providerChooser.set("value", providerType);
-                       dialog.providerChooser.set("disabled", true);
-                       dojo.byId("formAddAuthenticationProvider.id").value=provider.id;
-                       for(var attribute in provider)
-                       {
-                           if (provider.hasOwnProperty(attribute))
-                           {
-                               var widject = dijit.byId(getAuthenticationProviderWidgetId(providerType, attribute));
-                               if (widject)
-                               {
-                                   widject.set("value", provider[attribute]);
-                               }
-                           }
-                       }
-                       showPreferencesProviderFields(provider);
-                       registry.byId("addAuthenticationProvider").show();
-               });
-            }
-            else
-            {
-                showPreferencesProviderFields();
-                registry.byId("addAuthenticationProvider").show();
-            }
-        }
-
-        xhr.get({url: "addAuthenticationProvider.html",
-                 sync: true,
-                 load:  function(data) {
-                            var theForm;
-                            node.innerHTML = data;
-                            addAuthenticationProvider.dialogNode = dom.byId("addAuthenticationProvider");
-                            parser.instantiate([addAuthenticationProvider.dialogNode]);
-                            theForm = registry.byId("formAddAuthenticationProvider");
-                            theForm.on("submit", function(e) {
-
-                                event.stop(e);
-                                if(theForm.validate()){
-
-                                    var newAuthenticationManager = convertToAuthenticationProvider(theForm.getValues());
-                                    var that = this;
-
-                                    xhr.put({url: "api/latest/authenticationprovider/" + encodeURIComponent(newAuthenticationManager.name),
-                                             sync: true, handleAs: "json",
-                                             headers: { "Content-Type": "application/json"},
-                                             putData: json.toJson(newAuthenticationManager),
-                                             load: function(x) {that.success = true; },
-                                             error: function(error) {that.success = false; that.failureReason = error;}});
-
-                                    if(this.success === true)
-                                    {
-                                      if (PreferencesProviderFields.save(newAuthenticationManager.name))
-                                      {
-                                        registry.byId("addAuthenticationProvider").hide();
-                                      }
-                                    }
-                                    else
-                                    {
-                                        util.xhrErrorHandler(this.failureReason);
-                                    }
-                                    return false;
-                                }else{
-                                    alert('Form contains invalid data.  Please correct first');
-                                    return false;
-                                }
-                            });
-                        }});
-
-        addAuthenticationProvider.show = function(providerName) {
-            var that = this;
-            registry.byId("formAddAuthenticationProvider").reset();
-            dojo.byId("formAddAuthenticationProvider.id").value="";
-            registry.byId("formAddAuthenticationProvider.name").set("disabled", false);
-            if (this.providerChooser)
-            {
-                this.providerChooser.set("disabled", false);
-            }
-
-            if (!that.hasOwnProperty("providerFieldSets"))
-            {
-                xhr.get({
-                    url: "service/helper?action=ListAuthenticationProviderAttributes",
-                    handleAs: "json"
-                }).then(
-                   function(data) {
-                       var providers =  [];
-                       var providerIndex = 0;
-                       that.providerFieldSetsContainer = dom.byId("addAuthenticationProvider.fieldSets");
-                       that.providerFieldSets = [];
-
-                       for (var providerType in data) {
-                           if (data.hasOwnProperty(providerType)) {
-                               providers[providerIndex++] = {id: providerType, name: providerType};
-
-                               var attributes = data[providerType].attributes;
-                               var resources = data[providerType].descriptions;
-                               var layout = new dojox.layout.TableContainer( {
-                                   id: providerType + "FieldSet",
-                                   cols: 1,
-                                   "labelWidth": "200",
-                                   showLabels: true,
-                                   orientation: "horiz"
-                               });
-                               for(var i=0; i < attributes.length; i++) {
-                                   if ("type" == attributes[i])
-                                   {
-                                       continue;
-                                   }
-                                   var labelValue = attributes[i];
-                                   if (resources && resources[attributes[i]])
-                                   {
-                                       labelValue = resources[attributes[i]];
-                                   }
-                                   var text = new dijit.form.TextBox({
-                                       label: labelValue + ":",
-                                       id: getAuthenticationProviderWidgetId(providerType, attributes[i]),
-                                       name: attributes[i]
-                                   });
-                                   layout.addChild(text);
-                               }
-                               layout.placeAt("addAuthenticationProvider.fieldSets");
-                               that.providerFieldSets[providerType]=layout;
-                               layout.startup();
-                           }
-                       }
-
-                       var providersStore = new Memory({ data: providers });
-                       if(that.providerChooser) {
-                           that.providerChooser.destroy( false );
-                       }
-
-                       var providersDiv = dom.byId("addAuthenticationProvider.selectAuthenticationProviderDiv");
-                       var input = construct.create("input", {id: "addAuthenticationProviderType"}, providersDiv);
-
-                       that.providerChooser = new FilteringSelect({ id: "authenticationProviderType",
-                                                                 name: "type",
-                                                                 store: providersStore,
-                                                                 searchAttr: "name"}, input);
-                       that.providerChooser.on("change",
-                           function(value)
-                           {
-                               dijit.byId("addAuthenticationProvider.preferencesProviderPanel").domNode.style.display = (value == "Anonymous" ? "none" : "block");
-                               showFieldSets(that.providerChooser.value, that.providerFieldSets);
-                           }
-                       );
-                       var providerType = providers[0].name;
-                       that.providerChooser.set("value", providerType);
-                       showFieldSets(providerType, that.providerFieldSets);
-                       loadProviderAndDisplayForm(providerName, that)
-               });
-            }
-            else
-            {
-                loadProviderAndDisplayForm(providerName, that);
-            }
-        }
-
         return addAuthenticationProvider;
-    });
+    }
+
+);

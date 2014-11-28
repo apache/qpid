@@ -15,32 +15,50 @@
   ~ limitations under the License.
   -->
 <div class="dijitHidden">
-    <div data-dojo-type="dijit.Dialog" data-dojo-props="title:'Authentication Provider'" id="addAuthenticationProvider">
-        <form id="formAddAuthenticationProvider" method="post" dojoType="dijit.form.Form">
-            <div style="width:420px; overflow: auto">
-                <table class="tableContainer-table tableContainer-table-horiz" width="100%" cellspacing="1">
-                <tr>
-                    <td class="tableContainer-labelCell">Type*:</td>
-                    <td class="tableContainer-valueCell"><div id="addAuthenticationProvider.selectAuthenticationProviderDiv"></div></td>
-                </tr>
-                <tr>
-                    <td class="tableContainer-labelCell">Name*:</td>
-                    <td class="tableContainer-valueCell"><input type="text" required="true" name="name"
-                        id="formAddAuthenticationProvider.name" placeholder="Name"
-                        dojoType="dijit.form.ValidationTextBox" missingMessage="A name must be supplied" /></td>
-                </tr>
-                </table>
-                <input type="hidden" id="formAddAuthenticationProvider.id" name="id"/>
-                <div id="addAuthenticationProvider.fieldSets"></div>
-                <br/>
-                <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Preferences Provider',  open: true" id="addAuthenticationProvider.preferencesProviderPanel">
-                  <div id="addAuthenticationProvider.preferencesProvider"></div>
+    <div data-dojo-type="dijit/Dialog" data-dojo-props="title:'Authentication Provider'" id="addAuthenticationProvider">
+        <div id="addAuthenticationProvider.contentPane">
+            <form id="addAuthenticationProvider.form" method="post" data-dojo-type="dijit/form/Form">
+                <div class="formBox">
+                    <fieldset>
+                        <legend>Authentication Provider</legend>
+                        <div class="clear">
+                            <div class="formLabel-labelCell tableContainer-labelCell">Name*:</div>
+                            <div class="formLabel-controlCell tableContainer-valueCell">
+                                <input type="text" id="addAuthenticationProvider.name"
+                                       data-dojo-type="dijit/form/ValidationTextBox"
+                                       data-dojo-props="
+                                  name: 'name',
+                                  placeHolder: 'authentication provider name',
+                                  required: true,
+                                  promptMessage: 'Name of authentication provider, must be unique',
+                                  title: 'Enter a unique authentication provider name per broker'" />
+                            </div>
+                        </div>
+                        <div class="clear">
+                            <div class="formLabel-labelCell tableContainer-labelCell">Type*:</div>
+                            <div class="tableContainer-valueCell formLabel-controlCell">
+                                <select id="addAuthenticationProvider.type" data-dojo-type="dijit/form/FilteringSelect"
+                                        data-dojo-props="
+                                        name: 'type',
+                                        required: true,
+                                        placeHolder: 'select authentication provider type',
+                                        promptMessage: 'Type of  authentication provider',
+                                        title: 'Select  authentication provider type',
+                                        searchAttr: 'name'">
+                                </select>
+                            </div>
+                        </div>
+                        <div class="clear"></div>
+                        <div id="addAuthenticationProvider.typeFields"></div>
+                    </fieldset>
                 </div>
-            </div>
-            <div class="dijitDialogPaneActionBar">
-                <!-- submit buttons -->
-                <input type="submit" value="Save Authentication Provider" label="Save Authentication Provider" dojoType="dijit.form.Button" />
-            </div>
-        </form>
+            </form>
+
+            <div id="addPreferencesProvider.form" xxx-data-dojo-type="qpid/management/preferencesprovider/PreferencesProviderForm"></div>
+        </div>
+        <div class="dijitDialogPaneActionBar">
+            <button data-dojo-type="dijit/form/Button" id="addAuthenticationProvider.addButton" data-dojo-props="label: 'Add'" type="submit"></button>
+            <button data-dojo-type="dijit/form/Button" id="addAuthenticationProvider.cancelButton" data-dojo-props="label: 'Cancel'" ></button>
+        </div>
     </div>
 </div>

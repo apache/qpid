@@ -18,76 +18,73 @@
  * under the License.
  *
  */
-define(["dojo/_base/xhr",
-        "dojo/dom",
-        "dojo/dom-construct",
-        "dojo/query",
-        "dojo/_base/window",
-        "dijit/registry",
-        "dojo/parser",
-        "dojo/_base/array",
+define([
         "dojo/_base/event",
-        'dojo/_base/json',
-        "dojo/store/Memory",
-        "dijit/form/FilteringSelect",
-        "dojo/_base/connect",
-        "dojo/dom-style",
-        "dojo/string",
+        "dojo/dom-construct",
+        "dojo/parser",
+        "dijit/registry",
+        "qpid/management/preferencesprovider/PreferencesProviderForm",
+        "qpid/common/util",
+        "dojo/text!addPreferencesProvider.html",
         "dojox/html/entities",
-        "qpid/management/PreferencesProviderFields",
         "dojox/validate/us",
         "dojox/validate/web",
         "dijit/Dialog",
-        "dijit/form/CheckBox",
-        "dijit/form/Textarea",
-        "dijit/form/TextBox",
-        "dijit/form/ValidationTextBox",
         "dijit/form/Button",
-        "dijit/form/Form",
-        "dojox/form/BusyButton",
-        "dojox/form/CheckedMultiSelect",
-        "dojox/layout/TableContainer",
         "dojo/domReady!"],
-    function (xhr, dom, construct, query, win, registry, parser, array, event, json, Memory, FilteringSelect, connect, domStyle, string, entities, PreferencesProviderFields) {
+    function ( event, construct, parser, registry, PreferencesProviderForm, util, template, entities) {
 
-        var addPreferencesProvider = {};
+        var addPreferencesProvider =
+        {
+            init: function()
+            {
+                var that=this;
+                this.containerNode = construct.create("div", {innerHTML: template});
+                parser.parse(this.containerNode);
 
-        var node = construct.create("div", null, win.body(), "last");
+                this.preferencesProviderForm = registry.byId("addPreferencesProvider.preferencesProvider");
+                this.dialog = registry.byId("addPreferencesProvider");
 
-        xhr.get({url: "addPreferencesProvider.html",
-                 sync: true,
-                 load:  function(data) {
-                            node.innerHTML = data;
-                            addPreferencesProvider.dialogNode = dom.byId("addPreferencesProvider");
-                            parser.instantiate([addPreferencesProvider.dialogNode]);
+                var cancelButton = registry.byId("addPreferencesProvider.cancelButton");
+                cancelButton.on("click", function() { that.dialog.hide(); });
 
-                            var cancelButton = registry.byId("addPreferencesProvider.cancelButton");
-                            cancelButton.on("click", function(){
-                              registry.byId("addPreferencesProvider").hide();
-                            });
-                            var theForm = registry.byId("formAddPreferencesProvider");
-                            theForm.on("submit", function(e) {
+                var saveButton = registry.byId("addPreferencesProvider.saveButton");
+                saveButton.on("click", function()
+                {
+                    var result = that.preferencesProviderForm.submit(encodeURIComponent(addPreferencesProvider.authenticationProviderName));
+                    if (result.success)
+                    {
+                        that.dialog.hide();
+                    }
+                    else
+                    {
+                        util.xhrErrorHandler(result.failureReason);
+                    }
+                });
+            },
+            show: function(authenticationProviderName, providerName)
+            {
+                this.authenticationProviderName = authenticationProviderName;
+                this.dialog.set("title", (providerName ? "Edit preferences provider '" + entities.encode(String(providerName)) + "' " : "Add preferences provider ") + " for '" + entities.encode(String(authenticationProviderName)) + "' ");
+                if (providerName)
+                {
+                    this.preferencesProviderForm.load(authenticationProviderName, providerName);
+                }
+                else
+                {
+                    this.preferencesProviderForm.reset();
+                }
+                this.dialog.show();
+            }
+        };
 
-                                event.stop(e);
-                                if(theForm.validate()){
-                                    if(PreferencesProviderFields.save(addPreferencesProvider.authenticationProviderName))
-                                    {
-                                        registry.byId("addPreferencesProvider").hide();
-                                    }
-                                    return false;
-                                }else{
-                                    alert('Form contains invalid data.  Please correct first');
-                                    return false;
-                                }
-                            });
-                        }});
-
-        addPreferencesProvider.show = function(authenticationProviderName, providerName) {
-            this.authenticationProviderName = authenticationProviderName;
-            PreferencesProviderFields.show(dom.byId("addPreferencesProvider.preferencesProvider"), providerName, authenticationProviderName)
-            var dialog = registry.byId("addPreferencesProvider");
-            dialog.set("title", (providerName ? "Edit preferences provider '" + entities.encode(String(providerName)) + "' " : "Add preferences provider ") + " for '" + entities.encode(String(authenticationProviderName)) + "' ")
-            dialog.show();
+        try
+        {
+            addPreferencesProvider.init();
+        }
+        catch(e)
+        {
+            console.warn("Initialisation of add preferences dialog failed", e);
         }
 
         return addPreferencesProvider;

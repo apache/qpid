@@ -65,6 +65,10 @@ define(["dojo/_base/xhr",
            }
         }
         return values;
+     },
+     implementsManagedInterface: function (category, type, managedInterfaceName)
+     {
+        return this.getMetaData(category, type).managedInterfaces.indexOf(managedInterfaceName) >= 0;
      }
    };
 

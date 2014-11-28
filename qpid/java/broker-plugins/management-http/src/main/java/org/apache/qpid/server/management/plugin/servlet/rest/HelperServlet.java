@@ -34,7 +34,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListAccessControlProviderAttributes;
-import org.apache.qpid.server.management.plugin.servlet.rest.action.ListAuthenticationProviderAttributes;
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListBrokerAttribute;
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListGroupProviderAttributes;
 import org.apache.qpid.server.management.plugin.servlet.rest.action.ListTimeZones;
@@ -55,7 +54,6 @@ public class HelperServlet extends AbstractServlet
         _mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
 
         Action[] supportedActions = {
-                new ListAuthenticationProviderAttributes(),
                 new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOSTNODE_TYPES, "ListVirtualHostNodeTypes"),
                 new ListBrokerAttribute(Broker.SUPPORTED_VIRTUALHOST_TYPES, "ListVirtualHostTypes"),
                 new ListBrokerAttribute(Broker.SUPPORTED_PREFERENCES_PROVIDER_TYPES, "ListPreferencesProvidersTypes"),
