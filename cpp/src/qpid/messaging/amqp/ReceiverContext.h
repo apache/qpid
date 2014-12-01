@@ -60,6 +60,8 @@ class ReceiverContext
     void verify();
     Address getAddress() const;
     bool hasCurrent();
+    bool getBrowse() const { return helper.getBrowse(); }
+
   private:
     friend class ConnectionContext;
     const std::string name;
