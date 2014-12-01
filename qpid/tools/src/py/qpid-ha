@@ -261,8 +261,11 @@ def main_except(argv):
     if "--cluster-manager" in args:
         commands += ManagerCommand.manager_commands
         args.remove("--cluster-manager")
-    if "--help-all" in args:
-        for c in commands: c.op.print_help(); print
+    if len(args) and args[0] in ['help', '--help', '-help', '-h', 'help-all', '--help-all']:
+        if 'help-all' in args[0]:
+            for c in commands: c.op.print_help(); print
+        else:
+            print_usage(os.path.basename(argv[0]));
     else:
         command = find_command(args, commands)
         if command:
