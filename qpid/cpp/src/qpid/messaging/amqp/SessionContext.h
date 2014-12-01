@@ -75,7 +75,7 @@ class SessionContext
     qpid::framing::SequenceNumber next;
     std::string name;
 
-    qpid::framing::SequenceNumber record(pn_delivery_t*);
+    qpid::framing::SequenceNumber record(pn_delivery_t*, bool browse);
     void acknowledge();
     void acknowledge(const qpid::framing::SequenceNumber& id, bool cummulative);
     void acknowledge(DeliveryMap::iterator begin, DeliveryMap::iterator end);

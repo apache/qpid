@@ -110,10 +110,10 @@ uint32_t SessionContext::getUnsettledAcks()
     return 0;//TODO
 }
 
-qpid::framing::SequenceNumber SessionContext::record(pn_delivery_t* delivery)
+qpid::framing::SequenceNumber SessionContext::record(pn_delivery_t* delivery, bool browse)
 {
     qpid::framing::SequenceNumber id = next++;
-    unacked[id] = delivery;
+    if (!browse) unacked[id] = delivery;
     QPID_LOG(debug, "Recorded delivery " << id << " -> " << delivery);
     return id;
 }

@@ -36,7 +36,9 @@ ReceiverContext::ReceiverContext(pn_session_t* session, const std::string& n, co
     address(a),
     helper(address),
     receiver(pn_receiver(session, name.c_str())),
-    capacity(0), used(0) {}
+    capacity(0), used(0)
+{}
+
 ReceiverContext::~ReceiverContext()
 {
     //pn_link_free(receiver);
