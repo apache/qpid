@@ -870,10 +870,6 @@ public class ServerSession extends Session
     {
         long blockTime = _blockTime;
         boolean b = _blocking.get() && blockTime != 0 && (System.currentTimeMillis() - blockTime) > _blockingTimeout;
-        if(b)
-        {
-            System.err.println(_blockingTimeout);
-        }
         return b;
     }
 
