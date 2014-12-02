@@ -29,6 +29,7 @@ import javax.jms.Destination;
 import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
 import javax.jms.Queue;
 import javax.jms.QueueConnection;
 import javax.jms.QueueSession;
@@ -186,7 +187,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                     }
                     else if(_conn.getEndpoint().requiresSASL() && !_conn.getEndpoint().isAuthenticated())
                     {
-                        throw new JMSException("Authentication Failed");
+                        throw new JMSSecurityException("Failed to authenitcate user[" + _username + "].");
                     }
                 }
                 catch (ConnectionException e)
@@ -264,7 +265,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
             {
                 session.setMaxPrefetch(_maxPrefetch);
             }
-            
+
             boolean connectionStarted = false;
             synchronized(_lock)
             {
@@ -272,12 +273,12 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 _sessions.add(session);
                 connectionStarted = _state == State.STARTED;
             }
-            
+
             if(connectionStarted)
             {
                 session.start();
             }
-            
+
             return session;
         }
         catch(JMSException e)
@@ -402,7 +403,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
             _lock.notifyAll();
         }
-        
+
         if (startedSessions != null)
         {
             for(SessionImpl session : startedSessions)
@@ -449,7 +450,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 closeTasks = new ArrayList<CloseTask>(_closeTasks);
                 closeConnection = _conn != null && _state != State.UNCONNECTED;
             }
-            
+
             _lock.notifyAll();
         }
 
