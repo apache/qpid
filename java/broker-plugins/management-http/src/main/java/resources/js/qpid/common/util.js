@@ -570,7 +570,11 @@ define(["dojo/_base/xhr",
              {
                var fieldName = fieldNames[i];
                var value = data[fieldName];
-               obj[fieldName].innerHTML= (value == undefined || value == null) ? "" : entities.encode(String(value));
+               var fieldNode = obj[fieldName];
+               if (fieldNode)
+               {
+                 fieldNode.innerHTML= (value == undefined || value == null) ? "" : entities.encode(String(value));
+               }
              }
            }
 

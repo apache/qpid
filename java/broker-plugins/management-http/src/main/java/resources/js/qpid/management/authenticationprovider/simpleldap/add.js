@@ -28,15 +28,15 @@ define(["dojo/_base/xhr","dojo/query","dijit/registry","qpid/common/util","qpid/
 
                 var that = this;
                 xhr.get({url: "api/latest/truststore", sync: true, handleAs: "json"}).then(
-                    function(data)
+                    function(trustStores)
                     {
-                        that._initTrustStores(data,data.containerNode);
+                        that._initTrustStores(trustStores, data.containerNode);
                     }
                 );
 
                 if (data.data)
                 {
-                    this._initFields(data.data);
+                    this._initFields(data.data, data.containerNode );
                 }
             },
             _initTrustStores: function(trustStores, containerNode)
@@ -48,29 +48,31 @@ define(["dojo/_base/xhr","dojo/query","dijit/registry","qpid/common/util","qpid/
                 }
                 var trustStoresStore = new Memory({ data: data });
 
-                var trustStore = registry.byNode(query(".trustStore", data.containerNode)[0]);
+                var trustStore = registry.byNode(query(".trustStore", containerNode)[0]);
                 trustStore.set("store", trustStoresStore);
             },
-            _initFields:function(data)
+            _initFields:function(data, containerNode)
             {
                 var attributes = metadata.getMetaData("AuthenticationProvider", "SimpleLDAP").attributes;
                 for(var name in attributes)
                 {
-                    var widget = registry.byNode(query("." + name, data.containerNode)[0]);
-                    if (widget)
+                    var domNode = query("." + name, containerNode)[0];
+                    if (domNode)
                     {
-                        if (widget instanceof dijit.form.CheckBox)
+                        var widget = registry.byNode(domNode);
+                        if (widget)
                         {
-                            widget.set("checked", data[name]);
-                        }
-                        else
-                        {
-                            widget.set("value", data[name]);
+                            if (widget instanceof dijit.form.CheckBox)
+                            {
+                                widget.set("checked", data[name]);
+                            }
+                            else
+                            {
+                                widget.set("value", data[name]);
+                            }
                         }
                     }
                 }
-                var bindWithoutSearch =
-                bindWithoutSearch.set("checked", data.data.bindWithoutSearch);
             }
         };
     }

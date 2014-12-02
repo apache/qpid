@@ -64,12 +64,12 @@ define(["dojo/_base/xhr",
                    var deletePreferencesProviderWidget = registry.byNode(that.deletePreferencesProviderButton);
                    deletePreferencesProviderWidget.on("click", function(evt){ event.stop(evt); that.deletePreferencesProvider();});
                }});
-             this.reload();
            };
 
            PreferencesProvider.prototype.open = function(contentPane) {
                this.contentPane = contentPane;
                this.init(contentPane.containerNode);
+               this.reload();
                this.updater = new PreferencesProviderUpdater(this);
                updater.add(this.updater);
            };

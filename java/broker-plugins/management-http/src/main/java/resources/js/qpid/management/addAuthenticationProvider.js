@@ -58,8 +58,8 @@ define(["dojo/_base/xhr",
                 this.containerNode = construct.create("div", {innerHTML: template});
                 parser.parse(this.containerNode);
 
-                var authenticationProviderName = registry.byId("addAuthenticationProvider.name");
-                authenticationProviderName.set("regExpGen", util.nameOrContextVarRegexp);
+                this.authenticationProviderName = registry.byId("addAuthenticationProvider.name");
+                this.authenticationProviderName.set("regExpGen", util.nameOrContextVarRegexp);
 
                 this.dialog = registry.byId("addAuthenticationProvider");
                 this.addButton = registry.byId("addAuthenticationProvider.addButton");
@@ -79,10 +79,41 @@ define(["dojo/_base/xhr",
                 this.preferencesProviderForm = new qpid.preferencesprovider.PreferencesProviderForm({disabled: true});
                 this.preferencesProviderForm.placeAt(dom.byId("addPreferencesProvider.form"));
             },
-            show:function(providerName)
+            show:function(effectiveData)
             {
                 this.authenticationProviderForm.reset();
                 this.preferencesProviderForm.reset();
+
+                if (effectiveData)
+                {
+                    // editing
+                    var actualData = null;
+                    xhr.get(
+                                {
+                                  url: "api/latest/authenticationprovider/" + encodeURIComponent(effectiveData.name),
+                                  sync: true,
+                                  content: { actuals: true },
+                                  handleAs: "json",
+                                  load: function(data)
+                                  {
+                                    actualData = data[0];
+                                  }
+                                }
+                            );
+                    this.initialData = actualData;
+                    this.effectiveData = effectiveData;
+                    this.authenticationProviderType.set("value", actualData.type);
+                    this.authenticationProviderName.set("value", actualData.name);
+                    this.authenticationProviderType.set("disabled", true);
+                    this.authenticationProviderName.set("disabled", true);
+                }
+                else
+                {
+                    this.authenticationProviderType.set("disabled", false);
+                    this.authenticationProviderName.set("disabled", false);
+                    this.initialData = {};
+                    this.effectiveData = {};
+                }
 
                 this.dialog.show();
                 if (!this.resizeEventRegistered)
@@ -107,9 +138,9 @@ define(["dojo/_base/xhr",
                 {
                     var success = false,failureReason=null;
 
-                    var authenticationProviderData = util.getFormWidgetValues(this.authenticationProviderForm); // TODO initialValues
+                    var authenticationProviderData = util.getFormWidgetValues(this.authenticationProviderForm, this.initialData);
 
-                    var encodedAuthenticationProviderName = encodeURIComponent(authenticationProviderData.name);
+                    var encodedAuthenticationProviderName = encodeURIComponent(this.authenticationProviderName.value);
                     xhr.put({
                         url: "api/latest/authenticationprovider/" + encodedAuthenticationProviderName,
                         sync: true,
@@ -149,6 +180,7 @@ define(["dojo/_base/xhr",
             {
                 var widgets = registry.findWidgets(typeFieldsContainer);
                 array.forEach(widgets, function(item) { item.destroyRecursive();});
+                construct.empty(typeFieldsContainer);
                 this.preferencesProviderForm.set("disabled", !type || !util.supportsPreferencesProvider(type));
                 if (type)
                 {
@@ -157,7 +189,7 @@ define(["dojo/_base/xhr",
                     {
                         try
                         {
-                            typeUI.show({containerNode:typeFieldsContainer, parent: that});
+                            typeUI.show({containerNode:typeFieldsContainer, parent: that, data: that.initialData, effectiveData: that.effectiveData});
                             util.applyMetadataToWidgets(typeFieldsContainer, category, type);
                         }
                         catch(e)
