@@ -21,11 +21,16 @@
 package org.apache.qpid.server.virtualhostalias;
 
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.PatternMatchingAlias;
+import org.apache.qpid.server.model.Port;
 
 public final class PatternMatchingAliasImpl
         extends AbstractFixedVirtualHostNodeAlias<PatternMatchingAliasImpl>
@@ -44,6 +49,34 @@ public final class PatternMatchingAliasImpl
     protected boolean matches(final String name)
     {
         return name == null ? "".matches(_pattern) : name.matches(_pattern);
+    }
+
+    @Override
+    public void onValidate()
+    {
+        super.onValidate();
+        validatePattern(getPattern());
+
+    }
+
+    @Override
+    protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
+    {
+        super.validateChange(proxyForValidation, changedAttributes);
+        validatePattern(((PatternMatchingAlias)proxyForValidation).getPattern());
+    }
+
+    private void validatePattern(final String pattern)
+    {
+        try
+        {
+            Pattern p = Pattern.compile(pattern);
+        }
+        catch (PatternSyntaxException e)
+        {
+            throw new IllegalConfigurationException("'"+pattern+"' is not a valid Java regex pattern", e);
+        }
+
     }
 
     @Override
