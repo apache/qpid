@@ -18,20 +18,21 @@
  * under the License.
  *
  */
-define(["dojo/query","dijit/registry","qpid/common/util"],
-    function (query, registry, util)
-    {
-        return {
-            show: function(data)
-            {
-                util.parseHtmlIntoDiv(data.containerNode, "authenticationprovider/filebased/add.html");
-                if (data.data)
-                {
-                    var path = registry.byNode(query(".path", data.containerNode)[0]);
-                    path.set("value", data.data.path);
-                }
-            }
-        };
-    }
-);
+define(["qpid/common/util", "dojo/domReady!"],
+  function (util, metadata)
+  {
 
+    function Base64MD5PasswordFile(data)
+    {
+        util.buildUI(data.containerNode, data.parent, "authenticationprovider/filebased/show.html", ["path"], this);
+        data.parent.editButton.set("disabled", false);
+    }
+
+    Base64MD5PasswordFile.prototype.update = function(data)
+    {
+        util.updateUI(data, ["path"], this);
+    }
+
+    return Base64MD5PasswordFile;
+  }
+);

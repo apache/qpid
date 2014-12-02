@@ -59,17 +59,17 @@ define(["dojo/_base/xhr",
                             contentPane.containerNode.innerHTML = data;
                             parser.parse(contentPane.containerNode);
 
-                            that.authProviderUpdater = new AuthProviderUpdater(contentPane.containerNode, that.modelObj, that.controller, that);
+                            var authProviderUpdater = new AuthProviderUpdater(contentPane.containerNode, that.modelObj, that.controller, that);
+                            that.authProviderUpdater = authProviderUpdater;
 
-                            that.authProviderUpdater.update();
-
-                            var editButton = query(".editAuthenticationProviderButton", contentPane.containerNode)[0];
-                            var editWidget = registry.byNode(editButton);
-                            connect.connect(editWidget, "onClick",
+                            var editButtonNode = query(".editAuthenticationProviderButton", contentPane.containerNode)[0];
+                            var editButtonWidget = registry.byNode(editButtonNode);
+                            editButtonWidget.on("click",
                                             function(evt){
                                                 event.stop(evt);
-                                                addAuthenticationProvider.show(that.name);
+                                                addAuthenticationProvider.show(authProviderUpdater.authProviderData);
                                             });
+                            authProviderUpdater.editButton = editButtonWidget;
 
                             var deleteButton = query(".deleteAuthenticationProviderButton", contentPane.containerNode)[0];
                             var deleteWidget = registry.byNode(deleteButton);
@@ -86,6 +86,25 @@ define(["dojo/_base/xhr",
                                                 event.stop(evt);
                                                 that.addPreferencesProvider();
                                             });
+
+                            authProviderUpdater.update();
+                            if (util.isProviderManagingUsers(authProviderUpdater.authProviderData.type))
+                            {
+                                 authProviderUpdater.managingUsersUI = new PrincipalDatabaseAuthenticationManager(contentPane.containerNode, authProviderUpdater.authProviderData, that.controller);
+                                 authProviderUpdater.managingUsersUI.update(authProviderUpdater.authProviderData);
+                            }
+
+                            if (!util.supportsPreferencesProvider(authProviderUpdater.authProviderData.type))
+                            {
+                                var authenticationProviderPanel =  registry.byNode( query(".preferencesPanel", contentPane.containerNode)[0]);
+                                domStyle.set(authenticationProviderPanel.domNode, "display","none");
+                            }
+                            else
+                            {
+                                var preferencesProviderData = authProviderUpdater.authProviderData.preferencesproviders? authProviderUpdater.authProviderData.preferencesproviders[0]: null;
+                                authProviderUpdater.updatePreferencesProvider(preferencesProviderData);
+                            }
+
                             updater.add( that.authProviderUpdater );
                         }});
            };
@@ -140,42 +159,9 @@ define(["dojo/_base/xhr",
                this.deletePreferencesProviderButton = query(".deletePreferencesProviderButton", node)[0];
                this.preferencesProviderAttributes = dom.byId("preferencesProviderAttributes")
                this.preferencesNode = query(".preferencesProviderDetails", node)[0];
+               this.authenticationProviderDetailsContainer = query(".authenticationProviderDetails", node)[0];
 
                this.query = "api/latest/authenticationprovider/" + encodeURIComponent(authProviderObj.name);
-
-               var that = this;
-
-               xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
-                   .then(function(data)
-                         {
-                             that.authProviderData = data[0];
-
-                             util.flattenStatistics( that.authProviderData );
-
-                             that.updateHeader();
-
-                             var editButton = query(".editAuthenticationProviderButton", node)[0];
-                             var editWidget = registry.byNode(editButton);
-                             var hideEdit = (that.authProviderData.type === 'Anonymous' || that.authProviderData.type === 'External' || that.authProviderData.type === 'Kerberos')
-                             domStyle.set(editWidget.domNode, "display", hideEdit ? "none": "");
-
-                             if (util.isProviderManagingUsers(that.authProviderData.type))
-                             {
-                                     that.details = new PrincipalDatabaseAuthenticationManager(node, that.authProviderData, controller);
-                                     that.details.update(that.authProviderData);
-                             }
-                             if (that.authProviderData.type == "Anonymous")
-                             {
-                               var authenticationProviderPanel =  registry.byNode( query(".preferencesPanel", node)[0]);
-                               domStyle.set(authenticationProviderPanel.domNode, "display","none");
-                             }
-                             else
-                             {
-                               var preferencesProviderData = that.authProviderData.preferencesproviders? that.authProviderData.preferencesproviders[0]: null;
-
-                               that.updatePreferencesProvider(preferencesProviderData);
-                             }
-                         });
 
            }
 
@@ -186,8 +172,9 @@ define(["dojo/_base/xhr",
                this.addPreferencesProviderButton.style.display = 'none';
                if (!this.preferencesProvider)
                {
-                 this.preferencesProvider=new PreferencesProvider(preferencesProviderData.name, this.authProviderData);
-                 this.preferencesProvider.init(this.preferencesNode);
+                 var preferencesProvider =new PreferencesProvider(preferencesProviderData.name, this.authProviderData);
+                 preferencesProvider.init(this.preferencesNode);
+                 this.preferencesProvider = preferencesProvider;
                }
                this.preferencesProvider.update(preferencesProviderData);
              }
@@ -212,45 +199,58 @@ define(["dojo/_base/xhr",
            AuthProviderUpdater.prototype.update = function()
            {
              var that = this;
-
-             xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
-                 .then(function(data) {
-                     that.authProviderData = data[0];
-                     that.name = data[0].name
-                     util.flattenStatistics( that.authProviderData );
-                     that.updateHeader();
-                     if (that.details)
-                     {
-                       try
-                       {
-                         that.details.update(that.authProviderData);
-                       }
-                       catch(e)
-                       {
-                         if (console)
-                         {
-                           console.error(e);
-                         }
-                       }
-                     }
-                     var preferencesProviderData = that.authProviderData.preferencesproviders? that.authProviderData.preferencesproviders[0]: null;
-                     try
-                     {
-                       that.updatePreferencesProvider(preferencesProviderData);
-                     }
-                     catch(e)
-                     {
-                       if (console)
-                       {
-                         console.error(e);
-                       }
-                     }
-                 });
-
-
+             xhr.get({url: this.query, sync: true, handleAs: "json"}).then(function(data) {that._update(data[0]);});
            };
 
+            AuthProviderUpdater.prototype._update = function(data)
+            {
+                var that = this;
+                this.authProviderData = data;
+                util.flattenStatistics(data );
+                this.updateHeader();
 
+                if (this.details)
+                {
+                    this.details.update(data);
+                }
+                else
+                {
+                    require(["qpid/management/authenticationprovider/" + encodeURIComponent(data.type.toLowerCase()) + "/show"],
+                         function(DetailsUI)
+                         {
+                           that.details = new DetailsUI({containerNode:that.authenticationProviderDetailsContainer, parent: that});
+                           that.details.update(data);
+                         }
+                       );
+                }
+
+                if (this.managingUsersUI)
+                {
+                    try
+                    {
+                        this.managingUsersUI.update(data);
+                    }
+                    catch(e)
+                    {
+                        if (console)
+                        {
+                            console.error(e);
+                        }
+                    }
+                }
+                var preferencesProviderData = data.preferencesproviders? data.preferencesproviders[0]: null;
+                try
+                {
+                    this.updatePreferencesProvider(preferencesProviderData);
+                }
+                catch(e)
+                {
+                    if (console)
+                    {
+                        console.error(e);
+                    }
+                }
+            }
 
            return AuthenticationProvider;
        });

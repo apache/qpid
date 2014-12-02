@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,22 +15,29 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-define(["dojo/query","dijit/registry","qpid/common/util"],
-    function (query, registry, util)
-    {
-        return {
-            show: function(data)
-            {
-                util.parseHtmlIntoDiv(data.containerNode, "authenticationprovider/filebased/add.html");
-                if (data.data)
-                {
-                    var path = registry.byNode(query(".path", data.containerNode)[0]);
-                    path.set("value", data.data.path);
-                }
-            }
-        };
-    }
-);
 
+define(["qpid/common/util", "qpid/common/metadata", "dojo/domReady!"],
+  function (util, metadata)
+  {
+
+    function SimpleLdapAuthenticationProvider(data)
+    {
+        this.fields = [];
+        var attributes = metadata.getMetaData("AuthenticationProvider", "SimpleLDAP").attributes;
+        for(var name in attributes)
+        {
+            this.fields.push(name);
+        }
+        util.buildUI(data.containerNode, data.parent, "authenticationprovider/simpleldap/show.html", this.fields, this);
+        data.parent.editButton.set("disabled", false);
+    }
+
+    SimpleLdapAuthenticationProvider.prototype.update = function(data)
+    {
+        util.updateUI(data, this.fields, this);
+    }
+
+    return SimpleLdapAuthenticationProvider;
+  }
+);

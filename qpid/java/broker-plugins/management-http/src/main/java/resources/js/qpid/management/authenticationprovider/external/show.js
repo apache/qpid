@@ -18,20 +18,21 @@
  * under the License.
  *
  */
-define(["dojo/query","dijit/registry","qpid/common/util"],
-    function (query, registry, util)
-    {
-        return {
-            show: function(data)
-            {
-                util.parseHtmlIntoDiv(data.containerNode, "authenticationprovider/filebased/add.html");
-                if (data.data)
-                {
-                    var path = registry.byNode(query(".path", data.containerNode)[0]);
-                    path.set("value", data.data.path);
-                }
-            }
-        };
-    }
-);
+define(["qpid/common/util", "dojo/domReady!"],
+  function (util, metadata)
+  {
 
+    function External(data)
+    {
+        util.buildUI(data.containerNode, data.parent, "authenticationprovider/external/show.html", ["useFullDN"], this);
+        data.parent.editButton.set("disabled", false);
+    }
+
+    External.prototype.update = function(data)
+    {
+        util.updateUI(data, ["useFullDN"], this);
+    }
+
+    return External;
+  }
+);

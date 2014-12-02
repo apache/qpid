@@ -32,19 +32,17 @@
             <div class="formLabel-labelCell">State:</div>
             <div class="state"></div>
         </div>
-
+        <div class="clear authenticationProviderDetails"></div>
         <div class="clear"></div>
         <div class="clear dijitDialogPaneActionBar">
-            <button data-dojo-type="dijit.form.Button" class="editAuthenticationProviderButton" type="button">Edit</button>
+            <button data-dojo-type="dijit.form.Button" class="editAuthenticationProviderButton" type="button" data-dojo-props="disabled: true">Edit</button>
             <button data-dojo-type="dijit.form.Button" class="deleteAuthenticationProviderButton" type="button">Delete</button>
         </div>
-        <br/>
-        <br/>
-        <div class="clear"></div>
-        <div class="clear preferencesPanel" data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Preferences Provider',  open: true">
-          <div class="preferencesProviderDetails"></div>
-          <button data-dojo-type="dijit.form.Button" class="addPreferencesProviderButton">Add</button>
-        </div>
-        <br/>
     </div>
+    <br/>
+    <div class="clear preferencesPanel" data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Preferences Provider',  open: true">
+        <div class="preferencesProviderDetails"></div>
+        <button data-dojo-type="dijit.form.Button" class="addPreferencesProviderButton">Add</button>
+    </div>
+    <br/>
 </div>
