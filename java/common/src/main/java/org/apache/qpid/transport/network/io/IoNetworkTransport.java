@@ -143,6 +143,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
         try
         {
             _acceptor = new AcceptingThread(config, factory, sslContext);
+            _acceptor.setName(String.format("IoNetworkAcceptor - %s", config.getAddress()));
             _acceptor.setDaemon(false);
             _acceptor.start();
         }
