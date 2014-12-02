@@ -35,6 +35,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.HostNameAlias;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
@@ -46,6 +48,8 @@ public class HostNameAliasImpl
         extends AbstractFixedVirtualHostNodeAlias<HostNameAliasImpl>
         implements HostNameAlias<HostNameAliasImpl>
 {
+
+    private static final Logger LOG = Logger.getLogger(HostNameAliasImpl.class);
 
     private final Set<InetAddress> _localAddresses = new CopyOnWriteArraySet<>();
     private final Set<String> _localAddressNames = new CopyOnWriteArraySet<>();
@@ -62,7 +66,12 @@ public class HostNameAliasImpl
     protected void onOpen()
     {
         super.onOpen();
-        Thread thread = new Thread(new NetworkAddressResolver(), "Network Address Resolver");
+        String bindingAddress = ((AmqpPort) getPort()).getBindingAddress();
+        Thread thread = new Thread(new NetworkAddressResolver(),
+                                   "Network Address Resolver (Port: "
+                                   + (useAllAddresses(bindingAddress) ? "" : bindingAddress)
+                                   + ":" + getPort().getPort() +")");
+        thread.setDaemon(true);
         thread.start();
     }
 
@@ -138,7 +147,7 @@ public class HostNameAliasImpl
             try
             {
                 Collection<InetAddress> inetAddresses;
-                if(bindingAddress == null || bindingAddress.trim().equals("") || bindingAddress.trim().equals("*"))
+                if(useAllAddresses(bindingAddress))
                 {
                     inetAddresses = getAllInetAddresses();
                 }
@@ -168,7 +177,8 @@ public class HostNameAliasImpl
             }
             catch (SocketException | UnknownHostException e)
             {
-                // ignore
+                LOG.error("Unable to correctly calculate host name aliases for port " + getPort().getName()
+                         + ". This may lead to connection failures.", e);
             }
             finally
             {
@@ -189,5 +199,10 @@ public class HostNameAliasImpl
             }
             return addresses;
         }
+    }
+
+    private boolean useAllAddresses(final String bindingAddress)
+    {
+        return bindingAddress == null || bindingAddress.trim().equals("") || bindingAddress.trim().equals("*");
     }
 }
