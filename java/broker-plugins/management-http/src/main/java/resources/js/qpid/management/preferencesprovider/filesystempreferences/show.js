@@ -28,7 +28,7 @@ define(["dojo/_base/xhr",
 
   function FileSystemPreferences(containerNode) {
     var that = this;
-    xhr.get({url: "authenticationprovider/preferences/filesystempreferences/show.html",
+    xhr.get({url: "preferencesprovider/filesystempreferences/show.html",
       sync: true,
       load:  function(template) {
         containerNode.innerHTML = template;

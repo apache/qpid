@@ -21,7 +21,8 @@
 define(["dojo/_base/xhr",
         "dojo/parser",
         "dojo/query",
-        "dojo/_base/connect",
+        "dojo/dom-construct",
+        "dojo/_base/array",
         "qpid/common/properties",
         "qpid/common/updater",
         "qpid/common/util",
@@ -31,7 +32,7 @@ define(["dojo/_base/xhr",
         "dojox/html/entities",
         "qpid/management/addPreferencesProvider",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, event, registry, domStyle, entities, addPreferencesProvider) {
+       function (xhr, parser, query, construct, array, properties, updater, util, event, registry, domStyle, entities, addPreferencesProvider) {
 
            function PreferencesProvider(name, parent, controller) {
                this.name = name;
@@ -44,7 +45,7 @@ define(["dojo/_base/xhr",
                return "PreferencesProvider:" + this.authenticationProviderName + "/" + this.name ;
            };
 
-           PreferencesProvider.prototype.init = function(node) {
+           PreferencesProvider.prototype.init = function(node, parentObject) {
              var that = this;
              xhr.get({url: "showPreferencesProvider.html",
                sync: true,
@@ -52,6 +53,8 @@ define(["dojo/_base/xhr",
                    node.innerHTML = data;
                    parser.parse(node);
 
+                   that.containerNode = node;
+                   that.parentObject = parentObject;
                    that.preferencesProviderType=query(".preferencesProviderType", node)[0];
                    that.preferencesProviderName=query(".preferencesProviderName", node)[0];
                    that.preferencesProviderState=query(".preferencesProviderState", node)[0];
@@ -100,6 +103,16 @@ define(["dojo/_base/xhr",
                          that.controller.tabContainer.removeChild(that.contentPane);
                          that.contentPane.destroyRecursive();
                        }
+                       else
+                       {
+                         var widgets = registry.findWidgets(that.containerNode);
+                         array.forEach(widgets, function(item) { item.destroyRecursive();});
+                         construct.empty(that.containerNode);
+                         if (that.parentObject)
+                         {
+                            that.parentObject.onPreferencesProviderDeleted();
+                         }
+                       }
                      },
                      function(error) {that.success = false; that.failureReason = error;});
                  if(!this.success ) {
@@ -129,7 +142,7 @@ define(["dojo/_base/xhr",
                if (!this.details)
                {
                  var that = this;
-                 require(["qpid/management/authenticationprovider/preferences/" + data.type.toLowerCase() + "/show"],
+                 require(["qpid/management/preferencesprovider/" + data.type.toLowerCase() + "/show"],
                    function(PreferencesProviderDetails) {
                      that.details = new PreferencesProviderDetails(that.preferencesDetailsDiv);
                      that.details.update(data);

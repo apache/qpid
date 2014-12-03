@@ -82,7 +82,6 @@ define(["dojo/_base/xhr",
             show:function(effectiveData)
             {
                 this.authenticationProviderForm.reset();
-                this.preferencesProviderForm.reset();
 
                 if (effectiveData)
                 {
@@ -106,9 +105,18 @@ define(["dojo/_base/xhr",
                     this.authenticationProviderName.set("value", actualData.name);
                     this.authenticationProviderType.set("disabled", true);
                     this.authenticationProviderName.set("disabled", true);
+                    if (actualData.preferencesproviders && actualData.preferencesproviders[0])
+                    {
+                        this.preferencesProviderForm.setData(actualData.preferencesproviders[0]);
+                    }
+                    else
+                    {
+                        this.preferencesProviderForm.reset();
+                    }
                 }
                 else
                 {
+                    this.preferencesProviderForm.reset();
                     this.authenticationProviderType.set("disabled", false);
                     this.authenticationProviderName.set("disabled", false);
                     this.initialData = {};
