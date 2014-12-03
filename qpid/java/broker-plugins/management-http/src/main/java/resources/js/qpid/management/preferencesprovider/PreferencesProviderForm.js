@@ -85,8 +85,8 @@ function (util, metadata, xhr, declare, array, domConstruct, win, query, json, _
     {
         if (this.preferencesProviderTypeWidget.get("value") != "None")
         {
-            var preferencesProviderData = util.getFormWidgetValues(this.preferencesProviderForm); // TODO initialValues
-            var encodedPreferencesProviderName = encodeURIComponent(preferencesProviderData.name);
+            var preferencesProviderData = util.getFormWidgetValues(this.preferencesProviderForm, this.data)
+            var encodedPreferencesProviderName = encodeURIComponent(this.preferencesProviderNameWidget.get("value"));
             var success = false;
             var failureReason = null;
             xhr.put({
@@ -114,8 +114,13 @@ function (util, metadata, xhr, declare, array, domConstruct, win, query, json, _
             handleAs: "json"
         }).then(function(data){that._load(data[0])});
     },
+    setData: function(data)
+    {
+        this._load(data);
+    },
     _load:function(data)
     {
+        data = data || {}
         this.data = data;
         this.preferencesProviderNameWidget.set("value", data.name);
         if (data.type == this.preferencesProviderTypeWidget.get("value"))
@@ -184,7 +189,10 @@ function (util, metadata, xhr, declare, array, domConstruct, win, query, json, _
     {
         this.inherited(arguments);
         this.disabled = disabled;
-        this.reset();
+        if (disabled)
+        {
+            this.reset();
+        }
     },
   });
 });

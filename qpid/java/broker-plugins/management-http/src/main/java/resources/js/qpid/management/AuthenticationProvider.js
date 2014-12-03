@@ -173,7 +173,7 @@ define(["dojo/_base/xhr",
                if (!this.preferencesProvider)
                {
                  var preferencesProvider =new PreferencesProvider(preferencesProviderData.name, this.authProviderData);
-                 preferencesProvider.init(this.preferencesNode);
+                 preferencesProvider.init(this.preferencesNode, this);
                  this.preferencesProvider = preferencesProvider;
                }
                this.preferencesProvider.update(preferencesProviderData);
@@ -187,6 +187,11 @@ define(["dojo/_base/xhr",
                this.addPreferencesProviderButton.style.display = 'inline';
              }
            };
+
+           AuthProviderUpdater.prototype.onPreferencesProviderDeleted = function()
+           {
+            this.preferencesProvider = null;
+           }
 
            AuthProviderUpdater.prototype.updateHeader = function()
            {
