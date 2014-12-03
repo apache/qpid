@@ -187,7 +187,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                     }
                     else if(_conn.getEndpoint().requiresSASL() && !_conn.getEndpoint().isAuthenticated())
                     {
-                        throw new JMSSecurityException("Failed to authenitcate user[" + _username + "].");
+                        throw new JMSSecurityException("Failed to authenticate user[" + _username + "].");
                     }
                 }
                 catch (ConnectionException e)
