@@ -261,7 +261,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         _queue.enqueue(messageB, postEnqueueAction);
         _queue.enqueue(messageC, postEnqueueAction);
 
-        Thread.sleep(150);  // Work done by SubFlushRunner/QueueRunner Threads
+        Thread.sleep(150);  // Work done by QueueRunner Thread
 
         assertEquals("Unexpected total number of messages sent to consumer",
                      3,
@@ -274,7 +274,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
 
         queueEntries.get(0).release();
 
-        Thread.sleep(150); // Work done by SubFlushRunner/QueueRunner Threads
+        Thread.sleep(150); // Work done by QueueRunner Thread
 
         assertEquals("Unexpected total number of messages sent to consumer",
                      4,
@@ -311,7 +311,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         _queue.enqueue(messageA, postEnqueueAction);
 
         int subFlushWaitTime = 150;
-        Thread.sleep(subFlushWaitTime); // Work done by SubFlushRunner/QueueRunner Threads
+        Thread.sleep(subFlushWaitTime); // Work done by QueueRunner Thread
 
         assertEquals("Unexpected total number of messages sent to consumer",
                      1,
@@ -322,7 +322,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         Thread.sleep(messageExpirationOffset - subFlushWaitTime + 10);
         queueEntries.get(0).release();
 
-        Thread.sleep(subFlushWaitTime); // Work done by SubFlushRunner/QueueRunner Threads
+        Thread.sleep(subFlushWaitTime); // Work done by QueueRunner Thread
 
         assertTrue("Expecting the queue entry to be now expired", queueEntries.get(0).expired());
         assertEquals("Total number of messages sent should not have changed",
@@ -360,7 +360,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         _queue.enqueue(messageB, postEnqueueAction);
         _queue.enqueue(messageC, postEnqueueAction);
 
-        Thread.sleep(150);  // Work done by SubFlushRunner/QueueRunner Threads
+        Thread.sleep(150);  // Work done by QueueRunner Thread
 
         assertEquals("Unexpected total number of messages sent to consumer",
                      3,
@@ -374,7 +374,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         queueEntries.get(2).release();
         queueEntries.get(0).release();
 
-        Thread.sleep(150); // Work done by SubFlushRunner/QueueRunner Threads
+        Thread.sleep(150); // Work done by QueueRunner Thread
 
         assertEquals("Unexpected total number of messages sent to consumer",
                      5,
@@ -417,7 +417,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         _queue.enqueue(messageA, postEnqueueAction);
         _queue.enqueue(messageB, postEnqueueAction);
 
-        Thread.sleep(150);  // Work done by SubFlushRunner/QueueRunner Threads
+        Thread.sleep(150);  // Work done by QueueRunner Thread
 
         assertEquals("Unexpected total number of messages sent to both after enqueue",
                      2,
@@ -426,7 +426,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         /* Now release the first message only, causing it to be requeued */
         queueEntries.get(0).release();
 
-        Thread.sleep(150); // Work done by SubFlushRunner/QueueRunner Threads
+        Thread.sleep(150); // Work done by QueueRunner Thread
 
         assertEquals("Unexpected total number of messages sent to both consumers after release",
                      3,
@@ -643,88 +643,6 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         assertEquals("Message ID was wrong", msgID, 9L);
         msgID = entries.get(1).getMessage().getMessageNumber();
         assertEquals("Message ID was wrong", msgID, 10L);
-    }
-
-
-    /**
-     * processQueue() is used when asynchronously delivering messages to
-     * consumers which could not be delivered immediately during the
-     * enqueue() operation.
-     *
-     * A defect within the method would mean that delivery of these messages may
-     * not occur should the Runner stop before all messages have been processed.
-     * Such a defect was discovered when Selectors were used such that one and
-     * only one consumer can/will accept any given messages, but multiple
-     * consumers are present, and one of the earlier consumers receives
-     * more messages than the others.
-     *
-     * This test is to validate that the processQueue() method is able to
-     * correctly deliver all of the messages present for asynchronous delivery
-     * to consumers in such a scenario.
-     */
-    public void testProcessQueueWithUniqueSelectors() throws Exception
-    {
-        AbstractQueue testQueue = createNonAsyncDeliverQueue();
-        testQueue.open();
-
-        // retrieve the QueueEntryList the queue creates and insert the test
-        // messages, thus avoiding straight-through delivery attempts during
-        //enqueue() process.
-        QueueEntryList list = testQueue.getEntries();
-        assertNotNull("QueueEntryList should have been created", list);
-
-        QueueEntry msg1 = list.add(createMessage(1L));
-        QueueEntry msg2 = list.add(createMessage(2L));
-        QueueEntry msg3 = list.add(createMessage(3L));
-        QueueEntry msg4 = list.add(createMessage(4L));
-        QueueEntry msg5 = list.add(createMessage(5L));
-
-        // Create lists of the entries each consumer should be interested
-        // in.Bias over 50% of the messages to the first consumer so that
-        // the later consumers reject them and report being done before
-        // the first consumer as the processQueue method proceeds.
-        List<String> msgListSub1 = createEntriesList(msg1, msg2, msg3);
-        List<String> msgListSub2 = createEntriesList(msg4);
-        List<String> msgListSub3 = createEntriesList(msg5);
-
-        MockConsumer sub1 = new MockConsumer(msgListSub1);
-        MockConsumer sub2 = new MockConsumer(msgListSub2);
-        MockConsumer sub3 = new MockConsumer(msgListSub3);
-
-        // register the consumers
-        testQueue.addConsumer(sub1, sub1.getFilters(), msg1.getMessage().getClass(), "test",
-                              EnumSet.of(ConsumerImpl.Option.ACQUIRES, ConsumerImpl.Option.SEES_REQUEUES));
-        testQueue.addConsumer(sub2, sub2.getFilters(), msg1.getMessage().getClass(), "test",
-                              EnumSet.of(ConsumerImpl.Option.ACQUIRES, ConsumerImpl.Option.SEES_REQUEUES));
-        testQueue.addConsumer(sub3, sub3.getFilters(), msg1.getMessage().getClass(), "test",
-                              EnumSet.of(ConsumerImpl.Option.ACQUIRES, ConsumerImpl.Option.SEES_REQUEUES));
-
-        //check that no messages have been delivered to the
-        //consumers during registration
-        assertEquals("No messages should have been delivered yet", 0, sub1.getMessages().size());
-        assertEquals("No messages should have been delivered yet", 0, sub2.getMessages().size());
-        assertEquals("No messages should have been delivered yet", 0, sub3.getMessages().size());
-
-        // call processQueue to deliver the messages
-        testQueue.processQueue(new QueueRunner(testQueue)
-        {
-            @Override
-            public void run()
-            {
-                // we don't actually want/need this runner to do any work
-                // because we we are already doing it!
-            }
-        });
-
-        // check expected messages delivered to correct consumers
-        verifyReceivedMessages(Arrays.asList((MessageInstance)msg1,msg2,msg3), sub1.getMessages());
-        verifyReceivedMessages(Collections.singletonList((MessageInstance)msg4), sub2.getMessages());
-        verifyReceivedMessages(Collections.singletonList((MessageInstance)msg5), sub3.getMessages());
-    }
-
-    private AbstractQueue createNonAsyncDeliverQueue()
-    {
-        return new NonAsyncDeliverQueue(getVirtualHost());
     }
 
     /**
@@ -1055,16 +973,6 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         return entry;
     }
 
-    private List<String> createEntriesList(QueueEntry... entries)
-    {
-        ArrayList<String> entriesList = new ArrayList<String>();
-        for (QueueEntry entry : entries)
-        {
-            entriesList.add(entry.getMessage().getMessageHeader().getMessageId());
-        }
-        return entriesList;
-    }
-
     protected void verifyReceivedMessages(List<MessageInstance> expected,
                                         List<MessageInstance> delivered)
     {
@@ -1210,90 +1118,4 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         return _consumerTarget;
     }
 
-    private static class NonAsyncDeliverEntry extends OrderedQueueEntry
-    {
-
-        public NonAsyncDeliverEntry(final NonAsyncDeliverList queueEntryList)
-        {
-            super(queueEntryList);
-        }
-
-        public NonAsyncDeliverEntry(final NonAsyncDeliverList queueEntryList,
-                                    final ServerMessage message,
-                                    final long entryId)
-        {
-            super(queueEntryList, message, entryId);
-        }
-
-        public NonAsyncDeliverEntry(final NonAsyncDeliverList queueEntryList, final ServerMessage message)
-        {
-            super(queueEntryList, message);
-        }
-    }
-
-    private static class NonAsyncDeliverList extends OrderedQueueEntryList
-    {
-
-        private static final HeadCreator HEAD_CREATOR =
-                new HeadCreator()
-                {
-
-                    @Override
-                    public NonAsyncDeliverEntry createHead(final QueueEntryList list)
-                    {
-                        return new NonAsyncDeliverEntry((NonAsyncDeliverList) list);
-                    }
-                };
-
-        public NonAsyncDeliverList(final NonAsyncDeliverQueue queue)
-        {
-            super(queue, HEAD_CREATOR);
-        }
-
-        @Override
-        protected NonAsyncDeliverEntry createQueueEntry(final ServerMessage<?> message)
-        {
-            return new NonAsyncDeliverEntry(this,message);
-        }
-    }
-
-
-    private static class NonAsyncDeliverQueue extends AbstractQueue<NonAsyncDeliverQueue>
-    {
-        private QueueEntryList _entries = new NonAsyncDeliverList(this);
-
-        public NonAsyncDeliverQueue(VirtualHostImpl vhost)
-        {
-            super(attributes(), vhost);
-        }
-
-        @Override
-        protected void onOpen()
-        {
-            super.onOpen();
-        }
-
-        @Override
-        QueueEntryList getEntries()
-        {
-            return _entries;
-        }
-
-        private static Map<String,Object> attributes()
-        {
-            Map<String,Object> attributes = new HashMap<String, Object>();
-            attributes.put(Queue.ID, UUID.randomUUID());
-            attributes.put(Queue.NAME, "test");
-            attributes.put(Queue.DURABLE, false);
-            attributes.put(Queue.LIFETIME_POLICY, LifetimePolicy.PERMANENT);
-            return attributes;
-        }
-
-        @Override
-        public void deliverAsync(QueueConsumer<?> sub)
-        {
-            // do nothing, i.e prevent deliveries by the SubFlushRunner
-            // when registering the new consumers
-        }
-    }
 }

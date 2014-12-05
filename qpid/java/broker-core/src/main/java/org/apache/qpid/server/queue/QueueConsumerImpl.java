@@ -86,7 +86,6 @@ class QueueConsumerImpl
     }
 
     private final ConsumerTarget _target;
-    private final SubFlushRunner _runner = new SubFlushRunner(this);
     private final StateChangeListener<ConsumerTarget, ConsumerTarget.State>
             _listener;
     private volatile QueueContext _queueContext;
@@ -210,7 +209,7 @@ class QueueConsumerImpl
     @Override
     public void externalStateChange()
     {
-        _queue.deliverAsync(this);
+        _queue.deliverAsync();
     }
 
     @Override
@@ -322,11 +321,6 @@ class QueueConsumerImpl
     public boolean resend(final QueueEntry entry)
     {
         return getQueue().resend(entry, this);
-    }
-
-    public final SubFlushRunner getRunner()
-    {
-        return _runner;
     }
 
     public final long getConsumerNumber()

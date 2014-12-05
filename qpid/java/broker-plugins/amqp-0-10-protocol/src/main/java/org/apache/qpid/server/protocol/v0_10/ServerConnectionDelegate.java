@@ -307,7 +307,7 @@ public class ServerConnectionDelegate extends ServerDelegate
     @Override public void sessionDetach(Connection conn, SessionDetach dtc)
     {
         // To ensure a clean detach, we stop any remaining subscriptions. Stop ensures
-        // that any in-progress delivery (SubFlushRunner/QueueRunner) is completed before the stop
+        // that any in-progress delivery (QueueRunner) is completed before the stop
         // completes.
         stopAllSubscriptions(conn, dtc);
         Session ssn = conn.getSession(dtc.getChannel());
