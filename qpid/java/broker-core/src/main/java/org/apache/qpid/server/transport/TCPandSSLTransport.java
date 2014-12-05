@@ -28,13 +28,13 @@ import java.util.Set;
 import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
+import org.apache.qpid.transport.network.io.NonBlockingNetworkTransport;
 
 class TCPandSSLTransport implements AcceptingTransport
 {
@@ -78,10 +78,10 @@ class TCPandSSLTransport implements AcceptingTransport
         }
 
         final NetworkTransportConfiguration settings = new ServerNetworkTransportConfiguration();
-        _networkTransport = org.apache.qpid.transport.network.Transport.getIncomingTransportInstance();
+        _networkTransport = new NonBlockingNetworkTransport();
         final MultiVersionProtocolEngineFactory protocolEngineFactory =
                 new MultiVersionProtocolEngineFactory(
-                _port.getParent(Broker.class), _transports.contains(Transport.TCP) ? _sslContext : null,
+                _port.getParent(Broker.class), _sslContext,
                 settings.wantClientAuth(), settings.needClientAuth(),
                 _supported,
                 _defaultSupportedProtocolReply,

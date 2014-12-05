@@ -111,7 +111,10 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
             public void send(ByteBuffer msg)
             {
                 _lastWriteTime = System.currentTimeMillis();
-                sender.send(msg);
+                ByteBuffer copy = ByteBuffer.wrap(new byte[msg.remaining()]);
+                copy.put(msg);
+                copy.flip();
+                sender.send(copy);
 
             }
 

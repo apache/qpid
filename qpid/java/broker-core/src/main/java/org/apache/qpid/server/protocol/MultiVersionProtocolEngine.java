@@ -44,7 +44,6 @@ import org.apache.qpid.server.plugin.ProtocolEngineCreator;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.security.SSLStatus;
-import org.apache.qpid.transport.network.security.ssl.SSLBufferingSender;
 import org.apache.qpid.transport.network.security.ssl.SSLReceiver;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
