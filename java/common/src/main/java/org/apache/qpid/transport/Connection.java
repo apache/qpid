@@ -730,6 +730,11 @@ public class Connection extends ConnectionInvoker
         return connectionLost.get();
     }
 
+    protected boolean isConnectionLost()
+    {
+        return connectionLost.get();
+    }
+
     protected Collection<Session> getChannels()
     {
         return new ArrayList<>(channels.values());

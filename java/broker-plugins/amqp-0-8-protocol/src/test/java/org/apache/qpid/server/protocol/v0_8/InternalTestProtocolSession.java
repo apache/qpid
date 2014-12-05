@@ -231,7 +231,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         //Simulate the Client responding with a CloseOK
         // should really update the StateManger but we don't have access here
         // changeState(AMQState.CONNECTION_CLOSED);
-        ((AMQChannel)session).getConnection().closeSession();
+        ((AMQChannel)session).getConnection().closeSession(false);
 
     }
 
