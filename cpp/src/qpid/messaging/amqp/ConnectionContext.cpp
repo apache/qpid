@@ -292,7 +292,7 @@ bool ConnectionContext::get(boost::shared_ptr<SessionContext> ssn, boost::shared
             QPID_LOG(debug, "Received message of " << encoded->getSize() << " bytes: ");
             encoded->init(impl);
             impl.setEncoded(encoded);
-            impl.setInternalId(ssn->record(current, lnk->getBrowse()));
+            impl.setInternalId(ssn->record(current));
             pn_link_advance(lnk->receiver);
             if (lnk->capacity) {
                 pn_link_flow(lnk->receiver, 1);
