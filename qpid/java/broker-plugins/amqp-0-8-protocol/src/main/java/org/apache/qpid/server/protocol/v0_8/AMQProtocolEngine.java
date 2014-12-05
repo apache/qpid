@@ -514,20 +514,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             throw new ServerScopedRuntimeException(e);
         }
 
-        final ByteBuffer buf;
-
-        if(size <= REUSABLE_BYTE_BUFFER_CAPACITY)
-        {
-            buf = _reusableByteBuffer;
-            buf.position(0);
-        }
-        else
-        {
-            buf = ByteBuffer.wrap(data);
-        }
-        buf.limit(_reusableDataOutput.length());
-
-        return buf;
+        final ByteBuffer copy = ByteBuffer.allocate(_reusableDataOutput.length());
+        copy.put(data, 0, _reusableDataOutput.length());
+        copy.flip();
+        return copy;
     }
 
 
