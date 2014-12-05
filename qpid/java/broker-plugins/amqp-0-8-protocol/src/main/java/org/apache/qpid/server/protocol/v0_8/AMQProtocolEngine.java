@@ -86,6 +86,7 @@ import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.SenderClosedException;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -329,6 +330,16 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                 catch (AMQProtocolVersionException e)
                 {
                     _logger.error("Unexpected protocol version", e);
+                    closeProtocolSession();
+                }
+                catch (SenderClosedException e)
+                {
+                    _logger.debug("Sender was closed abruptly, closing network.", e);
+                    closeProtocolSession();
+                }
+                catch (SenderException e)
+                {
+                    _logger.info("Unexpected exception on send, closing network.", e);
                     closeProtocolSession();
                 }
                 catch (TransportException e)
@@ -766,7 +777,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         }
     }
 
-    public void closeSession()
+    public void closeSession(final boolean connectionDropped)
     {
 
         if(runningAsSubject())
@@ -782,34 +793,9 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                 finally
                 {
                     _receivedLock.unlock();
+                    finishClose(connectionDropped);
                 }
 
-                if (!_closed)
-                {
-                    if (_virtualHost != null)
-                    {
-                        _virtualHost.getConnectionRegistry().deregisterConnection(this);
-                    }
-
-                    try
-                    {
-                        closeAllChannels();
-                    }
-                    finally
-                    {
-                        for (Action<? super AMQProtocolEngine> task : _taskList)
-                        {
-                            task.performAction(this);
-                        }
-
-                        synchronized (this)
-                        {
-                            _closed = true;
-                            notifyAll();
-                        }
-                        getEventLogger().message(_logSubject, ConnectionMessages.CLOSE());
-                    }
-                }
             }
             else
             {
@@ -823,11 +809,46 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                 @Override
                 public Object run()
                 {
-                    closeSession();
+                    closeSession(connectionDropped);
                     return null;
                 }
             });
 
+        }
+    }
+
+    private void finishClose(boolean connectionDropped)
+    {
+        if (!_closed)
+        {
+
+            try
+            {
+                if (_virtualHost != null)
+                {
+                    _virtualHost.getConnectionRegistry().deregisterConnection(this);
+                }
+                closeAllChannels();
+            }
+            finally
+            {
+                try
+                {
+                    for (Action<? super AMQProtocolEngine> task : _taskList)
+                    {
+                        task.performAction(this);
+                    }
+                }
+                finally
+                {
+                    synchronized (this)
+                    {
+                        _closed = true;
+                        notifyAll();
+                    }
+                    getEventLogger().message(_logSubject, connectionDropped ? ConnectionMessages.DROPPED_CONNECTION() : ConnectionMessages.CLOSE());
+                }
+            }
         }
     }
 
@@ -898,7 +919,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             try
             {
                 markChannelAwaitingCloseOk(channelId);
-                closeSession();
+                closeSession(false);
             }
             finally
             {
@@ -1126,7 +1147,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         {
             try
             {
-                closeSession();
+                closeSession(true);
             }
             finally
             {
@@ -1561,7 +1582,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         }
         try
         {
-            closeSession();
+            closeSession(false);
         }
         catch (Exception e)
         {
@@ -1588,7 +1609,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
 
         try
         {
-            closeSession();
+            closeSession(false);
         }
         catch (Exception e)
         {

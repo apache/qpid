@@ -62,7 +62,7 @@ public class MaxChannelsTest extends QpidTestCase
         try
         {
             _session.getVirtualHost().close();
-            _session.closeSession();
+            _session.closeSession(false);
         }
         finally
         {

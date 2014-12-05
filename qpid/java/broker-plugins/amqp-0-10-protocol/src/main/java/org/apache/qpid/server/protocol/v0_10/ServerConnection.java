@@ -174,7 +174,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     {
         if(_logClosed.compareAndSet(false, true))
         {
-            getEventLogger().message(this, ConnectionMessages.CLOSE());
+            getEventLogger().message(this, isConnectionLost() ? ConnectionMessages.DROPPED_CONNECTION() : ConnectionMessages.CLOSE());
         }
     }
 

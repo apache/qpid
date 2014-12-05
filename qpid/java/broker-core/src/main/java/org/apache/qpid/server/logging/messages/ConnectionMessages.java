@@ -45,6 +45,7 @@ public class ConnectionMessages
 
     public static final String CONNECTION_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "connection";
     public static final String OPEN_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "connection.open";
+    public static final String DROPPED_CONNECTION_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "connection.dropped_connection";
     public static final String IDLE_CLOSE_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "connection.idle_close";
     public static final String CLOSE_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "connection.close";
 
@@ -52,6 +53,7 @@ public class ConnectionMessages
     {
         Logger.getLogger(CONNECTION_LOG_HIERARCHY);
         Logger.getLogger(OPEN_LOG_HIERARCHY);
+        Logger.getLogger(DROPPED_CONNECTION_LOG_HIERARCHY);
         Logger.getLogger(IDLE_CLOSE_LOG_HIERARCHY);
         Logger.getLogger(CLOSE_LOG_HIERARCHY);
 
@@ -139,6 +141,33 @@ public class ConnectionMessages
             public String getLogHierarchy()
             {
                 return OPEN_LOG_HIERARCHY;
+            }
+        };
+    }
+
+    /**
+     * Log a Connection message of the Format:
+     * <pre>CON-1004 : Connection dropped</pre>
+     * Optional values are contained in [square brackets] and are numbered
+     * sequentially in the method call.
+     *
+     */
+    public static LogMessage DROPPED_CONNECTION()
+    {
+        String rawMessage = _messages.getString("DROPPED_CONNECTION");
+
+        final String message = rawMessage;
+
+        return new LogMessage()
+        {
+            public String toString()
+            {
+                return message;
+            }
+
+            public String getLogHierarchy()
+            {
+                return DROPPED_CONNECTION_LOG_HIERARCHY;
             }
         };
     }
