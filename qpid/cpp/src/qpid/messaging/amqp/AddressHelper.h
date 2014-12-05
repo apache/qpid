@@ -44,7 +44,6 @@ class AddressHelper
     const qpid::types::Variant::Map& getNodeProperties() const;
     bool getLinkSource(std::string& out) const;
     bool getLinkTarget(std::string& out) const;
-    bool getBrowse() const { return browse; }
     const qpid::types::Variant::Map& getLinkProperties() const;
     static std::string getLinkName(const Address& address);
   private:
