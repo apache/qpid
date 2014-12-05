@@ -571,7 +571,8 @@ bool AddressHelper::enabled(const std::string& policy, CheckMode mode) const
 
 bool AddressHelper::isUnreliable() const
 {
-    return reliability == AT_MOST_ONCE || reliability == UNRELIABLE;
+    return reliability == AT_MOST_ONCE || reliability == UNRELIABLE ||
+        (reliability.empty() && browse); // A browser defaults to unreliable.
 }
 
 const qpid::types::Variant::Map& AddressHelper::getNodeProperties() const
