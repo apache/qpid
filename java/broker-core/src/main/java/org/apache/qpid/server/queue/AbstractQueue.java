@@ -244,6 +244,8 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     private final AtomicBoolean _recovering = new AtomicBoolean(true);
     private final ConcurrentLinkedQueue<EnqueueRequest> _postRecoveryQueue = new ConcurrentLinkedQueue<>();
 
+    private final QueueRunner _queueRunner = new QueueRunner(this);
+
     protected AbstractQueue(Map<String, Object> attributes, VirtualHostImpl virtualHost)
     {
         super(parentsMap(virtualHost), attributes);
@@ -745,7 +747,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         childAdded(consumer);
         consumer.addChangeListener(_deletedChildListener);
 
-        deliverAsync(consumer);
+        deliverAsync();
 
         return consumer;
 
@@ -1006,14 +1008,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             {
                 checkConsumersNotAheadOfDelivery(entry);
 
-                if (exclusiveSub != null)
-                {
-                    deliverAsync(exclusiveSub);
-                }
-                else
-                {
-                    deliverAsync();
-                }
+                deliverAsync();
             }
 
             checkForNotification(entry.getMessage());
@@ -1490,7 +1485,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                 _activeSubscriberCount.incrementAndGet();
 
             }
-            deliverAsync(sub);
+            deliverAsync();
         }
     }
 
@@ -1859,27 +1854,11 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         }
     }
 
-    private final QueueRunner _queueRunner = new QueueRunner(this);
-
     public void deliverAsync()
     {
         _stateChangeCount.incrementAndGet();
 
         _queueRunner.execute();
-
-    }
-
-    public void deliverAsync(QueueConsumer<?> sub)
-    {
-        if(_exclusiveSubscriber == null)
-        {
-            deliverAsync();
-        }
-        else
-        {
-            SubFlushRunner flusher = sub.getRunner();
-            flusher.execute();
-        }
 
     }
 
@@ -2100,10 +2079,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
      *
      * A queue Runner is started whenever a state change occurs, e.g when a new
      * message arrives on the queue and cannot be immediately delivered to a
-     * consumer (i.e. asynchronous delivery is required). Unless there are
-     * SubFlushRunners operating (due to consumers unsuspending) which are
-     * capable of accepting/delivering all messages then these messages would
-     * otherwise remain on the queue.
+     * consumer (i.e. asynchronous delivery is required).
      *
      * processQueue should be running while there are messages on the queue AND
      * there are consumers that can deliver them. If there are no
@@ -2412,7 +2388,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         public void stateChanged(MessageInstance entry, QueueEntry.State oldSate, QueueEntry.State newState)
         {
             entry.removeStateChangeListener(this);
-            deliverAsync(_sub);
+            deliverAsync();
         }
     }
 

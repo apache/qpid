@@ -180,14 +180,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
         queueAttributes.put(Queue.ID, UUID.randomUUID());
         queueAttributes.put(Queue.NAME, "test");
         // create queue with overridden method deliverAsync
-        StandardQueueImpl testQueue = new StandardQueueImpl(queueAttributes, getVirtualHost())
-        {
-            @Override
-            public void deliverAsync(QueueConsumer sub)
-            {
-                // do nothing
-            }
-        };
+        StandardQueueImpl testQueue = new StandardQueueImpl(queueAttributes, getVirtualHost());
         testQueue.create();
 
         // put messages

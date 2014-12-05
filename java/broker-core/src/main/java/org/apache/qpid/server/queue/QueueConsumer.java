@@ -44,8 +44,6 @@ public interface QueueConsumer<X extends QueueConsumer<X>> extends ConsumerImpl,
 
     void queueDeleted();
 
-    SubFlushRunner getRunner();
-
     AMQQueue getQueue();
 
     boolean resend(QueueEntry e);
