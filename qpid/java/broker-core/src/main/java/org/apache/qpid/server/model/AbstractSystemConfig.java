@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.ManagementModeStoreHandler;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -48,24 +47,44 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
     private static final UUID SYSTEM_ID = new UUID(0l, 0l);
     private final EventLogger _eventLogger;
     private final LogRecorder _logRecorder;
-    private final BrokerOptions _brokerOptions;
     private final BrokerShutdownProvider _brokerShutdownProvider;
 
     private DurableConfigurationStore _configurationStore;
 
+    @ManagedAttributeField
+    private boolean _managementMode;
+
+    @ManagedAttributeField
+    private int _managementModeRmiPortOverride;
+
+    @ManagedAttributeField
+    private int _managementModeJmxPortOverride;
+
+    @ManagedAttributeField
+    private int _managementModeHttpPortOverride;
+
+    @ManagedAttributeField
+    private boolean _managementModeQuiesceVirtualHosts;
+
+    @ManagedAttributeField
+    private String _managementModePassword;
+
+    @ManagedAttributeField
+    private String _initialConfigurationLocation;
+
+
     public AbstractSystemConfig(final TaskExecutor taskExecutor,
                                 final EventLogger eventLogger,
                                 final LogRecorder logRecorder,
-                                final BrokerOptions brokerOptions,
+                                final Map<String,Object> attributes,
                                 final BrokerShutdownProvider brokerShutdownProvider)
     {
         super(parentsMap(),
-              updateAttributes(brokerOptions.convertToSystemAttributes()),
+              updateAttributes(attributes),
               taskExecutor, BrokerModel.getInstance());
         _eventLogger = eventLogger;
         getTaskExecutor().start();
         _logRecorder = logRecorder;
-        _brokerOptions = brokerOptions;
         _brokerShutdownProvider = brokerShutdownProvider;
     }
 
@@ -98,12 +117,6 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
     public LogRecorder getLogRecorder()
     {
         return _logRecorder;
-    }
-
-    @Override
-    public BrokerOptions getBrokerOptions()
-    {
-        return _brokerOptions;
     }
 
     @Override
@@ -155,16 +168,16 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
         super.onOpen();
         _configurationStore = createStoreObject();
 
-        if (_brokerOptions.isManagementMode())
+        if (isManagementMode())
         {
-            _configurationStore = new ManagementModeStoreHandler(_configurationStore, _brokerOptions);
+            _configurationStore = new ManagementModeStoreHandler(_configurationStore, this);
         }
 
         try
         {
             _configurationStore.openConfigurationStore(this,
                                           false,
-                                          convertToConfigurationRecords(_brokerOptions.getInitialConfigurationLocation(),
+                                          convertToConfigurationRecords(getInitialConfigurationLocation(),
                                                                         this));
             _configurationStore.upgradeStoreStructure();
         }
@@ -213,6 +226,48 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
         }
 
 
+    }
+
+    @Override
+    public boolean isManagementMode()
+    {
+        return _managementMode;
+    }
+
+    @Override
+    public int getManagementModeRmiPortOverride()
+    {
+        return _managementModeRmiPortOverride;
+    }
+
+    @Override
+    public int getManagementModeJmxPortOverride()
+    {
+        return _managementModeJmxPortOverride;
+    }
+
+    @Override
+    public int getManagementModeHttpPortOverride()
+    {
+        return _managementModeHttpPortOverride;
+    }
+
+    @Override
+    public boolean isManagementModeQuiesceVirtualHosts()
+    {
+        return _managementModeQuiesceVirtualHosts;
+    }
+
+    @Override
+    public String getManagementModePassword()
+    {
+        return _managementModePassword;
+    }
+
+    @Override
+    public String getInitialConfigurationLocation()
+    {
+        return _initialConfigurationLocation;
     }
 
     @Override

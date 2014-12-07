@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.server.model;
 
-import org.apache.qpid.server.BrokerOptions;
+import java.util.Map;
+
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
@@ -38,10 +39,10 @@ public class JsonSystemConfigImpl extends AbstractSystemConfig<JsonSystemConfigI
     public JsonSystemConfigImpl(final TaskExecutor taskExecutor,
                                 final EventLogger eventLogger,
                                 final LogRecorder logRecorder,
-                                final BrokerOptions brokerOptions,
+                                final Map<String,Object> attributes,
                                 final BrokerShutdownProvider brokerShutdownProvider)
     {
-        super(taskExecutor, eventLogger, logRecorder, brokerOptions, brokerShutdownProvider);
+        super(taskExecutor, eventLogger, logRecorder, attributes, brokerShutdownProvider);
     }
 
     public String getStorePath()

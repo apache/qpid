@@ -71,13 +71,13 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             CONNECTION_HEART_BEAT_DELAY, STATISTICS_REPORTING_PERIOD };
 
 
+    private SystemConfig<?> _parent;
     private EventLogger _eventLogger;
     private final LogRecorder _logRecorder;
 
     private final SecurityManager _securityManager;
 
     private AuthenticationProvider<?> _managementModeAuthenticationProvider;
-    private BrokerOptions _brokerOptions;
 
     private Timer _reportingTimer;
     private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
@@ -108,18 +108,17 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
                          SystemConfig parent)
     {
         super(parentsMap(parent), attributes);
-
+        _parent = parent;
         _logRecorder = parent.getLogRecorder();
         _eventLogger = parent.getEventLogger();
-        _brokerOptions = parent.getBrokerOptions();
-        _securityManager = new SecurityManager(this, _brokerOptions.isManagementMode());
-        if (_brokerOptions.isManagementMode())
+        _securityManager = new SecurityManager(this, parent.isManagementMode());
+        if (parent.isManagementMode())
         {
             Map<String,Object> authManagerAttrs = new HashMap<String, Object>();
             authManagerAttrs.put(NAME,"MANAGEMENT_MODE_AUTHENTICATION");
             authManagerAttrs.put(ID, UUID.randomUUID());
             SimpleAuthenticationManager authManager = new SimpleAuthenticationManager(authManagerAttrs, this);
-            authManager.addUser(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _brokerOptions.getManagementModePassword());
+            authManager.addUser(BrokerOptions.MANAGEMENT_MODE_USER_NAME, _parent.getManagementModePassword());
             _managementModeAuthenticationProvider = authManager;
         }
         _messagesDelivered = new StatisticsCounter("messages-delivered");
@@ -230,7 +229,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.ACTIVE )
     private void activate()
     {
-        if(_brokerOptions.isManagementMode())
+        if(_parent.isManagementMode())
         {
             _managementModeAuthenticationProvider.open();
         }
@@ -263,7 +262,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         }
 
         final boolean brokerShutdownOnErroredChild = getContextValue(Boolean.class, BROKER_FAIL_STARTUP_WITH_ERRORED_CHILD);
-        if (!_brokerOptions.isManagementMode() && brokerShutdownOnErroredChild && hasBrokerAnyErroredChildren)
+        if (!_parent.isManagementMode() && brokerShutdownOnErroredChild && hasBrokerAnyErroredChildren)
         {
             throw new IllegalStateException(String.format("Broker context variable %s is set and the broker has %s children",
                     BROKER_FAIL_STARTUP_WITH_ERRORED_CHILD, State.ERRORED));
@@ -274,7 +273,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         if (isManagementMode())
         {
             _eventLogger.message(BrokerMessages.MANAGEMENT_MODE(BrokerOptions.MANAGEMENT_MODE_USER_NAME,
-                                                                _brokerOptions.getManagementModePassword()));
+                                                                _parent.getManagementModePassword()));
         }
         setState(State.ACTIVE);
     }
@@ -939,7 +938,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @Override
     public boolean isManagementMode()
     {
-        return _brokerOptions.isManagementMode();
+        return _parent.isManagementMode();
     }
 
     @Override

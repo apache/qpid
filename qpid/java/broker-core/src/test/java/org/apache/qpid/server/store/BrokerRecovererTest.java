@@ -69,7 +69,7 @@ public class BrokerRecovererTest extends TestCase
         _brokerShutdownProvider = mock(BrokerShutdownProvider.class);
         _systemConfig = new JsonSystemConfigImpl(_taskExecutor,
                                                mock(EventLogger.class), mock(LogRecorder.class),
-                                               new BrokerOptions(),
+                                               new BrokerOptions().convertToSystemConfigAttributes(),
                                                _brokerShutdownProvider);
 
         when(_brokerEntry.getId()).thenReturn(_brokerId);
