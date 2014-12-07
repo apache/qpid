@@ -44,8 +44,10 @@ import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.model.AbstractSystemConfig;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerShutdownProvider;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.JsonSystemConfigImpl;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -87,7 +89,8 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
 
 
 
-        _root = new ConfiguredObjectRecordImpl(_rootId, Broker.class.getSimpleName(), Collections.<String,Object>emptyMap(), Collections.singletonMap(SystemConfig.class.getSimpleName(), systemContextRecord.getId()));
+        _root = new ConfiguredObjectRecordImpl(_rootId, Broker.class.getSimpleName(), Collections.singletonMap(Broker.NAME,
+                                                                                                               (Object) "broker"), Collections.singletonMap(SystemConfig.class.getSimpleName(), systemContextRecord.getId()));
 
         _portEntry = mock(ConfiguredObjectRecord.class);
         when(_portEntry.getId()).thenReturn(_portEntryId);
@@ -120,11 +123,30 @@ public class ManagementModeStoreHandlerTest extends QpidTestCase
     private ManagementModeStoreHandler createManagementModeStoreHandler()
     {
         _systemConfig.close();
-        _systemConfig = new JsonSystemConfigImpl(_taskExecutor,
-                                                                     mock(EventLogger.class),
-                                                                     mock(LogRecorder.class),
-                                                                     _options.convertToSystemConfigAttributes(),
-                                                                     mock(BrokerShutdownProvider.class));
+        Map<String, Object> attributes = new HashMap<>(_options.convertToSystemConfigAttributes());
+        attributes.put(ConfiguredObject.DESIRED_STATE, State.QUIESCED);
+        _systemConfig = new AbstractSystemConfig(_taskExecutor,
+                                                 mock(EventLogger.class),
+                                                 mock(LogRecorder.class),
+                                                 attributes,
+                                                 mock(BrokerShutdownProvider.class))
+        {
+            @Override
+            protected void onOpen()
+            {
+            }
+
+            @Override
+            protected DurableConfigurationStore createStoreObject()
+            {
+                return _store;
+            }
+
+            @Override
+            protected void onClose()
+            {
+            }
+        };
         _systemConfig.open();
         return new ManagementModeStoreHandler(_store, _systemConfig);
     }

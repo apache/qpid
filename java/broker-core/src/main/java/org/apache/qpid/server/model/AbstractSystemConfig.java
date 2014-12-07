@@ -31,15 +31,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.ManagementModeStoreHandler;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.logging.MessageLogger;
+import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
+import org.apache.qpid.server.store.BrokerStoreUpgraderAndRecoverer;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordConverter;
 import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.util.SystemUtils;
 
 public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
         extends AbstractConfiguredObject<X> implements SystemConfig<X>
@@ -72,6 +78,9 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
     @ManagedAttributeField
     private String _initialConfigurationLocation;
 
+    @ManagedAttributeField
+    private boolean _startupLoggedToSystemOut;
+
 
     public AbstractSystemConfig(final TaskExecutor taskExecutor,
                                 final EventLogger eventLogger,
@@ -100,12 +109,6 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
     protected void setState(final State desiredState)
     {
         throw new IllegalArgumentException("Cannot change the state of the SystemContext object");
-    }
-
-    @Override
-    public State getState()
-    {
-        return State.ACTIVE;
     }
 
     @Override
@@ -176,9 +179,9 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
         try
         {
             _configurationStore.openConfigurationStore(this,
-                                          false,
-                                          convertToConfigurationRecords(getInitialConfigurationLocation(),
-                                                                        this));
+                                                       false,
+                                                       convertToConfigurationRecords(getInitialConfigurationLocation(),
+                                                                                     this));
             _configurationStore.upgradeStoreStructure();
         }
         catch (IOException e)
@@ -186,6 +189,61 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
             throw new IllegalArgumentException(e);
         }
 
+
+
+    }
+
+    @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
+    protected void activate()
+    {
+        final EventLogger eventLogger = _eventLogger;
+
+        EventLogger startupLogger;
+        if (isStartupLoggedToSystemOut())
+        {
+            //Create the composite (logging+SystemOut MessageLogger to be used during startup
+            MessageLogger[] messageLoggers = {new SystemOutMessageLogger(), eventLogger.getMessageLogger()};
+
+            CompositeStartupMessageLogger startupMessageLogger = new CompositeStartupMessageLogger(messageLoggers);
+            startupLogger = new EventLogger(startupMessageLogger);
+        }
+        else
+        {
+            startupLogger = eventLogger;
+        }
+
+        startupLogger.message(BrokerMessages.STARTUP(QpidProperties.getReleaseVersion(),
+                                                     QpidProperties.getBuildVersion()));
+
+        startupLogger.message(BrokerMessages.PLATFORM(System.getProperty("java.vendor"),
+                                                      System.getProperty("java.runtime.version",
+                                                                         System.getProperty("java.version")),
+                                                      SystemUtils.getOSName(),
+                                                      SystemUtils.getOSVersion(),
+                                                      SystemUtils.getOSArch()));
+
+        startupLogger.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
+
+        BrokerStoreUpgraderAndRecoverer upgrader = new BrokerStoreUpgraderAndRecoverer(this);
+        upgrader.perform();
+
+        Broker broker = getBroker();
+
+        broker.setEventLogger(startupLogger);
+        broker.open();
+
+        if (broker.getState() == State.ACTIVE)
+        {
+            startupLogger.message(BrokerMessages.READY());
+            broker.setEventLogger(eventLogger);
+        }
+
+    }
+
+    @Override
+    protected final boolean rethrowRuntimeExceptionsOnOpen()
+    {
+        return true;
     }
 
     abstract protected DurableConfigurationStore createStoreObject();
@@ -274,5 +332,11 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
     public BrokerShutdownProvider getBrokerShutdownProvider()
     {
         return _brokerShutdownProvider;
+    }
+
+    @Override
+    public boolean isStartupLoggedToSystemOut()
+    {
+        return _startupLoggedToSystemOut;
     }
 }

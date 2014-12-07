@@ -604,8 +604,9 @@ public class BrokerStoreUpgraderAndRecoverer
         return brokerRecord;
     }
 
-    public Broker<?> perform(final DurableConfigurationStore store)
+    public Broker<?> perform()
     {
+        final DurableConfigurationStore store = _systemConfig.getConfigurationStore();
         List<ConfiguredObjectRecord> upgradedRecords = upgrade(store);
         new GenericRecoverer(_systemConfig).recover(upgradedRecords);
 

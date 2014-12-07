@@ -41,6 +41,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.util.FileUtils;
 
 /**
@@ -454,7 +455,17 @@ public class Main
 
     protected void startBroker(final BrokerOptions options) throws Exception
     {
-        Broker broker = new Broker(true);
+        Broker broker = new Broker(new Action<Integer>()
+                                    {
+                                        @Override
+                                        public void performAction(final Integer exitStatusCode)
+                                        {
+                                            if (exitStatusCode != 0)
+                                            {
+                                                shutdown(exitStatusCode);
+                                            }
+                                        }
+                                    });
         broker.startup(options);
     }
 

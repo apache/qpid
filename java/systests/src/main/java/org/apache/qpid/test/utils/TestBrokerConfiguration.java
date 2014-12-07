@@ -44,21 +44,7 @@ import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
-import org.apache.qpid.server.model.AbstractSystemConfig;
-import org.apache.qpid.server.model.AccessControlProvider;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.BrokerModel;
-import org.apache.qpid.server.model.BrokerShutdownProvider;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.JsonSystemConfigImpl;
-import org.apache.qpid.server.model.Plugin;
-import org.apache.qpid.server.model.PreferencesProvider;
-import org.apache.qpid.server.model.SystemConfig;
-import org.apache.qpid.server.model.UUIDGenerator;
-import org.apache.qpid.server.model.VirtualHostAlias;
-import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.FileBasedGroupProvider;
 import org.apache.qpid.server.model.adapter.FileBasedGroupProviderImpl;
 import org.apache.qpid.server.plugin.PluggableFactoryLoader;
@@ -216,10 +202,13 @@ public class TestBrokerConfiguration
         SystemConfigFactory configFactory =
                 (new PluggableFactoryLoader<>(SystemConfigFactory.class)).get(_storeType);
 
+        Map<String, Object> attributes = new HashMap<>(brokerOptions.convertToSystemConfigAttributes());
+        attributes.put(SystemConfig.STARTUP_LOGGED_TO_SYSTEM_OUT, false);
+        attributes.put(ConfiguredObject.DESIRED_STATE, State.QUIESCED);
         final SystemConfig parentObject = configFactory.newInstance(_taskExecutor,
                                                                    mock(EventLogger.class),
                                                                    mock(LogRecorder.class),
-                                                                   brokerOptions.convertToSystemConfigAttributes(),
+                                                                   attributes,
                                                                    mock(BrokerShutdownProvider.class));
 
         parentObject.open();
@@ -252,6 +241,7 @@ public class TestBrokerConfiguration
 
         configurationStore.openConfigurationStore(parentObject,true,initialRecords.toArray(new ConfiguredObjectRecord[initialRecords.size()]));
         configurationStore.closeConfigurationStore();
+        parentObject.close();
         return true;
     }
 
