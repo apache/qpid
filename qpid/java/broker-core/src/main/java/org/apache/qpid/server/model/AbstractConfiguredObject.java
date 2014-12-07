@@ -556,9 +556,14 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
     }
 
+    protected boolean rethrowRuntimeExceptionsOnOpen()
+    {
+        return false;
+    }
+
     protected final void handleExceptionOnOpen(RuntimeException e)
     {
-        if (e instanceof ServerScopedRuntimeException)
+        if (rethrowRuntimeExceptionsOnOpen() || e instanceof ServerScopedRuntimeException)
         {
             throw e;
         }

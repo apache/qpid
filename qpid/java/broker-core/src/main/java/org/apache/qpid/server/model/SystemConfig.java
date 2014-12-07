@@ -35,7 +35,8 @@ public interface SystemConfig<X extends SystemConfig<X>> extends ConfiguredObjec
     String MANAGEMENT_MODE_HTTP_PORT_OVERRIDE = "managementModeHttpPortOverride";
     String MANAGEMENT_MODE_PASSWORD = "managementModePassword";
     String INITIAL_CONFIGURATION_LOCATION = "initialConfigurationLocation";
-    
+    String STARTUP_LOGGED_TO_SYSTEM_OUT = "startupLoggedToSystemOut";
+
     @ManagedAttribute(defaultValue = "false")
     boolean isManagementMode();
 
@@ -57,6 +58,8 @@ public interface SystemConfig<X extends SystemConfig<X>> extends ConfiguredObjec
     @ManagedAttribute
     String getInitialConfigurationLocation();
 
+    @ManagedAttribute(defaultValue = "true")
+    boolean isStartupLoggedToSystemOut();
 
     EventLogger getEventLogger();
 

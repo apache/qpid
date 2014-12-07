@@ -59,4 +59,9 @@ public class EventLogger
     {
         _messageLogger = messageLogger;
     }
+
+    public MessageLogger getMessageLogger()
+    {
+        return _messageLogger;
+    }
 }

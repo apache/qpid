@@ -33,11 +33,9 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
-import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
-import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.Log4jMessageLogger;
 import org.apache.qpid.server.logging.LogRecorder;
@@ -46,14 +44,11 @@ import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.model.BrokerShutdownProvider;
-import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.plugin.PluggableFactoryLoader;
 import org.apache.qpid.server.plugin.SystemConfigFactory;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.store.BrokerStoreUpgraderAndRecoverer;
-import org.apache.qpid.server.store.DurableConfigurationStore;
-import org.apache.qpid.util.SystemUtils;
+import org.apache.qpid.server.util.Action;
 
 public class Broker implements BrokerShutdownProvider
 {
@@ -63,23 +58,20 @@ public class Broker implements BrokerShutdownProvider
     private EventLogger _eventLogger;
     private boolean _configuringOwnLogging = false;
     private final TaskExecutor _taskExecutor = new TaskExecutorImpl();
-    private final boolean _exitJVMOnShutdownWithNonZeroExitCode;
 
     private SystemConfig _systemConfig;
 
-    private org.apache.qpid.server.model.Broker _broker;
-
-    private DurableConfigurationStore _store;
+    private final Action<Integer> _shutdownAction;
 
 
     public Broker()
     {
-        this(false);
+        this(null);
     }
 
-    public Broker(boolean exitJVMOnShutdownWithNonZeroExitCode)
+    public Broker(Action<Integer> shutdownAction)
     {
-        this._exitJVMOnShutdownWithNonZeroExitCode = exitJVMOnShutdownWithNonZeroExitCode;
+        _shutdownAction = shutdownAction;
     }
 
     protected static class InitException extends RuntimeException
@@ -108,22 +100,10 @@ public class Broker implements BrokerShutdownProvider
         {
             try
             {
-                try
+                if(_systemConfig != null)
                 {
-                    if (_broker != null)
-                    {
-                        _broker.close();
-                    }
+                    _systemConfig.close();
                 }
-                finally
-                {
-                    if(_systemConfig != null)
-                    {
-                        _systemConfig.close();
-                    }
-                }
-                _store = null;
-                _broker = null;
                 _taskExecutor.stop();
 
             }
@@ -134,9 +114,9 @@ public class Broker implements BrokerShutdownProvider
                     LogManager.shutdown();
                 }
 
-                if (_exitJVMOnShutdownWithNonZeroExitCode && exitStatusCode != 0)
+                if (_shutdownAction != null)
                 {
-                    System.exit(exitStatusCode);
+                    _shutdownAction.performAction(exitStatusCode);
                 }
             }
         }
@@ -178,6 +158,10 @@ public class Broker implements BrokerShutdownProvider
         {
             configureLogging(new File(options.getLogConfigFileLocation()), options.getLogWatchFrequency());
         }
+        // Create the RootLogger to be used during broker operation
+        boolean statusUpdatesEnabled = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "true"));
+        MessageLogger messageLogger = new Log4jMessageLogger(statusUpdatesEnabled);
+        _eventLogger.setMessageLogger(messageLogger);
 
 
         PluggableFactoryLoader<SystemConfigFactory> configFactoryLoader = new PluggableFactoryLoader<>(SystemConfigFactory.class);
@@ -194,66 +178,16 @@ public class Broker implements BrokerShutdownProvider
 
         _taskExecutor.start();
         _systemConfig = configFactory.newInstance(_taskExecutor, _eventLogger, logRecorder, options.convertToSystemConfigAttributes(), this);
-        _systemConfig.open();
-        _store = _systemConfig.getConfigurationStore();
-
         try
         {
-            // Create the RootLogger to be used during broker operation
-            boolean statusUpdatesEnabled = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "true"));
-            MessageLogger messageLogger = new Log4jMessageLogger(statusUpdatesEnabled);
-            final EventLogger eventLogger = _systemConfig.getEventLogger();
-            eventLogger.setMessageLogger(messageLogger);
-
-            //Create the composite (log4j+SystemOut MessageLogger to be used during startup
-            MessageLogger[] messageLoggers = {new SystemOutMessageLogger(), messageLogger};
-
-            CompositeStartupMessageLogger startupMessageLogger = new CompositeStartupMessageLogger(messageLoggers);
-            EventLogger startupLogger = new EventLogger(startupMessageLogger);
-
-            startupLogger.message(BrokerMessages.STARTUP(QpidProperties.getReleaseVersion(),
-                                                         QpidProperties.getBuildVersion()));
-
-            startupLogger.message(BrokerMessages.PLATFORM(System.getProperty("java.vendor"),
-                                                          System.getProperty("java.runtime.version",
-                                                                             System.getProperty("java.version")),
-                                                          SystemUtils.getOSName(),
-                                                          SystemUtils.getOSVersion(),
-                                                          SystemUtils.getOSArch()));
-
-            startupLogger.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
-
-            BrokerStoreUpgraderAndRecoverer upgrader = new BrokerStoreUpgraderAndRecoverer(_systemConfig);
-            org.apache.qpid.server.model.Broker broker = upgrader.perform(_store);
-            _broker = broker;
-
-            broker.setEventLogger(startupLogger);
-            broker.open();
-
-            if (broker.getState() == State.ACTIVE)
-            {
-                startupLogger.message(BrokerMessages.READY());
-                broker.setEventLogger(eventLogger);
-            }
+            _systemConfig.open();
         }
-        catch(Exception e)
+        catch(RuntimeException e)
         {
             LOGGER.fatal("Exception during startup", e);
             try
             {
-                try
-                {
-                    if (_broker != null)
-                    {
-                        _broker.close();
-                    }
-                }
-                finally
-                {
-                    _systemConfig.close();
-                }
-                _store = null;
-                _broker = null;
+                _systemConfig.close();
             }
             catch(Exception ce)
             {
