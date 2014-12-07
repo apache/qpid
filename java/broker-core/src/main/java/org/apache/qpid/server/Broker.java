@@ -193,7 +193,7 @@ public class Broker implements BrokerShutdownProvider
         LogRecorder logRecorder = new LogRecorder();
 
         _taskExecutor.start();
-        _systemConfig = configFactory.newInstance(_taskExecutor, _eventLogger, logRecorder, options, this);
+        _systemConfig = configFactory.newInstance(_taskExecutor, _eventLogger, logRecorder, options.convertToSystemConfigAttributes(), this);
         _systemConfig.open();
         _store = _systemConfig.getConfigurationStore();
 

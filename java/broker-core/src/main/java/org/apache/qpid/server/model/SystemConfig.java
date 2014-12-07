@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.model;
 
-import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -28,9 +27,38 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 @ManagedObject (creatable = false)
 public interface SystemConfig<X extends SystemConfig<X>> extends ConfiguredObject<X>
 {
-    EventLogger getEventLogger();
+    String MANAGEMENT_MODE = "managementMode";
+    
+    String MANAGEMENT_MODE_QUIESCE_VIRTUAL_HOSTS = "managementModeQuiesceVirtualHosts";
+    String MANAGEMENT_MODE_RMI_PORT_OVERRIDE = "managementModeRmiPortOverride";
+    String MANAGEMENT_MODE_JMX_PORT_OVERRIDE = "managementModeJmxPortOverride";
+    String MANAGEMENT_MODE_HTTP_PORT_OVERRIDE = "managementModeHttpPortOverride";
+    String MANAGEMENT_MODE_PASSWORD = "managementModePassword";
+    String INITIAL_CONFIGURATION_LOCATION = "initialConfigurationLocation";
+    
+    @ManagedAttribute(defaultValue = "false")
+    boolean isManagementMode();
 
-    BrokerOptions getBrokerOptions();
+    @ManagedAttribute(defaultValue = "0")
+    int getManagementModeRmiPortOverride();
+
+    @ManagedAttribute(defaultValue = "0")
+    int getManagementModeJmxPortOverride();
+
+    @ManagedAttribute(defaultValue = "0")
+    int getManagementModeHttpPortOverride();
+
+    @ManagedAttribute(defaultValue = "false")
+    boolean isManagementModeQuiesceVirtualHosts();
+
+    @ManagedAttribute(secure = true)
+    String getManagementModePassword();
+
+    @ManagedAttribute
+    String getInitialConfigurationLocation();
+
+
+    EventLogger getEventLogger();
 
     Broker getBroker();
 
@@ -39,4 +67,5 @@ public interface SystemConfig<X extends SystemConfig<X>> extends ConfiguredObjec
     DurableConfigurationStore getConfigurationStore();
 
     BrokerShutdownProvider getBrokerShutdownProvider();
+
 }

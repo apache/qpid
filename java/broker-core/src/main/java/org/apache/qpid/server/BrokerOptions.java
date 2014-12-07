@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.util.StringUtil;
 
 public class BrokerOptions
@@ -80,12 +81,21 @@ public class BrokerOptions
     private Map<String, String> _configProperties = new HashMap<String,String>();
     private String _initialSystemProperties;
 
-    public Map<String, Object> convertToSystemAttributes()
+    public Map<String, Object> convertToSystemConfigAttributes()
     {
         Map<String,Object> attributes = new HashMap<String, Object>();
 
         attributes.put("storePath", getConfigurationStoreLocation());
         attributes.put(ConfiguredObject.CONTEXT, getConfigProperties());
+
+        attributes.put(SystemConfig.MANAGEMENT_MODE, _managementMode);
+        attributes.put(SystemConfig.MANAGEMENT_MODE_QUIESCE_VIRTUAL_HOSTS, _managementModeQuiesceVhosts);
+        attributes.put(SystemConfig.MANAGEMENT_MODE_RMI_PORT_OVERRIDE, _managementModeRmiPortOverride);
+        attributes.put(SystemConfig.MANAGEMENT_MODE_JMX_PORT_OVERRIDE, _managementModeJmxPortOverride);
+        attributes.put(SystemConfig.MANAGEMENT_MODE_HTTP_PORT_OVERRIDE, _managementModeHttpPortOverride);
+        attributes.put(SystemConfig.MANAGEMENT_MODE_PASSWORD, _managementModePassword);
+        attributes.put(SystemConfig.INITIAL_CONFIGURATION_LOCATION, getInitialConfigurationLocation());
+        
         return attributes;
     }
 
