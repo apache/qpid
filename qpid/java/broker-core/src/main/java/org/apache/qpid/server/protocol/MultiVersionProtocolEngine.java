@@ -278,7 +278,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     private class SelfDelegateProtocolEngine implements ServerProtocolEngine
     {
         private final ByteBuffer _header = ByteBuffer.allocate(MINIMUM_REQUIRED_HEADER_BYTES);
-        private long _lastReadTime;
+        private long _lastReadTime = System.currentTimeMillis();
 
         public SocketAddress getRemoteAddress()
         {

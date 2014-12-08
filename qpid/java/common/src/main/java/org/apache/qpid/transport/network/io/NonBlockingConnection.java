@@ -41,8 +41,7 @@ public class NonBlockingConnection implements NetworkConnection
     private static final Logger LOGGER = LoggerFactory.getLogger(NonBlockingConnection.class);
     private final SocketChannel _socket;
     private final long _timeout;
-    private final NonBlockingSender _ioSender;
-    private final NonBlockingReceiver _ioReceiver;
+    private final NonBlockingSenderReceiver _nonBlockingSenderReceiver;
     private int _maxReadIdle;
     private int _maxWriteIdle;
     private Principal _principal;
@@ -55,36 +54,30 @@ public class NonBlockingConnection implements NetworkConnection
         _socket = socket;
         _timeout = timeout;
 
-        _ioReceiver = new NonBlockingReceiver(_socket, delegate, receiveBufferSize,_timeout);
-        _ioReceiver.setTicker(ticker);
+//        _ioReceiver = new NonBlockingReceiver(_socket, delegate, receiveBufferSize,_timeout);
+//        _nonBlockingSenderReceiver.setTicker(ticker);
 
-        _ioSender = new NonBlockingSender(_socket, 2 * sendBufferSize, _timeout);
+//        _ioSender = new NonBlockingSender(_socket, 2 * sendBufferSize, _timeout);
 
-        _ioSender.setReceiver(_ioReceiver);
+//        _ioSender.setReceiver(_nonBlockingSenderReceiver);
+
+        _nonBlockingSenderReceiver = new NonBlockingSenderReceiver(_socket, delegate, receiveBufferSize, ticker);
 
     }
 
     public void start()
     {
-        _ioSender.initiate();
-        _ioReceiver.initiate();
+        _nonBlockingSenderReceiver.initiate();
     }
 
     public Sender<ByteBuffer> getSender()
     {
-        return _ioSender;
+        return _nonBlockingSenderReceiver;
     }
 
     public void close()
     {
-        try
-        {
-            _ioSender.close();
-        }
-        finally
-        {
-            _ioReceiver.close(false);
-        }
+        _nonBlockingSenderReceiver.close();
     }
 
     public SocketAddress getRemoteAddress()

@@ -170,7 +170,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     private Sender<ByteBuffer> _sender;
 
     private volatile boolean _deferFlush;
-    private long _lastReceivedTime;
+    private long _lastReceivedTime = System.currentTimeMillis();  // TODO consider if this is what we want?
     private boolean _blocking;
 
     private final ReentrantLock _receivedLock;
