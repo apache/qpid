@@ -112,6 +112,9 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
     @Override
     public void run()
     {
+
+        LOGGER.debug("I/O for thread " + _remoteSocketAddress + " started");
+
         // never ending loop doing
         //  try to write all pending byte buffers, handle situation where zero bytes or part of a byte buffer is written
         //  read as much as you can
@@ -161,6 +164,10 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
         catch (IOException e)
         {
             LOGGER.info("Exception performing final output for thread '" + _remoteSocketAddress + "': " + e);
+        }
+        finally
+        {
+            LOGGER.info("Shutting down IO thread for " + _remoteSocketAddress);
         }
     }
 
