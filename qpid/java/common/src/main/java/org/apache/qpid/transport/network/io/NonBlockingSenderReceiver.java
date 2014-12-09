@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.SenderClosedException;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.network.Ticker;
 
@@ -104,6 +105,10 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
     @Override
     public void send(final ByteBuffer msg)
     {
+        if (_closed.get())
+        {
+            throw new SenderClosedException("I/O for thread " + _remoteSocketAddress + " is already closed");
+        }
         // append to list and do selector wakeup
         _buffers.add(msg);
         _selector.wakeup();
@@ -223,8 +228,8 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
     private void doRead() throws IOException
     {
 
-        int remaining;
-        do
+        int remaining = 0;
+        while (remaining == 0 && !_closed.get())
         {
             if(_currentBuffer == null || _currentBuffer.remaining() == 0)
             {
@@ -241,7 +246,5 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
             _currentBuffer = _currentBuffer.slice();
             _receiver.received(dup);
         }
-        while (remaining == 0);
-
     }
 }
