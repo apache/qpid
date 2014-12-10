@@ -31,6 +31,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBVirtualHostNode;
 import org.apache.qpid.test.utils.Piper;
@@ -151,15 +152,15 @@ public class BDBBackupTest extends QpidBrokerTestCase
         Process backupProcess = null;
         try
         {
-            String qpidHome = System.getProperty(QPID_HOME);
+            String qpidHome = QPID_HOME;
             ProcessBuilder pb = new ProcessBuilder(qpidHome + BACKUP_SCRIPT, "-todir", backupToDir.getAbsolutePath(), "-fromdir", backupFromDir.getAbsolutePath());
             pb.redirectErrorStream(true);
             Map<String, String> env = pb.environment();
-            env.put(QPID_HOME, qpidHome);
+            env.put(BrokerProperties.PROPERTY_QPID_HOME, qpidHome);
 
             LOGGER.debug("Backup command is " + pb.command());
             backupProcess = pb.start();
-            Piper piper = new Piper(backupProcess.getInputStream(), _testcaseOutputStream, null, BACKUP_COMPLETE_MESSAGE);
+            Piper piper = new Piper(backupProcess.getInputStream(),  null, BACKUP_COMPLETE_MESSAGE, "BACKUP", "");
             piper.start();
             piper.await(2, TimeUnit.SECONDS);
             backupProcess.waitFor();

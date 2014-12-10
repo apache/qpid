@@ -218,9 +218,6 @@
             <amqj.server.logging.level>debug</amqj.server.logging.level>
             <amqj.protocol.logging.level>debug</amqj.protocol.logging.level>
             <root.logging.level>warn</root.logging.level>
-            <log4j.configuration.file>${project.basedir}${file.separator}test-profiles${file.separator}log4j-test.xml</log4j.configuration.file>
-            <log4j.configuration>log4j-test.xml</log4j.configuration>
-            <log4j.debug>false</log4j.debug>
             <test.port>15672</test.port>
             <test.mport>18999</test.mport>
             <test.cport>19099</test.cport>

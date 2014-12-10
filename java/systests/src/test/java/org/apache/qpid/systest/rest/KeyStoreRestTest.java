@@ -56,7 +56,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
 
         Map<String, Object> keystore = keyStores.get(0);
         assertKeyStoreAttributes(keystore, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE,
-                System.getProperty(QPID_HOME) + "/../" + TestSSLConstants.BROKER_KEYSTORE, null);
+                QPID_HOME + "/../" + TestSSLConstants.BROKER_KEYSTORE, null);
     }
 
     public void testCreate() throws Exception
@@ -98,7 +98,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
         List<Map<String, Object>> keyStores = assertNumberOfKeyStores(1);
         Map<String, Object> keystore = keyStores.get(0);
         assertKeyStoreAttributes(keystore, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE,
-                System.getProperty(QPID_HOME) + "/../" + TestSSLConstants.BROKER_KEYSTORE, null);
+                QPID_HOME + "/../" + TestSSLConstants.BROKER_KEYSTORE, null);
     }
 
     public void testDeleteFailsWhenKeyStoreInUse() throws Exception

@@ -22,6 +22,7 @@ package org.apache.qpid.test.utils;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -30,39 +31,215 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.logging.messages.BrokerMessages;
+import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.SystemUtils;
 
 public class SpawnedBrokerHolder implements BrokerHolder
 {
     private static final Logger LOGGER = Logger.getLogger(SpawnedBrokerHolder.class);
+    protected static final String BROKER_READY = System.getProperty("broker.ready", BrokerMessages.READY().toString());
+    private static final String BROKER_STOPPED = System.getProperty("broker.stopped", BrokerMessages.STOPPED().toString());
 
-    private final Process _process;
-    private final Integer _pid;
-    private final String _workingDirectory;
+    private final BrokerType _type;
+    private final int _port;
+    private final String _name;
+    private final Map<String, String> _jvmOptions;
+    private final Map<String, String> _environmentSettings;
+    protected BrokerCommandHelper _brokerCommandHelper;
+
+    private  Process _process;
+    private  Integer _pid;
     private Set<Integer> _portsUsedByBroker;
-    private final String _brokerCommand;
+    private String _brokerCommand;
 
-    public SpawnedBrokerHolder(final Process process, final String workingDirectory, Set<Integer> portsUsedByBroker,
-                               String brokerCmd)
+    public SpawnedBrokerHolder(String brokerCommandTemplate, int port, String name, Map<String, String> jvmOptions, Map<String, String> environmentSettings, BrokerType type, Set<Integer> portsUsedByBroker)
     {
-        if(process == null)
-        {
-            throw new IllegalArgumentException("Process must not be null");
-        }
-
-        _process = process;
-        _pid = retrieveUnixPidIfPossible();
-        _workingDirectory = workingDirectory;
+        _type = type;
         _portsUsedByBroker = portsUsedByBroker;
-        _brokerCommand = brokerCmd;
+        _port = port;
+        _name = name;
+        _jvmOptions = jvmOptions;
+        _environmentSettings = environmentSettings;
+        _brokerCommandHelper = new BrokerCommandHelper(brokerCommandTemplate);
     }
 
+
     @Override
-    public String getWorkingDirectory()
+    public void start(BrokerOptions brokerOptions) throws Exception
     {
-        return _workingDirectory;
+        // Add the port to QPID_WORK to ensure unique working dirs for multi broker tests
+        final String qpidWork = getQpidWork(_type, _port);
+
+        String[] cmd = _brokerCommandHelper.getBrokerCommand(_port, brokerOptions.getConfigurationStoreLocation(), brokerOptions.getConfigurationStoreType(),
+                new File(brokerOptions.getLogConfigFileLocation()));
+        if (brokerOptions.isManagementMode())
+        {
+            String[] newCmd = new String[cmd.length + 3];
+            System.arraycopy(cmd, 0, newCmd, 0, cmd.length);
+            newCmd[cmd.length] = "-mm";
+            newCmd[cmd.length + 1] = "-mmpass";
+            newCmd[cmd.length + 2] = brokerOptions.getManagementModePassword();
+            cmd = newCmd;
+        }
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        pb.redirectErrorStream(true);
+        Map<String, String> processEnv = pb.environment();
+        String qpidHome = System.getProperty(BrokerProperties.PROPERTY_QPID_HOME);
+        processEnv.put(BrokerProperties.PROPERTY_QPID_HOME, qpidHome);
+
+        //Augment Path with bin directory in QPID_HOME.
+        boolean foundPath = false;
+        final String pathEntry = qpidHome + File.separator + "bin";
+        for(Map.Entry<String,String> entry : processEnv.entrySet())
+        {
+            if(entry.getKey().equalsIgnoreCase("path"))
+            {
+                entry.setValue(entry.getValue().concat(File.pathSeparator + pathEntry));
+                foundPath = true;
+            }
+        }
+        if(!foundPath)
+        {
+            processEnv.put("PATH", pathEntry);
+        }
+        //Add the test name to the broker run.
+        // DON'T change PNAME, qpid.stop needs this value.
+        processEnv.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + _name + "\"");
+        processEnv.put("QPID_WORK", qpidWork);
+
+        // Use the environment variable to set amqj.logging.level for the broker
+        // The value used is a 'server' value in the test configuration to
+        // allow a differentiation between the client and broker logging levels.
+        if (System.getProperty("amqj.server.logging.level") != null)
+        {
+            processEnv.put("AMQJ_LOGGING_LEVEL", System.getProperty("amqj.server.logging.level"));
+        }
+
+        // Add all the environment settings the test requested
+        if (!_environmentSettings.isEmpty())
+        {
+            for (Map.Entry<String, String> entry : _environmentSettings.entrySet())
+            {
+                processEnv.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        String qpidOpts = "";
+
+        // Add all the specified system properties to QPID_OPTS
+        if (!_jvmOptions.isEmpty())
+        {
+            for (String key : _jvmOptions.keySet())
+            {
+                qpidOpts += " -D" + key + "=" + _jvmOptions.get(key);
+            }
+        }
+
+        if (processEnv.containsKey("QPID_OPTS"))
+        {
+            qpidOpts = processEnv.get("QPID_OPTS") + qpidOpts;
+        }
+        processEnv.put("QPID_OPTS", qpidOpts);
+
+        // cpp broker requires that the work directory is created
+        createBrokerWork(qpidWork);
+
+        _process = pb.start();
+
+        Piper standardOutputPiper = new Piper(_process.getInputStream(),
+                BROKER_READY,
+                BROKER_STOPPED,
+                "STD", "BROKER-" + _port);
+
+        standardOutputPiper.start();
+
+        new Piper(_process.getErrorStream(), null, null, "ERROR", "BROKER-" + _port).start();
+
+        StringBuilder cmdLine = new StringBuilder(cmd[0]);
+        for(int i = 1; i< cmd.length; i++)
+        {
+            cmdLine.append(' ');
+            cmdLine.append(cmd[i]);
+        }
+
+        _brokerCommand = cmdLine.toString();
+        _pid = retrieveUnixPidIfPossible();
+
+        if (!standardOutputPiper.await(30, TimeUnit.SECONDS))
+        {
+            LOGGER.info("broker failed to become ready (" + standardOutputPiper.getReady() + "):" + standardOutputPiper.getStopLine());
+            String threadDump = dumpThreads();
+            if (!threadDump.isEmpty())
+            {
+                LOGGER.info("the result of a try to capture thread dump:" + threadDump);
+            }
+            //Ensure broker has stopped
+            _process.destroy();
+            cleanBrokerWork(qpidWork);
+            throw new RuntimeException("broker failed to become ready:"
+                    + standardOutputPiper.getStopLine());
+        }
+
+        try
+        {
+            //test that the broker is still running and hasn't exited unexpectedly
+            int exit = _process.exitValue();
+            LOGGER.info("broker aborted: " + exit);
+            cleanBrokerWork(qpidWork);
+            throw new RuntimeException("broker aborted: " + exit);
+        }
+        catch (IllegalThreadStateException e)
+        {
+            // this is expect if the broker started successfully
+        }
+
+    }
+
+    protected void createBrokerWork(final String qpidWork)
+    {
+        if (qpidWork != null)
+        {
+            final File dir = new File(qpidWork);
+            dir.mkdirs();
+            if (!dir.isDirectory())
+            {
+                throw new RuntimeException("Failed to created Qpid work directory : " + qpidWork);
+            }
+        }
+    }
+
+    private String getQpidWork(BrokerType broker, int port)
+    {
+        if (!broker.equals(BrokerType.EXTERNAL))
+        {
+            return System.getProperty(BrokerProperties.PROPERTY_QPID_WORK) + File.separator + port;
+        }
+
+        return System.getProperty(BrokerProperties.PROPERTY_QPID_WORK);
+    }
+
+    private void cleanBrokerWork(final String qpidWork)
+    {
+        if (qpidWork != null)
+        {
+            LOGGER.info("Cleaning broker work dir: " + qpidWork);
+
+            File file = new File(qpidWork);
+            if (file.exists())
+            {
+                final boolean success = FileUtils.delete(file, true);
+                if(!success)
+                {
+                    throw new RuntimeException("Failed to recursively delete beneath : " + file);
+                }
+            }
+        }
     }
 
     public void shutdown()

@@ -28,23 +28,38 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.apache.qpid.server.BrokerOptions;
+import org.apache.log4j.FileAppender;
+import org.apache.log4j.Logger;
+import org.apache.log4j.SimpleLayout;
+import org.apache.qpid.server.configuration.BrokerProperties;
 
 public class LogViewerTest extends QpidRestTestCase
 {
-    public static final String DEFAULT_FILE_APPENDER_NAME = "FileAppender";
     private String _expectedLogFileName;
+    private FileAppender _fileAppender;
+    private String _appenderName;
 
+    @Override
     public void setUp() throws Exception
     {
-        setSystemProperty("logsuffix", "-" + getTestQueueName());
-        _expectedLogFileName = System.getProperty("logprefix", "") + "qpid" + System.getProperty("logsuffix", "") + ".log";
+        _appenderName = getTestQueueName();
+        _expectedLogFileName =  "qpid-" + _appenderName + ".log";
 
-        // use real broker log file
-        File brokerLogFile = new File(System.getProperty(QPID_HOME), BrokerOptions.DEFAULT_LOG_CONFIG_FILE);
-        setBrokerCommandLog4JFile(brokerLogFile);
-
+        _fileAppender = new FileAppender(new SimpleLayout(),
+                System.getProperty(BrokerProperties.PROPERTY_QPID_WORK)  + File.separator +  _expectedLogFileName, false);
+        _fileAppender.setName(_appenderName);
+        Logger.getRootLogger().addAppender(_fileAppender);
         super.setUp();
+    }
+
+    @Override
+    public void tearDown() throws Exception
+    {
+        if (_fileAppender != null)
+        {
+            Logger.getRootLogger().removeAppender(_fileAppender);
+        }
+        super.tearDown();
     }
 
     public void testGetLogFiles() throws Exception
@@ -54,24 +69,32 @@ public class LogViewerTest extends QpidRestTestCase
 
         // 1 file appender is configured in QPID default log4j xml:
         assertTrue("Unexpected number of log files", logFiles.size() > 0);
+        Map<String, Object> logFileDetails = null;
+        for (Map<String, Object> appenderDetails: logFiles)
+        {
+            if (_appenderName.equals(appenderDetails.get("appenderName")))
+            {
+                logFileDetails = appenderDetails;
+                break;
+            }
+        }
 
-        Map<String, Object> logFileDetails = logFiles.get(0);
         assertEquals("Unexpected log file name", _expectedLogFileName, logFileDetails.get("name"));
         assertEquals("Unexpected log file mime type", "text/plain", logFileDetails.get("mimeType"));
-        assertEquals("Unexpected log file appender",DEFAULT_FILE_APPENDER_NAME, logFileDetails.get("appenderName"));
+        assertEquals("Unexpected log file appender",_appenderName, logFileDetails.get("appenderName"));
         assertTrue("Unexpected log file size", ((Number)logFileDetails.get("size")).longValue()>0);
         assertTrue("Unexpected log file modification time", ((Number)logFileDetails.get("lastModified")).longValue()>0);
     }
 
     public void testDownloadExistingLogFiles() throws Exception
     {
-        byte[] bytes = getRestTestHelper().getBytes("/service/logfile?l=" + DEFAULT_FILE_APPENDER_NAME + "%2F" + _expectedLogFileName);
+        byte[] bytes = getRestTestHelper().getBytes("/service/logfile?l=" + _appenderName + "%2F" + _expectedLogFileName);
 
         ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(bytes));
         try
         {
             ZipEntry entry = zis.getNextEntry();
-            assertEquals("Unexpected broker log file name", DEFAULT_FILE_APPENDER_NAME + "/" + _expectedLogFileName, entry.getName());
+            assertEquals("Unexpected broker log file name", _appenderName + "/" + _expectedLogFileName, entry.getName());
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
             int len;
@@ -91,7 +114,7 @@ public class LogViewerTest extends QpidRestTestCase
 
     public void testDownloadNonExistingLogFiles() throws Exception
     {
-        int responseCode = getRestTestHelper().submitRequest("/service/logfile?l=" + DEFAULT_FILE_APPENDER_NAME + "%2F"
+        int responseCode = getRestTestHelper().submitRequest("/service/logfile?l=" + _appenderName + "%2F"
                 + _expectedLogFileName + "_" + System.currentTimeMillis(), "GET");
 
         assertEquals("Unexpected response code", 404, responseCode);

@@ -77,7 +77,7 @@ public class BrokerStartupTest extends AbstractTestLogging
                 brokerConfigFile.delete();
             }
 
-            startBroker(port, null);
+            startBroker(port, null, null);
 
             AMQConnectionURL url = new AMQConnectionURL(String.format("amqp://"
                                                                       + GUEST_USERNAME
@@ -209,7 +209,7 @@ public class BrokerStartupTest extends AbstractTestLogging
                 brokerConfigFile.delete();
             }
 
-            startBroker(port, null);
+            startBroker(port, null, null);
 
             AMQConnectionURL url = new AMQConnectionURL(String.format("amqp://"
                     + GUEST_USERNAME

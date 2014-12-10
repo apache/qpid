@@ -104,7 +104,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
             //There will be 2 copies of the startup message (one via SystemOut, and one via Log4J)
             results = findMatches("MNG-1001");
             assertEquals("Unexpected startup message count.",
-                         2, results.size());
+                         1, results.size());
 
             //3
             assertEquals("Startup log message is not 'Startup'.", "JMX Management Startup",
@@ -185,7 +185,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
             // Validation
 
             //There will be 4 startup messages (two via SystemOut, and two via Log4J)
-            assertEquals("Unexpected MNG-1002 message count", 4, results.size());
+            assertEquals("Unexpected MNG-1002 message count", 2, results.size());
 
             String log = getLogMessage(results, 0);
 
@@ -197,7 +197,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
             assertTrue("RMI Registry port not as expected(" + mPort + ").:" + getMessageString(log),
                        getMessageString(log).endsWith(String.valueOf(mPort)));
 
-            log = getLogMessage(results, 2);
+            log = getLogMessage(results, 1);
 
             //1
             validateMessageID("MNG-1002", log);
@@ -243,7 +243,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
             // Validate we only have two MNG-1002 (one via stdout, one via log4j)
             results = findMatches("MNG-1006");
             assertEquals("Upexpected SSL Keystore message count",
-                         2, results.size());
+                         1, results.size());
 
             // Validate the keystore path is as expected
             assertTrue("SSL Keystore entry expected.:" + getMessageString(log),

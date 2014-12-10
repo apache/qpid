@@ -45,6 +45,7 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.berkeleydb.jmx.ManagedBDBHAMessageStore;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 import org.apache.qpid.systest.rest.RestTestHelper;
+import org.apache.qpid.test.utils.BrokerHolder;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.junit.Assert;
@@ -72,7 +73,7 @@ public class JMXManagementTest extends QpidBrokerTestCase
     @Override
     protected void setUp() throws Exception
     {
-        _brokerType = BrokerType.SPAWNED;
+        _brokerType = BrokerHolder.BrokerType.SPAWNED;
 
         setTestClientSystemProperty("log4j.configuration", getBrokerCommandLog4JFile().toURI().toString());
 

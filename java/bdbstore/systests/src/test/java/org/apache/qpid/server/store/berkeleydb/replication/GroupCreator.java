@@ -209,7 +209,7 @@ public class GroupCreator
                     {
                         try
                         {
-                            _testcase.startBroker(brokerPortNumber, brokerConfig);
+                            _testcase.startBroker(brokerPortNumber, brokerConfig, null);
                             return "OK";
                         }
                         catch (Exception e)

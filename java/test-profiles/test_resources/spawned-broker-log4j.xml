@@ -48,16 +48,8 @@
     <level value="${amqj.protocol.logging.level}"/>
   </logger>
 
-  <logger name="org.apache.qpid.test.utils.QpidTestCase">
-    <level value="ALL"/>
-  </logger>
-  
   <logger name="org.apache.commons">
     <level value="WARN"/>
-  </logger>
-
-  <logger name="apache.commons.configuration.ConfigurationFactory">
-    <level value="ERROR"/>
   </logger>
 
   <root>
