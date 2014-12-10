@@ -33,7 +33,6 @@ org.apache.qpid.test.client.message.SelectorTest#testRuntimeSelectorError
 
 
 // QPID-6262: Temporary exclusion whilst NIO refactoring is in flight
-org.apache.qpid.client.ssl.SSLTest#*
 org.apache.qpid.server.transport.TCPandSSLTransportTest#*
 org.apache.qpid.server.security.auth.manager.ExternalAuthenticationTest#*
 org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerStartupListeningTCPSSL

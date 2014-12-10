@@ -23,6 +23,7 @@ package org.apache.qpid.server.transport;
 import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
 
 import java.net.InetSocketAddress;
+import java.util.EnumSet;
 import java.util.Set;
 
 import javax.net.ssl.SSLContext;
@@ -34,6 +35,7 @@ import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
+import org.apache.qpid.transport.network.TransportEncryption;
 import org.apache.qpid.transport.network.io.NonBlockingNetworkTransport;
 
 class TCPandSSLTransport implements AcceptingTransport
@@ -88,7 +90,17 @@ class TCPandSSLTransport implements AcceptingTransport
                 _port,
                 _transports.contains(Transport.TCP) ? Transport.TCP : Transport.SSL);
 
-        _networkTransport.accept(settings, protocolEngineFactory, _transports.contains(Transport.TCP) ? null : _sslContext);
+        EnumSet<TransportEncryption> encryptionSet = EnumSet.noneOf(TransportEncryption.class);
+        if(_transports.contains(Transport.TCP))
+        {
+            encryptionSet.add(TransportEncryption.NONE);
+        }
+        if(_transports.contains(Transport.SSL))
+        {
+            encryptionSet.add(TransportEncryption.TLS);
+        }
+        _networkTransport.accept(settings, protocolEngineFactory, _transports.contains(Transport.TCP) ? null : _sslContext,
+                                 encryptionSet);
     }
 
     public int getAcceptingPort()

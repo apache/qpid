@@ -20,19 +20,7 @@
  */
 package org.apache.qpid.transport.network;
 
-import java.util.Set;
-
-import javax.net.ssl.SSLContext;
-
-import org.apache.qpid.protocol.ProtocolEngineFactory;
-import org.apache.qpid.transport.NetworkTransportConfiguration;
-
-public interface IncomingNetworkTransport extends NetworkTransport
+public enum TransportEncryption
 {
-    public void accept(NetworkTransportConfiguration config,
-                       ProtocolEngineFactory factory,
-                       SSLContext sslContext,
-                       final Set<TransportEncryption> encryptionSet);
-
-    public int getAcceptingPort();
+    NONE, TLS
 }

@@ -27,6 +27,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocket;
@@ -45,6 +46,7 @@ import org.apache.qpid.transport.network.IncomingNetworkTransport;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.OutgoingNetworkTransport;
 import org.apache.qpid.transport.network.TransportActivity;
+import org.apache.qpid.transport.network.TransportEncryption;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public abstract class AbstractNetworkTransport implements OutgoingNetworkTransport, IncomingNetworkTransport
@@ -136,7 +138,7 @@ public abstract class AbstractNetworkTransport implements OutgoingNetworkTranspo
 
     public void accept(NetworkTransportConfiguration config,
                        ProtocolEngineFactory factory,
-                       SSLContext sslContext)
+                       SSLContext sslContext, final Set<TransportEncryption> encryptionSet)
     {
         try
         {

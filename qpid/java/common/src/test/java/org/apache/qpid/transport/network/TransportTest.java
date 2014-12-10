@@ -22,6 +22,7 @@ package org.apache.qpid.transport.network;
 
 
 import java.nio.ByteBuffer;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
@@ -150,7 +151,9 @@ public class TransportTest extends QpidTestCase
         }
 
         public void accept(NetworkTransportConfiguration config,
-                           ProtocolEngineFactory factory, SSLContext sslContext)
+                           ProtocolEngineFactory factory,
+                           SSLContext sslContext,
+                           final Set<TransportEncryption> encryptionSet)
         {
             throw new UnsupportedOperationException();
         }

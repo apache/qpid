@@ -21,13 +21,13 @@
 package org.apache.qpid.transport.network.io;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.StandardSocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
@@ -36,13 +36,12 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.configuration.CommonProperties;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
-import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
 import org.apache.qpid.transport.network.NetworkConnection;
-import org.apache.qpid.transport.network.TransportActivity;
+import org.apache.qpid.transport.network.TransportEncryption;
 
 public class NonBlockingNetworkTransport implements IncomingNetworkTransport
 {
@@ -54,6 +53,8 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
                                                                    CommonProperties.HANDSHAKE_TIMEOUT_DEFAULT);
     private AcceptingThread _acceptor;
 
+
+/*
     private SocketChannel _socketChannel;
     private NonBlockingConnection _connection;
 
@@ -93,7 +94,7 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
         {
             IdleTimeoutTicker ticker = new IdleTimeoutTicker(transportActivity, TIMEOUT);
             _connection = createNetworkConnection(_socketChannel, delegate, sendBufferSize, receiveBufferSize,
-                                                  TIMEOUT, ticker);
+                                                  TIMEOUT, ticker, _encryptionSet, _sslContext);
             ticker.setConnection(_connection);
             _connection.start();
         }
@@ -114,41 +115,51 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
         return _connection;
     }
 
+*/
 
     protected NonBlockingConnection createNetworkConnection(final SocketChannel socket,
-                                                          final Receiver<ByteBuffer> engine,
-                                                          final Integer sendBufferSize,
-                                                          final Integer receiveBufferSize,
-                                                          final int timeout,
-                                                          final IdleTimeoutTicker ticker)
+                                                            final Receiver<ByteBuffer> engine,
+                                                            final Integer sendBufferSize,
+                                                            final Integer receiveBufferSize,
+                                                            final int timeout,
+                                                            final IdleTimeoutTicker ticker,
+                                                            final Set<TransportEncryption> encryptionSet,
+                                                            final SSLContext sslContext,
+                                                            final boolean wantClientAuth,
+                                                            final boolean needClientAuth)
     {
-        return new NonBlockingConnection(socket, engine, sendBufferSize, receiveBufferSize, timeout, ticker);
+        return new NonBlockingConnection(socket, engine, sendBufferSize, receiveBufferSize, timeout, ticker, encryptionSet, sslContext, wantClientAuth, needClientAuth);
     }
 
     public void close()
     {
+/*
         if(_connection != null)
         {
             _connection.close();
         }
+*/
         if(_acceptor != null)
         {
             _acceptor.close();
         }
     }
+/*
 
     public NetworkConnection getConnection()
     {
         return _connection;
     }
+*/
 
     public void accept(NetworkTransportConfiguration config,
                        ProtocolEngineFactory factory,
-                       SSLContext sslContext)
+                       SSLContext sslContext,
+                       final Set<TransportEncryption> encryptionSet)
     {
         try
         {
-            _acceptor = new AcceptingThread(config, factory, sslContext);
+            _acceptor = new AcceptingThread(config, factory, sslContext, encryptionSet);
             _acceptor.setDaemon(false);
             _acceptor.start();
         }
@@ -165,6 +176,7 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
 
     private class AcceptingThread extends Thread
     {
+        private final Set<TransportEncryption> _encryptionSet;
         private volatile boolean _closed = false;
         private NetworkTransportConfiguration _config;
         private ProtocolEngineFactory _factory;
@@ -174,7 +186,8 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
 
         private AcceptingThread(NetworkTransportConfiguration config,
                                 ProtocolEngineFactory factory,
-                                SSLContext sslContext) throws IOException
+                                SSLContext sslContext,
+                                final Set<TransportEncryption> encryptionSet) throws IOException
         {
             _config = config;
             _factory = factory;
@@ -187,6 +200,7 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
 
             _serverSocket.setOption(StandardSocketOptions.SO_REUSEADDR, true);
             _serverSocket.bind(address);
+            _encryptionSet = encryptionSet;
         }
 
 
@@ -250,7 +264,11 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
                                                             sendBufferSize,
                                                             receiveBufferSize,
                                                             _timeout,
-                                                            ticker);
+                                                            ticker,
+                                                            _encryptionSet,
+                                                            _sslContext,
+                                                            _config.wantClientAuth(),
+                                                            _config.needClientAuth());
 
                             connection.setMaxReadIdle(HANSHAKE_TIMEOUT);
 

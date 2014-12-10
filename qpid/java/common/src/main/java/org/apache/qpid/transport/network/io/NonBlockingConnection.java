@@ -24,7 +24,9 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.Principal;
+import java.util.Set;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSocket;
 
@@ -35,6 +37,7 @@ import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.Ticker;
+import org.apache.qpid.transport.network.TransportEncryption;
 
 public class NonBlockingConnection implements NetworkConnection
 {
@@ -48,20 +51,20 @@ public class NonBlockingConnection implements NetworkConnection
     private boolean _principalChecked;
     private final Object _lock = new Object();
 
-    public NonBlockingConnection(SocketChannel socket, Receiver<ByteBuffer> delegate,
-                                 int sendBufferSize, int receiveBufferSize, long timeout, Ticker ticker)
+    public NonBlockingConnection(SocketChannel socket,
+                                 Receiver<ByteBuffer> delegate,
+                                 int sendBufferSize,
+                                 int receiveBufferSize,
+                                 long timeout,
+                                 Ticker ticker,
+                                 final Set<TransportEncryption> encryptionSet,
+                                 final SSLContext sslContext,
+                                 final boolean wantClientAuth, final boolean needClientAuth)
     {
         _socket = socket;
         _timeout = timeout;
 
-//        _ioReceiver = new NonBlockingReceiver(_socket, delegate, receiveBufferSize,_timeout);
-//        _nonBlockingSenderReceiver.setTicker(ticker);
-
-//        _ioSender = new NonBlockingSender(_socket, 2 * sendBufferSize, _timeout);
-
-//        _ioSender.setReceiver(_nonBlockingSenderReceiver);
-
-        _nonBlockingSenderReceiver = new NonBlockingSenderReceiver(_socket, delegate, receiveBufferSize, ticker);
+        _nonBlockingSenderReceiver = new NonBlockingSenderReceiver(_socket, delegate, receiveBufferSize, ticker, encryptionSet, sslContext, wantClientAuth, needClientAuth);
 
     }
 

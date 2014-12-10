@@ -24,10 +24,17 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +45,8 @@ import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.SenderClosedException;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.network.Ticker;
+import org.apache.qpid.transport.network.TransportEncryption;
+import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
 {
@@ -47,6 +56,7 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
     private final Selector _selector;
 
     private final ConcurrentLinkedQueue<ByteBuffer> _buffers = new ConcurrentLinkedQueue<>();
+    private final List<ByteBuffer> _encryptedOutput = new ArrayList<>();
 
     private final Thread _ioThread;
     private final String _remoteSocketAddress;
@@ -54,16 +64,55 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
     private final Receiver<ByteBuffer> _receiver;
     private final int _receiveBufSize;
     private final Ticker _ticker;
+    private final Set<TransportEncryption> _encryptionSet;
+    private final SSLContext _sslContext;
+    private ByteBuffer _netInputBuffer;
+    private SSLEngine _sslEngine;
 
     private ByteBuffer _currentBuffer;
 
+    private TransportEncryption _transportEncryption;
+    private SSLEngineResult _status;
 
-    public NonBlockingSenderReceiver(final SocketChannel socketChannel, Receiver<ByteBuffer> receiver, int receiveBufSize, Ticker ticker)
+
+    public NonBlockingSenderReceiver(final SocketChannel socketChannel,
+                                     Receiver<ByteBuffer> receiver,
+                                     int receiveBufSize,
+                                     Ticker ticker,
+                                     final Set<TransportEncryption> encryptionSet,
+                                     final SSLContext sslContext,
+                                     final boolean wantClientAuth,
+                                     final boolean needClientAuth)
     {
         _socketChannel = socketChannel;
         _receiver = receiver;
         _receiveBufSize = receiveBufSize;
         _ticker = ticker;
+        _encryptionSet = encryptionSet;
+        _sslContext = sslContext;
+
+
+        if(encryptionSet.size() == 1)
+        {
+            _transportEncryption = _encryptionSet.iterator().next();
+        }
+
+        if(encryptionSet.contains(TransportEncryption.TLS))
+        {
+            _sslEngine = _sslContext.createSSLEngine();
+            _sslEngine.setUseClientMode(false);
+            SSLUtil.removeSSLv3Support(_sslEngine);
+            if(needClientAuth)
+            {
+                _sslEngine.setNeedClientAuth(true);
+            }
+            else if(wantClientAuth)
+            {
+                _sslEngine.setWantClientAuth(true);
+            }
+            _netInputBuffer = ByteBuffer.allocate(_sslEngine.getSession().getPacketBufferSize());
+
+        }
 
         try
         {
@@ -197,7 +246,6 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
 
     private boolean doWrite() throws IOException
     {
-        int byteBuffersWritten = 0;
 
         ByteBuffer[] bufArray = new ByteBuffer[_buffers.size()];
         Iterator<ByteBuffer> bufferIterator = _buffers.iterator();
@@ -206,45 +254,153 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
             bufArray[i] = bufferIterator.next();
         }
 
-        _socketChannel.write(bufArray);
+        int byteBuffersWritten = 0;
 
-        for (ByteBuffer buf : bufArray)
+        if(_transportEncryption == TransportEncryption.NONE)
         {
-            if (buf.remaining() == 0)
+
+
+            _socketChannel.write(bufArray);
+
+            for (ByteBuffer buf : bufArray)
             {
-                byteBuffersWritten++;
-                _buffers.poll();
+                if (buf.remaining() == 0)
+                {
+                    byteBuffersWritten++;
+                    _buffers.poll();
+                }
             }
-        }
 
-        if (LOGGER.isDebugEnabled())
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Written " + byteBuffersWritten + " byte buffer(s) completely");
+            }
+
+            return bufArray.length == byteBuffersWritten;
+        }
+        else if(_transportEncryption == TransportEncryption.TLS)
         {
-            LOGGER.debug("Written " + byteBuffersWritten + " byte buffer(s) completely");
-        }
+            int remaining = 0;
 
-        return bufArray.length == byteBuffersWritten;
+            do
+            {
+                LOGGER.debug("Handshake status: " + _sslEngine.getHandshakeStatus());
+                if(_sslEngine.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.NEED_UNWRAP)
+                {
+                    final ByteBuffer netBuffer = ByteBuffer.allocate(_sslEngine.getSession().getPacketBufferSize());
+                    _status = _sslEngine.wrap(bufArray, netBuffer);
+                    LOGGER.debug("Status: " + _status.getStatus() + " HandshakeStatus " + _status.getHandshakeStatus());
+                    runSSLEngineTasks(_status);
+
+                    netBuffer.flip();
+                    LOGGER.debug("Encrypted " + netBuffer.remaining() + " bytes for output");
+                    remaining = netBuffer.remaining();
+                    if (remaining != 0)
+                    {
+                        _encryptedOutput.add(netBuffer);
+                    }
+                    for (ByteBuffer buf : bufArray)
+                    {
+                        if (buf.remaining() == 0)
+                        {
+                            byteBuffersWritten++;
+                            _buffers.poll();
+                        }
+                    }
+                }
+
+            }
+            while(remaining != 0 && _sslEngine.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.NEED_UNWRAP);
+
+            ByteBuffer[] encryptedBuffers = _encryptedOutput.toArray(new ByteBuffer[_encryptedOutput.size()]);
+            long written  = _socketChannel.write(encryptedBuffers);
+            LOGGER.debug("Written " + written + " encrypted bytes");
+
+            ListIterator<ByteBuffer> iter = _encryptedOutput.listIterator();
+            while(iter.hasNext())
+            {
+                ByteBuffer buf = iter.next();
+                if(buf.remaining() == 0)
+                {
+                    iter.remove();
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return bufArray.length == byteBuffersWritten;
+
+        }
+        else
+        {
+            // TODO - actually implement
+            return true;
+        }
     }
 
     private void doRead() throws IOException
     {
 
-        int remaining = 0;
-        while (remaining == 0 && !_closed.get())
+        if(_transportEncryption == TransportEncryption.NONE)
         {
-            if(_currentBuffer == null || _currentBuffer.remaining() == 0)
+            int remaining = 0;
+            while (remaining == 0 && !_closed.get())
             {
-                _currentBuffer = ByteBuffer.allocate(_receiveBufSize);
+                if (_currentBuffer == null || _currentBuffer.remaining() == 0)
+                {
+                    _currentBuffer = ByteBuffer.allocate(_receiveBufSize);
+                }
+                _socketChannel.read(_currentBuffer);
+                remaining = _currentBuffer.remaining();
+                if (LOGGER.isDebugEnabled())
+                {
+                    LOGGER.debug("Read " + _currentBuffer.position() + " byte(s)");
+                }
+                ByteBuffer dup = _currentBuffer.duplicate();
+                dup.flip();
+                _currentBuffer = _currentBuffer.slice();
+                _receiver.received(dup);
             }
-            _socketChannel.read(_currentBuffer);
-            remaining = _currentBuffer.remaining();
-            if (LOGGER.isDebugEnabled())
+        }
+        else if(_transportEncryption == TransportEncryption.TLS)
+        {
+            int read = 1;
+            int unwrapped = 0;
+            while(!_closed.get() && (read > 0 || unwrapped > 0) && _sslEngine.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.NEED_WRAP && (_status == null || _status.getStatus() != SSLEngineResult.Status.CLOSED))
             {
-                LOGGER.debug("Read " + _currentBuffer.position() + " byte(s)");
+                read = _socketChannel.read(_netInputBuffer);
+                LOGGER.debug("Read " + read + " encrypted bytes " + _netInputBuffer);
+                _netInputBuffer.flip();
+                ByteBuffer appInputBuffer =
+                        ByteBuffer.allocate(_sslEngine.getSession().getApplicationBufferSize() + 50);
+
+                _status = _sslEngine.unwrap(_netInputBuffer, appInputBuffer);
+                LOGGER.debug("Status: " +_status.getStatus() + " HandshakeStatus " + _status.getHandshakeStatus());
+                _netInputBuffer.compact();
+
+                appInputBuffer.flip();
+                unwrapped = appInputBuffer.remaining();
+                LOGGER.debug("Unwrapped to " + unwrapped + " bytes");
+
+                _receiver.received(appInputBuffer);
+
+                runSSLEngineTasks(_status);
             }
-            ByteBuffer dup = _currentBuffer.duplicate();
-            dup.flip();
-            _currentBuffer = _currentBuffer.slice();
-            _receiver.received(dup);
+        }
+    }
+
+    private void runSSLEngineTasks(final SSLEngineResult status)
+    {
+        if(status.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_TASK)
+        {
+            Runnable task;
+            while((task = _sslEngine.getDelegatedTask()) != null)
+            {
+                LOGGER.debug("Running task");
+                task.run();
+            }
         }
     }
 }
