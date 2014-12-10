@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -35,6 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLPeerUnverifiedException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -389,6 +391,38 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
                 runSSLEngineTasks(_status);
             }
         }
+        else
+        {
+            int read = 1;
+            while (!_closed.get() && read > 0)
+            {
+
+                read = _socketChannel.read(_netInputBuffer);
+                LOGGER.debug("Read " + read + " possibly encrypted bytes " + _netInputBuffer);
+
+                if (_netInputBuffer.position() >= 6)
+                {
+                    _netInputBuffer.flip();
+                    final byte[] headerBytes = new byte[6];
+                    ByteBuffer dup = _netInputBuffer.duplicate();
+                    dup.get(headerBytes);
+
+                    _transportEncryption =  looksLikeSSL(headerBytes) ? TransportEncryption.TLS : TransportEncryption.NONE;
+                    LOGGER.debug("Identified transport encryption as " + _transportEncryption);
+
+                    if (_transportEncryption == TransportEncryption.NONE)
+                    {
+                        _receiver.received(_netInputBuffer);
+                    }
+                    else
+                    {
+                        _netInputBuffer.compact();
+                        doRead();
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     private void runSSLEngineTasks(final SSLEngineResult status)
@@ -402,5 +436,49 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
                 task.run();
             }
         }
+    }
+
+    private boolean looksLikeSSL(byte[] headerBytes)
+    {
+        return looksLikeSSLv3ClientHello(headerBytes) || looksLikeSSLv2ClientHello(headerBytes);
+    }
+
+    private boolean looksLikeSSLv3ClientHello(byte[] headerBytes)
+    {
+        return headerBytes[0] == 22 && // SSL Handshake
+               (headerBytes[1] == 3 && // SSL 3.0 / TLS 1.x
+                (headerBytes[2] == 0 || // SSL 3.0
+                 headerBytes[2] == 1 || // TLS 1.0
+                 headerBytes[2] == 2 || // TLS 1.1
+                 headerBytes[2] == 3)) && // TLS1.2
+               (headerBytes[5] == 1); // client_hello
+    }
+
+    private boolean looksLikeSSLv2ClientHello(byte[] headerBytes)
+    {
+        return headerBytes[0] == -128 &&
+               headerBytes[3] == 3 && // SSL 3.0 / TLS 1.x
+               (headerBytes[4] == 0 || // SSL 3.0
+                headerBytes[4] == 1 || // TLS 1.0
+                headerBytes[4] == 2 || // TLS 1.1
+                headerBytes[4] == 3);
+    }
+
+    public Principal getPeerPrincipal()
+    {
+
+        if (_sslEngine != null)
+        {
+            try
+            {
+                return _sslEngine.getSession().getPeerPrincipal();
+            }
+            catch (SSLPeerUnverifiedException e)
+            {
+                return null;
+            }
+        }
+
+        return null;
     }
 }

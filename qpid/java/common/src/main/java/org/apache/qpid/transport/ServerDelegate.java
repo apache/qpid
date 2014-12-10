@@ -126,8 +126,11 @@ public class ServerDelegate extends ConnectionDelegate
 
     protected void connectionAuthFailed(final Connection conn, Exception e)
     {
-        conn.exception(e);
-        conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED, e.getMessage());
+        if (e != null)
+        {
+            conn.exception(e);
+        }
+        conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED, e == null ? "Authentication failed" : e.getMessage());
     }
 
     protected void connectionAuthContinue(final Connection conn, byte[] challenge)

@@ -110,17 +110,8 @@ public class NonBlockingConnection implements NetworkConnection
         {
             if(!_principalChecked)
             {
-                if(_socket.socket() instanceof SSLSocket)
-                {
-                    try
-                    {
-                        _principal = ((SSLSocket) _socket.socket()).getSession().getPeerPrincipal();
-                    }
-                    catch(SSLPeerUnverifiedException e)
-                    {
-                        _principal = null;
-                    }
-                }
+
+                _principal =  _nonBlockingSenderReceiver.getPeerPrincipal();
 
                 _principalChecked = true;
             }

@@ -30,10 +30,3 @@ org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testNoLocalMessagesNotDe
 //QPID-4153 Messages causing a runtime selector error should be dead-lettered (or something similar)
 org.apache.qpid.test.client.message.SelectorTest#testRuntimeSelectorError
 
-
-
-// QPID-6262: Temporary exclusion whilst NIO refactoring is in flight
-org.apache.qpid.server.transport.TCPandSSLTransportTest#*
-org.apache.qpid.server.security.auth.manager.ExternalAuthenticationTest#*
-org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerStartupListeningTCPSSL
-org.apache.qpid.server.logging.BrokerLoggingTest#testBrokerShutdownListeningTCPSSL

@@ -99,8 +99,7 @@ class TCPandSSLTransport implements AcceptingTransport
         {
             encryptionSet.add(TransportEncryption.TLS);
         }
-        _networkTransport.accept(settings, protocolEngineFactory, _transports.contains(Transport.TCP) ? null : _sslContext,
-                                 encryptionSet);
+        _networkTransport.accept(settings, protocolEngineFactory, _sslContext, encryptionSet);
     }
 
     public int getAcceptingPort()
