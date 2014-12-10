@@ -22,13 +22,15 @@ package org.apache.qpid.server.logging;
 
 import junit.framework.AssertionFailedError;
 
-import org.apache.qpid.server.BrokerOptions;
+import org.apache.log4j.FileAppender;
+import org.apache.log4j.LogManager;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.transport.ConnectionException;
 import org.apache.qpid.util.LogMonitor;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Collections;
@@ -59,6 +61,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
     private static final Pattern BROKER_MESSAGE_LOG_PATTERN = Pattern.compile(BROKER_MESSAGE_LOG_REG_EXP);
     private static final String BRK_LOG_PREFIX = "BRK-";
 
+    @Override
     public void setUp() throws Exception
     {
         setLogMessagePrefix();
@@ -146,94 +149,6 @@ public class BrokerLoggingTest extends AbstractTestLogging
 
     /**
      * Description:
-     * On startup the broker must report correctly report the log4j file in use. This is important as it can help diagnose why logging messages are not being reported.
-     * Input:
-     * No custom -l value should be provided on the command line so that the default value is correctly reported.
-     * Output:
-     *
-     * <date> MESSAGE BRK-1007 : Using logging configuration : <$QPID_HOME>/etc/log4j.xml
-     *
-     * Validation Steps:
-     *
-     * 1. The BRK ID is correct
-     * 2. This occurs before the BRK-1001 startup message.
-     * 3. The log4j file is the full path to the file specified on the commandline.
-     *
-     * @throws Exception caused by broker startup
-     */
-    public void testBrokerStartupDefaultLog4j() throws Exception
-    {
-        if (isJavaBroker() && isExternalBroker() && !isInternalBroker())
-        {
-            String TESTID = "BRK-1007";
-
-            _brokerCommandHelper.removeBrokerCommandLog4JFile();
-
-            startBroker();
-
-            // Now we can create the monitor as _outputFile will now be defined
-            _monitor = new LogMonitor(_outputFile);
-
-            // Ensure broker has fully started up.
-            getConnection();
-
-            // Ensure we wait for TESTID to be logged
-            waitAndFindMatches(TESTID);
-
-            List<String> results = waitAndFindMatches(BRK_LOG_PREFIX);
-            try
-            {
-                // Validation
-
-                assertTrue("BRKer message not logged", results.size() > 0);
-
-                boolean validation = false;
-                for (String rawLog : results)
-                {
-                    // We don't care about messages after we have our log config
-                    if (validation)
-                    {
-                        break;
-                    }
-
-                    String log = getLog(rawLog);
-
-                    // Ensure we do not have a BRK-1001 message before
-                    if (!getMessageID(log).equals(TESTID))
-                    {
-                        assertFalse(getMessageID(log).equals("BRK-1001"));
-                        continue;
-                    }
-
-                    //1
-                    validateMessageID(TESTID, log);
-
-                    //2
-                    //There will be 1 copy of this startup message (via SystemOut)
-                    assertEquals("Unexpected log4j configuration message count.",
-                                 1, findMatches(TESTID).size());
-
-                    //3
-                    String defaultLog4j = System.getProperty(QPID_HOME) + "/" + BrokerOptions.DEFAULT_LOG_CONFIG_FILE;
-                    assertTrue("Log4j file(" + defaultLog4j + ") details not correctly logged:" + getMessageString(log),
-                               getMessageString(log).endsWith(defaultLog4j));
-
-                    validation = true;
-                }
-
-                assertTrue("Validation not performed: " + TESTID + " not logged", validation);
-            }
-            catch (AssertionFailedError afe)
-            {
-                dumpLogs(results, _monitor);
-
-                throw afe;
-            }
-        }
-    }
-
-    /**
-     * Description:
      * On startup the broker must report correctly report the log4j file in use. This is important as it can help diagnose why logging messages are not being reported. The broker must also be capable of correctly recognising the command line property to specify the custom logging configuration.
      * Input:
      * The value of -l specified on the command line.
@@ -254,11 +169,17 @@ public class BrokerLoggingTest extends AbstractTestLogging
         // This logging startup code only occurs when you run a Java broker
         if (isJavaBroker())
         {
-            String customLog4j = getBrokerCommandLog4JFile().getAbsolutePath();
+            // Log4j properties expects this to be set
+            System.setProperty("qpid.testMethod", "-" + getName() + ".customLog4j");
+            System.setProperty("qpid.testClass", getClass().getName() );
+
+            String customLog4j = System.getProperty("log4j.configuration.file");
 
             String TESTID = "BRK-1007";
 
-            startBroker();
+            startBroker(0, false, customLog4j);
+            _outputFile = new File(((FileAppender) LogManager.getRootLogger().getAllAppenders().nextElement()).getFile());
+
 
             // Now we can create the monitor as _outputFile will now be defined
             _monitor = new LogMonitor(_outputFile);
@@ -385,7 +306,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     //2
                     //There will be 2 copies of the startup message (one via SystemOut, and one via Log4J)
                     assertEquals("Unexpected startup message count",
-                                 2, findMatches(TESTID).size());
+                                 1, findMatches(TESTID).size());
 
                     validation = true;
                 }
@@ -471,9 +392,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     assertEquals("Incorrect message", TESTID, id);
 
                     //2
-                    //There will be 2 copies of the startup message (one via SystemOut, and one via Log4J)
                     assertEquals("Unexpected listen message count",
-                                 2, findMatches(TESTID).size());
+                                 1, findMatches(TESTID).size());
 
                     //3
                     String message = getMessageString(log);
@@ -587,7 +507,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     //There will be 4 copies of the startup message (two via SystemOut, and two via Log4J)
                     List<String> listenMessages  = findMatches(TESTID);
                     assertEquals("Four listen messages should be found.",
-                                 4, listenMessages .size());
+                                 2, listenMessages .size());
 
                     int tcpStarted = 0;
                     int sslStarted = 0;
@@ -604,8 +524,8 @@ public class BrokerLoggingTest extends AbstractTestLogging
                         }
                     }
 
-                    assertEquals("Unexpected number of logs 'Listening on TCP port'", 2, tcpStarted);
-                    assertEquals("Unexpected number of logs 'Listening on SSL port'", 2, sslStarted);
+                    assertEquals("Unexpected number of logs 'Listening on TCP port'", 1, tcpStarted);
+                    assertEquals("Unexpected number of logs 'Listening on SSL port'", 1, sslStarted);
 
                     //4 Test ports open
                     testSocketOpen(getPort());
@@ -690,10 +610,9 @@ public class BrokerLoggingTest extends AbstractTestLogging
                     //2
                     assertEquals("Ready message not present", "Qpid Broker Ready", getMessageString(log));
                     
-                    //There will be 2 copies of the startup message (one via SystemOut, and one via Log4J)
                     assertEquals("Unexpected ready message count",
-                                 2, findMatches(TESTID).size());
-                    assertEquals("The ready messages should have been the last 2 messages", results.size() - 2, i);
+                                 1, findMatches(TESTID).size());
+                    assertEquals("The ready messages should have been the last 2 messages", results.size() - 1, i);
 
                     validationComplete = true;
                     break;

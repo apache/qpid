@@ -48,6 +48,7 @@ import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
+import org.apache.qpid.test.utils.BrokerHolder;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.TestUtils;
 
@@ -75,7 +76,7 @@ public class MultiNodeTest extends QpidBrokerTestCase
     @Override
     protected void setUp() throws Exception
     {
-        _brokerType = BrokerType.SPAWNED;
+        _brokerType = BrokerHolder.BrokerType.SPAWNED;
 
         assertTrue(isJavaBroker());
         assertTrue(isBrokerStorePersistent());

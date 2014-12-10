@@ -56,7 +56,7 @@ public class TrustStoreRestTest extends QpidRestTestCase
 
         Map<String, Object> truststore = trustStores.get(0);
         assertTrustStoreAttributes(truststore, TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE,
-                System.getProperty(QPID_HOME) + "/../" + TestSSLConstants.BROKER_TRUSTSTORE, false);
+                QPID_HOME + "/../" + TestSSLConstants.BROKER_TRUSTSTORE, false);
     }
 
     public void testCreate() throws Exception
@@ -96,7 +96,7 @@ public class TrustStoreRestTest extends QpidRestTestCase
         List<Map<String, Object>> trustStores = assertNumberOfTrustStores(1);
         Map<String, Object> truststore = trustStores.get(0);
         assertTrustStoreAttributes(truststore, TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE,
-                System.getProperty(QPID_HOME) + "/../" + TestSSLConstants.BROKER_TRUSTSTORE, false);
+                QPID_HOME + "/../" + TestSSLConstants.BROKER_TRUSTSTORE, false);
     }
 
     public void testDeleteFailsWhenTrustStoreInUse() throws Exception

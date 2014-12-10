@@ -25,6 +25,7 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
 
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacadeTest;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -35,7 +36,6 @@ import org.apache.qpid.util.LogMonitor;
  * System test for Logging Management.  <b>These tests rely on value set within
  * test-profiles/log4j-test.xml</b>.
  *
- * @see LoggingManagementMBeanTest
  * @see LoggingManagementFacadeTest
  *
  */
@@ -44,7 +44,9 @@ public class LoggingManagementTest extends QpidBrokerTestCase
     private JMXTestUtils _jmxUtils;
     private LoggingManagement _loggingManagement;
     private LogMonitor _monitor;
+    private File _logConfig;
 
+    @Override
     public void setUp() throws Exception
     {
         getBrokerConfiguration().addJmxManagementConfiguration();
@@ -56,8 +58,9 @@ public class LoggingManagementTest extends QpidBrokerTestCase
 
         File tmpLogFile = File.createTempFile("log4j" + "." + getName(), ".xml");
         tmpLogFile.deleteOnExit();
-        FileUtils.copy(getBrokerCommandLog4JFile(), tmpLogFile);
+        FileUtils.copy(new File(System.getProperty("log4j.configuration.file")), tmpLogFile);
         setBrokerCommandLog4JFile(tmpLogFile);
+        _logConfig = tmpLogFile;
 
         super.setUp();
         _jmxUtils.open();
@@ -66,6 +69,12 @@ public class LoggingManagementTest extends QpidBrokerTestCase
         _monitor = new LogMonitor(_outputFile);
     }
 
+    public void startBroker() throws Exception
+    {
+        super.startBroker(0, false, _logConfig.getAbsolutePath());
+    }
+
+    @Override
     public void tearDown() throws Exception
     {
         try
@@ -73,6 +82,11 @@ public class LoggingManagementTest extends QpidBrokerTestCase
             if (_jmxUtils != null)
             {
                 _jmxUtils.close();
+            }
+
+            if (_logConfig != null)
+            {
+               _logConfig.delete();
             }
         }
         finally
@@ -122,7 +136,7 @@ public class LoggingManagementTest extends QpidBrokerTestCase
         _loggingManagement.setConfigFileLoggerLevel(operationalLoggingLogger, "OFF");
 
         List<String> matches = _monitor.waitAndFindMatches("Setting level to OFF for logger 'qpid.message'", 5000);
-        assertEquals(1, matches.size());
+        assertTrue(matches.size()>=1);
 
         assertEffectiveLoggingLevel(operationalLoggingLogger, "INFO");
 

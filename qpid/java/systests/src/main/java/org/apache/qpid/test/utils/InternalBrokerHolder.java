@@ -21,12 +21,13 @@
 package org.apache.qpid.test.utils;
 
 import java.security.PrivilegedAction;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.Broker;
-import org.apache.qpid.server.security.auth.TaskPrincipal;
+import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.security.SecurityManager;
 
 import javax.security.auth.Subject;
@@ -35,27 +36,22 @@ public class InternalBrokerHolder implements BrokerHolder
 {
     private static final Logger LOGGER = Logger.getLogger(InternalBrokerHolder.class);
 
-    private final Broker _broker;
-    private final String _workingDirectory;
+    private Broker _broker;
 
     private Set<Integer> _portsUsedByBroker;
 
-    public InternalBrokerHolder(final Broker broker, String workingDirectory, Set<Integer> portsUsedByBroker)
+    public InternalBrokerHolder(Set<Integer> portsUsedByBroker)
     {
-        if(broker == null)
-        {
-            throw new IllegalArgumentException("Broker must not be null");
-        }
-
-        _broker = broker;
-        _workingDirectory = workingDirectory;
         _portsUsedByBroker = portsUsedByBroker;
     }
 
     @Override
-    public String getWorkingDirectory()
+    public void start(BrokerOptions options) throws Exception
     {
-        return _workingDirectory;
+        LOGGER.info("Starting internal broker (same JVM)");
+
+        _broker = new Broker();
+        _broker.startup(options);
     }
 
     public void shutdown()
