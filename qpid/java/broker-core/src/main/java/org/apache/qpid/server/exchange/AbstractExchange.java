@@ -64,12 +64,12 @@ import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
-import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.StateChangeListener;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.server.virtualhost.VirtualHostUnavailableException;
 
 public abstract class AbstractExchange<T extends AbstractExchange<T>>
         extends AbstractConfiguredObject<T>
@@ -510,7 +510,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     {
         if (_virtualHost.getState() != State.ACTIVE)
         {
-            throw new ConnectionScopedRuntimeException("Virtualhost state " + _virtualHost.getState() + " prevents the message from being sent");
+            throw new VirtualHostUnavailableException(this._virtualHost);
         }
 
         List<? extends BaseQueue> queues = route(message, routingAddress, instanceProperties);
@@ -910,4 +910,5 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             this.getVirtualHost().getDurableConfigurationStore().update(false, asObjectRecord());
         }
     }
+
 }
