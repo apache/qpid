@@ -150,19 +150,29 @@ public class Broker implements BrokerShutdownProvider
         String storeLocation = options.getConfigurationStoreLocation();
         String storeType = options.getConfigurationStoreType();
 
-        _eventLogger.message(BrokerMessages.CONFIG(storeLocation));
+        if (options.isStartupLoggedToSystemOut())
+        {
+            _eventLogger.message(BrokerMessages.CONFIG(storeLocation));
+        }
 
         //Allow skipping the logging configuration for people who are
         //embedding the broker and want to configure it themselves.
         if(!options.isSkipLoggingConfiguration())
         {
-            configureLogging(new File(options.getLogConfigFileLocation()), options.getLogWatchFrequency());
+            configureLogging(new File(options.getLogConfigFileLocation()), options.getLogWatchFrequency(), options.isStartupLoggedToSystemOut());
         }
         // Create the RootLogger to be used during broker operation
         boolean statusUpdatesEnabled = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "true"));
         MessageLogger messageLogger = new Log4jMessageLogger(statusUpdatesEnabled);
         _eventLogger.setMessageLogger(messageLogger);
 
+        // Additionally, report BRK-1006 and BRK-1007 into log4j appenders
+        if(!options.isSkipLoggingConfiguration())
+        {
+            _eventLogger.message(BrokerMessages.LOG_CONFIG(new File(options.getLogConfigFileLocation()).getAbsolutePath()));
+        }
+
+        _eventLogger.message(BrokerMessages.CONFIG(storeLocation));
 
         PluggableFactoryLoader<SystemConfigFactory> configFactoryLoader = new PluggableFactoryLoader<>(SystemConfigFactory.class);
         SystemConfigFactory configFactory = configFactoryLoader.get(storeType);
@@ -198,12 +208,15 @@ public class Broker implements BrokerShutdownProvider
 
     }
 
-    private void configureLogging(File logConfigFile, int logWatchTime) throws InitException, IOException
+    private void configureLogging(File logConfigFile, int logWatchTime, boolean startupLoggedToSystemOutput) throws InitException, IOException
     {
         _configuringOwnLogging = true;
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
-            _eventLogger.message(BrokerMessages.LOG_CONFIG(logConfigFile.getAbsolutePath()));
+            if (startupLoggedToSystemOutput)
+            {
+                _eventLogger.message(BrokerMessages.LOG_CONFIG(logConfigFile.getAbsolutePath()));
+            }
 
             if (logWatchTime > 0)
             {
