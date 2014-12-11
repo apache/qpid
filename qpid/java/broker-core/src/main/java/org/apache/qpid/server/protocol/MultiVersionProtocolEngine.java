@@ -157,6 +157,18 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         return _delegate.getSubject();
     }
 
+    @Override
+    public boolean isTransportBlockedForWriting()
+    {
+        return _delegate.isTransportBlockedForWriting();
+    }
+
+    @Override
+    public void setTransportBlockedForWriting(final boolean blocked)
+    {
+        _delegate.setTransportBlockedForWriting(blocked);
+    }
+
     private static final int MINIMUM_REQUIRED_HEADER_BYTES = 8;
 
     public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
@@ -267,6 +279,17 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         public Subject getSubject()
         {
             return new Subject();
+        }
+
+        @Override
+        public boolean isTransportBlockedForWriting()
+        {
+            return false;
+        }
+
+        @Override
+        public void setTransportBlockedForWriting(final boolean blocked)
+        {
         }
     }
 
@@ -406,6 +429,17 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         public Subject getSubject()
         {
             return _delegate.getSubject();
+        }
+
+        @Override
+        public boolean isTransportBlockedForWriting()
+        {
+            return false;
+        }
+
+        @Override
+        public void setTransportBlockedForWriting(final boolean blocked)
+        {
         }
 
         public void exception(Throwable t)

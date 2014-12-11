@@ -44,6 +44,7 @@ import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
 import org.apache.qpid.amqp_1_0.type.transport.End;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.model.Broker;
@@ -64,6 +65,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     private final AmqpPort<?> _port;
     private final Broker<?> _broker;
     private final SubjectCreator _subjectCreator;
+    private final ServerProtocolEngine _protocolEngine;
     private VirtualHostImpl _vhost;
     private final Transport _transport;
     private final ConnectionEndpoint _conn;
@@ -101,12 +103,16 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     private boolean _closedOnOpen;
 
 
+
     public Connection_1_0(Broker<?> broker,
                           ConnectionEndpoint conn,
                           long connectionId,
                           AmqpPort<?> port,
-                          Transport transport, final SubjectCreator subjectCreator)
+                          Transport transport,
+                          final SubjectCreator subjectCreator,
+                          final ServerProtocolEngine protocolEngine)
     {
+        _protocolEngine = protocolEngine;
         _broker = broker;
         _port = port;
         _transport = transport;
@@ -363,6 +369,11 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         return _port;
     }
 
+    public ServerProtocolEngine getProtocolEngine()
+    {
+        return _protocolEngine;
+    }
+
     @Override
     public Transport getTransport()
     {
@@ -480,4 +491,11 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     }
 
 
+    public void transportStateChanged()
+    {
+        for (Session_1_0 session : _sessions)
+        {
+            session.transportStateChanged();
+        }
+    }
 }

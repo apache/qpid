@@ -456,6 +456,12 @@ public class MockConsumer implements ConsumerTarget
         {
             return 0;
         }
+
+        @Override
+        public void transportStateChanged()
+        {
+
+        }
     }
 
     private static class MockConnectionModel implements AMQConnectionModel
@@ -663,5 +669,7 @@ public class MockConsumer implements ConsumerTarget
         {
 
         }
+
+
     }
 }

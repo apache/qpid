@@ -54,6 +54,7 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     private long _createTime = System.currentTimeMillis();
     private long _lastReadTime = _createTime;
     private long _lastWriteTime = _createTime;
+    private volatile boolean _transportBlockedForWriting;
 
     public ProtocolEngine_0_10(ServerConnection conn,
                                NetworkConnection network)
@@ -249,4 +250,18 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     {
         return _connection.getAuthorizedSubject();
     }
+
+    @Override
+    public boolean isTransportBlockedForWriting()
+    {
+        return _transportBlockedForWriting;
+    }
+
+    @Override
+    public void setTransportBlockedForWriting(final boolean blocked)
+    {
+        _transportBlockedForWriting = blocked;
+        _connection.transportStateChanged();
+    }
+
 }

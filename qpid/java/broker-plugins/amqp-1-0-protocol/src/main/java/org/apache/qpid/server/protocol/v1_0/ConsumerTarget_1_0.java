@@ -40,6 +40,7 @@ import org.apache.qpid.amqp_1_0.type.messaging.Released;
 import org.apache.qpid.amqp_1_0.type.transaction.TransactionalState;
 import org.apache.qpid.amqp_1_0.type.transport.SenderSettleMode;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
+import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.consumer.AbstractConsumerTarget;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
@@ -84,7 +85,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
 
     public boolean isSuspended()
     {
-        return _link.getSession().getConnectionModel().isStopped() || getState() != State.ACTIVE;// || !getEndpoint().hasCreditToSend();
+        return _link.getSession().getConnectionModel().isStopped() || getState() != State.ACTIVE;
 
     }
 
@@ -290,7 +291,9 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
     {
         synchronized (_link.getLock())
         {
-            final boolean hasCredit = _link.isAttached() && getEndpoint().hasCreditToSend();
+
+            ServerProtocolEngine protocolEngine = getSession().getConnection().getProtocolEngine();
+            final boolean hasCredit = _link.isAttached() && getEndpoint().hasCreditToSend() && !protocolEngine.isTransportBlockedForWriting();
             if(!hasCredit && getState() == State.ACTIVE)
             {
                 suspend();
@@ -330,7 +333,8 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
     {
         synchronized(_link.getLock())
         {
-            if(isSuspended() && getEndpoint() != null)
+            ServerProtocolEngine protocolEngine = getSession().getConnection().getProtocolEngine();
+            if(isSuspended() && getEndpoint() != null && !protocolEngine.isTransportBlockedForWriting())
             {
                 updateState(State.SUSPENDED, State.ACTIVE);
                 _transactionId = _link.getTransactionId();

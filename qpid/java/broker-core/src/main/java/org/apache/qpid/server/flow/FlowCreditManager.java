@@ -24,10 +24,6 @@ package org.apache.qpid.server.flow;
 
 public interface FlowCreditManager
 {
-    long getMessageCredit();
-
-    long getBytesCredit();
-
     public static interface FlowCreditManagerListener
     {
         void creditStateChanged(boolean hasCredit);

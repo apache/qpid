@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.Subject;
 
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogSubject;
@@ -89,6 +90,8 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     private volatile boolean _stopped;
     private int _messageCompressionThreshold;
     private int _maxMessageSize;
+
+    private ServerProtocolEngine _serverProtocolEngine;
 
     public ServerConnection(final long connectionId,
                             Broker<?> broker,
@@ -187,6 +190,16 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     public void setConnectionDelegate(ServerConnectionDelegate delegate)
     {
         super.setConnectionDelegate(delegate);
+    }
+
+    public ServerProtocolEngine getProtocolEngine()
+    {
+        return _serverProtocolEngine;
+    }
+
+    public void setProtocolEngine(final ServerProtocolEngine serverProtocolEngine)
+    {
+        _serverProtocolEngine = serverProtocolEngine;
     }
 
     public VirtualHostImpl<?,?,?> getVirtualHost()
@@ -663,5 +676,13 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     public int getMaxMessageSize()
     {
         return _maxMessageSize;
+    }
+
+    public void transportStateChanged()
+    {
+        for (AMQSessionModel ssn : getSessionModels())
+        {
+            ssn.transportStateChanged();
+        }
     }
 }

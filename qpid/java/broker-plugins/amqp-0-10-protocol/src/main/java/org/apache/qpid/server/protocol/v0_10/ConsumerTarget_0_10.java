@@ -158,6 +158,10 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         return _name;
     }
 
+    public void transportStateChanged()
+    {
+        _creditManager.restoreCredit(0, 0);
+    }
 
     public static class AddMessageDispositionListenerAction implements Runnable
     {
@@ -555,10 +559,10 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         switch(flowMode)
         {
             case CREDIT:
-                _creditManager = new CreditCreditManager(0l,0l);
+                _creditManager = new CreditCreditManager(0l, 0l, _session.getConnection().getProtocolEngine());
                 break;
             case WINDOW:
-                _creditManager = new WindowCreditManager(0l,0l);
+                _creditManager = new WindowCreditManager(0l, 0l, _session.getConnection().getProtocolEngine());
                 break;
             default:
                 // this should never happen, as 0-10 is finalised and so the enum should never change

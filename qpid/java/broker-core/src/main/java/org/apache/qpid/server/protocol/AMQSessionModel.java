@@ -113,4 +113,6 @@ public interface AMQSessionModel<T extends AMQSessionModel<T,C>, C extends AMQCo
      * @return the time of the last activity or 0 if not in a transaction
      */
     long getTransactionUpdateTime();
+
+    void transportStateChanged();
 }

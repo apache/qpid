@@ -86,7 +86,10 @@ public class ProtocolEngineCreator_0_10 implements ProtocolEngineCreator
         conn.setRemoteAddress(network.getRemoteAddress());
         conn.setLocalAddress(network.getLocalAddress());
 
-        return new ProtocolEngine_0_10( conn, network);
+        ProtocolEngine_0_10 protocolEngine = new ProtocolEngine_0_10(conn, network);
+        conn.setProtocolEngine(protocolEngine);
+
+        return protocolEngine;
     }
 
 

@@ -118,6 +118,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     private NetworkConnection _network;
     private Sender<ByteBuffer> _sender;
     private Connection_1_0 _connection;
+    private volatile boolean _transportBlockedForWriting;
 
 
     static enum State {
@@ -216,7 +217,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         _endpoint.setProperties(serverProperties);
 
         _endpoint.setRemoteAddress(getRemoteAddress());
-        _connection = new Connection_1_0(_broker, _endpoint, _connectionId, _port, _transport, subjectCreator);
+        _connection = new Connection_1_0(_broker, _endpoint, _connectionId, _port, _transport, subjectCreator, this);
 
         _endpoint.setConnectionEventListener(_connection);
         _endpoint.setFrameOutputHandler(this);
@@ -529,6 +530,8 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
     }
 
+
+
     public void close()
     {
         _sender.close();
@@ -559,4 +562,18 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     {
         return _lastWriteTime;
     }
+
+    @Override
+    public boolean isTransportBlockedForWriting()
+    {
+        return _transportBlockedForWriting;
+    }
+    @Override
+    public void setTransportBlockedForWriting(final boolean blocked)
+    {
+        _transportBlockedForWriting = blocked;
+        _connection.transportStateChanged();
+
+    }
+
 }

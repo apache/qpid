@@ -136,12 +136,6 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
 
         }
 
-        @Override
-        public boolean allocateCredit(ServerMessage msg)
-        {
-            return true;
-        }
-
     }
 
     public static ConsumerTarget_0_8 createNoAckTarget(AMQChannel channel,
@@ -215,12 +209,6 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
 
         }
 
-        @Override
-        public boolean allocateCredit(ServerMessage msg)
-        {
-            return true;
-        }
-
         private static final ServerTransaction.Action NOOP =
                 new ServerTransaction.Action()
                 {
@@ -248,11 +236,6 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
                                 RecordDeliveryMethod recordMethod)
         {
             super(channel, consumerTag, filters, creditManager, deliveryMethod, recordMethod);
-        }
-
-        public boolean allocateCredit(ServerMessage msg)
-        {
-            return getCreditManager().useCreditForMessage(msg.getSize());
         }
 
     }

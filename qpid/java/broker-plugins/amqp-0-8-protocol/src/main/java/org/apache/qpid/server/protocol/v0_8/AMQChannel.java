@@ -66,8 +66,6 @@ import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.flow.FlowCreditManager;
-import org.apache.qpid.server.flow.MessageOnlyCreditManager;
-import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
@@ -131,7 +129,8 @@ public class AMQChannel
     private final int _channelId;
 
 
-    private final Pre0_10CreditManager _creditManager = new Pre0_10CreditManager(0l,0l);
+    private final Pre0_10CreditManager _creditManager;
+    private final FlowCreditManager _noAckCreditManager;
 
     /**
      * The delivery tag is unique per channel. This is pre-incremented before putting into the deliver frame so that
@@ -213,6 +212,9 @@ public class AMQChannel
 
     public AMQChannel(AMQProtocolEngine connection, int channelId, final MessageStore messageStore)
     {
+        _creditManager = new Pre0_10CreditManager(0l,0l, connection);
+        _noAckCreditManager = new NoAckCreditManager(connection);
+
         _connection = connection;
         _channelId = channelId;
 
@@ -699,7 +701,7 @@ public class AMQChannel
 
         if(filters != null && Boolean.TRUE.equals(filters.get(AMQPFilterTypes.NO_CONSUME.getValue())))
         {
-            target = ConsumerTarget_0_8.createBrowserTarget(this, tag, filters, _creditManager);
+            target = ConsumerTarget_0_8.createBrowserTarget(this, tag, filters, _noAckCreditManager);
         }
         else if(acks)
         {
@@ -709,7 +711,7 @@ public class AMQChannel
         }
         else
         {
-            target = ConsumerTarget_0_8.createNoAckTarget(this, tag, filters, _creditManager);
+            target = ConsumerTarget_0_8.createNoAckTarget(this, tag, filters, _noAckCreditManager);
             options.add(ConsumerImpl.Option.ACQUIRES);
             options.add(ConsumerImpl.Option.SEES_REQUEUES);
         }
@@ -1644,6 +1646,7 @@ public class AMQChannel
         }
     }
 
+
     public synchronized void block(AMQQueue queue)
     {
         if(_blockingEntities.add(queue))
@@ -1669,6 +1672,13 @@ public class AMQChannel
                 flow(true);
             }
         }
+    }
+
+    @Override
+    public void transportStateChanged()
+    {
+        _creditManager.restoreCredit(0, 0);
+        _noAckCreditManager.restoreCredit(0, 0);
     }
 
     @Override

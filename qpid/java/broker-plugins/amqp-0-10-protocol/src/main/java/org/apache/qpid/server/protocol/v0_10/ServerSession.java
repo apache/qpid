@@ -56,6 +56,7 @@ import org.apache.qpid.server.TransactionTimeoutHelper;
 import org.apache.qpid.server.TransactionTimeoutHelper.CloseAction;
 import org.apache.qpid.server.connection.SessionPrincipal;
 import org.apache.qpid.server.consumer.ConsumerImpl;
+import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
@@ -871,6 +872,15 @@ public class ServerSession extends Session
         long blockTime = _blockTime;
         boolean b = _blocking.get() && blockTime != 0 && (System.currentTimeMillis() - blockTime) > _blockingTimeout;
         return b;
+    }
+
+    @Override
+    public void transportStateChanged()
+    {
+        for(ConsumerTarget_0_10 consumerTarget : getSubscriptions())
+        {
+            consumerTarget.transportStateChanged();
+        }
     }
 
     @Override

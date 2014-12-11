@@ -30,4 +30,8 @@ public interface ServerProtocolEngine extends ProtocolEngine
     long getConnectionId();
 
     Subject getSubject();
+
+    boolean isTransportBlockedForWriting();
+
+    void setTransportBlockedForWriting(boolean blocked);
 }

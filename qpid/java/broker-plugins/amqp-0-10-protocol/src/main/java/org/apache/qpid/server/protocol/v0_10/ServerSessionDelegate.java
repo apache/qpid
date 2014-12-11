@@ -35,6 +35,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostUnavailableException;
@@ -244,8 +245,8 @@ public class ServerSessionDelegate extends SessionDelegate
                 }
                 else
                 {
-
-                    FlowCreditManager_0_10 creditManager = new WindowCreditManager(0L,0L);
+                    ServerProtocolEngine serverProtocolEngine = getServerConnection(session).getProtocolEngine();
+                    FlowCreditManager_0_10 creditManager = new WindowCreditManager(0L,0L, serverProtocolEngine);
 
                     FilterManager filterManager = null;
                     try

@@ -188,6 +188,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     private int _currentMethodId;
     private int _binaryDataLimit;
     private long _maxMessageSize;
+    private volatile boolean _transportBlockedForWriting;
 
     public AMQProtocolEngine(Broker<?> broker,
                              final NetworkConnection network,
@@ -248,6 +249,22 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     public Subject getSubject()
     {
         return _authorizedSubject;
+    }
+
+    @Override
+    public boolean isTransportBlockedForWriting()
+    {
+        return _transportBlockedForWriting;
+    }
+
+    @Override
+    public void setTransportBlockedForWriting(final boolean blocked)
+    {
+        _transportBlockedForWriting = blocked;
+        for(AMQChannel channel : _channelMap.values())
+        {
+            channel.transportStateChanged();
+        }
     }
 
     public void setNetworkConnection(NetworkConnection network)
