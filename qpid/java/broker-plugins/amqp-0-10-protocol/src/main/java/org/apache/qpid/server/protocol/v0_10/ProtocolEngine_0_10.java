@@ -193,6 +193,11 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         return _writtenBytes;
     }
 
+    @Override
+    public void encryptedTransport()
+    {
+    }
+
     public void writerIdle()
     {
         _connection.doHeartBeat();

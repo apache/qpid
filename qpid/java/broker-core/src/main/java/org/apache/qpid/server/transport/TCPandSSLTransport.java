@@ -83,8 +83,7 @@ class TCPandSSLTransport implements AcceptingTransport
         _networkTransport = new NonBlockingNetworkTransport();
         final MultiVersionProtocolEngineFactory protocolEngineFactory =
                 new MultiVersionProtocolEngineFactory(
-                _port.getParent(Broker.class), _sslContext,
-                settings.wantClientAuth(), settings.needClientAuth(),
+                _port.getParent(Broker.class),
                 _supported,
                 _defaultSupportedProtocolReply,
                 _port,

@@ -27,8 +27,6 @@ import java.security.Principal;
 import java.util.Set;
 
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSocket;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,12 +57,14 @@ public class NonBlockingConnection implements NetworkConnection
                                  Ticker ticker,
                                  final Set<TransportEncryption> encryptionSet,
                                  final SSLContext sslContext,
-                                 final boolean wantClientAuth, final boolean needClientAuth)
+                                 final boolean wantClientAuth,
+                                 final boolean needClientAuth,
+                                 final Runnable onTransportEncryptionAction)
     {
         _socket = socket;
         _timeout = timeout;
 
-        _nonBlockingSenderReceiver = new NonBlockingSenderReceiver(_socket, delegate, receiveBufferSize, ticker, encryptionSet, sslContext, wantClientAuth, needClientAuth);
+        _nonBlockingSenderReceiver = new NonBlockingSenderReceiver(_socket, delegate, receiveBufferSize, ticker, encryptionSet, sslContext, wantClientAuth, needClientAuth, onTransportEncryptionAction);
 
     }
 

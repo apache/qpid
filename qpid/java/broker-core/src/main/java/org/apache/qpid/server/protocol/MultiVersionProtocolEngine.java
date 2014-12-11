@@ -24,12 +24,8 @@ package org.apache.qpid.server.protocol;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.security.Principal;
 import java.util.Set;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
@@ -43,20 +39,14 @@ import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
-import org.apache.qpid.transport.network.security.SSLStatus;
-import org.apache.qpid.transport.network.security.ssl.SSLReceiver;
-import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class MultiVersionProtocolEngine implements ServerProtocolEngine
 {
     private static final Logger _logger = Logger.getLogger(MultiVersionProtocolEngine.class);
 
     private final long _id;
-    private final SSLContext _sslContext;
-    private final boolean _wantClientAuth;
-    private final boolean _needClientAuth;
     private final AmqpPort<?> _port;
-    private final Transport _transport;
+    private Transport _transport;
     private final ProtocolEngineCreator[] _creators;
     private final Runnable _onCloseTask;
 
@@ -70,9 +60,6 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     private volatile ServerProtocolEngine _delegate = new SelfDelegateProtocolEngine();
 
     public MultiVersionProtocolEngine(final Broker<?> broker,
-                                      SSLContext sslContext,
-                                      boolean wantClientAuth,
-                                      boolean needClientAuth,
                                       final Set<Protocol> supported,
                                       final Protocol defaultSupportedReply,
                                       AmqpPort<?> port,
@@ -91,15 +78,16 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         _broker = broker;
         _supported = supported;
         _defaultSupportedReply = defaultSupportedReply;
-        _sslContext = sslContext;
-        _wantClientAuth = wantClientAuth;
-        _needClientAuth = needClientAuth;
         _port = port;
         _transport = transport;
         _creators = creators;
         _onCloseTask = onCloseTask;
     }
 
+    void setTransport(Transport transport)
+    {
+        _transport = transport;
+    }
 
     public SocketAddress getRemoteAddress()
     {
@@ -144,6 +132,12 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     public void readerIdle()
     {
         _delegate.readerIdle();
+    }
+
+    @Override
+    public void encryptedTransport()
+    {
+        _delegate.encryptedTransport();
     }
 
 
@@ -242,6 +236,12 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         }
 
         public void readerIdle()
+        {
+
+        }
+
+        @Override
+        public void encryptedTransport()
         {
 
         }
@@ -359,15 +359,6 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                     }
                 }
 
-
-                if(newDelegate == null && looksLikeSSL(headerBytes))
-                {
-                    if(_sslContext !=  null)
-                    {
-                        newDelegate = new SslDelegateProtocolEngine();
-                    }
-                }
-
                 // If no delegate is found then send back a supported protocol version id
                 if(newDelegate == null)
                 {
@@ -465,6 +456,15 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
             _network.close();
         }
 
+        @Override
+        public void encryptedTransport()
+        {
+            if(_transport == Transport.TCP)
+            {
+                _transport = Transport.SSL;
+            }
+        }
+
         public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
         {
 
@@ -483,250 +483,5 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         }
     }
 
-    private class SslDelegateProtocolEngine implements ServerProtocolEngine
-    {
-        private final MultiVersionProtocolEngine _decryptEngine;
-        private final SSLEngine _engine;
-        private final SSLReceiver _sslReceiver;
-        private final SSLBufferingSender _sslSender;
-        private long _lastReadTime;
 
-        private SslDelegateProtocolEngine()
-        {
-
-            _decryptEngine = new MultiVersionProtocolEngine(_broker, null, false, false, _supported,
-                                                            _defaultSupportedReply, _port, Transport.SSL, _id, _creators,
-                                                            null);
-
-            _engine = _sslContext.createSSLEngine();
-            _engine.setUseClientMode(false);
-            SSLUtil.removeSSLv3Support(_engine);
-
-            if(_needClientAuth)
-            {
-                _engine.setNeedClientAuth(true);
-            }
-            else if(_wantClientAuth)
-            {
-                _engine.setWantClientAuth(true);
-            }
-
-            SSLStatus sslStatus = new SSLStatus();
-            _sslReceiver = new SSLReceiver(_engine,_decryptEngine,sslStatus);
-            _sslSender = new SSLBufferingSender(_engine,_sender,sslStatus);
-            _decryptEngine.setNetworkConnection(new SSLNetworkConnection(_engine,_network, _sslSender), _sslSender);
-        }
-
-        @Override
-        public void received(ByteBuffer msg)
-        {
-            _lastReadTime = System.currentTimeMillis();
-            _sslReceiver.received(msg);
-            _sslSender.send();
-            _sslSender.flush();
-        }
-
-        @Override
-        public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
-        {
-            //TODO - Implement
-        }
-
-        @Override
-        public SocketAddress getRemoteAddress()
-        {
-            return _decryptEngine.getRemoteAddress();
-        }
-
-        @Override
-        public SocketAddress getLocalAddress()
-        {
-            return _decryptEngine.getLocalAddress();
-        }
-
-        @Override
-        public long getWrittenBytes()
-        {
-            return _decryptEngine.getWrittenBytes();
-        }
-
-        @Override
-        public long getReadBytes()
-        {
-            return _decryptEngine.getReadBytes();
-        }
-
-        @Override
-        public void closed()
-        {
-            _decryptEngine.closed();
-        }
-
-        @Override
-        public void writerIdle()
-        {
-            _decryptEngine.writerIdle();
-        }
-
-        @Override
-        public void readerIdle()
-        {
-            _decryptEngine.readerIdle();
-        }
-
-        @Override
-        public void exception(Throwable t)
-        {
-            _decryptEngine.exception(t);
-        }
-
-        @Override
-        public long getConnectionId()
-        {
-            return _decryptEngine.getConnectionId();
-        }
-
-        @Override
-        public Subject getSubject()
-        {
-            return _decryptEngine.getSubject();
-        }
-
-        @Override
-        public long getLastReadTime()
-        {
-            return _lastReadTime;
-        }
-
-        @Override
-        public long getLastWriteTime()
-        {
-            return _decryptEngine.getLastWriteTime();
-        }
-    }
-
-    private boolean looksLikeSSL(byte[] headerBytes)
-    {
-        return looksLikeSSLv3ClientHello(headerBytes) || looksLikeSSLv2ClientHello(headerBytes);
-    }
-
-    private boolean looksLikeSSLv3ClientHello(byte[] headerBytes)
-    {
-        return headerBytes[0] == 22 && // SSL Handshake
-               (headerBytes[1] == 3 && // SSL 3.0 / TLS 1.x
-                (headerBytes[2] == 0 || // SSL 3.0
-                 headerBytes[2] == 1 || // TLS 1.0
-                 headerBytes[2] == 2 || // TLS 1.1
-                 headerBytes[2] == 3)) && // TLS1.2
-               (headerBytes[5] == 1); // client_hello
-    }
-
-    private boolean looksLikeSSLv2ClientHello(byte[] headerBytes)
-    {
-        return headerBytes[0] == -128 &&
-               headerBytes[3] == 3 && // SSL 3.0 / TLS 1.x
-                (headerBytes[4] == 0 || // SSL 3.0
-                 headerBytes[4] == 1 || // TLS 1.0
-                 headerBytes[4] == 2 || // TLS 1.1
-                 headerBytes[4] == 3);
-    }
-
-
-    private static class SSLNetworkConnection implements NetworkConnection
-    {
-        private final NetworkConnection _network;
-        private final SSLBufferingSender _sslSender;
-        private final SSLEngine _engine;
-        private Principal _principal;
-        private boolean _principalChecked;
-        private final Object _lock = new Object();
-
-        public SSLNetworkConnection(SSLEngine engine, NetworkConnection network,
-                                    SSLBufferingSender sslSender)
-        {
-            _engine = engine;
-            _network = network;
-            _sslSender = sslSender;
-
-        }
-
-        @Override
-        public Sender<ByteBuffer> getSender()
-        {
-            return _sslSender;
-        }
-
-        @Override
-        public void start()
-        {
-            _network.start();
-        }
-
-        @Override
-        public void close()
-        {
-            _sslSender.close();
-
-            _network.close();
-        }
-
-        @Override
-        public SocketAddress getRemoteAddress()
-        {
-            return _network.getRemoteAddress();
-        }
-
-        @Override
-        public SocketAddress getLocalAddress()
-        {
-            return _network.getLocalAddress();
-        }
-
-        @Override
-        public void setMaxWriteIdle(int sec)
-        {
-            _network.setMaxWriteIdle(sec);
-        }
-
-        @Override
-        public void setMaxReadIdle(int sec)
-        {
-            _network.setMaxReadIdle(sec);
-        }
-
-        @Override
-        public Principal getPeerPrincipal()
-        {
-            synchronized (_lock)
-            {
-                if(!_principalChecked)
-                {
-                    try
-                    {
-                        _principal =  _engine.getSession().getPeerPrincipal();
-                    }
-                    catch (SSLPeerUnverifiedException e)
-                    {
-                        _principal = null;
-                    }
-
-                    _principalChecked = true;
-                }
-
-                return _principal;
-            }
-        }
-
-        @Override
-        public int getMaxReadIdle()
-        {
-            return _network.getMaxReadIdle();
-        }
-
-        @Override
-        public int getMaxWriteIdle()
-        {
-            return _network.getMaxWriteIdle();
-        }
-    }
 }

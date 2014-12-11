@@ -68,6 +68,7 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
     private final Ticker _ticker;
     private final Set<TransportEncryption> _encryptionSet;
     private final SSLContext _sslContext;
+    private final Runnable _onTransportEncryptionAction;
     private ByteBuffer _netInputBuffer;
     private SSLEngine _sslEngine;
 
@@ -84,7 +85,8 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
                                      final Set<TransportEncryption> encryptionSet,
                                      final SSLContext sslContext,
                                      final boolean wantClientAuth,
-                                     final boolean needClientAuth)
+                                     final boolean needClientAuth,
+                                     final Runnable onTransportEncryptionAction)
     {
         _socketChannel = socketChannel;
         _receiver = receiver;
@@ -92,7 +94,7 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
         _ticker = ticker;
         _encryptionSet = encryptionSet;
         _sslContext = sslContext;
-
+        _onTransportEncryptionAction = onTransportEncryptionAction;
 
         if(encryptionSet.size() == 1)
         {
@@ -113,7 +115,7 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
                 _sslEngine.setWantClientAuth(true);
             }
             _netInputBuffer = ByteBuffer.allocate(_sslEngine.getSession().getPacketBufferSize());
-
+            onTransportEncryptionAction.run();
         }
 
         try
@@ -200,7 +202,10 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
                 doRead();
                 boolean fullyWritten = doWrite();
 
-                _socketChannel.register(_selector, fullyWritten ? SelectionKey.OP_READ : (SelectionKey.OP_WRITE | SelectionKey.OP_READ));
+                _socketChannel.register(_selector,
+                                        fullyWritten
+                                                ? SelectionKey.OP_READ
+                                                : (SelectionKey.OP_WRITE | SelectionKey.OP_READ));
             }
             catch (IOException e)
             {
@@ -416,6 +421,7 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
                     }
                     else
                     {
+                        _onTransportEncryptionAction.run();
                         _netInputBuffer.compact();
                         doRead();
                     }

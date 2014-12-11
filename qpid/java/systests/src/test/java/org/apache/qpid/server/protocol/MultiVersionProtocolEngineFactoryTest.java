@@ -161,7 +161,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 
         when(port.getContextValue(eq(Long.class),eq(Port.CONNECTION_MAXIMUM_AUTHENTICATION_DELAY))).thenReturn(10000l);
         MultiVersionProtocolEngineFactory factory =
-            new MultiVersionProtocolEngineFactory(_broker, null, false, false, protocols, null, port,
+            new MultiVersionProtocolEngineFactory(_broker, protocols, null, port,
                     org.apache.qpid.server.model.Transport.TCP);
 
         //create a dummy to retrieve the 'current' ID number
@@ -215,7 +215,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 
         try
         {
-            new MultiVersionProtocolEngineFactory(_broker, null, false, false, versions, Protocol.AMQP_0_9, null,
+            new MultiVersionProtocolEngineFactory(_broker, versions, Protocol.AMQP_0_9, null,
                     org.apache.qpid.server.model.Transport.TCP);
             fail("should not have been allowed to create the factory");
         }

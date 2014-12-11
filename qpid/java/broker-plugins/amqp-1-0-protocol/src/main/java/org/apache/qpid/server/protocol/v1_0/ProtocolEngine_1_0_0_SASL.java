@@ -179,6 +179,11 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         //Todo
     }
 
+    @Override
+    public void encryptedTransport()
+    {
+    }
+
     public void setNetworkConnection(final NetworkConnection network, final Sender<ByteBuffer> sender)
     {
         _network = network;

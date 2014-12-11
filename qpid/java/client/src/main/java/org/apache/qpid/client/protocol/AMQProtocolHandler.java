@@ -316,6 +316,11 @@ public class AMQProtocolHandler implements ProtocolEngine
         }
     }
 
+    @Override
+    public void encryptedTransport()
+    {
+    }
+
     public void readerIdle()
     {
         _logger.debug("Protocol Session [" + this + "] idle: reader");

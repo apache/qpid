@@ -1150,6 +1150,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         }
     }
 
+    @Override
+    public void encryptedTransport()
+    {
+    }
+
     public void readerIdle()
     {
         Subject.doAs(_authorizedSubject, new PrivilegedAction<Object>()

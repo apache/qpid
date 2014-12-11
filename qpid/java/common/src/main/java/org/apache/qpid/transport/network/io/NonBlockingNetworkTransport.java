@@ -53,70 +53,6 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
                                                                    CommonProperties.HANDSHAKE_TIMEOUT_DEFAULT);
     private AcceptingThread _acceptor;
 
-
-/*
-    private SocketChannel _socketChannel;
-    private NonBlockingConnection _connection;
-
-    public NetworkConnection connect(ConnectionSettings settings,
-                                     Receiver<ByteBuffer> delegate,
-                                     TransportActivity transportActivity)
-    {
-        int sendBufferSize = settings.getWriteBufferSize();
-        int receiveBufferSize = settings.getReadBufferSize();
-
-        try
-        {
-            _socketChannel = SocketChannel.open();
-            _socketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-            _socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, settings.isTcpNodelay());
-            _socketChannel.setOption(StandardSocketOptions.SO_SNDBUF, sendBufferSize);
-            _socketChannel.setOption(StandardSocketOptions.SO_RCVBUF, receiveBufferSize);
-
-            if(LOGGER.isDebugEnabled())
-            {
-                LOGGER.debug("SO_RCVBUF : " + _socketChannel.getOption(StandardSocketOptions.SO_RCVBUF));
-                LOGGER.debug("SO_SNDBUF : " + _socketChannel.getOption(StandardSocketOptions.SO_SNDBUF));
-                LOGGER.debug("TCP_NODELAY : " + _socketChannel.getOption(StandardSocketOptions.TCP_NODELAY));
-            }
-
-            InetAddress address = InetAddress.getByName(settings.getHost());
-
-            _socketChannel.socket().connect(new InetSocketAddress(address, settings.getPort()),
-                                            settings.getConnectTimeout());
-        }
-        catch (IOException e)
-        {
-            throw new TransportException("Error connecting to broker", e);
-        }
-
-        try
-        {
-            IdleTimeoutTicker ticker = new IdleTimeoutTicker(transportActivity, TIMEOUT);
-            _connection = createNetworkConnection(_socketChannel, delegate, sendBufferSize, receiveBufferSize,
-                                                  TIMEOUT, ticker, _encryptionSet, _sslContext);
-            ticker.setConnection(_connection);
-            _connection.start();
-        }
-        catch(Exception e)
-        {
-            try
-            {
-                _socketChannel.close();
-            }
-            catch(IOException ioe)
-            {
-                //ignored, throw based on original exception
-            }
-
-            throw new TransportException("Error creating network connection", e);
-        }
-
-        return _connection;
-    }
-
-*/
-
     protected NonBlockingConnection createNetworkConnection(final SocketChannel socket,
                                                             final Receiver<ByteBuffer> engine,
                                                             final Integer sendBufferSize,
@@ -126,9 +62,10 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
                                                             final Set<TransportEncryption> encryptionSet,
                                                             final SSLContext sslContext,
                                                             final boolean wantClientAuth,
-                                                            final boolean needClientAuth)
+                                                            final boolean needClientAuth,
+                                                            final Runnable onTransportEncryptionAction)
     {
-        return new NonBlockingConnection(socket, engine, sendBufferSize, receiveBufferSize, timeout, ticker, encryptionSet, sslContext, wantClientAuth, needClientAuth);
+        return new NonBlockingConnection(socket, engine, sendBufferSize, receiveBufferSize, timeout, ticker, encryptionSet, sslContext, wantClientAuth, needClientAuth, onTransportEncryptionAction);
     }
 
     public void close()
@@ -242,7 +179,7 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
                     {
                         socket = _serverSocket.accept();
 
-                        ProtocolEngine engine = _factory.newProtocolEngine(socket.socket().getRemoteSocketAddress());
+                        final ProtocolEngine engine = _factory.newProtocolEngine(socket.socket().getRemoteSocketAddress());
 
                         if(engine != null)
                         {
@@ -268,7 +205,16 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
                                                             _encryptionSet,
                                                             _sslContext,
                                                             _config.wantClientAuth(),
-                                                            _config.needClientAuth());
+                                                            _config.needClientAuth(),
+                                                            new Runnable()
+                                                            {
+
+                                                                @Override
+                                                                public void run()
+                                                                {
+                                                                    engine.encryptedTransport();
+                                                                }
+                                                            });
 
                             connection.setMaxReadIdle(HANSHAKE_TIMEOUT);
 
