@@ -54,7 +54,7 @@
 
     <!-- test profile properties and defaults-->
     <qpid.home>${basedir}</qpid.home> <!-- override for broker tests -->
-    <qpid.home.qbtc.output>${qpid.home}${file.separator}target${file.separator}qbtc-output</qpid.home.qbtc.output> <!-- override for broker tests -->
+    <qpid.home.qbtc.output>${qpid.home}${file.separator}target${file.separator}qbtc-test-config</qpid.home.qbtc.output> <!-- override for broker tests -->
     <qpid.work>${project.build.directory}${file.separator}QPID_WORK</qpid.work>
 
     <profile>java-mms.0-10</profile>
