@@ -34,7 +34,7 @@
     <broker.home.dir>target${file.separator}qpid-broker${file.separator}${project.version}</broker.home.dir>
     <!-- test properties -->
     <qpid.home>${basedir}${file.separator}${broker.home.dir}</qpid.home>
-    <qpid.home.qbtc.output>${qpid.home}${file.separator}qbtc-output</qpid.home.qbtc.output>
+    <qpid.home.qbtc.output>${qpid.home}${file.separator}qbtc-test-config</qpid.home.qbtc.output>
     <test.output.dir>${basedir}${file.separator}target${file.separator}surefire-reports</test.output.dir>
 
     <test.working.directory>${basedir}/..</test.working.directory>
