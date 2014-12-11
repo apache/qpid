@@ -178,6 +178,7 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
         //  read as much as you can
         //  try to write all pending byte buffers
 
+
         while (!_closed.get())
         {
 
@@ -206,6 +207,7 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
                                         fullyWritten
                                                 ? SelectionKey.OP_READ
                                                 : (SelectionKey.OP_WRITE | SelectionKey.OP_READ));
+
             }
             catch (IOException e)
             {
@@ -359,7 +361,11 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
                 {
                     _currentBuffer = ByteBuffer.allocate(_receiveBufSize);
                 }
-                _socketChannel.read(_currentBuffer);
+                int read = _socketChannel.read(_currentBuffer);
+                if (read == -1)
+                {
+                    _closed.set(true);
+                }
                 remaining = _currentBuffer.remaining();
                 if (LOGGER.isDebugEnabled())
                 {
@@ -378,6 +384,11 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
             while(!_closed.get() && (read > 0 || unwrapped > 0) && _sslEngine.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.NEED_WRAP && (_status == null || _status.getStatus() != SSLEngineResult.Status.CLOSED))
             {
                 read = _socketChannel.read(_netInputBuffer);
+                if (read == -1)
+                {
+                    _closed.set(true);
+                }
+
                 LOGGER.debug("Read " + read + " encrypted bytes " + _netInputBuffer);
                 _netInputBuffer.flip();
                 ByteBuffer appInputBuffer =
@@ -403,6 +414,11 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
             {
 
                 read = _socketChannel.read(_netInputBuffer);
+                if (read == -1)
+                {
+                    _closed.set(true);
+                }
+
                 LOGGER.debug("Read " + read + " possibly encrypted bytes " + _netInputBuffer);
 
                 if (_netInputBuffer.position() >= 6)

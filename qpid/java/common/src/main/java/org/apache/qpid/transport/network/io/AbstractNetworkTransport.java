@@ -49,6 +49,7 @@ import org.apache.qpid.transport.network.TransportActivity;
 import org.apache.qpid.transport.network.TransportEncryption;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
+// TODO we are no longer using the IncomingNetworkTransport
 public abstract class AbstractNetworkTransport implements OutgoingNetworkTransport, IncomingNetworkTransport
 {
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(AbstractNetworkTransport.class);

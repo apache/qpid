@@ -84,11 +84,6 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         _onCloseTask = onCloseTask;
     }
 
-    void setTransport(Transport transport)
-    {
-        _transport = transport;
-    }
-
     public SocketAddress getRemoteAddress()
     {
         return _delegate.getRemoteAddress();

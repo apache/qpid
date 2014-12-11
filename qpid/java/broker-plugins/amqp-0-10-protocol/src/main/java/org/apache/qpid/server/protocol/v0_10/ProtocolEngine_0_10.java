@@ -223,11 +223,6 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         return getRemoteAddress().toString();
     }
 
-    public String getAuthId()
-    {
-        return _connection.getAuthorizedPrincipal() == null ? null : _connection.getAuthorizedPrincipal().getName();
-    }
-
     public boolean isDurable()
     {
         return false;

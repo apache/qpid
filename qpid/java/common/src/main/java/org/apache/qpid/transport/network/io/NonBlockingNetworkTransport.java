@@ -49,7 +49,7 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(AbstractNetworkTransport.class);
     private static final int TIMEOUT = Integer.getInteger(CommonProperties.IO_NETWORK_TRANSPORT_TIMEOUT_PROP_NAME,
                                                           CommonProperties.IO_NETWORK_TRANSPORT_TIMEOUT_DEFAULT);
-    private static final int HANSHAKE_TIMEOUT = Integer.getInteger(CommonProperties.HANDSHAKE_TIMEOUT_PROP_NAME ,
+    private static final int HANDSHAKE_TIMEOUT = Integer.getInteger(CommonProperties.HANDSHAKE_TIMEOUT_PROP_NAME ,
                                                                    CommonProperties.HANDSHAKE_TIMEOUT_DEFAULT);
     private AcceptingThread _acceptor;
 
@@ -70,24 +70,11 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
 
     public void close()
     {
-/*
-        if(_connection != null)
-        {
-            _connection.close();
-        }
-*/
         if(_acceptor != null)
         {
             _acceptor.close();
         }
     }
-/*
-
-    public NetworkConnection getConnection()
-    {
-        return _connection;
-    }
-*/
 
     public void accept(NetworkTransportConfiguration config,
                        ProtocolEngineFactory factory,
@@ -115,10 +102,10 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
     {
         private final Set<TransportEncryption> _encryptionSet;
         private volatile boolean _closed = false;
-        private NetworkTransportConfiguration _config;
-        private ProtocolEngineFactory _factory;
-        private SSLContext _sslContext;
-        private ServerSocketChannel _serverSocket;
+        private final NetworkTransportConfiguration _config;
+        private final ProtocolEngineFactory _factory;
+        private final SSLContext _sslContext;
+        private final ServerSocketChannel _serverSocket;
         private int _timeout;
 
         private AcceptingThread(NetworkTransportConfiguration config,
@@ -184,7 +171,7 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
                         if(engine != null)
                         {
                             socket.setOption(StandardSocketOptions.TCP_NODELAY, _config.getTcpNoDelay());
-                            socket.socket().setSoTimeout(1000 * HANSHAKE_TIMEOUT);
+                            socket.socket().setSoTimeout(1000 * HANDSHAKE_TIMEOUT);
 
                             final Integer sendBufferSize = _config.getSendBufferSize();
                             final Integer receiveBufferSize = _config.getReceiveBufferSize();
@@ -216,11 +203,10 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
                                                                 }
                                                             });
 
-                            connection.setMaxReadIdle(HANSHAKE_TIMEOUT);
+                            engine.setNetworkConnection(connection, connection.getSender());
+                            connection.setMaxReadIdle(HANDSHAKE_TIMEOUT);
 
                             ticker.setConnection(connection);
-
-                            engine.setNetworkConnection(connection, connection.getSender());
 
                             connection.start();
                         }
