@@ -99,6 +99,10 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
         if(encryptionSet.size() == 1)
         {
             _transportEncryption = _encryptionSet.iterator().next();
+            if (_transportEncryption == TransportEncryption.TLS)
+            {
+                onTransportEncryptionAction.run();
+            }
         }
 
         if(encryptionSet.contains(TransportEncryption.TLS))
@@ -115,7 +119,6 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
                 _sslEngine.setWantClientAuth(true);
             }
             _netInputBuffer = ByteBuffer.allocate(_sslEngine.getSession().getPacketBufferSize());
-            onTransportEncryptionAction.run();
         }
 
         try
