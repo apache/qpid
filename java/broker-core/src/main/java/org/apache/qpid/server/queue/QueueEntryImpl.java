@@ -214,6 +214,7 @@ public abstract class QueueEntryImpl implements QueueEntry
         if(acquired)
         {
             _deliveryCountUpdater.compareAndSet(this,-1,0);
+            getQueue().incrementUnackedMsgCount(this);
         }
         return acquired;
     }

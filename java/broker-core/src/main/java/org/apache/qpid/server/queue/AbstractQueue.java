@@ -1230,7 +1230,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         setLastSeenEntry(sub, entry);
 
         _deliveredMessages.incrementAndGet();
-        incrementUnackedMsgCount(entry);
 
         sub.send(entry, batch);
     }
@@ -2461,13 +2460,15 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         return _unackedMsgBytes.get();
     }
 
+    @Override
     public void decrementUnackedMsgCount(QueueEntry queueEntry)
     {
         _unackedMsgCount.decrementAndGet();
         _unackedMsgBytes.addAndGet(-queueEntry.getSize());
     }
 
-    private void incrementUnackedMsgCount(QueueEntry entry)
+    @Override
+    public void incrementUnackedMsgCount(QueueEntry entry)
     {
         _unackedMsgCount.incrementAndGet();
         _unackedMsgBytes.addAndGet(entry.getSize());

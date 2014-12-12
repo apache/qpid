@@ -71,6 +71,8 @@ public interface AMQQueue<X extends AMQQueue<X>>
 
     void decrementUnackedMsgCount(QueueEntry queueEntry);
 
+    void incrementUnackedMsgCount(QueueEntry entry);
+
     boolean resend(final QueueEntry entry, final QueueConsumer<?> consumer);
 
     List<? extends QueueEntry> getMessagesOnTheQueue();
