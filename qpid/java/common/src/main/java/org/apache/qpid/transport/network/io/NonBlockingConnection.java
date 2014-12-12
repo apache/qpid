@@ -31,7 +31,7 @@ import javax.net.ssl.SSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.Ticker;
@@ -50,7 +50,7 @@ public class NonBlockingConnection implements NetworkConnection
     private final Object _lock = new Object();
 
     public NonBlockingConnection(SocketChannel socket,
-                                 Receiver<ByteBuffer> delegate,
+                                 ServerProtocolEngine delegate,
                                  int sendBufferSize,
                                  int receiveBufferSize,
                                  long timeout,

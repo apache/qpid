@@ -41,8 +41,8 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.thread.Threading;
-import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.SenderClosedException;
 import org.apache.qpid.transport.SenderException;
@@ -63,7 +63,7 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
     private final Thread _ioThread;
     private final String _remoteSocketAddress;
     private final AtomicBoolean _closed = new AtomicBoolean(false);
-    private final Receiver<ByteBuffer> _receiver;
+    private final ServerProtocolEngine _receiver;
     private final int _receiveBufSize;
     private final Ticker _ticker;
     private final Set<TransportEncryption> _encryptionSet;
@@ -79,7 +79,7 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
 
 
     public NonBlockingSenderReceiver(final SocketChannel socketChannel,
-                                     Receiver<ByteBuffer> receiver,
+                                     ServerProtocolEngine receiver,
                                      int receiveBufSize,
                                      Ticker ticker,
                                      final Set<TransportEncryption> encryptionSet,
@@ -202,9 +202,10 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
 
                 LOGGER.debug("Number Ready " +  numberReady);
 
-                doWrite();
+                _receiver.setTransportBlockedForWriting(!doWrite());
                 doRead();
                 boolean fullyWritten = doWrite();
+                _receiver.setTransportBlockedForWriting(!fullyWritten);
 
                 _socketChannel.register(_selector,
                                         fullyWritten

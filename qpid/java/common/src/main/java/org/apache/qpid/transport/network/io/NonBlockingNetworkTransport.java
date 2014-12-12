@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.StandardSocketOptions;
-import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
@@ -34,10 +33,9 @@ import javax.net.ssl.SSLContext;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.configuration.CommonProperties;
-import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
+import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
-import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -54,7 +52,7 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
     private AcceptingThread _acceptor;
 
     protected NonBlockingConnection createNetworkConnection(final SocketChannel socket,
-                                                            final Receiver<ByteBuffer> engine,
+                                                            final ServerProtocolEngine engine,
                                                             final Integer sendBufferSize,
                                                             final Integer receiveBufferSize,
                                                             final int timeout,
@@ -166,7 +164,8 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
                     {
                         socket = _serverSocket.accept();
 
-                        final ProtocolEngine engine = _factory.newProtocolEngine(socket.socket().getRemoteSocketAddress());
+                        final ServerProtocolEngine engine =
+                                (ServerProtocolEngine) _factory.newProtocolEngine(socket.socket().getRemoteSocketAddress());
 
                         if(engine != null)
                         {
