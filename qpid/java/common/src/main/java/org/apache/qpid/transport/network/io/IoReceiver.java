@@ -78,7 +78,7 @@ final class IoReceiver implements Runnable
             throw new RuntimeException("Error creating IOReceiver thread",e);
         }
         receiverThread.setDaemon(true);
-        receiverThread.setName(String.format("IoReceiver - %s", socket.getRemoteSocketAddress()));
+        receiverThread.setName(String.format("IoReceiver-%s", socket.getRemoteSocketAddress()));
     }
 
     public void initiate()

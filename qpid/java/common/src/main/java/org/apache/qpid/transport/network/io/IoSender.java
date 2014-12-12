@@ -88,7 +88,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
         }
 
         senderThread.setDaemon(true);
-        senderThread.setName(String.format("IoSender - %s", _remoteSocketAddress));
+        senderThread.setName(String.format("IoSender-%s", _remoteSocketAddress));
     }
 
     public void initiate()
