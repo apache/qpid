@@ -102,13 +102,6 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         return new Sender<ByteBuffer>()
         {
             @Override
-            public void setIdleTimeout(int i)
-            {
-                sender.setIdleTimeout(i);
-
-            }
-
-            @Override
             public void send(ByteBuffer msg)
             {
                 _lastWriteTime = System.currentTimeMillis();

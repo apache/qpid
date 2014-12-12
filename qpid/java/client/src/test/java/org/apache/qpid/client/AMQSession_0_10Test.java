@@ -670,7 +670,7 @@ public class AMQSession_0_10Test extends QpidTestCase
     {
         private List<ProtocolEvent> _sendEvents = new ArrayList<ProtocolEvent>();
 
-        public void setIdleTimeout(int i)
+        private void setIdleTimeout(int i)
         {
         }
 

@@ -288,10 +288,6 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         {
             _sender = new Sender<ByteBuffer>()
             {
-                public void setIdleTimeout(int i)
-                {
-                }
-
                 public void send(ByteBuffer msg)
                 {
                 }

@@ -153,11 +153,9 @@ public class ClientDelegate extends ConnectionDelegate
                               maxFrameSize,
                               actualHeartbeatInterval);
 
-        int idleTimeout = (int)(actualHeartbeatInterval * 1000 * heartbeatTimeoutFactor);
         conn.getNetworkConnection().setMaxReadIdle((int)(actualHeartbeatInterval*heartbeatTimeoutFactor));
         conn.getNetworkConnection().setMaxWriteIdle(actualHeartbeatInterval);
         conn.setMaxFrameSize(maxFrameSize == 0 ? 0xffff : maxFrameSize);
-        conn.setIdleTimeout(idleTimeout);
 
         int channelMax = tune.getChannelMax();
         //0 means no implied limit, except available server resources

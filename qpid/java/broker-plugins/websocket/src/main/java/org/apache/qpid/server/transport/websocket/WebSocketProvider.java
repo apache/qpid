@@ -271,12 +271,6 @@ class WebSocketProvider implements AcceptingTransport
         }
 
         @Override
-        public void setIdleTimeout(final int i)
-        {
-
-        }
-
-        @Override
         public void send(final ByteBuffer msg)
         {
             try

@@ -103,11 +103,6 @@ public class SASLSender extends SASLEncryptor implements Sender<ByteBuffer> {
         }        
     }
 
-    public void setIdleTimeout(int i) 
-    {
-        delegate.setIdleTimeout(i);
-    }
-    
     public void securityLayerEstablished()
     {
         appData = new byte[getSendBuffSize()];

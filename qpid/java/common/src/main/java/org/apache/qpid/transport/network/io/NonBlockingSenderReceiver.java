@@ -154,12 +154,6 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
     }
 
     @Override
-    public void setIdleTimeout(final int i)
-    {
-        // Probably unused - dead code to be removed??
-    }
-
-    @Override
     public void send(final ByteBuffer msg)
     {
         if (_closed.get())

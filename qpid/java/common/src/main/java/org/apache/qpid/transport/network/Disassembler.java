@@ -251,11 +251,6 @@ public final class Disassembler implements Sender<ProtocolEvent>, ProtocolDelega
         throw new IllegalArgumentException(String.valueOf(error));
     }
 
-    public void setIdleTimeout(int i)
-    {
-        sender.setIdleTimeout(i);
-    }
-
     @Override
     public void setMaxFrameSize(final int maxFrame)
     {

@@ -27,11 +27,6 @@ import org.apache.qpid.transport.Sender;
 public class MockSender implements Sender<ByteBuffer>
 {
 
-    public void setIdleTimeout(int i)
-    {
-
-    }
-
     public void send(ByteBuffer msg)
     {
 

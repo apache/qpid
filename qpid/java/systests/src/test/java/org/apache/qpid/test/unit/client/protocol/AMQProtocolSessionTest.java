@@ -114,11 +114,6 @@ public class AMQProtocolSessionTest extends QpidBrokerTestCase
             _sender = new Sender<ByteBuffer>()
             {
 
-                public void setIdleTimeout(int i)
-                {
-
-                }
-
                 public void send(ByteBuffer msg)
                 {
 

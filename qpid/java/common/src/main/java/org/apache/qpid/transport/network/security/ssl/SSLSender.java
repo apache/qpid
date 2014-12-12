@@ -264,8 +264,4 @@ public class SSLSender implements Sender<ByteBuffer>
         }
     }
 
-    public void setIdleTimeout(int i)
-    {
-        delegate.setIdleTimeout(i);
-    }
 }

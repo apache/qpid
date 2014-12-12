@@ -316,18 +316,6 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
         }
     }
 
-    public void setIdleTimeout(int i)
-    {
-        try
-        {
-            socket.setSoTimeout(i);
-        }
-        catch (Exception e)
-        {
-            throw new SenderException(e);
-        }
-    }
-
     public void setReceiver(IoReceiver receiver)
     {
         _receiver = receiver;

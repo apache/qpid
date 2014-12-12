@@ -159,7 +159,6 @@ public class Connection extends ConnectionInvoker
     public void setSender(Sender<ProtocolEvent> sender)
     {
         this.sender = sender;
-        sender.setIdleTimeout(idleTimeout);
     }
 
     protected void setState(State state)
@@ -673,20 +672,6 @@ public class Connection extends ConnectionInvoker
                 break;
             }
         }
-    }
-
-    public void setIdleTimeout(int i)
-    {
-        idleTimeout = i;
-        if (sender != null)
-        {
-            sender.setIdleTimeout(i);
-        }
-    }
-
-    public int getIdleTimeout()
-    {
-        return idleTimeout;
     }
 
     public String getUserID()
