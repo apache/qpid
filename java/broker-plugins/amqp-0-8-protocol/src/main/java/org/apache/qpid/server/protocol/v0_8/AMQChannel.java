@@ -2113,32 +2113,32 @@ public class AMQChannel
             catch (AMQQueue.ExistingExclusiveConsumer e)
             {
                 _connection.closeConnection(AMQConstant.ACCESS_REFUSED,
-                                            "Cannot subscribe to queue "
+                                            "Cannot subscribe to queue '"
                                                                     + queue1.getName()
-                                                                    + " as it already has an existing exclusive consumer", _channelId);
+                                                                    + "' as it already has an existing exclusive consumer", _channelId);
 
             }
             catch (AMQQueue.ExistingConsumerPreventsExclusive e)
             {
                 _connection.closeConnection(AMQConstant.ACCESS_REFUSED,
-                                            "Cannot subscribe to queue "
+                                            "Cannot subscribe to queue '"
                                                                     + queue1.getName()
-                                                                    + " exclusively as it already has a consumer", _channelId);
+                                                                    + "' exclusively as it already has a consumer", _channelId);
 
             }
             catch (AccessControlException e)
             {
-                _connection.closeConnection(AMQConstant.ACCESS_REFUSED, "Cannot subscribe to queue "
+                _connection.closeConnection(AMQConstant.ACCESS_REFUSED, "Cannot subscribe to queue '"
                                                                     + queue1.getName()
-                                                                    + " permission denied", _channelId);
+                                                                    + "' permission denied", _channelId);
 
             }
             catch (MessageSource.ConsumerAccessRefused consumerAccessRefused)
             {
                 _connection.closeConnection(AMQConstant.ACCESS_REFUSED,
-                                            "Cannot subscribe to queue "
+                                            "Cannot subscribe to queue '"
                                                                     + queue1.getName()
-                                                                    + " as it already has an incompatible exclusivity policy", _channelId);
+                                                                    + "' as it already has an incompatible exclusivity policy", _channelId);
 
             }
 
@@ -2247,7 +2247,7 @@ public class AMQChannel
             // if the exchange does not exist we raise a channel exception
             if (destination == null)
             {
-                closeChannel(AMQConstant.NOT_FOUND, "Unknown exchange name: " + exchangeName);
+                closeChannel(AMQConstant.NOT_FOUND, "Unknown exchange name: '" + exchangeName + "'");
             }
             else
             {
@@ -2805,15 +2805,14 @@ public class AMQChannel
                 exchange = virtualHost.getExchange(exchangeName.toString());
                 if (exchange == null)
                 {
-                    closeChannel(AMQConstant.NOT_FOUND, "Unknown exchange: " + exchangeName);
+                    closeChannel(AMQConstant.NOT_FOUND, "Unknown exchange: '" + exchangeName + "'");
                 }
                 else if (!(type == null || type.length() == 0) && !exchange.getType().equals(type.asString()))
                 {
 
-                    _connection.closeConnection(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: "
-                                                                         +
-                                                                         exchangeName
-                                                                         + " of type "
+                    _connection.closeConnection(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: '"
+                                                                         + exchangeName
+                                                                         + "' of type "
                                                                          + exchange.getType()
                                                                          + " to "
                                                                          + type
@@ -2840,7 +2839,6 @@ public class AMQChannel
                     {
                         attributes.putAll(FieldTable.convertToMap(arguments));
                     }
-                    attributes.put(Exchange.ID, null);
                     attributes.put(Exchange.NAME, name);
                     attributes.put(Exchange.TYPE, typeString);
                     attributes.put(Exchange.DURABLE, durable);
@@ -2865,8 +2863,8 @@ public class AMQChannel
                 catch (ReservedExchangeNameException e)
                 {
                     _connection.closeConnection(AMQConstant.NOT_ALLOWED,
-                                                "Attempt to declare exchange: " + exchangeName +
-                                                                         " which begins with reserved prefix.", getChannelId());
+                                                "Attempt to declare exchange: '" + exchangeName +
+                                                                         "' which begins with reserved prefix.", getChannelId());
 
 
                 }
@@ -2875,8 +2873,8 @@ public class AMQChannel
                     exchange = e.getExistingExchange();
                     if (!new AMQShortString(exchange.getType()).equals(type))
                     {
-                        _connection.closeConnection(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: "
-                                                                                 + exchangeName + " of type "
+                        _connection.closeConnection(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: '"
+                                                                                 + exchangeName + "' of type "
                                                                                  + exchange.getType()
                                                                                  + " to " + type + ".", getChannelId());
 
@@ -2912,7 +2910,7 @@ public class AMQChannel
                     // note - since 0-8/9/9-1 can't set the alt. exchange this exception should never occur
                     final String message = "Unknown alternate exchange "
                                            + (e.getName() != null
-                            ? "name: \"" + e.getName() + "\""
+                            ? "name: '" + e.getName() + "'"
                             : "id: " + e.getId());
                     _connection.closeConnection(AMQConstant.NOT_FOUND, message, getChannelId());
 
@@ -2958,7 +2956,7 @@ public class AMQChannel
                 final ExchangeImpl exchange = virtualHost.getExchange(exchangeName);
                 if (exchange == null)
                 {
-                    closeChannel(AMQConstant.NOT_FOUND, "No such exchange: " + exchangeStr);
+                    closeChannel(AMQConstant.NOT_FOUND, "No such exchange: '" + exchangeStr + "'");
                 }
                 else
                 {
@@ -3035,7 +3033,7 @@ public class AMQChannel
         else if (isDefaultExchange(exchange))
         {
             _connection.closeConnection(AMQConstant.NOT_ALLOWED,
-                                        "Cannot bind the queue " + queueName + " to the default exchange", getChannelId());
+                                        "Cannot bind the queue '" + queueName + "' to the default exchange", getChannelId());
 
         }
         else
@@ -3047,7 +3045,7 @@ public class AMQChannel
             if (exch == null)
             {
                 closeChannel(AMQConstant.NOT_FOUND,
-                             "Exchange " + exchangeName + " does not exist.");
+                             "Exchange '" + exchangeName + "' does not exist.");
             }
             else
             {
@@ -3138,19 +3136,19 @@ public class AMQChannel
             if (queue == null)
             {
                 closeChannel(AMQConstant.NOT_FOUND,
-                                                     "Queue: "
+                                                     "Queue: '"
                                                      + queueName
-                                                     + " not found on VirtualHost("
-                                                     + virtualHost
-                                                     + ").");
+                                                     + "' not found on VirtualHost '"
+                                                     + virtualHost.getName()
+                                                     + "'.");
             }
             else
             {
                 if (!queue.verifySessionAccess(this))
                 {
-                    _connection.closeConnection(AMQConstant.NOT_ALLOWED, "Queue "
+                    _connection.closeConnection(AMQConstant.NOT_ALLOWED, "Queue '"
                                                 + queue.getName()
-                                                + " is exclusive, but not created on this Connection.", getChannelId());
+                                                + "' is exclusive, but not created on this Connection.", getChannelId());
                 }
                 else
                 {
@@ -3180,7 +3178,6 @@ public class AMQChannel
                         QueueArgumentsConverter.convertWireArgsToModel(FieldTable.convertToMap(arguments));
                 final String queueNameString = AMQShortString.toString(queueName);
                 attributes.put(Queue.NAME, queueNameString);
-                attributes.put(Queue.ID, UUID.randomUUID());
                 attributes.put(Queue.DURABLE, durable);
 
                 LifetimePolicy lifetimePolicy;
@@ -3227,9 +3224,9 @@ public class AMQChannel
 
                 if (!queue.verifySessionAccess(this))
                 {
-                    _connection.closeConnection(AMQConstant.NOT_ALLOWED, "Queue "
+                    _connection.closeConnection(AMQConstant.NOT_ALLOWED, "Queue '"
                                                 + queue.getName()
-                                                + " is exclusive, but not created on this Connection.", getChannelId());
+                                                + "' is exclusive, but not created on this Connection.", getChannelId());
 
                 }
                 else if (queue.isExclusive() != exclusive)
@@ -3323,27 +3320,27 @@ public class AMQChannel
 
         if (queue == null)
         {
-            closeChannel(AMQConstant.NOT_FOUND, "Queue " + queueName + " does not exist.");
+            closeChannel(AMQConstant.NOT_FOUND, "Queue '" + queueName + "' does not exist.");
 
         }
         else
         {
             if (ifEmpty && !queue.isEmpty())
             {
-                closeChannel(AMQConstant.IN_USE, "Queue: " + queueName + " is not empty.");
+                closeChannel(AMQConstant.IN_USE, "Queue: '" + queueName + "' is not empty.");
             }
             else if (ifUnused && !queue.isUnused())
             {
                 // TODO - Error code
-                closeChannel(AMQConstant.IN_USE, "Queue: " + queueName + " is still used.");
+                closeChannel(AMQConstant.IN_USE, "Queue: '" + queueName + "' is still used.");
             }
             else
             {
                 if (!queue.verifySessionAccess(this))
                 {
-                    _connection.closeConnection(AMQConstant.NOT_ALLOWED, "Queue "
+                    _connection.closeConnection(AMQConstant.NOT_ALLOWED, "Queue '"
                                                 + queue.getName()
-                                                + " is exclusive, but not created on this Connection.", getChannelId());
+                                                + "' is exclusive, but not created on this Connection.", getChannelId());
 
                 }
                 else
@@ -3383,7 +3380,7 @@ public class AMQChannel
         }
         else if ((queueName != null) && (queue = virtualHost.getQueue(queueName.toString())) == null)
         {
-            closeChannel(AMQConstant.NOT_FOUND, "Queue " + queueName + " does not exist.");
+            closeChannel(AMQConstant.NOT_FOUND, "Queue '" + queueName + "' does not exist.");
         }
         else if (!queue.verifySessionAccess(this))
         {
@@ -3416,14 +3413,14 @@ public class AMQChannel
     @Override
     public void receiveQueueUnbind(final AMQShortString queueName,
                                    final AMQShortString exchange,
-                                   final AMQShortString routingKey,
+                                   final AMQShortString bindingKey,
                                    final FieldTable arguments)
     {
         if(_logger.isDebugEnabled())
         {
             _logger.debug("RECV[" + _channelId + "] QueueUnbind[" +" queue: " + queueName +
                           " exchange: " + exchange +
-                          " bindingKey: " + routingKey +
+                          " bindingKey: " + bindingKey +
                           " arguments: " + arguments + " ]");
         }
 
@@ -3440,14 +3437,14 @@ public class AMQChannel
         {
             String message = useDefaultQueue
                     ? "No default queue defined on channel and queue was null"
-                    : "Queue " + queueName + " does not exist.";
+                    : "Queue '" + queueName + "' does not exist.";
             closeChannel(AMQConstant.NOT_FOUND, message);
         }
         else if (isDefaultExchange(exchange))
         {
-            _connection.closeConnection(AMQConstant.NOT_ALLOWED, "Cannot unbind the queue "
+            _connection.closeConnection(AMQConstant.NOT_ALLOWED, "Cannot unbind the queue '"
                                                          + queue.getName()
-                                                         + " from the default exchange", getChannelId());
+                                                         + "' from the default exchange", getChannelId());
 
         }
         else
@@ -3457,9 +3454,9 @@ public class AMQChannel
 
             if (exch == null)
             {
-                closeChannel(AMQConstant.NOT_FOUND, "Exchange " + exchange + " does not exist.");
+                closeChannel(AMQConstant.NOT_FOUND, "Exchange '" + exchange + "' does not exist.");
             }
-            else if (!exch.hasBinding(String.valueOf(routingKey), queue))
+            else if (!exch.hasBinding(String.valueOf(bindingKey), queue))
             {
                 closeChannel(AMQConstant.NOT_FOUND, "No such binding");
             }
@@ -3467,7 +3464,7 @@ public class AMQChannel
             {
                 try
                 {
-                    exch.deleteBinding(String.valueOf(routingKey), queue);
+                    exch.deleteBinding(String.valueOf(bindingKey), queue);
 
                     final AMQMethodBody responseBody = _connection.getMethodRegistry().createQueueUnbindOkBody();
                     sync();
