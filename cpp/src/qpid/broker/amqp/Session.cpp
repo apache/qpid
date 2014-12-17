@@ -505,7 +505,7 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
             if (!settings.autodelete) settings.autodelete = autodelete;
             altExchange = node.topic->getAlternateExchange();
         }
-        if (!settings.autoDeleteDelay) {
+        if (settings.original.find("qpid.auto_delete_timeout") == settings.original.end()) {
             //only use delay from link if policy didn't specify one
             settings.autoDeleteDelay = pn_terminus_get_timeout(source);
             settings.original["qpid.auto_delete_timeout"] = settings.autoDeleteDelay;
