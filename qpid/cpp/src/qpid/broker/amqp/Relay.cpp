@@ -126,7 +126,13 @@ bool OutgoingFromRelay::doWork()
 {
     relay->check();
     relay->setCredit(pn_link_credit(link));
-    return relay->send(link);
+    bool worked = relay->send(link);
+    pn_delivery_t *d = pn_link_current(link);
+    if (d && pn_delivery_writable(d)) {
+        handle(d);
+        return true;
+    }
+    return worked;
 }
 /**
  * Called when a delivery is writable
