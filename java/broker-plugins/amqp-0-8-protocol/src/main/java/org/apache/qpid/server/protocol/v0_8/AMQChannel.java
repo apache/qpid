@@ -142,7 +142,7 @@ public class AMQChannel
     private long _deliveryTag = 0;
 
     /** A channel has a default queue (the last declared) that is used when no queue name is explicitly set */
-    private volatile AMQQueue _defaultQueue;
+    private volatile AMQQueue<?> _defaultQueue;
 
     /** This tag is unique per subscription to a queue. The server returns this in response to a basic.consume request. */
     private int _consumerTag;
@@ -827,7 +827,7 @@ public class AMQChannel
         getVirtualHost().getEventLogger().message(_logSubject, operationalLogMessage);
 
         unsubscribeAllConsumers();
-
+        setDefaultQueue(null);
         for (Action<? super AMQChannel> task : _taskList)
         {
             task.performAction(this);
@@ -3114,7 +3114,7 @@ public class AMQChannel
             queueName = queueStr.intern();
         }
 
-        AMQQueue queue;
+        AMQQueue<?> queue;
 
         //TODO: do we need to check that the queue already exists with exactly the same "configuration"?
 
@@ -3574,9 +3574,9 @@ public class AMQChannel
         return exchangeName == null || AMQShortString.EMPTY_STRING.equals(exchangeName);
     }
 
-    private void setDefaultQueue(AMQQueue queue)
+    private void setDefaultQueue(AMQQueue<?> queue)
     {
-        AMQQueue currentDefaultQueue = _defaultQueue;
+        AMQQueue<?> currentDefaultQueue = _defaultQueue;
         if (queue != currentDefaultQueue)
         {
             if (currentDefaultQueue != null)
