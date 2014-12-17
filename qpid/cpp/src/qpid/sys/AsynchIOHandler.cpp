@@ -150,7 +150,7 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
                 if (!codec) {
                     //TODO: may still want to revise this...
                     //send valid version header & close connection.
-                    write(framing::ProtocolInitiation(framing::highestProtocolVersion));
+                    write(framing::ProtocolInitiation(factory->supportedVersion()));
                     readError = true;
                     aio->queueWriteClose();
                 } else {

@@ -73,6 +73,7 @@ class ProtocolImpl : public BrokerContext, public Protocol
     qpid::sys::ConnectionCodec* create(const qpid::framing::ProtocolVersion&, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
     boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> translate(const qpid::broker::Message&);
     boost::shared_ptr<RecoverableMessage> recover(qpid::framing::Buffer&);
+    qpid::framing::ProtocolVersion supportedVersion() const;
   private:
 };
 
@@ -156,6 +157,11 @@ boost::shared_ptr<RecoverableMessage> ProtocolImpl::recover(qpid::framing::Buffe
         QPID_LOG(debug, "Recovered message is NOT in 1.0 format");
         return RecoverableMessage::shared_ptr();
     }
+}
+
+qpid::framing::ProtocolVersion ProtocolImpl::supportedVersion() const
+{
+    return qpid::framing::ProtocolVersion(1,0);
 }
 
 

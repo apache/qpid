@@ -35,8 +35,10 @@ ProtocolRegistry::ProtocolRegistry(const std::set<std::string>& e, Broker* b) : 
 
 qpid::sys::ConnectionCodec* ProtocolRegistry::create(const qpid::framing::ProtocolVersion& v, qpid::sys::OutputControl& o, const std::string& id, const qpid::sys::SecuritySettings& s)
 {
-    if (v == qpid::framing::ProtocolVersion(0, 10) && isEnabled(AMQP_0_10)) {
-        return create_0_10(o, id, s, false);
+    if (v == qpid::framing::ProtocolVersion(0, 10)) {
+        if (isEnabled(AMQP_0_10)) {
+            return create_0_10(o, id, s, false);
+        }
     }
     qpid::sys::ConnectionCodec* codec = 0;
     for (Protocols::const_iterator i = protocols.begin(); !codec && i != protocols.end(); ++i) {
@@ -51,7 +53,22 @@ qpid::sys::ConnectionCodec* ProtocolRegistry::create(qpid::sys::OutputControl& o
     return create_0_10(o, id, s, true);
 }
 
-bool ProtocolRegistry::isEnabled(const std::string& name)
+qpid::framing::ProtocolVersion ProtocolRegistry::supportedVersion() const
+{
+    if (isEnabled(AMQP_0_10)) {
+        return qpid::framing::ProtocolVersion(0,10);
+    } else {
+        for (Protocols::const_iterator i = protocols.begin(); i != protocols.end(); ++i) {
+            if (isEnabled(i->first)) {
+                return i->second->supportedVersion();
+            }
+        }
+    }
+    QPID_LOG(error, "No enabled protocols!");
+    return qpid::framing::ProtocolVersion(0,0);
+}
+
+bool ProtocolRegistry::isEnabled(const std::string& name) const
 {
     return enabled.empty()/*if nothing is explicitly enabled, assume everything is*/ || enabled.find(name) != enabled.end();
 }
