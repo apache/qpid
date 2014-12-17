@@ -547,7 +547,7 @@ Subscription::Subscription(const Address& address, const std::string& type)
         //default for the autodelete timeout (previously this would
         //have defaulted to autodelete immediately anyway, so the risk
         //of the change causing problems is mitigated)
-        queueOptions.setInt("qpid.auto_delete_timeout", 15*60);
+        queueOptions.setInt("qpid.auto_delete_timeout", 2*60);
     }
     (Opt(address)/LINK/X_DECLARE/ARGUMENTS).collect(queueOptions);
     (Opt(address)/LINK/X_SUBSCRIBE/ARGUMENTS).collect(subscriptionOptions);
