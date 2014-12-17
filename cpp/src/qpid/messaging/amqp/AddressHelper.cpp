@@ -242,7 +242,7 @@ bool replace(Variant::Map& map, const std::string& original, const std::string& 
     }
 }
 
-const uint32_t DEFAULT_DURABLE_TIMEOUT(15*60);//15 minutes
+const uint32_t DEFAULT_DURABLE_TIMEOUT(2*60);//2 minutes
 const uint32_t DEFAULT_TIMEOUT(0);
 }
 
