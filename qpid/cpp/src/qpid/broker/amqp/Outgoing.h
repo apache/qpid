@@ -70,7 +70,7 @@ class Outgoing : public ManagedOutgoingLink
     /**
      * Signals that this link has been detached
      */
-    virtual void detached() = 0;
+    virtual void detached(bool closed) = 0;
     /**
      * Called when a delivery is writable
      */
@@ -98,7 +98,7 @@ class OutgoingFromQueue : public Outgoing, public qpid::broker::Consumer, public
     void write(const char* data, size_t size);
     void handle(pn_delivery_t* delivery);
     bool canDeliver();
-    void detached();
+    void detached(bool closed);
 
     //Consumer interface:
     bool deliver(const QueueCursor& cursor, const qpid::broker::Message& msg);

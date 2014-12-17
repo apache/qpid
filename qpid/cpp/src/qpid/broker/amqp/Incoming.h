@@ -42,7 +42,7 @@ class Incoming : public ManagedIncomingLink
     virtual ~Incoming();
     virtual bool doWork();//do anything that requires output
     virtual bool haveWork();//called when handling input to see whether any output work is needed
-    virtual void detached();
+    virtual void detached(bool closed);
     virtual void readable(pn_delivery_t* delivery) = 0;
     void verify(const std::string& userid, const std::string& defaultRealm);
     void wakeup();
