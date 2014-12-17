@@ -39,7 +39,7 @@ using std::string;
 int main(int argc, char** argv) {
     const char* url = argc>1 ? argv[1] : "amqp:tcp:127.0.0.1:5672";
     std::string connectionOptions = argc > 2 ? argv[2] : "";
-    
+
     Connection connection(url, connectionOptions);
      try {
         connection.open();
@@ -62,10 +62,10 @@ int main(int argc, char** argv) {
     	Message request;
         request.setReplyTo(responseQueue);
 	for (int i=0; i<4; i++) {
-            request.setContent(s[i]);
+            request.setContentObject(s[i]);
             sender.send(request);
             Message response = receiver.fetch();
-            std::cout << request.getContent() << " -> " << response.getContent() << std::endl;
+            std::cout << request.getContentObject() << " -> " << response.getContentObject() << std::endl;
 	}
         connection.close();
         return 0;
