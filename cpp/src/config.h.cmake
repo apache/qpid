@@ -58,5 +58,6 @@
 #cmakedefine HAVE_LOG_FTP
 #cmakedefine HAVE_PROTON_TRACER
 #cmakedefine USE_PROTON_TRANSPORT_CONDITION
+#cmakedefine HAVE_PROTON_EVENTS
 
 #endif /* QPID_CONFIG_H */
