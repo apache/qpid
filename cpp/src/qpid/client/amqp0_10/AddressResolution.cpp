@@ -538,15 +538,16 @@ Subscription::Subscription(const Address& address, const std::string& type)
       exclusiveSubscription((Opt(address)/LINK/X_SUBSCRIBE/EXCLUSIVE).asBool(exclusiveQueue)),
       alternateExchange((Opt(address)/LINK/X_DECLARE/ALTERNATE_EXCHANGE).str())
 {
-    const Variant* timeout = (Opt(address)/LINK/TIMEOUT).value;
-    if (timeout) {
+
+    if ((Opt(address)/LINK).hasKey(TIMEOUT)) {
+        const Variant* timeout = (Opt(address)/LINK/TIMEOUT).value;
         if (timeout->asUint32()) queueOptions.setInt("qpid.auto_delete_timeout", timeout->asUint32());
     } else if (durable && !(Opt(address)/LINK/RELIABILITY).value) {
         //if durable but not explicitly reliable, then set a non-zero
         //default for the autodelete timeout (previously this would
         //have defaulted to autodelete immediately anyway, so the risk
         //of the change causing problems is mitigated)
-        queueOptions.setInt("qpid.auto_delete_delay", 15*60);
+        queueOptions.setInt("qpid.auto_delete_timeout", 15*60);
     }
     (Opt(address)/LINK/X_DECLARE/ARGUMENTS).collect(queueOptions);
     (Opt(address)/LINK/X_SUBSCRIBE/ARGUMENTS).collect(subscriptionOptions);
