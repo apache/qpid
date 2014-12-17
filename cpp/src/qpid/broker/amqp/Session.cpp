@@ -577,7 +577,7 @@ void Session::detach(pn_link_t* link)
     if (pn_link_is_sender(link)) {
         OutgoingLinks::iterator i = outgoing.find(link);
         if (i != outgoing.end()) {
-            i->second->detached();
+            i->second->detached(true/*TODO: checked whether actually closed; see PROTON-773*/);
             boost::shared_ptr<Queue> q = OutgoingFromQueue::getExclusiveSubscriptionQueue(i->second.get());
             if (q && !q->isAutoDelete() && !q->isDeleted()) {
                 connection.getBroker().deleteQueue(q->getName(), connection.getUserId(), connection.getMgmtId());
@@ -588,7 +588,7 @@ void Session::detach(pn_link_t* link)
     } else {
         IncomingLinks::iterator i = incoming.find(link);
         if (i != incoming.end()) {
-            i->second->detached();
+            i->second->detached(true/*TODO: checked whether actually closed; see PROTON-773*/);
             incoming.erase(i);
             QPID_LOG(debug, "Incoming link detached");
         }
@@ -653,7 +653,7 @@ bool Session::dispatch()
             pn_condition_set_name(error, e.symbol());
             pn_condition_set_description(error, e.what());
             pn_link_close(s->first);
-            s->second->detached();
+            s->second->detached(true);
             outgoing.erase(s++);
             output = true;
         }
@@ -678,7 +678,7 @@ bool Session::dispatch()
             pn_condition_set_name(error, e.symbol());
             pn_condition_set_description(error, e.what());
             pn_link_close(i->first);
-            i->second->detached();
+            i->second->detached(true);
             incoming.erase(i++);
             output = true;
         }
@@ -690,10 +690,10 @@ bool Session::dispatch()
 void Session::close()
 {
     for (OutgoingLinks::iterator i = outgoing.begin(); i != outgoing.end(); ++i) {
-        i->second->detached();
+        i->second->detached(false);
     }
     for (IncomingLinks::iterator i = incoming.begin(); i != incoming.end(); ++i) {
-        i->second->detached();
+        i->second->detached(false);
     }
     outgoing.clear();
     incoming.clear();

@@ -379,7 +379,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QPID_BROKER_EXTERN uint32_t getConsumerCount() const;
     inline const std::string& getName() const { return name; }
     QPID_BROKER_EXTERN bool isExclusiveOwner(const OwnershipToken* const o) const;
-    QPID_BROKER_EXTERN void releaseExclusiveOwnership();
+    QPID_BROKER_EXTERN void releaseExclusiveOwnership(bool immediateExpiry=false);
     QPID_BROKER_EXTERN bool setExclusiveOwner(const OwnershipToken* const o);
     QPID_BROKER_EXTERN bool hasExclusiveConsumer() const;
     QPID_BROKER_EXTERN bool hasExclusiveOwner() const;
@@ -389,7 +389,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     inline bool isAutoDelete() const { return settings.autodelete; }
     inline bool isBrowseOnly() const { return settings.isBrowseOnly; }
     QPID_BROKER_EXTERN bool canAutoDelete() const;
-    QPID_BROKER_EXTERN void scheduleAutoDelete();
+    QPID_BROKER_EXTERN void scheduleAutoDelete(bool immediate=false);
     QPID_BROKER_EXTERN bool isDeleted() const;
     const QueueBindings& getBindings() const { return bindings; }
 

@@ -100,7 +100,7 @@ class OutgoingFromRelay : public Outgoing
                       const std::string& target, const std::string& name, boost::shared_ptr<Relay>);
     bool doWork();
     void handle(pn_delivery_t* delivery);
-    void detached();
+    void detached(bool closed);
     void init();
     void setSubjectFilter(const std::string&);
     void setSelectorFilter(const std::string&);
@@ -118,7 +118,7 @@ class IncomingToRelay : public Incoming
     bool settle();
     bool doWork();
     bool haveWork();
-    void detached();
+    void detached(bool closed);
     void readable(pn_delivery_t* delivery);
     uint32_t getCredit();
   private:

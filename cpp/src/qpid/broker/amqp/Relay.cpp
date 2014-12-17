@@ -163,7 +163,7 @@ void OutgoingFromRelay::handle(pn_delivery_t* delivery)
 /**
  * Signals that this link has been detached
  */
-void OutgoingFromRelay::detached()
+void OutgoingFromRelay::detached(bool /*closed*/)
 {
     relay->detached(this);
 }
@@ -221,7 +221,7 @@ uint32_t IncomingToRelay::getCredit()
     return relay->getCredit();
 }
 
-void IncomingToRelay::detached()
+void IncomingToRelay::detached(bool /*closed*/)
 {
     relay->detached(this);
 }

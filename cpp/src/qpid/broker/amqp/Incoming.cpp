@@ -57,7 +57,7 @@ uint32_t Incoming::getCredit()
     return credit;//TODO: proper flow control
 }
 
-void Incoming::detached()
+void Incoming::detached(bool /*closed*/)
 {
 }
 

@@ -156,7 +156,7 @@ bool OutgoingFromQueue::canDeliver()
     return deliveries[current].delivery == 0 && pn_link_credit(link);
 }
 
-void OutgoingFromQueue::detached()
+void OutgoingFromQueue::detached(bool closed)
 {
     QPID_LOG(debug, "Detaching outgoing link " << getName() << " from " << queue->getName());
     queue->cancel(shared_from_this());
@@ -164,11 +164,13 @@ void OutgoingFromQueue::detached()
     for (size_t i = 0 ; i < deliveries.capacity(); ++i) {
         if (deliveries[i].msg) queue->release(deliveries[i].cursor, true);
     }
-    if (exclusive) queue->releaseExclusiveOwnership();
-    else if (isControllingUser) queue->releaseFromUse(true);
+    if (exclusive) {
+        queue->releaseExclusiveOwnership(closed);
+    } else if (isControllingUser) {
+        queue->releaseFromUse(true);
+    }
     cancelled = true;
 }
-
 
 OutgoingFromQueue::~OutgoingFromQueue()
 {

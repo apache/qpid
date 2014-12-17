@@ -1300,10 +1300,10 @@ struct AutoDeleteTask : qpid::sys::TimerTask
     }
 };
 
-void Queue::scheduleAutoDelete()
+void Queue::scheduleAutoDelete(bool immediate)
 {
     if (canAutoDelete()) {
-        if (settings.autoDeleteDelay) {
+        if (!immediate && settings.autoDeleteDelay) {
             AbsTime time(now(), Duration(settings.autoDeleteDelay * TIME_SEC));
             autoDeleteTask = boost::intrusive_ptr<qpid::sys::TimerTask>(new AutoDeleteTask(shared_from_this(), time));
             broker->getTimer().add(autoDeleteTask);
@@ -1343,7 +1343,7 @@ bool Queue::isExclusiveOwner(const OwnershipToken* const o) const
     return o == owner;
 }
 
-void Queue::releaseExclusiveOwnership()
+void Queue::releaseExclusiveOwnership(bool immediateExpiry)
 {
     bool unused;
     {
@@ -1355,7 +1355,7 @@ void Queue::releaseExclusiveOwnership()
         unused = !users.isUsed();
     }
     if (unused && settings.autodelete) {
-        scheduleAutoDelete();
+        scheduleAutoDelete(immediateExpiry);
     }
 }
 
