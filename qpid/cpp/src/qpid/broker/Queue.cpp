@@ -1258,6 +1258,10 @@ Queue::shared_ptr Queue::restore( QueueRegistry& queues, Buffer& buffer )
     if (has_userId)
         result.first->setOwningUser(_userId);
 
+    if (result.first->getSettings().autoDeleteDelay) {
+        result.first->scheduleAutoDelete();
+    }
+
     return result.first;
 }
 
