@@ -482,6 +482,7 @@ shared_ptr<PrimaryTxObserver> Primary::makeTxObserver(
 {
     shared_ptr<PrimaryTxObserver> observer =
         PrimaryTxObserver::create(*this, haBroker, txBuffer);
+    sys::Mutex::ScopedLock l(lock);
     txMap[observer->getTxQueue()->getName()] = observer;
     return observer;
 }
