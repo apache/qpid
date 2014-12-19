@@ -62,13 +62,20 @@ public class RestServlet extends AbstractServlet
     public static final String INHERITED_ACTUALS_PARAM = "inheritedActuals";
     public static final String EXTRACT_INITIAL_CONFIG_PARAM = "extractInitialConfig";
 
+    /**
+     * Signifies that the agent wishes the servlet to set the Content-Disposition on the
+     * response with the value attachment.  This filename will be derived from the parameter value.
+     */
+    public static final String CONTENT_DISPOSITION_ATTACHMENT_FILENAME_PARAM = "contentDispositionAttachmentFilename";
+
     public static final Set<String> RESERVED_PARAMS =
             new HashSet<>(Arrays.asList(DEPTH_PARAM,
                                         SORT_PARAM,
                                         ACTUALS_PARAM,
                                         INCLUDE_SYS_CONTEXT_PARAM,
                                         EXTRACT_INITIAL_CONFIG_PARAM,
-                                        INHERITED_ACTUALS_PARAM));
+                                        INHERITED_ACTUALS_PARAM,
+                                        CONTENT_DISPOSITION_ATTACHMENT_FILENAME_PARAM));
 
     private Class<? extends ConfiguredObject>[] _hierarchy;
 
@@ -316,19 +323,23 @@ public class RestServlet extends AbstractServlet
     @Override
     protected void doGetWithSubjectAndActor(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
+        // TODO - sort special params, everything else should act as a filter
+        String attachmentFilename = request.getParameter(CONTENT_DISPOSITION_ATTACHMENT_FILENAME_PARAM);
+        boolean extractInitialConfig = getBooleanParameterFromRequest(request, EXTRACT_INITIAL_CONFIG_PARAM);
+
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
 
         setCachingHeadersOnResponse(response);
+        setContentDispositionHeaderIfNecessary(response, attachmentFilename);
 
         Collection<ConfiguredObject<?>> allObjects = getObjects(request);
 
-        // TODO - sort special params, everything else should act as a filter
-        boolean extractInitialConfig = getBooleanParameterFromRequest(request, EXTRACT_INITIAL_CONFIG_PARAM);
         int depth;
         boolean actuals;
         boolean includeSystemContext;
         boolean inheritedActuals;
+
         if(extractInitialConfig)
         {
             depth = Integer.MAX_VALUE;
@@ -344,20 +355,35 @@ public class RestServlet extends AbstractServlet
             inheritedActuals = getBooleanParameterFromRequest(request, INHERITED_ACTUALS_PARAM);
         }
 
-        List<Map<String, Object>> output = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> output = new ArrayList<>();
         for(ConfiguredObject configuredObject : allObjects)
         {
             output.add(_objectConverter.convertObjectToMap(configuredObject, getConfiguredClass(),
                     depth, actuals, inheritedActuals, includeSystemContext, extractInitialConfig));
         }
 
+
         Writer writer = getOutputWriter(request, response);
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
         mapper.writeValue(writer, extractInitialConfig && output.size() == 1 ? output.get(0) : output);
+    }
 
-        response.setContentType("application/json");
-        response.setStatus(HttpServletResponse.SC_OK);
+    private void setContentDispositionHeaderIfNecessary(final HttpServletResponse response,
+                                                        final String attachmentFilename)
+    {
+        if (attachmentFilename != null)
+        {
+            String filenameRfc2183 = ensureFilenameIsRfc2183(attachmentFilename);
+            if (filenameRfc2183.length() > 0)
+            {
+                response.setHeader("Content-disposition", String.format("attachment; filename=\"%s\"", filenameRfc2183));
+            }
+            else
+            {
+                response.setHeader("Content-disposition", String.format("attachment"));  // Agent will allow user to choose a name
+            }
+        }
     }
 
     private Class<? extends ConfiguredObject> getConfiguredClass()
@@ -669,6 +695,12 @@ public class RestServlet extends AbstractServlet
     private boolean getBooleanParameterFromRequest(HttpServletRequest request, final String paramName)
     {
         return Boolean.parseBoolean(request.getParameter(paramName));
+    }
+
+    private String ensureFilenameIsRfc2183(final String requestedFilename)
+    {
+        String fileNameRfc2183 = requestedFilename.replaceAll("[\\P{InBasic_Latin}\\\\:/]", "");
+        return fileNameRfc2183;
     }
 
 }
