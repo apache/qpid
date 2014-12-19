@@ -62,6 +62,7 @@ int main(int argc, char** argv) {
                           << " -> "
                           << response.getContentObject() << std::endl;
                 session.acknowledge();
+                sender.close();
             } else {
                 std::cerr << "Error: no reply address specified for request: " << request.getContent() << std::endl;
                 session.reject(request);
