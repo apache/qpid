@@ -215,6 +215,22 @@ div .messages {
     height: 16px;
 }
 
+.loadingIcon
+{
+    background: url("../dojo/dojox/image/resources/images/loading.gif") no-repeat;
+    width: 25px;
+    height: 25px;
+    display: inline-block;
+}
+
+.loadedIcon
+{
+    background: url("../dojo/dojox/mobile/themes/common/domButtons/compat/mblDomButtonDarkBlueCheck.png") no-repeat;
+    width: 25px;
+    height: 25px;
+    display: inline-block;
+}
+
 .infoMessage
 {
     padding: 5px;

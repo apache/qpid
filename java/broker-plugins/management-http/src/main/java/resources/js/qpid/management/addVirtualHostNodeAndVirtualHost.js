@@ -44,6 +44,7 @@ define(["dojo/_base/xhr",
         "dijit/form/Form",
         "dijit/form/CheckBox",
         "dijit/form/RadioButton",
+        "dojox/form/Uploader",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"],
@@ -61,6 +62,9 @@ define(["dojo/_base/xhr",
         var virtualHostNodeName = registry.byId("addVirtualHostNode.nodeName");
         virtualHostNodeName.set("regExpGen", util.nameOrContextVarRegexp);
 
+        // Readers are HTML5
+        this.reader = window.FileReader ? new FileReader() : undefined;
+
         this.dialog = registry.byId("addVirtualHostNodeAndVirtualHost");
         this.addButton = registry.byId("addVirtualHostNodeAndVirtualHost.addButton");
         this.cancelButton = registry.byId("addVirtualHostNodeAndVirtualHost.cancelButton");
@@ -68,13 +72,22 @@ define(["dojo/_base/xhr",
         this.addButton.on("click", function(e){that._add(e);});
 
         this.virtualHostNodeTypeFieldsContainer = dom.byId("addVirtualHostNode.typeFields");
+        this.virtualHostNodeSelectedFileContainer = dom.byId("addVirtualHostNode.selectedFile");
+        this.virtualHostNodeSelectedFileStatusContainer = dom.byId("addVirtualHostNode.selectedFileStatus");
+        this.virtualHostNodeUploadFields = dom.byId("addVirtualHostNode.uploadFields");
+        this.virtualHostNodeFileFields = dom.byId("addVirtualHostNode.fileFields");
+
         this.virtualHostNodeForm = registry.byId("addVirtualHostNode.form");
         this.virtualHostNodeType = registry.byId("addVirtualHostNode.type");
+        this.virtualHostNodeFileCheck = registry.byId("addVirtualHostNode.upload");
+        this.virtualHostNodeFile = registry.byId("addVirtualHostNode.file");
+
         this.virtualHostNodeType.set("disabled", true);
 
         this.virtualHostTypeFieldsContainer = dom.byId("addVirtualHost.typeFields");
         this.virtualHostForm = registry.byId("addVirtualHost.form");
         this.virtualHostType = registry.byId("addVirtualHost.type");
+
         this.virtualHostType.set("disabled", true);
 
         this.supportedVirtualHostNodeTypes = metadata.getTypesForCategory("VirtualHostNode");
@@ -96,6 +109,21 @@ define(["dojo/_base/xhr",
         this.virtualHostType.set("store", this.virtualHostTypeStore);
         this.virtualHostType.set("disabled", false);
         this.virtualHostType.on("change", function(type){that._vhTypeChanged(type, that.virtualHostTypeFieldsContainer, "qpid/management/virtualhost/");});
+
+        if (this.reader)
+        {
+          this.reader.onload = function(e) {that._vhnUploadFileComplete(e);};
+          this.virtualHostNodeFile.on("change",  function(selected){that._vhnFileChanged(selected)});
+          this.virtualHostNodeFileCheck.on("change",  function(selected){that._vhnFileFlagChanged(selected)});
+        }
+        else
+        {
+          // Fall back for IE8/9 which do not support FileReader
+          this.virtualHostNodeFile.set("disabled", true);
+          this.virtualHostNodeFileCheck.set("disabled", true);
+        }
+
+        this.virtualHostNodeUploadFields.style.display = "none";
       },
       show: function()
       {
@@ -164,6 +192,14 @@ define(["dojo/_base/xhr",
         this._processDropDownsForBdbHa(type);
         this._processDropDownsForJson(type);
 
+        var vhnTypeSelected =  !(type == '');
+        this.virtualHostNodeUploadFields.style.display = vhnTypeSelected ? "block" : "none";
+
+        if (!vhnTypeSelected)
+        {
+          this._vhnFileFlagChanged(false);
+        }
+
         this._typeChanged(type, typeFieldsContainer, urlStem, "VirtualHostNode");
       },
       _vhTypeChanged: function (type, typeFieldsContainer, urlStem)
@@ -202,6 +238,37 @@ define(["dojo/_base/xhr",
               }
             );
           }
+      },
+      _vhnFileFlagChanged: function (selected)
+      {
+        this.virtualHostForm.domNode.style.display = selected ?  "none" : "block";
+        this.virtualHostNodeFileFields.style.display = selected ?  "block" : "none";
+        this.virtualHostType.set("required", !selected);
+        this.virtualHostNodeFile.reset();
+        this.virtualHostInitialConfiguration = undefined;
+        this.virtualHostNodeSelectedFileContainer.innerHTML = "";
+        this.virtualHostNodeSelectedFileStatusContainer.className = "";
+      },
+      _vhnFileChanged: function (evt)
+      {
+        // We only ever expect a single file
+        var file = this.virtualHostNodeFile.domNode.children[0].files[0];
+
+        this.addButton.set("disabled", true);
+        this.virtualHostNodeSelectedFileContainer.innerHTML = file.name;
+        this.virtualHostNodeSelectedFileStatusContainer.className = "loadingIcon";
+
+        console.log("Beginning to read file " + file.name);
+        this.reader.readAsDataURL(file);
+      },
+      _vhnUploadFileComplete: function(evt)
+      {
+        var reader = evt.target;
+        var result = reader.result;
+        console.log("File read complete, contents " + result);
+        this.virtualHostInitialConfiguration = result;
+        this.addButton.set("disabled", false);
+        this.virtualHostNodeSelectedFileStatusContainer.className = "loadedIcon";
       },
       _processDropDownsForBdbHa: function (type)
       {
@@ -249,6 +316,10 @@ define(["dojo/_base/xhr",
       },
       _cancel: function(e)
       {
+          if (this.reader)
+          {
+            this.reader.abort();
+          }
           this.dialog.hide();
       },
       _add: function(e)
@@ -258,16 +329,32 @@ define(["dojo/_base/xhr",
       },
       _submit: function()
       {
-        if(this.virtualHostNodeForm.validate() && this.virtualHostForm.validate())
-        {
-          var success = false,failureReason=null;
 
-          var virtualHostNodeData = this._getValues(this.virtualHostNodeForm);
+        var uploadVHConfig = this.virtualHostNodeFileCheck.get("checked");
+        var virtualHostNodeData = undefined;
+
+        if (uploadVHConfig && this.virtualHostNodeFile.getFileList().length > 0 && this.virtualHostNodeForm.validate())
+        {
+          // VH config is being uploaded
+          virtualHostNodeData = this._getValues(this.virtualHostNodeForm);
           var virtualHostNodeContext = this.virtualHostNodeContext.get("value");
           if (virtualHostNodeContext)
           {
             virtualHostNodeData["context"] = virtualHostNodeContext;
           }
+
+          // Add the loaded virtualhost configuration
+          virtualHostNodeData["virtualHostInitialConfiguration"] = this.virtualHostInitialConfiguration;
+        }
+        else if (!uploadVHConfig && this.virtualHostNodeForm.validate() && this.virtualHostForm.validate())
+        {
+          virtualHostNodeData = this._getValues(this.virtualHostNodeForm);
+          var virtualHostNodeContext = this.virtualHostNodeContext.get("value");
+          if (virtualHostNodeContext)
+          {
+            virtualHostNodeData["context"] = virtualHostNodeContext;
+          }
+
           var virtualHostData = this._getValues(this.virtualHostForm);
           var virtualHostContext = this.virtualHostContext.get("value");
           if (virtualHostContext)
@@ -278,48 +365,35 @@ define(["dojo/_base/xhr",
           //Default the VH name to be the same as the VHN name.
           virtualHostData["name"] = virtualHostNodeData["name"];
 
-          var encodedVirtualHostNodeName = encodeURIComponent(virtualHostNodeData.name);
-          xhr.put({
-              url: "api/latest/virtualhostnode/" + encodedVirtualHostNodeName,
-              sync: true,
-              handleAs: "json",
-              headers: { "Content-Type": "application/json"},
-              putData: json.stringify(virtualHostNodeData),
-              load: function(x) {success = true; },
-              error: function(error) {success = false; failureReason = error;}
-          });
+          virtualHostNodeData["virtualHostInitialConfiguration"] = json.stringify(virtualHostData)
 
-          if(success === true && virtualHostNodeData["type"] != "BDB_HA")
-          {
-              var encodedVirtualHostName = encodeURIComponent(virtualHostData.name);
-              xhr.put({
-                  url: "api/latest/virtualhost/" + encodedVirtualHostNodeName + "/" + encodedVirtualHostName,
-                  sync: true,
-                  handleAs: "json",
-                  headers: { "Content-Type": "application/json"},
-                  putData: json.stringify(virtualHostData),
-                  load: function (x) {
-                      success = true;
-                  },
-                  error: function (error) {
-                      success = false;
-                      failureReason = error;
-                  }
-              });
-          }
-
-          if (success == true)
-          {
-              this.dialog.hide();
-          }
-          else
-          {
-              util.xhrErrorHandler(failureReason);
-          }
         }
         else
         {
-            alert('Form contains invalid data. Please correct first');
+          alert('Form contains invalid data. Please correct first');
+          return;
+        }
+
+        var success = false,failureReason=null;
+
+        var encodedVirtualHostNodeName = encodeURIComponent(virtualHostNodeData.name);
+        xhr.put({
+            url: "api/latest/virtualhostnode/" + encodedVirtualHostNodeName,
+            sync: true,
+            handleAs: "json",
+            headers: { "Content-Type": "application/json"},
+            putData: json.stringify(virtualHostNodeData),
+            load: function(x) {success = true; },
+            error: function(error) {success = false; failureReason = error;}
+        });
+
+        if (success == true)
+        {
+            this.dialog.hide();
+        }
+        else
+        {
+            util.xhrErrorHandler(failureReason);
         }
       },
       _getValues: function (form)

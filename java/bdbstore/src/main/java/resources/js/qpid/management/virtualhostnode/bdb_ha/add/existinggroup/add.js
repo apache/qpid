@@ -39,6 +39,9 @@ define(["dojo/_base/xhr",
             registry.byId("addVirtualHostNode.helperNodeName").set("regExpGen", util.nameOrContextVarRegexp);
             registry.byId("addVirtualHostNode.helperAddress").set("regExpGen", util.nodeAddressOrContextVarRegexp);
             registry.byId("addVirtualHostNode.address").set("regExpGen", util.nodeAddressOrContextVarRegexp);
+
+            dom.byId("addVirtualHostNode.uploadFields").style.display = "none";
+
         }
     };
   }

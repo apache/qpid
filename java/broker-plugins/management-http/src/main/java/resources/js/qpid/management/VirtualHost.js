@@ -93,6 +93,19 @@ define(["dojo/_base/xhr",
                             that.stopButton = registry.byNode(query(".stopButton", containerNode)[0]);
                             that.startButton = registry.byNode(query(".startButton", containerNode)[0]);
                             that.editButton = registry.byNode(query(".editButton", containerNode)[0]);
+                            that.downloadButton = registry.byNode(query(".downloadButton", containerNode)[0]);
+                            that.downloadButton.on("click",
+                              function(e)
+                              {
+                                var iframe = document.createElement('iframe');
+                                iframe.id = "downloader_" + that.name;
+                                document.body.appendChild(iframe);
+                                var suggestedAttachmentName = encodeURIComponent(that.name + ".json");
+                                iframe.src = "/api/latest/virtualhost/" + encodeURIComponent(that.modelObj.parent.name) + "/" + encodeURIComponent(that.name) + "?extractInitialConfig=true&contentDispositionAttachmentFilename=" + suggestedAttachmentName;
+                                // It seems there is no way to remove this iframe in a manner that is cross browser compatible.
+                              }
+                            );
+
                             that.deleteButton = registry.byNode(query(".deleteButton", containerNode)[0]);
                             that.deleteButton.on("click",
                                  function(e)
@@ -344,6 +357,7 @@ define(["dojo/_base/xhr",
                 this.virtualHost.startButton.set("disabled", !this.vhostData.state || this.vhostData.state != "STOPPED");
                 this.virtualHost.stopButton.set("disabled", !this.vhostData.state || this.vhostData.state != "ACTIVE");
                 this.virtualHost.editButton.set("disabled", !this.vhostData.state || this.vhostData.state == "UNAVAILABLE");
+                this.virtualHost.downloadButton.set("disabled", !this.vhostData.state || this.vhostData.state != "ACTIVE");
                 this.virtualHost.deleteButton.set("disabled", !this.vhostData.state);
 
                        util.flattenStatistics( thisObj.vhostData );

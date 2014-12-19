@@ -59,6 +59,34 @@
 
                     <div id="addVirtualHostNode.typeFields"></div>
 
+                    <div id="addVirtualHostNode.uploadFields" class="clear">
+                      <div class="formLabel-labelCell">
+                          <label for="addVirtualHostNode.upload">Upload virtualhost configuration from file:</label>
+                      </div>
+                      <div class="formLabel-controlCell">
+                          <input id="addVirtualHostNode.upload" type="checkbox"
+                                 data-dojo-type="dijit.form.CheckBox"
+                                 data-dojo-props="
+                                  name: 'upload'" />
+                      </div>
+                      <div id="addVirtualHostNode.fileFields" class="clear">
+                          <div class="formLabel-labelCell">
+                              <label for="addVirtualHostNode.file">Select JSON file*:</label>
+                          </div>
+                          <div class="tableContainer-valueCell formLabel-controlCell">
+                              <input type="file" id="addVirtualHostNode.file"
+                                      multiple="false"
+                                      data-dojo-type="dojox.form.Uploader"
+                                      data-dojo-props="
+                                      label: 'Select'"/>
+                              <span id="addVirtualHostNode.selectedFile" class="infoMessage"></span>
+                              <span id="addVirtualHostNode.selectedFileStatus"></span>
+                          </div>
+                      </div>
+                    </div>
+
+                    <div class="clear"></div>
+
                     <div data-dojo-type="dijit/TitlePane" data-dojo-props="title: 'Context variables',  open: false">
                         <div id="addVirtualHostNode.context"></div>
                     </div>
