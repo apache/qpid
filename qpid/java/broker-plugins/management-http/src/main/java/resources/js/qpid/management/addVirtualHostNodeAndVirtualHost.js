@@ -112,15 +112,17 @@ define(["dojo/_base/xhr",
 
         if (this.reader)
         {
-          this.reader.onload = function(e) {that._vhnUploadFileComplete(e);};
+          this.reader.onload = function(evt) {that._vhnUploadFileComplete(evt);};
+          this.reader.onerror = function(ex) {console.error("Failed to load JSON file", ex);};
           this.virtualHostNodeFile.on("change",  function(selected){that._vhnFileChanged(selected)});
           this.virtualHostNodeFileCheck.on("change",  function(selected){that._vhnFileFlagChanged(selected)});
         }
         else
         {
           // Fall back for IE8/9 which do not support FileReader
-          this.virtualHostNodeFile.set("disabled", true);
-          this.virtualHostNodeFileCheck.set("disabled", true);
+          this.virtualHostNodeFileCheck.set("disabled", "disabled");
+          this.virtualHostNodeFileCheck.set("title", "Requires a more recent browser with HTML5 support");
+          this.virtualHostNodeFileFields.style.display = "none";
         }
 
         this.virtualHostNodeUploadFields.style.display = "none";

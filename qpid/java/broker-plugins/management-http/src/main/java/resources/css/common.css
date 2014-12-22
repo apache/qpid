@@ -218,16 +218,18 @@ div .messages {
 .loadingIcon
 {
     background: url("../dojo/dojox/image/resources/images/loading.gif") no-repeat;
-    width: 25px;
-    height: 25px;
+    width: 16px;
+    height: 16px;
+    background-size: contain;
     display: inline-block;
 }
 
 .loadedIcon
 {
-    background: url("../dojo/dojox/mobile/themes/common/domButtons/compat/mblDomButtonDarkBlueCheck.png") no-repeat;
-    width: 25px;
-    height: 25px;
+    background: url("../dojo/dijit/icons/images/commonIconsObjActEnabled_rtl.png") no-repeat;
+    background-position: -352px -0px;
+    width: 16px;
+    height: 16px;
     display: inline-block;
 }
 
