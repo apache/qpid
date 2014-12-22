@@ -35,7 +35,7 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class MessageConsumerCloseTest  extends QpidBrokerTestCase
 {
-    Exception _exception;
+    private volatile Exception _exception;
 
     public void testConsumerCloseAndSessionRollback() throws Exception
     {
@@ -65,7 +65,7 @@ public class MessageConsumerCloseTest  extends QpidBrokerTestCase
         boolean messageReceived = receiveLatch.await(1l, TimeUnit.SECONDS);
         consumer.close();
 
-        assertNull("Exception occured on rollback:" + _exception, _exception);
+        assertNull("Exception occurred on rollback:" + _exception, _exception);
         assertTrue("Message is not received", messageReceived);
 
         consumer = session.createConsumer(destination);
@@ -73,5 +73,39 @@ public class MessageConsumerCloseTest  extends QpidBrokerTestCase
         assertNotNull("message1 is not received", message1);
         Message message2 = consumer.receive(1000l);
         assertNotNull("message2 is not received", message2);
+    }
+
+    public void testPrefetchedMessagesReleasedOnConsumerClose() throws Exception
+    {
+        Connection connection = getConnection();
+        final Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+
+        Destination destination = getTestQueue();
+        MessageConsumer consumer = session.createConsumer(destination);
+
+        sendMessage(session, destination, 3);
+
+        connection.start();
+
+        Message msg1 = consumer.receive(1000);
+        assertNotNull("Message one was null", msg1);
+        assertEquals("Message one has unexpected content", 0, msg1.getIntProperty(INDEX));
+        session.commit();
+
+        // Messages two and three will have been prefetched by the consumer.
+        // Closing the consumer must make the available for delivery elsewhere
+
+        consumer.close();
+
+        MessageConsumer consumer2 = session.createConsumer(destination);
+
+        Message msg2 = consumer2.receive(1000);
+        Message msg3 = consumer2.receive(1000);
+        assertNotNull("Message two was null", msg2);
+        assertEquals("Message two has unexpected content", 1, msg2.getIntProperty(INDEX));
+
+        assertNotNull("Message three was null", msg3);
+        assertEquals("Message three has unexpected content", 2, msg3.getIntProperty(INDEX));
+        session.commit();
     }
 }
