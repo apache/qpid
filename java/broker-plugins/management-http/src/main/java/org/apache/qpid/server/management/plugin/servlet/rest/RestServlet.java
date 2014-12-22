@@ -330,8 +330,14 @@ public class RestServlet extends AbstractServlet
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
 
-        setCachingHeadersOnResponse(response);
-        setContentDispositionHeaderIfNecessary(response, attachmentFilename);
+        if (attachmentFilename == null)
+        {
+            setCachingHeadersOnResponse(response);
+        }
+        else
+        {
+            setContentDispositionHeaderIfNecessary(response, attachmentFilename);
+        }
 
         Collection<ConfiguredObject<?>> allObjects = getObjects(request);
 
