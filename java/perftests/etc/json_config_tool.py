@@ -22,7 +22,29 @@ from StringIO import StringIO
 import json
 import sys
 import re
-import argparse
+
+objname = None
+attrname = None
+attrvalue = None
+
+try:
+  import argparse
+
+  parser = argparse.ArgumentParser(description='Adds (or updates) a attribute name/value pair of an existing object within a Java Broker config.json')
+  parser.add_argument("objectname", help='Name of the object e.g. httpManagement')
+  parser.add_argument("attrname", help='Name of the attribute to add or update e.g. httpBasicAuthenticationEnabled')
+  parser.add_argument("attrvalue", help='Value of the attribute e.g. true')
+  args = parser.parse_args()
+
+  objname = args.objectname
+  attrname = args.attrname
+  attrvalue = args.attrvalue
+except ImportError:
+  objname = sys.argv[1]
+  attrname = sys.argv[2]
+  attrvalue = sys.argv[3]
+  pass
+
 
 def transform(data):
   if isinstance(data, tuple):
@@ -36,17 +58,6 @@ def transform(data):
     return data
   else:
     return data
-
-
-parser = argparse.ArgumentParser(description='Adds (or updates) a attribute name/value pair of an existing object within a Java Broker config.json')
-parser.add_argument("objectname", help='Name of the object e.g. httpManagement')
-parser.add_argument("attrname", help='Name of the attribute to add or update e.g. httpBasicAuthenticationEnabled')
-parser.add_argument("attrvalue", help='Value of the attribute e.g. true')
-args = parser.parse_args()
-
-objname = args.objectname
-attrname = args.attrname
-attrvalue = args.attrvalue
 
 # Expects a config.json to be provided on stdin, write the resulting json to stdout.
 
