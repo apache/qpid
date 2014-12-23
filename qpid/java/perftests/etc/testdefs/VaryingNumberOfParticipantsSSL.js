@@ -23,7 +23,7 @@ var jsonObject = {
 };
 
 var duration = 30000;
-var queueName = "direct://amq.direct//varNumOfParticipants?durable='true'";
+var queueName = "direct://amq.direct//varNumOfParticipantsSsl?durable='true'";
 
 var numbersOfProducers = [1, 2, 5, 10, 20];
 var numbersOfConsumers = [1, 2, 5, 10, 20];
@@ -54,7 +54,7 @@ for(producersIndex=0; producersIndex < numbersOfProducers.length; producersIndex
               "_connections":[
                 {
                   "_name": "connection1",
-                  "_factory": "connectionfactory",
+                  "_factory": "sslconnectionfactory",
                   "_sessions": [
                     {
                       "_sessionName": "session1",
@@ -79,7 +79,7 @@ for(producersIndex=0; producersIndex < numbersOfProducers.length; producersIndex
               "_connections":[
                 {
                   "_name": "connection1",
-                  "_factory": "connectionfactory",
+                  "_factory": "sslconnectionfactory",
                   "_sessions": [
                     {
                       "_sessionName": "session1",
