@@ -25,8 +25,8 @@ var jsonObject = {
 var duration = 30000;
 var queueName = "direct://amq.direct//varNumOfParticipants?durable='true'";
 
-var numbersOfProducers = [1, 2, 5, 10, 20];
-var numbersOfConsumers = [1, 2, 5, 10, 20];
+var numbersOfProducers = [1, 2, 5, 10, 20, 40];
+var numbersOfConsumers = [1, 2, 5, 10, 20, 40];
 
 for(producersIndex=0; producersIndex < numbersOfProducers.length; producersIndex++)
 {

@@ -20,7 +20,7 @@
 chartType=XYLINE
 chartTitle=Varying number of consumers - transacted
 chartSubtitle=Persistent 1KB messages
-chartDescription=1,2,5,10 P/Cs, single queue, persistent, transacted, with message payload 1KB.
+chartDescription=1,2,5,10,20,40 P/Cs, single queue, persistent, transacted, with message payload 1KB.
 
 xAxisTitle=Consumers
 yAxisTitle=Throughput (messages/s)
@@ -40,8 +40,18 @@ series.3.legend=10 Producers
 series.3.dir=${csvCurrentDir}
 series.3.colourName=red
 
-series.4.statement=SELECT totalNumberOfConsumers, throughputMessagesPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfProducers = '10' and acknowledgeMode = '0'
-series.4.legend=10 Producers (baseline ${baselineName})
-series.4.dir=${csvBaselineDir}
-series.4.colourName=dark_red
-series.4.strokeWidth=-1
+series.4.statement=SELECT totalNumberOfConsumers, throughputMessagesPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfProducers = '20' and acknowledgeMode = '0'
+series.4.legend=20 Producers
+series.4.dir=${csvCurrentDir}
+series.4.colourName=magenta
+
+series.5.statement=SELECT totalNumberOfConsumers, throughputMessagesPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfProducers = '40' and acknowledgeMode = '0'
+series.5.legend=40 Producers
+series.5.dir=${csvCurrentDir}
+series.5.colourName=yellow
+
+series.6.statement=SELECT totalNumberOfConsumers, throughputMessagesPerS FROM VaryingNumberOfParticipants WHERE participantName = 'All' and totalNumberOfProducers = '10' and acknowledgeMode = '0'
+series.6.legend=10 Producers (baseline ${baselineName})
+series.6.dir=${csvBaselineDir}
+series.6.colourName=dark_red
+series.6.strokeWidth=-1
