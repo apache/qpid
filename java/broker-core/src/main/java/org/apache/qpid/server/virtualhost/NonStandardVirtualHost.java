@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,24 +16,14 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-
 package org.apache.qpid.server.virtualhost;
 
-import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.store.SizeMonitoringSettings;
+import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.VirtualHost;
 
-public interface ProvidedStoreVirtualHost<X extends ProvidedStoreVirtualHost<X>>
-        extends VirtualHostImpl<X,AMQQueue<?>,ExchangeImpl<?>>,
-                SizeMonitoringSettings,
-                NonStandardVirtualHost<X,AMQQueue<?>,ExchangeImpl<?>>
+public interface NonStandardVirtualHost<X extends NonStandardVirtualHost<X, Q, E>, Q extends Queue<?>, E extends Exchange<?> > extends VirtualHost<X, Q, E>
 {
-    @ManagedAttribute(mandatory = true, defaultValue = "0")
-    Long getStoreUnderfullSize();
-
-    @ManagedAttribute(mandatory = true, defaultValue = "0")
-    Long getStoreOverfullSize();
-
 }

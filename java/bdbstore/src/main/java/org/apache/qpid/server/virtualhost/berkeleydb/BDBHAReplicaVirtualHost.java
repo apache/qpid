@@ -52,6 +52,7 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.HouseKeepingTask;
+import org.apache.qpid.server.virtualhost.NonStandardVirtualHost;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
@@ -62,7 +63,8 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 @ManagedObject( category = false, type = "BDB_HA_REPLICA", register = false )
 public class BDBHAReplicaVirtualHost extends AbstractConfiguredObject<BDBHAReplicaVirtualHost>
     implements VirtualHostImpl<BDBHAReplicaVirtualHost, AMQQueue<?>, ExchangeImpl<?>>,
-               VirtualHost<BDBHAReplicaVirtualHost,AMQQueue<?>, ExchangeImpl<?>>
+               VirtualHost<BDBHAReplicaVirtualHost,AMQQueue<?>, ExchangeImpl<?>>,
+               NonStandardVirtualHost<BDBHAReplicaVirtualHost,AMQQueue<?>,ExchangeImpl<?>>
 {
     private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
