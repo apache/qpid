@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.virtualhostnode.memory;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 import org.apache.qpid.server.model.Broker;
@@ -30,7 +32,7 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MemoryConfigurationStore;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 
-@ManagedObject(type=MemoryVirtualHostNode.VIRTUAL_HOST_NODE_TYPE, category=false)
+@ManagedObject(type=MemoryVirtualHostNode.VIRTUAL_HOST_NODE_TYPE, category=false, validChildTypes = "org.apache.qpid.server.virtualhostnode.memory.MemoryVirtualHostNode#getSupportedChildTypes()")
 public class MemoryVirtualHostNode extends AbstractStandardVirtualHostNode<MemoryVirtualHostNode>
 {
    public static final String VIRTUAL_HOST_NODE_TYPE = "Memory";
@@ -50,5 +52,10 @@ public class MemoryVirtualHostNode extends AbstractStandardVirtualHostNode<Memor
     protected DurableConfigurationStore createConfigurationStore()
     {
         return new MemoryConfigurationStore(VirtualHost.class);
+    }
+
+    public static Map<String, Collection<String>> getSupportedChildTypes()
+    {
+        return Collections.singletonMap(VirtualHost.class.getSimpleName(), getSupportedVirtualHostTypes(true));
     }
 }

@@ -21,8 +21,11 @@
 package org.apache.qpid.server.model;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.AbstractCollection;
 import java.util.Arrays;
 import java.util.Collection;
@@ -176,6 +179,9 @@ public class ConfiguredObjectTypeRegistry
     private final Map<Class<? extends ConfiguredObject>,Set<Class<? extends ManagedInterface>>> _allManagedInterfaces =
             Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Set<Class<? extends ManagedInterface>>>());
 
+    private final Map<Class<? extends ConfiguredObject>, Map<String, Collection<String>>> _validChildTypes =
+            Collections.synchronizedMap(new HashMap<Class<? extends ConfiguredObject>, Map<String, Collection<String>>>());
+
     public ConfiguredObjectTypeRegistry(Iterable<ConfiguredObjectRegistration> configuredObjectRegistrations, Collection<Class<? extends ConfiguredObject>> categoriesRestriction)
     {
 
@@ -264,6 +270,96 @@ public class ConfiguredObjectTypeRegistry
                 }
             }
 
+        }
+
+        for(Class<? extends ConfiguredObject> type : types)
+        {
+            final ManagedObject annotation = type.getAnnotation(ManagedObject.class);
+            String validChildren = annotation.validChildTypes();
+            if(!"".equals(validChildren))
+            {
+                Method validChildTypesMethod = getValidChildTypesFunction(validChildren, type);
+                if(validChildTypesMethod != null)
+                {
+                    try
+                    {
+                        _validChildTypes.put(type, (Map<String, Collection<String>>) validChildTypesMethod.invoke(null));
+                    }
+                    catch (IllegalAccessException | InvocationTargetException e)
+                    {
+                        throw new IllegalArgumentException("Exception while evaluating valid child types for " + type.getName(), e);
+                    }
+                }
+
+            }
+        }
+    }
+
+    private static Method getValidChildTypesFunction(final String validValue, final Class<? extends ConfiguredObject> clazz)
+    {
+        if (validValue.matches("([\\w][\\w\\d_]+\\.)+[\\w][\\w\\d_\\$]*#[\\w\\d_]+\\s*\\(\\s*\\)"))
+        {
+            String function = validValue;
+            try
+            {
+                String className = function.split("#")[0].trim();
+                String methodName = function.split("#")[1].split("\\(")[0].trim();
+                Class<?> validValueCalculatingClass = Class.forName(className);
+                Method method = validValueCalculatingClass.getMethod(methodName);
+                if (Modifier.isStatic(method.getModifiers()) && Modifier.isPublic(method.getModifiers()))
+                {
+                    if (Map.class.isAssignableFrom(method.getReturnType()))
+                    {
+                        if (method.getGenericReturnType() instanceof ParameterizedType)
+                        {
+                            Type keyType =
+                                    ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
+                            if (keyType == String.class)
+                            {
+                                Type valueType =
+                                        ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[1];
+                                if (valueType instanceof ParameterizedType)
+                                {
+                                    ParameterizedType paramType = (ParameterizedType) valueType;
+                                    final Type rawType = paramType.getRawType();
+                                    final Type[] args = paramType.getActualTypeArguments();
+                                    if (Collection.class.isAssignableFrom((Class<?>) rawType)
+                                        && args.length == 1
+                                        && args[0] == String.class)
+                                    {
+                                        return method;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+                throw new IllegalArgumentException("The validChildTypes of the class "
+                                                   + clazz.getSimpleName()
+                                                   + " has value '"
+                                                   + validValue
+                                                   + "' but the method does not meet the requirements - is it public and static");
+
+            }
+            catch (ClassNotFoundException | NoSuchMethodException e)
+            {
+                throw new IllegalArgumentException("The validChildTypes of the class "
+                                                   + clazz.getSimpleName()
+                                                   + " has value '"
+                                                   + validValue
+                                                   + "' which looks like it should be a method,"
+                                                   + " but no such method could be used.", e);
+            }
+        }
+        else
+        {
+            throw new IllegalArgumentException("The validChildTypes of the class "
+                                               + clazz.getSimpleName()
+                                               + " has value '"
+                                               + validValue
+                                               + "' which does not match the required <package>.<class>#<method>() format.");
         }
     }
 
@@ -904,6 +1000,20 @@ public class ConfiguredObjectTypeRegistry
             {
                 managedInterfaces.add((Class<? extends ManagedInterface>) iface);
             }
+        }
+    }
+
+    public Collection<String> getValidChildTypes(Class<? extends ConfiguredObject> type, Class<? extends ConfiguredObject> childType)
+    {
+        final Map<String, Collection<String>> allValidChildTypes = _validChildTypes.get(getTypeClass(type));
+        if(allValidChildTypes != null)
+        {
+            final Collection<String> validTypesForSpecificChild = allValidChildTypes.get(getCategory(childType).getSimpleName());
+            return validTypesForSpecificChild == null ? null : Collections.unmodifiableCollection(validTypesForSpecificChild);
+        }
+        else
+        {
+            return null;
         }
     }
 

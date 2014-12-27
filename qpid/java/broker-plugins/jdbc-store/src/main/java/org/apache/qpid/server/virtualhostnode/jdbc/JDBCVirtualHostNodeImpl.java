@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.virtualhostnode.jdbc;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 import org.apache.qpid.server.model.Broker;
@@ -31,7 +33,8 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.jdbc.GenericJDBCConfigurationStore;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 
-@ManagedObject(type = JDBCVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, category = false )
+@ManagedObject(type = JDBCVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, category = false ,
+               validChildTypes = "org.apache.qpid.server.virtualhostnode.jdbc.JDBCVirtualHostNodeImpl#getSupportedChildTypes()")
 public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDBCVirtualHostNodeImpl> implements JDBCVirtualHostNode<JDBCVirtualHostNodeImpl>
 {
     public static final String VIRTUAL_HOST_NODE_TYPE = "JDBC";
@@ -96,5 +99,11 @@ public class JDBCVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<JDB
                                         ", connectionUrl=" + getConnectionUrl() +
                                         ", connectionPoolType=" + getConnectionPoolType() +
                                         ", username=" + getUsername() + "]";
+    }
+
+
+    public static Map<String, Collection<String>> getSupportedChildTypes()
+    {
+        return Collections.singletonMap(VirtualHost.class.getSimpleName(), getSupportedVirtualHostTypes(true));
     }
 }

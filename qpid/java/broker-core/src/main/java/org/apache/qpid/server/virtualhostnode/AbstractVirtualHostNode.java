@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,14 +48,18 @@ import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.ManagedAttributeField;
+import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.plugin.ConfiguredObjectRegistration;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -62,6 +67,8 @@ import org.apache.qpid.server.store.ConfiguredObjectRecordConverter;
 import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
+import org.apache.qpid.server.virtualhost.NonStandardVirtualHost;
+import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHostImpl;
 
 public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<X>> extends AbstractConfiguredObject<X> implements VirtualHostNode<X>
 {
@@ -440,6 +447,36 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
             initialConfigReader = new StringReader("{}");
         }
         return initialConfigReader;
+    }
+
+    protected static Collection<String> getSupportedVirtualHostTypes(boolean includeProvided)
+    {
+
+        final Iterable<ConfiguredObjectRegistration> registrations =
+                (new QpidServiceLoader()).instancesOf(ConfiguredObjectRegistration.class);
+
+        Set<String> supportedTypes = new HashSet<>();
+
+        for(ConfiguredObjectRegistration registration : registrations)
+        {
+            for(Class<? extends ConfiguredObject> typeClass : registration.getConfiguredObjectClasses())
+            {
+                if(VirtualHost.class.isAssignableFrom(typeClass))
+                {
+                    ManagedObject annotation = typeClass.getAnnotation(ManagedObject.class);
+
+                    if (annotation.creatable() && annotation.defaultType().equals("") && !NonStandardVirtualHost.class.isAssignableFrom(typeClass))
+                    {
+                        supportedTypes.add(ConfiguredObjectTypeRegistry.getType(typeClass));
+                    }
+                }
+            }
+        }
+        if(includeProvided)
+        {
+            supportedTypes.add(ProvidedStoreVirtualHostImpl.VIRTUAL_HOST_TYPE);
+        }
+        return Collections.unmodifiableCollection(supportedTypes);
     }
 
 }

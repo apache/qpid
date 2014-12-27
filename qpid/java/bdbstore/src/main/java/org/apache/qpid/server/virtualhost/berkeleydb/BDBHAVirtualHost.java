@@ -20,16 +20,18 @@
  */
 package org.apache.qpid.server.virtualhost.berkeleydb;
 
-import java.util.List;
-
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.DerivedAttribute;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.SizeMonitoringSettings;
+import org.apache.qpid.server.virtualhost.NonStandardVirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>> extends VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>, SizeMonitoringSettings
+public interface BDBHAVirtualHost<X extends BDBHAVirtualHost<X>>
+        extends VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>,
+                SizeMonitoringSettings,
+                NonStandardVirtualHost<X,AMQQueue<?>,ExchangeImpl<?>>
 {
     String REMOTE_TRANSACTION_SYNCHRONIZATION_POLICY = "remoteTransactionSynchronizationPolicy";
     String LOCAL_TRANSACTION_SYNCHRONIZATION_POLICY = "localTransactionSynchronizationPolicy";

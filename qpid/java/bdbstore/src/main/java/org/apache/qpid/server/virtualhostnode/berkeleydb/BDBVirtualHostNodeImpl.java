@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
@@ -32,7 +34,8 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.berkeleydb.BDBConfigurationStore;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 
-@ManagedObject(type = BDBVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, category = false)
+@ManagedObject(type = BDBVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, category = false,
+               validChildTypes = "org.apache.qpid.server.virtualhostnode.berkeleydb.BDBVirtualHostNodeImpl#getSupportedChildTypes()")
 public class BDBVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<BDBVirtualHostNodeImpl> implements BDBVirtualHostNode<BDBVirtualHostNodeImpl>
 {
     public static final String VIRTUAL_HOST_NODE_TYPE = "BDB";
@@ -70,4 +73,8 @@ public class BDBVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<BDBV
         return getClass().getSimpleName() + " [id=" + getId() + ", name=" + getName() + ", storePath=" + getStorePath() + "]";
     }
 
+    public static Map<String, Collection<String>> getSupportedChildTypes()
+    {
+        return Collections.singletonMap(VirtualHost.class.getSimpleName(), getSupportedVirtualHostTypes(true));
+    }
 }
