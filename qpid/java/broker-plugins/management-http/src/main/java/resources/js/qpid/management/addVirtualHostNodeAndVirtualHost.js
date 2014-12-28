@@ -90,24 +90,15 @@ define(["dojo/_base/xhr",
 
         this.virtualHostType.set("disabled", true);
 
-        this.supportedVirtualHostNodeTypes = metadata.getTypesForCategory("VirtualHostNode");
-        this.supportedVirtualHostNodeTypes.sort();
-        this.supportedVirtualHostTypes = metadata.getTypesForCategory("VirtualHost");
-        this.supportedVirtualHostTypes.sort();
+        var supportedVirtualHostNodeTypes = metadata.getTypesForCategory("VirtualHostNode");
+        supportedVirtualHostNodeTypes.sort();
 
-        //VH Type BDB_HA_REPLICA is not user creatable. This is only needed until we have model meta data available.
-        this.supportedVirtualHostTypes = array.filter(this.supportedVirtualHostTypes, function(item){
-            return item != "BDB_HA_REPLICA" && item != "BDB_HA";
-        });
-
-        var virtualHostNodeTypeStore = util.makeTypeStore(this.supportedVirtualHostNodeTypes);
+        var virtualHostNodeTypeStore = util.makeTypeStore(supportedVirtualHostNodeTypes);
         this.virtualHostNodeType.set("store", virtualHostNodeTypeStore);
         this.virtualHostNodeType.set("disabled", false);
         this.virtualHostNodeType.on("change", function(type){that._vhnTypeChanged(type, that.virtualHostNodeTypeFieldsContainer, "qpid/management/virtualhostnode/");});
 
-        this.virtualHostTypeStore = util.makeTypeStore(this.supportedVirtualHostTypes);
-        this.virtualHostType.set("store", this.virtualHostTypeStore);
-        this.virtualHostType.set("disabled", false);
+        this.virtualHostType.set("disabled", true);
         this.virtualHostType.on("change", function(type){that._vhTypeChanged(type, that.virtualHostTypeFieldsContainer, "qpid/management/virtualhost/");});
 
         if (this.reader)
@@ -191,8 +182,21 @@ define(["dojo/_base/xhr",
       },
       _vhnTypeChanged: function (type, typeFieldsContainer, urlStem)
       {
-        this._processDropDownsForBdbHa(type);
-        this._processDropDownsForJson(type);
+        var validChildTypes = metadata.validChildTypes("VirtualHostNode", type, "VirtualHost");
+        validChildTypes.sort();
+
+        var virtualHostTypeStore = util.makeTypeStore( validChildTypes );
+
+        this.virtualHostType.set("store", virtualHostTypeStore);
+        this.virtualHostType.set("disabled", validChildTypes.length <= 1);
+        if (validChildTypes.length == 1)
+        {
+          this.virtualHostType.set("value", validChildTypes[0]);
+        }
+        else
+        {
+          this.virtualHostType.reset();
+        }
 
         var vhnTypeSelected =  !(type == '');
         this.virtualHostNodeUploadFields.style.display = vhnTypeSelected ? "block" : "none";
@@ -271,50 +275,6 @@ define(["dojo/_base/xhr",
         this.virtualHostInitialConfiguration = result;
         this.addButton.set("disabled", false);
         this.virtualHostNodeSelectedFileStatusContainer.className = "loadedIcon";
-      },
-      _processDropDownsForBdbHa: function (type)
-      {
-        if (type == "BDB_HA")
-        {
-          this.virtualHostType.set("disabled", true);
-          if (!this.virtualHostTypeStore.get("BDB_HA"))
-          {
-            this.virtualHostTypeStore.add({id: "BDB_HA", name: "BDB_HA"});
-          }
-          this.virtualHostType.set("value", "BDB_HA");
-        }
-        else
-        {
-          if (this.virtualHostTypeStore.get("BDB_HA"))
-          {
-            this.virtualHostTypeStore.remove("BDB_HA");
-          }
-          this.virtualHostType.set("value", "");
-
-          this.virtualHostType.set("disabled", false);
-        }
-      },
-      _processDropDownsForJson: function (type)
-      {
-        if (type == "JSON")
-        {
-          if (this.virtualHostType.value == "ProvidedStore")
-          {
-            this.virtualHostType.set("value", "");
-          }
-
-          if (this.virtualHostTypeStore.get("ProvidedStore"))
-          {
-            this.virtualHostTypeStore.remove("ProvidedStore");
-          }
-        }
-        else
-        {
-          if (!this.virtualHostTypeStore.get("ProvidedStore"))
-          {
-            this.virtualHostTypeStore.add({id: "ProvidedStore", name: "ProvidedStore"});
-          }
-        }
       },
       _cancel: function(e)
       {
