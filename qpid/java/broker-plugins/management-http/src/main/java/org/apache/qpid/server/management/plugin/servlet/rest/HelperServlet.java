@@ -54,7 +54,6 @@ public class HelperServlet extends AbstractServlet
         _mapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
 
         Action[] supportedActions = {
-                new ListBrokerAttribute(Broker.SUPPORTED_PREFERENCES_PROVIDER_TYPES, "ListPreferencesProvidersTypes"),
                 new ListBrokerAttribute(Broker.PRODUCT_VERSION, "version"),
                 new ListGroupProviderAttributes(),
                 new ListAccessControlProviderAttributes(),

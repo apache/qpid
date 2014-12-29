@@ -327,18 +327,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     }
 
     @Override
-    public Collection<String> getSupportedAuthenticationProviders()
-    {
-        return getObjectFactory().getSupportedTypes(AuthenticationProvider.class);
-    }
-
-    @Override
-    public Collection<String> getSupportedPreferencesProviderTypes()
-    {
-        return getObjectFactory().getSupportedTypes(PreferencesProvider.class);
-    }
-
-    @Override
     public String getDefaultVirtualHost()
     {
         return _defaultVirtualHost;

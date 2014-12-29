@@ -40,18 +40,8 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     String STORE_TRANSACTION_IDLE_TIMEOUT_WARN  = "storeTransactionIdleTimeoutWarn";
     String STORE_TRANSACTION_OPEN_TIMEOUT_CLOSE = "storeTransactionOpenTimeoutClose";
     String STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "storeTransactionOpenTimeoutWarn";
-    String SUPPORTED_EXCHANGE_TYPES             = "supportedExchangeTypes";
-    String SUPPORTED_QUEUE_TYPES                = "supportedQueueTypes";
     String HOUSE_KEEPING_THREAD_COUNT           = "houseKeepingThreadCount";
     String MODEL_VERSION                        = "modelVersion";
-
-    // TODO - this isn't really an attribute
-    @DerivedAttribute
-    Collection<String> getSupportedExchangeTypes();
-
-    // TODO - this isn't really an attribute
-    @DerivedAttribute
-    Collection<String> getSupportedQueueTypes();
 
     @ManagedContextDefault( name = "queue.deadLetterQueueEnabled")
     public static final boolean DEFAULT_DEAD_LETTER_QUEUE_ENABLED = false;

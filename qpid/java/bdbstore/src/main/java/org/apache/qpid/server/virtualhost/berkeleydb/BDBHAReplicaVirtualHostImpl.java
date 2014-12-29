@@ -39,7 +39,6 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.model.VirtualHostNode;
@@ -49,12 +48,9 @@ import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.DtxRegistry;
-import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.HouseKeepingTask;
-import org.apache.qpid.server.virtualhost.NonStandardVirtualHost;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 /**
   Object that represents the VirtualHost whilst the VirtualHostNode is in the replica role.  The
@@ -163,18 +159,6 @@ public class BDBHAReplicaVirtualHostImpl extends AbstractConfiguredObject<BDBHAR
     public Collection<String> getExchangeTypeNames()
     {
         return getObjectFactory().getSupportedTypes(Exchange.class);
-    }
-
-    @Override
-    public Collection<String> getSupportedExchangeTypes()
-    {
-        return getObjectFactory().getSupportedTypes(Exchange.class);
-    }
-
-    @Override
-    public Collection<String> getSupportedQueueTypes()
-    {
-        return getObjectFactory().getSupportedTypes(Queue.class);
     }
 
     @Override
