@@ -31,7 +31,7 @@ import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.ManagedObject;
 
-@ManagedObject( defaultType = "test" )
+@ManagedObject( defaultType = TestRootCategoryImpl.TEST_ROOT_TYPE )
 public interface TestRootCategory<X extends TestRootCategory<X>> extends ConfiguredObject<X>
 {
     String AUTOMATED_PERSISTED_VALUE = "automatedPersistedValue";

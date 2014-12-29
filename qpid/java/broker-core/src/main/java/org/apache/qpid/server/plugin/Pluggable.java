@@ -1,4 +1,4 @@
-package org.apache.qpid.server.plugin;/*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,6 +18,8 @@ package org.apache.qpid.server.plugin;/*
  * under the License.
  *
  */
+
+package org.apache.qpid.server.plugin;
 
 public interface Pluggable
 {

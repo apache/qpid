@@ -62,7 +62,7 @@ public class TestModel extends Model
             @Override
             public String getType()
             {
-                return "test";
+                return "org.apache.qpid.server.model.testmodel";
             }
         };
         _registry = new ConfiguredObjectTypeRegistry(Arrays.asList(configuredObjectRegistration), getSupportedCategories());

@@ -29,10 +29,11 @@ import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.State;
 
-@ManagedObject( category = false , type = "test" )
+@ManagedObject( category = false, type = TestChildCategoryImpl.TEST_CHILD_TYPE )
 public class TestChildCategoryImpl
         extends AbstractConfiguredObject<TestChildCategoryImpl> implements TestChildCategory<TestChildCategoryImpl>
 {
+    public static final String TEST_CHILD_TYPE = "testchild";
 
 
     @ManagedAttributeField
