@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.model;
 
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -136,9 +140,19 @@ public class ConfiguredObjectTypeRegistryTest extends TestCase
         assertEquals("Unexpected interfaces on class implementing 1 interface with annotation",
                 new HashSet<>(Arrays.asList(TestManagedInterface1.class)), typeRegistry.getManagedInterfaces(TestManagedClass2.class));
         assertEquals("Unexpected interfaces on class implementing 2 interfaces with annotation",
-                new HashSet<>(Arrays.asList(TestManagedInterface3.class, TestManagedInterface1.class)), typeRegistry.getManagedInterfaces(TestManagedClass3.class));
+                     new HashSet<>(Arrays.asList(TestManagedInterface3.class, TestManagedInterface1.class)),
+                     typeRegistry.getManagedInterfaces(TestManagedClass3.class));
 
     }
+
+    public void testGetValidChildTypes()
+    {
+        Collection<String> validTypes = _typeRegistry.getValidChildTypes(TestRootCategory.class,
+                                                                         TestChildCategory.class);
+        assertThat(validTypes, hasItem("testchild"));
+        assertThat(validTypes.size(), is(1));
+    }
+
 
     private ConfiguredObjectTypeRegistry createConfiguredObjectTypeRegistry(Class<? extends ConfiguredObject>... supportedTypes)
     {

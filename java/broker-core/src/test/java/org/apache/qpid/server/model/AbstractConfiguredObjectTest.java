@@ -33,10 +33,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.testmodel.TestChildCategory;
+import org.apache.qpid.server.model.testmodel.TestChildCategoryImpl;
 import org.apache.qpid.server.model.testmodel.TestConfiguredObject;
 import org.apache.qpid.server.model.testmodel.TestEnum;
 import org.apache.qpid.server.model.testmodel.TestModel;
 import org.apache.qpid.server.model.testmodel.TestRootCategory;
+import org.apache.qpid.server.model.testmodel.TestRootCategoryImpl;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -285,7 +287,7 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
         attributes.put("intValue", "${contextVal}");
         attributes.put("name", "child");
         attributes.put("integerSet", "[ ]");
-        attributes.put(ConfiguredObject.TYPE, "test");
+        attributes.put(ConfiguredObject.TYPE, TestChildCategoryImpl.TEST_CHILD_TYPE);
 
         try
         {
@@ -318,7 +320,7 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
         final Map<String, Object> attributes = new HashMap<>();
         attributes.put("intValue", "1");
         attributes.put("name", "child");
-        attributes.put(ConfiguredObject.TYPE, "test");
+        attributes.put(ConfiguredObject.TYPE, TestChildCategoryImpl.TEST_CHILD_TYPE);
 
         try
         {

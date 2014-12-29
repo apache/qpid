@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.model.testmodel;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,11 +32,16 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
+import org.apache.qpid.server.model.VirtualHost;
 
-@ManagedObject( category = false , type = "test" )
+@ManagedObject( category = false,
+                type = TestRootCategoryImpl.TEST_ROOT_TYPE,
+                validChildTypes = "org.apache.qpid.server.model.testmodel.TestRootCategoryImpl#getSupportedChildTypes()")
 public class TestRootCategoryImpl extends AbstractConfiguredObject<TestRootCategoryImpl>
         implements TestRootCategory<TestRootCategoryImpl>
 {
+    public static final String TEST_ROOT_TYPE = "testroot";
+
     @ManagedAttributeField
     private String _automatedPersistedValue;
 
@@ -125,5 +133,11 @@ public class TestRootCategoryImpl extends AbstractConfiguredObject<TestRootCateg
     public String getValidValue()
     {
         return _validValue;
+    }
+
+    @SuppressWarnings("unused")
+    public static Map<String, Collection<String>> getSupportedChildTypes()
+    {
+        return Collections.singletonMap(TestChildCategory.class.getSimpleName(), (Collection<String>)Collections.singleton(TestChildCategoryImpl.TEST_CHILD_TYPE));
     }
 }

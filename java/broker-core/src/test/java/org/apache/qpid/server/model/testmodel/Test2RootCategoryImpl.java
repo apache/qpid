@@ -32,10 +32,12 @@ import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 
-@ManagedObject( category = false , type = "test2" )
+@ManagedObject( category = false , type = Test2RootCategoryImpl.TEST_ROOT_TYPE )
 public class Test2RootCategoryImpl extends AbstractConfiguredObject<Test2RootCategoryImpl>
         implements Test2RootCategory<Test2RootCategoryImpl>
 {
+    public static final String TEST_ROOT_TYPE = "testroot2";
+
     @ManagedAttributeField
     private String _automatedPersistedValue;
 
