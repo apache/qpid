@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,25 +15,13 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.model.testmodel;
 
-import org.apache.qpid.server.model.DerivedAttribute;
-import org.apache.qpid.server.model.ManagedAttribute;
+package org.apache.qpid.server.model.testmodels.hierarchy;
 
-public interface Test2RootCategory<X extends Test2RootCategory<X>> extends TestRootCategory<X>
+import org.apache.qpid.server.model.ManagedObject;
+
+@ManagedObject(category = false)
+public interface TestStandardCar<X extends TestStandardCar<X>> extends TestCar<X>
 {
-    String DEFAULTED_VALUE_DEFAULT = "differentDefault";
-
-    @Override
-    @ManagedAttribute( defaultValue = DEFAULTED_VALUE_DEFAULT)
-    String getDefaultedValue();
-
-    @Override
-    @ManagedAttribute( validValues = {"org.apache.qpid.server.model.testmodel.Test2RootCategoryImpl#functionGeneratedValidValues()"})
-    String getValidValue();
-
-    @DerivedAttribute
-    public int getDerivedAttribute();
 }

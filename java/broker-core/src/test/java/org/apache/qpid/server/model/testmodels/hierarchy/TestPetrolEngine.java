@@ -17,16 +17,11 @@
  * under the License.
  */
 
-package org.apache.qpid.server.model.testmodel;
+package org.apache.qpid.server.model.testmodels.hierarchy;
 
+import org.apache.qpid.server.model.ManagedObject;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-public enum TestEnum
+@ManagedObject (category = false)
+public interface TestPetrolEngine<X extends TestPetrolEngine<X>> extends TestEngine<X>
 {
-    TEST_ENUM1,
-    TEST_ENUM2,
-    TEST_ENUM3;
 }

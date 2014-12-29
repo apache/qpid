@@ -16,7 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.server.model.testmodel;
+
+package org.apache.qpid.server.model.testmodels.lifecycle;
 
 import static org.mockito.Mockito.mock;
 

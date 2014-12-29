@@ -18,16 +18,12 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model.testmodel;
+package org.apache.qpid.server.model.testmodels.hierarchy;
 
-import org.apache.qpid.server.model.ManagedAnnotation;
-import org.apache.qpid.server.model.ManagedInterface;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ManagedObject;
 
-/**
- * This is a test managed interface which has ManagedAnnotation.
- * All types implementing this interface will inherit the annotation and will be managed entities of type TestManagedInterface1
- */
-@ManagedAnnotation
-public interface TestManagedInterface1 extends ManagedInterface
+@ManagedObject(category = true)
+public interface TestEngine<X extends TestEngine<X>> extends ConfiguredObject<X>
 {
 }

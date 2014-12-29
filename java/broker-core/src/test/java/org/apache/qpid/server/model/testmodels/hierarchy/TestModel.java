@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model.testmodel;
+package org.apache.qpid.server.model.testmodels.hierarchy;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,10 +34,10 @@ import org.apache.qpid.server.plugin.ConfiguredObjectRegistration;
 public class TestModel extends Model
 {
     private static final Model INSTANCE = new TestModel();
-    private Class<? extends ConfiguredObject>[] _supportedClasses =
+    private Class<? extends ConfiguredObject>[] _supportedCategories =
             new Class[] {
-                    TestRootCategory.class,
-                    TestChildCategory.class
+                    TestCar.class,
+                    TestEngine.class
             };
 
     private final ConfiguredObjectFactory _objectFactory;
@@ -51,49 +51,38 @@ public class TestModel extends Model
     public TestModel(final ConfiguredObjectFactory objectFactory)
     {
         _objectFactory = objectFactory == null ? new ConfiguredObjectFactoryImpl(this) : objectFactory;
-        ConfiguredObjectRegistration configuredObjectRegistration = new ConfiguredObjectRegistration()
-        {
-            @Override
-            public Collection<Class<? extends ConfiguredObject>> getConfiguredObjectClasses()
-            {
-                return Arrays.<Class<? extends ConfiguredObject>>asList(TestRootCategoryImpl.class, Test2RootCategoryImpl.class);
-            }
 
-            @Override
-            public String getType()
-            {
-                return "org.apache.qpid.server.model.testmodel";
-            }
-        };
-        _registry = new ConfiguredObjectTypeRegistry(Arrays.asList(configuredObjectRegistration), getSupportedCategories());
+        ConfiguredObjectRegistration configuredObjectRegistration = new ConfiguredObjectRegistrationImpl();
+
+        _registry = new ConfiguredObjectTypeRegistry(Collections.singletonList(configuredObjectRegistration), Collections.EMPTY_LIST);
     }
 
 
     @Override
     public Collection<Class<? extends ConfiguredObject>> getSupportedCategories()
     {
-        return Arrays.asList(_supportedClasses);
+        return Arrays.asList(_supportedCategories);
     }
 
     @Override
     public Collection<Class<? extends ConfiguredObject>> getChildTypes(final Class<? extends ConfiguredObject> parent)
     {
-        return TestRootCategory.class.isAssignableFrom(parent)
-                ? Collections.<Class<? extends ConfiguredObject>>singleton(TestChildCategory.class)
+        return TestCar.class.isAssignableFrom(parent)
+                ? Collections.<Class<? extends ConfiguredObject>>singleton(TestEngine.class)
                 : Collections.<Class<? extends ConfiguredObject>>emptySet();
     }
 
     @Override
     public Class<? extends ConfiguredObject> getRootCategory()
     {
-        return TestRootCategory.class;
+        return TestCar.class;
     }
 
     @Override
     public Collection<Class<? extends ConfiguredObject>> getParentTypes(final Class<? extends ConfiguredObject> child)
     {
-        return TestChildCategory.class.isAssignableFrom(child)
-                ? Collections.<Class<? extends ConfiguredObject>>singleton(TestRootCategory.class)
+        return TestEngine.class.isAssignableFrom(child)
+                ? Collections.<Class<? extends ConfiguredObject>>singleton(TestCar.class)
                 : Collections.<Class<? extends ConfiguredObject>>emptySet();
     }
 

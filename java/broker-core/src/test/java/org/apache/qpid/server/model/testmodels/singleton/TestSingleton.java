@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,38 +15,36 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.model.testmodel;
+package org.apache.qpid.server.model.testmodels.singleton;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.DerivedAttribute;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.ManagedObject;
 
-@ManagedObject( defaultType = TestRootCategoryImpl.TEST_ROOT_TYPE )
-public interface TestRootCategory<X extends TestRootCategory<X>> extends ConfiguredObject<X>
+@ManagedObject( defaultType = TestSingletonImpl.TEST_SINGLETON_TYPE)
+public interface TestSingleton<X extends TestSingleton<X>> extends ConfiguredObject<X>
 {
     String AUTOMATED_PERSISTED_VALUE = "automatedPersistedValue";
     String AUTOMATED_NONPERSISTED_VALUE = "automatedNonPersistedValue";
+    String DERIVED_VALUE = "derivedValue";
     String DEFAULTED_VALUE = "defaultedValue";
     String STRING_VALUE = "stringValue";
     String MAP_VALUE = "mapValue";
-    String VALID_VALUE = "validValue";
     String ENUM_VALUE = "enumValue";
+    String INT_VALUE = "intValue";
+    String VALID_VALUE = "validValue";
     String ENUMSET_VALUES = "enumSetValues";
 
     String TEST_CONTEXT_DEFAULT = "TEST_CONTEXT_DEFAULT";
 
     @ManagedContextDefault(name = TEST_CONTEXT_DEFAULT)
     String testGlobalDefault = "default";
-
 
     @ManagedAttribute
     String getAutomatedPersistedValue();
@@ -71,10 +68,16 @@ public interface TestRootCategory<X extends TestRootCategory<X>> extends Configu
     @ManagedAttribute
     TestEnum getEnumValue();
 
+    @ManagedAttribute
+    int getIntValue();
+
     @ManagedAttribute(validValues = {VALID_VALUE1, VALID_VALUE2} )
     String getValidValue();
 
     @ManagedAttribute( validValues = {"[\"TEST_ENUM1\"]", "[\"TEST_ENUM2\", \"TEST_ENUM3\"]"})
     Set<TestEnum> getEnumSetValues();
+
+    @DerivedAttribute
+    long getDerivedValue();
 
 }

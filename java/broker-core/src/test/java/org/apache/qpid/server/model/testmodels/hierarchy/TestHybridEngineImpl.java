@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,14 +15,24 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.model.testmodel;
 
-import org.apache.qpid.server.model.ManagedAnnotation;
-import org.apache.qpid.server.model.ManagedInterface;
+package org.apache.qpid.server.model.testmodels.hierarchy;
 
-@ManagedAnnotation
-public interface TestManagedInterface3 extends ManagedInterface
+import java.util.Map;
+
+import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
+
+@ManagedObject( category = false, type = TestHybridEngineImpl.TEST_HYBRID_ENGINE_TYPE)
+public class TestHybridEngineImpl extends AbstractConfiguredObject<TestHybridEngineImpl> implements TestHybridEngine<TestHybridEngineImpl>
 {
+    public static final String TEST_HYBRID_ENGINE_TYPE = "HYBRID";
+
+    @ManagedObjectFactoryConstructor
+    public TestHybridEngineImpl(final Map<String, Object> attributes, TestCar<?> parent)
+    {
+        super(parentsMap(parent), attributes);
+    }
 }

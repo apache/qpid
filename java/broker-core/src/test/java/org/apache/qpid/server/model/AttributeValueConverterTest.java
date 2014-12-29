@@ -37,8 +37,8 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.model.testmodel.TestModel;
-import org.apache.qpid.server.model.testmodel.TestRootCategory;
+import org.apache.qpid.server.model.testmodels.hierarchy.TestModel;
+import org.apache.qpid.server.model.testmodels.hierarchy.TestCar;
 
 public class AttributeValueConverterTest extends TestCase
 {
@@ -61,7 +61,7 @@ public class AttributeValueConverterTest extends TestCase
         _context.put("mapWithInterpolatedContents", "{\"${mykey}\" : \"b\"}");
         _context.put("mykey", "mykey1");
 
-        ConfiguredObject object = _objectFactory.create(TestRootCategory.class, _attributes);
+        ConfiguredObject object = _objectFactory.create(TestCar.class, _attributes);
 
         AttributeValueConverter<Map> mapConverter = getConverter(Map.class, Map.class);
 
@@ -96,7 +96,7 @@ public class AttributeValueConverterTest extends TestCase
     {
         _context.put("simpleCollection", "[\"a\", \"b\"]");
 
-        ConfiguredObject object = _objectFactory.create(TestRootCategory.class, _attributes);
+        ConfiguredObject object = _objectFactory.create(TestCar.class, _attributes);
 
         AttributeValueConverter<Collection> collectionConverter = getConverter(Collection.class, Collection.class);
 
@@ -131,7 +131,7 @@ public class AttributeValueConverterTest extends TestCase
     {
         _context.put("simpleList", "[\"a\", \"b\"]");
 
-        ConfiguredObject object = _objectFactory.create(TestRootCategory.class, _attributes);
+        ConfiguredObject object = _objectFactory.create(TestCar.class, _attributes);
 
         AttributeValueConverter<List> listConverter = getConverter(List.class, List.class);
 
@@ -164,7 +164,7 @@ public class AttributeValueConverterTest extends TestCase
     {
         _context.put("simpleSet", "[\"a\", \"b\"]");
 
-        ConfiguredObject object = _objectFactory.create(TestRootCategory.class, _attributes);
+        ConfiguredObject object = _objectFactory.create(TestCar.class, _attributes);
 
         AttributeValueConverter<Set> setConverter = getConverter(Set.class, Set.class);;
 
