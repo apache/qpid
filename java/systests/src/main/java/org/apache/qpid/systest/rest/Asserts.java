@@ -76,7 +76,6 @@ public class Asserts
                                 ConfiguredObject.DESCRIPTION,
                                 ConfiguredObject.CONTEXT,
                                 ConfiguredObject.DESIRED_STATE,
-                                VirtualHost.SUPPORTED_QUEUE_TYPES,
                                 VirtualHost.TYPE);
 
         assertEquals("Unexpected value of attribute " + VirtualHost.NAME,
@@ -91,12 +90,6 @@ public class Asserts
                      virtualHost.get(VirtualHost.LIFETIME_POLICY));
         assertEquals("Unexpected value of attribute " + VirtualHost.QUEUE_DEAD_LETTER_QUEUE_ENABLED, Boolean.FALSE,
                      virtualHost.get(VirtualHost.QUEUE_DEAD_LETTER_QUEUE_ENABLED));
-
-        @SuppressWarnings("unchecked")
-        Collection<String> exchangeTypes = (Collection<String>) virtualHost.get(VirtualHost.SUPPORTED_EXCHANGE_TYPES);
-        assertEquals("Unexpected value of attribute " + VirtualHost.SUPPORTED_EXCHANGE_TYPES,
-                     new HashSet<String>(Arrays.asList("headers", "topic", "direct", "fanout")),
-                     new HashSet<String>(exchangeTypes));
 
         @SuppressWarnings("unchecked")
         Map<String, Object> statistics = (Map<String, Object>) virtualHost.get(STATISTICS_ATTRIBUTE);

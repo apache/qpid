@@ -1087,18 +1087,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
     @Override
-    public Collection<String> getSupportedExchangeTypes()
-    {
-        return getObjectFactory().getSupportedTypes(Exchange.class);
-    }
-
-    @Override
-    public Collection<String> getSupportedQueueTypes()
-    {
-        return getObjectFactory().getSupportedTypes(Queue.class);
-    }
-
-    @Override
     public boolean isQueue_deadLetterQueueEnabled()
     {
         return _queue_deadLetterQueueEnabled;
