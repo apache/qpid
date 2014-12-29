@@ -18,55 +18,23 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model.testmodel;
+package org.apache.qpid.server.model.testmodels.hierarchy;
 
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.qpid.server.model.AbstractConfiguredObject;
-import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.model.State;
 
-@ManagedObject( category = false, type = TestChildCategoryImpl.TEST_CHILD_TYPE )
-public class TestChildCategoryImpl
-        extends AbstractConfiguredObject<TestChildCategoryImpl> implements TestChildCategory<TestChildCategoryImpl>
+@ManagedObject( category = false, type = TestPetrolEngineImpl.TEST_PETROL_ENGINE_TYPE)
+public class TestPetrolEngineImpl
+        extends AbstractConfiguredObject<TestPetrolEngineImpl> implements TestPetrolEngine<TestPetrolEngineImpl>
 {
-    public static final String TEST_CHILD_TYPE = "testchild";
-
-
-    @ManagedAttributeField
-    private String _validValueNotInterpolated;
-
-    @ManagedAttributeField
-    private int _intValue;
-
-    @ManagedAttributeField
-    private Set<Integer> _integerSet;
-
+    public static final String TEST_PETROL_ENGINE_TYPE = "PETROL";
 
     @ManagedObjectFactoryConstructor
-    public TestChildCategoryImpl(final Map<String, Object> attributes, TestRootCategory<?> parent)
+    public TestPetrolEngineImpl(final Map<String, Object> attributes, TestCar<?> parent)
     {
         super(parentsMap(parent), attributes);
-    }
-
-    @Override
-    public String getValidValueNotInterpolated()
-    {
-        return _validValueNotInterpolated;
-    }
-
-    @Override
-    public int getIntValue()
-    {
-        return _intValue;
-    }
-
-    @Override
-    public Set<Integer> getIntegerSet()
-    {
-        return _integerSet;
     }
 }

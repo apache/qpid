@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,24 +15,13 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.model.testmodel;
 
-import java.util.Map;
+package org.apache.qpid.server.model.testmodels.hierarchy;
 
 import org.apache.qpid.server.model.ManagedObject;
 
-/**
- * This is a test managed type extending TestManagedClass0.
- * Because TestManagedClass0 implements managed interface TestManagedInterface1 with ManagedAnnotation set,
- * the instances of this class will be managed entities of type TestManagedInterface1.
- */
-@ManagedObject( category = false , type = "ChildClass" )
-public class TestManagedClass1 extends TestManagedClass0
+@ManagedObject(category = false)
+public interface TestElecCar<X extends TestElecCar<X>> extends TestCar<X>
 {
-    public TestManagedClass1(final Map<String, Object> attributes, TestRootCategory<?> parent)
-    {
-        super(attributes, parent);
-    }
 }

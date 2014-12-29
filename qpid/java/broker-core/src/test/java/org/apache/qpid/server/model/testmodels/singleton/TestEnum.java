@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,23 +15,14 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.model.testmodel;
 
-import java.util.Map;
+package org.apache.qpid.server.model.testmodels.singleton;
 
-import org.apache.qpid.server.model.ManagedObject;
 
-/**
- * This is a test managed type implementing managed interface TestManagedInterface1 and TestManagedInterface3.
- * The instances of this class will be managed entities of types TestManagedInterface1 and TestManagedInterface3.
- */
-@ManagedObject( category = false , type = "ChildClass3" )
-public class TestManagedClass3 extends TestChildCategoryImpl implements TestManagedInterface1,TestManagedInterface3
+public enum TestEnum
 {
-    public TestManagedClass3(final Map<String, Object> attributes, TestRootCategory<?> parent)
-    {
-        super(attributes, parent);
-    }
+    TEST_ENUM1,
+    TEST_ENUM2,
+    TEST_ENUM3;
 }

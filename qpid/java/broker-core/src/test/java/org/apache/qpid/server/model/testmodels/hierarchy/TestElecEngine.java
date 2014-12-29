@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,16 +15,13 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.model.testmodel;
 
-import org.apache.qpid.server.model.ManagedInterface;
+package org.apache.qpid.server.model.testmodels.hierarchy;
 
-/**
- * This is a test managed interface which has no ManagedAnnotation.
- * All types implementing this interface would need to have ManagedAnnotation declared in order to became managed entity.
- */
-public interface TestManagedInterface2 extends ManagedInterface
+import org.apache.qpid.server.model.ManagedObject;
+
+@ManagedObject (category = false)
+public interface TestElecEngine<X extends TestElecEngine<X>> extends TestEngine<X>, TestRechargeable
 {
 }

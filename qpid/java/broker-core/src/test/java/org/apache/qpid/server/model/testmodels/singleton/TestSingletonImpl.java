@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,12 +15,9 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.model.testmodel;
+package org.apache.qpid.server.model.testmodels.singleton;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,11 +28,13 @@ import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 
-@ManagedObject( category = false , type = Test2RootCategoryImpl.TEST_ROOT_TYPE )
-public class Test2RootCategoryImpl extends AbstractConfiguredObject<Test2RootCategoryImpl>
-        implements Test2RootCategory<Test2RootCategoryImpl>
+@ManagedObject( category = false, type = TestSingletonImpl.TEST_SINGLETON_TYPE)
+public class TestSingletonImpl extends AbstractConfiguredObject<TestSingletonImpl>
+        implements TestSingleton<TestSingletonImpl>
 {
-    public static final String TEST_ROOT_TYPE = "testroot2";
+    public static final String TEST_SINGLETON_TYPE = "testsingleton";
+
+    public static final int DERIVED_VALUE = -100;
 
     @ManagedAttributeField
     private String _automatedPersistedValue;
@@ -51,19 +49,23 @@ public class Test2RootCategoryImpl extends AbstractConfiguredObject<Test2RootCat
     private String _stringValue;
 
     @ManagedAttributeField
+    private int _intValue;
+
+    @ManagedAttributeField
     private Map<String,String> _mapValue;
 
     @ManagedAttributeField
     private String _validValue;
 
     @ManagedAttributeField
-    private TestEnum _enumValue;
+    private org.apache.qpid.server.model.testmodels.singleton.TestEnum _enumValue;
 
     @ManagedAttributeField
-    private Set<TestEnum> _enumSetValues;
+    private Set<org.apache.qpid.server.model.testmodels.singleton.TestEnum> _enumSetValues;
+
 
     @ManagedObjectFactoryConstructor
-    public Test2RootCategoryImpl(final Map<String, Object> attributes)
+    public TestSingletonImpl(final Map<String, Object> attributes)
     {
         super(parentsMap(), attributes, newTaskExecutor(), TestModel.getInstance());
     }
@@ -75,11 +77,12 @@ public class Test2RootCategoryImpl extends AbstractConfiguredObject<Test2RootCat
         return currentThreadTaskExecutor;
     }
 
-    public Test2RootCategoryImpl(final Map<String, Object> attributes,
-                                 final TaskExecutor taskExecutor)
+    public TestSingletonImpl(final Map<String, Object> attributes,
+                             final TaskExecutor taskExecutor)
     {
         super(parentsMap(), attributes, taskExecutor);
     }
+
 
     @Override
     public String getAutomatedPersistedValue()
@@ -97,18 +100,6 @@ public class Test2RootCategoryImpl extends AbstractConfiguredObject<Test2RootCat
     public String getDefaultedValue()
     {
         return _defaultedValue;
-    }
-
-    @Override
-    public String getValidValue()
-    {
-        return _validValue;
-    }
-
-    @Override
-    public int getDerivedAttribute()
-    {
-        return 0;
     }
 
     @Override
@@ -135,8 +126,21 @@ public class Test2RootCategoryImpl extends AbstractConfiguredObject<Test2RootCat
         return _enumSetValues;
     }
 
-    public static Collection<String> functionGeneratedValidValues()
+    @Override
+    public String getValidValue()
     {
-        return Collections.singleton("generated");
+        return _validValue;
+    }
+
+    @Override
+    public int getIntValue()
+    {
+        return _intValue;
+    }
+
+    @Override
+    public long getDerivedValue()
+    {
+        return DERIVED_VALUE;
     }
 }

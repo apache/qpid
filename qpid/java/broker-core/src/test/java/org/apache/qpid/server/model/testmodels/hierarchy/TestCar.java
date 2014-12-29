@@ -18,26 +18,12 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model.testmodel;
-
-import java.util.Set;
+package org.apache.qpid.server.model.testmodels.hierarchy;
 
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.ManagedObject;
 
-@ManagedObject
-public interface TestChildCategory<X extends TestChildCategory<X>> extends ConfiguredObject<X>
+@ManagedObject( defaultType = TestStandardCarImpl.TEST_STANDARD_CAR_TYPE)
+public interface TestCar<X extends TestCar<X>> extends ConfiguredObject<X>
 {
-    String NON_INTERPOLATED_VALID_VALUE = "${file.separator}";
-
-    @ManagedAttribute(validValues = { NON_INTERPOLATED_VALID_VALUE }, defaultValue = "")
-    String getValidValueNotInterpolated();
-
-    @ManagedAttribute( defaultValue = "3" )
-    int getIntValue();
-
-    @ManagedAttribute( defaultValue = "[ \"1\", \"2\", \"foo\" ]" )
-    Set<Integer> getIntegerSet();
 }

@@ -18,23 +18,13 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model.testmodel;
+package org.apache.qpid.server.model.testmodels.hierarchy;
 
-import java.util.Map;
-
+import org.apache.qpid.server.model.ManagedAnnotation;
 import org.apache.qpid.server.model.ManagedInterface;
-import org.apache.qpid.server.model.ManagedObject;
 
-/**
- * This is a test managed type implementing TestManagedInterface1 which extends ManagedInterface.
- * Because TestManagedInterface1 already has ManagedAnnotation set, the instances of this class will be managed entities
- * of type TestManagedInterface1.
- */
-@ManagedObject( category = false , type = "SuperClass" )
-public class TestManagedClass0 extends TestChildCategoryImpl implements TestManagedInterface1
+
+@ManagedAnnotation
+public interface TestRechargeable extends ManagedInterface
 {
-    public TestManagedClass0(final Map<String, Object> attributes, TestRootCategory<?> parent)
-    {
-        super(attributes, parent);
-    }
 }
