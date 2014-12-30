@@ -224,6 +224,11 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
 
         startupLogger.message(BrokerMessages.MAX_MEMORY(Runtime.getRuntime().maxMemory()));
 
+        if (SystemUtils.getProcessPid() != null)
+        {
+            startupLogger.message(BrokerMessages.PROCESS(SystemUtils.getProcessPid()));
+        }
+
         BrokerStoreUpgraderAndRecoverer upgrader = new BrokerStoreUpgraderAndRecoverer(this);
         upgrader.perform();
 

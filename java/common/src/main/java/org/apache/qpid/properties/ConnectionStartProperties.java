@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.properties;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
-
 import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.util.SystemUtils;
 
@@ -62,30 +59,18 @@ public class ConnectionStartProperties
 
     public static final String QPID_CONFIRMED_PUBLISH_SUPPORTED = "qpid.confirmed_publish_supported";
 
-    public static int _pid;
+    public static final int _pid;
 
     public static final String _platformInfo;
 
     static
     {
-        RuntimeMXBean rtb = ManagementFactory.getRuntimeMXBean();
-        String processName = rtb.getName();
-        if (processName != null && processName.indexOf('@') > 0)
+
+        _pid = SystemUtils.getProcessPidAsInt();
+
+        if (_pid == -1)
         {
-            try
-            {
-                _pid = Integer.parseInt(processName.substring(0,processName.indexOf('@')));
-            }
-            catch(Exception e)
-            {
-                LOGGER.warn("Unable to get the PID due to error",e);
-                _pid = -1;
-            }
-        }
-        else
-        {
-            LOGGER.warn("Unable to get the PID due to unsupported format : " + processName);
-            _pid = -1;
+            LOGGER.warn("Unable to get the process's PID");
         }
 
         StringBuilder fullSystemInfo = new StringBuilder(System.getProperty("java.runtime.name"));

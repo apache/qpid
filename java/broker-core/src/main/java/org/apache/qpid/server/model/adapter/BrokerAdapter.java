@@ -316,8 +316,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @Override
     public String getProcessPid()
     {
-        // TODO
-        return null;
+        return SystemUtils.getProcessPid();
     }
 
     @Override
