@@ -120,12 +120,15 @@ public class HeartbeatTest extends QpidBrokerTestCase
         sendConn.setHeartbeatListener(sendListener);
         receiveConn.start();
 
+        // Start the flow of messages to the consumer
+        consumer.receiveNoWait();
+
         for(int i = 0; i < 5; i++)
         {
             producer.send(senderSession.createTextMessage("Msg " + i));
             Thread.sleep(500);
             assertNotNull("Expected to received message", consumer.receive(500));
-            // Consumer does not ack the message in  order to generate no bytes from consumer back to Broker
+            // Consumer does not ack the message in order that no bytes flow from consumer connection back to Broker
         }
 
         assertTrue("Too few heartbeats sent "+ receiveListener.getHeartbeatsSent() +" (expected at least 2)", receiveListener.getHeartbeatsSent()>=2);
