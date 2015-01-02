@@ -530,6 +530,7 @@ public class Receiver implements DeliveryStateHandler
         {
             release(msg);
         }
+        _session.removeReceiver(this);
 
     }
 
