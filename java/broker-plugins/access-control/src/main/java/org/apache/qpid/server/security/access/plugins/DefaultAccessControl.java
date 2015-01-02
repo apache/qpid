@@ -21,9 +21,14 @@
 package org.apache.qpid.server.security.access.plugins;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.SocketAddress;
+import java.net.URL;
 import java.security.AccessController;
 import java.util.Set;
 
@@ -47,46 +52,81 @@ import org.apache.qpid.server.security.access.config.RuleSet;
 public class DefaultAccessControl implements AccessControl
 {
     private static final Logger _logger = Logger.getLogger(DefaultAccessControl.class);
+    private final String _fileName;
 
     private RuleSet _ruleSet;
-    private File _aclFile;
     private final EventLoggerProvider _eventLogger;
 
-    public DefaultAccessControl(String fileName, final EventLoggerProvider eventLogger)
+    public DefaultAccessControl(String name, final EventLoggerProvider eventLogger)
     {
+        _fileName = name;
         _eventLogger = eventLogger;
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Creating AccessControl instance using file: " + fileName);
+            _logger.debug("Creating AccessControl instance");
         }
-
-        _aclFile = new File(fileName);
     }
 
     DefaultAccessControl(RuleSet rs)
     {
+        _fileName = null;
         _ruleSet = rs;
         _eventLogger = rs;
     }
 
     public void open()
     {
-        if(_aclFile != null)
+        if(_fileName != null)
         {
-            if (!validate())
-            {
-                throw new IllegalConfigurationException("ACL file '" + _aclFile + "' is not found");
-            }
-
-            ConfigurationFile configFile = new PlainConfiguration(_aclFile, _eventLogger);
-            _ruleSet = configFile.load();
+            ConfigurationFile configFile = new PlainConfiguration(_fileName, _eventLogger);
+            _ruleSet = configFile.load(getReaderFromURLString(_fileName));
         }
     }
 
     @Override
     public boolean validate()
     {
-        return _aclFile.exists();
+        try
+        {
+            getReaderFromURLString(_fileName);
+            return true;
+        }
+        catch(IllegalConfigurationException e)
+        {
+            return false;
+        }
+    }
+
+
+    private static Reader getReaderFromURLString(String urlString)
+    {
+        try
+        {
+            URL url;
+
+            try
+            {
+                url = new URL(urlString);
+            }
+            catch (MalformedURLException e)
+            {
+                File file = new File(urlString);
+                try
+                {
+                    url = file.toURI().toURL();
+                }
+                catch (MalformedURLException notAFile)
+                {
+                    throw new IllegalConfigurationException("Cannot convert " + urlString + " to a readable resource");
+                }
+
+            }
+            return new InputStreamReader(url.openStream());
+        }
+        catch (IOException e)
+        {
+            throw new IllegalConfigurationException("Cannot convert " + urlString + " to a readable resource");
+        }
     }
 
     @Override
@@ -104,16 +144,10 @@ public class DefaultAccessControl implements AccessControl
     @Override
     public void onCreate()
     {
-        if(_aclFile != null)
+        if(_fileName != null)
         {
-            //verify it exists
-            if (!validate())
-            {
-                throw new IllegalConfigurationException("ACL file '" + _aclFile + "' is not found");
-            }
-
             //verify it is parsable
-            new PlainConfiguration(_aclFile, _eventLogger).load();
+            new PlainConfiguration(_fileName, _eventLogger).load(getReaderFromURLString(_fileName));
         }
     }
 

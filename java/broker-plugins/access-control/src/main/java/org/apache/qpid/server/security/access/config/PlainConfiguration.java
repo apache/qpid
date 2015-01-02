@@ -21,10 +21,9 @@
 package org.apache.qpid.server.security.access.config;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StreamTokenizer;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -34,14 +33,14 @@ import java.util.Stack;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.Permission;
 
-public class PlainConfiguration extends AbstractConfiguration
+public class PlainConfiguration implements ConfigurationFile
 {
     private static final Logger _logger = Logger.getLogger(PlainConfiguration.class);
 
@@ -66,30 +65,30 @@ public class PlainConfiguration extends AbstractConfiguration
     static final String PROPERTY_KEY_ONLY_MSG = "Incomplete property (key only) at line %d";
     static final String PROPERTY_NO_EQUALS_MSG = "Incomplete property (no equals) at line %d";
     static final String PROPERTY_NO_VALUE_MSG = "Incomplete property (no value) at line %d";
+    private final EventLoggerProvider _eventLogger;
+    private final String _name;
 
     private StreamTokenizer _st;
+    private RuleSet _config;
 
-    public PlainConfiguration(File file, final EventLoggerProvider eventLogger)
+    public PlainConfiguration(String name, final EventLoggerProvider eventLogger)
     {
-        super(file, eventLogger);
+        _eventLogger = eventLogger;
+        _name = name;
     }
 
     @Override
-    public RuleSet load()
+    public RuleSet load(final Reader configReader)
     {
-        RuleSet ruleSet = super.load();
+        _config = new RuleSet(_eventLogger);
 
-        File file = getFile();
-        FileReader fileReader = null;
-
-        try
+        try(Reader fileReader = configReader)
         {
             if(_logger.isDebugEnabled())
             {
-                _logger.debug("About to load ACL file " + file);
+                _logger.debug("About to load ACL file");
             }
 
-            fileReader = new FileReader(file);
             _st = new StreamTokenizer(new BufferedReader(fileReader));
             _st.resetSyntax(); // setup the tokenizer
 
@@ -209,29 +208,14 @@ public class PlainConfiguration extends AbstractConfiguration
         }
         catch (FileNotFoundException fnfe)
         {
-            throw new IllegalConfigurationException(String.format(CONFIG_NOT_FOUND_MSG, file.getName()), fnfe);
+            throw new IllegalConfigurationException(String.format(CONFIG_NOT_FOUND_MSG, _name), fnfe);
         }
         catch (IOException ioe)
         {
-            throw new IllegalConfigurationException(String.format(CANNOT_LOAD_MSG, file.getName()), ioe);
-        }
-        finally
-        {
-            if(fileReader != null)
-            {
-                try
-                {
-                    fileReader.close();
-                }
-                catch (IOException e)
-                {
-                    throw new IllegalConfigurationException(String.format(CANNOT_CLOSE_MSG, file.getName()), e);
-                }
-            }
+            throw new IllegalConfigurationException(String.format(CANNOT_LOAD_MSG, _name), ioe);
         }
 
-
-        return ruleSet;
+        return _config;
     }
 
     private void parseAcl(Integer number, List<String> args)
@@ -333,4 +317,10 @@ public class PlainConfiguration extends AbstractConfiguration
     {
         return _st.lineno() - 1;
     }
+
+    public RuleSet getConfiguration()
+    {
+        return _config;
+    }
+
 }
