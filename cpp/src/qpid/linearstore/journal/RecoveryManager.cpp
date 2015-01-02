@@ -43,6 +43,7 @@
 #include "qpid/linearstore/journal/utils/file_hdr.h"
 #include <sstream>
 #include <string>
+#include <unistd.h>
 #include <vector>
 
 namespace qpid {
@@ -101,7 +102,11 @@ void RecoveryManager::analyzeJournals(const std::vector<std::string>* preparedTr
     analyzeJournalFileHeaders(efpIdentity);
 
     if (journalEmptyFlag_) {
-        *emptyFilePoolPtrPtr = emptyFilePoolManager->getEmptyFilePool(0, 0); // Use default EFP
+        if (uninitFileList_.empty()) {
+            *emptyFilePoolPtrPtr = emptyFilePoolManager->getEmptyFilePool(0, 0); // Use default EFP
+        } else {
+            *emptyFilePoolPtrPtr = emptyFilePoolManager->getEmptyFilePool(efpIdentity);
+        }
     } else {
         *emptyFilePoolPtrPtr = emptyFilePoolManager->getEmptyFilePool(efpIdentity);
         if (! *emptyFilePoolPtrPtr) {
@@ -294,6 +299,7 @@ void RecoveryManager::setLinearFileControllerJournals(lfcAddJournalFileFn fnPtr,
                                                       LinearFileController* lfcPtr) {
     if (journalEmptyFlag_) {
         if (uninitFileList_.size() > 0) {
+            // TODO: Handle case if uninitFileList_.size() > 1, but this should not happen in normal operation. Here we assume only one item in the list.
             std::string uninitFile = uninitFileList_.back();
             uninitFileList_.pop_back();
             lfcPtr->restoreEmptyFile(uninitFile);
@@ -377,11 +383,28 @@ void RecoveryManager::analyzeJournalFileHeaders(efpIdentity_t& efpIdentity) {
     jdir::read_dir(journalDirectory_, directoryList, false, true, false, true);
     for (stringListConstItr_t i = directoryList.begin(); i != directoryList.end(); ++i) {
         bool hdrOk = readJournalFileHeader(*i, fileHeader, headerQueueName);
-        if (!hdrOk || headerQueueName.empty()) {
+        bool hdrEmpty = ::is_file_hdr_reset(&fileHeader);
+        if (!hdrOk) {
             std::ostringstream oss;
-            oss << "Journal file " << (*i) << " is uninitialized or corrupted";
+            oss << "Journal file " << (*i) << " is corrupted or invalid";
             journalLogRef_.log(JournalLog::LOG_WARN, queueName_, oss.str());
+        } else if (hdrEmpty) {
+            // Read symlink, find efp directory name which is efp size in KiB
+            // TODO: place this bit into a common function as it is also used in EmptyFilePool.cpp::deleteSymlink()
+            char buff[1024];
+            ssize_t len = ::readlink((*i).c_str(), buff, 1024);
+            if (len < 0) {
+                std::ostringstream oss;
+                oss << "symlink=\"" << (*i) << "\"" << FORMAT_SYSERR(errno);
+                throw jexception(jerrno::JERR__SYMLINK, oss.str(), "RecoveryManager", "analyzeJournalFileHeaders");
+            }
+            // Find second and third '/' from back of string, which contains the EFP directory name
+            *(::strrchr(buff, '/')) = '\0';
+            *(::strrchr(buff, '/')) = '\0';
+            int efpDataSize_kib = atoi(::strrchr(buff, '/') + 1);
             uninitFileList_.push_back(*i);
+            efpIdentity.pn_ = fileHeader._efp_partition;
+            efpIdentity.ds_ = efpDataSize_kib;
         } else if (headerQueueName.compare(queueName_) != 0) {
             std::ostringstream oss;
             oss << "Journal file " << (*i) << " belongs to queue \"" << headerQueueName << "\": ignoring";
@@ -406,6 +429,7 @@ void RecoveryManager::analyzeJournalFileHeaders(efpIdentity_t& efpIdentity) {
         }
     }
 
+std::cerr << "*** RecoveryManager::analyzeJournalFileHeaders() fileNumberMap_.size()=" << fileNumberMap_.size() << std::endl; // DEBUG
     if (fileNumberMap_.empty()) {
         journalEmptyFlag_ = true;
     } else {
@@ -905,7 +929,9 @@ bool RecoveryManager::readJournalFileHeader(const std::string& journalFileName,
     }
     ifs.close();
     ::memcpy(&fileHeaderRef, buffer, sizeof(::file_hdr_t));
-    if (::file_hdr_check(&fileHeaderRef, QLS_FILE_MAGIC, QLS_JRNL_VERSION, 0, QLS_MAX_QUEUE_NAME_LEN)) return false;
+    if (::file_hdr_check(&fileHeaderRef, QLS_FILE_MAGIC, QLS_JRNL_VERSION, 0, QLS_MAX_QUEUE_NAME_LEN)) {
+        return false;
+    }
     queueName.assign(buffer + sizeof(::file_hdr_t), fileHeaderRef._queue_name_len);
     return true;
 }

@@ -148,7 +148,7 @@ void MessageStoreImpl::initManagement ()
             mgmtObject = qmf::org::apache::qpid::linearstore::Store::shared_ptr (
                 new qmf::org::apache::qpid::linearstore::Store(agent, this, broker));
 
-            mgmtObject->set_location(storeDir);
+            mgmtObject->set_storeDir(storeDir);
             mgmtObject->set_tplIsInitialized(false);
             mgmtObject->set_tplDirectory(getTplBaseDir());
             mgmtObject->set_tplWritePageSize(tplWCachePgSizeSblks * QLS_SBLK_SIZE_BYTES);
@@ -406,7 +406,7 @@ void MessageStoreImpl::create(qpid::broker::PersistableQueue& queue_,
 
     if (queue_.getName().size() == 0)
     {
-        QLS_LOG(error, "Cannot create store for empty (null) queue name - ignoring and attempting to continue.");
+        QLS_LOG(error, "Cannot create store for empty (null) queue name - queue create ignored.");
         return;
     }
 
@@ -449,15 +449,15 @@ qpid::linearstore::journal::EmptyFilePool*
 MessageStoreImpl::getEmptyFilePool(const qpid::framing::FieldTable& args_) {
     qpid::framing::FieldTable::ValuePtr value;
     qpid::linearstore::journal::efpPartitionNumber_t localEfpPartition = defaultEfpPartitionNumber;
-    value = args_.get("qpid.efp_partition");
+    value = args_.get("qpid.efp_partition_num");
     if (value.get() != 0 && !value->empty() && value->convertsTo<int>()) {
-        localEfpPartition = chkEfpPartition((uint32_t)value->get<int>(), "qpid.efp_partition");
+        localEfpPartition = chkEfpPartition((uint32_t)value->get<int>(), "qpid.efp_partition_num");
     }
 
     qpid::linearstore::journal::efpDataSize_kib_t localEfpFileSizeKib = defaultEfpFileSize_kib;
-    value = args_.get("qpid.efp_file_size");
+    value = args_.get("qpid.efp_pool_file_size");
     if (value.get() != 0 && !value->empty() && value->convertsTo<int>()) {
-        localEfpFileSizeKib = chkEfpFileSizeKiB((uint32_t)value->get<int>(),"qpid.efp_file_size" );
+        localEfpFileSizeKib = chkEfpFileSizeKiB((uint32_t)value->get<int>(), "qpid.efp_pool_file_size");
     }
     return getEmptyFilePool(localEfpPartition, localEfpFileSizeKib);
 }
