@@ -42,6 +42,7 @@ const uint32_t jerrno::JERR__UNEXPRESPONSE       = 0x0108;
 const uint32_t jerrno::JERR__RECNFOUND           = 0x0109;
 const uint32_t jerrno::JERR__NOTIMPL             = 0x010a;
 const uint32_t jerrno::JERR__NULL                = 0x010b;
+const uint32_t jerrno::JERR__SYMLINK             = 0x010c;
 
 // class jcntl
 const uint32_t jerrno::JERR_JCNTL_STOPPED        = 0x0200;
@@ -112,10 +113,11 @@ const uint32_t jerrno::JERR_EFP_BADPARTITIONDIR  = 0x0d02;
 const uint32_t jerrno::JERR_EFP_BADEFPDIRNAME    = 0x0d03;
 const uint32_t jerrno::JERR_EFP_NOEFP            = 0x0d04;
 const uint32_t jerrno::JERR_EFP_EMPTY            = 0x0d05;
-const uint32_t jerrno::JERR_EFP_SYMLINK          = 0x0d06;
-const uint32_t jerrno::JERR_EFP_LSTAT            = 0x0d07;
-const uint32_t jerrno::JERR_EFP_BADFILETYPE      = 0x0d08;
-const uint32_t jerrno::JERR_EFP_FOPEN            = 0x0d09;
+const uint32_t jerrno::JERR_EFP_LSTAT            = 0x0d06;
+const uint32_t jerrno::JERR_EFP_BADFILETYPE      = 0x0d07;
+const uint32_t jerrno::JERR_EFP_FOPEN            = 0x0d08;
+const uint32_t jerrno::JERR_EFP_FWRITE           = 0x0d09;
+const uint32_t jerrno::JERR_EFP_MKDIR            = 0x0d0a;
 
 // Negative returns for some functions
 const int32_t jerrno::AIO_TIMEOUT                = -1;
@@ -140,6 +142,7 @@ jerrno::__init()
     _err_map[JERR__RECNFOUND] = "JERR__RECNFOUND: Record not found.";
     _err_map[JERR__NOTIMPL] = "JERR__NOTIMPL: Not implemented";
     _err_map[JERR__NULL] = "JERR__NULL: Operation on null pointer";
+    _err_map[JERR__SYMLINK] = "JERR__SYMLINK: Symbolic link operation failed";
 
     // class jcntl
     _err_map[JERR_JCNTL_STOPPED] = "JERR_JCNTL_STOPPED: Operation on stopped journal.";
@@ -210,10 +213,11 @@ jerrno::__init()
     _err_map[JERR_EFP_BADPARTITIONDIR] = "JERR_EFP_BADPARTITIONDIR: Invalid partition directory";
     _err_map[JERR_EFP_NOEFP] = "JERR_EFP_NOEFP: No Empty File Pool found for given partition and empty file size";
     _err_map[JERR_EFP_EMPTY] = "JERR_EFP_EMPTY: Empty File Pool is empty";
-    _err_map[JERR_EFP_SYMLINK] = "JERR_EFP_SYMLINK: Symbolic link operation failed";
     _err_map[JERR_EFP_LSTAT] = "JERR_EFP_LSTAT: lstat() operation failed";
     _err_map[JERR_EFP_BADFILETYPE] = "JERR_EFP_BADFILETYPE: File type incorrect for operation";
     _err_map[JERR_EFP_FOPEN] = "JERR_EFP_FOPEN: Unable to fopen file for write";
+    _err_map[JERR_EFP_FWRITE] = "JERR_EFP_FWRITE: Write failed";
+    _err_map[JERR_EFP_MKDIR] = "JERR_EFP_MKDIR: Directory creation failed";
 
     //_err_map[] = "";
 

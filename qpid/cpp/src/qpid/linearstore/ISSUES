@@ -25,7 +25,7 @@ Current/pending:
  ------ -------  ----------------------
    5359 -        Linearstore: Implement new management schema and wire into store
    5360 -        Linearstore: Evaluate and rework logging to produce a consistent log output
-   5361 1145359  Linearstore: No tests for linearstore functionality currently exist
+*  5361 1145359  Linearstore: No tests for linearstore functionality currently exist
                    svn r.1564893 2014-02-05: Added tx-test-soak.sh
                    svn r.1564935 2014-02-05: Added license text to tx-test-soak.sh
                    svn r.1625283 2014-09-16: Basic python tests from legacystore ported over to linearstore
@@ -41,11 +41,12 @@ Current/pending:
    -    1067480  [LinearStore] Provide a way to limit max count/size of empty files in EFP
    -    1067429  [LinearStore] last file from deleted queue is not moved to EFP  <queue delete issue>
    -    1067482  [LinearStore] Provide a way to prealocate empty pages in EFP
-*  5671          [linearstore] Add ability to use disk partitions and select per-queue EFPs
+*  5671 1160367  [linearstore] Add ability to use disk partitions and select per-queue EFPs
                    svn r.1636598 2014-11-04: WIP: New EFP and journal dir structure using symlinks
                    svn r.1637985 2014-11-10: WIP: Auto-upgrade from old dir structure to new
-   6230 1165200  [linearstore] qpid-qls-analyze fails when analyzing empty journal
-                   svn r.1643053 2014-11-18: Proposed fix
+*       1148807  [linearstore] Restarting broker with empty journal raises confusing warning
+*       1066256  [linearstore] Changing EFP size after using store breaks durable queue creation
+   
 
 
 
@@ -147,7 +148,9 @@ NO-JIRA -        Added missing Apache copyright/license text
                    svn r.1631360 2014-10-13 Proposed solution
    6157 1150397  linearstore: segfault when 2 journals request new journal file from empty EFP
                    svn r.1632504 2014-10-17 Proposed solution by pmoravec   
-   6248  1167911 [linearstore] Symlink creation fails if store dir path is not absolute
+   6230 1165200  [linearstore] qpid-qls-analyze fails when analyzing empty journal
+                   svn r.1643053 2014-11-18: Proposed fix
+   6248 1167911  [linearstore] Symlink creation fails if store dir path is not absolute
                    svn r.1641689 2014-11-25 Proposed solution
                    
 
@@ -194,7 +197,8 @@ no.   svn r  Q-JIRA     RHBZ       Date Alt Committer
 34. 1632504    6157  1150397 2014-10-17 (pmoravec)
 35. 1636598    5671          2014-11-04
 36. 1637985    5671          2014-11-10
-37. 1641689    6248  1167911 2014-11-25
+37. 1643053    6230  1165200 2014-11-18
+38. 1641689    6248  1167911 2014-11-25
 
 See above sections for details on these checkins.
 
