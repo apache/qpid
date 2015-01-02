@@ -39,12 +39,18 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.security.AccessControl;
 import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
 
 public class ACLFileAccessControlProviderImpl
         extends AbstractConfiguredObject<ACLFileAccessControlProviderImpl>
         implements ACLFileAccessControlProvider<ACLFileAccessControlProviderImpl>
 {
     private static final Logger LOGGER = Logger.getLogger(ACLFileAccessControlProviderImpl.class);
+
+    static
+    {
+        Handler.register();
+    }
 
     protected DefaultAccessControl _accessControl;
     protected final Broker _broker;
@@ -94,6 +100,7 @@ public class ACLFileAccessControlProviderImpl
         }
         catch(RuntimeException e)
         {
+            e.printStackTrace();
             throw new IllegalConfigurationException(e.getMessage(), e);
         }
         finally

@@ -18,8 +18,10 @@
  */
 package org.apache.qpid.server.security.access.config;
 
+import static org.mockito.Mockito.mock;
+
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.Map;
@@ -27,14 +29,11 @@ import java.util.Map;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectProperties.Property;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
-
-import static org.mockito.Mockito.mock;
 
 public class PlainConfigurationTest extends TestCase
 {
@@ -52,26 +51,9 @@ public class PlainConfigurationTest extends TestCase
         aclWriter.close();
 
         // Load ruleset
-        PlainConfiguration configFile = new PlainConfiguration(acl, mock(EventLoggerProvider.class));
-        configFile.load();
+        PlainConfiguration configFile = new PlainConfiguration(acl.getName(), mock(EventLoggerProvider.class));
+        configFile.load(new FileReader(acl));
         return configFile;
-    }
-
-    public void testMissingACLConfig() throws Exception
-    {
-        try
-        {
-            // Load ruleset
-            ConfigurationFile configFile = new PlainConfiguration(new File("doesnotexist"), mock(EventLoggerProvider.class));
-            configFile.load();
-
-            fail("fail");
-        }
-        catch (IllegalConfigurationException ce)
-        {
-            assertEquals(String.format(PlainConfiguration.CONFIG_NOT_FOUND_MSG, "doesnotexist"), ce.getMessage());
-            assertTrue(ce.getCause() instanceof FileNotFoundException);
-        }
     }
 
     public void testACLFileSyntaxContinuation() throws Exception

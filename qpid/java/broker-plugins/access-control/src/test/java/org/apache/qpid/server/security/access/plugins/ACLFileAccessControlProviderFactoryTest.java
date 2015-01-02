@@ -107,7 +107,7 @@ public class ACLFileAccessControlProviderFactoryTest extends QpidTestCase
         }
         catch (IllegalConfigurationException e)
         {
-            assertTrue("Unexpected exception message: " + e.getMessage(), Pattern.matches("ACL file '.*' is not found", e.getMessage()));
+            assertTrue("Unexpected exception message: " + e.getMessage(), Pattern.matches("Cannot convert .* to a readable resource", e.getMessage()));
         }
     }
 }
