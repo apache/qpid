@@ -824,12 +824,13 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
             throws AMQException, FailoverException
     {
         _currentPrefetch.set(0);
-        BasicQosBody basicQosBody = getProtocolHandler().getMethodRegistry().createBasicQosBody(sizePrefetch, messagePrefetch, false);
+        if(messagePrefetch > 0 || sizePrefetch > 0)
+        {
+            BasicQosBody basicQosBody =
+                    getProtocolHandler().getMethodRegistry().createBasicQosBody(sizePrefetch, messagePrefetch, false);
 
-        // todo send low water mark when protocol allows.
-        // todo Be aware of possible changes to parameter order as versions change.
-        getProtocolHandler().syncWrite(basicQosBody.generateFrame(getChannelId()), BasicQosOkBody.class);
-
+            getProtocolHandler().syncWrite(basicQosBody.generateFrame(getChannelId()), BasicQosOkBody.class);
+        }
     }
 
 
@@ -842,13 +843,17 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                     public Boolean execute() throws AMQException, FailoverException
                     {
                         int currentPrefetch = _currentPrefetch.get();
-                        if (currentPrefetch >= getPrefetch())
+                        if (currentPrefetch >= getPrefetch() && getPrefetch() >= 0)
                         {
                             BasicQosBody basicQosBody = getProtocolHandler().getMethodRegistry()
                                     .createBasicQosBody(0, currentPrefetch + 1, false);
 
                             getProtocolHandler().syncWrite(basicQosBody.generateFrame(getChannelId()),
                                                            BasicQosOkBody.class);
+                            if(currentPrefetch == 0 && !isSuspended())
+                            {
+                                sendSuspendChannel(false);
+                            }
                             _creditChanged.set(true);
                             return true;
                         }
@@ -863,8 +868,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
     protected void reduceCreditAfterAcknowledge() throws AMQException
     {
-        int acknowledgeMode = getAcknowledgeMode();
-        boolean manageCredit = acknowledgeMode == javax.jms.Session.CLIENT_ACKNOWLEDGE || acknowledgeMode == javax.jms.Session.SESSION_TRANSACTED;
+        boolean manageCredit = isManagingCredit();
 
         if(manageCredit && _creditChanged.compareAndSet(true,false))
         {
@@ -873,17 +877,39 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                     {
                         public Void execute() throws AMQException, FailoverException
                         {
-                            BasicQosBody basicQosBody =
-                                    getProtocolHandler().getMethodRegistry()
-                                            .createBasicQosBody(0, getPrefetch(), false);
+                            int prefetch = getPrefetch();
+                            if(prefetch == 0)
+                            {
+                                sendSuspendChannel(true);
+                            }
+                            else
+                            {
+                                BasicQosBody basicQosBody =
+                                        getProtocolHandler().getMethodRegistry()
+                                                .createBasicQosBody(0, prefetch == -1 ? 0 : prefetch, false);
 
-                            getProtocolHandler().syncWrite(basicQosBody.generateFrame(getChannelId()),
-                                                           BasicQosOkBody.class);
+                                getProtocolHandler().syncWrite(basicQosBody.generateFrame(getChannelId()),
+                                                               BasicQosOkBody.class);
+                            }
                             return null;
                         }
                     }, getProtocolHandler().getConnection()).execute();
         }
     }
+
+    protected void reduceCreditInPostDeliver()
+    {
+        int acknowledgeMode = getAcknowledgeMode();
+        boolean manageCredit = (acknowledgeMode == AUTO_ACKNOWLEDGE || acknowledgeMode == DUPS_OK_ACKNOWLEDGE) && getPrefetch() == 0;
+
+        if(manageCredit && _creditChanged.compareAndSet(true,false))
+        {
+            ChannelFlowBody body = getMethodRegistry().createChannelFlowBody(false);
+            AMQFrame channelFlowFrame = body.generateFrame(getChannelId());
+            getProtocolHandler().writeFrame(channelFlowFrame, true);
+        }
+    }
+
 
     protected void updateCurrentPrefetch(int delta)
     {
@@ -1413,6 +1439,15 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
             return null;
         }
     }
+
+    boolean isManagingCredit()
+    {
+        int acknowledgeMode = getAcknowledgeMode();
+        return acknowledgeMode == CLIENT_ACKNOWLEDGE
+               || acknowledgeMode == SESSION_TRANSACTED
+               || ((acknowledgeMode == AUTO_ACKNOWLEDGE || acknowledgeMode == DUPS_OK_ACKNOWLEDGE) && getPrefetch() == 0);
+    }
+
 
     public boolean isFlowBlocked()
     {
