@@ -22,7 +22,6 @@ package org.apache.qpid.client;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
-import javax.jms.Session;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -170,8 +169,7 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
     @Override
     public Message receive(final long l) throws JMSException
     {
-        int acknowledgeMode = getSession().getAcknowledgeMode();
-        boolean manageCredit = acknowledgeMode == Session.CLIENT_ACKNOWLEDGE || acknowledgeMode == Session.SESSION_TRANSACTED;
+        boolean manageCredit = getSession().isManagingCredit();
         boolean creditModified = false;
         try
         {
@@ -199,8 +197,7 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
     @Override
     public Message receiveNoWait() throws JMSException
     {
-        int acknowledgeMode = getSession().getAcknowledgeMode();
-        boolean manageCredit = acknowledgeMode == Session.CLIENT_ACKNOWLEDGE || acknowledgeMode == Session.SESSION_TRANSACTED;
+        boolean manageCredit = getSession().isManagingCredit();
         boolean creditModified = false;
         try
         {
@@ -227,5 +224,12 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
         {
             throw new JMSAMQException(e);
         }
+    }
+
+
+    void postDeliver(AbstractJMSMessage msg)
+    {
+        getSession().reduceCreditInPostDeliver();
+        super.postDeliver(msg);
     }
 }
