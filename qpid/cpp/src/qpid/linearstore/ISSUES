@@ -44,6 +44,7 @@ Current/pending:
 *  5671 1160367  [linearstore] Add ability to use disk partitions and select per-queue EFPs
                    svn r.1636598 2014-11-04: WIP: New EFP and journal dir structure using symlinks
                    svn r.1637985 2014-11-10: WIP: Auto-upgrade from old dir structure to new
+                   svn r.1649081 2015-01-02: WIP: Specify new queue using qpid-config --durable together with --efp-partition-num and/or --efp-pool-file-size. Needs testing.
 *       1148807  [linearstore] Restarting broker with empty journal raises confusing warning
 *       1066256  [linearstore] Changing EFP size after using store breaks durable queue creation
    
@@ -190,15 +191,15 @@ no.   svn r  Q-JIRA     RHBZ       Date Alt Committer
 28. 1596509    5767  1098118 2014-05-21 0.22-mrg (pmoravec)
 29. 1596633 NO-JIRA  1078937 2014-05-21 (includes tools install update)
 30. 1599243    5767  1098118 2014-06-02 0.22-mrg
-30. 1599243    5767  1098118 2014-06-02
-31. 1614665    5924  1124906 2014-07-30
-32. 1620426    6043  1089652 2014-08-25
-33. 1631360    6147  1152012 2014-10-13 (pmoravec)
-34. 1632504    6157  1150397 2014-10-17 (pmoravec)
-35. 1636598    5671          2014-11-04
-36. 1637985    5671          2014-11-10
-37. 1643053    6230  1165200 2014-11-18
-38. 1641689    6248  1167911 2014-11-25
+31. 1599243    5767  1098118 2014-06-02
+32. 1614665    5924  1124906 2014-07-30
+33. 1620426    6043  1089652 2014-08-25
+34. 1631360    6147  1152012 2014-10-13 (pmoravec)
+35. 1632504    6157  1150397 2014-10-17 (pmoravec)
+36. 1636598    5671          2014-11-04
+37. 1637985    5671          2014-11-10
+38. 1643053    6230  1165200 2014-11-18
+39. 1641689    6248  1167911 2014-11-25
 
 See above sections for details on these checkins.
 
