@@ -55,7 +55,7 @@ public class ACLFileAccessControlProviderImpl
     protected DefaultAccessControl _accessControl;
     protected final Broker _broker;
 
-    @ManagedAttributeField
+    @ManagedAttributeField( afterSet = "reloadAclFile")
     private String _path;
 
     @ManagedObjectFactoryConstructor
@@ -100,7 +100,6 @@ public class ACLFileAccessControlProviderImpl
         }
         catch(RuntimeException e)
         {
-            e.printStackTrace();
             throw new IllegalConfigurationException(e.getMessage(), e);
         }
         finally
@@ -117,6 +116,26 @@ public class ACLFileAccessControlProviderImpl
     {
         super.onOpen();
         _accessControl = new DefaultAccessControl(getPath(), _broker);
+    }
+
+    @SuppressWarnings("unused")
+    private void reloadAclFile()
+    {
+        try
+        {
+            DefaultAccessControl accessControl = new DefaultAccessControl(getPath(), _broker);
+            accessControl.open();
+            DefaultAccessControl oldAccessControl = _accessControl;
+            _accessControl = accessControl;
+            if(oldAccessControl != null)
+            {
+                oldAccessControl.close();
+            }
+        }
+        catch(RuntimeException e)
+        {
+            throw new IllegalConfigurationException(e.getMessage(), e);
+        }
     }
 
     @Override

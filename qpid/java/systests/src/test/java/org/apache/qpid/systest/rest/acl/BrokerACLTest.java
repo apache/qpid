@@ -795,10 +795,11 @@ public class BrokerACLTest extends QpidRestTestCase
 
         assertAccessControlProviderExistence(accessControlProviderName, true);
 
+        File aclFile = TestFileUtils.createTempFile(this, ".acl", "ACL ALLOW all all");
+
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(GroupProvider.NAME, accessControlProviderName);
-        attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
-        attributes.put(FileBasedGroupProvider.PATH, "/path/to/file");
+        attributes.put(AccessControlProvider.NAME, accessControlProviderName);
+        attributes.put(FileBasedGroupProvider.PATH, aclFile.getAbsolutePath());
         responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
         assertEquals("Setting of access control provider attributes should be allowed", 200, responseCode);
     }
