@@ -32,7 +32,7 @@ class MessageMap;
  * conjunction with the MessageMap class. This requires an existing
  * message to be 'replaced' by a newer message with the same key.
  */
-class Lvq : public Queue
+class Lvq : public virtual Queue
 {
   public:
     Lvq(const std::string&, std::auto_ptr<MessageMap>, const QueueSettings&, MessageStore* const, management::Manageable*, Broker*);
