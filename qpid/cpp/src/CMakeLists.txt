@@ -1077,6 +1077,7 @@ set (qpidbroker_SOURCES
      qpid/broker/IngressCompletion.cpp
      qpid/broker/Link.cpp
      qpid/broker/LinkRegistry.cpp
+     qpid/broker/LossyLvq.cpp
      qpid/broker/LossyQueue.cpp
      qpid/broker/Lvq.cpp
      qpid/broker/Message.cpp

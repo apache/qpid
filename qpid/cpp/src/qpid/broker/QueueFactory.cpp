@@ -22,6 +22,7 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/QueueSettings.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/LossyLvq.h"
 #include "qpid/broker/LossyQueue.h"
 #include "qpid/broker/Lvq.h"
 #include "qpid/broker/Messages.h"
@@ -51,10 +52,17 @@ boost::shared_ptr<Queue> QueueFactory::create(const std::string& name, const Que
     boost::shared_ptr<QueueFlowLimit> flow_ptr(QueueFlowLimit::createLimit(name, settings));
 
     //1. determine Queue type (i.e. whether we are subclassing Queue)
-    // -> if 'ring' policy is in use then subclass
     boost::shared_ptr<Queue> queue;
     if (settings.dropMessagesAtLimit) {
-        queue = boost::shared_ptr<Queue>(new LossyQueue(name, settings, settings.durable ? store : 0, parent, broker));
+        // -> if 'ring' policy is in use then subclass
+        if (settings.lvqKey.size()) {
+            //combination of ring and lvq:
+            std::auto_ptr<MessageMap> map(new MessageMap(settings.lvqKey));
+            queue = boost::shared_ptr<Queue>(new LossyLvq(name, map, settings, settings.durable ? store : 0, parent, broker));
+        } else {
+            //simple ring:
+            queue = boost::shared_ptr<Queue>(new LossyQueue(name, settings, settings.durable ? store : 0, parent, broker));
+        }
     } else if (settings.selfDestructAtLimit) {
         queue = boost::shared_ptr<Queue>(new SelfDestructQueue(name, settings, settings.durable ? store : 0, parent, broker));
     } else if (settings.lvqKey.size()) {
