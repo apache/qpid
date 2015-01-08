@@ -49,7 +49,7 @@ SenderContext::SenderContext(pn_session_t* session, const std::string& n, const 
 
 SenderContext::~SenderContext()
 {
-    //pn_link_free(sender);
+    pn_link_free(sender);
 }
 
 void SenderContext::close()
