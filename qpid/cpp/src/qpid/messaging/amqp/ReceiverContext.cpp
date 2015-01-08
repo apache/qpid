@@ -39,7 +39,7 @@ ReceiverContext::ReceiverContext(pn_session_t* session, const std::string& n, co
     capacity(0), used(0) {}
 ReceiverContext::~ReceiverContext()
 {
-    //pn_link_free(receiver);
+    pn_link_free(receiver);
 }
 
 void ReceiverContext::setCapacity(uint32_t c)
