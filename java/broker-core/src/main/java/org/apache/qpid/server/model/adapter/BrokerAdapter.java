@@ -180,6 +180,14 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             deleted();
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
         }
+
+        Collection<AccessControlProvider<?>> accessControlProviders = getAccessControlProviders();
+
+        if(accessControlProviders != null && accessControlProviders.size() > 1)
+        {
+            deleted();
+            throw new IllegalArgumentException("At most one AccessControlProvider can be defined");
+        }
     }
 
     @Override
@@ -242,14 +250,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             if (children != null) {
                 for (final ConfiguredObject<?> child : children) {
 
-                    if (child instanceof  AccessControlProvider)
-                    {
-                        addAccessControlProvider((AccessControlProvider)child);
-                    }
-                    else
-                    {
-                        child.addChangeListener(this);
-                    }
+                    child.addChangeListener(this);
 
                     if (child.getState() == State.ERRORED )
                     {
@@ -578,21 +579,16 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     private AccessControlProvider<?> createAccessControlProvider(final Map<String, Object> attributes)
     {
+        final Collection<AccessControlProvider<?>> currentProviders = getAccessControlProviders();
+        if(currentProviders != null && !currentProviders.isEmpty())
+        {
+            throw new IllegalConfigurationException("Cannot add a second AccessControlProvider");
+        }
         AccessControlProvider<?> accessControlProvider = (AccessControlProvider<?>) createChild(AccessControlProvider.class, attributes);
-        addAccessControlProvider(accessControlProvider);
+        accessControlProvider.addChangeListener(this);
 
         return accessControlProvider;
 
-    }
-
-    private void addAccessControlProvider(final AccessControlProvider<?> accessControlProvider)
-    {
-        accessControlProvider.addChangeListener(this);
-        accessControlProvider.addChangeListener(_securityManager);
-        if(accessControlProvider.getState() == State.ACTIVE)
-        {
-            _securityManager.addPlugin(accessControlProvider.getAccessControl());
-        }
     }
 
     private boolean deleteAccessControlProvider(AccessControlProvider<?> accessControlProvider)

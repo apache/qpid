@@ -125,34 +125,28 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
 
     public void testReplaceAccessControlProvider() throws Exception
     {
-        String accessControlProviderName1 = getTestName() + "1";
 
-        //verify that the access control provider doesn't exist, and
-        //in doing so implicitly verify that the 'denied' user can
-        //actually currently connect because no ACL is in effect yet
-        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-        assertAccessControlProviderExistence(accessControlProviderName1, false);
 
         //create the access control provider using the 'allowed' user
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
-        int responseCode = createAccessControlProvider(accessControlProviderName1, _aclFileContent1);
+        int responseCode = createAccessControlProvider(getTestName(), _aclFileContent1);
         assertEquals("Access control provider creation should be allowed", 201, responseCode);
 
         //verify it exists with the 'allowed' user
-        assertAccessControlProviderExistence(accessControlProviderName1, true);
+        assertAccessControlProviderExistence(getTestName(), true);
 
         //verify the 'denied' and 'other' user can no longer access the management
         //interface due to the just-created ACL file now preventing them
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-        assertCanAccessManagementInterface(accessControlProviderName1, false);
+        assertCanAccessManagementInterface(getTestName(), false);
         getRestTestHelper().setUsernameAndPassword(OTHER_USER, OTHER_USER);
-        assertCanAccessManagementInterface(accessControlProviderName1, false);
+        assertCanAccessManagementInterface(getTestName(), false);
 
         //create the replacement access control provider using the 'allowed' user.
         String accessControlProviderName2 = getTestName() + "2";
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
-        responseCode = createAccessControlProvider(accessControlProviderName2, _aclFileContent2);
-        assertEquals("Access control provider creation should be allowed", 201, responseCode);
+        responseCode = createAccessControlProvider(getTestName(), _aclFileContent2);
+        assertEquals("Access control provider creation should be allowed", 200, responseCode);
 
         //Verify that it took effect immediately, replacing the first access control provider
 
@@ -162,11 +156,6 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
         getRestTestHelper().setUsernameAndPassword(OTHER_USER, OTHER_USER);
         assertCanAccessManagementInterface(accessControlProviderName2, true);
 
-        //remove the original access control provider using the 'allowed' user
-        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
-        responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName1, "DELETE");
-        assertEquals("Access control provider deletion should be allowed", 200, responseCode);
-        assertAccessControlProviderExistence(accessControlProviderName1, false);
 
         //verify the 'denied' user still can't access the management interface, the 'other' user still can, thus
         //confirming that the second access control provider is still in effect
@@ -177,61 +166,6 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
     }
 
 
-    public void testAddAndRemoveSecondAccessControlProviderReinstatesOriginal() throws Exception
-    {
-        String accessControlProviderName1 = getTestName() + "1";
-
-        //verify that the access control provider doesn't exist, and
-        //in doing so implicitly verify that the 'denied' user can
-        //actually currently connect because no ACL is in effect yet
-        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-        assertAccessControlProviderExistence(accessControlProviderName1, false);
-
-        //create the access control provider using the 'allowed' user
-        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
-        int responseCode = createAccessControlProvider(accessControlProviderName1, _aclFileContent1);
-        assertEquals("Access control provider creation should be allowed", 201, responseCode);
-
-        //verify it exists with the 'allowed' user
-        assertAccessControlProviderExistence(accessControlProviderName1, true);
-
-        //verify the 'denied' and 'other' user can no longer access the management
-        //interface due to the just-created ACL file now preventing them
-        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-        assertCanAccessManagementInterface(accessControlProviderName1, false);
-        getRestTestHelper().setUsernameAndPassword(OTHER_USER, OTHER_USER);
-        assertCanAccessManagementInterface(accessControlProviderName1, false);
-
-        //create the replacement access control provider using the 'allowed' user.
-        String accessControlProviderName2 = getTestName() + "2";
-        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
-        responseCode = createAccessControlProvider(accessControlProviderName2, _aclFileContent2);
-        assertEquals("Access control provider creation should be allowed", 201, responseCode);
-
-        //Verify that it took effect immediately, replacing the first access control provider
-
-        //verify the 'denied' user still can't access the management interface, but the 'other' user now CAN.
-        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-        assertCanAccessManagementInterface(accessControlProviderName2, false);
-        getRestTestHelper().setUsernameAndPassword(OTHER_USER, OTHER_USER);
-        assertCanAccessManagementInterface(accessControlProviderName2, true);
-
-        //remove the second access control provider using the 'allowed' user
-        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
-        responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName2, "DELETE");
-        assertEquals("Access control provider deletion should be allowed", 200, responseCode);
-        assertAccessControlProviderExistence(accessControlProviderName2, false);
-
-        //verify the 'denied' user still can't access the management interface, the
-        //'other' now CANT again, the 'allowed' still can, thus confirming that the
-        //first access control provider is now in effect once again
-        getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
-        assertCanAccessManagementInterface(accessControlProviderName2, false);
-        getRestTestHelper().setUsernameAndPassword(OTHER_USER, OTHER_USER);
-        assertCanAccessManagementInterface(accessControlProviderName2, false);
-        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
-        assertCanAccessManagementInterface(accessControlProviderName2, true);
-    }
 
     public void testRemovalOfAccessControlProviderInErrorStateUsingManagementMode() throws Exception
     {
