@@ -44,7 +44,6 @@ import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.Broker;
-import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -57,18 +56,17 @@ import org.apache.qpid.server.security.access.OperationLoggingDetails;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.TaskPrincipal;
 
-public class SecurityManager implements ConfigurationChangeListener
+public class SecurityManager
 {
     private static final Subject SYSTEM = new Subject(true,
                                                      Collections.singleton(new SystemPrincipal()),
                                                      Collections.emptySet(),
                                                      Collections.emptySet());
 
-    private final ConcurrentMap<String, AccessControl> _plugins = new ConcurrentHashMap<String, AccessControl>();
     private final boolean _managementMode;
     private final Broker<?> _broker;
 
-    private final ConcurrentMap<PublishAccessCheckCacheEntry, PublishAccessCheck> _publishAccessCheckCache = new ConcurrentHashMap<SecurityManager.PublishAccessCheckCacheEntry, SecurityManager.PublishAccessCheck>();
+    private final ConcurrentMap<PublishAccessCheckCacheEntry, PublishAccessCheck> _publishAccessCheckCache = new ConcurrentHashMap<PublishAccessCheckCacheEntry, SecurityManager.PublishAccessCheck>();
 
     public SecurityManager(Broker<?> broker, boolean managementMode)
     {
@@ -135,16 +133,6 @@ public class SecurityManager implements ConfigurationChangeListener
         return user;
     }
 
-    public void addPlugin(final AccessControl accessControl)
-    {
-
-        synchronized (_plugins)
-        {
-            String pluginTypeName = getPluginTypeName(accessControl);
-
-            _plugins.put(pluginTypeName, accessControl);
-        }
-    }
 
     private static final class SystemPrincipal implements Principal
     {
@@ -167,24 +155,31 @@ public class SecurityManager implements ConfigurationChangeListener
     private boolean checkAllPlugins(AccessCheck checker)
     {
         // If we are running as SYSTEM then no ACL checking
-        if(isSystemProcess())
+        if(isSystemProcess() || _managementMode)
         {
             return true;
         }
 
-        for (AccessControl plugin : _plugins.values())
+
+        Collection<AccessControlProvider<?>> accessControlProviders = _broker.getAccessControlProviders();
+        if(accessControlProviders != null && !accessControlProviders.isEmpty())
         {
-            Result remaining = checker.allowed(plugin);
-            if (remaining == Result.DEFER)
+            AccessControlProvider<?> accessControlProvider = accessControlProviders.iterator().next();
+            if (accessControlProvider != null
+                && accessControlProvider.getState() == State.ACTIVE
+                && accessControlProvider.getAccessControl() != null)
             {
-                remaining = plugin.getDefault();
-            }
-            if (remaining == Result.DENIED)
-            {
-                return false;
+                Result remaining = checker.allowed(accessControlProvider.getAccessControl());
+                if (remaining == Result.DEFER)
+                {
+                    remaining = accessControlProvider.getAccessControl().getDefault();
+                }
+                if (remaining == Result.DENIED)
+                {
+                    return false;
+                }
             }
         }
-
         // getting here means either allowed or abstained from all plugins
         return true;
     }
@@ -484,92 +479,6 @@ public class SecurityManager implements ConfigurationChangeListener
         {
             return plugin.authorise(PUBLISH, EXCHANGE, _props);
         }
-    }
-
-    @Override
-    public void stateChanged(ConfiguredObject object, State oldState, State newState)
-    {
-        if(_managementMode)
-        {
-            //AccessControl is disabled in ManagementMode
-            return;
-        }
-
-        if(object instanceof AccessControlProvider)
-        {
-            if(newState == State.ACTIVE)
-            {
-                synchronized (_plugins)
-                {
-                    AccessControl accessControl = ((AccessControlProvider)object).getAccessControl();
-                    String pluginTypeName = getPluginTypeName(accessControl);
-
-                    _plugins.put(pluginTypeName, accessControl);
-                }
-            }
-            else if(newState == State.DELETED)
-            {
-                synchronized (_plugins)
-                {
-                    AccessControl control = ((AccessControlProvider)object).getAccessControl();
-                    String pluginTypeName = getPluginTypeName(control);
-
-                    // Remove the type->control mapping for this type key only if the
-                    // given control is actually referred to.
-                    if(_plugins.containsValue(control))
-                    {
-                        // If we are removing this control, check if another of the same
-                        // type already exists on the broker and use it in instead.
-                        AccessControl other = null;
-                        Collection<AccessControlProvider<?>> providers = _broker.getAccessControlProviders();
-                        for(AccessControlProvider p : providers)
-                        {
-                            if(p == object || p.getState() != State.ACTIVE)
-                            {
-                                //we don't count ourself as another
-                                continue;
-                            }
-
-                            AccessControl ac = p.getAccessControl();
-                            if(pluginTypeName.equals(getPluginTypeName(ac)))
-                            {
-                                other = ac;
-                                break;
-                            }
-                        }
-
-                        if(other != null)
-                        {
-                            //Another control of this type was found, use it instead
-                            _plugins.replace(pluginTypeName, control, other);
-                        }
-                        else
-                        {
-                            //No other was found, remove the type entirely
-                            _plugins.remove(pluginTypeName);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @Override
-    public void childAdded(ConfiguredObject object, ConfiguredObject child)
-    {
-        // no op
-    }
-
-    @Override
-    public void childRemoved(ConfiguredObject object, ConfiguredObject child)
-    {
-        // no op
-    }
-
-    @Override
-    public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
-    {
-        // no op
     }
 
     public boolean authoriseConfiguringBroker(String configuredObjectName, Class<? extends ConfiguredObject> configuredObjectType, Operation configuredObjectOperation)

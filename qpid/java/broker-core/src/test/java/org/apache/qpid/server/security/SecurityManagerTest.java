@@ -30,6 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.security.AccessControlException;
+import java.util.Collections;
 
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.consumer.ConsumerImpl;
@@ -68,11 +69,13 @@ public class SecurityManagerTest extends QpidTestCase
 
         AccessControlProvider<?> aclProvider = mock(AccessControlProvider.class);
         when(aclProvider.getAccessControl()).thenReturn(_accessControl);
+        when(aclProvider.getState()).thenReturn(State.ACTIVE);
 
         when(_virtualHost.getName()).thenReturn(TEST_VIRTUAL_HOST);
 
-        _securityManager = new SecurityManager(mock(Broker.class), false);
-        _securityManager.stateChanged(aclProvider, State.UNINITIALIZED, State.ACTIVE);
+        Broker broker = mock(Broker.class);
+        when(broker.getAccessControlProviders()).thenReturn(Collections.singleton(aclProvider));
+        _securityManager = new SecurityManager(broker, false);
     }
 
     public void testAuthoriseCreateBinding()
