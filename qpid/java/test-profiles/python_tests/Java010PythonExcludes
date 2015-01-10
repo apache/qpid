@@ -53,6 +53,8 @@ qpid_tests.broker_0_10.extensions.ExtensionTests.test_timed_autodelete
 qpid_tests.broker_0_10.priority.PriorityTests.test_ring_queue*
 qpid_tests.broker_0_10.priority.PriorityTests.test_fairshare*
 qpid_tests.broker_0_10.priority.PriorityTests.test_prioritised_delivery_with_alias
+#QPID-6299 broker does not support ring queue on lvq
+qpid_tests.broker_0_10.lvq.LVQTests.test_ring_lvq2
 
 #The broker does not support the autodelete property on exchanges
 qpid_tests.broker_0_10.exchange.AutodeleteTests.testAutodelete*
