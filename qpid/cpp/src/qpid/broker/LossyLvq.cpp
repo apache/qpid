@@ -19,6 +19,7 @@
  *
  */
 #include "LossyLvq.h"
+#include "MessageMap.h"
 
 namespace qpid {
 namespace broker {
