@@ -90,7 +90,6 @@ public final class BrokerModel extends Model
 
         addRelationship(AuthenticationProvider.class, User.class);
         addRelationship(AuthenticationProvider.class, PreferencesProvider.class);
-        addRelationship(User.class, GroupMember.class);
 
         addRelationship(GroupProvider.class, Group.class);
         addRelationship(Group.class, GroupMember.class);

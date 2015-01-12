@@ -19,7 +19,11 @@
  */
 package org.apache.qpid.server.model;
 
-@ManagedObject
+import org.apache.qpid.server.security.group.GroupImpl;
+import org.apache.qpid.server.security.group.GroupPrincipal;
+
+@ManagedObject( defaultType = GroupImpl.CONFIG_TYPE )
 public interface Group<X extends Group<X>> extends ConfiguredObject<X>
 {
+    GroupPrincipal getGroupPrincipal();
 }
