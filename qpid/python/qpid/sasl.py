@@ -28,6 +28,9 @@ class WrapperClient:
     self._cli = _Client()
 
   def setAttr(self, name, value):
+    # Allow unicode user names and passwords
+    if isinstance(value, unicode):
+      value = value.encode('utf8')
     status = self._cli.setAttr(str(name), str(value))
     if status and name == 'username':
       status = self._cli.setAttr('externaluser', str(value))
