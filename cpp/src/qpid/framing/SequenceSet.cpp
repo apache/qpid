@@ -54,7 +54,11 @@ void SequenceSet::decode(Buffer& buffer)
         throw IllegalArgumentException(QPID_MSG("Invalid size for sequence set: " << size)); 
 
     for (uint16_t i = 0; i < count; i++) {
-        add(SequenceNumber(buffer.getLong()), SequenceNumber(buffer.getLong()));
+        SequenceNumber a(buffer.getLong());
+        SequenceNumber b(buffer.getLong());
+        if (b < a)
+            throw IllegalArgumentException(QPID_MSG("Invalid range in sequence set: " << a << " -> " << b));
+        add(a, b);
     }
 }
 
