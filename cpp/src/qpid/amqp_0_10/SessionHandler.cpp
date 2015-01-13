@@ -276,6 +276,7 @@ void SessionHandler::flush(bool expected, bool confirmed, bool completed) {
 }
 
 void SessionHandler::gap(const SequenceSet& /*commands*/) {
+    checkAttached();
     throw NotImplementedException("session.gap not supported");
 }
 
