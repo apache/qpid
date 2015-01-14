@@ -20,23 +20,20 @@
  */
 package org.apache.qpid.systest.rest;
 
-import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
+import javax.servlet.http.HttpServletResponse;
+
 
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.security.FileKeyStore;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestSSLConstants;
+import org.apache.qpid.util.DataUrlUtils;
+import org.apache.qpid.util.FileUtils;
 
 public class KeyStoreRestTest extends QpidRestTestCase
 {
@@ -67,13 +64,31 @@ public class KeyStoreRestTest extends QpidRestTestCase
         String certAlias = "app2";
 
         assertNumberOfKeyStores(1);
-        createKeyStore(name, certAlias);
+        createKeyStore(name, certAlias, TestSSLConstants.KEYSTORE, TestSSLConstants.KEYSTORE_PASSWORD);
         assertNumberOfKeyStores(2);
 
         List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("keystore/" + name);
         assertNotNull("details cannot be null", keyStores);
 
         assertKeyStoreAttributes(keyStores.get(0), name, TestSSLConstants.KEYSTORE, certAlias);
+    }
+
+    public void testCreateWithDataUrl() throws Exception
+    {
+        super.setUp();
+
+        String name = getTestName();
+        byte[] keystoreAsBytes = FileUtils.readFileAsBytes(TestSSLConstants.KEYSTORE);
+        String dataUrlForKeyStore = DataUrlUtils.getDataUrlForBytes(keystoreAsBytes);
+
+        assertNumberOfKeyStores(1);
+        createKeyStore(name, null, dataUrlForKeyStore, TestSSLConstants.KEYSTORE_PASSWORD);
+        assertNumberOfKeyStores(2);
+
+        List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("keystore/" + name);
+        assertNotNull("details cannot be null", keyStores);
+
+        assertKeyStoreAttributes(keyStores.get(0), name, dataUrlForKeyStore, null);
     }
 
     public void testDelete() throws Exception
@@ -84,11 +99,10 @@ public class KeyStoreRestTest extends QpidRestTestCase
         String certAlias = "app2";
 
         assertNumberOfKeyStores(1);
-        createKeyStore(name, certAlias);
+        createKeyStore(name, certAlias, TestSSLConstants.KEYSTORE, TestSSLConstants.KEYSTORE_PASSWORD);
         assertNumberOfKeyStores(2);
 
-        int responseCode = getRestTestHelper().submitRequest("keystore/" + name , "DELETE");
-        assertEquals("Unexpected response code for provider deletion", 200, responseCode);
+        getRestTestHelper().submitRequest("keystore/" + name, "DELETE", HttpServletResponse.SC_OK);
 
         List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
         assertNotNull("details should not be null", keyStore);
@@ -101,62 +115,21 @@ public class KeyStoreRestTest extends QpidRestTestCase
                 QPID_HOME + "/../" + TestSSLConstants.BROKER_KEYSTORE, null);
     }
 
-    public void testDeleteFailsWhenKeyStoreInUse() throws Exception
-    {
-        String name = "testDeleteFailsWhenKeyStoreInUse";
-
-        //add a new key store config to use
-        Map<String, Object> sslKeyStoreAttributes = new HashMap<String, Object>();
-        sslKeyStoreAttributes.put(KeyStore.NAME, name);
-        sslKeyStoreAttributes.put(FileKeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
-        sslKeyStoreAttributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
-        getBrokerConfiguration().addObjectConfiguration(KeyStore.class,sslKeyStoreAttributes);
-
-        //add the SSL port using it
-        Map<String, Object> sslPortAttributes = new HashMap<String, Object>();
-        sslPortAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
-        sslPortAttributes.put(Port.PORT, DEFAULT_SSL_PORT);
-        sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
-        sslPortAttributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
-        sslPortAttributes.put(Port.KEY_STORE, name);
-        getBrokerConfiguration().addObjectConfiguration(Port.class,sslPortAttributes);
-
-        super.setUp();
-
-        //verify the keystore is there
-        assertNumberOfKeyStores(2);
-
-        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
-        assertNotNull("details should not be null", keyStore);
-        assertKeyStoreAttributes(keyStore.get(0), name, TestSSLConstants.BROKER_KEYSTORE, null);
-
-        //try to delete it, which should fail as it is in use
-        int responseCode = getRestTestHelper().submitRequest("keystore/" + name , "DELETE");
-        assertEquals("Unexpected response code for provider deletion", 409, responseCode);
-
-        //check its still there
-        assertNumberOfKeyStores(2);
-        keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
-        assertNotNull("details should not be null", keyStore);
-        assertKeyStoreAttributes(keyStore.get(0), name, TestSSLConstants.BROKER_KEYSTORE, null);
-    }
-
-    public void testUpdateWithGoodPathSucceeds() throws Exception
+    public void testUpdate() throws Exception
     {
         super.setUp();
 
         String name = getTestName();
 
         assertNumberOfKeyStores(1);
-        createKeyStore(name, null);
+        createKeyStore(name, null, TestSSLConstants.KEYSTORE, TestSSLConstants.KEYSTORE_PASSWORD);
         assertNumberOfKeyStores(2);
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(KeyStore.NAME, name);
         attributes.put(FileKeyStore.PATH, TestSSLConstants.UNTRUSTED_KEYSTORE);
 
-        int responseCode = getRestTestHelper().submitRequest("keystore/" + name , "PUT", attributes);
-        assertEquals("Unexpected response code for keystore update", 200, responseCode);
+        getRestTestHelper().submitRequest("keystore/" + name, "PUT", attributes, HttpServletResponse.SC_OK);
 
         List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
         assertNotNull("details should not be null", keyStore);
@@ -164,73 +137,8 @@ public class KeyStoreRestTest extends QpidRestTestCase
         assertKeyStoreAttributes(keyStore.get(0), name, TestSSLConstants.UNTRUSTED_KEYSTORE, null);
     }
 
-    public void testUpdateWithNonExistentPathFails() throws Exception
-    {
-        super.setUp();
 
-        String name = getTestName();
-
-        assertNumberOfKeyStores(1);
-        createKeyStore(name, null);
-        assertNumberOfKeyStores(2);
-
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(KeyStore.NAME, name);
-        attributes.put(FileKeyStore.PATH, "does.not.exist");
-
-        int responseCode = getRestTestHelper().submitRequest("keystore/" + name , "PUT", attributes);
-        assertEquals("Unexpected response code for keystore update", 409, responseCode);
-
-        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
-        assertNotNull("details should not be null", keyStore);
-
-        //verify the details remain unchanged
-        assertKeyStoreAttributes(keyStore.get(0), name, TestSSLConstants.KEYSTORE, null);
-    }
-
-    public void testUpdateCertificateAlias() throws Exception
-    {
-        super.setUp();
-
-        String name = getTestName();
-
-        assertNumberOfKeyStores(1);
-        createKeyStore(name, "app1");
-        assertNumberOfKeyStores(2);
-
-        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
-        assertNotNull("details should not be null", keyStore);
-        assertKeyStoreAttributes(keyStore.get(0), name, TestSSLConstants.KEYSTORE, "app1");
-
-        //Update the certAlias from app1 to app2
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(KeyStore.NAME, name);
-        attributes.put(FileKeyStore.CERTIFICATE_ALIAS, "app2");
-
-        int responseCode = getRestTestHelper().submitRequest("keystore/" + name , "PUT", attributes);
-        assertEquals("Unexpected response code for keystore update", 200, responseCode);
-
-        keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
-        assertNotNull("details should not be null", keyStore);
-
-        assertKeyStoreAttributes(keyStore.get(0), name, TestSSLConstants.KEYSTORE, "app2");
-
-        //Update the certAlias to clear it (i.e go from from app1 to null)
-        attributes = new HashMap<String, Object>();
-        attributes.put(KeyStore.NAME, name);
-        attributes.put(FileKeyStore.CERTIFICATE_ALIAS, null);
-
-        responseCode = getRestTestHelper().submitRequest("keystore/" + name , "PUT", attributes);
-        assertEquals("Unexpected response code for keystore update", 200, responseCode);
-
-        keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
-        assertNotNull("details should not be null", keyStore);
-
-        assertKeyStoreAttributes(keyStore.get(0), name, TestSSLConstants.KEYSTORE, null);
-    }
-
-    private List<Map<String, Object>> assertNumberOfKeyStores(int numberOfKeystores) throws IOException,
-    JsonParseException, JsonMappingException
+    private List<Map<String, Object>> assertNumberOfKeyStores(int numberOfKeystores) throws Exception
     {
         List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("keystore");
         assertNotNull("keystores should not be null", keyStores);
@@ -239,16 +147,18 @@ public class KeyStoreRestTest extends QpidRestTestCase
         return keyStores;
     }
 
-    private void createKeyStore(String name, String certAlias) throws IOException, JsonGenerationException, JsonMappingException
+    private void createKeyStore(String name, String certAlias, final String keyStorePath, final String keystorePassword) throws Exception
     {
-        Map<String, Object> keyStoreAttributes = new HashMap<String, Object>();
+        Map<String, Object> keyStoreAttributes = new HashMap<>();
         keyStoreAttributes.put(KeyStore.NAME, name);
-        keyStoreAttributes.put(FileKeyStore.PATH, TestSSLConstants.KEYSTORE);
-        keyStoreAttributes.put(FileKeyStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
-        keyStoreAttributes.put(FileKeyStore.CERTIFICATE_ALIAS, certAlias);
+        keyStoreAttributes.put(FileKeyStore.PATH, keyStorePath);
+        keyStoreAttributes.put(FileKeyStore.PASSWORD, keystorePassword);
+        if (certAlias != null)
+        {
+            keyStoreAttributes.put(FileKeyStore.CERTIFICATE_ALIAS, certAlias);
+        }
 
-        int responseCode = getRestTestHelper().submitRequest("keystore/" + name, "PUT", keyStoreAttributes);
-        assertEquals("Unexpected response code", 201, responseCode);
+        getRestTestHelper().submitRequest("keystore/" + name, "PUT", keyStoreAttributes, HttpServletResponse.SC_CREATED);
     }
 
     private void assertKeyStoreAttributes(Map<String, Object> keystore, String name, String path, String certAlias)
@@ -261,12 +171,16 @@ public class KeyStoreRestTest extends QpidRestTestCase
                      AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.PASSWORD));
         assertEquals("unexpected type of default systests key store",
                 java.security.KeyStore.getDefaultType(), keystore.get(FileKeyStore.KEY_STORE_TYPE));
-        assertEquals("unexpected certificateAlias value",
-                certAlias, keystore.get(FileKeyStore.CERTIFICATE_ALIAS));
         if(certAlias == null)
         {
             assertFalse("should not be a certificateAlias attribute",
                             keystore.containsKey(FileKeyStore.CERTIFICATE_ALIAS));
+        }
+        else
+        {
+            assertEquals("unexpected certificateAlias value",
+                         certAlias, keystore.get(FileKeyStore.CERTIFICATE_ALIAS));
+
         }
     }
 }

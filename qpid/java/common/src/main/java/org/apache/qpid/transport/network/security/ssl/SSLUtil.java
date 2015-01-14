@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.Principal;
@@ -244,6 +245,23 @@ public class SSLUtil
                 {
                 }
             }
+        }
+        return ks;
+    }
+
+    public static KeyStore getInitializedKeyStore(URL storePath, String storePassword, String keyStoreType) throws GeneralSecurityException, IOException
+    {
+        KeyStore ks = KeyStore.getInstance(keyStoreType);
+        try(InputStream in = storePath.openStream())
+        {
+            if (in == null && !"PKCS11".equalsIgnoreCase(keyStoreType)) // PKCS11 will not require an explicit path
+            {
+                throw new IOException("Unable to load keystore resource: " + storePath);
+            }
+
+            char[] storeCharPassword = storePassword == null ? null : storePassword.toCharArray();
+
+            ks.load(in, storeCharPassword);
         }
         return ks;
     }

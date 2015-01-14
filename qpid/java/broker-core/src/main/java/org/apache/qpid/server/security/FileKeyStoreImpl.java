@@ -20,11 +20,15 @@
  */
 package org.apache.qpid.server.security;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.AccessControlException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,6 +52,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
+import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
 import org.apache.qpid.transport.network.security.ssl.QpidClientX509KeyManager;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
@@ -69,7 +74,12 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
     private String _password;
 
 
-    private Broker<?> _broker;
+    private final Broker<?> _broker;
+
+    static
+    {
+        Handler.register();
+    }
 
     @ManagedObjectFactoryConstructor
     public FileKeyStoreImpl(Map<String, Object> attributes, Broker<?> broker)
@@ -152,14 +162,25 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
         java.security.KeyStore keyStore;
         try
         {
-            String path = fileKeyStore.getPath();
+            URL url = getUrlFromString(fileKeyStore.getPath());
             String password = fileKeyStore.getPassword();
             String keyStoreType = fileKeyStore.getKeyStoreType();
-            keyStore = SSLUtil.getInitializedKeyStore(path, password, keyStoreType);
+            keyStore = SSLUtil.getInitializedKeyStore(url, password, keyStoreType);
         }
+
         catch (Exception e)
         {
-            throw new IllegalConfigurationException("Cannot instantiate key store at " + fileKeyStore.getPath(), e);
+            final String message;
+            if (e instanceof IOException && e.getCause() != null && e.getCause() instanceof UnrecoverableKeyException)
+            {
+                message = "Check key store password. Cannot instantiate key store from '" + fileKeyStore.getPath() + "'.";
+            }
+            else
+            {
+                message = "Cannot instantiate key store from '" + fileKeyStore.getPath() + "'.";
+            }
+
+            throw new IllegalConfigurationException(message, e);
         }
 
         if (fileKeyStore.getCertificateAlias() != null)
@@ -176,8 +197,8 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
             }
             if (cert == null)
             {
-                throw new IllegalConfigurationException("Cannot find a certificate with alias " + fileKeyStore.getCertificateAlias()
-                        + "in key store : " + fileKeyStore.getPath());
+                throw new IllegalConfigurationException("Cannot find a certificate with alias '" + fileKeyStore.getCertificateAlias()
+                        + "' in key store : " + fileKeyStore.getPath());
             }
         }
 
@@ -237,17 +258,18 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
 
         try
         {
+            URL url = getUrlFromString(_path);
             if (_certificateAlias != null)
             {
                 return new KeyManager[] {
-                        new QpidClientX509KeyManager( _certificateAlias, _path, _keyStoreType, getPassword(),
+                        new QpidClientX509KeyManager( _certificateAlias, url, _keyStoreType, getPassword(),
                                                       _keyManagerFactoryAlgorithm)
                                         };
 
             }
             else
             {
-                final java.security.KeyStore ks = SSLUtil.getInitializedKeyStore(_path, getPassword(), _keyStoreType);
+                final java.security.KeyStore ks = SSLUtil.getInitializedKeyStore(url, getPassword(), _keyStoreType);
 
                 char[] keyStoreCharPassword = getPassword() == null ? null : getPassword().toCharArray();
 
@@ -262,5 +284,21 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
         {
             throw new GeneralSecurityException(e);
         }
+    }
+
+    private static URL getUrlFromString(String urlString) throws MalformedURLException
+    {
+        URL url;
+        try
+        {
+            url = new URL(urlString);
+        }
+        catch (MalformedURLException e)
+        {
+            File file = new File(urlString);
+            url = file.toURI().toURL();
+
+        }
+        return url;
     }
 }

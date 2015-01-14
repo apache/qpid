@@ -22,6 +22,7 @@ package org.apache.qpid.util;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -51,37 +52,30 @@ public class FileUtils
      *
      * @return The contents of the file.
      */
-    public static String readFileAsString(String filename)
+    public static byte[] readFileAsBytes(String filename)
     {
-        BufferedInputStream is = null;
 
-        try
+        try(BufferedInputStream is = new BufferedInputStream(new FileInputStream(filename)))
         {
-            try
-            {
-                is = new BufferedInputStream(new FileInputStream(filename));
-            }
-            catch (FileNotFoundException e)
-            {
-                throw new RuntimeException(e);
-            }
-
             return readStreamAsString(is);
         }
-        finally
+        catch (IOException e)
         {
-            if (is != null)
-            {
-                try
-                {
-                    is.close();
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }
+            throw new RuntimeException(e);
         }
+    }
+
+
+    /**
+     * Reads a text file as a string.
+     *
+     * @param filename The name of the file.
+     *
+     * @return The contents of the file.
+     */
+    public static String readFileAsString(String filename)
+    {
+        return new String(readFileAsBytes(filename));
     }
 
     /**
@@ -93,18 +87,15 @@ public class FileUtils
      */
     public static String readFileAsString(File file)
     {
-        BufferedInputStream is = null;
-
-        try
+        try(BufferedInputStream is = new BufferedInputStream(new FileInputStream(file)))
         {
-            is = new BufferedInputStream(new FileInputStream(file));
+
+            return new String(readStreamAsString(is));
         }
-        catch (FileNotFoundException e)
+        catch (IOException e)
         {
             throw new RuntimeException(e);
         }
-
-        return readStreamAsString(is);
     }
 
     /**
@@ -115,23 +106,20 @@ public class FileUtils
      *
      * @return The contents of the reader.
      */
-    private static String readStreamAsString(BufferedInputStream is)
+    private static byte[] readStreamAsString(BufferedInputStream is)
     {
-        try
+        try(ByteArrayOutputStream inBuffer = new ByteArrayOutputStream())
         {
             byte[] data = new byte[4096];
-
-            StringBuffer inBuffer = new StringBuffer();
 
             int read;
 
             while ((read = is.read(data)) != -1)
             {
-                String s = new String(data, 0, read);
-                inBuffer.append(s);
+                inBuffer.write(data, 0, read);
             }
 
-            return inBuffer.toString();
+            return inBuffer.toByteArray();
         }
         catch (IOException e)
         {
