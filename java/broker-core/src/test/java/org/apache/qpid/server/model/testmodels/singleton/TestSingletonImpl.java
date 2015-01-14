@@ -58,10 +58,13 @@ public class TestSingletonImpl extends AbstractConfiguredObject<TestSingletonImp
     private String _validValue;
 
     @ManagedAttributeField
-    private org.apache.qpid.server.model.testmodels.singleton.TestEnum _enumValue;
+    private TestEnum _enumValue;
 
     @ManagedAttributeField
-    private Set<org.apache.qpid.server.model.testmodels.singleton.TestEnum> _enumSetValues;
+    private Set<TestEnum> _enumSetValues;
+
+    @ManagedAttributeField
+    private String _secureValue;
 
 
     @ManagedObjectFactoryConstructor
@@ -142,5 +145,11 @@ public class TestSingletonImpl extends AbstractConfiguredObject<TestSingletonImp
     public long getDerivedValue()
     {
         return DERIVED_VALUE;
+    }
+
+    @Override
+    public String getSecureValue()
+    {
+        return _secureValue;
     }
 }

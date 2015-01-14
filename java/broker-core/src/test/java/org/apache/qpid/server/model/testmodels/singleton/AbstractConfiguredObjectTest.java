@@ -18,12 +18,16 @@
  */
 package org.apache.qpid.server.model.testmodels.singleton;
 
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.security.auth.Subject;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -441,5 +445,35 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
         object.setAttribute(TestSingleton.DERIVED_VALUE, object.getDerivedValue(), System.currentTimeMillis());
 
         assertEquals(TestSingletonImpl.DERIVED_VALUE, object.getDerivedValue());
+    }
+
+    public void testSecureValueRetrieval()
+    {
+        final String objectName = "myName";
+        final String secret = "secret";
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(ConfiguredObject.NAME, objectName);
+        attributes.put(TestSingleton.SECURE_VALUE, secret);
+
+        final TestSingleton object = _model.getObjectFactory().create(TestSingleton.class, attributes);
+
+        assertEquals(AbstractConfiguredObject.SECURED_STRING_VALUE, object.getAttribute(TestSingleton.SECURE_VALUE));
+        assertEquals(secret, object.getSecureValue());
+
+        //verify we can retrieve the actual secure value using system rights
+        Subject.doAs(org.apache.qpid.server.security.SecurityManager.getSubjectWithAddedSystemRights(),
+                     new PrivilegedAction<Object>()
+                     {
+                         @Override
+                         public Object run()
+                         {
+                             assertEquals(secret, object.getAttribute(TestSingleton.SECURE_VALUE));
+                             assertEquals(secret, object.getSecureValue());
+                             return null;
+                         }
+                     });
+
+
     }
 }

@@ -39,6 +39,7 @@ public interface TestSingleton<X extends TestSingleton<X>> extends ConfiguredObj
     String ENUM_VALUE = "enumValue";
     String INT_VALUE = "intValue";
     String VALID_VALUE = "validValue";
+    String SECURE_VALUE = "secureValue";
     String ENUMSET_VALUES = "enumSetValues";
 
     String TEST_CONTEXT_DEFAULT = "TEST_CONTEXT_DEFAULT";
@@ -79,5 +80,8 @@ public interface TestSingleton<X extends TestSingleton<X>> extends ConfiguredObj
 
     @DerivedAttribute
     long getDerivedValue();
+
+    @ManagedAttribute(secure = true)
+    String getSecureValue();
 
 }
