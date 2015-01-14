@@ -20,23 +20,19 @@
  */
 package org.apache.qpid.systest.rest;
 
-import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.server.model.AbstractConfiguredObject;
-import org.apache.qpid.server.model.Port;
-import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.FileTrustStore;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 import org.apache.qpid.test.utils.TestSSLConstants;
+import org.apache.qpid.util.DataUrlUtils;
+import org.apache.qpid.util.FileUtils;
 
 public class TrustStoreRestTest extends QpidRestTestCase
 {
@@ -66,13 +62,33 @@ public class TrustStoreRestTest extends QpidRestTestCase
         String name = getTestName();
 
         assertNumberOfTrustStores(1);
-        createTrustStore(name, true);
+        createTrustStore(name, true, TestSSLConstants.TRUSTSTORE, TestSSLConstants.TRUSTSTORE_PASSWORD);
         assertNumberOfTrustStores(2);
 
         List<Map<String, Object>> trustStores = getRestTestHelper().getJsonAsList("truststore/" + name);
         assertNotNull("details cannot be null", trustStores);
 
         assertTrustStoreAttributes(trustStores.get(0), name, TestSSLConstants.TRUSTSTORE, true);
+    }
+
+    public void testCreateUsingDataUrl() throws Exception
+    {
+        super.setUp();
+
+        String name = getTestName();
+        byte[] trustStoreAsBytes = FileUtils.readFileAsBytes(TestSSLConstants.TRUSTSTORE);
+        String dataUrlForTruststore = DataUrlUtils.getDataUrlForBytes(trustStoreAsBytes);
+
+        assertNumberOfTrustStores(1);
+
+        createTrustStore(name, false, dataUrlForTruststore, TestSSLConstants.TRUSTSTORE_PASSWORD);
+
+        assertNumberOfTrustStores(2);
+
+        List<Map<String, Object>> trustStores = getRestTestHelper().getJsonAsList("truststore/" + name);
+        assertNotNull("details cannot be null", trustStores);
+
+        assertTrustStoreAttributes(trustStores.get(0), name, dataUrlForTruststore, false);
     }
 
     public void testDelete() throws Exception
@@ -82,11 +98,10 @@ public class TrustStoreRestTest extends QpidRestTestCase
         String name = getTestName();
 
         assertNumberOfTrustStores(1);
-        createTrustStore(name, false);
+        createTrustStore(name, false, TestSSLConstants.TRUSTSTORE, TestSSLConstants.TRUSTSTORE_PASSWORD);
         assertNumberOfTrustStores(2);
 
-        int responseCode = getRestTestHelper().submitRequest("truststore/" + name , "DELETE");
-        assertEquals("Unexpected response code for provider deletion", 200, responseCode);
+        getRestTestHelper().submitRequest("truststore/" + name , "DELETE", HttpServletResponse.SC_OK);
 
         List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
         assertNotNull("details should not be null", trustStore);
@@ -99,63 +114,22 @@ public class TrustStoreRestTest extends QpidRestTestCase
                 QPID_HOME + "/../" + TestSSLConstants.BROKER_TRUSTSTORE, false);
     }
 
-    public void testDeleteFailsWhenTrustStoreInUse() throws Exception
-    {
-        String name = "testDeleteFailsWhenTrustStoreInUse";
 
-        //add a new trust store config to use
-        Map<String, Object> sslTrustStoreAttributes = new HashMap<String, Object>();
-        sslTrustStoreAttributes.put(TrustStore.NAME, name);
-        sslTrustStoreAttributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
-        sslTrustStoreAttributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
-        getBrokerConfiguration().addObjectConfiguration(TrustStore.class,sslTrustStoreAttributes);
-
-        //add the SSL port using it
-        Map<String, Object> sslPortAttributes = new HashMap<String, Object>();
-        sslPortAttributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
-        sslPortAttributes.put(Port.PORT, DEFAULT_SSL_PORT);
-        sslPortAttributes.put(Port.NAME, TestBrokerConfiguration.ENTRY_NAME_SSL_PORT);
-        sslPortAttributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
-        sslPortAttributes.put(Port.KEY_STORE, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE);
-        sslPortAttributes.put(Port.TRUST_STORES, Collections.singleton(name));
-        getBrokerConfiguration().addObjectConfiguration(Port.class, sslPortAttributes);
-
-        super.setUp();
-
-        //verify the truststore is there
-        assertNumberOfTrustStores(2);
-
-        List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
-        assertNotNull("details should not be null", trustStore);
-        assertTrustStoreAttributes(trustStore.get(0), name, TestSSLConstants.TRUSTSTORE, false);
-
-        //try to delete it, which should fail as it is in use
-        int responseCode = getRestTestHelper().submitRequest("truststore/" + name , "DELETE");
-        assertEquals("Unexpected response code for provider deletion", 409, responseCode);
-
-        //check its still there
-        assertNumberOfTrustStores(2);
-        trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
-        assertNotNull("details should not be null", trustStore);
-        assertTrustStoreAttributes(trustStore.get(0), name, TestSSLConstants.TRUSTSTORE, false);
-    }
-
-    public void testUpdateWithGoodPathSucceeds() throws Exception
+    public void testUpdate() throws Exception
     {
         super.setUp();
 
         String name = getTestName();
 
         assertNumberOfTrustStores(1);
-        createTrustStore(name, false);
+        createTrustStore(name, false, TestSSLConstants.TRUSTSTORE, TestSSLConstants.TRUSTSTORE_PASSWORD);
         assertNumberOfTrustStores(2);
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(TrustStore.NAME, name);
         attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
 
-        int responseCode = getRestTestHelper().submitRequest("truststore/" + name , "PUT", attributes);
-        assertEquals("Unexpected response code for truststore update", 200, responseCode);
+        getRestTestHelper().submitRequest("truststore/" + name , "PUT", attributes, HttpServletResponse.SC_OK);
 
         List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
         assertNotNull("details should not be null", trustStore);
@@ -163,69 +137,7 @@ public class TrustStoreRestTest extends QpidRestTestCase
         assertTrustStoreAttributes(trustStore.get(0), name, TestSSLConstants.TRUSTSTORE, false);
     }
 
-    public void testUpdateWithNonExistentPathFails() throws Exception
-    {
-        super.setUp();
-
-        String name = getTestName();
-
-        assertNumberOfTrustStores(1);
-        createTrustStore(name, false);
-        assertNumberOfTrustStores(2);
-
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(TrustStore.NAME, name);
-        attributes.put(FileTrustStore.PATH, "does.not.exist");
-
-        int responseCode = getRestTestHelper().submitRequest("truststore/" + name , "PUT", attributes);
-        assertEquals("Unexpected response code for trust store update", 409, responseCode);
-
-        List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
-        assertNotNull("details should not be null", trustStore);
-
-        //verify the details remain unchanged
-        assertTrustStoreAttributes(trustStore.get(0), name, TestSSLConstants.TRUSTSTORE, false);
-    }
-
-    public void testUpdatePeersOnly() throws Exception
-    {
-        super.setUp();
-
-        String name = getTestName();
-
-        assertNumberOfTrustStores(1);
-        createTrustStore(name, false);
-        assertNumberOfTrustStores(2);
-
-        //update the peersOnly attribute from false to true
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(TrustStore.NAME, name);
-        attributes.put(FileTrustStore.PEERS_ONLY, true);
-
-        int responseCode = getRestTestHelper().submitRequest("truststore/" + name , "PUT", attributes);
-        assertEquals("Unexpected response code for trust store update", 200, responseCode);
-
-        List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
-        assertNotNull("details should not be null", trustStore);
-
-        assertTrustStoreAttributes(trustStore.get(0), name, TestSSLConstants.TRUSTSTORE, true);
-
-        //Update peersOnly to clear it (i.e go from from true to null, which will default to false)
-        attributes = new HashMap<String, Object>();
-        attributes.put(TrustStore.NAME, name);
-        attributes.put(FileTrustStore.PEERS_ONLY, null);
-
-        responseCode = getRestTestHelper().submitRequest("truststore/" + name , "PUT", attributes);
-        assertEquals("Unexpected response code for trust store update", 200, responseCode);
-
-        trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
-        assertNotNull("details should not be null", trustStore);
-
-        assertTrustStoreAttributes(trustStore.get(0), name, TestSSLConstants.TRUSTSTORE, false);
-    }
-
-    private List<Map<String, Object>> assertNumberOfTrustStores(int numberOfTrustStores) throws IOException,
-    JsonParseException, JsonMappingException
+    private List<Map<String, Object>> assertNumberOfTrustStores(int numberOfTrustStores) throws Exception
     {
         List<Map<String, Object>> trustStores = getRestTestHelper().getJsonAsList("truststore");
         assertNotNull("trust stores should not be null", trustStores);
@@ -234,17 +146,16 @@ public class TrustStoreRestTest extends QpidRestTestCase
         return trustStores;
     }
 
-    private void createTrustStore(String name, boolean peersOnly) throws IOException, JsonGenerationException, JsonMappingException
+    private void createTrustStore(String name, boolean peersOnly, final String truststorePath, final String truststorePassword) throws Exception
     {
         Map<String, Object> trustStoreAttributes = new HashMap<String, Object>();
         trustStoreAttributes.put(TrustStore.NAME, name);
         //deliberately using the client trust store to differentiate from the one we are already for broker
-        trustStoreAttributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
-        trustStoreAttributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
+        trustStoreAttributes.put(FileTrustStore.PATH, truststorePath);
+        trustStoreAttributes.put(FileTrustStore.PASSWORD, truststorePassword);
         trustStoreAttributes.put(FileTrustStore.PEERS_ONLY, peersOnly);
 
-        int responseCode = getRestTestHelper().submitRequest("truststore/" + name, "PUT", trustStoreAttributes);
-        assertEquals("Unexpected response code", 201, responseCode);
+        getRestTestHelper().submitRequest("truststore/" + name, "PUT", trustStoreAttributes, HttpServletResponse.SC_CREATED);
     }
 
     private void assertTrustStoreAttributes(Map<String, Object> truststore, String name, String path, boolean peersOnly)

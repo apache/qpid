@@ -20,11 +20,15 @@
  */
 package org.apache.qpid.server.security;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.AccessControlException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -48,6 +52,7 @@ import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationManager;
+import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 import org.apache.qpid.transport.network.security.ssl.QpidPeersOnlyTrustManager;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
@@ -66,7 +71,12 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     @ManagedAttributeField
     private String _password;
 
-    private Broker<?> _broker;
+    private final Broker<?> _broker;
+
+    static
+    {
+        Handler.register();
+    }
 
     @ManagedObjectFactoryConstructor
     public FileTrustStoreImpl(Map<String, Object> attributes, Broker<?> broker)
@@ -114,12 +124,10 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
         Collection<AuthenticationProvider> authenticationProviders = new ArrayList<AuthenticationProvider>(_broker.getAuthenticationProviders());
         for (AuthenticationProvider authProvider : authenticationProviders)
         {
-            if(authProvider.getAttributeNames().contains(SimpleLDAPAuthenticationManager.TRUST_STORE))
+            if (authProvider instanceof SimpleLDAPAuthenticationManager)
             {
-                Object attributeType = authProvider.getAttribute(AuthenticationProvider.TYPE);
-                Object attributeValue = authProvider.getAttribute(SimpleLDAPAuthenticationManager.TRUST_STORE);
-                if (SimpleLDAPAuthenticationManager.PROVIDER_TYPE.equals(attributeType)
-                        && storeName.equals(attributeValue))
+                SimpleLDAPAuthenticationManager simpleLdap = (SimpleLDAPAuthenticationManager) authProvider;
+                if (simpleLdap.getTrustStore() == this)
                 {
                     throw new IntegrityViolationException("Trust store '"
                             + storeName
@@ -185,11 +193,22 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     {
         try
         {
-            SSLUtil.getInitializedKeyStore(trustStore.getPath(), trustStore.getPassword(), trustStore.getTrustStoreType());
+            URL trustStoreUrl = getUrlFromString(trustStore.getPath());
+            SSLUtil.getInitializedKeyStore(trustStoreUrl, trustStore.getPassword(), trustStore.getTrustStoreType());
         }
         catch (Exception e)
         {
-            throw new IllegalConfigurationException("Cannot instantiate trust store at " + trustStore.getPath(), e);
+            final String message;
+            if (e instanceof IOException && e.getCause() != null && e.getCause() instanceof UnrecoverableKeyException)
+            {
+                message = "Check trust store password. Cannot instantiate trust store from '" + trustStore.getPath() + "'.";
+            }
+            else
+            {
+                message = "Cannot instantiate trust store from '" + trustStore.getPath() + "'.";
+            }
+
+            throw new IllegalConfigurationException(message, e);
         }
 
         try
@@ -238,14 +257,15 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     }
     public TrustManager[] getTrustManagers() throws GeneralSecurityException
     {
-        String trustStorePath = _path;
         String trustStorePassword = getPassword();
         String trustStoreType = _trustStoreType;
         String trustManagerFactoryAlgorithm = _trustManagerFactoryAlgorithm;
 
         try
         {
-            KeyStore ts = SSLUtil.getInitializedKeyStore(trustStorePath, trustStorePassword, trustStoreType);
+            URL trustStoreUrl = getUrlFromString(_path);
+
+            KeyStore ts = SSLUtil.getInitializedKeyStore(trustStoreUrl, trustStorePassword, trustStoreType);
             final TrustManagerFactory tmf = TrustManagerFactory
                     .getInstance(trustManagerFactoryAlgorithm);
             tmf.init(ts);
@@ -291,4 +311,21 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
             throw new GeneralSecurityException(e);
         }
     }
+
+    private static URL getUrlFromString(String urlString) throws MalformedURLException
+    {
+        URL url;
+        try
+        {
+            url = new URL(urlString);
+        }
+        catch (MalformedURLException e)
+        {
+            File file = new File(urlString);
+            url = file.toURI().toURL();
+
+        }
+        return url;
+    }
+
 }

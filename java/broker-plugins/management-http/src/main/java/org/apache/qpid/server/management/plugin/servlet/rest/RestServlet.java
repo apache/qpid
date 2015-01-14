@@ -36,7 +36,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-import javax.xml.bind.DatatypeConverter;
 
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -46,6 +45,7 @@ import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
+import org.apache.qpid.util.DataUrlUtils;
 
 public class RestServlet extends AbstractServlet
 {
@@ -439,8 +439,7 @@ public class RestServlet extends AbstractServlet
                 {
                     byte[] data = new byte[(int) part.getSize()];
                     part.getInputStream().read(data);
-                    StringBuilder inlineURL = new StringBuilder("data:;base64,");
-                    inlineURL.append(DatatypeConverter.printBase64Binary(data));
+                    String inlineURL = DataUrlUtils.getDataUrlForBytes(data);
                     fileUploads.put(part.getName(),inlineURL.toString());
                 }
             }

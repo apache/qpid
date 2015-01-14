@@ -28,6 +28,7 @@ public interface TestSSLConstants
 
     String BROKER_KEYSTORE = "test-profiles/test_resources/ssl/java_broker_keystore.jks";
     String BROKER_KEYSTORE_PASSWORD = "password";
+    Object BROKER_KEYSTORE_ALIAS = "rootca";
 
     String BROKER_PEERSTORE = "test-profiles/test_resources/ssl/java_broker_peerstore.jks";
     String BROKER_PEERSTORE_PASSWORD = "password";
