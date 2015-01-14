@@ -32,10 +32,14 @@ import javax.net.ssl.KeyManager;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.IntegrityViolationException;
+import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -46,17 +50,18 @@ import org.apache.qpid.util.FileUtils;
 public class FileKeyStoreTest extends QpidTestCase
 {
     private final Broker<?> _broker = mock(Broker.class);
-    private final CurrentThreadTaskExecutor _taskExecutor = new CurrentThreadTaskExecutor();
+    private final TaskExecutor _taskExecutor = CurrentThreadTaskExecutor.newStartedInstance();
     private final SecurityManager _securityManager = mock(SecurityManager.class);
+    private final Model _model = BrokerModel.getInstance();
+    private final ConfiguredObjectFactory _factory = _model.getObjectFactory();
+
 
     public void setUp() throws Exception
     {
         super.setUp();
 
-        _taskExecutor.start();
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
-        when(_broker.getModel()).thenReturn(BrokerModel.getInstance());
-
+        when(_broker.getModel()).thenReturn(_model);
         when(_broker.getSecurityManager()).thenReturn(_securityManager);
     }
 
@@ -67,9 +72,7 @@ public class FileKeyStoreTest extends QpidTestCase
         attributes.put(FileKeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
 
-        FileKeyStoreImpl fileKeyStore = new FileKeyStoreImpl(attributes, _broker);
-
-        fileKeyStore.create();
+        FileKeyStoreImpl fileKeyStore = (FileKeyStoreImpl) _factory.create(KeyStore.class, attributes,  _broker);
 
         KeyManager[] keyManager = fileKeyStore.getKeyManagers();
         assertNotNull(keyManager);
@@ -85,9 +88,7 @@ public class FileKeyStoreTest extends QpidTestCase
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
         attributes.put(FileKeyStore.CERTIFICATE_ALIAS, TestSSLConstants.BROKER_KEYSTORE_ALIAS);
 
-        FileKeyStoreImpl fileKeyStore = new FileKeyStoreImpl(attributes, _broker);
-
-        fileKeyStore.create();
+        FileKeyStoreImpl fileKeyStore = (FileKeyStoreImpl) _factory.create(KeyStore.class, attributes,  _broker);
 
         KeyManager[] keyManager = fileKeyStore.getKeyManagers();
         assertNotNull(keyManager);
@@ -102,11 +103,9 @@ public class FileKeyStoreTest extends QpidTestCase
         attributes.put(FileKeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
         attributes.put(FileKeyStore.PASSWORD, "wrong");
 
-        FileKeyStoreImpl fileKeyStore = new FileKeyStoreImpl(attributes, _broker);
-
         try
         {
-            fileKeyStore.create();
+            _factory.create(KeyStore.class, attributes,  _broker);
             fail("Exception not thrown");
         }
         catch (IllegalConfigurationException ice)
@@ -124,11 +123,9 @@ public class FileKeyStoreTest extends QpidTestCase
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
         attributes.put(FileKeyStore.CERTIFICATE_ALIAS, "notknown");
 
-        FileKeyStoreImpl fileKeyStore = new FileKeyStoreImpl(attributes, _broker);
-
         try
         {
-            fileKeyStore.create();
+            _factory.create(KeyStore.class, attributes,  _broker);
             fail("Exception not thrown");
         }
         catch (IllegalConfigurationException ice)
@@ -147,9 +144,7 @@ public class FileKeyStoreTest extends QpidTestCase
         attributes.put(FileKeyStore.PATH, trustStoreAsDataUrl);
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
 
-        FileKeyStoreImpl fileKeyStore = new FileKeyStoreImpl(attributes, _broker);
-
-        fileKeyStore.create();
+        FileKeyStoreImpl fileKeyStore = (FileKeyStoreImpl) _factory.create(KeyStore.class, attributes,  _broker);
 
         KeyManager[] keyManagers = fileKeyStore.getKeyManagers();
         assertNotNull(keyManagers);
@@ -167,9 +162,7 @@ public class FileKeyStoreTest extends QpidTestCase
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
         attributes.put(FileKeyStore.CERTIFICATE_ALIAS, TestSSLConstants.BROKER_KEYSTORE_ALIAS);
 
-        FileKeyStoreImpl fileKeyStore = new FileKeyStoreImpl(attributes, _broker);
-
-        fileKeyStore.create();
+        FileKeyStoreImpl fileKeyStore = (FileKeyStoreImpl) _factory.create(KeyStore.class, attributes,  _broker);
 
         KeyManager[] keyManagers = fileKeyStore.getKeyManagers();
         assertNotNull(keyManagers);
@@ -186,12 +179,9 @@ public class FileKeyStoreTest extends QpidTestCase
         attributes.put(FileKeyStore.PASSWORD, "wrong");
         attributes.put(FileKeyStore.PATH, keyStoreAsDataUrl);
 
-        FileKeyStoreImpl fileKeyStore = new FileKeyStoreImpl(attributes, _broker);
-
         try
         {
-
-            fileKeyStore.create();
+            _factory.create(KeyStore.class, attributes,  _broker);
             fail("Exception not thrown");
         }
         catch (IllegalConfigurationException ice)
@@ -210,11 +200,9 @@ public class FileKeyStoreTest extends QpidTestCase
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
         attributes.put(FileKeyStore.PATH, keyStoreAsDataUrl);
 
-        FileKeyStoreImpl fileKeyStore = new FileKeyStoreImpl(attributes, _broker);
-
         try
         {
-            fileKeyStore.create();
+            _factory.create(KeyStore.class, attributes,  _broker);
             fail("Exception not thrown");
         }
         catch (IllegalConfigurationException ice)
@@ -235,11 +223,9 @@ public class FileKeyStoreTest extends QpidTestCase
         attributes.put(FileKeyStore.PATH, keyStoreAsDataUrl);
         attributes.put(FileKeyStore.CERTIFICATE_ALIAS, "notknown");
 
-        FileKeyStoreImpl fileKeyStore = new FileKeyStoreImpl(attributes, _broker);
-
         try
         {
-            fileKeyStore.create();
+            _factory.create(KeyStore.class, attributes,  _broker);
             fail("Exception not thrown");
         }
         catch (IllegalConfigurationException ice)
@@ -259,9 +245,7 @@ public class FileKeyStoreTest extends QpidTestCase
         attributes.put(FileKeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
 
-        FileKeyStoreImpl fileKeyStore = new FileKeyStoreImpl(attributes, _broker);
-
-        fileKeyStore.create();
+        FileKeyStoreImpl fileKeyStore = (FileKeyStoreImpl) _factory.create(KeyStore.class, attributes,  _broker);
 
         assertNull("Unexpected alias value before change", fileKeyStore.getCertificateAlias());
 
@@ -302,9 +286,8 @@ public class FileKeyStoreTest extends QpidTestCase
         attributes.put(FileKeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
 
-        FileKeyStoreImpl fileKeyStore = new FileKeyStoreImpl(attributes, _broker);
+        FileKeyStoreImpl fileKeyStore = (FileKeyStoreImpl) _factory.create(KeyStore.class, attributes,  _broker);
 
-        fileKeyStore.create();
         fileKeyStore.delete();
     }
 
@@ -319,9 +302,7 @@ public class FileKeyStoreTest extends QpidTestCase
         attributes.put(FileKeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
 
-        FileKeyStoreImpl fileKeyStore = new FileKeyStoreImpl(attributes, _broker);
-
-        fileKeyStore.create();
+        FileKeyStoreImpl fileKeyStore = (FileKeyStoreImpl) _factory.create(KeyStore.class, attributes,  _broker);
 
         Port<?> port = mock(Port.class);
         when(port.getKeyStore()).thenReturn(fileKeyStore);

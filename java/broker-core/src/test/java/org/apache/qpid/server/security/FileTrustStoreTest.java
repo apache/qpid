@@ -33,11 +33,14 @@ import javax.net.ssl.TrustManager;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.IntegrityViolationException;
+import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.access.Operation;
@@ -51,18 +54,19 @@ import org.apache.qpid.util.FileUtils;
 public class FileTrustStoreTest extends QpidTestCase
 {
     private final Broker<?> _broker = mock(Broker.class);
-    private final CurrentThreadTaskExecutor _taskExecutor = new CurrentThreadTaskExecutor();
+    private final TaskExecutor _taskExecutor = CurrentThreadTaskExecutor.newStartedInstance();
     private final SecurityManager _securityManager = mock(SecurityManager.class);
+    private final Model _model = BrokerModel.getInstance();
+    private final ConfiguredObjectFactory _factory = _model.getObjectFactory();
 
     public void setUp() throws Exception
     {
         super.setUp();
 
-        _taskExecutor.start();
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
-        when(_broker.getModel()).thenReturn(BrokerModel.getInstance());
-
+        when(_broker.getModel()).thenReturn(_model);
         when(_broker.getSecurityManager()).thenReturn(_securityManager);
+
     }
 
     public void testCreateTrustStoreFromFile_Success() throws Exception
@@ -72,9 +76,8 @@ public class FileTrustStoreTest extends QpidTestCase
         attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
 
-        FileTrustStoreImpl fileTrustStore = new FileTrustStoreImpl(attributes, _broker);
-
-        fileTrustStore.create();
+        FileTrustStoreImpl fileTrustStore =
+                (FileTrustStoreImpl) _factory.create(TrustStore.class, attributes,  _broker);
 
         TrustManager[] trustManagers = fileTrustStore.getTrustManagers();
         assertNotNull(trustManagers);
@@ -89,11 +92,9 @@ public class FileTrustStoreTest extends QpidTestCase
         attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
         attributes.put(FileTrustStore.PASSWORD, "wrong");
 
-        FileTrustStoreImpl fileTrustStore = new FileTrustStoreImpl(attributes, _broker);
-
         try
         {
-            fileTrustStore.create();
+            _factory.create(TrustStore.class, attributes,  _broker);
             fail("Exception not thrown");
         }
         catch (IllegalConfigurationException ice)
@@ -111,9 +112,8 @@ public class FileTrustStoreTest extends QpidTestCase
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.BROKER_PEERSTORE_PASSWORD);
         attributes.put(FileTrustStore.PEERS_ONLY, true);
 
-        FileTrustStoreImpl fileTrustStore = new FileTrustStoreImpl(attributes, _broker);
-
-        fileTrustStore.create();
+        FileTrustStoreImpl fileTrustStore =
+                (FileTrustStoreImpl) _factory.create(TrustStore.class, attributes,  _broker);
 
         TrustManager[] trustManagers = fileTrustStore.getTrustManagers();
         assertNotNull(trustManagers);
@@ -132,9 +132,8 @@ public class FileTrustStoreTest extends QpidTestCase
         attributes.put(FileTrustStore.PATH, trustStoreAsDataUrl);
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
 
-        FileTrustStoreImpl fileTrustStore = new FileTrustStoreImpl(attributes, _broker);
-
-        fileTrustStore.create();
+        FileTrustStoreImpl fileTrustStore =
+                (FileTrustStoreImpl) _factory.create(TrustStore.class, attributes,  _broker);
 
         TrustManager[] trustManagers = fileTrustStore.getTrustManagers();
         assertNotNull(trustManagers);
@@ -151,12 +150,9 @@ public class FileTrustStoreTest extends QpidTestCase
         attributes.put(FileTrustStore.PASSWORD, "wrong");
         attributes.put(FileTrustStore.PATH, trustStoreAsDataUrl);
 
-        FileTrustStoreImpl fileTrustStore = new FileTrustStoreImpl(attributes, _broker);
-
         try
         {
-
-            fileTrustStore.create();
+            _factory.create(TrustStore.class, attributes,  _broker);
             fail("Exception not thrown");
         }
         catch (IllegalConfigurationException ice)
@@ -175,11 +171,9 @@ public class FileTrustStoreTest extends QpidTestCase
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
         attributes.put(FileTrustStore.PATH, trustStoreAsDataUrl);
 
-        FileTrustStoreImpl fileTrustStore = new FileTrustStoreImpl(attributes, _broker);
-
         try
         {
-            fileTrustStore.create();
+            _factory.create(TrustStore.class, attributes,  _broker);
             fail("Exception not thrown");
         }
         catch (IllegalConfigurationException ice)
@@ -200,9 +194,8 @@ public class FileTrustStoreTest extends QpidTestCase
         attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
 
-        FileTrustStoreImpl fileTrustStore = new FileTrustStoreImpl(attributes, _broker);
-
-        fileTrustStore.create();
+        FileTrustStoreImpl fileTrustStore =
+                (FileTrustStoreImpl) _factory.create(TrustStore.class, attributes,  _broker);
 
         assertEquals("Unexpected path value before change", TestSSLConstants.TRUSTSTORE, fileTrustStore.getPath());
 
@@ -243,9 +236,9 @@ public class FileTrustStoreTest extends QpidTestCase
         attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
 
-        FileTrustStoreImpl fileTrustStore = new FileTrustStoreImpl(attributes, _broker);
+        FileTrustStoreImpl fileTrustStore =
+                (FileTrustStoreImpl) _factory.create(TrustStore.class, attributes,  _broker);
 
-        fileTrustStore.create();
         fileTrustStore.delete();
     }
 
@@ -260,9 +253,8 @@ public class FileTrustStoreTest extends QpidTestCase
         attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
 
-        FileTrustStoreImpl fileTrustStore = new FileTrustStoreImpl(attributes, _broker);
-
-        fileTrustStore.create();
+        FileTrustStoreImpl fileTrustStore =
+                (FileTrustStoreImpl) _factory.create(TrustStore.class, attributes,  _broker);
 
         SimpleLDAPAuthenticationManager ldap = mock(SimpleLDAPAuthenticationManager.class);
         when(ldap.getTrustStore()).thenReturn(fileTrustStore);
@@ -292,9 +284,8 @@ public class FileTrustStoreTest extends QpidTestCase
         attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
 
-        FileTrustStoreImpl fileTrustStore = new FileTrustStoreImpl(attributes, _broker);
-
-        fileTrustStore.create();
+        FileTrustStoreImpl fileTrustStore =
+                (FileTrustStoreImpl) _factory.create(TrustStore.class, attributes,  _broker);
 
         Port<?> port = mock(Port.class);
         when(port.getTrustStores()).thenReturn(Collections.<TrustStore>singletonList(fileTrustStore));
