@@ -18,7 +18,7 @@
 #
 
 """
-Module: qlslibs.anal
+Module: qlslibs.analyze
 
 Classes for recovery and analysis of a Qpid Linear Store (QLS).
 """
@@ -41,8 +41,8 @@ class HighCounter(object):
         return self.num
 
 class JournalRecoveryManager(object):
-    TPL_DIR_NAME = 'tpl'
-    JRNL_DIR_NAME = 'jrnl'
+    TPL_DIR_NAME = 'tpl2'
+    JRNL_DIR_NAME = 'jrnl2'
     def __init__(self, directory, args):
         if not os.path.exists(directory):
             raise qlslibs.err.InvalidQlsDirectoryNameError(directory)
@@ -55,15 +55,15 @@ class JournalRecoveryManager(object):
     def report(self, print_stats_flag):
         self._reconcile_transactions(self.prepared_list, self.args.txn)
         if self.tpl is not None:
-            self.tpl.report(print_stats_flag)
+            self.tpl.report(print_stats_flag, self.args.show_recovered_recs)
         for queue_name in sorted(self.journals.keys()):
-            self.journals[queue_name].report(print_stats_flag)
+            self.journals[queue_name].report(print_stats_flag, self.args.show_recovered_recs)
     def run(self):
         tpl_dir = os.path.join(self.directory, JournalRecoveryManager.TPL_DIR_NAME)
         if os.path.exists(tpl_dir):
             self.tpl = Journal(tpl_dir, None, self.args)
             self.tpl.recover(self.high_rid_counter)
-            if self.args.show_recs or self.args.show_all_recs:
+            if self.args.show_recovery_recs or self.args.show_all_recs:
                 print
         jrnl_dir = os.path.join(self.directory, JournalRecoveryManager.JRNL_DIR_NAME)
         self.prepared_list = self.tpl.txn_map.get_prepared_list() if self.tpl is not None else {}
@@ -72,8 +72,9 @@ class JournalRecoveryManager(object):
                 jrnl = Journal(os.path.join(jrnl_dir, dir_entry), self.prepared_list, self.args)
                 jrnl.recover(self.high_rid_counter)
                 self.journals[jrnl.get_queue_name()] = jrnl
-                if self.args.show_recs or self.args.show_all_recs:
+                if self.args.show_recovery_recs or self.args.show_all_recs:
                     print
+        print
     def _reconcile_transactions(self, prepared_list, txn_flag):
         print 'Transaction reconciliation report:'
         print '=================================='
@@ -315,6 +316,7 @@ class Journal(object):
     """
     Instance of a Qpid Linear Store (QLS) journal.
     """
+    JRNL_SUFFIX = 'jrnl'
     def __init__(self, directory, xid_prepared_list, args):
         self.directory = directory
         self.queue_name = os.path.basename(directory)
@@ -350,7 +352,7 @@ class Journal(object):
     def get_queue_name(self):
         return self.queue_name
     def recover(self, high_rid_counter):
-        print 'Recovering', self.queue_name
+        print 'Recovering %s...' % self.queue_name,
         self._analyze_files()
         try:
             while self._get_next_record(high_rid_counter):
@@ -362,6 +364,7 @@ class Journal(object):
             print '0x%08x: **** FRO ERROR: queue=\"%s\" fid=0x%x fro actual=0x%08x expected=0x%08x' % \
             (err.get_expected_fro(), err.get_queue_name(), err.get_file_number(), err.get_record_offset(),
              err.get_expected_fro())
+        print 'done'
     def reconcile_transactions(self, prepared_list, txn_flag):
         xid_list = self.txn_map.get_xid_list()
         if len(xid_list) > 0:
@@ -385,13 +388,13 @@ class Journal(object):
                 print '  ', qlslibs.utils.format_xid(xid), '- Ignoring, not in prepared transaction list'
                 if txn_flag:
                     self.txn_map.abort(xid)
-    def report(self, print_stats_flag):
+    def report(self, print_stats_flag, show_recovered_records):
         print 'Journal "%s":' % self.queue_name
         print '=' * (11 + len(self.queue_name))
         if print_stats_flag:
             print str(self.statistics)
-        print self.enq_map.report_str(True, True)
-        print self.txn_map.report_str(True, True)
+        print self.enq_map.report_str(True, show_recovered_records)
+        print self.txn_map.report_str(True, show_recovered_records)
         JournalFile.report_header()
         for file_num in sorted(self.files.keys()):
             self.files[file_num].report()
@@ -405,7 +408,7 @@ class Journal(object):
     def _analyze_files(self):
         for dir_entry in os.listdir(self.directory):
             dir_entry_bits = dir_entry.split('.')
-            if len(dir_entry_bits) == 2 and dir_entry_bits[1] == JournalRecoveryManager.JRNL_DIR_NAME:
+            if len(dir_entry_bits) == 2 and dir_entry_bits[1] == Journal.JRNL_SUFFIX:
                 fq_file_name = os.path.join(self.directory, dir_entry)
                 file_handle = open(fq_file_name)
                 args = qlslibs.utils.load_args(file_handle, qlslibs.jrnl.RecordHeader)
@@ -413,7 +416,7 @@ class Journal(object):
                 file_hdr.init(file_handle, *qlslibs.utils.load_args(file_handle, qlslibs.jrnl.FileHeader))
                 if file_hdr.is_header_valid(file_hdr):
                     file_hdr.load(file_handle)
-                    if file_hdr.is_valid():
+                    if file_hdr.is_valid(False):
                         qlslibs.utils.skip(file_handle,
                                            file_hdr.file_header_size_sblks * qlslibs.utils.DEFAULT_SBLK_SIZE)
                         self.files[file_hdr.file_num] = JournalFile(file_hdr)
@@ -430,7 +433,7 @@ class Journal(object):
                                                qlslibs.utils.DEFAULT_DBLK_SIZE
             self.fill_to_offset = self.last_record_offset + \
                                   (self.num_filler_records_required * qlslibs.utils.DEFAULT_DBLK_SIZE)
-            if self.args.show_recs or self.args.show_all_recs:
+            if self.args.show_recovery_recs or self.args.show_all_recs:
                 print '0x%x:0x%08x: %d filler records required for DBLK alignment to 0x%08x' % \
                       (self.current_journal_file.file_header.file_num, self.last_record_offset,
                        self.num_filler_records_required, self.fill_to_offset)
@@ -460,7 +463,7 @@ class Journal(object):
             return False
         self.current_journal_file = self.files[file_num]
         self.first_rec_flag = True
-        if self.args.show_recs or self.args.show_all_recs:
+        if self.args.show_recovery_recs or self.args.show_all_recs:
             file_header = self.current_journal_file.file_header
             print '0x%x:%s' % (file_header.file_num, file_header.to_string())
         return True
@@ -480,18 +483,18 @@ class Journal(object):
         if isinstance(this_record, qlslibs.jrnl.EnqueueRecord):
             ok_flag = self._handle_enqueue_record(this_record, start_journal_file)
             high_rid_counter.check(this_record.record_id)
-            if self.args.show_recs or self.args.show_all_recs:
+            if self.args.show_recovery_recs or self.args.show_all_recs:
                 print '0x%x:%s' % (start_journal_file.file_header.file_num, \
                                    this_record.to_string(self.args.show_xids, self.args.show_data))
         elif isinstance(this_record, qlslibs.jrnl.DequeueRecord):
             ok_flag = self._handle_dequeue_record(this_record, start_journal_file)
             high_rid_counter.check(this_record.record_id)
-            if self.args.show_recs or self.args.show_all_recs:
+            if self.args.show_recovery_recs or self.args.show_all_recs:
                 print '0x%x:%s' % (start_journal_file.file_header.file_num, this_record.to_string(self.args.show_xids))
         elif isinstance(this_record, qlslibs.jrnl.TransactionRecord):
             ok_flag = self._handle_transaction_record(this_record, start_journal_file)
             high_rid_counter.check(this_record.record_id)
-            if self.args.show_recs or self.args.show_all_recs:
+            if self.args.show_recovery_recs or self.args.show_all_recs:
                 print '0x%x:%s' % (start_journal_file.file_header.file_num, this_record.to_string(self.args.show_xids))
         else:
             self.statistics.filler_record_count += 1
