@@ -37,6 +37,8 @@ class JournalLog;
 
 class EmptyFilePoolPartition
 {
+public:
+    static const std::string s_efpTopLevelDir_;
 protected:
     typedef std::map<efpDataSize_kib_t, EmptyFilePool*> efpMap_t;
     typedef efpMap_t::iterator efpMapItr_t;

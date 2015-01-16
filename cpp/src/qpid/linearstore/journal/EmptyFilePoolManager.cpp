@@ -74,6 +74,7 @@ void EmptyFilePoolManager::findEfpPartitions() {
         if (!foundPartition) {
             std::ostringstream oss1;
             oss1 << qlsStorePath_ << "/" << EmptyFilePoolPartition::getPartionDirectoryName(defaultPartitionNumber_)
+                << "/" << EmptyFilePoolPartition::s_efpTopLevelDir_
                 << "/" << EmptyFilePool::dirNameFromDataSize(defaultEfpDataSize_kib_);
             jdir::create_dir(oss1.str());
             insertPartition(defaultPartitionNumber_, oss1.str());
