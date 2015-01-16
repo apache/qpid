@@ -155,19 +155,24 @@ class FileHeader(RecordHeader):
         self.queue_name = file_handle.read(self.queue_name_len)
     def is_end_of_file(self):
         return self.file_handle.tell() >= self.get_file_size()
-    def is_valid(self):
+    def is_valid(self, is_empty):
         if not RecordHeader.is_header_valid(self, self):
             return False
         if self.file_handle is None or self.file_header_size_sblks == 0 or self.partition_num == 0 or \
-           self.efp_data_size_kb == 0 or self.first_record_offset == 0 or self.timestamp_sec == 0 or \
-           self.timestamp_ns == 0 or self.file_num == 0:
+           self.efp_data_size_kb == 0:
             return False
-        if self.queue_name_len == 0:
-            return False
-        if self.queue_name is None:
-            return False
-        if len(self.queue_name) != self.queue_name_len:
-            return False
+        if is_empty:
+            if self.first_record_offset != 0 or self.timestamp_sec != 0 or self.timestamp_ns != 0 or \
+               self.file_num != 0 or self.queue_name_len != 0:
+                return False
+        else:
+            if self.first_record_offset == 0 or self.timestamp_sec == 0 or self.timestamp_ns == 0 or \
+               self.file_num == 0 or self.queue_name_len == 0:
+                return False
+            if self.queue_name is None:
+                return False
+            if len(self.queue_name) != self.queue_name_len:
+                return False
         return True
     def timestamp_str(self):
         """Get the timestamp of this record in string format"""

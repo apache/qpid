@@ -28,11 +28,11 @@ import sys
 
 default = os.path.normpath('/usr/share/qpid-tools')
 home = os.environ.get('QPID_TOOLS_HOME', default)
-sys.path.append(os.path.join(home,'python'))
+sys.path.append(os.path.join(home, 'python'))
 
 import argparse
 import os
-import qlslibs.anal
+import qlslibs.analyze
 import qlslibs.efp
 
 class QlsAnalyzerArgParser(argparse.ArgumentParser):
@@ -45,7 +45,9 @@ class QlsAnalyzerArgParser(argparse.ArgumentParser):
                           help='Qpid Linear Store (QLS) directory to be analyzed')
         self.add_argument('--efp', action='store_true',
                           help='Analyze the Emtpy File Pool (EFP) and show stats')
-        self.add_argument('--show-recs', action='store_true',
+        self.add_argument('--show-recovered-recs', action='store_true',
+                          help='Show only recovered records')
+        self.add_argument('--show-recovery-recs', action='store_true',
                           help='Show material records found during recovery')
         self.add_argument('--show-all-recs', action='store_true',
                           help='Show all records (including fillers) found during recovery')
@@ -72,13 +74,13 @@ class QqpdLinearStoreAnalyzer(object):
     * The Linear Store
     * The Transaction Prepared List (TPL)
     """
-    QLS_ANALYZE_VERSION = '0.1'
+    QLS_ANALYZE_VERSION = '1.0'
     def __init__(self):
         self.args = None
         self._process_args()
         self.qls_dir = os.path.abspath(self.args.qls_dir)
         self.efp_manager = qlslibs.efp.EfpManager(self.qls_dir, None)
-        self.jrnl_recovery_mgr = qlslibs.anal.JournalRecoveryManager(self.qls_dir, self.args)
+        self.jrnl_recovery_mgr = qlslibs.analyze.JournalRecoveryManager(self.qls_dir, self.args)
     def _process_args(self):
         """ Create arg parser and process args """
         parser = QlsAnalyzerArgParser()
@@ -101,10 +103,6 @@ class QqpdLinearStoreAnalyzer(object):
 #==============================================================================
 
 if __name__ == "__main__":
-    # TODO: Remove this in due course
-    print 'WARNING: This program is still a work in progress and is largely untested.'
-    print '* USE AT YOUR OWN RISK *'
-    print
     M = QqpdLinearStoreAnalyzer()
     M.run()
     M.report()
