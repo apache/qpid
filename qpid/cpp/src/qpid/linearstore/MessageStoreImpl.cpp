@@ -1488,21 +1488,21 @@ std::string MessageStoreImpl::getStoreTopLevelDir() {
 std::string MessageStoreImpl::getJrnlBaseDir()
 {
     std::ostringstream dir;
-    dir << storeDir << "/" << storeTopLevelDir << "/jrnl/" ;
+    dir << storeDir << "/" << storeTopLevelDir << "/jrnl2/" ;
     return dir.str();
 }
 
 std::string MessageStoreImpl::getBdbBaseDir()
 {
     std::ostringstream dir;
-    dir << storeDir << "/" << storeTopLevelDir << "/dat/" ;
+    dir << storeDir << "/" << storeTopLevelDir << "/dat2/" ;
     return dir.str();
 }
 
 std::string MessageStoreImpl::getTplBaseDir()
 {
     std::ostringstream dir;
-    dir << storeDir << "/" << storeTopLevelDir << "/tpl/" ;
+    dir << storeDir << "/" << storeTopLevelDir << "/tpl2/" ;
     return dir.str();
 }
 

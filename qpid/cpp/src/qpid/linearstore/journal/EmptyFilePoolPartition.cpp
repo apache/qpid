@@ -32,6 +32,9 @@ namespace qpid {
 namespace linearstore {
 namespace journal {
 
+// static
+const std::string EmptyFilePoolPartition::s_efpTopLevelDir_("efp"); // Sets the top-level efp dir within a partition
+
 EmptyFilePoolPartition::EmptyFilePoolPartition(const efpPartitionNumber_t partitionNum,
                                                const std::string& partitionDir,
                                                const bool overwriteBeforeReturnFlag,
@@ -57,45 +60,18 @@ EmptyFilePoolPartition::~EmptyFilePoolPartition() {
 void
 EmptyFilePoolPartition::findEmptyFilePools() {
 //std::cout << "*** EmptyFilePoolPartition::findEmptyFilePools(): Reading " << partitionDir_ << std::endl; // DEBUG
-    std::vector<std::string> dirList;
-    bool upgradeDirStructureFlag = false;
-    std::string oldPartitionDir;
-        jdir::read_dir(partitionDir_, dirList, true, false, false, false);
-//std::cout << "*** dirList.size()=" << dirList.size() << "; dirList.front()=" << dirList.front() << std::endl; // DEBUG
-        if (dirList.size() == 1 && dirList.front().compare("efp") == 0) {
-            upgradeDirStructureFlag = true;
-            oldPartitionDir = partitionDir_ + "/efp";
-//std::cout << "*** oldPartitionDir=" << oldPartitionDir << std::endl; // DEBUG
-            dirList.clear();
-            jdir::read_dir(oldPartitionDir, dirList, true, false, false, false);
-        }
+    std::string efpDir(partitionDir_ + "/" + s_efpTopLevelDir_);
+    if (jdir::is_dir(efpDir)) {
+        std::vector<std::string> dirList;
+        jdir::read_dir(efpDir, dirList, true, false, false, true);
         for (std::vector<std::string>::iterator i = dirList.begin(); i != dirList.end(); ++i) {
-            std::string fqFileName(partitionDir_ + "/" + *i);
-            if (upgradeDirStructureFlag) {
-                std::string fqOldFileName(partitionDir_ + "/efp/" + *i);
-                if (::rename(fqOldFileName.c_str(), fqFileName.c_str())) {
-                    // File move failed
-                    std::ostringstream oss;
-                    oss << "File \'" << fqOldFileName << "\' could not be renamed to \'" << fqFileName << "\' (" << FORMAT_SYSERR(errno) << "); file deleted";
-                    journalLogRef_.log(JournalLog::LOG_WARN, oss.str());
-                    if (::unlink(fqOldFileName.c_str())) {
-                        std::ostringstream oss;
-                        oss << "File \'" << fqOldFileName << "\' could not be deleted (" << FORMAT_SYSERR(errno) << "\'; file orphaned";
-                        journalLogRef_.log(JournalLog::LOG_WARN, oss.str());
-                    }
-                }
-            }
-            createEmptyFilePool(fqFileName);
+            createEmptyFilePool(*i);
         }
-        if (upgradeDirStructureFlag) {
-            std::string oldEfpDir(partitionDir_ + "/efp");
-            if (::rmdir(oldEfpDir.c_str())) {
-                // Unable to delete old "efp" dir
-                std::ostringstream oss;
-                oss << "Unable to delete old EFP directory \'" << oldEfpDir << "\' (" << FORMAT_SYSERR(errno) << "\'; directory orphaned";
-                journalLogRef_.log(JournalLog::LOG_WARN, oss.str());
-            }
-        }
+    } else {
+        std::ostringstream oss;
+        oss << "Partition \"" << partitionDir_ << "\" does not contain top level EFP dir \"" << s_efpTopLevelDir_ << "\"";
+        journalLogRef_.log(JournalLog::LOG_WARN, oss.str());
+    }
 }
 
 EmptyFilePool* EmptyFilePoolPartition::getEmptyFilePool(const efpDataSize_kib_t efpDataSize_kib, const bool createIfNonExistent) {
@@ -182,7 +158,7 @@ efpPartitionNumber_t EmptyFilePoolPartition::getPartitionNumber(const std::strin
 // --- protected functions ---
 
 EmptyFilePool* EmptyFilePoolPartition::createEmptyFilePool(const efpDataSize_kib_t efpDataSize_kib) {
-    std::string fqEfpDirectoryName(partitionDir_ + "/" + EmptyFilePool::dirNameFromDataSize(efpDataSize_kib));
+    std::string fqEfpDirectoryName(partitionDir_ + "/" + EmptyFilePoolPartition::s_efpTopLevelDir_ + "/" + EmptyFilePool::dirNameFromDataSize(efpDataSize_kib));
     return createEmptyFilePool(fqEfpDirectoryName);
 }
 
@@ -211,11 +187,12 @@ EmptyFilePool* EmptyFilePoolPartition::createEmptyFilePool(const std::string fqE
 }
 
 void EmptyFilePoolPartition::validatePartitionDir() {
+    std::ostringstream ss;
     if (!jdir::is_dir(partitionDir_)) {
-        std::ostringstream ss;
         ss << "Invalid partition directory: \'" << partitionDir_ << "\' is not a directory";
         throw jexception(jerrno::JERR_EFP_BADPARTITIONDIR, ss.str(), "EmptyFilePoolPartition", "validatePartitionDir");
     }
+
     // TODO: other validity checks here
 }
 
