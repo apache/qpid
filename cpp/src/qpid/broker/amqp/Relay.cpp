@@ -23,6 +23,7 @@
 #include "qpid/log/Statement.h"
 #include <algorithm>
 #include <string.h>
+#include "config.h"
 
 namespace qpid {
 namespace broker {
@@ -244,7 +245,11 @@ void BufferedTransfer::initIn(pn_link_t* link, pn_delivery_t* d)
     //copy delivery tag
     pn_delivery_tag_t dt = pn_delivery_tag(d);
     tag.resize(dt.size);
+#ifdef NO_PROTON_DELIVERY_TAG_T
+    ::memmove(&tag[0], dt.start, dt.size);
+#else
     ::memmove(&tag[0], dt.bytes, dt.size);
+#endif
 
     //set context
     pn_delivery_set_context(d, this);
@@ -264,7 +269,11 @@ bool BufferedTransfer::settle()
 void BufferedTransfer::initOut(pn_link_t* link)
 {
     pn_delivery_tag_t dt;
+#ifdef NO_PROTON_DELIVERY_TAG_T
+    dt.start = &tag[0];
+#else
     dt.bytes = &tag[0];
+#endif
     dt.size = tag.size();
     out.handle = pn_delivery(link, dt);
     //set context

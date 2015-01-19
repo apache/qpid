@@ -59,5 +59,5 @@
 #cmakedefine HAVE_PROTON_TRACER
 #cmakedefine USE_PROTON_TRANSPORT_CONDITION
 #cmakedefine HAVE_PROTON_EVENTS
-
+#cmakedefine NO_PROTON_DELIVERY_TAG_T
 #endif /* QPID_CONFIG_H */

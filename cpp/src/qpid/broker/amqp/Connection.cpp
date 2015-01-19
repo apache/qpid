@@ -412,7 +412,11 @@ void Connection::process()
 namespace {
 std::string convert(pn_delivery_tag_t in)
 {
+#ifdef NO_PROTON_DELIVERY_TAG_T
+    return std::string(in.start, in.size);
+#else
     return std::string(in.bytes, in.size);
+#endif
 }
 }
 void Connection::processDeliveries()

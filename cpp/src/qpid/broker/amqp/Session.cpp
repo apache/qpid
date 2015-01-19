@@ -48,6 +48,7 @@
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
 #include "qpid/amqp_0_10/Codecs.h"
+#include "config.h"
 #include <boost/intrusive_ptr.hpp>
 #include <boost/format.hpp>
 #include <map>
@@ -615,7 +616,11 @@ void Session::accepted(pn_delivery_t* delivery, bool sync)
 void Session::readable(pn_link_t* link, pn_delivery_t* delivery)
 {
     pn_delivery_tag_t tag = pn_delivery_tag(delivery);
+#ifdef NO_PROTON_DELIVERY_TAG_T
+    QPID_LOG(debug, "received delivery: " << std::string(tag.start, tag.size));
+#else
     QPID_LOG(debug, "received delivery: " << std::string(tag.bytes, tag.size));
+#endif
     incomingMessageReceived();
     IncomingLinks::iterator target = incoming.find(link);
     if (target == incoming.end()) {
