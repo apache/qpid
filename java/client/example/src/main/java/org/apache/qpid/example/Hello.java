@@ -34,6 +34,9 @@ import javax.jms.TextMessage;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.configuration.ClientProperties;
+
 
 public class Hello 
 {
@@ -42,10 +45,38 @@ public class Hello
     {
     }
 
-    public static void main(String[] args) 
+    public static void main(String[] args) throws Exception
     {
-        Hello hello = new Hello();
-        hello.runTest();
+        System.setProperty(ClientProperties.AMQP_VERSION, "0-91");
+        System.setProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, "0");
+        System.setProperty(ClientProperties.DEST_SYNTAX, "BURL");
+
+        Connection conn = new AMQConnection("127.0.0.1", 5672, "admin","admin", "client", "/");
+
+        conn.start();
+
+        Session session = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Destination destination = session.createQueue("queue");
+
+        MessageConsumer consumer = session.createConsumer(destination);
+        MessageProducer producer = session.createProducer(destination);
+
+        for(int i = 0 ; i < 2 ; i ++)
+        {
+            TextMessage message = (TextMessage) consumer.receive(1000l);
+            System.out.println(message == null ? "null" : message.getText());
+        }
+        for(int i = 0 ; i < 2 ; i ++)
+        {
+            TextMessage message = session.createTextMessage("Hello " + i);
+            producer.send(message);
+        }
+
+        for(int i = 0 ; i < 2 ; i ++)
+        {
+            TextMessage message = (TextMessage) consumer.receive(1000l);
+            System.out.println(message == null ? "null" : message.getText());
+        }
     }
 
     private void runTest() 

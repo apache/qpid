@@ -22,6 +22,7 @@ package org.apache.qpid.client;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.Session;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -182,7 +183,8 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
             {
                 getSession().reduceCreditAfterAcknowledge();
             }
-            if (manageCredit && message != null)
+            if (manageCredit && !(getSession().getAcknowledgeMode() == Session.AUTO_ACKNOWLEDGE
+                                  || getSession().getAcknowledgeMode() == Session.DUPS_OK_ACKNOWLEDGE) && message != null)
             {
                 getSession().updateCurrentPrefetch(1);
             }
@@ -214,7 +216,8 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
             {
                 getSession().reduceCreditAfterAcknowledge();
             }
-            if (manageCredit && message != null)
+            if (manageCredit && !(getSession().getAcknowledgeMode() == Session.AUTO_ACKNOWLEDGE
+                                  || getSession().getAcknowledgeMode() == Session.DUPS_OK_ACKNOWLEDGE) && message != null)
             {
                 getSession().updateCurrentPrefetch(1);
             }
