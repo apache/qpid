@@ -54,7 +54,7 @@ size_t  Connection::decode(const char* buffer, size_t size) {
         }
     }
     framing::AMQFrame frame;
-    while(frame.decode(in)) {
+    while(!pushClosed && frame.decode(in)) {
         QPID_LOG(trace, "RECV [" << identifier << "]: " << frame);
          connection->received(frame);
     }
