@@ -29,16 +29,15 @@ define(["dojo/dom",
         "qpid/common/updater",
         "qpid/common/util",
         "qpid/common/formatter",
-        "qpid/management/addKeystore",
+        "qpid/management/addStore",
         "dojo/domReady!"],
-       function (dom, xhr, parser, query, connect, registry, entities, properties, updater, util, formatter, addKeystore) {
+       function (dom, xhr, parser, query, connect, registry, entities, properties, updater, util, formatter, addStore) {
 
            function TrustStore(name, parent, controller) {
                this.keyStoreName = name;
                this.controller = controller;
                this.modelObj = { type: "truststore", name: name, parent: parent};
                this.url = "api/latest/truststore/" + encodeURIComponent(name);
-               this.dialog =  addKeystore.showTruststoreDialog;
            }
 
            TrustStore.prototype.getTitle = function() {
@@ -48,7 +47,7 @@ define(["dojo/dom",
            TrustStore.prototype.open = function(contentPane) {
                var that = this;
                this.contentPane = contentPane;
-               xhr.get({url: "showTrustStore.html",
+               xhr.get({url: "showStore.html",
                         sync: true,
                         load:  function(data) {
                             contentPane.containerNode.innerHTML = data;
@@ -60,27 +59,26 @@ define(["dojo/dom",
 
                             that.keyStoreUpdater.update();
 
-                            var deleteTrustStoreButton = query(".deleteTrustStoreButton", contentPane.containerNode)[0];
+                            var deleteTrustStoreButton = query(".deleteStoreButton", contentPane.containerNode)[0];
                             var node = registry.byNode(deleteTrustStoreButton);
                             connect.connect(node, "onClick",
                                 function(evt){
                                     that.deleteKeyStore();
                                 });
 
-                            var editTrustStoreButton = query(".editTrustStoreButton", contentPane.containerNode)[0];
+                            var editTrustStoreButton = query(".editStoreButton", contentPane.containerNode)[0];
                             var node = registry.byNode(editTrustStoreButton);
                             connect.connect(node, "onClick",
                                 function(evt){
                                     xhr.get({url: that.url, sync: properties.useSyncGet, handleAs: "json", content: { actuals: true }})
                                     .then(function(data)
                                     {
-                                      that.dialog(data[0], that.url);
+                                      addStore.setupTypeStore("TrustStore");
+                                      addStore.show(data[0], that.url);
                                     });
                                 });
                         }});
            };
-
-
 
            TrustStore.prototype.close = function() {
                updater.remove( this.keyStoreUpdater );
@@ -89,9 +87,10 @@ define(["dojo/dom",
            function KeyStoreUpdater(containerNode, keyStoreObj, controller, url)
            {
                var that = this;
+               this.keyStoreDetailsContainer = query(".typeFieldsContainer", containerNode)[0];
 
                function findNode(name) {
-                   return query("." + name + "Value", containerNode)[0];
+                   return query("." + name , containerNode)[0];
                }
 
                function storeNodes(names)
@@ -102,12 +101,8 @@ define(["dojo/dom",
                }
 
                storeNodes(["name",
-                           "path",
-                           "trustStoreType",
-                           "trustStoreState",
-                           "trustManagerFactoryAlgorithm",
-                           "certificateAlias",
-                           "peersOnly"
+                           "type",
+                           "state"
                            ]);
 
                this.query = url;
@@ -123,23 +118,26 @@ define(["dojo/dom",
            KeyStoreUpdater.prototype.updateHeader = function()
            {
               this.name.innerHTML = entities.encode(String(this.keyStoreData[ "name" ]));
-              this.path.innerHTML = entities.encode(String(this.keyStoreData[ "path" ]));
-              this.trustStoreType.innerHTML = entities.encode(String(this.keyStoreData[ "trustStoreType" ]));
-              this.trustStoreState.innerHTML = entities.encode(String(this.keyStoreData[ "state" ]));
-              this.trustManagerFactoryAlgorithm.innerHTML = entities.encode(String(this.keyStoreData[ "trustManagerFactoryAlgorithm" ]));
-              this.peersOnly.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.keyStoreData[ "peersOnly" ] ? "checked='checked'": "")+" />" ;
+              this.type.innerHTML = entities.encode(String(this.keyStoreData[ "type" ]));
+              this.state.innerHTML = entities.encode(String(this.keyStoreData[ "state" ]));
            };
 
            KeyStoreUpdater.prototype.update = function()
            {
-
-              var thisObj = this;
-
+              var that = this;
               xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
-                   {
-                      thisObj.keyStoreData = data[0];
-                      thisObj.updateHeader();
-                   });
+               {
+                  that.trustStoreData = data[0];
+                  that.updateHeader();
+
+                  require(["qpid/management/store/" + encodeURIComponent(that.trustStoreData.type.toLowerCase()) + "/show"],
+                       function(DetailsUI)
+                       {
+                         that.details = new DetailsUI({containerNode:that.keyStoreDetailsContainer, parent: that});
+                         that.details.update(that.trustStoreData);
+                       }
+                     );
+               });
            };
 
            TrustStore.prototype.deleteKeyStore = function() {
