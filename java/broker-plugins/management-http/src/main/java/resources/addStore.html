@@ -1,0 +1,66 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
+<div class="dijitHidden">
+    <div data-dojo-type="dijit/Dialog" data-dojo-props="title:'Add Store'" id="addStore">
+        <div id="addStore.contentPane">
+            <form id="addStore.form" method="post" data-dojo-type="dijit/form/Form">
+                <div class="formBox">
+                    <div class="clear">
+                        <div class="formLabel-labelCell tableContainer-labelCell">Name*:</div>
+                        <div class="formLabel-controlCell tableContainer-valueCell">
+                            <input type="text" id="addStore.name"
+                                   data-dojo-type="dijit/form/ValidationTextBox"
+                                   data-dojo-props="
+                              name: 'name',
+                              placeHolder: 'store name',
+                              required: true,
+                              promptMessage: 'Name of store, must be unique',
+                              title: 'Enter a unique store name per broker'" />
+                        </div>
+                    </div>
+                    <div class="clear">
+                        <div class="formLabel-labelCell tableContainer-labelCell">Type*:</div>
+                        <div class="tableContainer-valueCell formLabel-controlCell">
+                            <select id="addStore.type" data-dojo-type="dijit/form/FilteringSelect"
+                                    data-dojo-props="
+                                    name: 'type',
+                                    required: true,
+                                    placeHolder: 'store type',
+                                    promptMessage: 'Type of store',
+                                    title: 'Select type',
+                                    searchAttr: 'name'">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="clear">
+                        <div id="addStore.typeFields"></div>
+                    </div>
+                </div>
+            </form>
+            <div class="clear">
+            </div>
+        </div>
+
+        <div class="dijitDialogPaneActionBar">
+            <button data-dojo-type="dijit/form/Button" id="addStore.addButton" data-dojo-props="label: 'Save'" type="submit"></button>
+            <button data-dojo-type="dijit/form/Button" id="addStore.cancelButton" data-dojo-props="label: 'Cancel'" ></button>
+        </div>
+    </div>
+</div>

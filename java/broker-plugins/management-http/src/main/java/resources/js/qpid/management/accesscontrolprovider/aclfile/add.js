@@ -39,6 +39,7 @@ define(["dojo/dom","dojo/query","dijit/registry","qpid/common/util"],
                 this.aclSelectedFileStatusContainer = dom.byId("addAccessControlProvider.selectedFileStatus");
                 this.aclFile = registry.byId("addAccessControlProvider.file");
                 this.aclFileClearButton = registry.byId("addAccessControlProvider.fileClearButton");
+                this.aclFileOldBrowserWarning = dom.byId("addAccessControlProvider.oldBrowserWarning");
 
                 //Only submitted field
                 this.aclPath = registry.byId("addAccessControlProvider.path");
@@ -56,6 +57,8 @@ define(["dojo/dom","dojo/query","dijit/registry","qpid/common/util"],
                 {
                   // Fall back for IE8/9 which do not support FileReader
                   this.aclUploadFields.style.display = "none";
+                  this.aclFileOldBrowserWarning.innerHTML = "File upload requires a more recent browser with HTML5 support";
+                  this.aclFileOldBrowserWarning.className = this.aclFileOldBrowserWarning.className.replace("hidden", "");
                 }
 
                 this.aclServerPath.on("blur", function(){that._aclServerPathChanged()});
