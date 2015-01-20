@@ -26,8 +26,10 @@ define(["dojo/_base/lang",
         "dojo/parser",
         "dojo/_base/array",
         "dojo/_base/event",
-        'dojo/_base/json',
+        'dojo/json',
         "qpid/common/util",
+        "qpid/common/metadata",
+        "dojo/text!addAccessControlProvider.html",
         "dojo/store/Memory",
         "dojox/validate/us",
         "dojox/validate/web",
@@ -42,140 +44,124 @@ define(["dojo/_base/lang",
         "dijit/layout/ContentPane",
         "dojox/layout/TableContainer",
         "dojo/domReady!"],
-    function (lang, xhr, dom, construct, registry, parser, array, event, json, util) {
+    function (lang, xhr, dom, construct, registry, parser, array, event, json, util, metadata, template)
+    {
 
-        var addAccessControlProvider = {};
+        var addAccessControlProvider =
+        {
+            init: function()
+            {
+                var that=this;
+                this.containerNode = construct.create("div", {innerHTML: template});
+                parser.parse(this.containerNode);
 
-        addAccessControlProvider.show = function(accessControlProvider) {
-          var fields = [{
-              name: "name",
-              createWidget: function(accessControlProvider) {
-                  return new dijit.form.ValidationTextBox({
-                    required: true,
-                    value: accessControlProvider.name,
-                    disabled: accessControlProvider.name ? true : false,
-                    label: "Name*:",
-                    regexp: "^[\x20-\x2e\x30-\x7F]{1,255}$",
-                    promptMessage: "Name of access control provider.",
-                    placeHolder: "name",
-                    name: "name"});
-              }
-          }, {
-              name: "type",
-              createWidget: function(accessControlProvider) {
+                this.accessControlProviderName = registry.byId("addAccessControlProvider.name");
+                this.accessControlProviderName.set("regExpGen", util.nameOrContextVarRegexp);
 
-                  var typeContainer = construct.create("div");
+                this.dialog = registry.byId("addAccessControlProvider");
+                this.addButton = registry.byId("addAccessControlProvider.addButton");
+                this.cancelButton = registry.byId("addAccessControlProvider.cancelButton");
+                this.cancelButton.on("click", function(e){that._cancel(e);});
+                this.addButton.on("click", function(e){that._add(e);});
 
-                  var typeListContainer = new dojox.layout.TableContainer({
-                      cols: 1,
-                      "labelWidth": "300",
-                      customClass: "formLabel",
-                      showLabels: true,
-                      orientation: "horiz"
-                  });
+                this.accessControlProviderTypeFieldsContainer = dom.byId("addAccessControlProvider.typeFields");
+                this.accessControlProviderForm = registry.byId("addAccessControlProvider.form");
+                this.accessControlProviderType = registry.byId("addAccessControlProvider.type");
+                this.supportedAccessControlProviderTypes = metadata.getTypesForCategory("AccessControlProvider");
+                this.supportedAccessControlProviderTypes.sort();
+                var accessControlProviderTypeStore = util.makeTypeStore(this.supportedAccessControlProviderTypes);
+                this.accessControlProviderType.set("store", accessControlProviderTypeStore);
+                this.accessControlProviderType.on("change", function(type){that._accessControlProviderTypeChanged(type);});
+            },
+            show: function(effectiveData)
+            {
+                this.accessControlProviderForm.reset();
+                this.dialog.show();
+            },
+            _cancel: function(e)
+            {
+                event.stop(e);
+                if (this.reader)
+                {
+                    this.reader.abort();
+                }
+                this.dialog.hide();
+            },
+            _add: function(e)
+            {
+                event.stop(e);
+                this._submit();
+            },
+            _submit: function()
+            {
+                if (this.accessControlProviderForm.validate())
+                {
+                    var success = false,failureReason=null;
 
-                  typeContainer.appendChild(typeListContainer.domNode);
+                    var accessControlProviderData = util.getFormWidgetValues(this.accessControlProviderForm, this.initialData);
+                    var encodedAccessControlProviderName = encodeURIComponent(this.accessControlProviderName.value);
 
-                  var providers =  [];
-                  var fieldSetContainers = {};
-                  xhr.get({
-                    url: "service/helper?action=ListAccessControlProviderAttributes",
-                    handleAs: "json",
-                    sync: true
-                  }).then(
-                  function(data) {
-                       var providerIndex = 0;
+                    xhr.put(
+                    {
+                        url: "api/latest/accesscontrolprovider/" + encodedAccessControlProviderName,
+                        sync: true,
+                        handleAs: "json",
+                        headers: { "Content-Type": "application/json"},
+                        putData: json.stringify(accessControlProviderData),
+                        load: function(x) {success = true; },
+                        error: function(error) {success = false; failureReason = error;}
+                    });
 
-                       for (var providerType in data) {
-                           if (data.hasOwnProperty(providerType)) {
-                               providers[providerIndex++] = {id: providerType, name: providerType};
-
-                               var attributes = data[providerType].attributes;
-                               var descriptions = data[providerType].descriptions;
-
-                               var layout = new dojox.layout.TableContainer( {
-                                   cols: 1,
-                                   "labelWidth": "300",
-                                   customClass: "formLabel",
-                                   showLabels: true,
-                                   orientation: "horiz"
-                               });
-
-                               for(var i=0; i < attributes.length; i++) {
-                                   if ("type" == attributes[i])
-                                   {
-                                       continue;
-                                   }
-                                   var labelValue = attributes[i];
-                                   if (descriptions && descriptions[attributes[i]])
-                                   {
-                                       labelValue = descriptions[attributes[i]];
-                                   }
-                                   var text = new dijit.form.TextBox({
-                                       label: labelValue + ":",
-                                       name: attributes[i]
-                                   });
-                                   layout.addChild(text);
-                               }
-
-                               typeContainer.appendChild(layout.domNode);
-                               fieldSetContainers[providerType] = layout;
-                           }
-                       }
-                });
-
-                var providersStore = new dojo.store.Memory({ data: providers });
-
-                var typeList = new dijit.form.FilteringSelect({
-                  required: true,
-                  value: accessControlProvider.type,
-                  store: providersStore,
-                  label: "Type*:",
-                  name: "type"});
-
-                typeListContainer.addChild(typeList);
-
-                var onChangeHandler = function onChangeHandler(newValue){
-                  for (var i in fieldSetContainers) {
-                    var container = fieldSetContainers[i];
-                    var descendants = container.getChildren();
-                    for(var i in descendants){
-                      var descendant = descendants[i];
-                      var propName = descendant.name;
-                      if (propName) {
-                        descendant.set("disabled", true);
-                      }
+                    if (success == true)
+                    {
+                        this.dialog.hide();
                     }
-                    container.domNode.style.display = "none";
-                  }
-                  var container = fieldSetContainers[newValue];
-                  if (container)
-                  {
-                    container.domNode.style.display = "block";
-                    var descendants = container.getChildren();
-                    for(var i in descendants){
-                      var descendant = descendants[i];
-                      var propName = descendant.name;
-                      if (propName) {
-                        descendant.set("disabled", false);
-                      }
+                    else
+                    {
+                        util.xhrErrorHandler(failureReason);
                     }
-                  }
-                };
-                typeList.on("change", onChangeHandler);
-                onChangeHandler(typeList.value);
-                return new dijit.layout.ContentPane({content: typeContainer, style:{padding: 0}});
-              }
-              }];
+                }
+                else
+                {
+                    alert('Form contains invalid data. Please correct first');
+                }
+            },
+            _accessControlProviderTypeChanged: function(type)
+            {
+                this._typeChanged(type, this.accessControlProviderTypeFieldsContainer, "qpid/management/accesscontrolprovider/", "AccessControlProvider" );
+            },
+            _typeChanged: function(type, typeFieldsContainer, baseUrl, category )
+            {
+                 var widgets = registry.findWidgets(typeFieldsContainer);
+                 array.forEach(widgets, function(item) { item.destroyRecursive();});
+                 construct.empty(typeFieldsContainer);
 
-          util.showSetAttributesDialog(
-              fields,
-              accessControlProvider ? accessControlProvider : {},
-              "api/latest/accesscontrolprovider" + (name ? "/" + encodeURIComponent(name.name) : ""),
-              accessControlProvider ? "Edit access control provider - " + accessControlProvider.name : "Add access control provider",
-              "AccessControlProvider",
-              accessControlProvider && accessControlProvider.type ? accessControlProvider.type : "AclFile",
-              accessControlProvider ? false : true);
+                 if (type)
+                 {
+                     var that = this;
+                     require([ baseUrl + type.toLowerCase() + "/add"], function(typeUI)
+                     {
+                         try
+                         {
+                             typeUI.show({containerNode:typeFieldsContainer, parent: that, data: that.initialData, effectiveData: that.effectiveData});
+                             util.applyMetadataToWidgets(typeFieldsContainer, category, type);
+                         }
+                         catch(e)
+                         {
+                             console.warn(e);
+                         }
+                     });
+                 }
+            }
         };
+
+        try
+        {
+            addAccessControlProvider.init();
+        }
+        catch(e)
+        {
+            console.warn(e);
+        }
         return addAccessControlProvider;
     });

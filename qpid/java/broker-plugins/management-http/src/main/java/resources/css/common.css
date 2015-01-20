@@ -233,6 +233,12 @@ div .messages {
     display: inline-block;
 }
 
+.fileUpload
+{
+    float: right;
+    padding: 5px;
+}
+
 .infoMessage
 {
     padding: 5px;
