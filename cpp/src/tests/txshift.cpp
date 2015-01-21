@@ -40,7 +40,7 @@ namespace tests {
 struct Args : public qpid::TestOptions
 {
     std::string workQueue;
-    size_t workers;
+    uint workers;
 
     Args() : workQueue("txshift-control"), workers(1)
     {
@@ -178,7 +178,7 @@ int main(int argc, char** argv)
             worker.run();
         } else {
             boost::ptr_vector<Worker> workers;
-            for (size_t i = 0; i < opts.workers; i++) {
+            for (uint i = 0; i < opts.workers; i++) {
                 workers.push_back(new Worker(connection, opts.workQueue));
             }
             std::for_each(workers.begin(), workers.end(), boost::bind(&Worker::start, _1));
