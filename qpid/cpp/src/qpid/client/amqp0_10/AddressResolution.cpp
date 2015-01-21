@@ -55,6 +55,7 @@ using qpid::messaging::AssertionFailed;
 using qpid::framing::ExchangeBoundResult;
 using qpid::framing::ExchangeQueryResult;
 using qpid::framing::FieldTable;
+using qpid::framing::FieldValue;
 using qpid::framing::QueueQueryResult;
 using qpid::framing::ReplyTo;
 using qpid::framing::Uuid;
@@ -140,6 +141,11 @@ const std::string PREFIX_AMQ("amq.");
 const std::string PREFIX_QPID("qpid.");
 
 const Verifier verifier;
+
+bool areEquivalent(const FieldValue& a, const FieldValue& b)
+{
+    return ((a == b) || (a.convertsTo<int64_t>() && b.convertsTo<int64_t>() && a.get<int64_t>() == b.get<int64_t>()));
+}
 }
 
 struct Binding
@@ -806,7 +812,7 @@ void Queue::checkAssert(qpid::client::AsyncSession& session, CheckMode mode)
                 FieldTable::ValuePtr v = result.getArguments().get(i->first);
                 if (!v) {
                     throw AssertionFailed((boost::format("Option %1% not set for %2%") % i->first % name).str());
-                } else if (*i->second != *v) {
+                } else if (!areEquivalent(*i->second, *v)) {
                     throw AssertionFailed((boost::format("Option %1% does not match for %2%, expected %3%, got %4%")
                                           % i->first % name % *(i->second) % *v).str());
                 }
@@ -906,7 +912,7 @@ void Exchange::checkAssert(qpid::client::AsyncSession& session, CheckMode mode)
                 FieldTable::ValuePtr v = result.getArguments().get(i->first);
                 if (!v) {
                     throw AssertionFailed((boost::format("Option %1% not set for %2%") % i->first % name).str());
-                } else if (*i->second != *v) {
+                } else if (!areEquivalent(*i->second, *v)) {
                     throw AssertionFailed((boost::format("Option %1% does not match for %2%, expected %3%, got %4%")
                                           % i->first % name % *(i->second) % *v).str());
                 }
