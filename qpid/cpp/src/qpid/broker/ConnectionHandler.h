@@ -100,13 +100,14 @@ class ConnectionHandler : public framing::FrameHandler
     std::auto_ptr<Handler> handler;
 
     bool handle(const qpid::framing::AMQMethodBody& method);
+    void close(framing::connection::CloseCode code, const std::string& text);
   public:
     ConnectionHandler(amqp_0_10::Connection& connection, bool isClient );
-    void close(framing::connection::CloseCode code, const std::string& text);
     void heartbeat();
     void handle(framing::AMQFrame& frame);
     void setSecureConnection(SecureConnection* secured);
     bool isOpen() { return handler->isOpen; }
+  friend class amqp_0_10::Connection;
 };
 
 
