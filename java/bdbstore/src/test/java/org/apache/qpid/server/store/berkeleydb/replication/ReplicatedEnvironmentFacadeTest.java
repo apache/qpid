@@ -803,7 +803,7 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
                 _replicaRolledback.countDown();
             }
         });
-        assertTrue("Node 1 did not go into desired state",
+        assertTrue("Node 1 did not go into desired state and remained in state " + node1.getNodeState(),
                    node1StateChangeListener.awaitForStateChange(LISTENER_TIMEOUT, TimeUnit.SECONDS));
         assertTrue("Node 1 did not experience rollback within timeout",
                    _replicaRolledback.await(LISTENER_TIMEOUT, TimeUnit.SECONDS));
