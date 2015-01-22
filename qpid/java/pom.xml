@@ -73,6 +73,7 @@
     <profile.broker.clean.between.tests>true</profile.broker.clean.between.tests>
     <dollar.sign>$</dollar.sign>
     <at.sign>@</at.sign>
+    <bdb-version>5.0.104</bdb-version>
   </properties>
 
   <modules>

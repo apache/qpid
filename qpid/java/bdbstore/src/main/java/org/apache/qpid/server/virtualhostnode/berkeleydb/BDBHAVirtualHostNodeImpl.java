@@ -636,12 +636,6 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         createReplicaVirtualHost();
     }
 
-
-    private void onDetached()
-    {
-        closeVirtualHostIfExist();
-    }
-
     private void createReplicaVirtualHost()
     {
         try
@@ -693,9 +687,10 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                         onReplica();
                         break;
                     case DETACHED:
-                        onDetached();
+                        closeVirtualHostIfExist();
                         break;
                     case UNKNOWN:
+                        closeVirtualHostIfExist();
                         break;
                     default:
                         LOGGER.error("Unexpected state change: " + state);

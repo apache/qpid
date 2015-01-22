@@ -392,6 +392,13 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 }
             }
 
+            if (dbe instanceof UnknownMasterException)
+            {
+                // when Master transits into Unknown state ( for example, due to mastership transfer)
+                // we need to abort any ongoing je operation without halting the Broker or VHN/VH
+                return new ConnectionScopedRuntimeException(String.format("Environment '%s' cannot finish JE operation because master is unknown", getNodeName()), dbe);
+            }
+
             boolean restart = (noMajority || dbe instanceof RestartRequiredException);
             if (restart)
             {
