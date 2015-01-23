@@ -33,7 +33,18 @@ namespace framing {
 
 namespace {
 //each range contains 2 numbers, 4 bytes each
-uint16_t RANGE_SIZE = 2 * 4; 
+uint16_t RANGE_SIZE = 2 * 4;
+int32_t MAX_RANGE = 2147483647;//2^31-1
+
+int32_t gap(const SequenceNumber& a, const SequenceNumber& b)
+{
+    return a < b ? b - a : a - b;
+}
+
+bool is_max_range(const SequenceNumber& a, const SequenceNumber& b)
+{
+    return gap(a, b) == MAX_RANGE;
+}
 }
 
 void SequenceSet::encode(Buffer& buffer) const
@@ -58,7 +69,17 @@ void SequenceSet::decode(Buffer& buffer)
         SequenceNumber b(buffer.getLong());
         if (b < a)
             throw IllegalArgumentException(QPID_MSG("Invalid range in sequence set: " << a << " -> " << b));
-        add(a, b);
+        if (is_max_range(a, b)) {
+            //RangeSet holds 'half-closed' ranges, where the end is
+            //one past the 'highest' value in the range. So if the
+            //range is already the maximum expressable with a 32bit
+            //sequence number, we can't represent it as a
+            //'half-closed' range, so we represent it as two ranges.
+            add(a, b-1);
+            add(b);
+        } else {
+            add(a, b);
+        }
     }
 }
 
