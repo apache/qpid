@@ -43,6 +43,8 @@ public abstract class ConfiguredObjectAttribute<C extends ConfiguredObject, T> e
 
     public abstract boolean isPersisted();
 
+    public abstract boolean isOversized();
+
     public abstract String getDescription();
 
     public T convert(final Object value, C object)

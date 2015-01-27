@@ -43,6 +43,7 @@ import org.apache.qpid.server.model.ConfiguredAutomatedAttribute;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectAttribute;
 import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
+import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.Model;
 
 public class MetaDataServlet extends AbstractServlet
@@ -103,6 +104,18 @@ public class MetaDataServlet extends AbstractServlet
         typeDetails.put("attributes", processAttributes(type));
         typeDetails.put("managedInterfaces", getManagedInterfaces(type));
         typeDetails.put("validChildTypes", getValidChildTypes(type));
+        ManagedObject annotation = type.getAnnotation(ManagedObject.class);
+        if(annotation != null)
+        {
+            if(annotation.deprecated())
+            {
+                typeDetails.put("deprecated",true);
+            }
+            if(!"".equals(annotation.description() )  )
+            {
+                typeDetails.put("description", annotation.description());
+            }
+        }
         return typeDetails;
     }
 

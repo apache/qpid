@@ -37,4 +37,6 @@ public @interface ManagedObject
     String type() default "";
     String validChildTypes() default "";
     boolean register() default true;
+    String description() default "";
+    boolean deprecated() default false;
 }

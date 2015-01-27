@@ -31,5 +31,5 @@ public @interface DerivedAttribute
     boolean secure() default false;
     boolean persist() default false;
     String description() default "";
-
+    boolean oversize() default false;
 }

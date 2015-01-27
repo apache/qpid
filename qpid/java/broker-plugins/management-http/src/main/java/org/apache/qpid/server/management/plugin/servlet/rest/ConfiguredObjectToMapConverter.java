@@ -54,23 +54,16 @@ public class ConfiguredObjectToMapConverter
                                                   Class<? extends ConfiguredObject> clazz,
                                                   int depth,
                                                   final boolean useActualValues,
-                                                  final boolean includeSystemContext,
-                                                  final boolean extractAsConfig)
-    {
-        return convertObjectToMap(confObject, clazz, depth, useActualValues, false, includeSystemContext, extractAsConfig);
-    }
-
-    public Map<String, Object> convertObjectToMap(final ConfiguredObject<?> confObject,
-                                                  Class<? extends ConfiguredObject> clazz,
-                                                  int depth,
-                                                  final boolean useActualValues,
                                                   final boolean inheritedActuals,
                                                   final boolean includeSystemContext,
-                                                  final boolean extractAsConfig)
+                                                  final boolean extractAsConfig,
+                                                  final int oversizeThreshold
+                                                 )
     {
         Map<String, Object> object = new LinkedHashMap<>();
 
-        incorporateAttributesIntoMap(confObject, object, useActualValues, inheritedActuals, includeSystemContext, extractAsConfig);
+        incorporateAttributesIntoMap(confObject, object, useActualValues, inheritedActuals, includeSystemContext,
+                                     extractAsConfig, oversizeThreshold);
         if(!extractAsConfig)
         {
             incorporateStatisticsIntoMap(confObject, object);
@@ -78,7 +71,8 @@ public class ConfiguredObjectToMapConverter
 
         if(depth > 0)
         {
-            incorporateChildrenIntoMap(confObject, clazz, depth, object, useActualValues, inheritedActuals, includeSystemContext, extractAsConfig);
+            incorporateChildrenIntoMap(confObject, clazz, depth, object, useActualValues, inheritedActuals,
+                                       includeSystemContext, extractAsConfig, oversizeThreshold);
         }
         return object;
     }
@@ -90,7 +84,8 @@ public class ConfiguredObjectToMapConverter
             final boolean useActualValues,
             final boolean inheritedActuals,
             final boolean includeSystemContext,
-            final boolean extractAsConfig)
+            final boolean extractAsConfig,
+            final int oversizeThreshold)
     {
         // if extracting as config add a fake attribute for each secondary parent
         if(extractAsConfig && confObject.getModel().getParentTypes(confObject.getCategoryClass()).size()>1)
@@ -160,7 +155,26 @@ public class ConfiguredObjectToMapConverter
                 }
                 else if (value != null)
                 {
-                    object.put(name, value);
+                    ConfiguredObjectAttribute<?, ?> attribute = confObject.getModel()
+                            .getTypeRegistry()
+                            .getAttributeTypes(confObject.getClass())
+                            .get(name);
+                    if(attribute.isOversized() && !extractAsConfig)
+                    {
+                        String valueString = String.valueOf(value);
+                        if(valueString.length() > oversizeThreshold)
+                        {
+                            object.put(name, String.valueOf(value).substring(0,oversizeThreshold-4) + "...");
+                        }
+                        else
+                        {
+                            object.put(name, value);
+                        }
+                    }
+                    else
+                    {
+                        object.put(name, value);
+                    }
                 }
                 else if (extractAsConfig)
                 {
@@ -220,7 +234,8 @@ public class ConfiguredObjectToMapConverter
             final boolean useActualValues,
             final boolean inheritedActuals,
             final boolean includeSystemContext,
-            final boolean extractAsConfig)
+            final boolean extractAsConfig,
+            final int oversizeThreshold)
     {
         List<Class<? extends ConfiguredObject>> childTypes = new ArrayList<>(confObject.getModel().getChildTypes(clazz));
 
@@ -262,7 +277,8 @@ public class ConfiguredObjectToMapConverter
                                                                 useActualValues,
                                                                 inheritedActuals,
                                                                 includeSystemContext,
-                                                                extractAsConfig));
+                                                                extractAsConfig,
+                                                                oversizeThreshold));
                         }
                     }
 

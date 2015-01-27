@@ -56,6 +56,7 @@ public class RestServlet extends AbstractServlet
     private static final String HIERARCHY_INIT_PARAMETER = "hierarchy";
 
     public static final String DEPTH_PARAM = "depth";
+    public static final String OVERSIZE_PARAM = "oversize";
     public static final String ACTUALS_PARAM = "actuals";
     public static final String SORT_PARAM = "sort";
     public static final String INCLUDE_SYS_CONTEXT_PARAM = "includeSysContext";
@@ -71,6 +72,7 @@ public class RestServlet extends AbstractServlet
     public static final Set<String> RESERVED_PARAMS =
             new HashSet<>(Arrays.asList(DEPTH_PARAM,
                                         SORT_PARAM,
+                                        OVERSIZE_PARAM,
                                         ACTUALS_PARAM,
                                         INCLUDE_SYS_CONTEXT_PARAM,
                                         EXTRACT_INITIAL_CONFIG_PARAM,
@@ -345,17 +347,20 @@ public class RestServlet extends AbstractServlet
         boolean actuals;
         boolean includeSystemContext;
         boolean inheritedActuals;
+        int oversizeThreshold;
 
         if(extractInitialConfig)
         {
             depth = Integer.MAX_VALUE;
+            oversizeThreshold = Integer.MAX_VALUE;
             actuals = true;
             includeSystemContext = false;
             inheritedActuals = false;
         }
         else
         {
-            depth = getDepthParameterFromRequest(request);
+            depth = getIntParameterFromRequest(request, DEPTH_PARAM, 1);
+            oversizeThreshold = getIntParameterFromRequest(request, OVERSIZE_PARAM, 120);
             actuals = getBooleanParameterFromRequest(request, ACTUALS_PARAM);
             includeSystemContext = getBooleanParameterFromRequest(request, INCLUDE_SYS_CONTEXT_PARAM);
             inheritedActuals = getBooleanParameterFromRequest(request, INHERITED_ACTUALS_PARAM);
@@ -364,8 +369,9 @@ public class RestServlet extends AbstractServlet
         List<Map<String, Object>> output = new ArrayList<>();
         for(ConfiguredObject configuredObject : allObjects)
         {
+
             output.add(_objectConverter.convertObjectToMap(configuredObject, getConfiguredClass(),
-                    depth, actuals, inheritedActuals, includeSystemContext, extractInitialConfig));
+                    depth, actuals, inheritedActuals, includeSystemContext, extractInitialConfig, oversizeThreshold));
         }
 
 
@@ -679,22 +685,24 @@ public class RestServlet extends AbstractServlet
         response.setDateHeader ("Expires", 0);
     }
 
-    private int getDepthParameterFromRequest(HttpServletRequest request)
+    private int getIntParameterFromRequest(final HttpServletRequest request,
+                                           final String paramName,
+                                           final int defaultValue)
     {
-        int depth = 1;
-        final String depthString = request.getParameter(DEPTH_PARAM);
-        if(depthString!=null)
+        int intValue = defaultValue;
+        final String stringValue = request.getParameter(paramName);
+        if(stringValue!=null)
         {
             try
             {
-                depth = Integer.parseInt(depthString);
+                intValue = Integer.parseInt(stringValue);
             }
             catch (NumberFormatException e)
             {
-                LOGGER.warn("Could not parse " + depthString + " as integer");
+                LOGGER.warn("Could not parse " + stringValue + " as integer for parameter " + paramName);
             }
         }
-        return depth;
+        return intValue;
     }
 
     private boolean getBooleanParameterFromRequest(HttpServletRequest request, final String paramName)
