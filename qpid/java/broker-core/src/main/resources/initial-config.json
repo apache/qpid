@@ -65,7 +65,7 @@
   "virtualhostnodes" : [ {
     "name" : "default",
     "type" : "JSON",
-    "virtualHostInitialConfiguration" : "{ \"type\" : \"DERBY\" }"
+    "virtualHostInitialConfiguration" : "${qpid.initial_config_virtualhost_config}"
   } ],
   "plugins" : [ {
     "type" : "MANAGEMENT-HTTP",

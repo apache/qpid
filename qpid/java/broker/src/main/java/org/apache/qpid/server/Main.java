@@ -328,14 +328,19 @@ public class Main
             initialPropertiesLocation = (new File(initialProperties)).toURI().toURL();
         }
 
-        Properties props = new Properties();
-        props.load(initialPropertiesLocation.openStream());
+        Properties props = new Properties(QpidProperties.asProperties());
+        if(initialPropertiesLocation != null)
+        {
+            props.load(initialPropertiesLocation.openStream());
+        }
+
         Set<String> propertyNames = new HashSet<>(props.stringPropertyNames());
         propertyNames.removeAll(System.getProperties().stringPropertyNames());
-        for(String propName : propertyNames)
+        for (String propName : propertyNames)
         {
             System.setProperty(propName, props.getProperty(propName));
         }
+
     }
 
     private void copyInitialConfigFile(final BrokerOptions options, final File destinationFile)
