@@ -94,6 +94,29 @@ public class SSLTest extends QpidBrokerTestCase
         }
     }
 
+    public void testSSLConnectionToPlainPortRejected() throws Exception
+    {
+        if (shouldPerformTest())
+        {
+            super.setUp();
+
+            String url = "amqp://guest:guest@test/?brokerlist='tcp://localhost:%s" +
+                         "?ssl='true''";
+
+            url = String.format(url,QpidBrokerTestCase.DEFAULT_PORT);
+
+            try
+            {
+                getConnection(new AMQConnectionURL(url));
+                fail("Exception not thrown");
+            }
+            catch (JMSException e)
+            {
+                assertTrue("Unexpected exception message", e.getMessage().contains("Unrecognized SSL message, plaintext connection?"));
+            }
+        }
+    }
+
     public void testHostVerificationIsOnByDefault() throws Exception
     {
         if (shouldPerformTest())
@@ -116,6 +139,7 @@ public class SSLTest extends QpidBrokerTestCase
             try
             {
                 getConnection(new AMQConnectionURL(url));
+                fail("Exception not thrown");
             }
             catch(JMSException e)
             {
