@@ -29,6 +29,10 @@
   <name>Qpid HTTP Management Broker Plug-in</name>
   <description>HTTP Management broker plug-in</description>
 
+  <properties>
+    <dojo-version>1.10.3</dojo-version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.qpid</groupId>
@@ -84,6 +88,7 @@
       <groupId>org.dojotoolkit</groupId>
       <artifactId>dojo</artifactId>
       <version>${dojo-version}</version>
+      <classifier>distribution</classifier>
       <type>zip</type>
     </dependency>
 
@@ -124,7 +129,7 @@
                  it gets picked up when using classpath wildcard
                  expansion, which only collects .jar files -->
             <manifestEntries>
-              <Class-Path>dojo-${dojo-version}.zip</Class-Path>
+              <Class-Path>dojo-${dojo-version}-distribution.zip</Class-Path>
             </manifestEntries>
           </archive>
         </configuration>
