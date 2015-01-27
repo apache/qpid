@@ -18,6 +18,17 @@
 
 package org.apache.qpid.configuration;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * This class centralized the Qpid client properties.
  *
@@ -25,6 +36,8 @@ package org.apache.qpid.configuration;
  */
 public class ClientProperties
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientProperties.class);
+
     /**
      * Currently with Qpid it is not possible to change the client ID.
      * If one is not specified upon connection construction, an id is generated automatically.
@@ -291,6 +304,48 @@ public class ClientProperties
      * that causes an error in the Java Broker (0.28 and earlier).
      */
     public static final String QPID_USE_LEGACY_GETQUEUEDEPTH_BEHAVIOUR = "qpid.use_legacy_getqueuedepth_behavior";
+
+    static
+    {
+        // force load of common properties
+        Class<CommonProperties> commonPropertiesClass = CommonProperties.class;
+
+        Properties props = new Properties();
+        String initialProperties = System.getProperty("qpid.client_properties_file");
+        URL initialPropertiesLocation = null;
+        try
+        {
+            if (initialProperties == null)
+            {
+                initialPropertiesLocation = ClientProperties.class.getClassLoader().getResource("qpid-client.properties");
+            }
+            else
+            {
+                initialPropertiesLocation = (new File(initialProperties)).toURI().toURL();
+            }
+
+            if (initialPropertiesLocation != null)
+            {
+                props.load(initialPropertiesLocation.openStream());
+            }
+        }
+        catch (MalformedURLException e)
+        {
+            LOGGER.warn("Could not open client properties file '"+initialProperties+"'.", e);
+        }
+        catch (IOException e)
+        {
+            LOGGER.warn("Could not open client properties file '" + initialPropertiesLocation + "'.", e);
+        }
+
+        Set<String> propertyNames = new HashSet<>(props.stringPropertyNames());
+        propertyNames.removeAll(System.getProperties().stringPropertyNames());
+        for (String propName : propertyNames)
+        {
+            System.setProperty(propName, props.getProperty(propName));
+        }
+
+    }
 
     private ClientProperties()
     {
