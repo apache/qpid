@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.common;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Properties;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * QpidProperties captures the project name, version number, and source code repository revision number from a properties
@@ -76,10 +76,11 @@ public class QpidProperties
     /** Holds the source code revision. */
     private static String buildVersion = DEFAULT;
 
+    private static final Properties properties = new Properties();
+
     // Loads the values from the version properties file.
     static
     {
-        Properties props = new Properties();
 
         try
         {
@@ -90,12 +91,12 @@ public class QpidProperties
             }
             else
             {
-                props.load(propertyStream);
+                properties.load(propertyStream);
 
                 if (_logger.isDebugEnabled())
                 {
                     _logger.debug("Dumping QpidProperties");
-                    for (Map.Entry<Object, Object> entry : props.entrySet())
+                    for (Map.Entry<Object, Object> entry : properties.entrySet())
                     {
                         _logger.debug("Property: " + entry.getKey() + " Value: " + entry.getValue());
                     }
@@ -103,11 +104,11 @@ public class QpidProperties
                     _logger.debug("End of property dump");
                 }
 
-                productName = readPropertyValue(props, PRODUCT_NAME_PROPERTY);
-                String versionSuffix = (String) props.get(RELEASE_VERSION_SUFFIX);
-                String version = readPropertyValue(props, RELEASE_VERSION_PROPERTY);
+                productName = readPropertyValue(properties, PRODUCT_NAME_PROPERTY);
+                String versionSuffix = (String) properties.get(RELEASE_VERSION_SUFFIX);
+                String version = readPropertyValue(properties, RELEASE_VERSION_PROPERTY);
                 releaseVersion = versionSuffix == null || "".equals(versionSuffix) ? version : version + ";" + versionSuffix;
-                buildVersion = readPropertyValue(props, BUILD_VERSION_PROPERTY);
+                buildVersion = readPropertyValue(properties, BUILD_VERSION_PROPERTY);
             }
         }
         catch (IOException e)
@@ -115,6 +116,11 @@ public class QpidProperties
             // Log a warning about this and leave the values initialized to unknown.
             _logger.error("Could not load version.properties resource: " + e, e);
         }
+    }
+
+    public static Properties asProperties()
+    {
+        return new Properties(properties);
     }
 
     /**
