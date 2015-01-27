@@ -20,6 +20,7 @@
 package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import static org.apache.qpid.server.management.plugin.servlet.rest.ConfiguredObjectToMapConverter.STATISTICS_MAP_KEY;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -37,6 +38,8 @@ import java.util.Set;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObjectAttribute;
+import org.apache.qpid.server.model.ConfiguredObjectTypeRegistry;
 import org.apache.qpid.server.model.Model;
 
 public class ConfiguredObjectToMapConverterTest extends TestCase
@@ -75,6 +78,8 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
     {
         final String attributeName = "attribute";
         final String attributeValue = "value";
+        Model model = createTestModel();
+        when(_configuredObject.getModel()).thenReturn(model);
         configureMockToReturnOneAttribute(_configuredObject, attributeName, attributeValue);
 
         Map<String, Object> resultMap = _converter.convertObjectToMap(_configuredObject,
@@ -217,6 +222,11 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
         final List<Class<? extends ConfiguredObject>> list = new ArrayList<Class<? extends ConfiguredObject>>();
         list.add(TestChild.class);
         when(model.getChildTypes(ConfiguredObject.class)).thenReturn(list);
+        final ConfiguredObjectTypeRegistry typeRegistry = mock(ConfiguredObjectTypeRegistry.class);
+        final Map<String, ConfiguredObjectAttribute<?, ?>> attrTypes = mock(Map.class);
+        when(attrTypes.get(any(String.class))).thenReturn(mock(ConfiguredObjectAttribute.class));
+        when(typeRegistry.getAttributeTypes(any(Class.class))).thenReturn(attrTypes);
+        when(model.getTypeRegistry()).thenReturn(typeRegistry);
         return model;
     }
 
