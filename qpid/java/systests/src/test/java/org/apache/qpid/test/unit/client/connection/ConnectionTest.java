@@ -81,7 +81,6 @@ public class ConnectionTest extends QpidBrokerTestCase
                                      + "&temporaryQueueExchange='tmp.direct'"
                                      + "&temporaryTopicExchange='tmp.topic'");
 
-            System.err.println(url.toString());
             conn = new AMQConnection(url);
 
 

@@ -23,6 +23,7 @@ define(["dojo/_base/xhr",
         "dojo/query",
         "dojo/json",
         "dojo/_base/connect",
+        "dojo/store/Memory",
         "qpid/common/properties",
         "qpid/common/updater",
         "qpid/common/util",
@@ -33,7 +34,7 @@ define(["dojo/_base/xhr",
         "qpid/management/addAuthenticationProvider",
         "qpid/management/addVirtualHostNodeAndVirtualHost",
         "qpid/management/addPort",
-        "qpid/management/addKeystore",
+        "qpid/management/addStore",
         "qpid/management/addGroupProvider",
         "qpid/management/addAccessControlProvider",
         "qpid/management/editBroker",
@@ -50,8 +51,8 @@ define(["dojo/_base/xhr",
         "dijit/Menu",
         "dijit/MenuItem",
         "dojo/domReady!"],
-       function (xhr, parser, query, json, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, entities,
-        addAuthenticationProvider, addVirtualHostNodeAndVirtualHost, addPort, addKeystore, addGroupProvider, addAccessControlProvider, editBroker) {
+       function (xhr, parser, query, json, connect, memory, properties, updater, util, UpdatableStore, EnhancedGrid, registry, entities,
+        addAuthenticationProvider, addVirtualHostNodeAndVirtualHost, addPort, addStore, addGroupProvider, addAccessControlProvider, editBroker) {
 
            var brokerAttributeNames = ["name", "operatingSystem", "platform", "productVersion", "modelVersion",
                                         "defaultVirtualHost", "statisticsReportingPeriod", "statisticsReportingResetEnabled",
@@ -153,7 +154,11 @@ define(["dojo/_base/xhr",
 
                             var addKeystoreButton = query(".addKeystore", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(addKeystoreButton), "onClick",
-                                function(evt){ addKeystore.showKeystoreDialog() });
+                                function(evt)
+                                {
+                                    addStore.setupTypeStore("KeyStore");
+                                    addStore.show();
+                                });
 
                             var deleteKeystore = query(".deleteKeystore", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(deleteKeystore), "onClick",
@@ -168,7 +173,11 @@ define(["dojo/_base/xhr",
 
                             var addTruststoreButton = query(".addTruststore", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(addTruststoreButton), "onClick",
-                                function(evt){ addKeystore.showTruststoreDialog() });
+                                function(evt)
+                                {
+                                    addStore.setupTypeStore("TrustStore");
+                                    addStore.show();
+                                });
 
                             var deleteTruststore = query(".deleteTruststore", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(deleteTruststore), "onClick",

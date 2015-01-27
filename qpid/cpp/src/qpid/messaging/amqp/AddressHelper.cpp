@@ -242,7 +242,7 @@ bool replace(Variant::Map& map, const std::string& original, const std::string& 
     }
 }
 
-const uint32_t DEFAULT_DURABLE_TIMEOUT(15*60);//15 minutes
+const uint32_t DEFAULT_DURABLE_TIMEOUT(2*60);//2 minutes
 const uint32_t DEFAULT_TIMEOUT(0);
 }
 
@@ -267,7 +267,7 @@ AddressHelper::AddressHelper(const Address& address) :
     bind(link, RELIABILITY, reliability);
     durableNode = test(node, DURABLE);
     durableLink = test(link, DURABLE);
-    timeout = get(link, TIMEOUT, durableLink ? DEFAULT_DURABLE_TIMEOUT : DEFAULT_TIMEOUT);
+    timeout = get(link, TIMEOUT, durableLink && reliability != AT_LEAST_ONCE ? DEFAULT_DURABLE_TIMEOUT : DEFAULT_TIMEOUT);
     std::string mode;
     if (bind(address, MODE, mode)) {
         if (mode == BROWSE) {
@@ -571,7 +571,8 @@ bool AddressHelper::enabled(const std::string& policy, CheckMode mode) const
 
 bool AddressHelper::isUnreliable() const
 {
-    return reliability == AT_MOST_ONCE || reliability == UNRELIABLE;
+    return reliability == AT_MOST_ONCE || reliability == UNRELIABLE ||
+        (reliability.empty() && browse); // A browser defaults to unreliable.
 }
 
 const qpid::types::Variant::Map& AddressHelper::getNodeProperties() const

@@ -45,6 +45,9 @@ void MessageBuilder::handle(AMQFrame& frame)
     switch(state) {
     case METHOD:
         checkType(METHOD_BODY, type);
+        if (!frame.getMethod()->isA<qpid::framing::MessageTransferBody>())
+            throw NotImplementedException(QPID_MSG("Unexpected method: " << *(frame.getMethod())));
+
         exchange = frame.castBody<qpid::framing::MessageTransferBody>()->getDestination();
         state = HEADER;
         break;

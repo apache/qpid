@@ -28,6 +28,7 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
+import org.apache.qpid.test.utils.BrokerHolder;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class TwoNodeTest extends QpidBrokerTestCase
@@ -47,7 +48,7 @@ public class TwoNodeTest extends QpidBrokerTestCase
     @Override
     protected void setUp() throws Exception
     {
-        _brokerType = BrokerType.SPAWNED;
+        _brokerType = BrokerHolder.BrokerType.SPAWNED;
 
         setTestClientSystemProperty("log4j.configuration", getBrokerCommandLog4JFile().toURI().toString());
 

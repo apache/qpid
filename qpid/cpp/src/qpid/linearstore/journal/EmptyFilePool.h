@@ -87,23 +87,30 @@ public:
                                                      const efpPartitionNumber_t partitionNumber);
 
 protected:
+    void checkIosState(std::ofstream& ofs,
+                       const uint32_t jerrno,
+                       const std::string& fqFileName,
+                       const std::string& operation,
+                       const std::string& errorMessage,
+                       const std::string& className,
+                       const std::string& fnName);
     std::string createEmptyFile();
     std::string getEfpFileName();
     void initializeSubDirectory(const std::string& fqDirName);
-    bool overwriteFileContents(const std::string& fqFileName);
+    void overwriteFileContents(const std::string& fqFileName);
     std::string popEmptyFile();
     void pushEmptyFile(const std::string fqFileName);
     void returnEmptyFile(const std::string& emptyFileName);
     void resetEmptyFileHeader(const std::string& fqFileName);
     bool validateEmptyFile(const std::string& emptyFileName) const;
 
-    static int moveFile(const std::string& fromFqPath,
-                        const std::string& toFqPath);
     static int createSymLink(const std::string& fqFileName,
                              const std::string& fqLinkName);
     static std::string deleteSymlink(const std::string& fqLinkName);
     static bool isFile(const std::string& fqName);
     static bool isSymlink(const std::string& fqName);
+    static bool moveFile(const std::string& fromFqPath,
+                         const std::string& toFqPath);
 };
 
 }}}

@@ -60,6 +60,8 @@ class ConnectionCodec : public Codec {
         virtual ConnectionCodec* create(
             OutputControl&, const std::string& id, const SecuritySettings&
         ) = 0;
+
+        virtual framing::ProtocolVersion supportedVersion() const = 0;
     };
 };
 

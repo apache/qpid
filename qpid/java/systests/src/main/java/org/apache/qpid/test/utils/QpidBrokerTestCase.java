@@ -18,9 +18,7 @@
 package org.apache.qpid.test.utils;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
@@ -48,8 +45,10 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.FileAppender;
+import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.apache.log4j.xml.DOMConfigurator;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnectionFactory;
@@ -60,7 +59,6 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.server.Broker;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -83,19 +81,11 @@ public class QpidBrokerTestCase extends QpidTestCase
 {
     private TaskExecutor _taskExecutor;
 
-    public enum BrokerType
-    {
-        EXTERNAL /** Test case relies on a Broker started independently of the test-suite */,
-        INTERNAL /** Test case starts an embedded broker within this JVM */,
-        SPAWNED /** Test case spawns a new broker as a separate process */
-    }
-
     public static final String GUEST_USERNAME = "guest";
     public static final String GUEST_PASSWORD = "guest";
 
-    protected final static String QpidHome = System.getProperty("QPID_HOME");
     private final File _configFile = new File(System.getProperty("broker.config"));
-    private File _logConfigFile;
+    private File _spawnedBrokerLogConfigFile;
     protected final String _brokerStoreType = System.getProperty("broker.config-store-type", "JSON");
     protected static final Logger _logger = Logger.getLogger(QpidBrokerTestCase.class);
     protected static final int LOGMONITOR_TIMEOUT = 5000;
@@ -128,11 +118,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     private static final String BROKER_COMMAND_PLATFORM = "broker.command." + SystemUtils.getOSConfigSuffix();
     private static final String BROKER_CLEAN_BETWEEN_TESTS = "broker.clean.between.tests";
     private static final String BROKER_VERSION = "broker.version";
-    protected static final String BROKER_READY = "broker.ready";
-    private static final String BROKER_STOPPED = "broker.stopped";
     private static final String TEST_OUTPUT = "test.output";
-    private static final String BROKER_LOG_INTERLEAVE = "broker.log.interleave";
-    private static final String BROKER_LOG_PREFIX = "broker.log.prefix";
     private static final String BROKER_PERSITENT = "broker.persistent";
     public static final String PROFILE_USE_SSL = "profile.use_ssl";
 
@@ -141,40 +127,29 @@ public class QpidBrokerTestCase extends QpidTestCase
     public static final int DEFAULT_JMXPORT_REGISTRYSERVER = 8999;
     public static final int JMXPORT_CONNECTORSERVER_OFFSET = 100;
     public static final int DEFAULT_HTTP_MANAGEMENT_PORT_VALUE = 8080;
-    public static final int DEFAULT_HTTPS_MANAGEMENT_PORT_VALUE = 8443;
 
     public static final String TEST_AMQP_PORT_PROTOCOLS_PROPERTY="test.amqp_port_protocols";
 
     // values
     protected static final String JAVA = "java";
-    protected static final String CPP = "cpp";
-
-    protected static final String QPID_HOME = "QPID_HOME";
 
     public static final int DEFAULT_PORT = Integer.getInteger("test.port", DEFAULT_PORT_VALUE);
     public static final int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
     public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", DEFAULT_JMXPORT_REGISTRYSERVER);
     public static final int DEFAULT_HTTP_MANAGEMENT_PORT = Integer.getInteger("test.hport", DEFAULT_HTTP_MANAGEMENT_PORT_VALUE);
-    public static final int DEFAULT_HTTPS_MANAGEMENT_PORT = Integer.getInteger("test.hsport", DEFAULT_HTTPS_MANAGEMENT_PORT_VALUE);
     public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.port.ssl", DEFAULT_SSL_PORT_VALUE);
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
-    protected BrokerType _brokerType = BrokerType.valueOf(System.getProperty(BROKER_TYPE, "").toUpperCase());
+    protected BrokerHolder.BrokerType _brokerType = BrokerHolder.BrokerType.valueOf(System.getProperty(BROKER_TYPE, "").toUpperCase());
 
     private static final String BROKER_COMMAND_TEMPLATE = System.getProperty(BROKER_COMMAND_PLATFORM, System.getProperty(BROKER_COMMAND));
-    protected BrokerCommandHelper _brokerCommandHelper = new BrokerCommandHelper(BROKER_COMMAND_TEMPLATE);
 
     private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
     private final Protocol _brokerProtocol = Protocol.valueOf("AMQP_" + System.getProperty(BROKER_VERSION, " ").substring(1));
     protected String _output = System.getProperty(TEST_OUTPUT, System.getProperty("java.io.tmpdir"));
     protected Boolean _brokerPersistent = Boolean.getBoolean(BROKER_PERSITENT);
 
-    protected static String _brokerLogPrefix = System.getProperty(BROKER_LOG_PREFIX,"BROKER: ");
-    protected static boolean _interleaveBrokerLog = Boolean.valueOf(System.getProperty(BROKER_LOG_INTERLEAVE,"true"));
-
     protected File _outputFile;
-
-    protected PrintStream _testcaseOutputStream;
 
     protected Map<Integer, BrokerHolder> _brokers = new HashMap<Integer, BrokerHolder>();
 
@@ -195,6 +170,8 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     /** Size to create our message*/
     private int _messageSize = DEFAULT_MESSAGE_SIZE;
+    private String _brokerCommandTemplate;
+
     /** Type of message*/
     protected enum MessageType
     {
@@ -210,7 +187,8 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         super();
         _brokerConfigurations = new HashMap<Integer, TestBrokerConfiguration>();
-        initialiseLogConfigFile();
+        initialiseSpawnedBrokerLogConfigFile();
+        _brokerCommandTemplate = BROKER_COMMAND_TEMPLATE;
     }
 
     public TestBrokerConfiguration getBrokerConfiguration(int port)
@@ -259,12 +237,12 @@ public class QpidBrokerTestCase extends QpidTestCase
         return configuration;
     }
 
-    private void initialiseLogConfigFile()
+    private void initialiseSpawnedBrokerLogConfigFile()
     {
-        _logConfigFile = new File(LOG4J_CONFIG_FILE_PATH);
-        if(!_logConfigFile.exists())
+        _spawnedBrokerLogConfigFile = new File(SPAWNED_BROKER_LOG4J_CONFIG_FILE_PATH);
+        if(!_spawnedBrokerLogConfigFile.exists())
         {
-            throw new RuntimeException("Log config file " + _logConfigFile.getAbsolutePath() + " does not exist");
+            throw new RuntimeException("Log config file " + _spawnedBrokerLogConfigFile.getAbsolutePath() + " does not exist");
         }
     }
 
@@ -276,36 +254,18 @@ public class QpidBrokerTestCase extends QpidTestCase
     @Override
     public void runBare() throws Throwable
     {
-        String qname = getClass().getName() + "." + getName();
-
         // Initialize this for each test run
         _env = new HashMap<String, String>();
 
-        PrintStream oldOut = System.out;
-        PrintStream oldErr = System.err;
-        PrintStream out = null;
-        PrintStream err = null;
+        // Log4j properties expects this to be set
+        System.setProperty("qpid.testMethod", "-" + getName());
+        System.setProperty("qpid.testClass", getClass().getName());
 
-        boolean redirected = _output != null && _output.length() > 0;
-        if (redirected)
-        {
-            _outputFile = new File(String.format("%s/TEST-%s.out", _output, qname));
-            out = new PrintStream(new FileOutputStream(_outputFile), true);
-            err = new PrintStream(String.format("%s/TEST-%s.err", _output, qname));
+        String log4jConfigFile = System.getProperty("log4j.configuration.file");
+        DOMConfigurator.configure(log4jConfigFile);
 
-            System.setOut(out);
-            System.setErr(err);
-
-            if (_interleaveBrokerLog)
-            {
-                _testcaseOutputStream = out;
-            }
-            else
-            {
-                _testcaseOutputStream = new PrintStream(new FileOutputStream(String
-                        .format("%s/TEST-%s.broker.out", _output, qname)), true);
-            }
-        }
+        // get log file from file appender
+        _outputFile = new File(((FileAppender)LogManager.getRootLogger().getAllAppenders().nextElement()).getFile());
 
         try
         {
@@ -324,7 +284,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             revertSystemProperties();
             revertLoggingLevels();
 
-            if(_brokerCleanBetweenTests)
+            if (_brokerCleanBetweenTests)
             {
                 final String qpidWork = System.getProperty("QPID_WORK");
                 cleanBrokerWork(qpidWork);
@@ -333,17 +293,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             _logger.info("==========  stop " + getTestName() + " ==========");
 
-            if (redirected)
-            {
-                System.setErr(oldErr);
-                System.setOut(oldOut);
-                err.close();
-                out.close();
-                if (!_interleaveBrokerLog)
-                {
-                    _testcaseOutputStream.close();
-                }
-            }
+            LogManager.resetConfiguration();
         }
     }
 
@@ -403,7 +353,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected int getPort(int port)
     {
-        if (!_brokerType.equals(BrokerType.EXTERNAL))
+        if (!_brokerType.equals(BrokerHolder.BrokerType.EXTERNAL))
         {
             return port == 0 ? DEFAULT_PORT : port;
         }
@@ -425,28 +375,33 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     public void startBroker(int port, boolean managementMode) throws Exception
     {
+        startBroker(port, managementMode, null);
+    }
+
+    public void startBroker(int port, boolean managementMode, String log4jFile) throws Exception
+    {
         int actualPort = getPort(port);
         TestBrokerConfiguration configuration = getBrokerConfiguration(actualPort);
-        startBroker(actualPort, configuration, managementMode);
+        startBroker(actualPort, configuration, managementMode, log4jFile);
     }
 
     protected File getBrokerCommandLog4JFile()
     {
-        return _logConfigFile;
+        return _spawnedBrokerLogConfigFile;
     }
 
     protected void setBrokerCommandLog4JFile(File file)
     {
-        _logConfigFile = file;
+        _spawnedBrokerLogConfigFile = file;
         _logger.info("Modified log config file to: " + file);
     }
 
-    public void startBroker(int port, TestBrokerConfiguration testConfiguration) throws Exception
+    public void startBroker(int port, TestBrokerConfiguration testConfiguration, String log4jFile) throws Exception
     {
-        startBroker(port, testConfiguration, false);
+        startBroker(port, testConfiguration, false, log4jFile);
     }
 
-    public void startBroker(int port, TestBrokerConfiguration testConfiguration, boolean managementMode) throws Exception
+    protected void startBroker(int port, TestBrokerConfiguration testConfiguration, boolean managementMode, String log4jFile) throws Exception
     {
         port = getPort(port);
 
@@ -455,181 +410,12 @@ public class QpidBrokerTestCase extends QpidTestCase
             throw new IllegalStateException("There is already an existing broker running on port " + port);
         }
 
-        Set<Integer> portsUsedByBroker = guessAllPortsUsedByBroker(port);
         String testConfig = saveTestConfiguration(port, testConfiguration);
-
-        if (_brokerType.equals(BrokerType.INTERNAL) && !existingInternalBroker())
-        {
-            setSystemProperty(BrokerProperties.PROPERTY_USE_CUSTOM_RMI_SOCKET_FACTORY, "false");
-            BrokerOptions options = new BrokerOptions();
-
-            options.setConfigurationStoreType(_brokerStoreType);
-            options.setConfigurationStoreLocation(testConfig);
-            options.setManagementMode(managementMode);
-            if (managementMode)
-            {
-                options.setManagementModePassword(MANAGEMENT_MODE_PASSWORD);
-            }
-
-            //Set the log config file, relying on the log4j.configuration system property
-            //set on the JVM by the JUnit runner task in module.xml.
-            options.setLogConfigFileLocation(_logConfigFile.getAbsolutePath());
-
-            Broker broker = new Broker();
-            _logger.info("Starting internal broker (same JVM)");
-            broker.startup(options);
-
-            _brokers.put(port, new InternalBrokerHolder(broker, System.getProperty("QPID_WORK"), portsUsedByBroker));
-        }
-        else if (!_brokerType.equals(BrokerType.EXTERNAL))
-        {
-            // Add the port to QPID_WORK to ensure unique working dirs for multi broker tests
-            final String qpidWork = getQpidWork(_brokerType, port);
-
-            String[] cmd = _brokerCommandHelper.getBrokerCommand(port, testConfig, _brokerStoreType, _logConfigFile);
-            if (managementMode)
-            {
-                String[] newCmd = new String[cmd.length + 3];
-                System.arraycopy(cmd, 0, newCmd, 0, cmd.length);
-                newCmd[cmd.length] = "-mm";
-                newCmd[cmd.length + 1] = "-mmpass";
-                newCmd[cmd.length + 2] = MANAGEMENT_MODE_PASSWORD;
-                cmd = newCmd;
-            }
-            _logger.info("Starting spawn broker using command: " + StringUtils.join(cmd, ' '));
-            ProcessBuilder pb = new ProcessBuilder(cmd);
-            pb.redirectErrorStream(true);
-            Map<String, String> processEnv = pb.environment();
-            String qpidHome = System.getProperty(QPID_HOME);
-            processEnv.put(QPID_HOME, qpidHome);
-            //Augment Path with bin directory in QPID_HOME.
-            boolean foundPath = false;
-            final String pathEntry = qpidHome + File.separator + "bin";
-            for(Map.Entry<String,String> entry : processEnv.entrySet())
-            {
-                if(entry.getKey().equalsIgnoreCase("path"))
-                {
-                    entry.setValue(entry.getValue().concat(File.pathSeparator + pathEntry));
-                    foundPath = true;
-                }
-            }
-            if(!foundPath)
-            {
-                processEnv.put("PATH", pathEntry);
-
-            }
-            //Add the test name to the broker run.
-            // DON'T change PNAME, qpid.stop needs this value.
-            processEnv.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + getTestName() + "\"");
-            processEnv.put("QPID_WORK", qpidWork);
-
-            // Use the environment variable to set amqj.logging.level for the broker
-            // The value used is a 'server' value in the test configuration to
-            // allow a differentiation between the client and broker logging levels.
-            if (System.getProperty("amqj.server.logging.level") != null)
-            {
-                setBrokerEnvironment("AMQJ_LOGGING_LEVEL", System.getProperty("amqj.server.logging.level"));
-            }
-
-            // Add all the environment settings the test requested
-            if (!_env.isEmpty())
-            {
-                for (Map.Entry<String, String> entry : _env.entrySet())
-                {
-                    processEnv.put(entry.getKey(), entry.getValue());
-                }
-            }
-
-            String qpidOpts = "";
-
-            // a synchronized hack to avoid adding into QPID_OPTS the values
-            // of JVM properties "test.virtualhosts" and "test.config" set by a concurrent startup process
-            synchronized (_propertiesSetForBroker)
-            {
-                // Add default test logging levels that are used by the log4j-test
-                // Use the convenience methods to push the current logging setting
-                // in to the external broker's QPID_OPTS string.
-                setSystemProperty("amqj.protocol.logging.level");
-                setSystemProperty("root.logging.level");
-
-                setSystemProperty("test.port");
-                setSystemProperty("test.mport");
-                setSystemProperty("test.cport");
-                setSystemProperty("test.hport");
-                setSystemProperty("test.hsport");
-                setSystemProperty("test.port.ssl");
-                setSystemProperty("test.port.alt");
-                setSystemProperty("test.port.alt.ssl");
-                setSystemProperty("test.amqp_port_protocols");
-
-                setSystemProperty("virtualhostnode.type");
-                setSystemProperty("virtualhostnode.context.blueprint");
-
-                // Add all the specified system properties to QPID_OPTS
-                if (!_propertiesSetForBroker.isEmpty())
-                {
-                    for (String key : _propertiesSetForBroker.keySet())
-                    {
-                        qpidOpts += " -D" + key + "=" + _propertiesSetForBroker.get(key);
-                    }
-                }
-            }
-            if (processEnv.containsKey("QPID_OPTS"))
-            {
-                qpidOpts = processEnv.get("QPID_OPTS") + qpidOpts;
-            }
-            processEnv.put("QPID_OPTS", qpidOpts);
-
-            // cpp broker requires that the work directory is created
-            createBrokerWork(qpidWork);
-
-            Process process = pb.start();
-
-            Piper p = new Piper(process.getInputStream(),
-                                _testcaseOutputStream,
-                                System.getProperty(BROKER_READY),
-                                System.getProperty(BROKER_STOPPED),
-                                _interleaveBrokerLog ? _brokerLogPrefix : null);
-
-            p.start();
-            StringBuilder cmdLine = new StringBuilder(cmd[0]);
-            for(int i = 1; i< cmd.length; i++)
-            {
-                cmdLine.append(' ');
-                cmdLine.append(cmd[i]);
-            }
-
-            SpawnedBrokerHolder holder = new SpawnedBrokerHolder(process, qpidWork, portsUsedByBroker, cmdLine.toString());
-            if (!p.await(30, TimeUnit.SECONDS))
-            {
-                _logger.info("broker failed to become ready (" + p.getReady() + "):" + p.getStopLine());
-                String threadDump = holder.dumpThreads();
-                if (!threadDump.isEmpty())
-                {
-                    _logger.info("the result of a try to capture thread dump:" + threadDump);
-                }
-                //Ensure broker has stopped
-                process.destroy();
-                cleanBrokerWork(qpidWork);
-                throw new RuntimeException("broker failed to become ready:"
-                                           + p.getStopLine());
-            }
-
-            try
-            {
-                //test that the broker is still running and hasn't exited unexpectedly
-                int exit = process.exitValue();
-                _logger.info("broker aborted: " + exit);
-                cleanBrokerWork(qpidWork);
-                throw new RuntimeException("broker aborted: " + exit);
-            }
-            catch (IllegalThreadStateException e)
-            {
-                // this is expect if the broker started successfully
-            }
-
-            _brokers.put(port, holder);
-        }
+        String log4jConfig = log4jFile == null ? getBrokerCommandLog4JFile().getAbsolutePath() : log4jFile;
+        BrokerOptions options = getBrokerOptions(managementMode, testConfig, log4jConfig, log4jFile == null);
+        BrokerHolder holder = new BrokerHolderFactory().create(_brokerType, port, this);
+        _brokers.put(port, holder);
+        holder.start(options);
     }
 
     private boolean existingInternalBroker()
@@ -643,21 +429,6 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
 
         return false;
-    }
-
-    private String getQpidWork(BrokerType broker, int port)
-    {
-        if (!broker.equals(BrokerType.EXTERNAL))
-        {
-            return System.getProperty("QPID_WORK")+ "/" + port;
-        }
-
-        return System.getProperty("QPID_WORK");
-    }
-
-    public String getTestConfigFile()
-    {
-        return getTestConfigFile(getPort());
     }
 
     public String getTestConfigFile(int port)
@@ -1035,7 +806,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected boolean isInternalBroker()
     {
-        return _brokerType.equals(BrokerType.INTERNAL);
+        return _brokerType.equals(BrokerHolder.BrokerType.INTERNAL);
     }
 
     protected boolean isBrokerStorePersistent()
@@ -1397,16 +1168,6 @@ public class QpidBrokerTestCase extends QpidTestCase
         return message;
     }
 
-    protected int getMessageSize()
-    {
-        return _messageSize;
-    }
-
-    protected void setMessageSize(int byteSize)
-    {
-        _messageSize = byteSize;
-    }
-
     public BrokerDetails getBroker()
     {
         try
@@ -1453,4 +1214,91 @@ public class QpidBrokerTestCase extends QpidTestCase
         session.commit();
         session.close();
     }
+
+    protected BrokerOptions getBrokerOptions( boolean managementMode, String testConfig, String log4jConfig, boolean skipLoggingConfiguration)
+    {
+        BrokerOptions options = new BrokerOptions();
+
+        options.setConfigurationStoreType(_brokerStoreType);
+        options.setConfigurationStoreLocation(testConfig);
+        options.setManagementMode(managementMode);
+        if (managementMode)
+        {
+            options.setManagementModePassword(MANAGEMENT_MODE_PASSWORD);
+        }
+        options.setSkipLoggingConfiguration(skipLoggingConfiguration);
+        options.setLogConfigFileLocation(log4jConfig);
+        options.setStartupLoggedToSystemOut(false);
+        return options;
+    }
+
+    private Map<String, String> getJvmProperties()
+    {
+        Map<String,String> jvmOptions = new HashMap();
+        synchronized (_propertiesSetForBroker)
+        {
+            jvmOptions.putAll(_propertiesSetForBroker);
+
+            copySystemProperty("amqj.protocol.logging.level", jvmOptions);
+            copySystemProperty("root.logging.level", jvmOptions);
+
+            copySystemProperty("test.port", jvmOptions);
+            copySystemProperty("test.mport", jvmOptions);
+            copySystemProperty("test.cport", jvmOptions);
+            copySystemProperty("test.hport", jvmOptions);
+            copySystemProperty("test.hsport", jvmOptions);
+            copySystemProperty("test.port.ssl", jvmOptions);
+            copySystemProperty("test.port.alt", jvmOptions);
+            copySystemProperty("test.port.alt.ssl", jvmOptions);
+            copySystemProperty("test.amqp_port_protocols", jvmOptions);
+
+            copySystemProperty("virtualhostnode.type", jvmOptions);
+            copySystemProperty("virtualhostnode.context.blueprint", jvmOptions);
+        }
+        return jvmOptions;
+    }
+
+    private void copySystemProperty(String name, Map<String, String> jvmOptions)
+    {
+        String value = System.getProperty(name);
+        if (value != null)
+        {
+            jvmOptions.put(name, value);
+        }
+    }
+
+    private Map<String, String> getEnvironmentProperties()
+    {
+        return new HashMap<>(_env);
+    }
+
+    private String getBrokerCommandTemplate()
+    {
+        return _brokerCommandTemplate;
+    }
+
+    public static class BrokerHolderFactory
+    {
+
+        public BrokerHolder create(BrokerHolder.BrokerType brokerType, int port, QpidBrokerTestCase testCase)
+        {
+            Set<Integer> portsUsedByBroker = testCase.guessAllPortsUsedByBroker(port);
+            BrokerHolder holder = null;
+            if (brokerType.equals(BrokerHolder.BrokerType.INTERNAL) && !testCase.existingInternalBroker())
+            {
+                testCase.setSystemProperty(BrokerProperties.PROPERTY_USE_CUSTOM_RMI_SOCKET_FACTORY, "false");
+                holder = new InternalBrokerHolder(portsUsedByBroker);
+            }
+            else if (!brokerType.equals(BrokerHolder.BrokerType.EXTERNAL))
+            {
+
+                Map<String,String> jvmOptions = testCase.getJvmProperties();
+                Map<String,String> environmentProperties = testCase.getEnvironmentProperties();
+
+                holder = new SpawnedBrokerHolder(testCase.getBrokerCommandTemplate(), port, testCase.getTestName(), jvmOptions, environmentProperties, brokerType, portsUsedByBroker);
+            }
+            return holder;
+        }
+    }
+
 }

@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.server.plugin;
 
-import org.apache.qpid.server.BrokerOptions;
+import java.util.Map;
+
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
@@ -32,6 +33,6 @@ public interface SystemConfigFactory<X extends SystemConfig<X>> extends Pluggabl
     public X newInstance(final TaskExecutor taskExecutor,
                          final EventLogger eventLogger,
                          final LogRecorder logRecorder,
-                         final BrokerOptions brokerOptions,
+                         final Map<String,Object> options,
                          final BrokerShutdownProvider brokerShutdownProvider);
 }

@@ -39,6 +39,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.security.AccessControl;
 import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
 
 public class ACLFileAccessControlProviderImpl
         extends AbstractConfiguredObject<ACLFileAccessControlProviderImpl>
@@ -46,10 +47,15 @@ public class ACLFileAccessControlProviderImpl
 {
     private static final Logger LOGGER = Logger.getLogger(ACLFileAccessControlProviderImpl.class);
 
+    static
+    {
+        Handler.register();
+    }
+
     protected DefaultAccessControl _accessControl;
     protected final Broker _broker;
 
-    @ManagedAttributeField
+    @ManagedAttributeField( afterSet = "reloadAclFile")
     private String _path;
 
     @ManagedObjectFactoryConstructor
@@ -110,6 +116,26 @@ public class ACLFileAccessControlProviderImpl
     {
         super.onOpen();
         _accessControl = new DefaultAccessControl(getPath(), _broker);
+    }
+
+    @SuppressWarnings("unused")
+    private void reloadAclFile()
+    {
+        try
+        {
+            DefaultAccessControl accessControl = new DefaultAccessControl(getPath(), _broker);
+            accessControl.open();
+            DefaultAccessControl oldAccessControl = _accessControl;
+            _accessControl = accessControl;
+            if(oldAccessControl != null)
+            {
+                oldAccessControl.close();
+            }
+        }
+        catch(RuntimeException e)
+        {
+            throw new IllegalConfigurationException(e.getMessage(), e);
+        }
     }
 
     @Override

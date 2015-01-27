@@ -29,16 +29,15 @@ define(["dojo/dom",
         "qpid/common/updater",
         "qpid/common/util",
         "qpid/common/formatter",
-        "qpid/management/addKeystore",
+        "qpid/management/addStore",
         "dojo/domReady!"],
-       function (dom, xhr, parser, query, connect, registry, entities, properties, updater, util, formatter, addKeystore) {
+       function (dom, xhr, parser, query, connect, registry, entities, properties, updater, util, formatter, addStore) {
 
-           function KeyStore(name, parent, controller, objectType) {
+           function KeyStore(name, parent, controller) {
                this.keyStoreName = name;
                this.controller = controller;
                this.modelObj = { type: "keystore", name: name, parent: parent};
                this.url = "api/latest/keystore/" + encodeURIComponent(name);
-               this.dialog =  addKeystore.showKeystoreDialog;
            }
 
            KeyStore.prototype.getTitle = function() {
@@ -48,7 +47,7 @@ define(["dojo/dom",
            KeyStore.prototype.open = function(contentPane) {
                var that = this;
                this.contentPane = contentPane;
-               xhr.get({url: "showKeyStore.html",
+               xhr.get({url: "showStore.html",
                         sync: true,
                         load:  function(data) {
                             contentPane.containerNode.innerHTML = data;
@@ -60,22 +59,22 @@ define(["dojo/dom",
 
                             that.keyStoreUpdater.update();
 
-                            var deleteKeyStoreButton = query(".deleteKeyStoreButton", contentPane.containerNode)[0];
+                            var deleteKeyStoreButton = query(".deleteStoreButton", contentPane.containerNode)[0];
                             var node = registry.byNode(deleteKeyStoreButton);
                             connect.connect(node, "onClick",
                                 function(evt){
                                     that.deleteKeyStore();
                                 });
 
-                            var editKeyStoreButton = query(".editKeyStoreButton", contentPane.containerNode)[0];
+                            var editKeyStoreButton = query(".editStoreButton", contentPane.containerNode)[0];
                             var node = registry.byNode(editKeyStoreButton);
                             connect.connect(node, "onClick",
                                 function(evt){
                                   xhr.get({url: that.url, sync: properties.useSyncGet, handleAs: "json", content: { actuals: true }})
                                     .then(function(data)
                                     {
-                                      // calls showKeystoreDialog
-                                      that.dialog(data[0], that.url);
+                                      addStore.setupTypeStore("KeyStore");
+                                      addStore.show(data[0], that.url);
                                     });
                                 });
                         }});
@@ -88,9 +87,10 @@ define(["dojo/dom",
            function KeyStoreUpdater(containerNode, keyStoreObj, controller, url)
            {
                var that = this;
+               this.keyStoreDetailsContainer = query(".typeFieldsContainer", containerNode)[0];
 
                function findNode(name) {
-                   return query("." + name + "Value", containerNode)[0];
+                   return query("." + name, containerNode)[0];
                }
 
                function storeNodes(names)
@@ -101,12 +101,8 @@ define(["dojo/dom",
                }
 
                storeNodes(["name",
-                           "path",
-                           "keyStoreType",
-                           "keyStoreState",
-                           "keyManagerFactoryAlgorithm",
-                           "certificateAlias",
-                           "peersOnly"
+                           "type",
+                           "state"
                            ]);
 
                this.query = url;
@@ -122,22 +118,27 @@ define(["dojo/dom",
            KeyStoreUpdater.prototype.updateHeader = function()
            {
               this.name.innerHTML = entities.encode(String(this.keyStoreData[ "name" ]));
-              this.path.innerHTML = entities.encode(String(this.keyStoreData[ "path" ]));
-              this.keyStoreType.innerHTML = entities.encode(String(this.keyStoreData[ "keyStoreType" ]));
-              this.keyStoreState.innerHTML = entities.encode(String(this.keyStoreData[ "state" ]));
-              this.keyManagerFactoryAlgorithm.innerHTML = entities.encode(String(this.keyStoreData[ "keyManagerFactoryAlgorithm" ]));
-              this.certificateAlias.innerHTML = this.keyStoreData[ "certificateAlias" ] ? entities.encode(String( this.keyStoreData[ "certificateAlias" ])) : "";
+              this.type.innerHTML = entities.encode(String(this.keyStoreData[ "type" ]));
+              this.state.innerHTML = entities.encode(String(this.keyStoreData[ "state" ]));
            };
 
            KeyStoreUpdater.prototype.update = function()
            {
 
-              var thisObj = this;
+              var that = this;
 
               xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
                    {
-                      thisObj.keyStoreData = data[0];
-                      thisObj.updateHeader();
+                      that.keyStoreData = data[0];
+                      that.updateHeader();
+
+                      require(["qpid/management/store/" + encodeURIComponent(that.keyStoreData.type.toLowerCase()) + "/show"],
+                           function(DetailsUI)
+                           {
+                             that.details = new DetailsUI({containerNode:that.keyStoreDetailsContainer, parent: that});
+                             that.details.update(that.keyStoreData);
+                           }
+                         );
                    });
            };
 

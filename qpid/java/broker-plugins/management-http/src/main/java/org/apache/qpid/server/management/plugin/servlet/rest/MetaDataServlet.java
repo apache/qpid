@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -101,7 +102,22 @@ public class MetaDataServlet extends AbstractServlet
         Map<String,Object> typeDetails = new LinkedHashMap<>();
         typeDetails.put("attributes", processAttributes(type));
         typeDetails.put("managedInterfaces", getManagedInterfaces(type));
+        typeDetails.put("validChildTypes", getValidChildTypes(type));
         return typeDetails;
+    }
+
+    private Map<String, Collection<String>> getValidChildTypes(final Class<? extends ConfiguredObject> type)
+    {
+        Map<String, Collection<String>> validChildTypes = new HashMap<>();
+        for(Class<? extends ConfiguredObject> childType : _instance.getChildTypes(ConfiguredObjectTypeRegistry.getCategory(type)))
+        {
+            Collection<String> validValues = _instance.getTypeRegistry().getValidChildTypes(type, childType);
+            if(validValues != null)
+            {
+                validChildTypes.put(childType.getSimpleName(), validValues);
+            }
+        }
+        return validChildTypes;
     }
 
     private Set<String> getManagedInterfaces(Class<? extends ConfiguredObject> type)

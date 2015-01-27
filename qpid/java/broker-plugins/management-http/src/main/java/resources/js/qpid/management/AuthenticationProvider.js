@@ -159,8 +159,8 @@ define(["dojo/_base/xhr",
                this.deletePreferencesProviderButton = query(".deletePreferencesProviderButton", node)[0];
                this.preferencesProviderAttributes = dom.byId("preferencesProviderAttributes")
                this.preferencesNode = query(".preferencesProviderDetails", node)[0];
-               this.authenticationProviderDetailsContainer = query(".authenticationProviderDetails", node)[0];
 
+this.authenticationProviderDetailsContainer = query(".authenticationProviderDetails", node)[0];
                this.query = "api/latest/authenticationprovider/" + encodeURIComponent(authProviderObj.name);
 
            }

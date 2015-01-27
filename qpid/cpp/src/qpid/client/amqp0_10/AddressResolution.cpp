@@ -55,6 +55,7 @@ using qpid::messaging::AssertionFailed;
 using qpid::framing::ExchangeBoundResult;
 using qpid::framing::ExchangeQueryResult;
 using qpid::framing::FieldTable;
+using qpid::framing::FieldValue;
 using qpid::framing::QueueQueryResult;
 using qpid::framing::ReplyTo;
 using qpid::framing::Uuid;
@@ -140,6 +141,11 @@ const std::string PREFIX_AMQ("amq.");
 const std::string PREFIX_QPID("qpid.");
 
 const Verifier verifier;
+
+bool areEquivalent(const FieldValue& a, const FieldValue& b)
+{
+    return ((a == b) || (a.convertsTo<int64_t>() && b.convertsTo<int64_t>() && a.get<int64_t>() == b.get<int64_t>()));
+}
 }
 
 struct Binding
@@ -534,19 +540,19 @@ Subscription::Subscription(const Address& address, const std::string& type)
       reliable(durable ? !AddressResolution::is_unreliable(address) : AddressResolution::is_reliable(address)),
       actualType(type.empty() ? (specifiedType.empty() ? TOPIC_EXCHANGE : specifiedType) : type),
       exclusiveQueue((Opt(address)/LINK/X_DECLARE/EXCLUSIVE).asBool(true)),
-      autoDeleteQueue((Opt(address)/LINK/X_DECLARE/AUTO_DELETE).asBool(true)),
+      autoDeleteQueue((Opt(address)/LINK/X_DECLARE/AUTO_DELETE).asBool(!(durable || reliable))),
       exclusiveSubscription((Opt(address)/LINK/X_SUBSCRIBE/EXCLUSIVE).asBool(exclusiveQueue)),
       alternateExchange((Opt(address)/LINK/X_DECLARE/ALTERNATE_EXCHANGE).str())
 {
-    const Variant* timeout = (Opt(address)/LINK/TIMEOUT).value;
-    if (timeout) {
+
+    if ((Opt(address)/LINK).hasKey(TIMEOUT)) {
+        const Variant* timeout = (Opt(address)/LINK/TIMEOUT).value;
         if (timeout->asUint32()) queueOptions.setInt("qpid.auto_delete_timeout", timeout->asUint32());
-    } else if (durable && !(Opt(address)/LINK/RELIABILITY).value) {
-        //if durable but not explicitly reliable, then set a non-zero
-        //default for the autodelete timeout (previously this would
-        //have defaulted to autodelete immediately anyway, so the risk
-        //of the change causing problems is mitigated)
-        queueOptions.setInt("qpid.auto_delete_delay", 15*60);
+    } else if (durable && !reliable && !(Opt(address)/LINK/X_DECLARE).hasKey(AUTO_DELETE)) {
+        //if durable but not reliable, and auto-delete not
+        //explicitly set, then set a non-zero default for the
+        //autodelete timeout
+        queueOptions.setInt("qpid.auto_delete_timeout", 2*60);
     }
     (Opt(address)/LINK/X_DECLARE/ARGUMENTS).collect(queueOptions);
     (Opt(address)/LINK/X_SUBSCRIBE/ARGUMENTS).collect(subscriptionOptions);
@@ -609,7 +615,7 @@ void Subscription::subscribe(qpid::client::AsyncSession& session, const std::str
 
     //create subscription queue:
     session.queueDeclare(arg::queue=queue, arg::exclusive=exclusiveQueue,
-                         arg::autoDelete=autoDeleteQueue && (!(durable || reliable)), arg::durable=durable,
+                         arg::autoDelete=autoDeleteQueue, arg::durable=durable,
                          arg::alternateExchange=alternateExchange,
                          arg::arguments=queueOptions);
     //'default' binding:
@@ -806,7 +812,7 @@ void Queue::checkAssert(qpid::client::AsyncSession& session, CheckMode mode)
                 FieldTable::ValuePtr v = result.getArguments().get(i->first);
                 if (!v) {
                     throw AssertionFailed((boost::format("Option %1% not set for %2%") % i->first % name).str());
-                } else if (*i->second != *v) {
+                } else if (!areEquivalent(*i->second, *v)) {
                     throw AssertionFailed((boost::format("Option %1% does not match for %2%, expected %3%, got %4%")
                                           % i->first % name % *(i->second) % *v).str());
                 }
@@ -906,7 +912,7 @@ void Exchange::checkAssert(qpid::client::AsyncSession& session, CheckMode mode)
                 FieldTable::ValuePtr v = result.getArguments().get(i->first);
                 if (!v) {
                     throw AssertionFailed((boost::format("Option %1% not set for %2%") % i->first % name).str());
-                } else if (*i->second != *v) {
+                } else if (!areEquivalent(*i->second, *v)) {
                     throw AssertionFailed((boost::format("Option %1% does not match for %2%, expected %3%, got %4%")
                                           % i->first % name % *(i->second) % *v).str());
                 }

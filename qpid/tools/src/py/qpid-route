@@ -25,6 +25,7 @@ import socket
 import os
 import locale
 from qmf.console import Session, BrokerURL
+from time import sleep
 
 usage = """
 Usage:  qpid-route [OPTIONS] dynamic add <dest-broker> <src-broker> <exchange> [tag] [exclude-list] [mechanism]
@@ -184,6 +185,21 @@ class RouteManager:
                 return link
         return None
 
+    def checkLink(self, link):
+        retry = 3
+        while link is None or (link.state in ("Waiting", "Connecting", "Closing") and retry > 0):
+            sleep(1)
+            link = self.getLink()
+            retry -= 1
+
+        if link == None:
+            raise Exception("Link failed to create")
+
+        if link.state == "Failed":
+            raise Exception("Link failed to create %s" % (link.lastError or ""))
+        elif config._verbose:
+            print "Link state is", link.state
+
     def addLink(self, remoteBroker, interbroker_mechanism=""):
         self.remote = BrokerURL(remoteBroker)
         if self.local.match(self.remote.host, self.remote.port):
@@ -196,8 +212,6 @@ class RouteManager:
             res = broker.connect(self.remote.host, self.remote.port, config._durable,
                                  interbroker_mechanism, self.remote.authName or "", self.remote.authPass or "",
                                  config._transport)
-            if config._verbose:
-                print "Connect method returned:", res.status, res.text
 
     def delLink(self, remoteBroker):
         self.remote = BrokerURL(remoteBroker)
@@ -321,8 +335,7 @@ class RouteManager:
 
         self.addLink(remoteBroker, interbroker_mechanism)
         link = self.getLink()
-        if link == None:
-            raise Exception("Link failed to create")
+        self.checkLink(link)
 
         bridges = self.agent.getObjects(_class="bridge")
         for bridge in bridges:
@@ -345,8 +358,7 @@ class RouteManager:
     def addQueueRoute(self, remoteBroker, interbroker_mechanism, exchange, queue ):
         self.addLink(remoteBroker, interbroker_mechanism)
         link = self.getLink()
-        if link == None:
-            raise Exception("Link failed to create")
+        self.checkLink(link)
 
         bridges = self.agent.getObjects(_class="bridge")
         for bridge in bridges:
@@ -537,6 +549,7 @@ def main(argv=None):
                 interbroker_mechanism = ""
                 if nargs > 4: interbroker_mechanism = args[4]
                 rm.addLink(remoteBroker, interbroker_mechanism)
+                rm.checkLink(rm.getLink())
             elif cmd == "del":
                 if nargs != 4:
                     Usage()

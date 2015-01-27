@@ -714,19 +714,6 @@ public class BrokerACLTest extends QpidRestTestCase
 
     /* === AccessControlProvider === */
 
-    public void testCreateAccessControlProviderAllowed() throws Exception
-    {
-        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
-
-        String accessControlProviderName = getTestName();
-
-        assertAccessControlProviderExistence(accessControlProviderName, false);
-
-        int responseCode = createAccessControlProvider(accessControlProviderName);
-        assertEquals("Access control provider creation should be allowed", 201, responseCode);
-
-        assertAccessControlProviderExistence(accessControlProviderName, true);
-    }
 
     public void testCreateAccessControlProviderDenied() throws Exception
     {
@@ -746,18 +733,13 @@ public class BrokerACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        String accessControlProviderName = getTestName();
-
-        assertAccessControlProviderExistence(accessControlProviderName, false);
-
-        int responseCode = createAccessControlProvider(accessControlProviderName);
-        assertEquals("Access control provider creation should be allowed", 201, responseCode);
+        String accessControlProviderName = TestBrokerConfiguration.ENTRY_NAME_ACL_FILE;
 
         assertAccessControlProviderExistence(accessControlProviderName, true);
 
         getRestTestHelper().setUsernameAndPassword(DENIED_USER, DENIED_USER);
 
-        responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "DELETE");
+        int responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "DELETE");
         assertEquals("Access control provider deletion should be denied", 403, responseCode);
 
         assertAccessControlProviderExistence(accessControlProviderName, true);
@@ -767,16 +749,12 @@ public class BrokerACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        String accessControlProviderName = getTestName();
+        String accessControlProviderName = TestBrokerConfiguration.ENTRY_NAME_ACL_FILE;
 
-        assertAccessControlProviderExistence(accessControlProviderName, false);
-
-        int responseCode = createAccessControlProvider(accessControlProviderName);
-        assertEquals("Access control provider creation should be allowed", 201, responseCode);
 
         assertAccessControlProviderExistence(accessControlProviderName, true);
 
-        responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "DELETE");
+        int responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "DELETE");
         assertEquals("Access control provider deletion should be allowed", 200, responseCode);
 
         assertAccessControlProviderExistence(accessControlProviderName, false);
@@ -786,20 +764,16 @@ public class BrokerACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        String accessControlProviderName = getTestName();
-
-        assertAccessControlProviderExistence(accessControlProviderName, false);
-
-        int responseCode = createAccessControlProvider(accessControlProviderName);
-        assertEquals("Access control provider creation should be allowed", 201, responseCode);
+        String accessControlProviderName = TestBrokerConfiguration.ENTRY_NAME_ACL_FILE;
 
         assertAccessControlProviderExistence(accessControlProviderName, true);
 
+        File aclFile = TestFileUtils.createTempFile(this, ".acl", "ACL ALLOW all all");
+
         Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(GroupProvider.NAME, accessControlProviderName);
-        attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
-        attributes.put(FileBasedGroupProvider.PATH, "/path/to/file");
-        responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
+        attributes.put(AccessControlProvider.NAME, accessControlProviderName);
+        attributes.put(FileBasedGroupProvider.PATH, aclFile.getAbsolutePath());
+        int responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
         assertEquals("Setting of access control provider attributes should be allowed", 200, responseCode);
     }
 
@@ -807,12 +781,7 @@ public class BrokerACLTest extends QpidRestTestCase
     {
         getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
 
-        String accessControlProviderName = getTestName();
-
-        assertAccessControlProviderExistence(accessControlProviderName, false);
-
-        int responseCode = createAccessControlProvider(accessControlProviderName);
-        assertEquals("Access control provider creation should be allowed", 201, responseCode);
+        String accessControlProviderName = TestBrokerConfiguration.ENTRY_NAME_ACL_FILE;
 
         assertAccessControlProviderExistence(accessControlProviderName, true);
 
@@ -822,7 +791,7 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(GroupProvider.NAME, accessControlProviderName);
         attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
         attributes.put(FileBasedGroupProvider.PATH, "/path/to/file");
-        responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
+        int responseCode = getRestTestHelper().submitRequest("accesscontrolprovider/" + accessControlProviderName, "PUT", attributes);
         assertEquals("Setting of access control provider attributes should be denied", 403, responseCode);
     }
 

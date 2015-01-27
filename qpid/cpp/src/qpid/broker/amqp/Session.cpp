@@ -48,6 +48,7 @@
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
 #include "qpid/amqp_0_10/Codecs.h"
+#include "config.h"
 #include <boost/intrusive_ptr.hpp>
 #include <boost/format.hpp>
 #include <map>
@@ -505,10 +506,11 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
             if (!settings.autodelete) settings.autodelete = autodelete;
             altExchange = node.topic->getAlternateExchange();
         }
-        if (!settings.autoDeleteDelay) {
+        if (settings.original.find("qpid.auto_delete_timeout") == settings.original.end()) {
             //only use delay from link if policy didn't specify one
             settings.autoDeleteDelay = pn_terminus_get_timeout(source);
-            settings.original["qpid.auto_delete_timeout"] = settings.autoDeleteDelay;
+            if (settings.autoDeleteDelay)
+                settings.original["qpid.auto_delete_timeout"] = settings.autoDeleteDelay;
         }
         if (settings.autoDeleteDelay) {
             settings.autodelete = true;
@@ -577,7 +579,7 @@ void Session::detach(pn_link_t* link)
     if (pn_link_is_sender(link)) {
         OutgoingLinks::iterator i = outgoing.find(link);
         if (i != outgoing.end()) {
-            i->second->detached();
+            i->second->detached(true/*TODO: checked whether actually closed; see PROTON-773*/);
             boost::shared_ptr<Queue> q = OutgoingFromQueue::getExclusiveSubscriptionQueue(i->second.get());
             if (q && !q->isAutoDelete() && !q->isDeleted()) {
                 connection.getBroker().deleteQueue(q->getName(), connection.getUserId(), connection.getMgmtId());
@@ -588,7 +590,7 @@ void Session::detach(pn_link_t* link)
     } else {
         IncomingLinks::iterator i = incoming.find(link);
         if (i != incoming.end()) {
-            i->second->detached();
+            i->second->detached(true/*TODO: checked whether actually closed; see PROTON-773*/);
             incoming.erase(i);
             QPID_LOG(debug, "Incoming link detached");
         }
@@ -615,7 +617,11 @@ void Session::accepted(pn_delivery_t* delivery, bool sync)
 void Session::readable(pn_link_t* link, pn_delivery_t* delivery)
 {
     pn_delivery_tag_t tag = pn_delivery_tag(delivery);
+#ifdef NO_PROTON_DELIVERY_TAG_T
+    QPID_LOG(debug, "received delivery: " << std::string(tag.start, tag.size));
+#else
     QPID_LOG(debug, "received delivery: " << std::string(tag.bytes, tag.size));
+#endif
     incomingMessageReceived();
     IncomingLinks::iterator target = incoming.find(link);
     if (target == incoming.end()) {
@@ -653,7 +659,7 @@ bool Session::dispatch()
             pn_condition_set_name(error, e.symbol());
             pn_condition_set_description(error, e.what());
             pn_link_close(s->first);
-            s->second->detached();
+            s->second->detached(true);
             outgoing.erase(s++);
             output = true;
         }
@@ -678,7 +684,7 @@ bool Session::dispatch()
             pn_condition_set_name(error, e.symbol());
             pn_condition_set_description(error, e.what());
             pn_link_close(i->first);
-            i->second->detached();
+            i->second->detached(true);
             incoming.erase(i++);
             output = true;
         }
@@ -690,10 +696,10 @@ bool Session::dispatch()
 void Session::close()
 {
     for (OutgoingLinks::iterator i = outgoing.begin(); i != outgoing.end(); ++i) {
-        i->second->detached();
+        i->second->detached(false);
     }
     for (IncomingLinks::iterator i = incoming.begin(); i != incoming.end(); ++i) {
-        i->second->detached();
+        i->second->detached(false);
     }
     outgoing.clear();
     incoming.clear();

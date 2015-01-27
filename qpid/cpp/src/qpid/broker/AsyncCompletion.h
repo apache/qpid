@@ -111,13 +111,14 @@ class AsyncCompletion : public virtual RefCounted
         qpid::sys::Mutex::ScopedLock l(callbackLock);
         if (active) {
             if (callback.get()) {
+                boost::intrusive_ptr<Callback> save = callback;
+                callback = boost::intrusive_ptr<Callback>(); // Nobody else can run callback.
                 inCallback = true;
                 {
                     qpid::sys::Mutex::ScopedUnlock ul(callbackLock);
-                    callback->completed(sync);
+                    save->completed(sync);
                 }
                 inCallback = false;
-                callback = boost::intrusive_ptr<Callback>();
                 callbackLock.notifyAll();
             }
             active = false;

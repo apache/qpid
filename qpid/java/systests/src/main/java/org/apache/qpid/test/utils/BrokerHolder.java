@@ -20,10 +20,19 @@
  */
 package org.apache.qpid.test.utils;
 
+import org.apache.qpid.server.BrokerOptions;
+
 public interface BrokerHolder
 {
-    String getWorkingDirectory();
+    public void start(BrokerOptions options) throws Exception;
     void shutdown();
     void kill();
     String dumpThreads();
+
+    enum BrokerType
+    {
+        EXTERNAL /** Test case relies on a Broker started independently of the test-suite */,
+        INTERNAL /** Test case starts an embedded broker within this JVM */,
+        SPAWNED /** Test case spawns a new broker as a separate process */
+    }
 }

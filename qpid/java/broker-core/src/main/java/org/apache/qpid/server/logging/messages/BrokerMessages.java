@@ -54,6 +54,7 @@ public class BrokerMessages
     public static final String FLOW_TO_DISK_ACTIVE_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "broker.flow_to_disk_active";
     public static final String MAX_MEMORY_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "broker.max_memory";
     public static final String PLATFORM_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "broker.platform";
+    public static final String PROCESS_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "broker.process";
     public static final String SHUTTING_DOWN_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "broker.shutting_down";
     public static final String MANAGEMENT_MODE_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "broker.management_mode";
     public static final String STARTUP_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "broker.startup";
@@ -73,6 +74,7 @@ public class BrokerMessages
         Logger.getLogger(FLOW_TO_DISK_ACTIVE_LOG_HIERARCHY);
         Logger.getLogger(MAX_MEMORY_LOG_HIERARCHY);
         Logger.getLogger(PLATFORM_LOG_HIERARCHY);
+        Logger.getLogger(PROCESS_LOG_HIERARCHY);
         Logger.getLogger(SHUTTING_DOWN_LOG_HIERARCHY);
         Logger.getLogger(MANAGEMENT_MODE_LOG_HIERARCHY);
         Logger.getLogger(STARTUP_LOG_HIERARCHY);
@@ -393,6 +395,38 @@ public class BrokerMessages
             public String getLogHierarchy()
             {
                 return PLATFORM_LOG_HIERARCHY;
+            }
+        };
+    }
+
+    /**
+     * Log a Broker message of the Format:
+     * <pre>BRK-1017 : Process : PID : {0}</pre>
+     * Optional values are contained in [square brackets] and are numbered
+     * sequentially in the method call.
+     *
+     */
+    public static LogMessage PROCESS(String param1)
+    {
+        String rawMessage = _messages.getString("PROCESS");
+
+        final Object[] messageArguments = {param1};
+        // Create a new MessageFormat to ensure thread safety.
+        // Sharing a MessageFormat and using applyPattern is not thread safe
+        MessageFormat formatter = new MessageFormat(rawMessage, _currentLocale);
+
+        final String message = formatter.format(messageArguments);
+
+        return new LogMessage()
+        {
+            public String toString()
+            {
+                return message;
+            }
+
+            public String getLogHierarchy()
+            {
+                return PROCESS_LOG_HIERARCHY;
             }
         };
     }

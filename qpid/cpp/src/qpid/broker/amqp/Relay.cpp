@@ -23,6 +23,7 @@
 #include "qpid/log/Statement.h"
 #include <algorithm>
 #include <string.h>
+#include "config.h"
 
 namespace qpid {
 namespace broker {
@@ -126,7 +127,13 @@ bool OutgoingFromRelay::doWork()
 {
     relay->check();
     relay->setCredit(pn_link_credit(link));
-    return relay->send(link);
+    bool worked = relay->send(link);
+    pn_delivery_t *d = pn_link_current(link);
+    if (d && pn_delivery_writable(d)) {
+        handle(d);
+        return true;
+    }
+    return worked;
 }
 /**
  * Called when a delivery is writable
@@ -163,7 +170,7 @@ void OutgoingFromRelay::handle(pn_delivery_t* delivery)
 /**
  * Signals that this link has been detached
  */
-void OutgoingFromRelay::detached()
+void OutgoingFromRelay::detached(bool /*closed*/)
 {
     relay->detached(this);
 }
@@ -221,7 +228,7 @@ uint32_t IncomingToRelay::getCredit()
     return relay->getCredit();
 }
 
-void IncomingToRelay::detached()
+void IncomingToRelay::detached(bool /*closed*/)
 {
     relay->detached(this);
 }
@@ -238,7 +245,11 @@ void BufferedTransfer::initIn(pn_link_t* link, pn_delivery_t* d)
     //copy delivery tag
     pn_delivery_tag_t dt = pn_delivery_tag(d);
     tag.resize(dt.size);
+#ifdef NO_PROTON_DELIVERY_TAG_T
+    ::memmove(&tag[0], dt.start, dt.size);
+#else
     ::memmove(&tag[0], dt.bytes, dt.size);
+#endif
 
     //set context
     pn_delivery_set_context(d, this);
@@ -258,7 +269,11 @@ bool BufferedTransfer::settle()
 void BufferedTransfer::initOut(pn_link_t* link)
 {
     pn_delivery_tag_t dt;
+#ifdef NO_PROTON_DELIVERY_TAG_T
+    dt.start = &tag[0];
+#else
     dt.bytes = &tag[0];
+#endif
     dt.size = tag.size();
     out.handle = pn_delivery(link, dt);
     //set context

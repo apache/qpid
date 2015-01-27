@@ -33,10 +33,13 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
 import org.apache.qpid.server.logging.EventLogger;
+import org.apache.qpid.server.logging.Log4jMessageLogger;
 import org.apache.qpid.server.logging.LogRecorder;
+import org.apache.qpid.server.logging.MessageLogger;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
@@ -44,30 +47,31 @@ import org.apache.qpid.server.model.BrokerShutdownProvider;
 import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.plugin.PluggableFactoryLoader;
 import org.apache.qpid.server.plugin.SystemConfigFactory;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.util.Action;
 
 public class Broker implements BrokerShutdownProvider
 {
     private static final Logger LOGGER = Logger.getLogger(Broker.class);
 
     private volatile Thread _shutdownHookThread;
-    private volatile IApplicationRegistry _applicationRegistry;
     private EventLogger _eventLogger;
     private boolean _configuringOwnLogging = false;
     private final TaskExecutor _taskExecutor = new TaskExecutorImpl();
-    private final boolean _exitJVMOnShutdownWithNonZeroExitCode;
+
+    private SystemConfig _systemConfig;
+
+    private final Action<Integer> _shutdownAction;
+
 
     public Broker()
     {
-        this(false);
+        this(null);
     }
 
-    public Broker(boolean exitJVMOnShutdownWithNonZeroExitCode)
+    public Broker(Action<Integer> shutdownAction)
     {
-        this._exitJVMOnShutdownWithNonZeroExitCode = exitJVMOnShutdownWithNonZeroExitCode;
+        _shutdownAction = shutdownAction;
     }
 
     protected static class InitException extends RuntimeException
@@ -96,9 +100,9 @@ public class Broker implements BrokerShutdownProvider
         {
             try
             {
-                if (_applicationRegistry != null)
+                if(_systemConfig != null)
                 {
-                    _applicationRegistry.close();
+                    _systemConfig.close();
                 }
                 _taskExecutor.stop();
 
@@ -110,9 +114,9 @@ public class Broker implements BrokerShutdownProvider
                     LogManager.shutdown();
                 }
 
-                if (_exitJVMOnShutdownWithNonZeroExitCode && exitStatusCode != 0)
+                if (_shutdownAction != null)
                 {
-                    System.exit(exitStatusCode);
+                    _shutdownAction.performAction(exitStatusCode);
                 }
             }
         }
@@ -146,15 +150,29 @@ public class Broker implements BrokerShutdownProvider
         String storeLocation = options.getConfigurationStoreLocation();
         String storeType = options.getConfigurationStoreType();
 
-        _eventLogger.message(BrokerMessages.CONFIG(storeLocation));
+        if (options.isStartupLoggedToSystemOut())
+        {
+            _eventLogger.message(BrokerMessages.CONFIG(storeLocation));
+        }
 
         //Allow skipping the logging configuration for people who are
         //embedding the broker and want to configure it themselves.
         if(!options.isSkipLoggingConfiguration())
         {
-            configureLogging(new File(options.getLogConfigFileLocation()), options.getLogWatchFrequency());
+            configureLogging(new File(options.getLogConfigFileLocation()), options.getLogWatchFrequency(), options.isStartupLoggedToSystemOut());
+        }
+        // Create the RootLogger to be used during broker operation
+        boolean statusUpdatesEnabled = Boolean.parseBoolean(System.getProperty(BrokerProperties.PROPERTY_STATUS_UPDATES, "true"));
+        MessageLogger messageLogger = new Log4jMessageLogger(statusUpdatesEnabled);
+        _eventLogger.setMessageLogger(messageLogger);
+
+        // Additionally, report BRK-1006 and BRK-1007 into log4j appenders
+        if(!options.isSkipLoggingConfiguration())
+        {
+            _eventLogger.message(BrokerMessages.LOG_CONFIG(new File(options.getLogConfigFileLocation()).getAbsolutePath()));
         }
 
+        _eventLogger.message(BrokerMessages.CONFIG(storeLocation));
 
         PluggableFactoryLoader<SystemConfigFactory> configFactoryLoader = new PluggableFactoryLoader<>(SystemConfigFactory.class);
         SystemConfigFactory configFactory = configFactoryLoader.get(storeType);
@@ -169,21 +187,17 @@ public class Broker implements BrokerShutdownProvider
         LogRecorder logRecorder = new LogRecorder();
 
         _taskExecutor.start();
-        SystemConfig systemConfig = configFactory.newInstance(_taskExecutor, _eventLogger, logRecorder, options, this);
-        systemConfig.open();
-        DurableConfigurationStore store = systemConfig.getConfigurationStore();
-
-        _applicationRegistry = new ApplicationRegistry(store, systemConfig);
+        _systemConfig = configFactory.newInstance(_taskExecutor, _eventLogger, logRecorder, options.convertToSystemConfigAttributes(), this);
         try
         {
-            _applicationRegistry.initialise(options);
+            _systemConfig.open();
         }
-        catch(Exception e)
+        catch(RuntimeException e)
         {
             LOGGER.fatal("Exception during startup", e);
             try
             {
-                _applicationRegistry.close();
+                _systemConfig.close();
             }
             catch(Exception ce)
             {
@@ -194,12 +208,15 @@ public class Broker implements BrokerShutdownProvider
 
     }
 
-    private void configureLogging(File logConfigFile, int logWatchTime) throws InitException, IOException
+    private void configureLogging(File logConfigFile, int logWatchTime, boolean startupLoggedToSystemOutput) throws InitException, IOException
     {
         _configuringOwnLogging = true;
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
-            _eventLogger.message(BrokerMessages.LOG_CONFIG(logConfigFile.getAbsolutePath()));
+            if (startupLoggedToSystemOutput)
+            {
+                _eventLogger.message(BrokerMessages.LOG_CONFIG(logConfigFile.getAbsolutePath()));
+            }
 
             if (logWatchTime > 0)
             {
@@ -295,15 +312,6 @@ public class Broker implements BrokerShutdownProvider
         {
             LOGGER.debug("Skipping shutdown hook removal as there either isn't one, or we are it.");
         }
-    }
-
-    public org.apache.qpid.server.model.Broker getBroker()
-    {
-        if (_applicationRegistry == null)
-        {
-            return null;
-        }
-        return _applicationRegistry.getBroker();
     }
 
     private class ShutdownService implements Runnable

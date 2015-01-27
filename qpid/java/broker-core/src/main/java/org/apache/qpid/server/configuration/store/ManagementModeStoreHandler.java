@@ -30,7 +30,6 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -40,6 +39,7 @@ import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.adapter.BrokerAdapter;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -62,14 +62,14 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
     private final DurableConfigurationStore _store;
     private Map<UUID, ConfiguredObjectRecord> _cliEntries;
     private Map<UUID, Object> _quiescedEntriesOriginalState;
-    private final BrokerOptions _options;
+    private final SystemConfig<?> _systemConfig;
     private ConfiguredObject<?> _parent;
     private HashMap<UUID, ConfiguredObjectRecord> _records;
 
     public ManagementModeStoreHandler(DurableConfigurationStore store,
-                                      BrokerOptions options)
+                                      SystemConfig<?> systemConfig)
     {
-        _options = options;
+        _systemConfig = systemConfig;
         _store = store;
     }
 
@@ -82,16 +82,16 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
         _parent = parent;
         _store.openConfigurationStore(parent, overwrite, initialRecords);
 
-        _quiescedEntriesOriginalState = quiesceEntries(_options);
+        _quiescedEntriesOriginalState = quiesceEntries(_systemConfig);
 
 
         _records = new HashMap<UUID, ConfiguredObjectRecord>();
         final ConfiguredObjectRecordHandler localRecoveryHandler = new ConfiguredObjectRecordHandler()
         {
             private int _version;
-            private boolean _quiesceRmiPort = _options.getManagementModeRmiPortOverride() > 0;
-            private boolean _quiesceJmxPort = _options.getManagementModeJmxPortOverride() > 0;
-            private boolean _quiesceHttpPort = _options.getManagementModeHttpPortOverride() > 0;
+            private boolean _quiesceRmiPort = _systemConfig.getManagementModeRmiPortOverride() > 0;
+            private boolean _quiesceJmxPort = _systemConfig.getManagementModeJmxPortOverride() > 0;
+            private boolean _quiesceHttpPort = _systemConfig.getManagementModeHttpPortOverride() > 0;
 
             @Override
             public void begin()
@@ -104,7 +104,7 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
                 String entryType = object.getType();
                 Map<String, Object> attributes = object.getAttributes();
                 boolean quiesce = false;
-                if (VIRTUAL_HOST_TYPE.equals(entryType) && _options.isManagementModeQuiesceVirtualHosts())
+                if (VIRTUAL_HOST_TYPE.equals(entryType) && _systemConfig.isManagementModeQuiesceVirtualHosts())
                 {
                     quiesce = true;
                 }
@@ -174,7 +174,7 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
 
         _store.visitConfiguredObjectRecords(localRecoveryHandler);
 
-        _cliEntries = createPortsFromCommandLineOptions(_options);
+        _cliEntries = createPortsFromCommandLineOptions(_systemConfig);
 
         for(ConfiguredObjectRecord entry : _cliEntries.values())
         {
@@ -293,7 +293,7 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
         }
     }
 
-    private Map<UUID, ConfiguredObjectRecord> createPortsFromCommandLineOptions(BrokerOptions options)
+    private Map<UUID, ConfiguredObjectRecord> createPortsFromCommandLineOptions(SystemConfig<?> options)
     {
         int managementModeRmiPortOverride = options.getManagementModeRmiPortOverride();
         if (managementModeRmiPortOverride < 0)
@@ -369,7 +369,7 @@ public class ManagementModeStoreHandler implements DurableConfigurationStore
     }
 
 
-    private Map<UUID, Object> quiesceEntries(final BrokerOptions options)
+    private Map<UUID, Object> quiesceEntries(final SystemConfig<?> options)
     {
         final Map<UUID, Object> quiescedEntries = new HashMap<UUID, Object>();
         final int managementModeRmiPortOverride = options.getManagementModeRmiPortOverride();

@@ -54,7 +54,7 @@
 
     <!-- test profile properties and defaults-->
     <qpid.home>${basedir}</qpid.home> <!-- override for broker tests -->
-    <qpid.home.qbtc.output>${qpid.home}${file.separator}target${file.separator}qbtc-output</qpid.home.qbtc.output> <!-- override for broker tests -->
+    <qpid.home.qbtc.output>${qpid.home}${file.separator}target${file.separator}qbtc-test-config</qpid.home.qbtc.output> <!-- override for broker tests -->
     <qpid.work>${project.build.directory}${file.separator}QPID_WORK</qpid.work>
 
     <profile>java-mms.0-10</profile>
@@ -73,6 +73,7 @@
     <profile.broker.clean.between.tests>true</profile.broker.clean.between.tests>
     <dollar.sign>$</dollar.sign>
     <at.sign>@</at.sign>
+    <bdb-version>5.0.104</bdb-version>
   </properties>
 
   <modules>
@@ -218,9 +219,6 @@
             <amqj.server.logging.level>debug</amqj.server.logging.level>
             <amqj.protocol.logging.level>debug</amqj.protocol.logging.level>
             <root.logging.level>warn</root.logging.level>
-            <log4j.configuration.file>${project.basedir}${file.separator}test-profiles${file.separator}log4j-test.xml</log4j.configuration.file>
-            <log4j.configuration>log4j-test.xml</log4j.configuration>
-            <log4j.debug>false</log4j.debug>
             <test.port>15672</test.port>
             <test.mport>18999</test.mport>
             <test.cport>19099</test.cport>

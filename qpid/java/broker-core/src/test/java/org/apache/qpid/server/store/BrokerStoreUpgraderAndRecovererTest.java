@@ -81,7 +81,7 @@ public class BrokerStoreUpgraderAndRecovererTest extends QpidTestCase
         _systemConfig = new JsonSystemConfigImpl(_taskExecutor,
                                                mock(EventLogger.class),
                                                mock(LogRecorder.class),
-                                               new BrokerOptions(),
+                                               new BrokerOptions().convertToSystemConfigAttributes(),
                                                mock(BrokerShutdownProvider.class));
     }
 

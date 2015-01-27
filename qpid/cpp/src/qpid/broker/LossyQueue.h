@@ -29,7 +29,7 @@ namespace broker {
 /**
  * Drops messages to prevent a breach of any configured maximum depth.
  */
-class LossyQueue : public Queue
+class LossyQueue : public virtual Queue
 {
   public:
     LossyQueue(const std::string&, const QueueSettings&, MessageStore* const, management::Manageable*, Broker*);

@@ -59,10 +59,16 @@ EmptyFilePool::EmptyFilePool(const std::string& efpDirectory,
 EmptyFilePool::~EmptyFilePool() {}
 
 void EmptyFilePool::initialize() {
-//std::cout << "*** Initializing EFP " << efpDataSize_kib_ << "k in partition " << partitionPtr_->getPartitionNumber() << "; efpDirectory=" << efpDirectory_ << std::endl; // DEBUG
-    std::vector<std::string> dirList;
+    if (::mkdir(efpDirectory_.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)) { // Create EFP dir if it does not yet exist
+        if (errno != EEXIST) {
+            std::ostringstream oss;
+            oss << "directory=" << efpDirectory_ << " " << FORMAT_SYSERR(errno);
+            throw jexception(jerrno::JERR_EFP_MKDIR, oss.str(), "EmptyFilePool", "initialize");
+        }
+    }
 
     // Process empty files in main dir
+    std::vector<std::string> dirList;
     jdir::read_dir(efpDirectory_, dirList, false, true, false, false);
     for (std::vector<std::string>::iterator i = dirList.begin(); i != dirList.end(); ++i) {
         size_t dotPos = i->rfind(".");
@@ -122,14 +128,14 @@ const efpIdentity_t EmptyFilePool::getIdentity() const {
 
 std::string EmptyFilePool::takeEmptyFile(const std::string& destDirectory) {
     std::string emptyFileName = popEmptyFile();
-    std::string newFileName = efpDirectory_ + "/" + s_inuseFileDirectory_ + emptyFileName.substr(emptyFileName.rfind('/'));
+    std::string newFileName = efpDirectory_ + "/" + s_inuseFileDirectory_ + emptyFileName.substr(emptyFileName.rfind('/')); // NOTE: substr() includes leading '/'
     std::string symlinkName = destDirectory + emptyFileName.substr(emptyFileName.rfind('/')); // NOTE: substr() includes leading '/'
-    if (moveFile(emptyFileName, newFileName)) {
+    if (!moveFile(emptyFileName, newFileName)) {
         // Try again with new UUID for file name
         newFileName = efpDirectory_ + "/" + s_inuseFileDirectory_ + "/" + getEfpFileName();
-        if (moveFile(emptyFileName, newFileName)) {
+        if (!moveFile(emptyFileName, newFileName)) {
 //std::cerr << "*** DEBUG: pushEmptyFile " << emptyFileName << "from  EmptyFilePool::takeEmptyFile()" << std::endl; // DEBUG
-            pushEmptyFile(emptyFileName);
+            pushEmptyFile(emptyFileName); // Return empty file to pool
             std::ostringstream oss;
             oss << "file=\"" << emptyFileName << "\" dest=\"" <<  newFileName << "\"" << FORMAT_SYSERR(errno);
             throw jexception(jerrno::JERR_JDIR_FMOVE, oss.str(), "EmptyFilePool", "takeEmptyFile");
@@ -138,7 +144,7 @@ std::string EmptyFilePool::takeEmptyFile(const std::string& destDirectory) {
     if (createSymLink(newFileName, symlinkName)) {
         std::ostringstream oss;
         oss << "file=\"" << emptyFileName << "\" dest=\"" <<  newFileName << "\" symlink=\"" << symlinkName << "\"" << FORMAT_SYSERR(errno);
-        throw jexception(jerrno::JERR_EFP_SYMLINK, oss.str(), "EmptyFilePool", "takeEmptyFile");
+        throw jexception(jerrno::JERR__SYMLINK, oss.str(), "EmptyFilePool", "takeEmptyFile");
     }
     return symlinkName;
 }
@@ -189,12 +195,27 @@ efpDataSize_kib_t EmptyFilePool::dataSizeFromDirName_kib(const std::string& dirN
 }
 
 // --- protected functions ---
+void EmptyFilePool::checkIosState(std::ofstream& ofs,
+                                  const uint32_t jerrno,
+                                  const std::string& fqFileName,
+                                  const std::string& operation,
+                                  const std::string& errorMessage,
+                                  const std::string& className,
+                                  const std::string& fnName) {
+    if (!ofs.good()) {
+        if (ofs.is_open()) {
+            ofs.close();
+        }
+        std::ostringstream oss;
+        oss << "IO failure: eofbit=" << (ofs.eof()?"T":"F") << " failbit=" << (ofs.fail()?"T":"F") << " badbit="
+            << (ofs.bad()?"T":"F") << " file=" << fqFileName << " operation=" << operation << ": " << errorMessage;
+        throw jexception(jerrno, oss.str(), className, fnName);
+    }
+}
 
 std::string EmptyFilePool::createEmptyFile() {
     std::string efpfn = getEfpFileName();
-    if (!overwriteFileContents(efpfn)) {
-        // TODO: handle failure to prepare new file here
-    }
+    overwriteFileContents(efpfn);
     return efpfn;
 }
 
@@ -226,24 +247,20 @@ void EmptyFilePool::initializeSubDirectory(const std::string& fqDirName) {
     }
 }
 
-bool EmptyFilePool::overwriteFileContents(const std::string& fqFileName) {
+void EmptyFilePool::overwriteFileContents(const std::string& fqFileName) {
     ::file_hdr_t fh;
     ::file_hdr_create(&fh, QLS_FILE_MAGIC, QLS_JRNL_VERSION, QLS_JRNL_FHDR_RES_SIZE_SBLKS, partitionPtr_->getPartitionNumber(), efpDataSize_kib_);
     std::ofstream ofs(fqFileName.c_str(), std::ofstream::out | std::ofstream::binary);
-    if (ofs.good()) {
-        ofs.write((char*)&fh, sizeof(::file_hdr_t));
-        uint64_t rem = ((efpDataSize_kib_ + (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_KIB)) * 1024) - sizeof(::file_hdr_t);
-        while (rem--)
-            ofs.put('\0');
-        ofs.close();
-        return true;
-//std::cout << "*** WARNING: EFP " << efpDirectory_ << " is empty - created new journal file " << fqFileName.substr(fqFileName.rfind('/') + 1) << " on the fly" << std::endl; // DEBUG
-    } else {
-        std::ostringstream oss;
-        oss << "std::ofstream ofs: file=\"" << fqFileName.c_str() << "\"" << " failed to be open";
-        throw jexception(jerrno::JERR_EFP_FOPEN, oss.str(), "EmptyFilePool", "overwriteFileContents");
+    checkIosState(ofs, jerrno::JERR_EFP_FOPEN, fqFileName, "constructor", "Failed to create file", "EmptyFilePool", "overwriteFileContents");
+    ofs.write((char*)&fh, sizeof(::file_hdr_t));
+    checkIosState(ofs, jerrno::JERR_EFP_FWRITE, fqFileName, "write()", "Failed to write header", "EmptyFilePool", "overwriteFileContents");
+    uint64_t rem = ((efpDataSize_kib_ + (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_KIB)) * 1024) - sizeof(::file_hdr_t);
+    while (rem--) {
+        ofs.put('\0');
+        checkIosState(ofs, jerrno::JERR_EFP_FWRITE, fqFileName, "put()", "Failed to put \0", "EmptyFilePool", "overwriteFileContents");
     }
-    return false;
+    ofs.close();
+//std::cout << "*** WARNING: EFP " << efpDirectory_ << " is empty - created new journal file " << fqFileName.substr(fqFileName.rfind('/') + 1) << " on the fly" << std::endl; // DEBUG
 }
 
 std::string EmptyFilePool::popEmptyFile() {
@@ -271,7 +288,7 @@ void EmptyFilePool::pushEmptyFile(const std::string fqFileName) {
 
 void EmptyFilePool::returnEmptyFile(const std::string& emptyFileName) {
     std::string returnedFileName = efpDirectory_ + "/" + s_returnedFileDirectory_ + emptyFileName.substr(emptyFileName.rfind('/')); // NOTE: substr() includes leading '/'
-    if (moveFile(emptyFileName, returnedFileName)) {
+    if (!moveFile(emptyFileName, returnedFileName)) {
         ::unlink(emptyFileName.c_str());
 //std::cerr << "*** WARNING: Unable to move file " << emptyFileName << " to " << returnedFileName << "; deleted." << std::endl; // DEBUG
     }
@@ -283,7 +300,7 @@ void EmptyFilePool::returnEmptyFile(const std::string& emptyFileName) {
         overwriteFileContents(returnedFileName);
     }
     std::string sanitizedEmptyFileName = efpDirectory_ + returnedFileName.substr(returnedFileName.rfind('/')); // NOTE: substr() includes leading '/'
-    if (moveFile(returnedFileName, sanitizedEmptyFileName)) {
+    if (!moveFile(returnedFileName, sanitizedEmptyFileName)) {
         ::unlink(returnedFileName.c_str());
 //std::cerr << "*** WARNING: Unable to move file " << returnedFileName << " to " << sanitizedEmptyFileName << "; deleted." << std::endl; // DEBUG
     } else {
@@ -395,18 +412,6 @@ bool EmptyFilePool::validateEmptyFile(const std::string& emptyFileName) const {
     return true;
 }
 
-// static
-int EmptyFilePool::moveFile(const std::string& from,
-                                 const std::string& to) {
-    if (::rename(from.c_str(), to.c_str())) {
-        if (errno == EEXIST) return errno; // File name exists
-        std::ostringstream oss;
-        oss << "file=\"" << from << "\" dest=\"" <<  to << "\"" << FORMAT_SYSERR(errno);
-        throw jexception(jerrno::JERR_JDIR_FMOVE, oss.str(), "EmptyFilePool", "returnEmptyFile");
-    }
-    return 0;
-}
-
 //static
 int EmptyFilePool::createSymLink(const std::string& fqFileName,
                                  const std::string& fqLinkName) {
@@ -414,7 +419,7 @@ int EmptyFilePool::createSymLink(const std::string& fqFileName,
         if (errno == EEXIST) return errno; // File name exists
         std::ostringstream oss;
         oss << "file=\"" << fqFileName << "\" symlink=\"" <<  fqLinkName << "\"" << FORMAT_SYSERR(errno);
-        throw jexception(jerrno::JERR_EFP_SYMLINK, oss.str(), "EmptyFilePool", "createSymLink");
+        throw jexception(jerrno::JERR__SYMLINK, oss.str(), "EmptyFilePool", "createSymLink");
     }
     return 0;
 }
@@ -426,7 +431,7 @@ std::string EmptyFilePool::deleteSymlink(const std::string& fqLinkName) {
     if (len < 0) {
         std::ostringstream oss;
         oss << "symlink=\"" << fqLinkName << "\"" << FORMAT_SYSERR(errno);
-        throw jexception(jerrno::JERR_EFP_SYMLINK, oss.str(), "EmptyFilePool", "deleteSymlink");
+        throw jexception(jerrno::JERR__SYMLINK, oss.str(), "EmptyFilePool", "deleteSymlink");
     }
     ::unlink(fqLinkName.c_str());
     return std::string(buff, len);
@@ -453,6 +458,20 @@ bool EmptyFilePool::isSymlink(const std::string& fqName) {
     }
     return S_ISLNK(buff.st_mode);
 
+}
+
+// static
+bool EmptyFilePool::moveFile(const std::string& from,
+                             const std::string& to) {
+    if (::rename(from.c_str(), to.c_str())) {
+        if (errno == EEXIST) {
+            return false; // File name exists
+        }
+        std::ostringstream oss;
+        oss << "file=\"" << from << "\" dest=\"" <<  to << "\"" << FORMAT_SYSERR(errno);
+        throw jexception(jerrno::JERR_JDIR_FMOVE, oss.str(), "EmptyFilePool", "returnEmptyFile");
+    }
+    return true;
 }
 
 }}}

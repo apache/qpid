@@ -240,7 +240,7 @@ public class AMQProtocolHandler implements ProtocolEngine
                     }
                     catch (Exception e)
                     {
-                        _logger.warn("Exception occured on closing the sender", e);
+                        _logger.warn("Exception occurred on closing the sender", e);
                     }
                     if (_connection.failoverAllowed())
                     {

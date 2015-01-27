@@ -378,6 +378,15 @@
             <para>Indicates that broker was shut down due to fatal error.</para>
           </entry>
         </row>
+        <row id="Java-Broker-Appendix-Operation-Logging-Message-BRK-1017">
+          <entry morerows="1">BRK-1017</entry>
+          <entry>Process : PID <replaceable>process identifier</replaceable></entry>
+        </row>
+        <row>
+          <entry>
+            <para>Process identifier (PID) of the Broker process.</para>
+          </entry>
+        </row>
       </tbody>
     </tgroup>
   </table>

@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import javax.jms.Destination;
 import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
@@ -32,19 +33,20 @@ import javax.jms.InvalidDestinationException;
 import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.MessageListener;
+
 import org.apache.qpid.amqp_1_0.client.AcknowledgeMode;
 import org.apache.qpid.amqp_1_0.client.ConnectionErrorException;
 import org.apache.qpid.amqp_1_0.client.Message;
 import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.client.Transaction;
 import org.apache.qpid.amqp_1_0.jms.MessageConsumer;
+import org.apache.qpid.amqp_1_0.jms.MessageConsumerException;
 import org.apache.qpid.amqp_1_0.jms.Queue;
 import org.apache.qpid.amqp_1_0.jms.QueueReceiver;
 import org.apache.qpid.amqp_1_0.jms.Session;
 import org.apache.qpid.amqp_1_0.jms.TemporaryDestination;
 import org.apache.qpid.amqp_1_0.jms.Topic;
 import org.apache.qpid.amqp_1_0.jms.TopicSubscriber;
-import org.apache.qpid.amqp_1_0.jms.MessageConsumerException;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
@@ -333,10 +335,23 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
             message.setFromTopic(_isTopicSubscriber);
             if(redelivery)
             {
+                UnsignedInteger failures = message.getDeliveryFailures();
+
                 if(!message.getJMSRedelivered())
                 {
                     message.setJMSRedelivered(true);
                 }
+
+                if(failures == null)
+                {
+                    message.setDeliveryFailures(UnsignedInteger.ONE);
+                }
+                else
+                {
+                    message.setDeliveryFailures(failures.add(UnsignedInteger.ONE));
+                }
+
+
             }
 
             return message;

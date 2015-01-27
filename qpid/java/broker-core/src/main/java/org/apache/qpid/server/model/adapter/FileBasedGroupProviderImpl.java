@@ -54,7 +54,6 @@ import org.apache.qpid.server.security.group.GroupPrincipal;
 public class FileBasedGroupProviderImpl
         extends AbstractConfiguredObject<FileBasedGroupProviderImpl> implements FileBasedGroupProvider<FileBasedGroupProviderImpl>
 {
-    public static final String RESOURCE_BUNDLE = "org.apache.qpid.server.security.group.FileGroupProviderAttributeDescriptions";
     public static final String GROUP_FILE_PROVIDER_TYPE = "GroupFile";
     private static Logger LOGGER = Logger.getLogger(FileBasedGroupProviderImpl.class);
 
@@ -357,7 +356,7 @@ public class FileBasedGroupProviderImpl
 
     private class GroupAdapter extends AbstractConfiguredObject<GroupAdapter> implements Group<GroupAdapter>
     {
-
+        private GroupPrincipal _groupPrincipal;
         public GroupAdapter(Map<String, Object> attributes)
         {
             super(parentsMap(FileBasedGroupProviderImpl.this), attributes);
@@ -396,6 +395,7 @@ public class FileBasedGroupProviderImpl
                 groupMemberAdapter.open();
                 members.add(groupMemberAdapter);
             }
+            _groupPrincipal = new GroupPrincipal(getName());
         }
 
         @Override
@@ -463,9 +463,17 @@ public class FileBasedGroupProviderImpl
             setState(State.DELETED);
         }
 
+        @Override
+        public GroupPrincipal getGroupPrincipal()
+        {
+            return _groupPrincipal;
+        }
+
         private class GroupMemberAdapter extends AbstractConfiguredObject<GroupMemberAdapter> implements
                 GroupMember<GroupMemberAdapter>
         {
+
+            private Principal _principal;
 
             public GroupMemberAdapter(Map<String, Object> attrMap)
             {
@@ -473,6 +481,12 @@ public class FileBasedGroupProviderImpl
                 super(parentsMap(GroupAdapter.this),attrMap);
             }
 
+            @Override
+            protected void onOpen()
+            {
+                super.onOpen();
+                _principal = new UsernamePrincipal(getName());
+            }
 
             @Override
             public void onValidate()
@@ -483,6 +497,8 @@ public class FileBasedGroupProviderImpl
                     throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
                 }
             }
+
+
 
             @Override
             protected void validateChange(final ConfiguredObject<?> proxyForValidation, final Set<String> changedAttributes)
@@ -517,6 +533,11 @@ public class FileBasedGroupProviderImpl
                 setState(State.DELETED);
             }
 
+            @Override
+            public Principal getPrincipal()
+            {
+                return _principal;
+            }
         }
     }
 

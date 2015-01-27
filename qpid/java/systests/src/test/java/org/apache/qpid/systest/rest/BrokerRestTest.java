@@ -235,9 +235,6 @@ public class BrokerRestTest extends QpidRestTestCase
         assertNotNull("Unexpected value of attribute ports", brokerDetails.get(BROKER_PORTS_ATTRIBUTE));
         assertNotNull("Unexpected value of attribute authenticationproviders", brokerDetails.get(BROKER_AUTHENTICATIONPROVIDERS_ATTRIBUTE));
 
-        assertNotNull("Unexpected value of attribute supportedVirtualHostTypes", brokerDetails.get(Broker.SUPPORTED_VIRTUALHOST_TYPES));
-        assertNotNull("Unexpected value of attribute supportedVirtualHostNodeTypes", brokerDetails.get(Broker.SUPPORTED_VIRTUALHOSTNODE_TYPES));
-
     }
 
 }

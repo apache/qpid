@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.util;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+
 /**
  * SystemUtils provides some simple helper methods for working with the current
  * Operating System.
@@ -38,8 +41,28 @@ public class SystemUtils
     private static final String _osName = System.getProperty("os.name", UNKNOWN_OS);
     private static final String _osVersion = System.getProperty("os.version", UNKNOWN_VERSION);
     private static final String _osArch = System.getProperty("os.arch", UNKNOWN_ARCH);
-
     private static final boolean _isWindows = _osName.toLowerCase().contains("windows");
+
+    /** Process identifier of underlying process or null if it cannot be determined */
+    private static final String _osPid;
+    private static int _osPidInt;
+
+    static
+    {
+        RuntimeMXBean rtb = ManagementFactory.getRuntimeMXBean();
+        String processName = rtb.getName();
+        int atIndex;
+        if(processName != null && (atIndex = processName.indexOf('@')) > 0)
+        {
+            _osPid = processName.substring(0, atIndex);
+            _osPidInt = parseInt(_osPid, -1);
+        }
+        else
+        {
+            _osPid = null;
+        }
+    }
+
 
     private SystemUtils()
     {
@@ -60,6 +83,16 @@ public class SystemUtils
         return _osArch;
     }
 
+    public final static String getProcessPid()
+    {
+        return _osPid;
+    }
+
+    public final static int getProcessPidAsInt()
+    {
+        return _osPidInt;
+    }
+
     public final static boolean isWindows()
     {
         return _isWindows;
@@ -78,4 +111,17 @@ public class SystemUtils
     {
         return _osName + " " + _osVersion + " " + _osArch;
     }
+
+    private static int parseInt(String str, int defaultVal)
+    {
+        try
+        {
+            return Integer.parseInt(str);
+        }
+        catch(NumberFormatException e)
+        {
+            return defaultVal;
+        }
+    }
+
 }

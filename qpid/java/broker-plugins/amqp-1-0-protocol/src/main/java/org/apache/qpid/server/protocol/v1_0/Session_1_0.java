@@ -518,6 +518,11 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
         }
 
         _connection.sessionEnded(this);
+        performCloseTasks();
+        if(_modelObject != null)
+        {
+            _modelObject.delete();
+        }
 
     }
 

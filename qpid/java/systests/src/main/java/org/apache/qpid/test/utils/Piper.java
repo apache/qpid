@@ -35,27 +35,21 @@ public final class Piper extends Thread
     private static final Logger LOGGER = Logger.getLogger(Piper.class);
 
     private final BufferedReader _in;
-    private final PrintStream _out;
+    private final Logger _out;
     private final String _ready;
     private final CountDownLatch _latch;
     private final String _stopped;
-    private final String _prefix;
     private volatile boolean _seenReady;
     private volatile String _stopLine;
 
-    public Piper(InputStream in, PrintStream out, String ready, String stopped)
+    public Piper(InputStream in, String ready, String stopped, String threadName, String loggerName)
     {
-        this(in, out, ready, stopped, null);
-    }
-
-    public Piper(InputStream in, PrintStream out, String ready, String stopped, String prefix)
-    {
+        super(threadName);
         _in = new BufferedReader(new InputStreamReader(in));
-        _out = out;
+        _out = Logger.getLogger(loggerName);
         _ready = ready;
         _stopped = stopped;
         _seenReady = false;
-        _prefix = prefix;
 
         if (this._ready != null && !this._ready.equals(""))
         {
@@ -87,11 +81,7 @@ public final class Piper extends Thread
             String line;
             while ((line = _in.readLine()) != null)
             {
-                if (_prefix != null)
-                {
-                    line = _prefix + line;
-                }
-                _out.println(line);
+                _out.info(line);
 
                 if (_latch != null && line.contains(_ready))
                 {

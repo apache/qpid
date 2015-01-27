@@ -140,6 +140,10 @@ class InterconnectFactory : public BrokerContext, public qpid::sys::ConnectionCo
                         boost::shared_ptr<Domain>, BrokerContext&, boost::shared_ptr<Relay>);
     qpid::sys::ConnectionCodec* create(const framing::ProtocolVersion&, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
     qpid::sys::ConnectionCodec* create(qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
+    qpid::framing::ProtocolVersion supportedVersion() const
+    {
+        return qpid::framing::ProtocolVersion(1, 0);
+    }
     bool connect();
     void failed(int, std::string);
   private:

@@ -645,6 +645,12 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
                 _receivingThread.interrupt();
             }
+
+
+            if(!(isBrowseOnly() || getSession().isClosing()))
+            {
+                rollback();
+            }
         }
     }
 

@@ -113,7 +113,8 @@ public class SystemConfigFactoryGenerator extends AbstractProcessor
             pw.println(";");
             pw.println();
 
-            pw.println("import org.apache.qpid.server.BrokerOptions;");
+            pw.println("import java.util.Map;");
+            pw.println();
             pw.println("import org.apache.qpid.server.configuration.updater.TaskExecutor;");
             pw.println("import org.apache.qpid.server.logging.EventLogger;");
             pw.println("import org.apache.qpid.server.logging.LogRecorder;");
@@ -140,10 +141,10 @@ public class SystemConfigFactoryGenerator extends AbstractProcessor
             pw.println("    public "+objectSimpleName+" newInstance(final TaskExecutor taskExecutor,");
             pw.println("                       final EventLogger eventLogger,");
             pw.println("                       final LogRecorder logRecorder,");
-            pw.println("                       final BrokerOptions brokerOptions,");
+            pw.println("                       final Map<String,Object> attributes,");
             pw.println("                       final BrokerShutdownProvider brokerShutdownProvider)");
             pw.println("    {");
-            pw.println("        return new "+objectSimpleName+"(taskExecutor, eventLogger, logRecorder, brokerOptions, brokerShutdownProvider);");
+            pw.println("        return new "+objectSimpleName+"(taskExecutor, eventLogger, logRecorder, attributes, brokerShutdownProvider);");
             pw.println("    }");
             pw.println("}");
 

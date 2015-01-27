@@ -32,6 +32,7 @@
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
+#include "config.h"
 
 namespace qpid {
 namespace broker {
@@ -156,7 +157,7 @@ bool OutgoingFromQueue::canDeliver()
     return deliveries[current].delivery == 0 && pn_link_credit(link);
 }
 
-void OutgoingFromQueue::detached()
+void OutgoingFromQueue::detached(bool closed)
 {
     QPID_LOG(debug, "Detaching outgoing link " << getName() << " from " << queue->getName());
     queue->cancel(shared_from_this());
@@ -164,11 +165,13 @@ void OutgoingFromQueue::detached()
     for (size_t i = 0 ; i < deliveries.capacity(); ++i) {
         if (deliveries[i].msg) queue->release(deliveries[i].cursor, true);
     }
-    if (exclusive) queue->releaseExclusiveOwnership();
-    else if (isControllingUser) queue->releaseFromUse(true);
+    if (exclusive) {
+        queue->releaseExclusiveOwnership(closed);
+    } else if (isControllingUser) {
+        queue->releaseFromUse(true);
+    }
     cancelled = true;
 }
-
 
 OutgoingFromQueue::~OutgoingFromQueue()
 {
@@ -283,7 +286,11 @@ qpid::broker::OwnershipToken* OutgoingFromQueue::getSession()
 
 OutgoingFromQueue::Record::Record() : delivery(0), disposition(0), index(0)
 {
+#ifdef NO_PROTON_DELIVERY_TAG_T
+    tag.start = tagData;
+#else
     tag.bytes = tagData;
+#endif
     tag.size = TAG_WIDTH;
 }
 void OutgoingFromQueue::Record::init(size_t i)
@@ -304,7 +311,11 @@ void OutgoingFromQueue::Record::reset()
 size_t OutgoingFromQueue::Record::getIndex(pn_delivery_tag_t t)
 {
     assert(t.size == TAG_WIDTH);
+#ifdef NO_PROTON_DELIVERY_TAG_T
+    qpid::framing::Buffer buffer(const_cast<char*>(t.start)/*won't ever be written to*/, t.size);
+#else
     qpid::framing::Buffer buffer(const_cast<char*>(t.bytes)/*won't ever be written to*/, t.size);
+#endif
     return (size_t) buffer.getLong();
 }
 

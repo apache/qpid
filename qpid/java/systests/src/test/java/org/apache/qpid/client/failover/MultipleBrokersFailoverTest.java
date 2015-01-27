@@ -38,7 +38,6 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.test.utils.TestUtils;
 import org.apache.qpid.util.FileUtils;
 
 public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements ConnectionListener
@@ -48,9 +47,10 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
     private static final String FAILOVER_VIRTUAL_HOST = "failover";
     private static final String NON_FAILOVER_VIRTUAL_HOST = "nonfailover";
     private static final String BROKER_PORTION_FORMAT = "tcp://localhost:%d?connectdelay='%d',retries='%d'";
-    private static final int FAILOVER_RETRIES = 1;
-    private static final int FAILOVER_CONNECTDELAY = 1000;
-    private static final int FAILOVER_FACTOR = 4;
+    private static final int FAILOVER_RETRIES = 0;
+    private static final int FAILOVER_CONNECTDELAY = 0;
+    private static final int FAILOVER_AWAIT_TIME = 10000;
+
 
     private int[] _brokerPorts;
     private AMQConnectionURL _connectionURL;
@@ -169,7 +169,7 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
 
         killBroker(_brokerPorts[1]);
 
-        awaitForFailoverCompletion(FAILOVER_CONNECTDELAY * _brokerPorts.length * FAILOVER_FACTOR);
+        awaitForFailoverCompletion(FAILOVER_AWAIT_TIME);
         assertEquals("Failover is not started as expected", 0, _failoverStarted.getCount());
 
         assertSendReceive(2);
@@ -185,7 +185,7 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
 
         stopBroker(_brokerPorts[1]);
 
-        awaitForFailoverCompletion(FAILOVER_CONNECTDELAY * _brokerPorts.length * FAILOVER_FACTOR);
+        awaitForFailoverCompletion(FAILOVER_AWAIT_TIME);
         assertEquals("Failover is not started as expected", 0, _failoverStarted.getCount());
 
         assertSendReceive(1);
@@ -214,20 +214,12 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
         }
     }
 
-    private void awaitForFailoverCompletion(long delay)
+    private void awaitForFailoverCompletion(long delay) throws Exception
     {
         _logger.info("Awaiting Failover completion..");
-        try
+        if (!_failoverComplete.await(delay, TimeUnit.MILLISECONDS))
         {
-            if (!_failoverComplete.await(delay, TimeUnit.MILLISECONDS))
-            {
-                _logger.warn("Test thread stack:\n\n" + TestUtils.dumpThreads());
-                fail("Failover did not complete");
-            }
-        }
-        catch (InterruptedException e)
-        {
-            fail("Test was interrupted:" + e.getMessage());
+            fail("Failover did not complete within " + delay + "ms.");
         }
     }
 
@@ -239,7 +231,7 @@ public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements C
                 receivedMessage instanceof TextMessage);
     }
 
-    private void init(int acknowledgeMode, boolean startConnection) throws JMSException
+    private void init(int acknowledgeMode, boolean startConnection) throws Exception
     {
         boolean isTransacted = acknowledgeMode == Session.SESSION_TRANSACTED ? true : false;
 

@@ -84,7 +84,8 @@ public class QpidServiceLoader
 
     private boolean isDisabledConfiguredType(final ConfiguredObjectTypeFactory<?> typeFactory)
     {
-        return Boolean.getBoolean("qpid.type.disabled:" + typeFactory.getCategoryClass().getSimpleName().toLowerCase()
+        String simpleName = typeFactory.getCategoryClass().getSimpleName().toLowerCase();
+        return Boolean.getBoolean("qpid.type.disabled:" + simpleName
                                   + "." + typeFactory.getType());
     }
 }

@@ -61,6 +61,7 @@ class Protocol
     virtual qpid::sys::ConnectionCodec* create(const qpid::framing::ProtocolVersion&, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&) = 0;
     virtual boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> translate(const Message&) = 0;
     virtual boost::shared_ptr<RecoverableMessage> recover(qpid::framing::Buffer&) = 0;
+    virtual qpid::framing::ProtocolVersion supportedVersion() const = 0;
 
   private:
 };
@@ -70,6 +71,7 @@ class ProtocolRegistry : public Protocol, public qpid::sys::ConnectionCodec::Fac
   public:
     QPID_BROKER_EXTERN qpid::sys::ConnectionCodec* create(const qpid::framing::ProtocolVersion&, qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
     QPID_BROKER_EXTERN qpid::sys::ConnectionCodec* create(qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&);
+    QPID_BROKER_EXTERN qpid::framing::ProtocolVersion supportedVersion() const;
     QPID_BROKER_EXTERN boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> translate(const Message&);
     QPID_BROKER_EXTERN boost::shared_ptr<RecoverableMessage> recover(qpid::framing::Buffer&);
     QPID_BROKER_EXTERN Message decode(qpid::framing::Buffer&);
@@ -86,7 +88,7 @@ class ProtocolRegistry : public Protocol, public qpid::sys::ConnectionCodec::Fac
     Broker* broker;
 
     qpid::sys::ConnectionCodec* create_0_10(qpid::sys::OutputControl&, const std::string&, const qpid::sys::SecuritySettings&, bool);
-    bool isEnabled(const std::string&);
+    bool isEnabled(const std::string&) const;
 
 };
 }} // namespace qpid::broker

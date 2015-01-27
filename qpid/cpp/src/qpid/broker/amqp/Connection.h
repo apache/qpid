@@ -31,6 +31,9 @@
 struct pn_connection_t;
 struct pn_session_t;
 struct pn_transport_t;
+struct pn_collector_t;
+struct pn_link_t;
+struct pn_delivery_t;
 
 namespace qpid {
 namespace sys {
@@ -69,6 +72,7 @@ class Connection : public BrokerContext, public sys::ConnectionCodec, public Man
     typedef std::map<pn_session_t*, boost::shared_ptr<Session> > Sessions;
     pn_connection_t* connection;
     pn_transport_t* transport;
+    pn_collector_t* collector;
     qpid::sys::OutputControl& out;
     const std::string id;
     bool haveOutput;
@@ -86,6 +90,17 @@ class Connection : public BrokerContext, public sys::ConnectionCodec, public Man
     void open();
     void readPeerProperties();
     void closedByManagement();
+
+ private:
+    // handle Proton engine events
+    void doConnectionRemoteOpen();
+    void doConnectionRemoteClose();
+    void doSessionRemoteOpen(pn_session_t *session);
+    void doSessionRemoteClose(pn_session_t *session);
+    void doLinkRemoteOpen(pn_link_t *link);
+    void doLinkRemoteClose(pn_link_t *link);
+    void doDeliveryUpdated(pn_delivery_t *delivery);
+
 };
 }}} // namespace qpid::broker::amqp
 

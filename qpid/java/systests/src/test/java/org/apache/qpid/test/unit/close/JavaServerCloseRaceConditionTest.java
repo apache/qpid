@@ -106,7 +106,7 @@ public class JavaServerCloseRaceConditionTest extends QpidBrokerTestCase
         }
         catch (Exception e)
         {
-            assertTrue("Exception should say the exchange is not known.", e.getMessage().contains("Unknown exchange: " + EXCHANGE_NAME));
+            assertTrue("Exception should say the exchange is not known.", e.getMessage().contains("Unknown exchange: '" + EXCHANGE_NAME + "'"));
         }
 
         try
@@ -119,7 +119,7 @@ public class JavaServerCloseRaceConditionTest extends QpidBrokerTestCase
         }
         catch (Exception e)
         {
-            assertTrue("Exception should say the exchange is not known.", e.getMessage().contains("Unknown exchange: " + EXCHANGE_NAME));
+            assertTrue("Exception should say the exchange is not known.", e.getMessage().contains("Unknown exchange: '" + EXCHANGE_NAME + "'"));
         }
 
     }

@@ -60,6 +60,7 @@ namespace journal {
         static const uint32_t JERR__RECNFOUND;          ///< Record not found
         static const uint32_t JERR__NOTIMPL;            ///< Not implemented
         static const uint32_t JERR__NULL;               ///< Operation on null pointer
+        static const uint32_t JERR__SYMLINK;            ///< Symbolic Link operation failed
 
         // class jcntl
         static const uint32_t JERR_JCNTL_STOPPED;       ///< Operation on stopped journal
@@ -130,10 +131,11 @@ namespace journal {
         static const uint32_t JERR_EFP_BADPARTITIONDIR; ///< Invalid partition directory
         static const uint32_t JERR_EFP_NOEFP;           ///< No EFP found for given partition and file size
         static const uint32_t JERR_EFP_EMPTY;           ///< EFP empty
-        static const uint32_t JERR_EFP_SYMLINK;         ///< Symbolic Link operation failed
         static const uint32_t JERR_EFP_LSTAT;           ///< lstat operation failed
         static const uint32_t JERR_EFP_BADFILETYPE;     ///< Bad file type
         static const uint32_t JERR_EFP_FOPEN;           ///< Unable to fopen file for write
+        static const uint32_t JERR_EFP_FWRITE;          ///< Write failed
+        static const uint32_t JERR_EFP_MKDIR;           ///< Directory creation failed
 
         // Negative returns for some functions
         static const int32_t AIO_TIMEOUT;               ///< Timeout waiting for AIO return

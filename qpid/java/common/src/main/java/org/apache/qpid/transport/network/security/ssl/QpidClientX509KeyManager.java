@@ -27,6 +27,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.X509ExtendedKeyManager;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.Principal;
@@ -45,6 +46,16 @@ public class QpidClientX509KeyManager extends X509ExtendedKeyManager
     {
         this.alias = alias;    
         KeyStore ks = SSLUtil.getInitializedKeyStore(keyStorePath,keyStorePassword,keyStoreType);
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithmName);
+        kmf.init(ks, keyStorePassword.toCharArray());
+        this.delegate = (X509ExtendedKeyManager)kmf.getKeyManagers()[0];
+    }
+
+    public QpidClientX509KeyManager(String alias, URL keyStoreUrl, String keyStoreType,
+                           String keyStorePassword, String keyManagerFactoryAlgorithmName) throws GeneralSecurityException, IOException
+    {
+        this.alias = alias;
+        KeyStore ks = SSLUtil.getInitializedKeyStore(keyStoreUrl,keyStorePassword,keyStoreType);
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithmName);
         kmf.init(ks, keyStorePassword.toCharArray());
         this.delegate = (X509ExtendedKeyManager)kmf.getKeyManagers()[0];

@@ -37,6 +37,8 @@ class JournalLog;
 
 class EmptyFilePoolPartition
 {
+public:
+    static const std::string s_efpTopLevelDir_;
 protected:
     typedef std::map<efpDataSize_kib_t, EmptyFilePool*> efpMap_t;
     typedef efpMap_t::iterator efpMapItr_t;
@@ -59,7 +61,7 @@ public:
     virtual ~EmptyFilePoolPartition();
 
     void findEmptyFilePools();
-    EmptyFilePool* getEmptyFilePool(const efpDataSize_kib_t efpDataSize_kib);
+    EmptyFilePool* getEmptyFilePool(const efpDataSize_kib_t efpDataSize_kib, const bool createIfNonExistent);
     void getEmptyFilePools(std::vector<EmptyFilePool*>& efpList);
     void getEmptyFilePoolSizes_kib(std::vector<efpDataSize_kib_t>& efpDataSizesList) const;
     std::string getPartitionDirectory() const;
@@ -70,6 +72,8 @@ public:
     static efpPartitionNumber_t getPartitionNumber(const std::string& name);
 
 protected:
+    EmptyFilePool* createEmptyFilePool(const efpDataSize_kib_t efpDataSize_kib);
+    EmptyFilePool* createEmptyFilePool(const std::string fqEfpDirectoryName);
     void validatePartitionDir();
 };
 

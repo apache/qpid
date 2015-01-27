@@ -85,15 +85,16 @@ class EfpManager(object):
         self.efp_partitions.remove(self.current_efp_partition)
         shutil.rmtree(os.path.join(self.current_efp_partition.efp_directory, dir_name))
     def report(self):
-        print 'Empty File Pool (EFP) report:'
-        print '============================='
-        print 'Found', len(self.efp_partitions), 'partition(s).'
+        print 'Empty File Pool (EFP) report'
+        print '============================'
+        print 'Found', len(self.efp_partitions), 'partition(s)'
         if (len(self.efp_partitions)) > 0:
+            sorted_efp_partitions = sorted(self.efp_partitions, key=lambda x: x.partition_number)
             EfpPartition.print_report_table_header()
-            for ptn in self.efp_partitions:
+            for ptn in sorted_efp_partitions:
                 ptn.print_report_table_line()
             print
-            for ptn in self.efp_partitions:
+            for ptn in sorted_efp_partitions:
                 ptn.report()
     def run(self, arg_tup):
         self._analyze_efp()
@@ -182,9 +183,12 @@ class EfpPartition(object):
                                        self.tot_file_size_kb, self.directory)
     def report(self):
         print 'Partition %s:' % os.path.basename(self.directory)
-        EmptyFilePool.print_report_table_header()
-        for dir_name in self.efp_pools.keys():
-            self.efp_pools[dir_name].print_report_table_line()
+        if len(self.efp_pools) > 0:
+            EmptyFilePool.print_report_table_header()
+            for dir_name in self.efp_pools.keys():
+                self.efp_pools[dir_name].print_report_table_line()
+        else:
+            print '<empty - no EFPs found in this partition>'
         print
     def scan(self):
         if os.path.exists(self.directory):
@@ -217,13 +221,16 @@ class EmptyFilePool(object):
     """
     EFP_DIR_SUFFIX = 'k'
     EFP_JRNL_EXTENTION = '.jrnl'
+    EFP_INUSE_DIRNAME = 'in_use'
+    EFP_RETURNED_DIRNAME = 'returned'
     def __init__(self, directory, partition_number):
         self.base_dir_name = os.path.basename(directory)
         self.directory = directory
         self.partition_number = partition_number
         self.data_size_kb = None
-        self.files = []
-        self.tot_file_size_kb = 0
+        self.efp_files = []
+        self.in_use_files = []
+        self.returned_files = []
         self._validate_efp_directory()
     def create_new_efp_files(self, num_files):
         """ Create one or more new empty journal files of the prescribed size for this EFP """
@@ -238,24 +245,37 @@ class EmptyFilePool(object):
         """ Static function to create an EFP directory name from the size of the files it contains """
         return '%dk' % file_size_kb
     def get_tot_file_count(self):
-        return len(self.files)
+        return len(self.efp_files)
     def get_tot_file_size_kb(self):
-        return self.data_size_kb * len(self.files)
+        return self.data_size_kb * len(self.efp_files)
     @staticmethod
     def print_report_table_header():
-        print 'data_size_kb file_count tot_file_size_kb efp_directory'
-        print '------------ ---------- ---------------- -------------'
+        print '             ---------- efp ------------ --------- in_use ---------- -------- returned ---------'
+        print 'data_size_kb file_count tot_file_size_kb file_count tot_file_size_kb file_count tot_file_size_kb efp_directory'
+        print '------------ ---------- ---------------- ---------- ---------------- ---------- ---------------- -------------'
     def print_report_table_line(self):
-        print '%12d %10d %16d %s' % (self.data_size_kb, self.get_tot_file_count(),
-                                     self.get_tot_file_size_kb(), self.get_directory())
+        print '%12d %10d %16d %10d %16d %10d %16d %s' % (self.data_size_kb, len(self.efp_files),
+                                                         self.data_size_kb * len(self.efp_files),
+                                                         len(self.in_use_files),
+                                                         self.data_size_kb * len(self.in_use_files),
+                                                         len(self.returned_files),
+                                                         self.data_size_kb * len(self.returned_files),
+                                                         self.get_directory())
     def scan(self):
         for efp_file in os.listdir(self.directory):
+            if efp_file == self.EFP_INUSE_DIRNAME:
+                for in_use_file in os.listdir(os.path.join(self.directory, self.EFP_INUSE_DIRNAME)):
+                    self.in_use_files.append(in_use_file)
+                continue
+            if efp_file == self.EFP_RETURNED_DIRNAME:
+                for returned_file in os.listdir(os.path.join(self.directory, self.EFP_RETURNED_DIRNAME)):
+                    self.returned_files.append(returned_file)
+                continue
             if self._validate_efp_file(os.path.join(self.directory, efp_file)):
-                self.files.append(efp_file)
+                self.efp_files.append(efp_file)
     def _add_efp_file(self, efp_file_name):
         """ Add a single journal file of the appropriate size to this EFP. No file size check is made here. """
-        self.files.append(efp_file_name)
-        self.tot_file_size_kb += os.path.getsize(efp_file_name)
+        self.efp_files.append(efp_file_name)
     def _create_new_efp_file(self):
         """ Create a single new empty journal file of the prescribed size for this EFP """
         file_name = str(uuid.uuid4()) + EmptyFilePool.EFP_JRNL_EXTENTION
@@ -296,7 +316,7 @@ class EmptyFilePool(object):
             return False
         file_hdr.load(file_handle)
         file_handle.close()
-        if not file_hdr.is_valid():
+        if not file_hdr.is_valid(True):
             return False
         return True
 

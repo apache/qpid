@@ -225,6 +225,9 @@ class Codec(Packer):
   def write_vbin32(self, b):
     if isinstance(b, buffer):
       b = str(b)
+    # Allow unicode values in connection 'response' field
+    if isinstance(b, unicode):
+      b = b.encode('utf8')
     self.write_uint32(len(b))
     self.write(b)
 

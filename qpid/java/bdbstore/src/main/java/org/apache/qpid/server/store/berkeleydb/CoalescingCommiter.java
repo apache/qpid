@@ -50,14 +50,17 @@ public class CoalescingCommiter implements Committer
     public void stop()
     {
         _commitThread.close();
-        try
+        if (Thread.currentThread() != _commitThread)
         {
-            _commitThread.join();
-        }
-        catch (InterruptedException ie)
-        {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException("Commit thread has not shutdown", ie);
+            try
+            {
+                _commitThread.join();
+            }
+            catch (InterruptedException ie)
+            {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Commit thread has not shutdown", ie);
+            }
         }
     }
 
