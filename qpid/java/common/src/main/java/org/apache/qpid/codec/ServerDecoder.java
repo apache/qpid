@@ -42,7 +42,6 @@ public class ServerDecoder extends AMQDecoder<ServerMethodProcessor<? extends Se
             throws AMQFrameDecodingException, IOException
     {
         ServerMethodProcessor<? extends ServerChannelMethodProcessor> methodProcessor = getMethodProcessor();
-        ServerChannelMethodProcessor channelMethodProcessor = methodProcessor.getChannelMethodProcessor(channelId);
         final int classAndMethod = in.readInt();
         int classId = classAndMethod >> 16;
         int methodId = classAndMethod & 0xFFFF;
@@ -115,116 +114,117 @@ public class ServerDecoder extends AMQDecoder<ServerMethodProcessor<? extends Se
                     ChannelOpenBody.process(channelId, in, methodProcessor);
                     break;
                 case 0x00140014:
-                    ChannelFlowBody.process(in, channelMethodProcessor);
+                    ChannelFlowBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x00140015:
-                    ChannelFlowOkBody.process(in, channelMethodProcessor);
+                    ChannelFlowOkBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x00140028:
-                    ChannelCloseBody.process(in, channelMethodProcessor);
+                    ChannelCloseBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x00140029:
-                    channelMethodProcessor.receiveChannelCloseOk();
+                    methodProcessor.getChannelMethodProcessor(channelId).receiveChannelCloseOk();
                     break;
 
                 // ACCESS_CLASS:
 
                 case 0x001e000a:
-                    AccessRequestBody.process(in, channelMethodProcessor);
+                    AccessRequestBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
 
                 // EXCHANGE_CLASS:
 
                 case 0x0028000a:
-                    ExchangeDeclareBody.process(in, channelMethodProcessor);
+                    ExchangeDeclareBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x00280014:
-                    ExchangeDeleteBody.process(in, channelMethodProcessor);
+                    ExchangeDeleteBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x00280016:
-                    ExchangeBoundBody.process(in, channelMethodProcessor);
+                    ExchangeBoundBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
 
 
                 // QUEUE_CLASS:
 
                 case 0x0032000a:
-                    QueueDeclareBody.process(in, channelMethodProcessor);
+                    QueueDeclareBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x00320014:
-                    QueueBindBody.process(in, channelMethodProcessor);
+                    QueueBindBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x0032001e:
-                    QueuePurgeBody.process(in, channelMethodProcessor);
+                    QueuePurgeBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x00320028:
-                    QueueDeleteBody.process(in, channelMethodProcessor);
+                    QueueDeleteBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x00320032:
-                    QueueUnbindBody.process(in, channelMethodProcessor);
+                    QueueUnbindBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
 
 
                 // BASIC_CLASS:
 
                 case 0x003c000a:
-                    BasicQosBody.process(in, channelMethodProcessor);
+                    BasicQosBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x003c0014:
-                    BasicConsumeBody.process(in, channelMethodProcessor);
+                    BasicConsumeBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x003c001e:
-                    BasicCancelBody.process(in, channelMethodProcessor);
+                    BasicCancelBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x003c0028:
-                    BasicPublishBody.process(in, channelMethodProcessor);
+                    BasicPublishBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x003c0046:
-                    BasicGetBody.process(in, channelMethodProcessor);
+                    BasicGetBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x003c0050:
-                    BasicAckBody.process(in, channelMethodProcessor);
+                    BasicAckBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x003c005a:
-                    BasicRejectBody.process(in, channelMethodProcessor);
+                    BasicRejectBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x003c0064:
-                    BasicRecoverBody.process(in, methodProcessor.getProtocolVersion(), channelMethodProcessor);
+                    BasicRecoverBody.process(in, methodProcessor.getProtocolVersion(),
+                                             methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x003c0066:
-                    BasicRecoverSyncBody.process(in, channelMethodProcessor);
+                    BasicRecoverSyncBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x003c006e:
-                    BasicRecoverSyncBody.process(in, channelMethodProcessor);
+                    BasicRecoverSyncBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
                 case 0x003c0078:
-                    BasicNackBody.process(in, channelMethodProcessor);
+                    BasicNackBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
 
                 // CONFIRM CLASS:
 
                 case 0x0055000a:
-                    ConfirmSelectBody.process(in, channelMethodProcessor);
+                    ConfirmSelectBody.process(in, methodProcessor.getChannelMethodProcessor(channelId));
                     break;
 
                 // TX_CLASS:
 
                 case 0x005a000a:
-                    if(!channelMethodProcessor.ignoreAllButCloseOk())
+                    if(!methodProcessor.getChannelMethodProcessor(channelId).ignoreAllButCloseOk())
                     {
-                        channelMethodProcessor.receiveTxSelect();
+                        methodProcessor.getChannelMethodProcessor(channelId).receiveTxSelect();
                     }
                     break;
                 case 0x005a0014:
-                    if(!channelMethodProcessor.ignoreAllButCloseOk())
+                    if(!methodProcessor.getChannelMethodProcessor(channelId).ignoreAllButCloseOk())
                     {
-                        channelMethodProcessor.receiveTxCommit();
+                        methodProcessor.getChannelMethodProcessor(channelId).receiveTxCommit();
                     }
                     break;
                 case 0x005a001e:
-                    if(!channelMethodProcessor.ignoreAllButCloseOk())
+                    if(!methodProcessor.getChannelMethodProcessor(channelId).ignoreAllButCloseOk())
                     {
-                        channelMethodProcessor.receiveTxRollback();
+                        methodProcessor.getChannelMethodProcessor(channelId).receiveTxRollback();
                     }
                     break;
 

@@ -96,6 +96,16 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                                           AMQConnectionModel<AMQProtocolEngine, AMQChannel>,
                                           ServerMethodProcessor<ServerChannelMethodProcessor>
 {
+    enum ConnectionState
+    {
+        INIT,
+        AWAIT_START_OK,
+        AWAIT_SECURE_OK,
+        AWAIT_TUNE_OK,
+        AWAIT_OPEN,
+        OPEN
+    }
+
     private static final Logger _logger = Logger.getLogger(AMQProtocolEngine.class);
 
     // to save boxing the channelId and looking up in a map... cache in an array the low numbered
@@ -122,6 +132,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             new CopyOnWriteArrayList<>();
 
     private final AMQChannel[] _cachedChannels = new AMQChannel[CHANNEL_CACHE_SIZE + 1];
+
+    private ConnectionState _state = ConnectionState.INIT;
 
     /**
      * The channels that the latest call to {@link #received(ByteBuffer)} applied to.
@@ -469,16 +481,15 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                                                                                        serverProperties,
                                                                                        mechanisms.getBytes(),
                                                                                        locales.getBytes());
-            _sender.send(asByteBuffer(responseBody.generateFrame(0)));
-            _sender.flush();
+            writeFrame(responseBody.generateFrame(0));
+            _state = ConnectionState.AWAIT_START_OK;
 
         }
         catch (AMQException e)
         {
             _logger.info("Received unsupported protocol initiation for protocol version: " + getProtocolVersion());
 
-            _sender.send(asByteBuffer(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion())));
-            _sender.flush();
+            writeFrame(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
         }
     }
 
@@ -1467,6 +1478,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         {
             _logger.debug("RECV[" + channelId + "] ChannelOpen");
         }
+        assertState(ConnectionState.OPEN);
 
         // Protect the broker against out of order frame request.
         if (_virtualHost == null)
@@ -1500,6 +1512,15 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
 
 
             writeFrame(response.generateFrame(channelId));
+        }
+    }
+
+    void assertState(final ConnectionState requiredState)
+    {
+        if(_state != requiredState)
+        {
+            closeConnection(AMQConstant.COMMAND_INVALID, "Command Invalid", 0);
+
         }
     }
 
@@ -1555,6 +1576,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                     AMQMethodBody responseBody = methodRegistry.createConnectionOpenOkBody(virtualHostName);
 
                     writeFrame(responseBody.generateFrame(0));
+                    _state = ConnectionState.OPEN;
                 }
                 catch (AccessControlException e)
                 {
@@ -1625,6 +1647,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             _logger.debug("RECV ConnectionSecureOk[ response: ******** ] ");
         }
 
+        assertState(ConnectionState.AWAIT_SECURE_OK);
+
         Broker<?> broker = getBroker();
 
         SubjectCreator subjectCreator = getSubjectCreator();
@@ -1665,6 +1689,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                                                                 frameMax,
                                                                 broker.getConnection_heartBeatDelay());
                 writeFrame(tuneBody.generateFrame(0));
+                _state = ConnectionState.AWAIT_TUNE_OK;
                 setAuthorizedSubject(authResult.getSubject());
                 disposeSaslServer();
                 break;
@@ -1712,6 +1737,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                           + locale
                           + " ]");
         }
+
+        assertState(ConnectionState.AWAIT_START_OK);
 
         Broker<?> broker = getBroker();
 
@@ -1774,11 +1801,14 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                                                                         frameMax,
                                                                         broker.getConnection_heartBeatDelay());
                         writeFrame(tuneBody.generateFrame(0));
+                        _state = ConnectionState.AWAIT_TUNE_OK;
                         break;
                     case CONTINUE:
                         ConnectionSecureBody
                                 secureBody = methodRegistry.createConnectionSecureBody(authResult.getChallenge());
                         writeFrame(secureBody.generateFrame(0));
+
+                        _state = ConnectionState.AWAIT_SECURE_OK;
                 }
             }
         }
@@ -1796,6 +1826,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         {
             _logger.debug("RECV ConnectionTuneOk[" +" channelMax: " + channelMax + " frameMax: " + frameMax + " heartbeat: " + heartbeat + " ]");
         }
+
+        assertState(ConnectionState.AWAIT_TUNE_OK);
 
         initHeartbeats(heartbeat);
 
@@ -1828,7 +1860,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             setMaximumNumberOfChannels( ((channelMax == 0l) || (channelMax > 0xFFFFL))
                                                ? 0xFFFFL
                                                : channelMax);
+
         }
+        _state = ConnectionState.AWAIT_OPEN;
+
     }
 
     public int getBinaryDataLimit()
@@ -1928,6 +1963,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     @Override
     public ServerChannelMethodProcessor getChannelMethodProcessor(final int channelId)
     {
+        assertState(ConnectionState.OPEN);
+
         ServerChannelMethodProcessor channelMethodProcessor = getChannel(channelId);
         if(channelMethodProcessor == null)
         {

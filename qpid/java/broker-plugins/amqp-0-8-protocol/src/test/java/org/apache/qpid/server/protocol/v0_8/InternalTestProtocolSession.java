@@ -275,6 +275,12 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         }
     }
 
+    void assertState(final ConnectionState requiredState)
+    {
+        // no-op
+    }
+
+
     private static final AtomicInteger portNumber = new AtomicInteger(0);
     
     private static class TestNetworkConnection implements NetworkConnection
