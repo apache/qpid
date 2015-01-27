@@ -21,23 +21,42 @@
 package org.apache.qpid.server.protocol.v1_0;
 
 
+import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.qpid.server.message.AbstractServerMessageImpl;
 import org.apache.qpid.server.store.StoredMessage;
 
 public class Message_1_0 extends AbstractServerMessageImpl<Message_1_0, MessageMetaData_1_0>
 {
 
-    private List<ByteBuffer> _fragments;
+    private volatile SoftReference<List<ByteBuffer>> _fragmentsRef;
     private long _arrivalTime;
+    private final long _size;
 
 
     public Message_1_0(final StoredMessage<MessageMetaData_1_0> storedMessage)
     {
         super(storedMessage, null);
-        _fragments = restoreFragments(storedMessage);
+        final List<ByteBuffer> fragments = restoreFragments(getStoredMessage());
+        _fragmentsRef = new SoftReference<>(fragments);
+        _size = calculateSize(fragments);
+    }
+
+    private long calculateSize(final List<ByteBuffer> fragments)
+    {
+
+        long size = 0l;
+        if(fragments != null)
+        {
+            for(ByteBuffer buf : fragments)
+            {
+                size += buf.remaining();
+            }
+        }
+        return size;
     }
 
     private static List<ByteBuffer> restoreFragments(StoredMessage<MessageMetaData_1_0> storedMessage)
@@ -65,7 +84,8 @@ public class Message_1_0 extends AbstractServerMessageImpl<Message_1_0, MessageM
                        final Object connectionReference)
     {
         super(storedMessage, connectionReference);
-        _fragments = fragments;
+        _fragmentsRef = new SoftReference<>(fragments);
+        _size = calculateSize(fragments);
         _arrivalTime = System.currentTimeMillis();
     }
 
@@ -94,16 +114,7 @@ public class Message_1_0 extends AbstractServerMessageImpl<Message_1_0, MessageM
 
     public long getSize()
     {
-        long size = 0l;
-        if(_fragments != null)
-        {
-            for(ByteBuffer buf : _fragments)
-            {
-                size += buf.remaining();
-            }
-        }
-
-        return size;
+        return _size;
     }
 
     public long getExpiration()
@@ -118,7 +129,14 @@ public class Message_1_0 extends AbstractServerMessageImpl<Message_1_0, MessageM
 
     public List<ByteBuffer> getFragments()
     {
-        return _fragments;
+
+        List<ByteBuffer> fragments = _fragmentsRef.get();
+        if(fragments == null)
+        {
+            fragments = restoreFragments(getStoredMessage());
+            _fragmentsRef = new SoftReference<>(fragments);
+        }
+        return fragments;
     }
 
 }
