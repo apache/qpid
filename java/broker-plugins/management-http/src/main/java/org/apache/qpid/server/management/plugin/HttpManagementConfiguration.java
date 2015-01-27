@@ -45,6 +45,10 @@ public interface HttpManagementConfiguration<X extends HttpManagementConfigurati
     @ManagedAttribute( defaultValue = "600" )
     public int getSessionTimeout();
 
+    String QPID_HELP_URL = "qpid.helpURL";
+    @ManagedContextDefault(name = QPID_HELP_URL)
+    String DEFAULT_HELP_URL = "http://qpid.apache.org/releases/qpid-${qpid.version}/java-broker/book";
+
     String HTTP_MANAGEMENT_COMPRESS_RESPONSES = "httpManagement.compressResponses";
     @ManagedContextDefault(name = HTTP_MANAGEMENT_COMPRESS_RESPONSES)
     boolean DEFAULT_COMPRESS_RESPONSES = false;
