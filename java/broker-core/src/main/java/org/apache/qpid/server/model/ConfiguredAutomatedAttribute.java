@@ -123,6 +123,12 @@ public class ConfiguredAutomatedAttribute<C extends ConfiguredObject, T>  extend
         return _annotation.persist();
     }
 
+    @Override
+    public boolean isOversized()
+    {
+        return _annotation.oversize();
+    }
+
     public String getDescription()
     {
         return _annotation.description();
