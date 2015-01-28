@@ -50,18 +50,16 @@ import org.apache.qpid.transport.network.Ticker;
 import org.apache.qpid.transport.network.TransportEncryption;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
-public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
+public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(NonBlockingSenderReceiver.class);
     public static final int NUMBER_OF_BYTES_FOR_TLS_CHECK = 6;
 
     private final SocketChannel _socketChannel;
-    private final Selector _selector;
 
     private final ConcurrentLinkedQueue<ByteBuffer> _buffers = new ConcurrentLinkedQueue<>();
     private final List<ByteBuffer> _encryptedOutput = new ArrayList<>();
 
-    private final Thread _ioThread;
     private final String _remoteSocketAddress;
     private final AtomicBoolean _closed = new AtomicBoolean(false);
     private final ServerProtocolEngine _receiver;
@@ -70,6 +68,7 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
     private final Set<TransportEncryption> _encryptionSet;
     private final SSLContext _sslContext;
     private final Runnable _onTransportEncryptionAction;
+    private final NonBlockingConnection _connection;
     private ByteBuffer _netInputBuffer;
     private SSLEngine _sslEngine;
 
@@ -77,9 +76,11 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
 
     private TransportEncryption _transportEncryption;
     private SSLEngineResult _status;
+    private volatile boolean _fullyWritten = true;
+    private AtomicBoolean _stateChanged = new AtomicBoolean();
 
 
-    public NonBlockingSenderReceiver(final SocketChannel socketChannel,
+    public NonBlockingSenderReceiver(final NonBlockingConnection connection,
                                      ServerProtocolEngine receiver,
                                      int receiveBufSize,
                                      Ticker ticker,
@@ -89,7 +90,8 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
                                      final boolean needClientAuth,
                                      final Runnable onTransportEncryptionAction)
     {
-        _socketChannel = socketChannel;
+        _connection = connection;
+        _socketChannel = connection.getSocketChannel();
         _receiver = receiver;
         _receiveBufSize = receiveBufSize;
         _ticker = ticker;
@@ -124,33 +126,14 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
 
         try
         {
-            _remoteSocketAddress = socketChannel.getRemoteAddress().toString();
+            _remoteSocketAddress = _socketChannel.getRemoteAddress().toString();
             _socketChannel.configureBlocking(false);
-            _selector = Selector.open();
-            _socketChannel.register(_selector, SelectionKey.OP_READ);
         }
         catch (IOException e)
         {
             throw new SenderException("Unable to prepare the channel for non-blocking IO", e);
         }
-        try
-        {
-            //Create but deliberately don't start the thread.
-            _ioThread = Threading.getThreadFactory().createThread(this);
-        }
-        catch(Exception e)
-        {
-            throw new SenderException("Error creating NonBlockingSenderReceiver thread for " + _remoteSocketAddress, e);
-        }
 
-        _ioThread.setDaemon(true);
-        _ioThread.setName(String.format("NonBlockingSenderReceiver-%s", _remoteSocketAddress));
-
-    }
-
-    public void initiate()
-    {
-        _ioThread.start();
     }
 
     @Override
@@ -162,11 +145,62 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
         }
         // append to list and do selector wakeup
         _buffers.add(msg);
-        _selector.wakeup();
+        _stateChanged.set(true);
     }
 
-    @Override
-    public void run()
+
+    public boolean doWork()
+    {
+        _stateChanged.set(false);
+
+        boolean closed = _closed.get();
+        if (!closed)
+        {
+            try
+            {
+                long currentTime = System.currentTimeMillis();
+                int tick = _ticker.getTimeToNextTick(currentTime);
+                if (tick <= 0)
+                {
+                    _ticker.tick(currentTime);
+                }
+
+                _receiver.setTransportBlockedForWriting(!doWrite());
+                doRead();
+                _fullyWritten = doWrite();
+                _receiver.setTransportBlockedForWriting(!_fullyWritten);
+
+            }
+            catch (IOException e)
+            {
+                LOGGER.info("Exception performing I/O for thread '" + _remoteSocketAddress + "': " + e);
+                close();
+            }
+        }
+        else
+        {
+            try
+            {
+                while(!doWrite())
+                {
+                }
+            }
+            catch (IOException e)
+            {
+                LOGGER.info("Exception performing final write/close for thread '" + _remoteSocketAddress + "': " + e);
+
+            }
+
+            _receiver.closed();
+
+        }
+
+        return closed;
+
+    }
+
+
+/*   public void run()
     {
         LOGGER.debug("I/O for thread " + _remoteSocketAddress + " started");
 
@@ -189,11 +223,11 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
 
                 _receiver.setTransportBlockedForWriting(!doWrite());
                 doRead();
-                boolean fullyWritten = doWrite();
-                _receiver.setTransportBlockedForWriting(!fullyWritten);
+                _fullyWritten = doWrite();
+                _receiver.setTransportBlockedForWriting(!_fullyWritten);
 
                 _socketChannel.register(_selector,
-                                        fullyWritten
+                                        _fullyWritten
                                                 ? SelectionKey.OP_READ
                                                 : (SelectionKey.OP_WRITE | SelectionKey.OP_READ));
 
@@ -221,22 +255,22 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
         {
             LOGGER.debug("Shutting down IO thread for " + _remoteSocketAddress);
         }
-    }
+    }*/
 
     @Override
     public void flush()
     {
-        _selector.wakeup();
+        _connection.getSelector().wakeup();
     }
 
     @Override
     public void close()
     {
-        LOGGER.debug("Closing " +  _remoteSocketAddress);
+        LOGGER.debug("Closing " + _remoteSocketAddress);
 
         _closed.set(true);
-        _selector.wakeup();
-
+        _stateChanged.set(true);
+        _connection.getSelector().wakeup();
     }
 
     private boolean doWrite() throws IOException
@@ -497,4 +531,20 @@ public class NonBlockingSenderReceiver  implements Runnable, Sender<ByteBuffer>
 
         return null;
     }
+
+    public boolean canRead()
+    {
+        return true;
+    }
+
+    public boolean waitingForWrite()
+    {
+        return !_fullyWritten;
+    }
+
+    public boolean isStateChanged()
+    {
+        return _stateChanged.get();
+    }
+
 }

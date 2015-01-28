@@ -38,7 +38,6 @@ import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
-import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.TransportEncryption;
 
 public class NonBlockingNetworkTransport implements IncomingNetworkTransport
@@ -50,8 +49,9 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
     private static final int HANDSHAKE_TIMEOUT = Integer.getInteger(CommonProperties.HANDSHAKE_TIMEOUT_PROP_NAME ,
                                                                    CommonProperties.HANDSHAKE_TIMEOUT_DEFAULT);
     private AcceptingThread _acceptor;
+    private SelectorThread _selector = new SelectorThread();
 
-    protected NonBlockingConnection createNetworkConnection(final SocketChannel socket,
+    protected NonBlockingConnection createNetworkConnection(final SocketChannel socketChannel,
                                                             final ServerProtocolEngine engine,
                                                             final Integer sendBufferSize,
                                                             final Integer receiveBufferSize,
@@ -63,7 +63,7 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
                                                             final boolean needClientAuth,
                                                             final Runnable onTransportEncryptionAction)
     {
-        return new NonBlockingConnection(socket, engine, sendBufferSize, receiveBufferSize, timeout, ticker, encryptionSet, sslContext, wantClientAuth, needClientAuth, onTransportEncryptionAction);
+        return new NonBlockingConnection(socketChannel, engine, sendBufferSize, receiveBufferSize, timeout, ticker, encryptionSet, sslContext, wantClientAuth, needClientAuth, onTransportEncryptionAction, _selector);
     }
 
     public void close()
@@ -84,11 +84,16 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
             _acceptor = new AcceptingThread(config, factory, sslContext, encryptionSet);
             _acceptor.setDaemon(false);
             _acceptor.start();
+
+
+            _selector.start();
         }
         catch (IOException e)
         {
             throw new TransportException("Failed to start AMQP on port : " + config, e);
         }
+
+
     }
 
     public int getAcceptingPort()
@@ -159,30 +164,31 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
             {
                 while (!_closed)
                 {
-                    SocketChannel socket = null;
+                    SocketChannel socketChannel = null;
                     try
                     {
-                        socket = _serverSocket.accept();
+                        socketChannel = _serverSocket.accept();
 
                         final ServerProtocolEngine engine =
-                                (ServerProtocolEngine) _factory.newProtocolEngine(socket.socket().getRemoteSocketAddress());
+                                (ServerProtocolEngine) _factory.newProtocolEngine(socketChannel.socket()
+                                                                                          .getRemoteSocketAddress());
 
                         if(engine != null)
                         {
-                            socket.setOption(StandardSocketOptions.TCP_NODELAY, _config.getTcpNoDelay());
-                            socket.socket().setSoTimeout(1000 * HANDSHAKE_TIMEOUT);
+                            socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, _config.getTcpNoDelay());
+                            socketChannel.socket().setSoTimeout(1000 * HANDSHAKE_TIMEOUT);
 
                             final Integer sendBufferSize = _config.getSendBufferSize();
                             final Integer receiveBufferSize = _config.getReceiveBufferSize();
 
-                            socket.setOption(StandardSocketOptions.SO_SNDBUF, sendBufferSize);
-                            socket.setOption(StandardSocketOptions.SO_RCVBUF, receiveBufferSize);
+                            socketChannel.setOption(StandardSocketOptions.SO_SNDBUF, sendBufferSize);
+                            socketChannel.setOption(StandardSocketOptions.SO_RCVBUF, receiveBufferSize);
 
 
                             final IdleTimeoutTicker ticker = new IdleTimeoutTicker(engine, TIMEOUT);
 
-                            NetworkConnection connection =
-                                    createNetworkConnection(socket,
+                            NonBlockingConnection connection =
+                                    createNetworkConnection(socketChannel,
                                                             engine,
                                                             sendBufferSize,
                                                             receiveBufferSize,
@@ -208,23 +214,26 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
                             ticker.setConnection(connection);
 
                             connection.start();
+
+                            _selector.addConnection(connection);
+
                         }
                         else
                         {
-                            socket.close();
+                            socketChannel.close();
                         }
                     }
                     catch(RuntimeException e)
                     {
                         LOGGER.error("Error in Acceptor thread on address " + _config.getAddress(), e);
-                        closeSocketIfNecessary(socket.socket());
+                        closeSocketIfNecessary(socketChannel.socket());
                     }
                     catch(IOException e)
                     {
                         if(!_closed)
                         {
                             LOGGER.error("Error in Acceptor thread on address " + _config.getAddress(), e);
-                            closeSocketIfNecessary(socket.socket());
+                            closeSocketIfNecessary(socketChannel.socket());
                             try
                             {
                                 //Delay to avoid tight spinning the loop during issues such as too many open files
@@ -265,4 +274,5 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
         }
 
     }
+
 }

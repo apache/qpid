@@ -40,16 +40,19 @@ import org.apache.qpid.transport.network.TransportEncryption;
 public class NonBlockingConnection implements NetworkConnection
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(NonBlockingConnection.class);
-    private final SocketChannel _socket;
+    private final SocketChannel _socketChannel;
     private final long _timeout;
     private final NonBlockingSenderReceiver _nonBlockingSenderReceiver;
+    private final Ticker _ticker;
+    private final SelectorThread _selector;
     private int _maxReadIdle;
     private int _maxWriteIdle;
     private Principal _principal;
     private boolean _principalChecked;
     private final Object _lock = new Object();
+    private boolean _stateChanged;
 
-    public NonBlockingConnection(SocketChannel socket,
+    public NonBlockingConnection(SocketChannel socketChannel,
                                  ServerProtocolEngine delegate,
                                  int sendBufferSize,
                                  int receiveBufferSize,
@@ -59,18 +62,30 @@ public class NonBlockingConnection implements NetworkConnection
                                  final SSLContext sslContext,
                                  final boolean wantClientAuth,
                                  final boolean needClientAuth,
-                                 final Runnable onTransportEncryptionAction)
+                                 final Runnable onTransportEncryptionAction, final SelectorThread selectorThread)
     {
-        _socket = socket;
+        _socketChannel = socketChannel;
         _timeout = timeout;
+        _ticker = ticker;
+        _selector = selectorThread;
 
-        _nonBlockingSenderReceiver = new NonBlockingSenderReceiver(_socket, delegate, receiveBufferSize, ticker, encryptionSet, sslContext, wantClientAuth, needClientAuth, onTransportEncryptionAction);
+        _nonBlockingSenderReceiver = new NonBlockingSenderReceiver(this,
+                                                                   delegate, receiveBufferSize, ticker, encryptionSet, sslContext, wantClientAuth, needClientAuth, onTransportEncryptionAction);
 
+    }
+
+    public Ticker getTicker()
+    {
+        return _ticker;
+    }
+
+    public SocketChannel getSocketChannel()
+    {
+        return _socketChannel;
     }
 
     public void start()
     {
-        _nonBlockingSenderReceiver.initiate();
     }
 
     public Sender<ByteBuffer> getSender()
@@ -85,12 +100,12 @@ public class NonBlockingConnection implements NetworkConnection
 
     public SocketAddress getRemoteAddress()
     {
-        return _socket.socket().getRemoteSocketAddress();
+        return _socketChannel.socket().getRemoteSocketAddress();
     }
 
     public SocketAddress getLocalAddress()
     {
-        return _socket.socket().getLocalSocketAddress();
+        return _socketChannel.socket().getLocalSocketAddress();
     }
 
     public void setMaxWriteIdle(int sec)
@@ -130,5 +145,31 @@ public class NonBlockingConnection implements NetworkConnection
     public int getMaxWriteIdle()
     {
         return _maxWriteIdle;
+    }
+
+    public boolean canRead()
+    {
+        return _nonBlockingSenderReceiver.canRead();
+    }
+
+    public boolean waitingForWrite()
+    {
+        return _nonBlockingSenderReceiver.waitingForWrite();
+    }
+
+    public boolean isStateChanged()
+    {
+
+        return _nonBlockingSenderReceiver.isStateChanged();
+    }
+
+    public boolean doWork()
+    {
+        return _nonBlockingSenderReceiver.doWork();
+    }
+
+    public SelectorThread getSelector()
+    {
+        return _selector;
     }
 }
