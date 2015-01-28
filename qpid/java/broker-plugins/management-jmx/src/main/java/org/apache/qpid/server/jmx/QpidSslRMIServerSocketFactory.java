@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Collection;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -35,6 +36,8 @@ import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 public class QpidSslRMIServerSocketFactory extends SslRMIServerSocketFactory
 {
     private final SSLContext _sslContext;
+    private final Collection<String> _enabledCipherSuites;
+    private final Collection<String> _disabledCipherSuites;
 
     /**
      * SslRMIServerSocketFactory which creates the ServerSocket using the
@@ -43,9 +46,12 @@ public class QpidSslRMIServerSocketFactory extends SslRMIServerSocketFactory
      * key store.
      *
      * @param sslContext previously created sslContext using the desired key store.
-     * @throws NullPointerException if the provided {@link SSLContext} is null.
+     * @param enabledCipherSuites
+     *@param disabledCipherSuites @throws NullPointerException if the provided {@link SSLContext} is null.
      */
-    public QpidSslRMIServerSocketFactory(SSLContext sslContext) throws NullPointerException
+    public QpidSslRMIServerSocketFactory(SSLContext sslContext,
+                                         final Collection<String> enabledCipherSuites,
+                                         final Collection<String> disabledCipherSuites) throws NullPointerException
     {
         super();
 
@@ -55,6 +61,8 @@ public class QpidSslRMIServerSocketFactory extends SslRMIServerSocketFactory
         }
 
         _sslContext = sslContext;
+        _enabledCipherSuites = enabledCipherSuites;
+        _disabledCipherSuites = disabledCipherSuites;
 
         //TODO: settings + implementation for SSL client auth, updating equals and hashCode appropriately.
     }
@@ -77,6 +85,7 @@ public class QpidSslRMIServerSocketFactory extends SslRMIServerSocketFactory
                                                          true);
                 sslSocket.setUseClientMode(false);
                 SSLUtil.removeSSLv3Support(sslSocket);
+                SSLUtil.updateEnabledCipherSuites(sslSocket, _enabledCipherSuites, _disabledCipherSuites);
                 return sslSocket;
             }
         };

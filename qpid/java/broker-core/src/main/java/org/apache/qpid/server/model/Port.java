@@ -60,6 +60,18 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
     @ManagedAttribute
     Collection<TrustStore> getTrustStores();
 
+    @ManagedContextDefault(name = "qpid.port.enabledCipherSuites" )
+    String DEFAULT_ENABLED_CIPHER_SUITES="[]";
+
+    @ManagedAttribute( defaultValue = "${qpid.port.enabledCipherSuites}")
+    Collection<String> getEnabledCipherSuites();
+
+    @ManagedContextDefault(name = "qpid.port.disabledCipherSuites" )
+    String DEFAULT_DISABLED_CIPHER_SUITES="[]";
+
+    @ManagedAttribute( defaultValue = "${qpid.port.disabledCipherSuites}")
+    Collection<String> getDisabledCipherSuites();
+
     Collection<Connection> getConnections();
 
     void start();

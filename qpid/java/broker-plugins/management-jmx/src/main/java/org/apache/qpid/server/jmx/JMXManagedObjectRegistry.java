@@ -146,7 +146,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
             //create the SSL RMI socket factories
             csf = new SslRMIClientSocketFactory();
-            ssf = new QpidSslRMIServerSocketFactory(sslContext);
+            ssf = new QpidSslRMIServerSocketFactory(sslContext,_connectorPort.getEnabledCipherSuites(), _connectorPort.getDisabledCipherSuites());
         }
         else
         {
