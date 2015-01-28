@@ -49,7 +49,7 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
     private static final int HANDSHAKE_TIMEOUT = Integer.getInteger(CommonProperties.HANDSHAKE_TIMEOUT_PROP_NAME ,
                                                                    CommonProperties.HANDSHAKE_TIMEOUT_DEFAULT);
     private AcceptingThread _acceptor;
-    private SelectorThread _selector = new SelectorThread();
+    private SelectorThread _selector;
 
     protected NonBlockingConnection createNetworkConnection(final SocketChannel socketChannel,
                                                             final ServerProtocolEngine engine,
@@ -72,6 +72,10 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
         {
             _acceptor.close();
         }
+        if(_selector != null)
+        {
+            _selector.close();
+        }
     }
 
     public void accept(NetworkTransportConfiguration config,
@@ -85,7 +89,7 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
             _acceptor.setDaemon(false);
             _acceptor.start();
 
-
+            _selector = new SelectorThread(config.getAddress().toString());
             _selector.start();
         }
         catch (IOException e)

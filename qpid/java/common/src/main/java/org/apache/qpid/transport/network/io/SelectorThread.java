@@ -43,10 +43,10 @@ public class SelectorThread extends Thread
     private final AtomicBoolean _closed = new AtomicBoolean();
     private final NetworkConnectionScheduler _scheduler = new NetworkConnectionScheduler();
 
-    SelectorThread()
+    SelectorThread(final String name)
     {
 
-
+        super("SelectorThread-"+name);
         try
         {
             _selector = Selector.open();
@@ -144,6 +144,12 @@ public class SelectorThread extends Thread
 
     public void wakeup()
     {
+        _selector.wakeup();
+    }
+
+    public void close()
+    {
+        _closed.set(true);
         _selector.wakeup();
     }
 
