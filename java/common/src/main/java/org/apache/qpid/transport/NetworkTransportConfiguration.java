@@ -21,6 +21,7 @@
 package org.apache.qpid.transport;
 
 import java.net.InetSocketAddress;
+import java.util.Collection;
 
 /**
  * This interface provides a means for NetworkDrivers to configure TCP options such as incoming and outgoing
@@ -30,17 +31,21 @@ import java.net.InetSocketAddress;
 public interface NetworkTransportConfiguration
 {
     // Taken from Socket
-    Boolean getTcpNoDelay();
+    boolean getTcpNoDelay();
 
     // The amount of memory in bytes to allocate to the incoming buffer
-    Integer getReceiveBufferSize();
+    int getReceiveBufferSize();
 
     // The amount of memory in bytes to allocate to the outgoing buffer
-    Integer getSendBufferSize();
+    int getSendBufferSize();
 
     InetSocketAddress getAddress();
 
     boolean needClientAuth();
 
     boolean wantClientAuth();
+
+    Collection<String> getEnabledCipherSuites();
+
+    Collection<String> getDisabledCipherSuites();
 }

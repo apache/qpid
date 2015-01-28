@@ -502,6 +502,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
             _engine = _sslContext.createSSLEngine();
             _engine.setUseClientMode(false);
             SSLUtil.removeSSLv3Support(_engine);
+            SSLUtil.updateEnabledCipherSuites(_engine, _port.getEnabledCipherSuites(), _port.getDisabledCipherSuites());
 
             if(_needClientAuth)
             {

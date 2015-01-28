@@ -190,6 +190,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
                 SSLServerSocket sslServerSocket = (SSLServerSocket) _serverSocket;
 
                 SSLUtil.removeSSLv3Support(sslServerSocket);
+                SSLUtil.updateEnabledCipherSuites(sslServerSocket, config.getEnabledCipherSuites(), config.getDisabledCipherSuites());
 
                 if(config.needClientAuth())
                 {

@@ -66,6 +66,12 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     @ManagedAttributeField
     private Set<Protocol> _protocols;
 
+    @ManagedAttributeField
+    private Collection<String> _enabledCipherSuites;
+
+    @ManagedAttributeField
+    private Collection<String> _disabledCipherSuites;
+
     public AbstractPort(Map<String, Object> attributes,
                         Broker<?> broker)
     {
@@ -275,6 +281,18 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
         {
             throw new AccessControlException("Setting of port attributes is denied");
         }
+    }
+
+    @Override
+    public Collection<String> getEnabledCipherSuites()
+    {
+        return _enabledCipherSuites;
+    }
+
+    @Override
+    public Collection<String> getDisabledCipherSuites()
+    {
+        return _disabledCipherSuites;
     }
 
     @Override

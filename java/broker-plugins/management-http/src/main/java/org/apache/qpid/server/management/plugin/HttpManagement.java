@@ -352,6 +352,17 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         }
         SslContextFactory factory = new SslContextFactory();
         factory.addExcludeProtocols(SSLUtil.SSLV3_PROTOCOL);
+
+        if(port.getDisabledCipherSuites() != null)
+        {
+            factory.addExcludeCipherSuites(port.getDisabledCipherSuites().toArray(new String[port.getDisabledCipherSuites().size()]));
+        }
+
+        if(port.getEnabledCipherSuites() != null && !port.getEnabledCipherSuites().isEmpty())
+        {
+            factory.setIncludeCipherSuites(port.getEnabledCipherSuites().toArray(new String[port.getEnabledCipherSuites().size()]));
+        }
+
         boolean needClientCert = port.getNeedClientAuth() || port.getWantClientAuth();
 
         if (needClientCert && trustStores.isEmpty())
