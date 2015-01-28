@@ -112,7 +112,9 @@ public class SSLTest extends QpidBrokerTestCase
             }
             catch (JMSException e)
             {
-                assertTrue("Unexpected exception message", e.getMessage().contains("Unrecognized SSL message, plaintext connection?"));
+                // PASS
+                assertTrue("Unexpected exception message : " + e.getMessage(),
+                           e.getMessage().contains("Unrecognized SSL message, plaintext connection?"));
             }
         }
     }

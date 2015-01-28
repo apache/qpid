@@ -537,6 +537,11 @@ public class Connection extends ConnectionInvoker
         connectionLost.set(true);
         synchronized (lock)
         {
+            if(log.isDebugEnabled())
+            {
+                log.debug("exception: %s state : %s", e.getMessage(), state);
+            }
+
             switch (state)
             {
             case OPENING:
