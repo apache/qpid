@@ -131,6 +131,15 @@ public class SelectorThread extends Thread
             }
 
         }
+        try
+        {
+            _selector.close();
+        }
+        catch (IOException e)
+        {
+            // TODO
+            e.printStackTrace();
+        }
 
 
     }
