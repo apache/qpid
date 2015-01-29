@@ -115,7 +115,9 @@ SslConnector::SslConnector(boost::shared_ptr<qpid::sys::Poller> p,
                            ConnectionImpl* cimpl)
     : TCPConnector(p, ver, settings, cimpl), shim(0), poller(p)
 {
-
+    if (settings.sslIgnoreHostnameVerificationFailure) {
+        sslCredential.ignoreHostnameVerificationFailure();
+    }
     const std::string& name = (settings.sslCertName != "") ?
         settings.sslCertName : qpid::sys::ssl::SslOptions::global.certName;
     certLoaded = sslCredential.load(name);
