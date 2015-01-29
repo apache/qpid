@@ -94,6 +94,9 @@ void SslTransport::negotiationDone(SECURITY_STATUS status)
 SslTransport::SslTransport(TransportContext& c, boost::shared_ptr<Poller> p) : TcpTransport(c, p)
 {
     const ConnectionOptions* options = context.getOptions();
+    if (options->sslIgnoreHostnameVerificationFailure) {
+        sslCredential.ignoreHostnameVerificationFailure();
+    }
     const std::string& name = (options->sslCertName != "") ?
         options->sslCertName : qpid::sys::ssl::SslOptions::global.certName;
     certLoaded = sslCredential.load(name);

@@ -53,6 +53,8 @@ public:
     QPID_COMMON_EXTERN bool load(const std::string& certName);
     QPID_COMMON_EXTERN CredHandle handle();
     QPID_COMMON_EXTERN std::string error();
+    /** Proceed with connect inspite of hostname verifcation failures*/
+    QPID_COMMON_EXTERN void ignoreHostnameVerificationFailure();
 
 private:
     struct SavedError {
@@ -70,6 +72,7 @@ private:
     CredHandle credHandle;
     TimeStamp credExpiry;
     SavedError loadError;
+    bool hostnameVerification;
 
     PCCERT_CONTEXT findCertificate(const std::string& name);
     void loadPrivCertStore();
