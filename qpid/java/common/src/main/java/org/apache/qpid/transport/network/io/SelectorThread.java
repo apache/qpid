@@ -45,16 +45,7 @@ public class SelectorThread extends Thread
 
     SelectorThread(final String name)
     {
-
         super("SelectorThread-"+name);
-        try
-        {
-            _selector = Selector.open();
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Failed to create selector");
-        }
     }
 
     @Override
