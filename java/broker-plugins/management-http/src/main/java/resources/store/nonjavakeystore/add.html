@@ -1,0 +1,153 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
+
+<div>
+    <div id="addStore.oldBrowserWarning" class="infoMessage hidden clear"></div>
+
+    <div class="clear">
+        <div id="addStore.privateKeyLabel" class="formLabel-labelCell tableContainer-labelCell">Private Key URL or Path*:</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" id="addStore.privateKey"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'privateKey',
+                              placeHolder: 'Private key URL or path to file on server',
+                              required: true,
+                              excluded: true,
+                              promptMessage: 'Location of the private key',
+                              title: 'Enter private key URL or path to file containing private key in DER or PEM format'" />
+
+            <!-- Hidden and used purely for form submission -->
+            <input type="hidden" id="addStore.privateKeyUrl"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'privateKeyUrl',
+                              required: true" />
+
+
+            <div id="addStore.privateKeyUploadFields" class="clear">
+
+                <div class="alignLeft" >
+                    <span id="addStore.privateKeyUploadContainer" class="infoMessage"></span>
+                    <span id="addStore.privateKeyUploadStatusContainer"></span>
+                </div>
+
+                <div class="alignRight">
+                    <input type="file" id="addStore.privateKeyFile"
+                           multiple="false"
+                           data-dojo-type="dojox/form/Uploader"
+                           data-dojo-props="label: 'Upload'"/>
+                    <button id="addStore.privateKeyFileClearButton"
+                            data-dojo-type="dijit/form/Button"
+                            data-dojo-props="label: 'Clear',
+                                            disabled: true">
+                    </button>
+                </div>
+                <div class="clear"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="clear">
+        <div id="addStore.serverPathLabel" class="formLabel-labelCell tableContainer-labelCell">Certificate URL or Path*:</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" id="addStore.certificate"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'certificate',
+                              placeHolder: 'Certificate URL or path to certificate file on server',
+                              required: true,
+                              excluded: true,
+                              promptMessage: 'Location of the certificate',
+                              title: 'Enter certificate URL or path to file containing certificate in DER or PEM format'" />
+
+            <!-- Hidden and used purely for form submission -->
+            <input type="hidden" id="addStore.certificateUrl"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'certificateUrl',
+                              required: true" />
+
+
+            <div id="addStore.certificateUploadFields">
+                <div class="alignLeft">
+                    <span id="addStore.certificateUploadContainer" class="infoMessage"></span>
+                    <span id="addStore.certificateUploadStatusContainer"></span>
+                </div>
+
+                <div class="alignRight">
+                    <input type="file" id="addStore.certificateFile"
+                           multiple="false"
+                           data-dojo-type="dojox/form/Uploader"
+                           data-dojo-props="label: 'Upload'"/>
+                    <button id="addStore.certificateFileClearButton"
+                            data-dojo-type="dijit/form/Button"
+                            data-dojo-props="label: 'Clear',
+                                            disabled: true">
+                    </button>
+                </div>
+                <div class="clear"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="clear">
+        <div id="addStore.intermediateCertificateLabel" class="formLabel-labelCell tableContainer-labelCell">Intermediate Certificate URL or Path:</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" id="addStore.intermediateCertificate"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'intermediateCertificate',
+                              placeHolder: 'Intermediate certificate URL or path to file on server',
+                              required: false,
+                              excluded: true,
+                              promptMessage: 'Location of the intermediate certificate',
+                              title: 'Enter intermediate certificate URL or path to file containing certificate in format DER or PEM'" />
+
+            <!-- Hidden and used purely for form submission -->
+            <input type="hidden" id="addStore.intermediateCertificateUrl"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'intermediateCertificateUrl',
+                              required: false" />
+        </div>
+
+        <div id="addStore.intermediateCertificateUploadFields">
+            <div class="alignLeft">
+                <span id="addStore.intermediateCertificateUploadContainer" class="infoMessage"></span>
+                <span id="addStore.intermediateCertificateUploadStatusContainer"></span>
+            </div>
+
+            <div class="alignRight">
+                <input type="file" id="addStore.intermediateCertificateFile"
+                       multiple="false"
+                       data-dojo-type="dojox/form/Uploader"
+                       data-dojo-props="label: 'Upload'"/>
+                <button id="addStore.intermediateCertificateFileClearButton"
+                        data-dojo-type="dijit/form/Button"
+                        data-dojo-props="label: 'Clear',
+                                        disabled: true">
+                </button>
+            </div>
+            <div class="clear"></div>
+        </div>
+    </div>
+
+</div>

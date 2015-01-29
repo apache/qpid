@@ -90,6 +90,7 @@ define(["dojo/_base/lang",
                 }
                 this.storeName.set("disabled", effectiveData == null ? false : true);
                 this.storeType.set("disabled", effectiveData == null ? false : true);
+                this.dialog.set("title", effectiveData == null ? "Add Key Store" : "Edit Key Store - " + effectiveData.name)
                 this.dialog.show();
             },
             _initFields:function(data)
