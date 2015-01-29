@@ -46,6 +46,7 @@ import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.network.Ticker;
 import org.apache.qpid.transport.network.TransportEncryption;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
+import org.apache.qpid.util.SystemUtils;
 
 public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
 {
@@ -182,6 +183,19 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
         }
         else
         {
+
+            if(!SystemUtils.isWindows())
+            {
+                try
+                {
+                    _socketChannel.shutdownInput();
+                }
+                catch (IOException e)
+                {
+                    LOGGER.info("Exception shutting down input for thread '" + _remoteSocketAddress + "': " + e);
+
+                }
+            }
             try
             {
                 while(!doWrite())
@@ -193,9 +207,22 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
                 LOGGER.info("Exception performing final write/close for thread '" + _remoteSocketAddress + "': " + e);
 
             }
-
+            LOGGER.debug("Closing receiver");
             _receiver.closed();
 
+            try
+            {
+                if(!SystemUtils.isWindows())
+                {
+                    _socketChannel.shutdownOutput();
+                }
+
+                _socketChannel.close();
+            }
+            catch (IOException e)
+            {
+                LOGGER.info("Exception closing socket thread '" + _remoteSocketAddress + "': " + e);
+            }
         }
 
         return closed;
@@ -212,9 +239,11 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
     public void close()
     {
         LOGGER.debug("Closing " + _remoteSocketAddress);
-        _closed.set(true);
-        _stateChanged.set(true);
-        _connection.getSelector().wakeup();
+        if(_closed.compareAndSet(false,true))
+        {
+            _stateChanged.set(true);
+            _connection.getSelector().wakeup();
+        }
     }
 
     private boolean doWrite() throws IOException
