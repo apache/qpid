@@ -165,11 +165,11 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
                 }
 
                 _receiver.setTransportBlockedForWriting(!doWrite());
-                doRead();
+                boolean dataRead = doRead();
                 _fullyWritten = doWrite();
                 _receiver.setTransportBlockedForWriting(!_fullyWritten);
 
-                if(_workDone && _netInputBuffer != null && _netInputBuffer.position() != 0)
+                if(dataRead || (_workDone && _netInputBuffer != null && _netInputBuffer.position() != 0))
                 {
                     _stateChanged.set(true);
                 }
@@ -201,64 +201,6 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
         return closed;
 
     }
-
-
-/*   public void run()
-    {
-        LOGGER.debug("I/O for thread " + _remoteSocketAddress + " started");
-
-
-        while (!_closed.get())
-        {
-
-            try
-            {
-                long currentTime = System.currentTimeMillis();
-                int tick = _ticker.getTimeToNextTick(currentTime);
-                if(tick <= 0)
-                {
-                    tick = _ticker.tick(currentTime);
-                }
-
-                _selector.select(tick <= 0 ? 1 : tick);
-                Set<SelectionKey> selectionKeys = _selector.selectedKeys();
-                selectionKeys.clear();
-
-                _receiver.setTransportBlockedForWriting(!doWrite());
-                doRead();
-                _fullyWritten = doWrite();
-                _receiver.setTransportBlockedForWriting(!_fullyWritten);
-
-                _socketChannel.register(_selector,
-                                        _fullyWritten
-                                                ? SelectionKey.OP_READ
-                                                : (SelectionKey.OP_WRITE | SelectionKey.OP_READ));
-
-            }
-            catch (IOException e)
-            {
-                LOGGER.info("Exception performing I/O for thread '" + _remoteSocketAddress + "': " + e);
-                close();
-            }
-        }
-
-        try(Selector selector = _selector; SocketChannel channel = _socketChannel)
-        {
-            while(!doWrite())
-            {
-            }
-
-            _receiver.closed();
-        }
-        catch (IOException e)
-        {
-            LOGGER.info("Exception performing final write/close for thread '" + _remoteSocketAddress + "': " + e);
-        }
-        finally
-        {
-            LOGGER.debug("Shutting down IO thread for " + _remoteSocketAddress);
-        }
-    }*/
 
     @Override
     public void flush()
@@ -368,9 +310,9 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
         }
     }
 
-    private void doRead() throws IOException
+    private boolean doRead() throws IOException
     {
-
+        boolean readData = false;
         if(_transportEncryption == TransportEncryption.NONE)
         {
             int remaining = 0;
@@ -381,6 +323,10 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
                     _currentBuffer = ByteBuffer.allocate(_receiveBufSize);
                 }
                 int read = _socketChannel.read(_currentBuffer);
+                if(read > 0)
+                {
+                    readData = true;
+                }
                 if (read == -1)
                 {
                     _closed.set(true);
@@ -406,7 +352,10 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
                 {
                     _closed.set(true);
                 }
-
+                else if(read > 0)
+                {
+                    readData = true;
+                }
                 if (LOGGER.isDebugEnabled())
                 {
                     LOGGER.debug("Read " + read + " encrypted bytes ");
@@ -427,6 +376,10 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
 
                     appInputBuffer.flip();
                     unwrapped = appInputBuffer.remaining();
+                    if(unwrapped > 0)
+                    {
+                        readData = true;
+                    }
                     _receiver.received(appInputBuffer);
                 }
                 while(unwrapped > 0 || tasksRun);
@@ -470,12 +423,13 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
                     {
                         _onTransportEncryptionAction.run();
                         _netInputBuffer.compact();
-                        doRead();
+                        readData = doRead();
                     }
                     break;
                 }
             }
         }
+        return readData;
     }
 
     private boolean runSSLEngineTasks(final SSLEngineResult status)

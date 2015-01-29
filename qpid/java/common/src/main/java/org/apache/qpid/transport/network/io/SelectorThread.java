@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
 * Created by keith on 28/01/2015.
@@ -66,70 +67,64 @@ public class SelectorThread extends Thread
 
         try
         {
-            try
+            while (!_closed.get())
             {
-                while (!_closed.get())
+
+                _selector.select(nextTimeout);
+
+                List<NonBlockingConnection> toBeScheduled = new ArrayList<>();
+
+
+                Set<SelectionKey> selectionKeys = _selector.selectedKeys();
+                for (SelectionKey key : selectionKeys)
                 {
+                    NonBlockingConnection connection = (NonBlockingConnection) key.attachment();
 
-                    _selector.select(nextTimeout);
+                    key.channel().register(_selector, 0);
 
-                    List<NonBlockingConnection> toBeScheduled = new ArrayList<>();
-
-
-                    Set<SelectionKey> selectionKeys = _selector.selectedKeys();
-                    for (SelectionKey key : selectionKeys)
-                    {
-                        NonBlockingConnection connection = (NonBlockingConnection) key.attachment();
-
-                        key.channel().register(_selector, 0);
-
-                        toBeScheduled.add(connection);
-                        _unscheduledConnections.remove(connection);
-
-                    }
-                    selectionKeys.clear();
-
-                    while (_unregisteredConnections.peek() != null)
-                    {
-                        NonBlockingConnection unregisteredConnection = _unregisteredConnections.poll();
-                        _unscheduledConnections.add(unregisteredConnection);
-
-
-                        final int ops = (unregisteredConnection.canRead() ? SelectionKey.OP_READ : 0)
-                                        | (unregisteredConnection.waitingForWrite() ? SelectionKey.OP_WRITE : 0);
-                        unregisteredConnection.getSocketChannel().register(_selector, ops, unregisteredConnection);
-
-                    }
-
-                    long currentTime = System.currentTimeMillis();
-                    Iterator<NonBlockingConnection> iterator = _unscheduledConnections.iterator();
-                    nextTimeout = Integer.MAX_VALUE;
-                    while (iterator.hasNext())
-                    {
-                        NonBlockingConnection connection = iterator.next();
-
-                        int period = connection.getTicker().getTimeToNextTick(currentTime);
-                        if (period < 0 || connection.isStateChanged())
-                        {
-                            toBeScheduled.add(connection);
-                            iterator.remove();
-                        }
-                        else
-                        {
-                            nextTimeout = Math.min(period, nextTimeout);
-                        }
-                    }
-
-                    for (NonBlockingConnection connection : toBeScheduled)
-                    {
-                        _scheduler.schedule(connection);
-                    }
+                    toBeScheduled.add(connection);
+                    _unscheduledConnections.remove(connection);
 
                 }
-            }
-            finally
-            {
-                _selector.close();
+                selectionKeys.clear();
+
+                while (_unregisteredConnections.peek() != null)
+                {
+                    NonBlockingConnection unregisteredConnection = _unregisteredConnections.poll();
+                    _unscheduledConnections.add(unregisteredConnection);
+
+
+                    final int ops = (unregisteredConnection.canRead() ? SelectionKey.OP_READ : 0)
+                                    | (unregisteredConnection.waitingForWrite() ? SelectionKey.OP_WRITE : 0);
+                    unregisteredConnection.getSocketChannel().register(_selector, ops, unregisteredConnection);
+
+                }
+
+                long currentTime = System.currentTimeMillis();
+                Iterator<NonBlockingConnection> iterator = _unscheduledConnections.iterator();
+                nextTimeout = Integer.MAX_VALUE;
+                while (iterator.hasNext())
+                {
+                    NonBlockingConnection connection = iterator.next();
+
+                    int period = connection.getTicker().getTimeToNextTick(currentTime);
+                    if (period < 0 || connection.isStateChanged())
+                    {
+                        toBeScheduled.add(connection);
+                        connection.getSocketChannel().register(_selector, 0).cancel();
+                        iterator.remove();
+                    }
+                    else
+                    {
+                        nextTimeout = Math.min(period, nextTimeout);
+                    }
+                }
+
+                for (NonBlockingConnection connection : toBeScheduled)
+                {
+                    _scheduler.schedule(connection);
+                }
+
             }
         }
         catch (IOException e)
@@ -137,6 +132,18 @@ public class SelectorThread extends Thread
             //TODO
             e.printStackTrace();
         }
+        finally
+        {
+            try
+            {
+                _selector.close();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        }
+
 
 
 
@@ -164,26 +171,52 @@ public class SelectorThread extends Thread
     private class NetworkConnectionScheduler
     {
         private final ScheduledThreadPoolExecutor _executor;
+        private final AtomicInteger _running = new AtomicInteger();
+        private final int _poolSize;
 
         private NetworkConnectionScheduler()
         {
-            _executor = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors());
+            _poolSize = Runtime.getRuntime().availableProcessors();
+            _executor = new ScheduledThreadPoolExecutor(_poolSize);
+            _executor.prestartAllCoreThreads();
         }
 
         public void processConnection(final NonBlockingConnection connection)
         {
-            boolean closed = connection.doWork();
-
-            if (!closed)
+            try
             {
-                if (connection.isStateChanged())
+                _running.incrementAndGet();
+                boolean rerun;
+                do
                 {
-                    schedule(connection);
-                }
-                else
-                {
-                    SelectorThread.this.addConnection(connection);
-                }
+                    rerun = false;
+                    boolean closed = connection.doWork();
+
+                    if (!closed)
+                    {
+
+                        if (connection.isStateChanged())
+                        {
+                            if (_running.get() == _poolSize)
+                            {
+                                schedule(connection);
+                            }
+                            else
+                            {
+                                rerun = true;
+                            }
+                        }
+                        else
+                        {
+                            SelectorThread.this.addConnection(connection);
+                        }
+                    }
+
+                } while (rerun);
+            }
+            finally
+            {
+                _running.decrementAndGet();
             }
         }
 
