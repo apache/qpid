@@ -67,6 +67,8 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
     private String _trustStorePath;
     private String _trustStorePassword;
     private SSLContext _sslContext;
+    private String _sslProtocol;
+    private String _sslProvider;
 
 
     public ConnectionFactoryImpl(final String host,
@@ -163,7 +165,9 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                                                           KeyManagerFactory.getDefaultAlgorithm(),
                                                           _trustStorePath,_trustStorePassword,
                                                           KeyStore.getDefaultType(),
-                                                          TrustManagerFactory.getDefaultAlgorithm());
+                                                          TrustManagerFactory.getDefaultAlgorithm(),
+                                                          _sslProtocol,
+                                                          _sslProvider);
                     if(username == null && _keyStoreCertAlias != null)
                     {
                         X509Certificate[] certs = SSLUtil.getClientCertificates(_keyStoreCertAlias,
@@ -220,6 +224,16 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         _keyStorePassword = keyStorePassword;
     }
 
+    public void setSslProtocol(final String sslProtocol)
+    {
+        _sslProtocol = sslProtocol;
+    }
+
+    public void setSslProvider(final String sslProvider)
+    {
+        _sslProvider = sslProvider;
+    }
+
     public void setKeyStoreCertAlias(final String keyStoreCertAlias)
     {
         _keyStoreCertAlias = keyStoreCertAlias;
@@ -252,6 +266,8 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         public String keyStorePath;
         public String keyStorePassword;
         public String keyStoreCertAlias;
+        public String sslProvider;
+        public String sslProtocol;
     }
 
 
@@ -388,7 +404,22 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                 {
                     options.keyStoreCertAlias = value;
                 }
+            },
+            new OptionSetter("ssl-provider","")
+            {
+                public void setOption(final ConnectionOptions options, final String value) throws MalformedURLException
+                {
+                    options.sslProvider = value;
+                }
+            },
+            new OptionSetter("ssl-protocol","")
+            {
+                public void setOption(final ConnectionOptions options, final String value) throws MalformedURLException
+                {
+                    options.sslProtocol = value;
+                }
             }
+
         };
 
     public static ConnectionFactoryImpl createFromURL(final String urlString) throws MalformedURLException
@@ -495,6 +526,14 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         if (options.trustStorePassword != null)
         {
             connectionFactory.setTrustStorePassword(options.trustStorePassword);
+        }
+        if (options.sslProvider != null)
+        {
+            connectionFactory.setSslProvider(options.sslProvider);
+        }
+        if (options.sslProtocol != null)
+        {
+            connectionFactory.setSslProtocol(options.sslProtocol);
         }
 
         return connectionFactory;

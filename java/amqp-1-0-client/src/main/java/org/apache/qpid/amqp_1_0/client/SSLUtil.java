@@ -27,12 +27,15 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -48,6 +51,10 @@ public class SSLUtil
     public static final String TRANSPORT_LAYER_SECURITY_CODE = "TLS";
     public static final String SSLV3_PROTOCOL = "SSLv3";
 
+
+    private static final Logger LOGGER = Logger.getLogger(SSLUtil.class.getName());
+
+
     public static SSLContext buildSslContext(final String certAlias,
                                              final String keyStorePath,
                                              final String keyStoreType,
@@ -56,11 +63,13 @@ public class SSLUtil
                                              final String trustStorePath,
                                              final String trustStorePassword,
                                              final String trustStoreType,
-                                             final String trustManagerFactoryAlgorithm) throws GeneralSecurityException, IOException
+                                             final String trustManagerFactoryAlgorithm,
+                                             final String sslProtocol,
+                                             final String sslProvider) throws GeneralSecurityException, IOException
     {
 
-        final SSLContext sslContext = SSLContext
-                .getInstance(TRANSPORT_LAYER_SECURITY_CODE);
+
+        SSLContext sslContext = getSslContext(sslProtocol, sslProvider);
 
         final TrustManager[] trustManagers;
         final KeyManager[] keyManagers;
@@ -106,6 +115,48 @@ public class SSLUtil
 
         sslContext.init(keyManagers, trustManagers, null);
 
+        return sslContext;
+    }
+
+    private static SSLContext getSslContext(final String sslProtocol, final String sslProvider) throws NoSuchAlgorithmException
+    {
+
+        final String sslProviderName = System.getProperty("qpid.ssl.provider", sslProvider);
+        final String sslProtocolName = System.getProperty("qpid.ssl.protocol", sslProtocol);
+
+        SSLContext sslContext = null;
+        if(sslProviderName != null && sslProtocolName != null)
+        {
+            try
+            {
+                sslContext = SSLContext.getInstance(sslProtocolName, sslProviderName);
+            }
+            catch(NoSuchProviderException e)
+            {
+                LOGGER.info("Unknown SSL Context Provider '"+ sslProviderName + "' will use the default");
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                LOGGER.info("Unknown SSL protocol '" + sslProtocolName
+                            + "' when using the provider '" + sslProviderName + "' will use the default provider");
+            }
+        }
+        if(sslContext == null && sslProtocolName != null)
+        {
+            try
+            {
+                sslContext = SSLContext.getInstance(sslProtocolName);
+            }
+            catch(NoSuchAlgorithmException e)
+            {
+                LOGGER.info("Unknown SSL protocol '" + sslProtocolName +
+                            "' will use '"+TRANSPORT_LAYER_SECURITY_CODE+"'");
+            }
+        }
+        if(sslContext == null)
+        {
+            sslContext = SSLContext.getInstance(TRANSPORT_LAYER_SECURITY_CODE);
+        }
         return sslContext;
     }
 
