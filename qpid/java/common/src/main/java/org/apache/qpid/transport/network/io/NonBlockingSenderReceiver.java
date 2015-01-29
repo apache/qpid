@@ -21,8 +21,6 @@ package org.apache.qpid.transport.network.io;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.security.Principal;
 import java.util.ArrayList;
@@ -42,7 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.SenderClosedException;
 import org.apache.qpid.transport.SenderException;
@@ -78,6 +75,7 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
     private SSLEngineResult _status;
     private volatile boolean _fullyWritten = true;
     private AtomicBoolean _stateChanged = new AtomicBoolean();
+    private boolean _workDone;
 
 
     public NonBlockingSenderReceiver(final NonBlockingConnection connection,
@@ -152,12 +150,13 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
     public boolean doWork()
     {
         _stateChanged.set(false);
-
         boolean closed = _closed.get();
         if (!closed)
         {
             try
             {
+                _workDone = false;
+
                 long currentTime = System.currentTimeMillis();
                 int tick = _ticker.getTimeToNextTick(currentTime);
                 if (tick <= 0)
@@ -170,6 +169,10 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
                 _fullyWritten = doWrite();
                 _receiver.setTransportBlockedForWriting(!_fullyWritten);
 
+                if(_workDone && _netInputBuffer != null && _netInputBuffer.position() != 0)
+                {
+                    _stateChanged.set(true);
+                }
             }
             catch (IOException e)
             {
@@ -267,7 +270,6 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
     public void close()
     {
         LOGGER.debug("Closing " + _remoteSocketAddress);
-
         _closed.set(true);
         _stateChanged.set(true);
         _connection.getSelector().wakeup();
@@ -310,11 +312,11 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
         else if(_transportEncryption == TransportEncryption.TLS)
         {
             int remaining = 0;
-
             do
             {
                 if(_sslEngine.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.NEED_UNWRAP)
                 {
+                    _workDone = true;
                     final ByteBuffer netBuffer = ByteBuffer.allocate(_sslEngine.getSession().getPacketBufferSize());
                     _status = _sslEngine.wrap(bufArray, netBuffer);
                     runSSLEngineTasks(_status);
@@ -337,14 +339,12 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
 
             }
             while(remaining != 0 && _sslEngine.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.NEED_UNWRAP);
-
             ByteBuffer[] encryptedBuffers = _encryptedOutput.toArray(new ByteBuffer[_encryptedOutput.size()]);
             long written  = _socketChannel.write(encryptedBuffers);
             if (LOGGER.isDebugEnabled())
             {
                 LOGGER.debug("Written " + written + " encrypted bytes");
             }
-
             ListIterator<ByteBuffer> iter = _encryptedOutput.listIterator();
             while(iter.hasNext())
             {
@@ -409,25 +409,27 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
 
                 if (LOGGER.isDebugEnabled())
                 {
-                    LOGGER.debug("Read " + read + " encrypted bytes " + _netInputBuffer);
+                    LOGGER.debug("Read " + read + " encrypted bytes ");
                 }
+
                 _netInputBuffer.flip();
 
 
                 int unwrapped = 0;
+                boolean tasksRun;
                 do
                 {
                     ByteBuffer appInputBuffer =
                             ByteBuffer.allocate(_sslEngine.getSession().getApplicationBufferSize() + 50);
 
                     _status = _sslEngine.unwrap(_netInputBuffer, appInputBuffer);
-                    runSSLEngineTasks(_status);
+                    tasksRun = runSSLEngineTasks(_status);
 
                     appInputBuffer.flip();
                     unwrapped = appInputBuffer.remaining();
                     _receiver.received(appInputBuffer);
                 }
-                while(unwrapped > 0);
+                while(unwrapped > 0 || tasksRun);
 
                 _netInputBuffer.compact();
 
@@ -476,7 +478,7 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
         }
     }
 
-    private void runSSLEngineTasks(final SSLEngineResult status)
+    private boolean runSSLEngineTasks(final SSLEngineResult status)
     {
         if(status.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_TASK)
         {
@@ -485,7 +487,9 @@ public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
             {
                 task.run();
             }
+            return true;
         }
+        return false;
     }
 
     private boolean looksLikeSSL(byte[] headerBytes)
