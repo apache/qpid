@@ -17,9 +17,16 @@
  * under the License.
  */
 
-define(["qpid/common/util", "qpid/common/metadata", "dojo/domReady!"],
-  function (util, metadata)
+define(["qpid/common/util", "qpid/common/metadata", "qpid/management/UserPreferences", "dojox/html/entities", "dojo/domReady!"],
+  function (util, metadata, UserPreferences, entities)
   {
+
+    function toDate(value)
+    {
+        return value ? entities.encode(String(UserPreferences.formatDateTime(value))) : "";
+    }
+
+    var dateFields = ["certificateValidEnd","certificateValidStart"];
 
     function NonJavaKeyStore(data)
     {
@@ -27,14 +34,26 @@ define(["qpid/common/util", "qpid/common/metadata", "dojo/domReady!"],
         var attributes = metadata.getMetaData("KeyStore", "NonJavaKeyStore").attributes;
         for(var name in attributes)
         {
-            this.fields.push(name);
+            if (dateFields.indexOf(name) == -1)
+            {
+                this.fields.push(name);
+            }
         }
-        util.buildUI(data.containerNode, data.parent, "store/nonjavakeystore/show.html", this.fields, this);
+        var allFields = this.fields.concat(dateFields);
+        util.buildUI(data.containerNode, data.parent, "store/nonjavakeystore/show.html",allFields, this);
     }
 
     NonJavaKeyStore.prototype.update = function(data)
     {
         util.updateUI(data, this.fields, this);
+        if (data)
+        {
+            for(var idx in dateFields)
+            {
+                var name = dateFields[idx];
+                this[name].innerHTML = toDate(data[name]);
+            }
+        }
     }
 
     return NonJavaKeyStore;
