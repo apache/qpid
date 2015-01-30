@@ -80,11 +80,11 @@ define(["dojo/_base/lang",
             },
             show: function(effectiveData)
             {
+                this.effectiveData = effectiveData;
                 this.storeForm.reset();
 
                 if (effectiveData)
                 {
-                    this.effectiveData = effectiveData;
                     this._destroyTypeFields(this.containerNode);
                     this._initFields(effectiveData);
                 }
