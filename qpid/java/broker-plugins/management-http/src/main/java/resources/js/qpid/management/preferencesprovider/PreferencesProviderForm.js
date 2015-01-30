@@ -193,6 +193,10 @@ function (util, metadata, xhr, declare, array, domConstruct, win, query, json, _
         {
             this.reset();
         }
+        else
+        {
+            this._toggleWidgets(this.preferencesProviderTypeWidget.value);
+        }
     },
   });
 });

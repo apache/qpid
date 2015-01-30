@@ -33,12 +33,11 @@ define(["dojo/_base/xhr",
         "dojo/dom-style",
         "dojox/html/entities",
         "dojo/dom",
-        "qpid/management/addPreferencesProvider",
         "qpid/management/PreferencesProvider",
         "qpid/management/authenticationprovider/PrincipalDatabaseAuthenticationManager",
         "dojo/domReady!"],
        function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid,
-           addAuthenticationProvider, event, registry, domStyle, entities, dom, addPreferencesProvider, PreferencesProvider, PrincipalDatabaseAuthenticationManager) {
+           addAuthenticationProvider, event, registry, domStyle, entities, dom, PreferencesProvider, PrincipalDatabaseAuthenticationManager) {
 
            function AuthenticationProvider(name, parent, controller) {
                this.name = name;
@@ -77,14 +76,6 @@ define(["dojo/_base/xhr",
                                             function(evt){
                                                 event.stop(evt);
                                                 that.deleteAuthenticationProvider();
-                                            });
-
-                            var addPreferencesProviderButton = query(".addPreferencesProviderButton", contentPane.containerNode)[0];
-                            var addPreferencesProviderWidget = registry.byNode(addPreferencesProviderButton);
-                            connect.connect(addPreferencesProviderWidget, "onClick",
-                                            function(evt){
-                                                event.stop(evt);
-                                                that.addPreferencesProvider();
                                             });
 
                             authProviderUpdater.update();
@@ -136,14 +127,6 @@ define(["dojo/_base/xhr",
                }
            };
 
-           AuthenticationProvider.prototype.addPreferencesProvider = function() {
-             if (this.authProviderUpdater && this.authProviderUpdater.authProviderData
-                   && (!this.authProviderUpdater.authProviderData.preferencesproviders
-                       || !this.authProviderUpdater.authProviderData.preferencesproviders[0])){
-               addPreferencesProvider.show(this.name);
-             }
-           };
-
            function AuthProviderUpdater(node, authProviderObj, controller, authenticationProvider)
            {
                this.controller = controller;
@@ -154,7 +137,6 @@ define(["dojo/_base/xhr",
                this.preferencesProviderType=dom.byId("preferencesProviderType");
                this.preferencesProviderName=dom.byId("preferencesProviderName");
                this.preferencesProviderState=dom.byId("preferencesProviderState");
-               this.addPreferencesProviderButton = query(".addPreferencesProviderButton", node)[0];
                this.editPreferencesProviderButton = query(".editPreferencesProviderButton", node)[0];
                this.deletePreferencesProviderButton = query(".deletePreferencesProviderButton", node)[0];
                this.preferencesProviderAttributes = dom.byId("preferencesProviderAttributes")
@@ -169,7 +151,6 @@ this.authenticationProviderDetailsContainer = query(".authenticationProviderDeta
            {
              if (preferencesProviderData)
              {
-               this.addPreferencesProviderButton.style.display = 'none';
                if (!this.preferencesProvider)
                {
                  var preferencesProvider =new PreferencesProvider(preferencesProviderData.name, this.authProviderData);
@@ -184,7 +165,6 @@ this.authenticationProviderDetailsContainer = query(".authenticationProviderDeta
                {
                  this.preferencesProvider.update(null);
                }
-               this.addPreferencesProviderButton.style.display = 'inline';
              }
            };
 
