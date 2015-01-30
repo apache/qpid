@@ -93,6 +93,7 @@ function (declare, array, lang, util, _WidgetBase, _TemplatedMixin, _WidgetsInTe
            {
                this.resourceLocation.set("title", this.title);
            }
+           this.resourceLocation.set("required", this.required ? true : false);
            this.uploadData.style.display = "none";
        },
        startup: function()
@@ -154,7 +155,7 @@ function (declare, array, lang, util, _WidgetBase, _TemplatedMixin, _WidgetsInTe
             this.selectedFileName = null;
             this.selectedFileStatus.className = "";
             this.selectedFile.innerHTML = "";
-            this.resourceLocation.set("required", true);
+            this.resourceLocation.set("required", this.required ? true : false);
             this.resourceLocation.setDisabled(false);
             this.clearButton.setDisabled(true);
             this.uploadData.style.display = "none";
