@@ -60,6 +60,7 @@ define(["dojo/_base/xhr",
 
                 this.authenticationProviderName = registry.byId("addAuthenticationProvider.name");
                 this.authenticationProviderName.set("regExpGen", util.nameOrContextVarRegexp);
+                this.authenticationProviderName.on("change", function(newValue){that.preferencesProviderForm.preferencesProviderNameWidget.set("value",newValue);});
 
                 this.dialog = registry.byId("addAuthenticationProvider");
                 this.addButton = registry.byId("addAuthenticationProvider.addButton");
@@ -102,7 +103,7 @@ define(["dojo/_base/xhr",
                     this.initialData = actualData;
                     this.effectiveData = effectiveData;
                     this.authenticationProviderType.set("value", actualData.type);
-                    this.authenticationProviderName.set("value", actualData.name);
+
                     this.authenticationProviderType.set("disabled", true);
                     this.authenticationProviderName.set("disabled", true);
                     if (actualData.preferencesproviders && actualData.preferencesproviders[0])
@@ -113,6 +114,7 @@ define(["dojo/_base/xhr",
                     {
                         this.preferencesProviderForm.reset();
                     }
+                    this.authenticationProviderName.set("value", actualData.name);
                 }
                 else
                 {

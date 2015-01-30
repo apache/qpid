@@ -56,7 +56,6 @@ define(["dojo/_base/xhr",
                    that.containerNode = node;
                    that.parentObject = parentObject;
                    that.preferencesProviderType=query(".preferencesProviderType", node)[0];
-                   that.preferencesProviderName=query(".preferencesProviderName", node)[0];
                    that.preferencesProviderState=query(".preferencesProviderState", node)[0];
                    that.editPreferencesProviderButton = query(".editPreferencesProviderButton", node)[0];
                    that.deletePreferencesProviderButton = query(".deletePreferencesProviderButton", node)[0];
@@ -137,7 +136,6 @@ define(["dojo/_base/xhr",
                this.editPreferencesProviderButton.style.display = 'inline';
                this.deletePreferencesProviderButton.style.display = 'inline';
                this.preferencesProviderType.innerHTML = entities.encode(String(data.type));
-               this.preferencesProviderName.innerHTML = entities.encode(String(data.name));
                this.preferencesProviderState.innerHTML = entities.encode(String(data.state));
                if (!this.details)
                {
