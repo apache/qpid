@@ -25,8 +25,6 @@ define(["dojo/dom","dojo/query", "dojo/_base/array", "dijit/registry","qpid/comm
         {
             init: function()
             {
-                // Readers are HTML5
-                this.reader = window.FileReader ? new FileReader() : undefined;
             },
             show: function(data)
             {
@@ -34,79 +32,17 @@ define(["dojo/dom","dojo/query", "dojo/_base/array", "dijit/registry","qpid/comm
                 util.parseHtmlIntoDiv(data.containerNode, "store/filetruststore/add.html");
 
                 this.containerNode = data.containerNode;
-                this.keyStoreServerPath = registry.byId("addStore.serverPath");
-                this.keyStoreUploadFields = dom.byId("addStore.uploadFields");
-                this.keyStoreSelectedFileContainer = dom.byId("addStore.selectedFile");
-                this.keyStoreSelectedFileStatusContainer = dom.byId("addStore.selectedFileStatus");
-                this.keyStoreFile = registry.byId("addStore.file");
-                this.keyStoreFileClearButton = registry.byId("addStore.fileClearButton");
-                this.keyStoreOldBrowserWarning = dom.byId("addStore.oldBrowserWarning");
 
-                //Only submitted field
-                this.keyStorePath = registry.byId("addStore.path");
+                this.keyStoreOldBrowserWarning = dom.byId("addStore.oldBrowserWarning");
 
                 this.addButton = data.parent.addButton;
 
-                if (this.reader)
-                {
-                  this.reader.onload = function(evt) {that._keyStoreUploadFileComplete(evt);};
-                  this.reader.onerror = function(ex) {console.error("Failed to load trust store file", ex);};
-                  this.keyStoreFile.on("change", function(selected){that._keyStoreFileChanged(selected)});
-                  this.keyStoreFileClearButton.on("click", function(event){that._keyStoreFileClearButtonClicked(event)});
-                }
-                else
+                if (!window.FileReader)
                 {
                   // Fall back for IE8/9 which do not support FileReader
-                  this.keyStoreUploadFields.style.display = "none";
                   this.keyStoreOldBrowserWarning.innerHTML = "File upload requires a more recent browser with HTML5 support";
                   this.keyStoreOldBrowserWarning.className = this.keyStoreOldBrowserWarning.className.replace("hidden", "");
                 }
-
-                this.keyStoreServerPath.on("blur", function(){that._keyStoreServerPathChanged()});
-            },
-            _keyStoreFileChanged: function (evt)
-            {
-                // We only ever expect a single file
-                var file = this.keyStoreFile.domNode.children[0].files[0];
-
-                this.addButton.setDisabled(true);
-                this.keyStoreSelectedFileContainer.innerHTML = file.name;
-                this.keyStoreSelectedFileStatusContainer.className = "loadingIcon";
-
-                console.log("Beginning to read trust store file " + file.name);
-                this.reader.readAsDataURL(file);
-            },
-            _keyStoreUploadFileComplete: function(evt)
-            {
-                var reader = evt.target;
-                var result = reader.result;
-                console.log("Trust store file read complete, contents " + result);
-                this.addButton.setDisabled(false);
-                this.keyStoreSelectedFileStatusContainer.className = "loadedIcon";
-
-                this.keyStoreServerPath.set("value", "");
-                this.keyStoreServerPath.setDisabled(true);
-                this.keyStoreServerPath.set("required", false);
-
-                this.keyStoreFileClearButton.setDisabled(false);
-
-                this.keyStorePath.set("value", result);
-            },
-             _keyStoreFileClearButtonClicked: function(event)
-            {
-                this.keyStoreFile.reset();
-                this.keyStoreSelectedFileStatusContainer.className = "";
-                this.keyStoreSelectedFileContainer.innerHTML = "";
-                this.keyStoreServerPath.set("required", true);
-                this.keyStoreServerPath.setDisabled(false);
-                this.keyStoreFileClearButton.setDisabled(true);
-
-                this.keyStorePath.set("value", "");
-            },
-            _keyStoreServerPathChanged: function()
-            {
-                var serverPathValue = this.keyStoreServerPath.get("value");
-                this.keyStorePath.set("value", serverPathValue);
             },
             update: function(effectiveData)
             {
@@ -115,27 +51,19 @@ define(["dojo/dom","dojo/query", "dojo/_base/array", "dijit/registry","qpid/comm
                 array.forEach(widgets, function(item)
                     {
                         var name = item.id.replace("addStore.","");
-                        if (name in attributes && item.type != "password")
+                        if (name in attributes )
                         {
-                            item.set("value", effectiveData[name]);
+                            if  (item.type != "password")
+                            {
+                                item.set("value", effectiveData[name]);
+                            }
+                            else
+                            {
+                                item.set("required", effectiveData?false:true);
+                            }
                         }
                     });
 
-                var keyStorePathValue = effectiveData["path"];
-                var isDataUrl = keyStorePathValue.indexOf("data:") == 0;
-
-                if (isDataUrl)
-                {
-                     this.keyStoreSelectedFileStatusContainer.className = "loadedIcon";
-                     this.keyStoreSelectedFileContainer.innerHTML = "uploaded.jks";
-                     this.keyStoreServerPath.setDisabled(true);
-                     this.keyStoreServerPath.set("required", false);
-                     this.keyStoreFileClearButton.setDisabled(false);
-                }
-                else
-                {
-                     this.keyStoreServerPath.set("value", keyStorePathValue);
-                }
             }
         };
 

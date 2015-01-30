@@ -1,0 +1,48 @@
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+ -->
+
+<div class="dijit dijitReset dijitInline dijitLeft" id="widget_${id}" role="presentation">
+    <input type="text" name="${name}_resourceLocation"
+           data-dojo-attach-point="resourceLocation,textbox,focusNode"
+           data-dojo-type="dijit/form/ValidationTextBox"
+           data-dojo-props="required:true,disabled:false"/>
+
+    <div data-dojo-attach-point="uploadFields">
+        <div data-dojo-attach-point="uploadData" style="width:auto;overflow:hidden;text-align:right">
+                <span data-dojo-attach-point="selectedFile" class="infoMessage"></span>
+                <span data-dojo-attach-point="selectedFileStatus"></span>
+        </div>
+        <div style="text-align:right">
+            <span data-dojo-attach-point="blah"></span>
+                <input name="${name}_uploadedFile" multiple="false" type="file" id="uploader_${id}"
+                       data-dojo-attach-point="uploader"
+                       data-dojo-type="dojox/form/Uploader"
+                       data-dojo-props="label: 'Upload'"/>
+                <button data-dojo-attach-point="clearButton" data-dojo-type="dijit/form/Button"
+                        data-dojo-props="label: 'Clear', disabled: true"/>Clear</button>
+
+        </div>
+        <div class="clear"></div>
+    </div>
+    <div data-dojo-attach-point="unsupportedWarning" class="infoMessage hidden clear" style="overflow:scroll;">
+        File upload requires a more recent browser with HTML5 support
+    </div>
+</div>

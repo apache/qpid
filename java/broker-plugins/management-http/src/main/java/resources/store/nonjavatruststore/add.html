@@ -24,43 +24,14 @@
     <div class="clear">
         <div id="addStore.certificatesLabel" class="formLabel-labelCell tableContainer-labelCell">Certificate URL or Path*:</div>
         <div class="formLabel-controlCell tableContainer-valueCell">
-            <input type="text" id="addStore.certificates"
-                   data-dojo-type="dijit/form/ValidationTextBox"
-                   data-dojo-props="
-                              name: 'certificates',
-                              placeHolder: 'Certificate URL or path to certificate file on server',
-                              required: true,
-                              excluded: true,
-                              promptMessage: 'Location of the certificate',
-                              title: 'Enter certificate URL or path to file containing certificate in DER or PEM format'" />
-
-            <!-- Hidden and used purely for form submission -->
-            <input type="hidden" id="addStore.certificatesUrl"
-                   data-dojo-type="dijit/form/ValidationTextBox"
+            <input type="text" id="addStore.certificatesUrl"
+                   data-dojo-type="qpid/common/ResourceWidget"
                    data-dojo-props="
                               name: 'certificatesUrl',
-                              required: true" />
-
-
-            <div id="addStore.certificatesUploadFields">
-                <div class="alignLeft">
-                    <span id="addStore.certificatesUploadContainer" class="infoMessage"></span>
-                    <span id="addStore.certificatesUploadStatusContainer"></span>
-                </div>
-
-                <div class="alignRight">
-                    <input type="file" id="addStore.certificatesFile"
-                           multiple="false"
-                           data-dojo-type="dojox/form/Uploader"
-                           data-dojo-props="label: 'Upload'"/>
-                    <button id="addStore.certificatesFileClearButton"
-                            data-dojo-type="dijit/form/Button"
-                            data-dojo-props="label: 'Clear',
-                                            disabled: true">
-                    </button>
-                </div>
-                <div class="clear"></div>
-            </div>
+                              placeHolder: 'Certificate URL or path to certificate file on server',
+                              required: true,
+                              promptMessage: 'Location of the certificate',
+                              title: 'Enter certificate URL or path to file containing certificate in DER or PEM format'" />
         </div>
     </div>
 

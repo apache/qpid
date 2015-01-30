@@ -40,81 +40,6 @@ define(["dojo/dom","dojo/query", "dojo/_base/array", "dijit/registry","qpid/comm
                   this.keyStoreOldBrowserWarning.innerHTML = "File upload requires a more recent browser with HTML5 support";
                   this.keyStoreOldBrowserWarning.className = this.keyStoreOldBrowserWarning.className.replace("hidden", "");
                 }
-
-                this._initUploadFields("certificates", "certificates");
-            },
-            _initUploadFields: function(fieldName, description)
-            {
-                var that=this;
-                this[fieldName] = registry.byId("addStore." + fieldName);
-                this[fieldName + "UploadFields"] = dom.byId("addStore." + fieldName +"UploadFields");
-                this[fieldName + "UploadContainer"] = dom.byId("addStore." + fieldName + "UploadContainer");
-                this[fieldName + "UploadStatusContainer"] = dom.byId("addStore." + fieldName + "UploadStatusContainer");
-                this[fieldName + "File"] = registry.byId("addStore." + fieldName + "File");
-                this[fieldName + "FileClearButton"] = registry.byId("addStore." + fieldName + "FileClearButton");
-
-                // field to submit
-                this[fieldName + "Url"] = registry.byId("addStore." + fieldName + "Url");
-
-                if (window.FileReader)
-                {
-                  this[fieldName + "Reader"] = new FileReader();
-                  this[fieldName + "Reader"].onload = function(evt) {that._uploadFileComplete(evt, fieldName);};
-                  this[fieldName + "Reader"].onerror = function(ex) {console.error("Failed to load " + description + " file", ex);};
-                  this[fieldName + "File"].on("change", function(selected){that._fileChanged(selected, fieldName)});
-                  this[fieldName + "FileClearButton"].on("click", function(event){that._fileClearButtonClicked(event, fieldName)});
-                }
-                else
-                {
-                  // Fall back for IE8/9 which do not support FileReader
-                  this[fieldName + "UploadFields"].style.display = "none";
-                }
-
-                this[fieldName].on("blur", function(){that._pathChanged(fieldName)});
-            },
-            _fileChanged: function (evt, fieldName)
-            {
-                var file = this[fieldName + "File"].domNode.children[0].files[0];
-
-                this[fieldName + "UploadContainer"].innerHTML = file.name;
-                this[fieldName + "UploadStatusContainer"].className = "loadingIcon";
-
-                console.log("Beginning to read  file " + file.name + " for " + fieldName );
-                this[fieldName + "Reader"].readAsDataURL(file);
-            },
-            _uploadFileComplete: function(evt, fieldName)
-            {
-                var reader = evt.target;
-                var result = reader.result;
-                console.log(fieldName + " file read complete, contents " + result);
-
-                // it is not clear the purpose of this operation
-                //this.addButton.setDisabled(false);
-                this[fieldName + "UploadStatusContainer"].className = "loadedIcon";
-
-                this[fieldName].set("value", "");
-                this[fieldName].setDisabled(true);
-                this[fieldName].set("required", false);
-
-                this[fieldName + "FileClearButton"].setDisabled(false);
-
-                this[fieldName + "Url"].set("value", result);
-            },
-             _fileClearButtonClicked: function(event, fieldName)
-            {
-                this[fieldName + "File"].reset();
-                this[fieldName + "UploadStatusContainer"].className = "";
-                this[fieldName + "UploadContainer"].innerHTML = "";
-                this[fieldName].set("required", true);
-                this[fieldName].setDisabled(false);
-                this[fieldName + "FileClearButton"].setDisabled(true);
-
-                this[fieldName + "Url"].set("value", "");
-            },
-            _pathChanged: function(fieldName)
-            {
-                var serverPathValue = this[fieldName].get("value");
-                this[fieldName + "Url"].set("value", serverPathValue);
             },
             update: function(effectiveData)
             {
@@ -127,23 +52,6 @@ define(["dojo/dom","dojo/query", "dojo/_base/array", "dijit/registry","qpid/comm
                         var val = effectiveData[name];
                         item.set("value", val);
 
-                        if (name.indexOf("Url") != -1)
-                        {
-                            var isDataUrl = val && val.indexOf("data:") == 0;
-                            var fieldName = name.substring(0, name.length - 3);
-                            if (isDataUrl)
-                            {
-                                  that[fieldName + "UploadStatusContainer"].className = "loadedIcon";
-                                  that[fieldName + "UploadContainer"].innerHTML = "uploaded.jks";
-                                  that[fieldName].setDisabled(true);
-                                  that[fieldName].set("required", false);
-                                  that[fieldName + "FileClearButton"].setDisabled(false);
-                            }
-                            else
-                            {
-                                  that[fieldName].set("value", val);
-                            }
-                         }
                     });
 
             }
