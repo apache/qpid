@@ -29,7 +29,8 @@ import org.apache.qpid.transport.codec.AbstractEncoder;
 
 public final class ServerEncoder extends AbstractEncoder
 {
-    public static final int DEFAULT_CAPACITY = 4096;
+    public static final int DEFAULT_CAPACITY = 8192;
+    private final int _threshold;
     private ByteBuffer _out;
     private int _segment;
     private int _initialCapacity;
@@ -42,6 +43,7 @@ public final class ServerEncoder extends AbstractEncoder
     public ServerEncoder(int capacity)
     {
         _initialCapacity = capacity;
+        _threshold = capacity/16;
         _out = ByteBuffer.allocate(capacity);
         _segment = 0;
     }
@@ -51,7 +53,7 @@ public final class ServerEncoder extends AbstractEncoder
         _out.position(_out.limit());
         _out.limit(_out.capacity());
         _out = _out.slice();
-        if(_out.remaining() < 256)
+        if(_out.remaining() < _threshold)
         {
             _out = ByteBuffer.allocate(_initialCapacity);
         }
