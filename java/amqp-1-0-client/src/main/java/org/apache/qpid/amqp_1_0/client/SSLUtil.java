@@ -118,11 +118,12 @@ public class SSLUtil
         return sslContext;
     }
 
-    private static SSLContext getSslContext(final String sslProtocol, final String sslProvider) throws NoSuchAlgorithmException
+    private static SSLContext getSslContext(final String sslProtocol,
+                                            final String sslProvider) throws NoSuchAlgorithmException
     {
 
-        final String sslProviderName = System.getProperty("qpid.ssl.provider", sslProvider);
-        final String sslProtocolName = System.getProperty("qpid.ssl.protocol", sslProtocol);
+        final String sslProviderName = sslProvider != null ? sslProvider : System.getProperty("qpid.ssl.contextProvider");
+        final String sslProtocolName = sslProtocol != null ? sslProtocol : System.getProperty("qpid.ssl.contextProtocol", TRANSPORT_LAYER_SECURITY_CODE);
 
         SSLContext sslContext = null;
         if(sslProviderName != null && sslProtocolName != null)

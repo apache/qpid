@@ -41,6 +41,7 @@ import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.amqp_1_0.client.ConnectionErrorException;
 import org.apache.qpid.amqp_1_0.client.ConnectionException;
+import org.apache.qpid.amqp_1_0.client.SSLOptions;
 import org.apache.qpid.amqp_1_0.jms.Connection;
 import org.apache.qpid.amqp_1_0.jms.ConnectionMetaData;
 import org.apache.qpid.amqp_1_0.jms.Session;
@@ -77,11 +78,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     private Boolean _syncPublish;
     private int _maxSessions;
     private int _maxPrefetch;
-
-    public void setMaxPrefetch(final int maxPrefetch)
-    {
-        _maxPrefetch = maxPrefetch;
-    }
+    private SSLOptions _sslOptions;
 
     private static enum State
     {
@@ -175,6 +172,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 {
                     _conn = new org.apache.qpid.amqp_1_0.client.Connection(_protocol, _host,
                             _port, _username, _password, container, _remoteHost, _sslContext,
+                            _sslOptions,
                             _maxSessions - 1);
                     _conn.setConnectionErrorTask(new ConnectionErrorTask());
                     // TODO - retrieve negotiated AMQP version
@@ -672,6 +670,21 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     Boolean syncPublish()
     {
         return _syncPublish;
+    }
+
+    public void setMaxPrefetch(final int maxPrefetch)
+    {
+        _maxPrefetch = maxPrefetch;
+    }
+
+    public void setSslOptions(final SSLOptions sslOptions)
+    {
+        _sslOptions = sslOptions;
+    }
+
+    public SSLOptions getSslOptions()
+    {
+        return _sslOptions;
     }
 
     private class ConnectionErrorTask implements Runnable

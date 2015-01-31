@@ -31,6 +31,7 @@ public interface TransportProvider
                  String address,
                  int port,
                  SSLContext sslContext,
+                 final SSLOptions sslOptions,
                  ExceptionHandler exceptionHandler) throws ConnectionException;
 
     void close();

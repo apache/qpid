@@ -34,6 +34,6 @@ public class TCPTransportProviderFactory implements TransportProviderFactory
     @Override
     public TransportProvider getProvider(final String transport)
     {
-        return new TCPTransportProvier(transport);
+        return new TCPTransportProvider(transport);
     }
 }
