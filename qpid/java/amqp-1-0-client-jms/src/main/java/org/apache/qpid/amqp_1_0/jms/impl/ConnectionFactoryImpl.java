@@ -40,6 +40,7 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.apache.qpid.amqp_1_0.client.SSLOptions;
 import org.apache.qpid.amqp_1_0.client.SSLUtil;
 import org.apache.qpid.amqp_1_0.jms.ConnectionFactory;
 
@@ -66,9 +67,15 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
     private String _keyStoreCertAlias;
     private String _trustStorePath;
     private String _trustStorePassword;
+    private String _sslContextProtocol;
+    private String _sslContextProvider;
+    private String _sslEnabledProtocols;
+    private String _sslDisabledProtocols;
+
+
+
     private SSLContext _sslContext;
-    private String _sslProtocol;
-    private String _sslProvider;
+    private SSLOptions _sslOptions;
 
 
     public ConnectionFactoryImpl(final String host,
@@ -166,8 +173,9 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                                                           _trustStorePath,_trustStorePassword,
                                                           KeyStore.getDefaultType(),
                                                           TrustManagerFactory.getDefaultAlgorithm(),
-                                                          _sslProtocol,
-                                                          _sslProvider);
+                                                          _sslContextProtocol,
+                                                          _sslContextProvider
+                                                         );
                     if(username == null && _keyStoreCertAlias != null)
                     {
                         X509Certificate[] certs = SSLUtil.getClientCertificates(_keyStoreCertAlias,
@@ -202,6 +210,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         connection.setTopicPrefix(_topicPrefix);
         connection.setUseBinaryMessageId(_useBinaryMessageId);
         connection.setSyncPublish(_syncPublish);
+        connection.setSslOptions(_sslOptions);
         if(_maxPrefetch != 0)
         {
             connection.setMaxPrefetch(_maxPrefetch);
@@ -224,14 +233,14 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         _keyStorePassword = keyStorePassword;
     }
 
-    public void setSslProtocol(final String sslProtocol)
+    public void setSslContextProtocol(final String sslContextProtocol)
     {
-        _sslProtocol = sslProtocol;
+        _sslContextProtocol = sslContextProtocol;
     }
 
-    public void setSslProvider(final String sslProvider)
+    public void setSslContextProvider(final String sslContextProvider)
     {
-        _sslProvider = sslProvider;
+        _sslContextProvider = sslContextProvider;
     }
 
     public void setKeyStoreCertAlias(final String keyStoreCertAlias)
@@ -266,8 +275,10 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         public String keyStorePath;
         public String keyStorePassword;
         public String keyStoreCertAlias;
-        public String sslProvider;
-        public String sslProtocol;
+        public String sslContextProvider;
+        public String sslContextProtocol;
+        public String sslEnabledProtocols;
+        public String sslDisabledProtocols;
     }
 
 
@@ -405,18 +416,32 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                     options.keyStoreCertAlias = value;
                 }
             },
-            new OptionSetter("ssl-provider","")
+            new OptionSetter("ssl-context-provider","")
             {
                 public void setOption(final ConnectionOptions options, final String value) throws MalformedURLException
                 {
-                    options.sslProvider = value;
+                    options.sslContextProvider = value;
                 }
             },
-            new OptionSetter("ssl-protocol","")
+            new OptionSetter("ssl-context-protocol","")
             {
                 public void setOption(final ConnectionOptions options, final String value) throws MalformedURLException
                 {
-                    options.sslProtocol = value;
+                    options.sslContextProtocol = value;
+                }
+            },
+            new OptionSetter("ssl-enabled-protocols","")
+            {
+                public void setOption(final ConnectionOptions options, final String value) throws MalformedURLException
+                {
+                    options.sslEnabledProtocols = value;
+                }
+            },
+            new OptionSetter("ssl-disabled-protocols","")
+            {
+                public void setOption(final ConnectionOptions options, final String value) throws MalformedURLException
+                {
+                    options.sslDisabledProtocols = value;
                 }
             }
 
@@ -527,13 +552,21 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         {
             connectionFactory.setTrustStorePassword(options.trustStorePassword);
         }
-        if (options.sslProvider != null)
+        if (options.sslContextProvider != null)
         {
-            connectionFactory.setSslProvider(options.sslProvider);
+            connectionFactory.setSslContextProvider(options.sslContextProvider);
         }
-        if (options.sslProtocol != null)
+        if (options.sslContextProtocol != null)
         {
-            connectionFactory.setSslProtocol(options.sslProtocol);
+            connectionFactory.setSslContextProtocol(options.sslContextProtocol);
+        }
+        if (options.sslEnabledProtocols != null)
+        {
+            connectionFactory.setSslEnabledProtocols(options.sslEnabledProtocols);
+        }
+        if (options.sslDisabledProtocols != null)
+        {
+            connectionFactory.setSslDisabledProtocols(options.sslDisabledProtocols);
         }
 
         return connectionFactory;
@@ -598,5 +631,160 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         _syncPublish = syncPublish;
     }
 
+    public String getSslContextProvider()
+    {
+        return _sslContextProvider;
+    }
 
+    public String getSslContextProtocol()
+    {
+        return _sslContextProtocol;
+    }
+
+    public String getTrustStorePassword()
+    {
+        return _trustStorePassword;
+    }
+
+    public String getTrustStorePath()
+    {
+        return _trustStorePath;
+    }
+
+    public String getKeyStoreCertAlias()
+    {
+        return _keyStoreCertAlias;
+    }
+
+    public String getKeyStorePassword()
+    {
+        return _keyStorePassword;
+    }
+
+    public String getKeyStorePath()
+    {
+        return _keyStorePath;
+    }
+
+    public int getMaxPrefetch()
+    {
+        return _maxPrefetch;
+    }
+
+    public int getMaxSessions()
+    {
+        return _maxSessions;
+    }
+
+    public Boolean getSyncPublish()
+    {
+        return _syncPublish;
+    }
+
+    public boolean isUseBinaryMessageId()
+    {
+        return _useBinaryMessageId;
+    }
+
+    public boolean isSsl()
+    {
+        return _ssl;
+    }
+
+    public String getRemoteHost()
+    {
+        return _remoteHost;
+    }
+
+    public String getClientId()
+    {
+        return _clientId;
+    }
+
+    public String getPassword()
+    {
+        return _password;
+    }
+
+    public String getUsername()
+    {
+        return _username;
+    }
+
+    public int getPort()
+    {
+        return _port;
+    }
+
+    public String getHost()
+    {
+        return _host;
+    }
+
+    public String getProtocol()
+    {
+        return _protocol;
+    }
+
+    public void setHost(final String host)
+    {
+        _host = host;
+    }
+
+    public void setPort(final int port)
+    {
+        _port = port;
+    }
+
+    public void setUsername(final String username)
+    {
+        _username = username;
+    }
+
+    public void setPassword(final String password)
+    {
+        _password = password;
+    }
+
+    public void setClientId(final String clientId)
+    {
+        _clientId = clientId;
+    }
+
+    public void setRemoteHost(final String remoteHost)
+    {
+        _remoteHost = remoteHost;
+    }
+
+    public void setSsl(final boolean ssl)
+    {
+        _ssl = ssl;
+    }
+
+    public void setMaxSessions(final int maxSessions)
+    {
+        _maxSessions = maxSessions;
+    }
+
+    public String getSslEnabledProtocols()
+    {
+        return _sslEnabledProtocols;
+    }
+
+    public void setSslEnabledProtocols(final String sslEnabledProtocols)
+    {
+        _sslEnabledProtocols = sslEnabledProtocols;
+        _sslOptions = new SSLOptions(_sslEnabledProtocols, _sslDisabledProtocols);
+    }
+
+    public String getSslDisabledProtocols()
+    {
+        return _sslDisabledProtocols;
+    }
+
+    public void setSslDisabledProtocols(final String sslDisabledProtocols)
+    {
+        _sslDisabledProtocols = sslDisabledProtocols;
+        _sslOptions = new SSLOptions(_sslEnabledProtocols, _sslDisabledProtocols);
+    }
 }
