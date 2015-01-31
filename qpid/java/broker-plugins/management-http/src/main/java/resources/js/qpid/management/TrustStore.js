@@ -54,10 +54,8 @@ define(["dojo/dom",
                             parser.parse(contentPane.containerNode);
 
                             that.keyStoreUpdater = new KeyStoreUpdater(contentPane.containerNode, that.modelObj, that.controller, that.url);
-
-                            updater.add( that.keyStoreUpdater );
-
                             that.keyStoreUpdater.update();
+                            updater.add( that.keyStoreUpdater );
 
                             var deleteTrustStoreButton = query(".deleteStoreButton", contentPane.containerNode)[0];
                             var node = registry.byNode(deleteTrustStoreButton);
@@ -129,14 +127,20 @@ define(["dojo/dom",
                {
                   that.trustStoreData = data[0];
                   that.updateHeader();
-
-                  require(["qpid/management/store/" + encodeURIComponent(that.trustStoreData.type.toLowerCase()) + "/show"],
-                       function(DetailsUI)
-                       {
-                         that.details = new DetailsUI({containerNode:that.keyStoreDetailsContainer, parent: that});
-                         that.details.update(that.trustStoreData);
-                       }
-                     );
+                  if (that.details)
+                  {
+                    that.details.update(that.trustStoreData);
+                  }
+                  else
+                  {
+                    require(["qpid/management/store/" + encodeURIComponent(that.trustStoreData.type.toLowerCase()) + "/show"],
+                      function(DetailsUI)
+                      {
+                        that.details = new DetailsUI({containerNode:that.keyStoreDetailsContainer, parent: that});
+                        that.details.update(that.trustStoreData);
+                      }
+                    );
+                  }
                });
            };
 
