@@ -26,9 +26,7 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.HeartbeatBody;
 import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.transport.Sender;
-
-import java.nio.ByteBuffer;
+import org.apache.qpid.transport.ByteBufferSender;
 
 
 /**
@@ -56,6 +54,6 @@ public interface AMQVersionAwareProtocolSession extends AMQProtocolWriter, Proto
     public void heartbeatBodyReceived(int channelId, HeartbeatBody body) throws AMQException;
 
 
-    public void setSender(Sender<ByteBuffer> sender);
+    public void setSender(ByteBufferSender sender);
 
 }

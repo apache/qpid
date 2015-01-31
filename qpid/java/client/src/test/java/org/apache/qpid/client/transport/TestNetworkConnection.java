@@ -20,18 +20,18 @@
  */
 package org.apache.qpid.client.transport;
 
-import java.security.Principal;
-import org.apache.qpid.protocol.ProtocolEngineFactory;
-import org.apache.qpid.ssl.SSLContextFactory;
-import org.apache.qpid.transport.NetworkTransportConfiguration;
-import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.network.NetworkConnection;
-
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.security.Principal;
+
+import org.apache.qpid.protocol.ProtocolEngineFactory;
+import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.transport.ByteBufferSender;
+import org.apache.qpid.transport.NetworkTransportConfiguration;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 /**
  * Test implementation of IoSession, which is required for some tests. Methods not being used are not implemented,
@@ -147,7 +147,7 @@ public class TestNetworkConnection implements NetworkConnection
         _remoteAddress = address;
     }
 
-    public Sender<ByteBuffer> getSender()
+    public ByteBufferSender getSender()
     {
         return _sender;
     }

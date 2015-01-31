@@ -32,10 +32,9 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.Constant;
-import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.Assembler;
-import org.apache.qpid.transport.network.Disassembler;
 import org.apache.qpid.transport.network.InputHandler;
 import org.apache.qpid.transport.network.NetworkConnection;
 
@@ -68,7 +67,7 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         }
     }
 
-    public void setNetworkConnection(final NetworkConnection network, final Sender<ByteBuffer> sender)
+    public void setNetworkConnection(final NetworkConnection network, final ByteBufferSender sender)
     {
         if(!getSubject().equals(Subject.getSubject(AccessController.getContext())))
         {
@@ -88,7 +87,7 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
             _network = network;
 
             _connection.setNetworkConnection(network);
-            Disassembler disassembler = new Disassembler(wrapSender(sender), Constant.MIN_MAX_FRAME_SIZE);
+            ServerDisassembler disassembler = new ServerDisassembler(wrapSender(sender), Constant.MIN_MAX_FRAME_SIZE);
             _connection.setSender(disassembler);
             _connection.addFrameSizeObserver(disassembler);
             // FIXME Two log messages to maintain compatibility with earlier protocol versions
@@ -97,19 +96,15 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         }
     }
 
-    private Sender<ByteBuffer> wrapSender(final Sender<ByteBuffer> sender)
+    private ByteBufferSender wrapSender(final ByteBufferSender sender)
     {
-        return new Sender<ByteBuffer>()
+        return new ByteBufferSender()
         {
             @Override
             public void send(ByteBuffer msg)
             {
                 _lastWriteTime = System.currentTimeMillis();
-                ByteBuffer copy = ByteBuffer.wrap(new byte[msg.remaining()]);
-                copy.put(msg);
-                copy.flip();
-                sender.send(copy);
-
+                sender.send(msg);
             }
 
             @Override

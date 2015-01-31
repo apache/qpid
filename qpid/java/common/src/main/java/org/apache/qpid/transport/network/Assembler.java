@@ -20,28 +20,29 @@
  */
 package org.apache.qpid.transport.network;
 
-import org.apache.qpid.transport.DeliveryProperties;
-import org.apache.qpid.transport.Header;
-import org.apache.qpid.transport.MessageProperties;
-import org.apache.qpid.transport.Method;
-import org.apache.qpid.transport.ProtocolError;
-import org.apache.qpid.transport.ProtocolEvent;
-import org.apache.qpid.transport.ProtocolHeader;
-import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.Struct;
-import org.apache.qpid.transport.codec.BBDecoder;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.Header;
+import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.Method;
+import org.apache.qpid.transport.NetworkEventReceiver;
+import org.apache.qpid.transport.ProtocolError;
+import org.apache.qpid.transport.ProtocolEvent;
+import org.apache.qpid.transport.ProtocolEventReceiver;
+import org.apache.qpid.transport.ProtocolHeader;
+import org.apache.qpid.transport.Struct;
+import org.apache.qpid.transport.codec.BBDecoder;
+
 /**
  * Assembler
  *
  */
-public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
+public class Assembler implements NetworkEventReceiver, NetworkDelegate
 {
     // Use a small array to store incomplete Methods for low-value channels, instead of allocating a huge
     // array or always boxing the channelId and looking it up in the map. This value must be of the form 2^X - 1.
@@ -49,7 +50,7 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
     private final Method[] _incompleteMethodArray = new Method[ARRAY_SIZE + 1];
     private final Map<Integer, Method> _incompleteMethodMap = new HashMap<Integer, Method>();
 
-    private final Receiver<ProtocolEvent> receiver;
+    private final ProtocolEventReceiver receiver;
     private final Map<Integer,List<Frame>> segments;
     private static final ThreadLocal<BBDecoder> _decoder = new ThreadLocal<BBDecoder>()
     {
@@ -59,7 +60,7 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
         }
     };
 
-    public Assembler(Receiver<ProtocolEvent> receiver)
+    public Assembler(ProtocolEventReceiver receiver)
     {
         this.receiver = receiver;
         segments = new HashMap<Integer,List<Frame>>();

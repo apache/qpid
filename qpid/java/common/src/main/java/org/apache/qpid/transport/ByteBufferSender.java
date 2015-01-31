@@ -1,5 +1,5 @@
 /*
-*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,17 +18,15 @@
  * under the License.
  *
  */
-package org.apache.qpid.transport.network.security;
+package org.apache.qpid.transport;
 
-import org.apache.qpid.transport.ByteBufferReceiver;
-import org.apache.qpid.transport.ByteBufferSender;
+import java.nio.ByteBuffer;
 
-public interface SecurityLayer
+public interface ByteBufferSender
 {
+    void send(ByteBuffer msg);
 
-    public ByteBufferSender sender(ByteBufferSender delegate);
-    public ByteBufferReceiver receiver(ByteBufferReceiver delegate);
-    public String getUserID();
+    void flush();
 
+    void close();
 }
-

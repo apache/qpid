@@ -22,7 +22,6 @@ package org.apache.qpid.transport.network.io;
 
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.security.Principal;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -31,8 +30,8 @@ import javax.net.ssl.SSLSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferReceiver;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.Ticker;
 
@@ -49,7 +48,7 @@ public class IoNetworkConnection implements NetworkConnection
     private boolean _principalChecked;
     private final Object _lock = new Object();
 
-    public IoNetworkConnection(Socket socket, Receiver<ByteBuffer> delegate,
+    public IoNetworkConnection(Socket socket, ByteBufferReceiver delegate,
             int sendBufferSize, int receiveBufferSize, long timeout, Ticker ticker)
     {
         _socket = socket;
@@ -70,7 +69,7 @@ public class IoNetworkConnection implements NetworkConnection
         _ioReceiver.initiate();
     }
 
-    public Sender<ByteBuffer> getSender()
+    public ByteBufferSender getSender()
     {
         return _ioSender;
     }

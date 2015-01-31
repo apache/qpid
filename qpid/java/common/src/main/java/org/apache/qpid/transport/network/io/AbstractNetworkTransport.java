@@ -26,7 +26,6 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.nio.ByteBuffer;
 import java.util.Set;
 
 import javax.net.ssl.SSLContext;
@@ -38,9 +37,9 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.configuration.CommonProperties;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
+import org.apache.qpid.transport.ByteBufferReceiver;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
-import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
 import org.apache.qpid.transport.network.NetworkConnection;
@@ -62,7 +61,7 @@ public abstract class AbstractNetworkTransport implements OutgoingNetworkTranspo
     private AcceptingThread _acceptor;
 
     public NetworkConnection connect(ConnectionSettings settings,
-                                     Receiver<ByteBuffer> delegate,
+                                     ByteBufferReceiver delegate,
                                      TransportActivity transportActivity)
     {
         int sendBufferSize = settings.getWriteBufferSize();
@@ -159,7 +158,7 @@ public abstract class AbstractNetworkTransport implements OutgoingNetworkTranspo
     }
 
     protected abstract NetworkConnection createNetworkConnection(Socket socket,
-                                                                 Receiver<ByteBuffer> engine,
+                                                                 ByteBufferReceiver engine,
                                                                  Integer sendBufferSize,
                                                                  Integer receiveBufferSize,
                                                                  int timeout,

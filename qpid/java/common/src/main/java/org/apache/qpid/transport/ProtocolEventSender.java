@@ -20,19 +20,11 @@
  */
 package org.apache.qpid.transport;
 
-
-/**
- * Sender
- *
- */
-
-public interface Sender<T>
+public interface ProtocolEventSender
 {
-
-    void send(T msg);
+    void send(ProtocolEvent msg);
 
     void flush();
 
     void close();
-
 }

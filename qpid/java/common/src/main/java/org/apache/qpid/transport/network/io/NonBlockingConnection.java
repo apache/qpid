@@ -21,7 +21,6 @@
 package org.apache.qpid.transport.network.io;
 
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.Principal;
 import java.util.Set;
@@ -32,7 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.Ticker;
 import org.apache.qpid.transport.network.TransportEncryption;
@@ -88,7 +87,7 @@ public class NonBlockingConnection implements NetworkConnection
     {
     }
 
-    public Sender<ByteBuffer> getSender()
+    public ByteBufferSender getSender()
     {
         return _nonBlockingSenderReceiver;
     }

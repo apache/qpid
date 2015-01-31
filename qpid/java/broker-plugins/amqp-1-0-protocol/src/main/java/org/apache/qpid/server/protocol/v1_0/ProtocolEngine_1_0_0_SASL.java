@@ -59,7 +59,7 @@ import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
 
@@ -116,7 +116,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     private byte _revision;
     private PrintWriter _out;
     private NetworkConnection _network;
-    private Sender<ByteBuffer> _sender;
+    private ByteBufferSender _sender;
     private Connection_1_0 _connection;
     private volatile boolean _transportBlockedForWriting;
 
@@ -185,7 +185,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     {
     }
 
-    public void setNetworkConnection(final NetworkConnection network, final Sender<ByteBuffer> sender)
+    public void setNetworkConnection(final NetworkConnection network, final ByteBufferSender sender)
     {
         _network = network;
         _sender = sender;

@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLSocket;
 
 import org.apache.qpid.thread.Threading;
-import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.ByteBufferReceiver;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.Ticker;
 import org.apache.qpid.transport.util.Logger;
@@ -47,7 +47,7 @@ final class IoReceiver implements Runnable
 
     private static final Logger log = Logger.get(IoReceiver.class);
 
-    private final Receiver<ByteBuffer> receiver;
+    private final ByteBufferReceiver receiver;
     private final int bufferSize;
     private final Socket socket;
     private final long timeout;
@@ -61,7 +61,7 @@ final class IoReceiver implements Runnable
         shutdownBroken = SystemUtils.isWindows();
     }
 
-    public IoReceiver(Socket socket, Receiver<ByteBuffer> receiver, int bufferSize, long timeout)
+    public IoReceiver(Socket socket, ByteBufferReceiver receiver, int bufferSize, long timeout)
     {
         this.receiver = receiver;
         this.bufferSize = bufferSize;

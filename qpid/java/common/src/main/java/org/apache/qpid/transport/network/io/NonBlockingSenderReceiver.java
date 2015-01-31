@@ -40,7 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.SenderClosedException;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.network.Ticker;
@@ -48,7 +48,7 @@ import org.apache.qpid.transport.network.TransportEncryption;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 import org.apache.qpid.util.SystemUtils;
 
-public class NonBlockingSenderReceiver  implements Sender<ByteBuffer>
+public class NonBlockingSenderReceiver  implements ByteBufferSender
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(NonBlockingSenderReceiver.class);
     public static final int NUMBER_OF_BYTES_FOR_TLS_CHECK = 6;

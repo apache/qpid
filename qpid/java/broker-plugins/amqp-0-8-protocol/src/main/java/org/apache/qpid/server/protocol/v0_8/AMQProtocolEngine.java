@@ -85,7 +85,7 @@ import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.SenderClosedException;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.TransportException;
@@ -167,7 +167,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     private NetworkConnection _network;
-    private Sender<ByteBuffer> _sender;
+    private ByteBufferSender _sender;
 
     private volatile boolean _deferFlush;
     private long _lastReceivedTime = System.currentTimeMillis();  // TODO consider if this is what we want?
@@ -272,7 +272,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         setNetworkConnection(network, network.getSender());
     }
 
-    public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
+    public void setNetworkConnection(NetworkConnection network, ByteBufferSender sender)
     {
         _network = network;
         _sender = sender;

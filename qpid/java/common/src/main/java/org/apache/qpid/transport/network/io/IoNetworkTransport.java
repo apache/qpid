@@ -21,9 +21,8 @@
 package org.apache.qpid.transport.network.io;
 
 import java.net.Socket;
-import java.nio.ByteBuffer;
 
-import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.ByteBufferReceiver;
 
 public class IoNetworkTransport extends AbstractNetworkTransport
 {
@@ -31,7 +30,7 @@ public class IoNetworkTransport extends AbstractNetworkTransport
 
     @Override
     protected IoNetworkConnection createNetworkConnection(final Socket socket,
-                                                       final Receiver<ByteBuffer> engine,
+                                                       final ByteBufferReceiver engine,
                                                        final Integer sendBufferSize,
                                                        final Integer receiveBufferSize,
                                                        final int timeout,

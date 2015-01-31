@@ -26,11 +26,11 @@ package org.apache.qpid.transport;
  *
  */
 
-public interface Binding<E,T>
+public interface Binding<E>
 {
 
-    E endpoint(Sender<T> sender);
+    E endpoint(ByteBufferSender sender);
 
-    Receiver<T> receiver(E endpoint);
+    ByteBufferReceiver receiver(E endpoint);
 
 }

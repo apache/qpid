@@ -37,7 +37,7 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
 public class MultiVersionProtocolEngine implements ServerProtocolEngine
@@ -54,7 +54,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     private String _fqdn;
     private final Broker<?> _broker;
     private NetworkConnection _network;
-    private Sender<ByteBuffer> _sender;
+    private ByteBufferSender _sender;
     private final Protocol _defaultSupportedReply;
 
     private volatile ServerProtocolEngine _delegate = new SelfDelegateProtocolEngine();
@@ -171,7 +171,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
     private static final int MINIMUM_REQUIRED_HEADER_BYTES = 8;
 
-    public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
+    public void setNetworkConnection(NetworkConnection network, ByteBufferSender sender)
     {
         _network = network;
         SocketAddress address = _network.getLocalAddress();
@@ -253,7 +253,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         }
 
-        public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
+        public void setNetworkConnection(NetworkConnection network, ByteBufferSender sender)
         {
 
         }
@@ -494,7 +494,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
             }
         }
 
-        public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
+        public void setNetworkConnection(NetworkConnection network, ByteBufferSender sender)
         {
 
         }

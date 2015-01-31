@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.transport.network;
+package org.apache.qpid.server.protocol.v0_10;
 
 import static java.lang.Math.min;
 import static org.apache.qpid.transport.network.Frame.FIRST_FRAME;
@@ -28,7 +28,6 @@ import static org.apache.qpid.transport.network.Frame.LAST_FRAME;
 import static org.apache.qpid.transport.network.Frame.LAST_SEG;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.FrameSizeObserver;
@@ -41,86 +40,71 @@ import org.apache.qpid.transport.ProtocolEventSender;
 import org.apache.qpid.transport.ProtocolHeader;
 import org.apache.qpid.transport.SegmentType;
 import org.apache.qpid.transport.Struct;
-import org.apache.qpid.transport.codec.BBEncoder;
 import org.apache.qpid.transport.codec.Encoder;
+import org.apache.qpid.transport.network.Frame;
 
 /**
  * Disassembler
  */
-public final class Disassembler implements ProtocolEventSender, ProtocolDelegate<Void>, FrameSizeObserver
+public final class ServerDisassembler implements ProtocolEventSender, ProtocolDelegate<Void>, FrameSizeObserver
 {
-    private final ByteBufferSender sender;
-    private int maxPayload;
-    private final Object sendlock = new Object();
-    private final static ThreadLocal<Encoder> _encoder = new ThreadLocal<Encoder>()
-    {
-        public BBEncoder initialValue()
-        {
-            return new BBEncoder(4*1024);
-        }
-    };
+    private final ByteBufferSender _sender;
+    private int _maxPayload;
+    private final Object _sendLock = new Object();
+    private final Encoder _encoder =  new ServerEncoder();
 
-    public Disassembler(ByteBufferSender sender, int maxFrame)
+    public ServerDisassembler(ByteBufferSender sender, int maxFrame)
     {
-        this.sender = sender;
-        if (maxFrame <= HEADER_SIZE || maxFrame >= 64*1024)
+        _sender = sender;
+        if (maxFrame <= HEADER_SIZE || maxFrame >= 64 * 1024)
         {
             throw new IllegalArgumentException("maxFrame must be > HEADER_SIZE and < 64K: " + maxFrame);
         }
-        this.maxPayload  = maxFrame - HEADER_SIZE;
+        _maxPayload = maxFrame - HEADER_SIZE;
     }
 
     public void send(ProtocolEvent event)
     {
-        event.delegate(null, this);
+        synchronized (_sendLock)
+        {
+            event.delegate(null, this);
+        }
     }
 
     public void flush()
     {
-        synchronized (sendlock)
+        synchronized (_sendLock)
         {
-            sender.flush();
+            _sender.flush();
         }
     }
 
     public void close()
     {
-        synchronized (sendlock)
+        synchronized (_sendLock)
         {
-            sender.close();
+            _sender.close();
         }
-    }
-
-    private final ByteBuffer _frameHeader = ByteBuffer.allocate(HEADER_SIZE);
-
-    {
-        _frameHeader.order(ByteOrder.BIG_ENDIAN);
     }
 
     private void frame(byte flags, byte type, byte track, int channel, int size, ByteBuffer buf)
     {
-        synchronized (sendlock)
-        {
-            ByteBuffer data = _frameHeader;
-            _frameHeader.rewind();
+        ByteBuffer data = ByteBuffer.wrap(new byte[HEADER_SIZE]);
 
-            
-            data.put(0, flags);
-            data.put(1, type);
-            data.putShort(2, (short) (size + HEADER_SIZE));
-            data.put(5, track);
-            data.putShort(6, (short) channel);
+        data.put(0, flags);
+        data.put(1, type);
+        data.putShort(2, (short) (size + HEADER_SIZE));
+        data.put(5, track);
+        data.putShort(6, (short) channel);
 
 
-            int limit = buf.limit();
-            buf.limit(buf.position() + size);
+        ByteBuffer dup = buf.duplicate();
+        dup.limit(dup.position() + size);
+        buf.position(buf.position() + size);
+        _sender.send(data);
+        _sender.send(dup);
 
-            data.rewind();
-            sender.send(data);
-            sender.send(buf);
-            buf.limit(limit);
 
-        }
     }
 
     private void fragment(byte flags, SegmentType type, ProtocolEvent event, ByteBuffer buf)
@@ -132,7 +116,7 @@ public final class Disassembler implements ProtocolEventSender, ProtocolDelegate
         boolean first = true;
         while (true)
         {
-            int size = min(maxPayload, remaining);
+            int size = min(_maxPayload, remaining);
             remaining -= size;
 
             byte newflags = flags;
@@ -157,12 +141,9 @@ public final class Disassembler implements ProtocolEventSender, ProtocolDelegate
 
     public void init(Void v, ProtocolHeader header)
     {
-        synchronized (sendlock)
-        {
-            sender.send(header.toByteBuffer());
-            sender.flush();
-        }
-    }
+        _sender.send(header.toByteBuffer());
+        _sender.flush();
+}
 
     public void control(Void v, Method method)
     {
@@ -176,7 +157,7 @@ public final class Disassembler implements ProtocolEventSender, ProtocolDelegate
 
     private void method(Method method, SegmentType type)
     {
-        Encoder enc = _encoder.get();
+        Encoder enc = _encoder;
         enc.init();
         enc.writeUint16(method.getEncodedType());
         if (type == SegmentType.COMMAND)
@@ -207,15 +188,15 @@ public final class Disassembler implements ProtocolEventSender, ProtocolDelegate
             final Header hdr = method.getHeader();
             if (hdr != null)
             {
-                if(hdr.getDeliveryProperties() != null)
+                if (hdr.getDeliveryProperties() != null)
                 {
                     enc.writeStruct32(hdr.getDeliveryProperties());
                 }
-                if(hdr.getMessageProperties() != null)
+                if (hdr.getMessageProperties() != null)
                 {
                     enc.writeStruct32(hdr.getMessageProperties());
                 }
-                if(hdr.getNonStandardProperties() != null)
+                if (hdr.getNonStandardProperties() != null)
                 {
                     for (Struct st : hdr.getNonStandardProperties())
                     {
@@ -223,25 +204,26 @@ public final class Disassembler implements ProtocolEventSender, ProtocolDelegate
                     }
                 }
             }
+
             headerLimit = enc.position();
         }
-
-        synchronized (sendlock)
+        synchronized (_sendLock)
         {
             ByteBuffer buf = enc.underlyingBuffer();
             buf.position(0);
             buf.limit(methodLimit);
 
-            fragment(flags, type, method, buf);
+            fragment(flags, type, method, buf.duplicate());
             if (payload)
             {
                 ByteBuffer body = method.getBody();
                 buf.limit(headerLimit);
                 buf.position(methodLimit);
-                fragment(body == null ? LAST_SEG : 0x0, SegmentType.HEADER, method, buf);
+
+                fragment(body == null ? LAST_SEG : 0x0, SegmentType.HEADER, method, buf.duplicate());
                 if (body != null)
                 {
-                    fragment(LAST_SEG, SegmentType.BODY, method, body);
+                    fragment(LAST_SEG, SegmentType.BODY, method, body.duplicate());
                 }
 
             }
@@ -260,7 +242,7 @@ public final class Disassembler implements ProtocolEventSender, ProtocolDelegate
         {
             throw new IllegalArgumentException("maxFrame must be > HEADER_SIZE and < 64K: " + maxFrame);
         }
-        this.maxPayload  = maxFrame - HEADER_SIZE;
+        this._maxPayload = maxFrame - HEADER_SIZE;
 
     }
 }

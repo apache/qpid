@@ -20,16 +20,14 @@
  */
 package org.apache.qpid.transport.network;
 
+import org.apache.qpid.transport.ByteBufferReceiver;
 import org.apache.qpid.transport.ConnectionSettings;
-import org.apache.qpid.transport.Receiver;
-
-import java.nio.ByteBuffer;
 
 public interface OutgoingNetworkTransport extends NetworkTransport
 {
     public NetworkConnection getConnection();
 
     public NetworkConnection connect(ConnectionSettings settings,
-                                     Receiver<ByteBuffer> delegate,
+                                     ByteBufferReceiver delegate,
                                      TransportActivity transportActivity);
 }

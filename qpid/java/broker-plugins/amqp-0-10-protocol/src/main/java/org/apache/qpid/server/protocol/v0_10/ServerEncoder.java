@@ -18,88 +18,85 @@
  * under the License.
  *
  */
-package org.apache.qpid.transport.codec;
+package org.apache.qpid.server.protocol.v0_10;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.UUID;
 
+import org.apache.qpid.transport.codec.AbstractEncoder;
 
-/**
- * Byte Buffer Encoder.
- * Encoder concrete implementor using a backing byte buffer for encoding data.
- * 
- * @author Rafael H. Schloming
- */
-public final class BBEncoder extends AbstractEncoder
+
+public final class ServerEncoder extends AbstractEncoder
 {
-    private ByteBuffer out;
-    private int segment;
+    public static final int DEFAULT_CAPACITY = 4096;
+    private ByteBuffer _out;
+    private int _segment;
+    private int _initialCapacity;
 
-    public BBEncoder(int capacity) {
-        out = ByteBuffer.allocate(capacity);
-        out.order(ByteOrder.BIG_ENDIAN);
-        segment = 0;
+    public ServerEncoder()
+    {
+        this(DEFAULT_CAPACITY);
+    }
+
+    public ServerEncoder(int capacity)
+    {
+        _initialCapacity = capacity;
+        _out = ByteBuffer.allocate(capacity);
+        _segment = 0;
     }
 
     public void init()
     {
-        out.clear();
-        segment = 0;
-    }
-
-    public ByteBuffer segment()
-    {
-        int pos = out.position();
-        out.position(segment);
-        ByteBuffer slice = out.slice();
-        slice.limit(pos - segment);
-        out.position(pos);
-        segment = pos;
-        return slice;
+        _out.position(_out.limit());
+        _out.limit(_out.capacity());
+        _out = _out.slice();
+        if(_out.remaining() < 256)
+        {
+            _out = ByteBuffer.allocate(_initialCapacity);
+        }
+        _segment = 0;
     }
 
     public ByteBuffer buffer()
     {
-        int pos = out.position();
-        out.position(segment);
-        ByteBuffer slice = out.slice();
-        slice.limit(pos - segment);
-        out.position(pos);
+        int pos = _out.position();
+        _out.position(_segment);
+        ByteBuffer slice = _out.slice();
+        slice.limit(pos - _segment);
+        _out.position(pos);
         return slice;
     }
 
     public int position()
     {
-        return out.position();
+        return _out.position();
     }
 
     public ByteBuffer underlyingBuffer()
     {
-        return out;
+        return _out;
     }
 
     private void grow(int size)
     {
-        ByteBuffer old = out;
+        ByteBuffer old = _out;
         int capacity = old.capacity();
-        out = ByteBuffer.allocate(Math.max(capacity + size, 2*capacity));
-        out.order(ByteOrder.BIG_ENDIAN);
+        _out = ByteBuffer.allocate(Math.max(Math.max(capacity + size, 2*capacity), _initialCapacity));
         old.flip();
-        out.put(old);
+        _out.put(old);
     }
 
     protected void doPut(byte b)
     {
         try
         {
-            out.put(b);
+            _out.put(b);
         }
         catch (BufferOverflowException e)
         {
             grow(1);
-            out.put(b);
+            _out.put(b);
         }
     }
 
@@ -107,12 +104,12 @@ public final class BBEncoder extends AbstractEncoder
     {
         try
         {
-            out.put(src);
+            _out.put(src);
         }
         catch (BufferOverflowException e)
         {
             grow(src.remaining());
-            out.put(src);
+            _out.put(src);
         }
     }
 
@@ -120,12 +117,12 @@ public final class BBEncoder extends AbstractEncoder
     {
         try
         {
-            out.put(bytes);
+            _out.put(bytes);
         }
         catch (BufferOverflowException e)
         {
             grow(bytes.length);
-            out.put(bytes);
+            _out.put(bytes);
         }
     }
 
@@ -135,12 +132,12 @@ public final class BBEncoder extends AbstractEncoder
 
         try
         {
-            out.put((byte) b);
+            _out.put((byte) b);
         }
         catch (BufferOverflowException e)
         {
             grow(1);
-            out.put((byte) b);
+            _out.put((byte) b);
         }
     }
 
@@ -150,12 +147,12 @@ public final class BBEncoder extends AbstractEncoder
 
         try
         {
-            out.putShort((short) s);
+            _out.putShort((short) s);
         }
         catch (BufferOverflowException e)
         {
             grow(2);
-            out.putShort((short) s);
+            _out.putShort((short) s);
         }
     }
 
@@ -165,12 +162,12 @@ public final class BBEncoder extends AbstractEncoder
 
         try
         {
-            out.putInt((int) i);
+            _out.putInt((int) i);
         }
         catch (BufferOverflowException e)
         {
             grow(4);
-            out.putInt((int) i);
+            _out.putInt((int) i);
         }
     }
 
@@ -178,87 +175,90 @@ public final class BBEncoder extends AbstractEncoder
     {
         try
         {
-            out.putLong(l);
+            _out.putLong(l);
         }
         catch (BufferOverflowException e)
         {
             grow(8);
-            out.putLong(l);
+            _out.putLong(l);
         }
     }
 
     public int beginSize8()
     {
-        int pos = out.position();
+        int pos = _out.position();
         try
         {
-            out.put((byte) 0);
+            _out.put((byte) 0);
         }
         catch (BufferOverflowException e)
         {
             grow(1);
-            out.put((byte) 0);
+            _out.put((byte) 0);
         }
         return pos;
     }
 
     public void endSize8(int pos)
     {
-        int cur = out.position();
-        out.put(pos, (byte) (cur - pos - 1));
+        int cur = _out.position();
+        _out.put(pos, (byte) (cur - pos - 1));
     }
 
     public int beginSize16()
     {
-        int pos = out.position();
+        int pos = _out.position();
         try
         {
-            out.putShort((short) 0);
+            _out.putShort((short) 0);
         }
         catch (BufferOverflowException e)
         {
             grow(2);
-            out.putShort((short) 0);
+            _out.putShort((short) 0);
         }
         return pos;
     }
 
     public void endSize16(int pos)
     {
-        int cur = out.position();
-        out.putShort(pos, (short) (cur - pos - 2));
+        int cur = _out.position();
+        _out.putShort(pos, (short) (cur - pos - 2));
     }
 
     public int beginSize32()
     {
-        int pos = out.position();
+        int pos = _out.position();
         try
         {
-            out.putInt(0);
+            _out.putInt(0);
         }
         catch (BufferOverflowException e)
         {
             grow(4);
-            out.putInt(0);
+            _out.putInt(0);
         }
         return pos;
+
     }
 
     public void endSize32(int pos)
     {
-        int cur = out.position();
-        out.putInt(pos, (cur - pos - 4));
+        int cur = _out.position();
+        _out.putInt(pos, (cur - pos - 4));
+
     }
 
 	public void writeDouble(double aDouble)
 	{
-		try 
+		try
 		{
-			out.putDouble(aDouble);
-		} catch(BufferOverflowException exception)
+			_out.putDouble(aDouble);
+		}
+        catch(BufferOverflowException exception)
 		{
 			grow(8);
-			out.putDouble(aDouble);
+			_out.putDouble(aDouble);
 		}
 	}
 
@@ -266,11 +266,12 @@ public final class BBEncoder extends AbstractEncoder
 	{
 		try 
 		{
-			out.putShort(aShort);
-		} catch(BufferOverflowException exception)
+			_out.putShort(aShort);
+		}
+        catch(BufferOverflowException exception)
 		{
 			grow(2);
-			out.putShort(aShort);
+			_out.putShort(aShort);
 		}
 	}
 
@@ -278,11 +279,12 @@ public final class BBEncoder extends AbstractEncoder
 	{
 		try
 		{
-			out.putInt(anInt);
-		} catch(BufferOverflowException exception)
+			_out.putInt(anInt);
+		}
+        catch(BufferOverflowException exception)
 		{
 			grow(4);
-			out.putInt(anInt);
+			_out.putInt(anInt);
 		}
 	}
 
@@ -290,11 +292,12 @@ public final class BBEncoder extends AbstractEncoder
 	{
 		try
 		{
-			out.putLong(aLong);
-		} catch(BufferOverflowException exception)
+			_out.putLong(aLong);
+		}
+        catch(BufferOverflowException exception)
 		{
 			grow(8);
-			out.putLong(aLong);
+			_out.putLong(aLong);
 		}
 	}
       
@@ -302,11 +305,12 @@ public final class BBEncoder extends AbstractEncoder
 	{
 		try 
 		{
-			out.put(aByte);	
-		} catch(BufferOverflowException exception)
+			_out.put(aByte);
+		}
+        catch(BufferOverflowException exception)
 		{
 			grow(1);
-			out.put(aByte);
+			_out.put(aByte);
 		}
 	}	
 	
@@ -318,11 +322,12 @@ public final class BBEncoder extends AbstractEncoder
 		
 		try 
 		{
-			out.put(byteArray);
-		} catch(BufferOverflowException exception)
+			_out.put(byteArray);
+		}
+        catch(BufferOverflowException exception)
 		{
 			grow(16);
-			out.put(byteArray);			
+			_out.put(byteArray);
 		}
 	}
 
@@ -352,11 +357,12 @@ public final class BBEncoder extends AbstractEncoder
 	{
 		try 
 		{
-			out.putFloat(aFloat);
-		} catch(BufferOverflowException exception)
+			_out.putFloat(aFloat);
+		}
+        catch(BufferOverflowException exception)
 		{
 			grow(4);
-			out.putFloat(aFloat);
+			_out.putFloat(aFloat);
 		}
 	}
 

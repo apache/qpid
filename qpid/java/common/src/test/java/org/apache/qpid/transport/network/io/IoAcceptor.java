@@ -20,16 +20,15 @@
  */
 package org.apache.qpid.transport.network.io;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.transport.Binding;
-import org.apache.qpid.transport.TransportException;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
+
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.transport.Binding;
 
 
 /**
@@ -44,9 +43,9 @@ public class IoAcceptor<E> extends Thread
     private volatile boolean _closed = false;
 
     private ServerSocket socket;
-    private Binding<E,ByteBuffer> binding;
+    private Binding<E> binding;
 
-    public IoAcceptor(SocketAddress address, Binding<E,ByteBuffer> binding)
+    public IoAcceptor(SocketAddress address, Binding<E> binding)
         throws IOException
     {
         socket = new ServerSocket();
@@ -70,7 +69,7 @@ public class IoAcceptor<E> extends Thread
         }
     }
 
-    public IoAcceptor(String host, int port, Binding<E,ByteBuffer> binding)
+    public IoAcceptor(String host, int port, Binding<E> binding)
         throws IOException
     {
         this(new InetSocketAddress(host, port), binding);
