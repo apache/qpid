@@ -20,8 +20,11 @@
 package org.apache.qpid.transport.network.io;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -38,16 +41,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 */
 public class SelectorThread extends Thread
 {
-
+    private final Queue<Runnable> _tasks = new ConcurrentLinkedQueue<>();
     private final Queue<NonBlockingConnection> _unregisteredConnections = new ConcurrentLinkedQueue<>();
     private final Set<NonBlockingConnection> _unscheduledConnections = new HashSet<>();
     private final Selector _selector;
     private final AtomicBoolean _closed = new AtomicBoolean();
     private final NetworkConnectionScheduler _scheduler = new NetworkConnectionScheduler();
+    private final NonBlockingNetworkTransport _transport;
 
-    SelectorThread(final String name)
+    SelectorThread(final String name, final NonBlockingNetworkTransport nonBlockingNetworkTransport)
     {
         super("SelectorThread-"+name);
+        _transport = nonBlockingNetworkTransport;
         try
         {
             _selector = Selector.open();
@@ -57,6 +62,45 @@ public class SelectorThread extends Thread
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+    }
+
+    public void addAcceptingSocket(final ServerSocketChannel socketChannel)
+    {
+        _tasks.add(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+
+                            try
+                            {
+                                socketChannel.register(_selector, SelectionKey.OP_ACCEPT);
+                            }
+                            catch (ClosedChannelException e)
+                            {
+                                // TODO
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+        _selector.wakeup();
+    }
+
+    public void cancelAcceptingSocket(final ServerSocketChannel socketChannel)
+    {
+        _tasks.add(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                SelectionKey selectionKey = socketChannel.keyFor(_selector);
+                if(selectionKey != null)
+                {
+                    selectionKey.cancel();
+                }
+            }
+        });
+        _selector.wakeup();
     }
 
     @Override
@@ -72,18 +116,33 @@ public class SelectorThread extends Thread
 
                 _selector.select(nextTimeout);
 
+                while(_tasks.peek() != null)
+                {
+                    Runnable task = _tasks.poll();
+                    task.run();
+                }
+
                 List<NonBlockingConnection> toBeScheduled = new ArrayList<>();
 
 
                 Set<SelectionKey> selectionKeys = _selector.selectedKeys();
                 for (SelectionKey key : selectionKeys)
                 {
-                    NonBlockingConnection connection = (NonBlockingConnection) key.attachment();
+                    if(key.isAcceptable())
+                    {
+                        // todo - should we schedule this rather than running in this thread?
+                        SocketChannel acceptedChannel = ((ServerSocketChannel)key.channel()).accept();
+                        _transport.acceptSocketChannel(acceptedChannel);
+                    }
+                    else
+                    {
+                        NonBlockingConnection connection = (NonBlockingConnection) key.attachment();
 
-                    key.channel().register(_selector, 0);
+                        key.channel().register(_selector, 0);
 
-                    toBeScheduled.add(connection);
-                    _unscheduledConnections.remove(connection);
+                        toBeScheduled.add(connection);
+                        _unscheduledConnections.remove(connection);
+                    }
 
                 }
                 selectionKeys.clear();
