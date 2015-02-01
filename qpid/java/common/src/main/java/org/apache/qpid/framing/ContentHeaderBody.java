@@ -24,10 +24,13 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.MarkableDataInput;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.transport.ByteBufferSender;
+import org.apache.qpid.util.BytesDataOutput;
 
 public class ContentHeaderBody implements AMQBody
 {
@@ -96,6 +99,19 @@ public class ContentHeaderBody implements AMQBody
         buffer.writeLong(_bodySize);
         EncodingUtils.writeUnsignedShort(buffer, _properties.getPropertyFlags());
         _properties.writePropertyListPayload(buffer);
+    }
+
+    @Override
+    public long writePayload(final ByteBufferSender sender) throws IOException
+    {
+        byte[] data = new byte[14];
+        BytesDataOutput buffer = new BytesDataOutput(data);
+        EncodingUtils.writeUnsignedShort(buffer, CLASS_ID);
+        EncodingUtils.writeUnsignedShort(buffer, 0);
+        buffer.writeLong(_bodySize);
+        EncodingUtils.writeUnsignedShort(buffer, _properties.getPropertyFlags());
+        sender.send(ByteBuffer.wrap(data));
+        return 14 + _properties.writePropertyListPayload(sender);
     }
 
     public void handle(final int channelId, final AMQVersionAwareProtocolSession session)

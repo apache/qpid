@@ -34,13 +34,12 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
-import org.apache.qpid.transport.network.IncomingNetworkTransport;
 import org.apache.qpid.transport.network.TransportEncryption;
 import org.apache.qpid.transport.network.io.NonBlockingNetworkTransport;
 
 class TCPandSSLTransport implements AcceptingTransport
 {
-    private IncomingNetworkTransport _networkTransport;
+    private NonBlockingNetworkTransport _networkTransport;
     private Set<Transport> _transports;
     private SSLContext _sslContext;
     private InetSocketAddress _bindingSocketAddress;
@@ -64,7 +63,7 @@ class TCPandSSLTransport implements AcceptingTransport
     @Override
     public void start()
     {
-        String bindingAddress = ((AmqpPort<?>)_port).getBindingAddress();
+        String bindingAddress = _port.getBindingAddress();
         if (WILDCARD_ADDRESS.equals(bindingAddress))
         {
             bindingAddress = null;

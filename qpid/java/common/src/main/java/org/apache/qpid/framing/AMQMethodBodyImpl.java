@@ -24,12 +24,15 @@ package org.apache.qpid.framing;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.transport.ByteBufferSender;
+import org.apache.qpid.util.BytesDataOutput;
 
 public abstract class AMQMethodBodyImpl implements AMQMethodBody
 {
@@ -105,6 +108,16 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
         writeMethodPayload(buffer);
     }
 
+    @Override
+    public long writePayload(final ByteBufferSender sender) throws IOException
+    {
+        final int size = getSize();
+        byte[] bytes = new byte[size];
+        BytesDataOutput buffer = new BytesDataOutput(bytes);
+        writePayload(buffer);
+        sender.send(ByteBuffer.wrap(bytes));
+        return size;
+    }
 
     protected int getSizeOf(AMQShortString string)
     {

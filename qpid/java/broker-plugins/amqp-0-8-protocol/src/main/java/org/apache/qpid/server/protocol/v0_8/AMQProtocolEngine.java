@@ -486,7 +486,14 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                                                                                        serverProperties,
                                                                                        mechanisms.getBytes(),
                                                                                        locales.getBytes());
-            _sender.send(asByteBuffer(responseBody.generateFrame(0)));
+            try
+            {
+                responseBody.generateFrame(0).writePayload(_sender);
+            }
+            catch (IOException e)
+            {
+                throw new ServerScopedRuntimeException(e);
+            }
             _sender.flush();
 
         }
@@ -494,7 +501,14 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         {
             _logger.info("Received unsupported protocol initiation for protocol version: " + getProtocolVersion());
 
-            _sender.send(asByteBuffer(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion())));
+            try
+            {
+                new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()).writePayload(_sender);
+            }
+            catch (IOException ioex)
+            {
+                throw new ServerScopedRuntimeException(ioex);
+            }
             _sender.flush();
         }
     }
@@ -546,16 +560,21 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
      */
     public synchronized void writeFrame(AMQDataBlock frame)
     {
-
-        final ByteBuffer buf = asByteBuffer(frame);
-        _writtenBytes += buf.remaining();
-
         if(_logger.isDebugEnabled())
         {
             _logger.debug("SEND: " + frame);
         }
 
-        _sender.send(buf);
+        try
+        {
+            _writtenBytes += frame.writePayload(_sender);
+        }
+        catch (IOException e)
+        {
+            throw new ServerScopedRuntimeException(e);
+        }
+
+
         final long time = System.currentTimeMillis();
         _lastIoTime = time;
         _lastWriteTime.set(time);

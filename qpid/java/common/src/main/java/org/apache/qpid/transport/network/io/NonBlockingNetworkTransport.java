@@ -37,10 +37,9 @@ import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.transport.network.IncomingNetworkTransport;
 import org.apache.qpid.transport.network.TransportEncryption;
 
-public class NonBlockingNetworkTransport implements IncomingNetworkTransport
+public class NonBlockingNetworkTransport
 {
 
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(AbstractNetworkTransport.class);
@@ -50,21 +49,6 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
                                                                    CommonProperties.HANDSHAKE_TIMEOUT_DEFAULT);
     private AcceptingThread _acceptor;
     private SelectorThread _selector;
-
-    protected NonBlockingConnection createNetworkConnection(final SocketChannel socketChannel,
-                                                            final ServerProtocolEngine engine,
-                                                            final Integer sendBufferSize,
-                                                            final Integer receiveBufferSize,
-                                                            final int timeout,
-                                                            final IdleTimeoutTicker ticker,
-                                                            final Set<TransportEncryption> encryptionSet,
-                                                            final SSLContext sslContext,
-                                                            final boolean wantClientAuth,
-                                                            final boolean needClientAuth,
-                                                            final Runnable onTransportEncryptionAction)
-    {
-        return new NonBlockingConnection(socketChannel, engine, sendBufferSize, receiveBufferSize, timeout, ticker, encryptionSet, sslContext, wantClientAuth, needClientAuth, onTransportEncryptionAction, _selector);
-    }
 
     public void close()
     {
@@ -173,59 +157,7 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
                     {
                         socketChannel = _serverSocket.accept();
 
-                        final ServerProtocolEngine engine =
-                                (ServerProtocolEngine) _factory.newProtocolEngine(socketChannel.socket()
-                                                                                          .getRemoteSocketAddress());
-
-                        if(engine != null)
-                        {
-                            socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, _config.getTcpNoDelay());
-                            socketChannel.socket().setSoTimeout(1000 * HANDSHAKE_TIMEOUT);
-
-                            final Integer sendBufferSize = _config.getSendBufferSize();
-                            final Integer receiveBufferSize = _config.getReceiveBufferSize();
-
-                            socketChannel.setOption(StandardSocketOptions.SO_SNDBUF, sendBufferSize);
-                            socketChannel.setOption(StandardSocketOptions.SO_RCVBUF, receiveBufferSize);
-
-
-                            final IdleTimeoutTicker ticker = new IdleTimeoutTicker(engine, TIMEOUT);
-
-                            NonBlockingConnection connection =
-                                    createNetworkConnection(socketChannel,
-                                                            engine,
-                                                            sendBufferSize,
-                                                            receiveBufferSize,
-                                                            _timeout,
-                                                            ticker,
-                                                            _encryptionSet,
-                                                            _sslContext,
-                                                            _config.wantClientAuth(),
-                                                            _config.needClientAuth(),
-                                                            new Runnable()
-                                                            {
-
-                                                                @Override
-                                                                public void run()
-                                                                {
-                                                                    engine.encryptedTransport();
-                                                                }
-                                                            });
-
-                            engine.setNetworkConnection(connection, connection.getSender());
-                            connection.setMaxReadIdle(HANDSHAKE_TIMEOUT);
-
-                            ticker.setConnection(connection);
-
-                            connection.start();
-
-                            _selector.addConnection(connection);
-
-                        }
-                        else
-                        {
-                            socketChannel.close();
-                        }
+                        acceptSocketChannel(socketChannel);
                     }
                     catch(RuntimeException e)
                     {
@@ -259,6 +191,64 @@ public class NonBlockingNetworkTransport implements IncomingNetworkTransport
                     LOGGER.debug("Acceptor exiting, no new connections will be accepted on address "
                                  + _config.getAddress());
                 }
+            }
+        }
+
+        public void acceptSocketChannel(final SocketChannel socketChannel) throws IOException
+        {
+            final ServerProtocolEngine engine =
+                    (ServerProtocolEngine) _factory.newProtocolEngine(socketChannel.socket()
+                                                                              .getRemoteSocketAddress());
+
+            if(engine != null)
+            {
+                socketChannel.setOption(StandardSocketOptions.TCP_NODELAY, _config.getTcpNoDelay());
+                socketChannel.socket().setSoTimeout(1000 * HANDSHAKE_TIMEOUT);
+
+                final Integer sendBufferSize = _config.getSendBufferSize();
+                final Integer receiveBufferSize = _config.getReceiveBufferSize();
+
+                socketChannel.setOption(StandardSocketOptions.SO_SNDBUF, sendBufferSize);
+                socketChannel.setOption(StandardSocketOptions.SO_RCVBUF, receiveBufferSize);
+
+
+                final IdleTimeoutTicker ticker = new IdleTimeoutTicker(engine, TIMEOUT);
+
+                NonBlockingConnection connection =
+                        new NonBlockingConnection(socketChannel,
+                                                  engine,
+                                                  sendBufferSize,
+                                                  receiveBufferSize,
+                                                  _timeout,
+                                                  ticker,
+                                                  _encryptionSet,
+                                                  _sslContext,
+                                                  _config.wantClientAuth(),
+                                                  _config.needClientAuth(),
+                                                  new Runnable()
+                                                  {
+
+                                                      @Override
+                                                      public void run()
+                                                      {
+                                                          engine.encryptedTransport();
+                                                      }
+                                                  },
+                                                  _selector);
+
+                engine.setNetworkConnection(connection, connection.getSender());
+                connection.setMaxReadIdle(HANDSHAKE_TIMEOUT);
+
+                ticker.setConnection(connection);
+
+                connection.start();
+
+                _selector.addConnection(connection);
+
+            }
+            else
+            {
+                socketChannel.close();
             }
         }
 
