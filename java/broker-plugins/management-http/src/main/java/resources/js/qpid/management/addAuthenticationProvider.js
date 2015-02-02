@@ -113,6 +113,7 @@ define(["dojo/_base/xhr",
                     else
                     {
                         this.preferencesProviderForm.reset();
+                        this.preferencesProviderForm.preferencesProviderNameWidget.set("value", actualData.name);
                     }
                     this.authenticationProviderName.set("value", actualData.name);
                 }
