@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -213,6 +214,85 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
         assertNotNull(childMap);
 
         assertEquals("Unexpected child attribute value", childAttributeValue, childMap.get(childAttributeName));
+
+    }
+
+    public void testOversizedAttributes()
+    {
+
+        Model model = createTestModel();
+        ConfiguredObjectTypeRegistry typeRegistry = model.getTypeRegistry();
+        final Map<String, ConfiguredObjectAttribute<?, ?>> attributeTypes =
+                typeRegistry.getAttributeTypes(TestChild.class);
+        final ConfiguredObjectAttribute longAttr = mock(ConfiguredObjectAttribute.class);
+        when(longAttr.isOversized()).thenReturn(true);
+        when(longAttr.getOversizedAltText()).thenReturn("");
+        when(attributeTypes.get(eq("longAttr"))).thenReturn(longAttr);
+
+        TestChild mockChild = mock(TestChild.class);
+        when(mockChild.getModel()).thenReturn(model);
+        when(_configuredObject.getModel()).thenReturn(model);
+        configureMockToReturnOneAttribute(mockChild, "longAttr", "this is not long");
+        when(_configuredObject.getChildren(TestChild.class)).thenReturn(Arrays.asList(mockChild));
+
+
+         Map<String, Object> resultMap = _converter.convertObjectToMap(_configuredObject,
+                                                                            ConfiguredObject.class,
+                                                                            1,
+                                                                            false,
+                                                                            false,
+                                                                            false,
+                                                                            false,
+                                                                            20);
+        Object children = resultMap.get("testchilds");
+        assertNotNull(children);
+        assertTrue(children instanceof Collection);
+        assertTrue(((Collection)children).size()==1);
+        Object attrs = ((Collection)children).iterator().next();
+        assertTrue(attrs instanceof Map);
+        assertEquals("this is not long", ((Map) attrs).get("longAttr"));
+
+
+
+        resultMap = _converter.convertObjectToMap(_configuredObject,
+                                                  ConfiguredObject.class,
+                                                  1,
+                                                  false,
+                                                  false,
+                                                  false,
+                                                  false,
+                                                  8);
+
+        children = resultMap.get("testchilds");
+        assertNotNull(children);
+        assertTrue(children instanceof Collection);
+        assertTrue(((Collection)children).size()==1);
+        attrs = ((Collection)children).iterator().next();
+        assertTrue(attrs instanceof Map);
+        assertEquals("this...", ((Map) attrs).get("longAttr"));
+
+
+
+
+        when(longAttr.getOversizedAltText()).thenReturn("test alt text");
+
+        resultMap = _converter.convertObjectToMap(_configuredObject,
+                                                  ConfiguredObject.class,
+                                                  1,
+                                                  false,
+                                                  false,
+                                                  false,
+                                                  false,
+                                                  8);
+
+        children = resultMap.get("testchilds");
+        assertNotNull(children);
+        assertTrue(children instanceof Collection);
+        assertTrue(((Collection)children).size()==1);
+        attrs = ((Collection)children).iterator().next();
+        assertTrue(attrs instanceof Map);
+        assertEquals("test alt text", ((Map) attrs).get("longAttr"));
+
 
     }
 

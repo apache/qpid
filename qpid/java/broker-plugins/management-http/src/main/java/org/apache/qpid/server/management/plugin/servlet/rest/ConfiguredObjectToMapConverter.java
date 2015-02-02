@@ -164,7 +164,12 @@ public class ConfiguredObjectToMapConverter
                         String valueString = String.valueOf(value);
                         if(valueString.length() > oversizeThreshold)
                         {
-                            object.put(name, String.valueOf(value).substring(0,oversizeThreshold-4) + "...");
+
+                            String replacementValue = "".equals(attribute.getOversizedAltText())
+                                    ? String.valueOf(value).substring(0, oversizeThreshold - 4) + "..."
+                                    : attribute.getOversizedAltText();
+
+                            object.put(name, replacementValue);
                         }
                         else
                         {
