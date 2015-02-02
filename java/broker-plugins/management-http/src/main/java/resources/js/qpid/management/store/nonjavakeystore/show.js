@@ -23,7 +23,7 @@ define(["qpid/common/util", "qpid/common/metadata", "qpid/management/UserPrefere
 
     function toDate(value)
     {
-        return value ? entities.encode(String(UserPreferences.formatDateTime(value))) : "";
+        return value ? entities.encode(String(UserPreferences.formatDateTime(value, {addOffset: true, appendTimeZone: true}))) : "";
     }
 
     var dateFields = ["certificateValidEnd","certificateValidStart"];
