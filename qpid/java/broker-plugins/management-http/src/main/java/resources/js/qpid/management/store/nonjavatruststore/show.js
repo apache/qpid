@@ -37,14 +37,15 @@ define(["dojo/query",
             this.fields.push(name);
         }
         util.buildUI(data.containerNode, data.parent, "store/nonjavatruststore/show.html", this.fields, this);
-        var gridNode = query(".details", data.containerNode)[0]
+        var gridNode = query(".details", data.containerNode)[0];
+        var dateTimeFormatter = function(value){ return value ? UserPreferences.formatDateTime(value, {addOffset: true, appendTimeZone: true}) : "";};
         this.detailsGrid = new UpdatableStore([],
                   gridNode,
                   [
                    { name: 'Subject', field: 'SUBJECT_NAME', width: '25%' },
                    { name: 'Issuer', field: 'ISSUER_NAME', width: '25%' },
-                   { name: 'Valid from', field: 'VALID_START', width: '25%', formatter: function(value){ return value ? UserPreferences.formatDateTime(value) : "";}},
-                   { name: 'Valid to', field: 'VALID_END', width: '25%', formatter: function(value){ return value ? UserPreferences.formatDateTime(value) : "";}}
+                   { name: 'Valid from', field: 'VALID_START', width: '25%', formatter: dateTimeFormatter },
+                   { name: 'Valid to', field: 'VALID_END', width: '25%', formatter: dateTimeFormatter}
                   ]);
     }
 

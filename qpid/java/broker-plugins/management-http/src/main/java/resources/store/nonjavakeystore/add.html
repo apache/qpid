@@ -22,45 +22,45 @@
     <div id="addStore.oldBrowserWarning" class="infoMessage hidden clear"></div>
 
     <div class="clear">
-        <div id="addStore.privateKeyLabel" class="formLabel-labelCell tableContainer-labelCell">Private Key*:</div>
+        <div id="addStore.privateKeyLabel" class="formLabel-labelCell tableContainer-labelCell">Private Key (Server path or upload)*:</div>
         <div class="formLabel-controlCell tableContainer-valueCell">
             <input type="text" id="addStore.privateKeyUrl"
                    data-dojo-type="qpid/common/ResourceWidget"
                    data-dojo-props="
                               name: 'privateKeyUrl',
-                              placeHolder: 'Private key URL or path to file on server',
+                              placeHolder: 'path to file with private key in PEM/DER format',
                               required: true,
-                              promptMessage: 'Location of the private key',
-                              title: 'Enter private key URL or path to file containing private key in DER or PEM format'" />
+                              promptMessage: 'Enter broker server path to file containing unencrypted private key in DER or PEM format',
+                              title: 'Enter broker server path to file containing unencrypted private key in DER or PEM format'" />
 
         </div>
     </div>
 
     <div class="clear">
-        <div id="addStore.serverPathLabel" class="formLabel-labelCell tableContainer-labelCell">Certificate*:</div>
+        <div id="addStore.serverPathLabel" class="formLabel-labelCell tableContainer-labelCell">Certificate (Server path or upload)*:</div>
         <div class="formLabel-controlCell tableContainer-valueCell">
             <input type="text" id="addStore.certificateUrl"
                    data-dojo-type="qpid/common/ResourceWidget"
                    data-dojo-props="
                               name: 'certificateUrl',
-                              placeHolder: 'Certificate URL or path to certificate file on server',
+                              placeHolder: 'path to file with certificate in PEM/DER format',
                               required: true,
-                              promptMessage: 'Location of the certificate',
-                              title: 'Enter certificate URL or path to file containing certificate in DER or PEM format'" />
+                              promptMessage: 'Enter broker server path to file containing certificate in DER or PEM format',
+                              title: 'Enter broker server path to file containing certificate in DER or PEM format'" />
         </div>
     </div>
 
     <div class="clear">
-        <div id="addStore.intermediateCertificateLabel" class="formLabel-labelCell tableContainer-labelCell">Intermediate Certificate(s):</div>
+        <div id="addStore.intermediateCertificateLabel" class="formLabel-labelCell tableContainer-labelCell">Intermediate Certificates (Server path or upload):</div>
         <div class="formLabel-controlCell tableContainer-valueCell">
             <input type="text" id="addStore.intermediateCertificateUrl"
                    data-dojo-type="qpid/common/ResourceWidget"
                    data-dojo-props="
                               name: 'intermediateCertificateUrl',
-                              placeHolder: 'Intermediate certificates URL or path to file on server',
+                              placeHolder: 'path to file with certificates in PEM/DER format',
                               required: false,
-                              promptMessage: 'Location of the intermediate certificates',
-                              title: 'Enter URL containing intermediate certificates or path to file with certificates in format DER or PEM'" />
+                              promptMessage: 'Enter broker server path to file containing intermediate certificates in DER or PEM format',
+                              title: 'Enter path to file containing intermediate certificates in format DER or PEM'" />
         </div>
     </div>
 </div>

@@ -22,16 +22,16 @@
     <div id="addStore.oldBrowserWarning" class="infoMessage hidden clear"></div>
 
     <div class="clear">
-        <div id="addStore.certificatesLabel" class="formLabel-labelCell tableContainer-labelCell">Certificate URL or Path*:</div>
+        <div id="addStore.certificatesLabel" class="formLabel-labelCell tableContainer-labelCell">Certificates (Server path or upload)*:</div>
         <div class="formLabel-controlCell tableContainer-valueCell">
             <input type="text" id="addStore.certificatesUrl"
                    data-dojo-type="qpid/common/ResourceWidget"
                    data-dojo-props="
                               name: 'certificatesUrl',
-                              placeHolder: 'Certificate URL or path to certificate file on server',
+                              placeHolder: 'path to file with certificate(s) in PEM/DER format',
                               required: true,
-                              promptMessage: 'Location of the certificate',
-                              title: 'Enter certificate URL or path to file containing certificate in DER or PEM format'" />
+                              promptMessage: 'Enter broker server path to file containing certificate(s) in DER or PEM format',
+                              title: 'Enter broker server path to file containing certificate(s) in DER or PEM format'" />
         </div>
     </div>
 
