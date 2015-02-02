@@ -39,6 +39,7 @@
 #include "qpid/sys/SecurityLayer.h"
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/Time.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/sys/urlAdd.h"
 #include "config.h"
 #include <boost/lexical_cast.hpp>
@@ -95,6 +96,27 @@ std::string get_error(pn_connection_t* connection, pn_transport_t* transport)
 }
 #endif
 
+class ConnectionTickerTask : public qpid::sys::TimerTask
+{
+    qpid::sys::Timer& timer;
+    ConnectionContext& connection;
+  public:
+    ConnectionTickerTask(const qpid::sys::Duration& interval, qpid::sys::Timer& t, ConnectionContext& c) :
+        TimerTask(interval, "ConnectionTicker"),
+        timer(t),
+        connection(c)
+    {}
+
+    void fire() {
+        QPID_LOG(debug, "ConnectionTickerTask fired");
+        // Setup next firing
+        setupNextFire();
+        timer.add(this);
+
+        // Send Ticker
+        connection.activateOutput();
+    }
+};
 }
 
 void ConnectionContext::trace(const char* message) const
@@ -118,23 +140,15 @@ ConnectionContext::ConnectionContext(const std::string& url, const qpid::types::
     // Concatenate all known URLs into a single URL, get rid of duplicate addresses.
     sys::urlAddStrings(fullUrl, urls.begin(), urls.end(), protocol.empty() ?
                        qpid::Address::TCP : protocol);
-    if (pn_transport_bind(engine, connection)) {
-        //error
-    }
     if (identifier.empty()) {
         identifier = qpid::types::Uuid(true).str();
     }
-    pn_connection_set_container(connection, identifier.c_str());
-    bool enableTrace(false);
-    QPID_LOG_TEST_CAT(trace, protocol, enableTrace);
-    if (enableTrace) {
-        pn_transport_trace(engine, PN_TRACE_FRM);
-        set_tracer(engine, this);
-    }
+    configureConnection();
 }
 
 ConnectionContext::~ConnectionContext()
 {
+    if (ticker) ticker->cancel();
     close();
     sessions.clear();
     pn_transport_free(engine);
@@ -217,6 +231,10 @@ void ConnectionContext::close()
         while (state != DISCONNECTED) {
             lock.wait();
         }
+    }
+    if (ticker) {
+        ticker->cancel();
+        ticker.reset();
     }
 }
 
@@ -498,7 +516,7 @@ uint32_t ConnectionContext::getUnsettled(boost::shared_ptr<ReceiverContext> rece
 void ConnectionContext::activateOutput()
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
-    wakeupDriver();
+    if (state == CONNECTED) wakeupDriver();
 }
 /**
  * Expects lock to be held by caller
@@ -530,14 +548,11 @@ void ConnectionContext::reset()
 
     engine = pn_transport();
     connection = pn_connection();
-    pn_connection_set_container(connection, identifier.c_str());
-    bool enableTrace(false);
-    QPID_LOG_TEST_CAT(trace, protocol, enableTrace);
-    if (enableTrace) pn_transport_trace(engine, PN_TRACE_FRM);
+    configureConnection();
+
     for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); ++i) {
         i->second->reset(connection);
     }
-    pn_transport_bind(engine, connection);
 }
 
 void ConnectionContext::check() {
@@ -758,12 +773,23 @@ std::size_t ConnectionContext::decodePlain(const char* buffer, std::size_t size)
     //TODO: Fix pn_engine_input() to take const buffer
     ssize_t n = pn_transport_input(engine, const_cast<char*>(buffer), size);
     if (n > 0 || n == PN_EOS) {
-        //If engine returns EOS, have no way of knowing how many bytes
-        //it processed, but can assume none need to be reprocessed so
-        //consider them all read:
-        if (n == PN_EOS) n = size;
+        // PN_EOS either means we received a Close (which also means we've
+        // consumed all the input), OR some Very Bad Thing happened and this
+        // connection is toast.
+        if (n == PN_EOS)
+        {
+            std::string error;
+            if (checkTransportError(error)) {
+                // "He's dead, Jim."
+                QPID_LOG_CAT(error, network, id << " connection failed: " << error);
+                transport->abort();
+                return 0;
+            } else {
+                n = size;   // assume all consumed
+            }
+        }
         QPID_LOG_CAT(debug, network, id << " decoded " << n << " bytes from " << size)
-        pn_transport_tick(engine, 0);
+        pn_transport_tick(engine, qpid::sys::Duration::FromEpoch() / qpid::sys::TIME_MSEC);
         lock.notifyAll();
         return n;
     } else if (n == PN_ERR) {
@@ -795,7 +821,13 @@ std::size_t ConnectionContext::encodePlain(char* buffer, std::size_t size)
         throw MessagingException(QPID_MSG("Error on output: " << getError()));
     } else if (n == PN_EOS) {
         haveOutput = false;
-        return 0;//Is this right?
+        // Normal close, or error?
+        std::string error;
+        if (checkTransportError(error)) {
+            QPID_LOG_CAT(error, network, id << " connection failed: " << error);
+            transport->abort();
+        }
+        return 0;
     } else {
         haveOutput = false;
         return 0;
@@ -804,6 +836,7 @@ std::size_t ConnectionContext::encodePlain(char* buffer, std::size_t size)
 bool ConnectionContext::canEncodePlain()
 {
     qpid::sys::ScopedLock<qpid::sys::Monitor> l(lock);
+    pn_transport_tick(engine, qpid::sys::Duration::FromEpoch() / qpid::sys::TIME_MSEC);
     return haveOutput && state == CONNECTED;
 }
 void ConnectionContext::closed()
@@ -1061,7 +1094,6 @@ bool ConnectionContext::tryOpenAddr(const qpid::Address& addr) {
     }
 
     QPID_LOG(debug, id << " Opening...");
-    setProperties();
     pn_connection_open(connection);
     wakeupDriver(); //want to write
     while ((pn_connection_state(connection) & PN_REMOTE_UNINIT) &&
@@ -1071,6 +1103,25 @@ bool ConnectionContext::tryOpenAddr(const qpid::Address& addr) {
     if (!(pn_connection_state(connection) & PN_REMOTE_ACTIVE)) {
         throw qpid::messaging::ConnectionError("Failed to open connection");
     }
+
+    // Connection open - check for idle timeout from the remote and start a
+    // periodic tick to monitor for idle connections
+    pn_timestamp_t remote = pn_transport_get_remote_idle_timeout(engine);
+    pn_timestamp_t local = pn_transport_get_idle_timeout(engine);
+    uint64_t shortest = ((remote && local)
+                         ? std::min(remote, local)
+                         : (remote) ? remote : local);
+    if (shortest) {
+        // send an idle frame at least twice before timeout
+        shortest = (shortest + 1)/2;
+        qpid::sys::Duration d(shortest * qpid::sys::TIME_MSEC);
+        ticker = boost::intrusive_ptr<qpid::sys::TimerTask>(new ConnectionTickerTask(d, driver->getTimer(), *this));
+        driver->getTimer().add(ticker);
+        QPID_LOG(debug, id << " AMQP 1.0 idle-timeout set:"
+                 << " local=" << pn_transport_get_idle_timeout(engine)
+                 << " remote=" << pn_transport_get_remote_idle_timeout(engine));
+    }
+
     QPID_LOG(debug, id << " Opened");
 
     return restartSessions();
@@ -1151,4 +1202,44 @@ bool ConnectionContext::CodecAdapter::canEncode()
 }
 
 
+// setup the transport and connection objects:
+void ConnectionContext::configureConnection()
+{
+    pn_connection_set_container(connection, identifier.c_str());
+    setProperties();
+    if (heartbeat) {
+        // fail an idle connection at 2 x heartbeat (in msecs)
+        pn_transport_set_idle_timeout(engine, heartbeat*2*1000);
+    }
+
+    bool enableTrace(false);
+    QPID_LOG_TEST_CAT(trace, protocol, enableTrace);
+    if (enableTrace) {
+        pn_transport_trace(engine, PN_TRACE_FRM);
+        set_tracer(engine, this);
+    }
+
+    int err = pn_transport_bind(engine, connection);
+    if (err)
+        QPID_LOG(error, id << " Error binding connection and transport: " << err);
+}
+
+
+// check for failures of the transport:
+bool ConnectionContext::checkTransportError(std::string& text)
+{
+    std::stringstream info;
+
+#ifdef USE_PROTON_TRANSPORT_CONDITION
+    pn_condition_t* tcondition = pn_transport_condition(engine);
+    if (pn_condition_is_set(tcondition))
+        info << "transport error: " << pn_condition_get_name(tcondition) << ", " << pn_condition_get_description(tcondition);
+#else
+    pn_error_t* terror = pn_transport_error(engine);
+    if (terror) info << "transport error " << pn_error_text(terror) << " [" << terror << "]";
+#endif
+
+    text = info.str();
+    return !text.empty();
+}
 }}} // namespace qpid::messaging::amqp
