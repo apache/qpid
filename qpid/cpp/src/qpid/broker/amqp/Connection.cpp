@@ -121,7 +121,7 @@ Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, Broker
       connection(pn_connection()),
       transport(pn_transport()),
       collector(0),
-      out(o), id(i), haveOutput(true), closeInitiated(false), closeRequested(false)
+      out(o), id(i), haveOutput(true), closeInitiated(false), closeRequested(false), ioRequested(false)
 {
 #ifdef HAVE_PROTON_EVENTS
     collector = pn_collector();
@@ -157,6 +157,7 @@ Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, Broker
 
 void Connection::requestIO()
 {
+    ioRequested = true;
     out.activateOutput();
 }
 
@@ -179,13 +180,24 @@ size_t Connection::decode(const char* buffer, size_t size)
 {
     QPID_LOG(trace, id << " decode(" << size << ")");
     if (size == 0) return 0;
-    //TODO: Fix pn_engine_input() to take const buffer
+
     ssize_t n = pn_transport_input(transport, const_cast<char*>(buffer), size);
     if (n > 0 || n == PN_EOS) {
-        //If engine returns EOS, have no way of knowing how many bytes
-        //it processed, but can assume none need to be reprocessed so
-        //consider them all read:
-        if (n == PN_EOS) n = size;
+        // PN_EOS either means we received a Close (which also means we've
+        // consumed all the input), OR some Very Bad Thing happened and this
+        // connection is toast.
+        if (n == PN_EOS)
+        {
+            std::string error;
+            if (checkTransportError(error)) {
+                // "He's dead, Jim."
+                QPID_LOG_CAT(error, network, id << " connection failed: " << error);
+                out.abort();
+                return 0;
+            } else {
+                n = size;   // assume all consumed
+            }
+        }
         QPID_LOG_CAT(debug, network, id << " decoded " << n << " bytes from " << size);
         try {
             process();
@@ -224,6 +236,15 @@ size_t Connection::encode(char* buffer, size_t size)
         QPID_LOG_CAT(debug, network, id << " encoded " << n << " bytes from " << size)
         haveOutput = true;
         return n;
+    } else if (n == PN_EOS) {
+        haveOutput = false;
+        // Normal close, or error?
+        std::string error;
+        if (checkTransportError(error)) {
+            QPID_LOG_CAT(error, network, id << " connection failed: " << error);
+            out.abort();
+        }
+        return 0;
     } else if (n == PN_ERR) {
         throw Exception(qpid::amqp::error_conditions::INTERNAL_ERROR, QPID_MSG("Error on output: " << getError()));
     } else {
@@ -291,6 +312,7 @@ bool Connection::canEncode()
     } else {
         QPID_LOG(info, "Connection " << id << " has been closed locally");
     }
+    if (ioRequested.valueCompareAndSwap(true, false)) haveOutput = true;
     pn_transport_tick(transport, qpid::sys::Duration::FromEpoch() / qpid::sys::TIME_MSEC);
     QPID_LOG_CAT(trace, network, id << " canEncode(): " << haveOutput)
     return haveOutput;
@@ -303,8 +325,22 @@ void Connection::open()
     pn_connection_set_container(connection, getBroker().getFederationTag().c_str());
     uint32_t timeout = pn_transport_get_remote_idle_timeout(transport);
     if (timeout) {
-        ticker = boost::intrusive_ptr<qpid::sys::TimerTask>(new ConnectionTickerTask(timeout, getBroker().getTimer(), *this));
-        pn_transport_set_idle_timeout(transport, timeout);
+        // if idle generate empty frames at 1/2 the timeout interval as keepalives:
+        ticker = boost::intrusive_ptr<qpid::sys::TimerTask>(new ConnectionTickerTask((timeout+1)/2,
+                                                                                     getBroker().getTimer(),
+                                                                                     *this));
+        getBroker().getTimer().add(ticker);
+
+        // Note: in version 0-10 of the protocol, idle timeout applies to both
+        // ends.  AMQP 1.0 changes that - it's now asymmetric: each end can
+        // configure/disable it independently.  For backward compatibility, by
+        // default mimic the old behavior and set our local timeout.
+        // Use 2x the remote's timeout, as per the spec the remote should
+        // advertise 1/2 its actual timeout threshold
+        pn_transport_set_idle_timeout(transport, timeout * 2);
+        QPID_LOG_CAT(debug, network, id << " AMQP 1.0 idle-timeout set:"
+                     << " local=" << pn_transport_get_idle_timeout(transport)
+                     << " remote=" << pn_transport_get_remote_idle_timeout(transport));
     }
 
     pn_connection_open(connection);
@@ -583,6 +619,24 @@ void Connection::doDeliveryUpdated(pn_delivery_t *delivery)
         pn_condition_set_description(error, e.what());
         pn_link_close(link);
     }
+}
+
+// check for failures of the transport:
+bool Connection::checkTransportError(std::string& text)
+{
+    std::stringstream info;
+
+#ifdef USE_PROTON_TRANSPORT_CONDITION
+    pn_condition_t* tcondition = pn_transport_condition(transport);
+    if (pn_condition_is_set(tcondition))
+        info << "transport error: " << pn_condition_get_name(tcondition) << ", " << pn_condition_get_description(tcondition);
+#else
+    pn_error_t* terror = pn_transport_error(transport);
+    if (terror) info << "transport error " << pn_error_text(terror) << " [" << terror << "]";
+#endif
+
+    text = info.str();
+    return !text.empty();
 }
 
 }}} // namespace qpid::broker::amqp

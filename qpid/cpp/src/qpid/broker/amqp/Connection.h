@@ -24,6 +24,7 @@
 #include "qpid/sys/ConnectionCodec.h"
 #include "qpid/broker/amqp/BrokerContext.h"
 #include "qpid/broker/amqp/ManagedConnection.h"
+#include "qpid/sys/AtomicValue.h"
 #include <map>
 #include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>
@@ -80,6 +81,7 @@ class Connection : public BrokerContext, public sys::ConnectionCodec, public Man
     bool closeInitiated;
     bool closeRequested;
     boost::intrusive_ptr<sys::TimerTask> ticker;
+    qpid::sys::AtomicValue<bool> ioRequested;
 
     virtual void process();
     void doOutput(size_t);
@@ -92,6 +94,8 @@ class Connection : public BrokerContext, public sys::ConnectionCodec, public Man
     void closedByManagement();
 
  private:
+    bool checkTransportError(std::string&);
+
     // handle Proton engine events
     void doConnectionRemoteOpen();
     void doConnectionRemoteClose();
@@ -100,7 +104,6 @@ class Connection : public BrokerContext, public sys::ConnectionCodec, public Man
     void doLinkRemoteOpen(pn_link_t *link);
     void doLinkRemoteClose(pn_link_t *link);
     void doDeliveryUpdated(pn_delivery_t *delivery);
-
 };
 }}} // namespace qpid::broker::amqp
 
