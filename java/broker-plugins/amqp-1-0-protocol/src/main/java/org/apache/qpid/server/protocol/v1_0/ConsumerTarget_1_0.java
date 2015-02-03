@@ -343,6 +343,11 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
         return _link.getSession();
     }
 
+    public void flush()
+    {
+        _consumer.flush();
+    }
+
     private class DispositionAction implements UnsettledAction
     {
 
