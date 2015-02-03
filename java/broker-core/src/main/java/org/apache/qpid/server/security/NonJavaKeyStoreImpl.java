@@ -248,16 +248,16 @@ public class NonJavaKeyStoreImpl extends AbstractConfiguredObject<NonJavaKeyStor
     {
         try
         {
-            getUrlFromString(keyStore.getPrivateKeyUrl()).openStream();
-            getUrlFromString(keyStore.getCertificateUrl()).openStream();
+            readPrivateKey(getUrlFromString(keyStore.getPrivateKeyUrl()));
+            readCertificates(getUrlFromString(keyStore.getCertificateUrl()));
             if(keyStore.getIntermediateCertificateUrl() != null)
             {
-                getUrlFromString(keyStore.getIntermediateCertificateUrl()).openStream();
+                readCertificates(getUrlFromString(keyStore.getIntermediateCertificateUrl()));
             }
         }
-        catch (IOException e)
+        catch (IOException | GeneralSecurityException e )
         {
-            throw new IllegalArgumentException(e);
+            throw new IllegalConfigurationException("Cannot validate private key or certificate(s):" + e, e);
         }
     }
 
@@ -296,8 +296,7 @@ public class NonJavaKeyStoreImpl extends AbstractConfiguredObject<NonJavaKeyStor
         }
         catch (IOException | GeneralSecurityException e)
         {
-            LOGGER.error("Error attempting to create KeyStore from private key and certificates", e);
-            _keyManagers = new KeyManager[0];
+            throw new IllegalConfigurationException("Cannot load private key or certificate(s): " + e, e);
         }
     }
 

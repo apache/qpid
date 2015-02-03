@@ -261,11 +261,11 @@ public class NonJavaTrustStoreImpl
     {
         try
         {
-            getUrlFromString(keyStore.getCertificatesUrl()).openStream();
+            readCertificates(getUrlFromString(keyStore.getCertificatesUrl()));
         }
-        catch (IOException e)
+        catch (IOException | GeneralSecurityException e)
         {
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException("Cannot validate certificate(s):" + e, e);
         }
     }
 
@@ -297,8 +297,7 @@ public class NonJavaTrustStoreImpl
         }
         catch (IOException | GeneralSecurityException e)
         {
-            LOGGER.error("Error attempting to create KeyStore from private key and certificates", e);
-            _trustManagers = new TrustManager[0];
+            throw new IllegalConfigurationException("Cannot load certificate(s) :" + e, e);
         }
     }
 
