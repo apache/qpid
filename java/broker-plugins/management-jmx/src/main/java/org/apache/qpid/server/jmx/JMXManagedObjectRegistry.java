@@ -142,8 +142,6 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 throw new ServerScopedRuntimeException("Unable to create SSLContext for key store", e);
             }
 
-            getEventLogger().message(ManagementConsoleMessages.SSL_KEYSTORE(keyStore.getName()));
-
             //create the SSL RMI socket factories
             csf = new SslRMIClientSocketFactory();
             ssf = new QpidSslRMIServerSocketFactory(sslContext,_connectorPort.getEnabledCipherSuites(), _connectorPort.getDisabledCipherSuites());

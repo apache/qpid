@@ -46,7 +46,6 @@ public class ManagementConsoleMessages
     public static final String MANAGEMENTCONSOLE_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "managementconsole";
     public static final String OPEN_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "managementconsole.open";
     public static final String LISTENING_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "managementconsole.listening";
-    public static final String SSL_KEYSTORE_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "managementconsole.ssl_keystore";
     public static final String STOPPED_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "managementconsole.stopped";
     public static final String CLOSE_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "managementconsole.close";
     public static final String SHUTTING_DOWN_LOG_HIERARCHY = DEFAULT_LOG_HIERARCHY_PREFIX + "managementconsole.shutting_down";
@@ -58,7 +57,6 @@ public class ManagementConsoleMessages
         Logger.getLogger(MANAGEMENTCONSOLE_LOG_HIERARCHY);
         Logger.getLogger(OPEN_LOG_HIERARCHY);
         Logger.getLogger(LISTENING_LOG_HIERARCHY);
-        Logger.getLogger(SSL_KEYSTORE_LOG_HIERARCHY);
         Logger.getLogger(STOPPED_LOG_HIERARCHY);
         Logger.getLogger(CLOSE_LOG_HIERARCHY);
         Logger.getLogger(SHUTTING_DOWN_LOG_HIERARCHY);
@@ -128,38 +126,6 @@ public class ManagementConsoleMessages
             public String getLogHierarchy()
             {
                 return LISTENING_LOG_HIERARCHY;
-            }
-        };
-    }
-
-    /**
-     * Log a ManagementConsole message of the Format:
-     * <pre>MNG-1006 : Using SSL Keystore : {0}</pre>
-     * Optional values are contained in [square brackets] and are numbered
-     * sequentially in the method call.
-     *
-     */
-    public static LogMessage SSL_KEYSTORE(String param1)
-    {
-        String rawMessage = _messages.getString("SSL_KEYSTORE");
-
-        final Object[] messageArguments = {param1};
-        // Create a new MessageFormat to ensure thread safety.
-        // Sharing a MessageFormat and using applyPattern is not thread safe
-        MessageFormat formatter = new MessageFormat(rawMessage, _currentLocale);
-
-        final String message = formatter.format(messageArguments);
-
-        return new LogMessage()
-        {
-            public String toString()
-            {
-                return message;
-            }
-
-            public String getLogHierarchy()
-            {
-                return SSL_KEYSTORE_LOG_HIERARCHY;
             }
         };
     }

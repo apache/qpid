@@ -83,16 +83,5 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "MNG-1005", expected);
     }
 
-    public void testManagementSSLKeyStore()
-    {
-        String path = "/path/to/the/keystore/files.jks";
-
-        _logMessage = ManagementConsoleMessages.SSL_KEYSTORE(path);
-        List<Object> log = performLog();
-
-        String[] expected = {"Using SSL Keystore :", path};
-
-        validateLogMessage(log, "MNG-1006", expected);
-    }
 
 }
