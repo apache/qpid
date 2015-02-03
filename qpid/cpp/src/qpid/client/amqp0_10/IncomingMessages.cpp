@@ -169,7 +169,7 @@ bool IncomingMessages::get(Handler& handler, qpid::sys::Duration timeout)
             }
         }
         if (handler.isClosed()) throw qpid::messaging::ReceiverError("Receiver has been closed");
-    } while (AbsTime::now() < deadline);
+    } while (AbsTime::now() < deadline && !incoming->isClosed());
     return false;
 }
 namespace {
