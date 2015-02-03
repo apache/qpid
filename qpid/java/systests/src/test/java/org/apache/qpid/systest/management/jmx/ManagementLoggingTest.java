@@ -211,47 +211,6 @@ public class ManagementLoggingTest extends AbstractTestLogging
     }
 
     /**
-     * Description:
-     * Using the default configuration with SSL enabled for the management port the SSL Keystore path should be reported via MNG-1006
-     * Input:
-     * Management SSL enabled default configuration.
-     * Output:
-     *
-     * <date> MESSAGE MNG-1006 : Using SSL Keystore : test_resources/ssl/keystore.jks
-     *
-     * Validation Steps:
-     *
-     * 1. The MNG ID is correct
-     * 2. The keystore path is as specified in the configuration
-     */
-    public void testManagementStartupSSLKeystore() throws Exception
-    {
-        if (isJavaBroker())
-        {
-            setSystemProperty("javax.net.debug", "ssl");
-            startBrokerAndCreateMonitor(true, true);
-
-            List<String> results = waitAndFindMatches("MNG-1006");
-
-            assertTrue("MNGer message not logged", results.size() > 0);
-
-            String log = getLogMessage(results, 0);
-
-            //1
-            validateMessageID("MNG-1006", log);
-
-            // Validate we only have two MNG-1002 (one via stdout, one via log4j)
-            results = findMatches("MNG-1006");
-            assertEquals("Upexpected SSL Keystore message count",
-                         1, results.size());
-
-            // Validate the keystore path is as expected
-            assertTrue("SSL Keystore entry expected.:" + getMessageString(log),
-                       getMessageString(log).endsWith("systestsKeyStore"));
-        }
-    }
-
-    /**
      * Description: Tests the management connection open/close are logged correctly.
      *
      * Output:

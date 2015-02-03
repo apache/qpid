@@ -455,14 +455,6 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         {
             getBroker().getEventLogger().message(ManagementConsoleMessages.LISTENING(stringifyConnectorScheme(connector),
                                                                                      connector.getPort()));
-            if (connector instanceof SslSocketConnector)
-            {
-                SslContextFactory sslContextFactory = ((SslSocketConnector)connector).getSslContextFactory();
-                if (sslContextFactory != null && sslContextFactory.getKeyStorePath() != null)
-                {
-                    getBroker().getEventLogger().message(ManagementConsoleMessages.SSL_KEYSTORE(sslContextFactory.getKeyStorePath()));
-                }
-            }
         }
     }
 
