@@ -150,6 +150,9 @@
         <testResource>
             <directory>${basedir}/src/test/resources</directory>
         </testResource>
+        <testResource>
+            <directory>${basedir}/../test-profiles/test_resources/ssl</directory>
+        </testResource>
     </testResources>
 
     <plugins>
