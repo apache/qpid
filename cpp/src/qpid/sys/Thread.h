@@ -34,6 +34,8 @@
 #  define QPID_TSS __thread
 #elif defined (__SUNPRO_CC)
 #  define QPID_TSS __thread
+#elif defined (__IBMCPP__)
+#  define QPID_TSS __thread
 #else
 #  error "Dont know how to define QPID_TSS for this platform"
 #endif

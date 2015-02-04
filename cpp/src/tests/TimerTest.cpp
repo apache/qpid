@@ -82,7 +82,7 @@ class TestTask : public TimerTask
         uint64_t difference = _abs64(expected - actual);
 #elif defined(_WIN32)
         uint64_t difference = labs(expected - actual);
-#elif defined(__SUNPRO_CC)
+#elif defined(__SUNPRO_CC) || defined (__IBMCPP__)
         uint64_t difference = llabs(expected - actual);
 #else
         uint64_t difference = abs(expected - actual);

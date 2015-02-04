@@ -59,7 +59,7 @@ Thread::operator bool() {
 }
 
 bool Thread::operator==(const Thread& t) const {
-    return ::pthread_equal(impl->thread, t.impl->thread) != 0;
+    return pthread_equal(impl->thread, t.impl->thread) != 0;
 }
 
 bool Thread::operator!=(const Thread& t) const {

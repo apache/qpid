@@ -16,6 +16,7 @@
  *
  */
 
+#include "config.h"
 #include "qpid/Options.h"
 #include "qpid/OptionsTemplates.h"
 #include "qpid/Exception.h"
@@ -145,6 +146,9 @@ template QPID_COMMON_EXTERN po::value_semantic* create_value(int64_t& val, const
 template QPID_COMMON_EXTERN po::value_semantic* create_value(uint16_t& val, const std::string& arg);
 template QPID_COMMON_EXTERN po::value_semantic* create_value(uint32_t& val, const std::string& arg);
 template QPID_COMMON_EXTERN po::value_semantic* create_value(uint64_t& val, const std::string& arg);
+#ifdef QPID_SIZE_T_NATIVE
+template QPID_COMMON_EXTERN po::value_semantic* create_value(size_t& val, const std::string& arg);
+#endif
 template QPID_COMMON_EXTERN po::value_semantic* create_value(double& val, const std::string& arg);
 
 template QPID_COMMON_EXTERN po::value_semantic* create_value(string& val, const std::string& arg);

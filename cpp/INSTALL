@@ -91,7 +91,7 @@ Or if you have only have a command line environment available
 
 2.1 Building as C++11 (Experimental)
 ====================================
-Currently the Qpoid project uses C++ that conforms to the C++03 standard, as currently
+Currently the Qpid project uses C++ that conforms to the C++03 standard, as currently
 this is the C++ standard that is supported the most widely, so any new code must also
 compile as C++03. As an experiment (and to support a few extra platforms) the Qpid code
 will also now build as C++11.
@@ -140,6 +140,23 @@ If you want to use the ports version of cyrus-sasl then you should also add:
 
 Which will allow cmake to find libraries installed in /usr/local (which is where cyrus-sasl gets
 installed by ports).
+
+2.4 Building on AIX
+===================
+Qpid has been tested on AIX 7.1 with XL C++ 13.1 and Boost 1.55.0. The
+thread-using variant of the compiler must be used but it isn't the default
+picked up by cmake. Thus, the compiler must be specified at cmake time.
+For example (assuming PATH includes the compiler binaries):
+
+ # CXX=xlC_r CC=cc_r cmake ..
+
+Warnings from Boost header files are expected and can be ignored.
+
+It is normal to see (lots of) multiply-defined symbol warnings when linking
+the shared libraries built as part of Qpid.
+
+The mktemp package must be installed separately in order to execute the
+Qpid test suite.
 
 3. Building a Repository Working Copy
 =====================================

@@ -96,9 +96,9 @@ class Range {
  */
 template <class T>
 class RangeSet
-    : boost::additive1<RangeSet<T>,
-                       boost::additive2<RangeSet<T>, Range<T>,
-                                        boost::additive2<RangeSet<T>, T> > >
+    : private boost::additive1<RangeSet<T>,
+                               boost::additive2<RangeSet<T>, Range<T>,
+                                                boost::additive2<RangeSet<T>, T> > >
 {
     typedef InlineVector<Range<T>, 3> Ranges; // TODO aconway 2008-04-21: what's the optimial inlined value?
 

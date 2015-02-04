@@ -42,6 +42,7 @@ include(CheckIncludeFiles)
 include(CheckIncludeFileCXX)
 include(CheckLibraryExists)
 include(CheckSymbolExists)
+include(CheckSizeTNativeType)
 
 find_package(PkgConfig)
 find_package(Ruby)
@@ -349,6 +350,8 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   set(QPID_POLLER ${poller_default} CACHE STRING "Poller implementation (poll/epoll)")
   mark_as_advanced(QPID_POLLER)
 endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+
+check_size_t_native_type (QPID_SIZE_T_NATIVE)
 
 option(BUILD_SASL "Build with Cyrus SASL support" ${SASL_FOUND})
 if (BUILD_SASL)
@@ -683,6 +686,12 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
       thread
     )
   endif (CMAKE_SYSTEM_NAME STREQUAL SunOS)
+
+  if (CMAKE_SYSTEM_NAME STREQUAL AIX)
+    set (qpid_system_module
+      qpid/sys/aix/SystemInfo.cpp
+    )
+  endif (CMAKE_SYSTEM_NAME STREQUAL AIX)
 
   if (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
     # -lmalloc needed for mallinfo.
@@ -1145,6 +1154,9 @@ set_target_properties (qpidbroker PROPERTIES
                        VERSION ${qpidbroker_version}
                        SOVERSION ${qpidbroker_version_major}
                        COMPILE_DEFINITIONS _IN_QPID_BROKER)
+if (CMAKE_CXX_COMPILER_ID MATCHES XL)
+  set_target_properties (qpidbroker PROPERTIES LINK_FLAGS -Wl,-bbigtoc)
+endif (CMAKE_CXX_COMPILER_ID MATCHES XL)
 
 if (MSVC)
   set_target_properties (qpidbroker PROPERTIES COMPILE_FLAGS /wd4290)

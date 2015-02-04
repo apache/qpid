@@ -188,13 +188,13 @@ bool caseInsensitiveMatch(const std::string& a, const std::string& b)
     return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin(), &same_char);
 }
 
-const std::string TRUE("True");
-const std::string FALSE("False");
+const std::string TRUE_STRING("True");
+const std::string FALSE_STRING("False");
 
 bool toBool(const std::string& s)
 {
-    if (caseInsensitiveMatch(s, TRUE)) return true;
-    if (caseInsensitiveMatch(s, FALSE)) return false;
+    if (caseInsensitiveMatch(s, TRUE_STRING)) return true;
+    if (caseInsensitiveMatch(s, FALSE_STRING)) return false;
     try { return boost::lexical_cast<int>(s); } catch(const boost::bad_lexical_cast&) {}
     throw InvalidConversion(QPID_MSG("Cannot convert " << s << " to bool"));
 }
@@ -494,7 +494,7 @@ std::string VariantImpl::asString() const
 {
     switch(type) {
       case VAR_VOID: return EMPTY;
-      case VAR_BOOL: return value.b ? TRUE : FALSE;
+      case VAR_BOOL: return value.b ? TRUE_STRING : FALSE_STRING;
       case VAR_UINT8: return boost::lexical_cast<std::string>((int) value.ui8);
       case VAR_UINT16: return boost::lexical_cast<std::string>(value.ui16);
       case VAR_UINT32: return boost::lexical_cast<std::string>(value.ui32);
