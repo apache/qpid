@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.logging;
 
-import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
@@ -304,54 +303,6 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         // Verify
         validateChannelClose(results);
-    }
-
-    public void testChannelClosedOnQueueArgumentsMismatch() throws Exception
-    {
-        assertLoggingNotYetOccured(CHANNEL_PREFIX);
-
-        Connection connection = getConnection();
-
-        // Create a session and then close it
-        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        waitForMessage("CHN-1001");
-
-        String testQueueName = getTestQueueName();
-
-        Queue nonDurableQueue = (Queue) session.createQueue("direct://amq.direct/" + testQueueName + "/" + testQueueName
-                + "?durable='false'");
-
-        ((AMQSession<?,?>)session).declareAndBind((AMQDestination)nonDurableQueue);
-
-        Queue durableQueue = (Queue) session.createQueue("direct://amq.direct/" + testQueueName + "/" + testQueueName
-                + "?durable='true'");
-        try
-        {
-            ((AMQSession<?,?>)session).declareAndBind((AMQDestination) durableQueue);
-            fail("Exception not thrown");
-        }
-        catch (AMQChannelClosedException acce)
-        {
-            // pass
-        }
-        catch (Exception e)
-        {
-            fail("Wrong exception thrown " + e);
-        }
-        waitForMessage("CHN-1003");
-
-        List<String> results = findMatches(CHANNEL_PREFIX);
-        assertTrue("No CHN messages logged", results.size() > 0);
-
-        String closeLog = results.get(results.size() -1);
-        int closeMessageID = closeLog.indexOf("CHN-1003");
-        assertFalse("CHN-1003 is not found", closeMessageID == -1);
-
-        String closeMessage = closeLog.substring(closeMessageID);
-        assertTrue("Unexpected close channel message :" + closeMessage, Pattern.matches(CHANNEL_CLOSE_FORCED_MESSAGE_PATTERN, closeMessage));
-
-        session.close();
-        connection.close();
     }
 
     public void testChannelClosedOnExclusiveQueueDeclaredOnDifferentSession() throws Exception
