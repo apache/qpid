@@ -24,6 +24,7 @@
 #include "qpid/sys/Time.h"
 #include <ostream>
 #include <istream>
+#include <sstream>
 #include <time.h>
 #include <stdio.h>
 #include <sys/time.h>
@@ -106,13 +107,14 @@ std::istream& operator>>(std::istream& i, Duration& d) {
     if (i.eof() || std::isspace(i.peek())) // No suffix
         d = int64_t(number*TIME_SEC);
     else {
-        std::string suffix;
-        i >> suffix;
+        std::stringbuf suffix;
+        i >> &suffix;
         if (i.fail()) return i;
-        if (suffix.compare("s") == 0) d = int64_t(number*TIME_SEC);
-        else if (suffix.compare("ms") == 0) d = int64_t(number*TIME_MSEC);
-        else if (suffix.compare("us") == 0) d = int64_t(number*TIME_USEC);
-        else if (suffix.compare("ns") == 0) d = int64_t(number*TIME_NSEC);
+	std::string suffix_str = suffix.str();
+        if (suffix_str.compare("s") == 0) d = int64_t(number*TIME_SEC);
+        else if (suffix_str.compare("ms") == 0) d = int64_t(number*TIME_MSEC);
+        else if (suffix_str.compare("us") == 0) d = int64_t(number*TIME_USEC);
+        else if (suffix_str.compare("ns") == 0) d = int64_t(number*TIME_NSEC);
         else i.setstate(std::ios::failbit);
     }
     return i;

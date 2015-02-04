@@ -31,7 +31,7 @@ struct Descriptor;
 /**
  * Encode map like data
  */
-class MapEncoder : public MapHandler, Encoder
+class MapEncoder : public MapHandler, private Encoder
 {
   public:
     MapEncoder(char* data, size_t size);

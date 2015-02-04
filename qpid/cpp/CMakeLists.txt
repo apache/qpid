@@ -182,6 +182,11 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
   set (HIDE_SYMBOL_FLAGS "")
 endif (CMAKE_CXX_COMPILER_ID STREQUAL SunPro)
 
+# XL is IBM XL C/C++
+if (CMAKE_CXX_COMPILER_ID MATCHES XL)
+  set (COMPILER_FLAGS "-qtls -qrtti")
+endif (CMAKE_CXX_COMPILER_ID MATCHES XL)
+
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   # Allow MSVC user to select 'WinXP-SP3/Windows Server 2003' as build target version
   set (win32_winnt_default OFF)

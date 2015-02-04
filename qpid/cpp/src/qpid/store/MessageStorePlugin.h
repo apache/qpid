@@ -267,7 +267,7 @@ class MessageStorePlugin :
     };
     StoreOptions options;
 
-    typedef std::map<const std::string, StorageProvider*> ProviderMap;
+    typedef std::map<std::string, StorageProvider*> ProviderMap;
     ProviderMap providers;
     ProviderMap::const_iterator provider;
 

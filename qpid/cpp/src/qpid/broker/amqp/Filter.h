@@ -37,7 +37,7 @@ struct QueueSettings;
 namespace amqp {
 class Outgoing;
 
-class Filter : qpid::amqp::MapReader
+class Filter : private qpid::amqp::MapReader
 {
   public:
     Filter();
