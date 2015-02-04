@@ -87,6 +87,7 @@ class IncomingMessages
     uint32_t available(const std::string& destination);
   private:
     typedef std::deque<FrameSetPtr> FrameSetQueue;
+    enum ProcessState {EMPTY=0,OK=1,CLOSED=2};
 
     sys::Monitor lock;
     qpid::client::AsyncSession session;
@@ -95,7 +96,7 @@ class IncomingMessages
     FrameSetQueue received;
     AcceptTracker acceptTracker;
 
-    bool process(Handler*, qpid::sys::Duration);
+    ProcessState process(Handler*, qpid::sys::Duration);
     bool wait(qpid::sys::Duration);
     bool pop(FrameSetPtr&, qpid::sys::Duration);
 
