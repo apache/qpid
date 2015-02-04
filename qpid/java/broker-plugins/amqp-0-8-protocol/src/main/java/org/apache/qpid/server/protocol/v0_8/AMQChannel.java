@@ -3246,17 +3246,6 @@ public class AMQChannel
                                                          + autoDelete
                                                          + ")");
                 }
-                else if (queue.isDurable() != durable)
-                {
-                    closeChannel(AMQConstant.ALREADY_EXISTS,
-                                                         "Cannot re-declare queue '"
-                                                         + queue.getName()
-                                                         + "' with different durability (was: "
-                                                         + queue.isDurable()
-                                                         + " requested "
-                                                         + durable
-                                                         + ")");
-                }
                 else
                 {
                     setDefaultQueue(queue);
