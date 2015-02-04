@@ -26,12 +26,15 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.net.ssl.SSLSocket;
+
 import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.SenderClosedException;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.util.Logger;
+import org.apache.qpid.util.SystemUtils;
 
 
 public final class IoSender implements Runnable, Sender<ByteBuffer>
@@ -58,6 +61,12 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
     private final Thread senderThread;
     private IoReceiver _receiver;
     private final String _remoteSocketAddress;
+    private static final boolean shutdownBroken;
+
+    static
+    {
+        shutdownBroken = SystemUtils.isWindows();
+    }
 
     private volatile Throwable exception = null;
 
@@ -312,6 +321,18 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
                 {
                     notFull.notify();
                 }
+            }
+        }
+
+        if (!shutdownBroken && !(socket instanceof SSLSocket))
+        {
+            try
+            {
+                socket.shutdownOutput();
+            }
+            catch (IOException e)
+            {
+                //pass
             }
         }
     }
