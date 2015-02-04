@@ -22,18 +22,24 @@ define(["dojo/_base/xhr",
         "dojo/parser",
         "dojo/query",
         "dojo/_base/connect",
+        "dojo/_base/array",
+        "dojo/_base/event",
         "qpid/common/properties",
         "qpid/common/updater",
         "qpid/common/util",
+        "qpid/common/metadata",
         "qpid/common/UpdatableStore",
         "dojox/grid/EnhancedGrid",
         "dijit/registry",
-        "dojo/_base/event",
         "dojox/html/entities",
+        "dojo/text!showGroupProvider.html",
+        "qpid/management/addGroupProvider",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
-       function (xhr, parser, query, connect, properties, updater, util, UpdatableStore, EnhancedGrid, registry, event, entities) {
+       function (xhr, parser, query, connect, array, event, properties, updater, util, metadata, UpdatableStore,
+                 EnhancedGrid, registry, entities, template, addGroupProvider)
+       {
 
            function GroupProvider(name, parent, controller) {
                this.name = name;
@@ -45,38 +51,63 @@ define(["dojo/_base/xhr",
                return "GroupProvider: " + this.name ;
            };
 
-           GroupProvider.prototype.open = function(contentPane) {
+           GroupProvider.prototype.open = function(contentPane)
+           {
                var that = this;
                this.contentPane = contentPane;
-               xhr.get({url: "showGroupProvider.html",
-                        sync: true,
-                        load:  function(data) {
-                            contentPane.containerNode.innerHTML = data;
-                            parser.parse(contentPane.containerNode);
+               contentPane.containerNode.innerHTML = template;
+               parser.parse(contentPane.containerNode);
 
-                            that.groupProviderAdapter = new GroupProviderUpdater(contentPane.containerNode, that.modelObj, that.controller);
+               this.groupProviderUpdater = new GroupProviderUpdater(contentPane.containerNode, this.modelObj, this.controller);
 
-                            updater.add( that.groupProviderAdapter );
+               // load data
+               this.groupProviderUpdater.update();
 
-                            that.groupProviderAdapter.update();
+               this.deleteButton = registry.byNode(query(".deleteGroupProviderButton", contentPane.containerNode)[0]);
+               this.deleteButton.on("click", function(evt){ event.stop(evt); that.deleteGroupProvider(); });
 
-                            var deleteButton = query(".deleteGroupProviderButton", contentPane.containerNode)[0];
-                            var deleteWidget = registry.byNode(deleteButton);
-                            connect.connect(deleteWidget, "onClick",
-                                            function(evt){
-                                                event.stop(evt);
-                                                that.deleteGroupProvider();
-                                            });
-                        }});
+               this.editButton = registry.byNode(query(".editGroupProviderButton", contentPane.containerNode)[0]);
+               this.editButton.on("click", function(evt){ event.stop(evt); that.editGroupProvider(); });
+
+               var type = this.groupProviderUpdater.groupProviderData.type;
+               var providerDetailsNode = query(".providerDetails", contentPane.containerNode)[0];
+
+               require(["qpid/management/groupprovider/"+ encodeURIComponent(type.toLowerCase()) + "/show"],
+                        function(DetailsUI)
+                        {
+                            that.groupProviderUpdater.details = new DetailsUI({containerNode: providerDetailsNode, parent: that});
+                            that.groupProviderUpdater.details.update(that.groupProviderUpdater.groupProviderData);
+                        });
+
+               var managedInterfaces = metadata.getMetaData("GroupProvider", type).managedInterfaces;
+               if (managedInterfaces)
+               {
+
+                    var managedInterfaceUI = this.groupProviderUpdater.managedInterfaces;
+
+                    array.forEach(managedInterfaces,
+                                  function(managedInterface)
+                                  {
+                                      require(["qpid/management/groupprovider/" + encodeURIComponent(managedInterface)],
+                                              function(ManagedInterface)
+                                              {
+                                                  managedInterfaceUI[ManagedInterface] = new ManagedInterface(providerDetailsNode, that.modelObj, that.controller);
+                                                  managedInterfaceUI[ManagedInterface].update(that.groupProviderUpdater.groupProviderData);
+                                              });
+                                  });
+               }
+
+               updater.add( this.groupProviderUpdater );
            };
 
+
            GroupProvider.prototype.close = function() {
-               updater.remove( this.groupProviderAdapter );
+               updater.remove( this.groupProviderUpdater );
            };
 
            GroupProvider.prototype.deleteGroupProvider = function() {
              var warnMessage = "";
-             if (this.groupProviderAdapter.groupProviderData && this.groupProviderAdapter.groupProviderData.type.indexOf("File") != -1)
+             if (this.groupProviderUpdater.groupProviderData && this.groupProviderUpdater.groupProviderData.type.indexOf("File") != -1)
              {
                warnMessage = "NOTE: provider deletion will also remove the group file on disk.\n\n";
              }
@@ -96,7 +127,23 @@ define(["dojo/_base/xhr",
                      util.xhrErrorHandler(this.failureReason);
                  }
              }
-         };
+           };
+
+           GroupProvider.prototype.editGroupProvider = function()
+           {
+                xhr.get(
+                        {
+                          url: this.groupProviderUpdater.query,
+                          sync: true,
+                          content: { actuals: true },
+                          handleAs: "json",
+                          load: function(actualData)
+                          {
+                            addGroupProvider.show(actualData[0]);
+                          }
+                        }
+                );
+           }
 
            function GroupProviderUpdater(node, groupProviderObj, controller)
            {
@@ -105,27 +152,8 @@ define(["dojo/_base/xhr",
                this.type = query(".type", node)[0];
                this.state = query(".state", node)[0];
                this.query = "api/latest/groupprovider/"+encodeURIComponent(groupProviderObj.name);
-               this.typeUI ={"GroupFile": "FileGroupManager"};
-               var that = this;
-
-               xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
-                   .then(function(data)
-                         {
-                             that.groupProviderData = data[0];
-
-                             util.flattenStatistics( that.groupProviderData );
-
-                             that.updateHeader();
-
-                             var ui = that.typeUI[that.groupProviderData.type];
-                             require(["qpid/management/groupprovider/"+ ui],
-                                 function(SpecificProvider) {
-                                 that.details = new SpecificProvider(query(".providerDetails", node)[0], groupProviderObj, controller);
-                                 that.details.update();
-                             });
-
-                         });
-
+               this.managedInterfaces = {};
+               this.details = null;
            }
 
            GroupProviderUpdater.prototype.updateHeader = function()
@@ -138,6 +166,28 @@ define(["dojo/_base/xhr",
            GroupProviderUpdater.prototype.update = function()
            {
                var that = this;
+               xhr.get({url: this.query, sync: true, handleAs: "json"}).then(function(data) {that._update(data[0]);});
+           };
+
+           GroupProviderUpdater.prototype._update = function(data)
+           {
+               this.groupProviderData = data;
+               util.flattenStatistics( this.groupProviderData );
+               this.updateHeader();
+
+               if (this.details)
+               {
+                    this.details.update(this.groupProviderData);
+               }
+
+               for(var managedInterface in this.managedInterfaces)
+               {
+                    var managedInterfaceUI = this.managedInterfaces[managedInterface];
+                    if (managedInterfaceUI)
+                    {
+                        managedInterfaceUI.update(this.groupProviderData);
+                    }
+               }
            };
 
            return GroupProvider;

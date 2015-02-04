@@ -34,11 +34,12 @@ define(["dojo/_base/xhr",
         "dojox/grid/EnhancedGrid",
         "dojo/data/ObjectStore",
         "qpid/management/group/addGroupMember",
+        "dojox/html/entities",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojo/domReady!"],
        function (xhr, parser, query, registry, connect, event, json, properties, updater, util, formatter,
-                 UpdatableStore, JsonRest, EnhancedGrid, ObjectStore, addGroupMember) {
+                 UpdatableStore, JsonRest, EnhancedGrid, ObjectStore, addGroupMember, entities) {
 
            function Group(name, parent, controller) {
                this.name = name;
@@ -78,10 +79,8 @@ define(["dojo/_base/xhr",
                             parser.parse(contentPane.containerNode);
 
                             that.groupUpdater = new GroupUpdater(contentPane.containerNode, that, that.controller);
-
-                            updater.add( that.groupUpdater );
-
                             that.groupUpdater.update();
+                            updater.add( that.groupUpdater );
                             
                             var addGroupMemberButton = query(".addGroupMemberButton", contentPane.containerNode)[0];
                             connect.connect(registry.byNode(addGroupMemberButton), "onClick",
@@ -128,7 +127,7 @@ define(["dojo/_base/xhr",
                            "durable",
                            "lifetimePolicy",
                            "type"]);
-
+               this.name.innerHTML = entities.encode(String(groupObj.getGroupName()));
                this.query = "api/latest/groupmember/"+ encodeURIComponent(groupObj.getGroupProviderName()) + "/" + encodeURIComponent(groupObj.getGroupName());
 
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)

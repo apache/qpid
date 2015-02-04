@@ -34,6 +34,7 @@ define(["dojo/_base/xhr",
         "qpid/common/updater",
         "qpid/common/UpdatableStore",
         "dojox/grid/EnhancedGrid",
+        "dojo/text!groupprovider/showGroupManagingGroupProvider.html",
         "dojox/grid/enhanced/plugins/Pagination",
         "dojox/grid/enhanced/plugins/IndirectSelection",
         "dojox/validate/us", "dojox/validate/web",
@@ -44,49 +45,17 @@ define(["dojo/_base/xhr",
         "dijit/form/Form",
         "dijit/form/DateTextBox",
         "dojo/domReady!"],
-    function (xhr, dom, parser, query, construct, connect, win, event, json, registry, entities, util, properties, updater, UpdatableStore, EnhancedGrid) {
-        function DatabaseGroupManager(containerNode, groupProviderObj, controller) {
+    function (xhr, dom, parser, query, construct, connect, win, event, json, registry, entities, util, properties,
+              updater, UpdatableStore, EnhancedGrid, template)
+    {
+        function GroupManagingGroupProvider(containerNode, groupProviderObj, controller)
+        {
             var node = construct.create("div", null, containerNode, "last");
             var that = this;
             this.name = groupProviderObj.name;
-            xhr.get({url: "groupprovider/showFileGroupManager.html",
-                                    sync: true,
-                                    load:  function(data) {
-                                        node.innerHTML = data;
-                                        parser.parse(node);
-
-
-                                        that.groupDatabaseUpdater= new GroupProviderUpdater(node, groupProviderObj, controller);
-
-                                        updater.add( that.groupDatabaseUpdater);
-
-                                        that.groupDatabaseUpdater.update();
-
-
-                                    }});
-        }
-
-        DatabaseGroupManager.prototype.update = function() {
-            this.groupDatabaseUpdater.update();
-        };
-
-        DatabaseGroupManager.prototype.close = function() {
-            updater.remove( this.groupDatabaseUpdater );
-        };
-
-        function GroupProviderUpdater(node, groupProviderObj, controller)
-        {
+            node.innerHTML = template;
+            parser.parse(node);
             this.controller = controller;
-            this.query = "api/latest/groupprovider/"+encodeURIComponent(groupProviderObj.name);
-            this.name = groupProviderObj.name;
-            var that = this;
-
-            xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
-               .then(function(data) {
-                     that.path = query(".path", node)[0];
-                     that.groupProviderData = data[0];
-
-                     util.flattenStatistics( that.groupProviderData );
 
                      var groupDiv = query(".groups", node)[0];
 
@@ -95,7 +64,7 @@ define(["dojo/_base/xhr",
                                             keepSelection: true,
                                             plugins: {
                                                       pagination: {
-                                                          pageSizes: ["10", "25", "50", "100"],
+                                                          pageSizes: [10, 25, 50, 100],
                                                           description: true,
                                                           sizeSwitch: true,
                                                           pageStepper: true,
@@ -106,10 +75,7 @@ define(["dojo/_base/xhr",
                                                       indirectSelection: true
 
                                              }};
-
-
-                     that.groupsGrid =
-                        new UpdatableStore(that.groupProviderData.groups, groupDiv,
+            this.groupsGrid = new UpdatableStore([], groupDiv,
                                         [ { name: "Group Name",    field: "name",      width: "100%" }
                                         ], function(obj) {
                                           connect.connect(obj.grid, "onRowDblClick", obj.grid,
@@ -120,22 +86,13 @@ define(["dojo/_base/xhr",
                                                   that.controller.show("group", name, groupProviderObj, theItem.id);
                                               });
                                       }, gridProperties, EnhancedGrid);
-
-
-                     var addGroupButton = query(".addGroupButton", node)[0];
-                     connect.connect(registry.byNode(addGroupButton), "onClick", function(evt){ addGroup.show(groupProviderObj.name) });
-
-                     var deleteGroupButton = query(".deleteGroupButton", node)[0];
-                     var deleteWidget = registry.byNode(deleteGroupButton);
-                     connect.connect(deleteWidget, "onClick",
-                                    function(evt){
-                                        event.stop(evt);
-                                        that.deleteGroups();
-                                    });
-                });
+            var addGroupButton = query(".addGroupButton", node)[0];
+            registry.byNode(addGroupButton).on("click", function(evt){ addGroup.show(groupProviderObj.name) });
+            var deleteWidget = registry.byNode(query(".deleteGroupButton", node)[0]);
+            deleteWidget.on("click", function(evt){ event.stop(evt); that.deleteGroups(); });
         }
 
-        GroupProviderUpdater.prototype.deleteGroups = function()
+        GroupManagingGroupProvider.prototype.deleteGroups = function()
         {
             var grid = this.groupsGrid.grid;
             var data = grid.selection.getSelected();
@@ -169,22 +126,12 @@ define(["dojo/_base/xhr",
 }
         };
 
-        GroupProviderUpdater.prototype.update = function()
+        GroupManagingGroupProvider.prototype.update = function(data)
         {
-
-            var that = this;
-
-            xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"})
-                .then(function(data) {
-                    that.groupProviderData = data[0];
-                    that.path.innerHTML = entities.encode(String(that.groupProviderData.path));
-                    util.flattenStatistics( that.groupProviderData );
-
-                    that.groupsGrid.update(that.groupProviderData.groups);
-
-                });
-
-
+            if (data)
+            {
+                this.groupsGrid.update(data.groups);
+            }
         };
 
         var addGroup = {};
@@ -258,5 +205,5 @@ define(["dojo/_base/xhr",
             registry.byId("addGroup").show();
         };
 
-        return DatabaseGroupManager;
+        return GroupManagingGroupProvider;
     });

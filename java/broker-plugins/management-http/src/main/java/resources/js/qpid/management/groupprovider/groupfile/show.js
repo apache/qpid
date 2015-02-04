@@ -18,18 +18,20 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model.adapter;
+define(["qpid/common/util", "dojo/domReady!"],
+  function (util, metadata)
+  {
 
-import org.apache.qpid.server.model.GroupManagingGroupProvider;
-import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.model.ManagedObject;
+    function GroupFile(data)
+    {
+        util.buildUI(data.containerNode, data.parent, "groupprovider/groupfile/show.html", ["path"], this);
+    }
 
-@ManagedObject( category = false, type = "GroupFile" )
-public interface FileBasedGroupProvider<X extends FileBasedGroupProvider<X>> extends GroupProvider<X>, GroupManagingGroupProvider
-{
-    String PATH="path";
+    GroupFile.prototype.update = function(data)
+    {
+        util.updateUI(data, ["path"], this);
+    }
 
-    @ManagedAttribute( mandatory = true, description = "File location" )
-    String getPath();
-}
+    return GroupFile;
+  }
+);
