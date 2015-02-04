@@ -187,10 +187,7 @@ public class SSLReceiver implements Receiver<ByteBuffer>
             }
             catch(SSLException e)
             {
-                if (log.isDebugEnabled())
-                {
-                    log.debug(e, "Error caught in SSLReceiver");
-                }
+                log.error(e, "Error caught in SSLReceiver");
                 _sslStatus.setSslErrorFlag();
                 synchronized(_sslStatus.getSslLock())
                 {
