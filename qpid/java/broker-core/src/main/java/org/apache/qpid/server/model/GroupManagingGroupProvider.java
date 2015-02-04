@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,20 +15,10 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.model.adapter;
+package org.apache.qpid.server.model;
 
-import org.apache.qpid.server.model.GroupManagingGroupProvider;
-import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.model.ManagedObject;
-
-@ManagedObject( category = false, type = "GroupFile" )
-public interface FileBasedGroupProvider<X extends FileBasedGroupProvider<X>> extends GroupProvider<X>, GroupManagingGroupProvider
+@ManagedAnnotation
+public interface GroupManagingGroupProvider extends ManagedInterface
 {
-    String PATH="path";
-
-    @ManagedAttribute( mandatory = true, description = "File location" )
-    String getPath();
 }

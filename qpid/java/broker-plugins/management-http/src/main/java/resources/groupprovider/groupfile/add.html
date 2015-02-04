@@ -18,15 +18,20 @@
  - under the License.
  -
  -->
-<div class="group">
-    <span style="">Name:</span><span class="name" style="position:absolute; left:6em"></span>
-    <br/>
-    <div data-dojo-type="dijit.TitlePane" data-dojo-props="title: 'Group Members'">
-        <div class="groupMembers"></div>
-        <div class="dijitDialogPaneActionBar">
-            <button data-dojo-type="dijit.form.Button" class="addGroupMemberButton" type="button">Add Group Member</button>
-            <button data-dojo-type="dijit.form.Button" class="removeGroupMemberButton" type="button">Remove Group Members</button>
+<div>
+    <div class="clear">
+        <div class="formLabel-labelCell tableContainer-labelCell">Path*:</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" class="addGroupProviderPath"
+                   data-dojo-type="dijit/form/ValidationTextBox"
+                   data-dojo-props="
+                              name: 'path',
+                              required: true,
+                              placeHolder: 'path/to/group/file',
+                              title: 'Enter path to file with groups',
+                              promptMessage: 'Enter path to file with groups'"/>
         </div>
     </div>
-</div>
 
+    <div class="clear"></div>
+</div>

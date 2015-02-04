@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-define(["dojo/_base/lang",
+define([
         "dojo/_base/xhr",
         "dojo/dom",
         "dojo/dom-construct",
@@ -26,8 +26,10 @@ define(["dojo/_base/lang",
         "dojo/parser",
         "dojo/_base/array",
         "dojo/_base/event",
-        'dojo/_base/json',
+        'dojo/json',
         "qpid/common/util",
+        "qpid/common/metadata",
+        "dojo/text!addGroupProvider.html",
         "dojo/store/Memory",
         "dojox/validate/us",
         "dojox/validate/web",
@@ -42,140 +44,152 @@ define(["dojo/_base/lang",
         "dijit/layout/ContentPane",
         "dojox/layout/TableContainer",
         "dojo/domReady!"],
-    function (lang, xhr, dom, construct, registry, parser, array, event, json, util) {
+    function (xhr, dom, construct, registry, parser, array, event, json, util, metadata, template)
+    {
 
-        var addGroupProvider = {};
+        var addGroupProvider =
+        {
+            init: function()
+            {
+                var that=this;
+                this.containerNode = construct.create("div", {innerHTML: template});
+                parser.parse(this.containerNode);
 
-        addGroupProvider.show = function(groupProvider) {
-          var fields = [{
-              name: "name",
-              createWidget: function(groupProvider) {
-                  return new dijit.form.ValidationTextBox({
-                    required: true,
-                    value: groupProvider.name,
-                    disabled: groupProvider.name ? true : false,
-                    label: "Name*:",
-                    regexp: "^[\x20-\x2e\x30-\x7F]{1,255}$",
-                    promptMessage: "Name of group provider.",
-                    placeHolder: "name",
-                    name: "name"});
-              }
-          }, {
-              name: "type",
-              createWidget: function(groupProvider) {
+                this.groupProviderName = registry.byId("addGroupProvider.name");
+                this.groupProviderName.set("regExpGen", util.nameOrContextVarRegexp);
 
-                  var typeContainer = construct.create("div");
+                this.dialog = registry.byId("addGroupProvider");
+                this.addButton = registry.byId("addGroupProvider.addButton");
+                this.cancelButton = registry.byId("addGroupProvider.cancelButton");
+                this.cancelButton.on("click", function(e){that._cancel(e);});
+                this.addButton.on("click", function(e){that._add(e);});
 
-                  var typeListContainer = new dojox.layout.TableContainer({
-                      cols: 1,
-                      "labelWidth": "300",
-                      customClass: "formLabel",
-                      showLabels: true,
-                      orientation: "horiz"
-                  });
+                this.groupProviderTypeFieldsContainer = dom.byId("addGroupProvider.typeFields");
+                this.groupProviderForm = registry.byId("addGroupProvider.form");
 
-                  typeContainer.appendChild(typeListContainer.domNode);
+                this.groupProviderType = registry.byId("addGroupProvider.type");
+                this.groupProviderType.on("change", function(type){that._groupProviderTypeChanged(type);});
 
-                  var providers =  [];
-                  var fieldSetContainers = {};
-                  xhr.get({
-                    url: "service/helper?action=ListGroupProviderAttributes",
-                    handleAs: "json",
-                    sync: true
-                  }).then(
-                  function(data) {
-                       var providerIndex = 0;
+                var supportedTypes = metadata.getTypesForCategory("GroupProvider");
+                supportedTypes.sort();
+                var supportedTypesStore = util.makeTypeStore(supportedTypes);
+                this.groupProviderType.set("store", supportedTypesStore);
+            },
+            show: function(actualData)
+            {
+                this.initialData = actualData;
+                this.groupProviderForm.reset();
 
-                       for (var providerType in data) {
-                           if (data.hasOwnProperty(providerType)) {
-                               providers[providerIndex++] = {id: providerType, name: providerType};
-
-                               var attributes = data[providerType].attributes;
-                               var descriptions = data[providerType].descriptions;
-
-                               var layout = new dojox.layout.TableContainer( {
-                                   cols: 1,
-                                   "labelWidth": "300",
-                                   customClass: "formLabel",
-                                   showLabels: true,
-                                   orientation: "horiz"
-                               });
-
-                               for(var i=0; i < attributes.length; i++) {
-                                   if ("type" == attributes[i])
-                                   {
-                                       continue;
-                                   }
-                                   var labelValue = attributes[i];
-                                   if (descriptions && descriptions[attributes[i]])
-                                   {
-                                       labelValue = descriptions[attributes[i]];
-                                   }
-                                   var text = new dijit.form.TextBox({
-                                       label: labelValue + ":",
-                                       name: attributes[i]
-                                   });
-                                   layout.addChild(text);
-                               }
-
-                               typeContainer.appendChild(layout.domNode);
-                               fieldSetContainers[providerType] = layout;
-                           }
-                       }
-                });
-
-                var providersStore = new dojo.store.Memory({ data: providers });
-
-                var typeList = new dijit.form.FilteringSelect({
-                  required: true,
-                  value: groupProvider.type,
-                  store: providersStore,
-                  label: "Type*:",
-                  name: "type"});
-
-                typeListContainer.addChild(typeList);
-
-                var onChangeHandler = function onChangeHandler(newValue){
-                  for (var i in fieldSetContainers) {
-                    var container = fieldSetContainers[i];
-                    var descendants = container.getChildren();
-                    for(var i in descendants){
-                      var descendant = descendants[i];
-                      var propName = descendant.name;
-                      if (propName) {
-                        descendant.set("disabled", true);
-                      }
+                if (actualData)
+                {
+                    this._destroyTypeFields(this.containerNode);
+                    this._initFields(actualData);
+                }
+                this.groupProviderName.set("disabled", actualData == null ? false : true);
+                this.groupProviderType.set("disabled", actualData == null ? false : true);
+                this.dialog.set("title", actualData == null ? "Add Group Provider" : "Edit Group Provider - " + actualData.name)
+                this.dialog.show();
+            },
+            _initFields:function(data)
+            {
+                var type = data["type"];
+                var attributes = metadata.getMetaData("GroupProvider", type).attributes;
+                for(var name in attributes)
+                {
+                    var widget = registry.byId("addGroupProvider."+name);
+                    if (widget)
+                    {
+                        widget.set("value", data[name]);
                     }
-                    container.domNode.style.display = "none";
-                  }
-                  var container = fieldSetContainers[newValue];
-                  if (container)
-                  {
-                    container.domNode.style.display = "block";
-                    var descendants = container.getChildren();
-                    for(var i in descendants){
-                      var descendant = descendants[i];
-                      var propName = descendant.name;
-                      if (propName) {
-                        descendant.set("disabled", false);
-                      }
-                    }
-                  }
-                };
-                typeList.on("change", onChangeHandler);
-                onChangeHandler(typeList.value);
-                return new dijit.layout.ContentPane({content: typeContainer, style:{padding: 0}});
-              }
-              }];
+                }
+            },
+            _cancel: function(e)
+            {
+                event.stop(e);
+                this.dialog.hide();
+            },
+            _add: function(e)
+            {
+                event.stop(e);
+                this._submit();
+            },
+            _submit: function()
+            {
+                if (this.groupProviderForm.validate())
+                {
+                    var success = false,failureReason=null;
 
-          util.showSetAttributesDialog(
-              fields,
-              groupProvider ? groupProvider : {},
-              "api/latest/groupprovider" + (name ? "/" + encodeURIComponent(name.name) : ""),
-              groupProvider ? "Edit group provider - " + groupProvider.name : "Add group provider",
-              "Group",
-              groupProvider && groupProvider.type ? groupProvider.type : "Group",
-              groupProvider ? false : true);
+                    var groupProviderData = util.getFormWidgetValues(this.groupProviderForm, this.initialData);
+                    var encodedName = encodeURIComponent(this.groupProviderName.value);
+                    var jsonString = json.stringify(groupProviderData);
+
+                    try {
+                    xhr.put(
+                    {
+                        url: "api/latest/groupprovider/" + encodedName,
+                        sync: true,
+                        handleAs: "json",
+                        headers: { "Content-Type": "application/json"},
+                        putData: jsonString,
+                        load: function(x) {success = true; },
+                        error: function(error) {success = false; failureReason = error;}
+                    });
+                    }
+                    catch (e)
+                    {
+                    console.warn(e);
+                    }
+
+                    if (success == true)
+                    {
+                        this.dialog.hide();
+                    }
+                    else
+                    {
+                        util.xhrErrorHandler(failureReason);
+                    }
+                }
+                else
+                {
+                    alert('Form contains invalid data. Please correct first');
+                }
+            },
+            _groupProviderTypeChanged: function(type)
+            {
+                 this._destroyTypeFields(this.groupProviderTypeFieldsContainer);
+                 if (type)
+                 {
+                     var that = this;
+                     require([ "qpid/management/groupprovider/" + type.toLowerCase() + "/add"], function(typeUI)
+                     {
+                         try
+                         {
+                             typeUI.show({containerNode: that.groupProviderTypeFieldsContainer, parent: that, data: that.initialData});
+                             util.applyMetadataToWidgets(that.groupProviderTypeFieldsContainer, "GroupProvider", type);
+                         }
+                         catch(e)
+                         {
+                             console.warn(e);
+                         }
+                     });
+                 }
+            },
+            _destroyTypeFields: function(typeFieldsContainer)
+            {
+                var widgets = registry.findWidgets(typeFieldsContainer);
+                array.forEach(widgets, function(item) { item.destroyRecursive();});
+                construct.empty(typeFieldsContainer);
+            }
         };
+
+        try
+        {
+            addGroupProvider.init();
+        }
+        catch(e)
+        {
+            console.warn(e);
+        }
         return addGroupProvider;
+
     });

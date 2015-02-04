@@ -18,18 +18,20 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model.adapter;
+define(["dojo/dom","dojo/query", "dojo/_base/array", "dijit/registry","qpid/common/util", "qpid/common/metadata"],
+    function (dom, query, array, registry, util, metadata)
+    {
 
-import org.apache.qpid.server.model.GroupManagingGroupProvider;
-import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.model.ManagedObject;
-
-@ManagedObject( category = false, type = "GroupFile" )
-public interface FileBasedGroupProvider<X extends FileBasedGroupProvider<X>> extends GroupProvider<X>, GroupManagingGroupProvider
-{
-    String PATH="path";
-
-    @ManagedAttribute( mandatory = true, description = "File location" )
-    String getPath();
-}
+        return {    show: function(data)
+                    {
+                        var that=this;
+                        util.parseHtmlIntoDiv(data.containerNode, "groupprovider/groupfile/add.html");
+                        if (data.data)
+                        {
+                            var pathWidget = registry.byNode(query(".addGroupProviderPath", data.containerNode)[0]);
+                            pathWidget.set("value", data.data.path);
+                        }
+                    }
+               };
+    }
+);

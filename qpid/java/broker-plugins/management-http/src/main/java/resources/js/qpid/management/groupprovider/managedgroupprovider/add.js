@@ -18,18 +18,9 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.model.adapter;
-
-import org.apache.qpid.server.model.GroupManagingGroupProvider;
-import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.ManagedAttribute;
-import org.apache.qpid.server.model.ManagedObject;
-
-@ManagedObject( category = false, type = "GroupFile" )
-public interface FileBasedGroupProvider<X extends FileBasedGroupProvider<X>> extends GroupProvider<X>, GroupManagingGroupProvider
-{
-    String PATH="path";
-
-    @ManagedAttribute( mandatory = true, description = "File location" )
-    String getPath();
-}
+define([],
+    function (dom, query, array, registry, util, metadata)
+    {
+        return { show: function(data) { /* nothing to do */ } };
+    }
+);
