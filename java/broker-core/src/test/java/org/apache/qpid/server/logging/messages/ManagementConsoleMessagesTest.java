@@ -22,6 +22,8 @@ package org.apache.qpid.server.logging.messages;
 
 import java.util.List;
 
+import org.apache.qpid.server.model.Transport;
+
 /**
  * Test MNG Log Messages
  */
@@ -39,13 +41,13 @@ public class ManagementConsoleMessagesTest extends AbstractTestMessages
 
     public void testManagementListening()
     {
-        String transport = "JMX";
+        String management = "JMX";
         Integer port = 8889;
 
-        _logMessage = ManagementConsoleMessages.LISTENING(transport, port);
+        _logMessage = ManagementConsoleMessages.LISTENING(management, Transport.TCP.name(), port);
         List<Object> log = performLog();
 
-        String[] expected = {"Starting :", transport, ": Listening on port", String.valueOf(port)};
+        String[] expected = {"Starting :", management, ": Listening on ", Transport.TCP.name(), " port", String.valueOf(port)};
 
         validateLogMessage(log, "MNG-1002", expected);
     }

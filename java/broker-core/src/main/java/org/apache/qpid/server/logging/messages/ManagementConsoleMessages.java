@@ -100,16 +100,16 @@ public class ManagementConsoleMessages
 
     /**
      * Log a ManagementConsole message of the Format:
-     * <pre>MNG-1002 : Starting : {0} : Listening on port {1,number,#}</pre>
+     * <pre>MNG-1002 : Starting : {0} : Listening on {1} port {2,number,#}</pre>
      * Optional values are contained in [square brackets] and are numbered
      * sequentially in the method call.
      *
      */
-    public static LogMessage LISTENING(String param1, Number param2)
+    public static LogMessage LISTENING(String param1, String param2, Number param3)
     {
         String rawMessage = _messages.getString("LISTENING");
 
-        final Object[] messageArguments = {param1, param2};
+        final Object[] messageArguments = {param1, param2, param3};
         // Create a new MessageFormat to ensure thread safety.
         // Sharing a MessageFormat and using applyPattern is not thread safe
         MessageFormat formatter = new MessageFormat(rawMessage, _currentLocale);
