@@ -68,7 +68,8 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
     private String _certificateAlias;
     @ManagedAttributeField
     private String _keyManagerFactoryAlgorithm;
-    @ManagedAttributeField
+    @ManagedAttributeField(afterSet = "postSetStoreUrl")
+    private String _storeUrl;
     private String _path;
     @ManagedAttributeField
     private String _password;
@@ -162,7 +163,7 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
         java.security.KeyStore keyStore;
         try
         {
-            URL url = getUrlFromString(fileKeyStore.getPath());
+            URL url = getUrlFromString(fileKeyStore.getStoreUrl());
             String password = fileKeyStore.getPassword();
             String keyStoreType = fileKeyStore.getKeyStoreType();
             keyStore = SSLUtil.getInitializedKeyStore(url, password, keyStoreType);
@@ -173,11 +174,11 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
             final String message;
             if (e instanceof IOException && e.getCause() != null && e.getCause() instanceof UnrecoverableKeyException)
             {
-                message = "Check key store password. Cannot instantiate key store from '" + fileKeyStore.getPath() + "'.";
+                message = "Check key store password. Cannot instantiate key store from '" + fileKeyStore.getStoreUrl() + "'.";
             }
             else
             {
-                message = "Cannot instantiate key store from '" + fileKeyStore.getPath() + "'.";
+                message = "Cannot instantiate key store from '" + fileKeyStore.getStoreUrl() + "'.";
             }
 
             throw new IllegalConfigurationException(message, e);
@@ -198,7 +199,7 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
             if (cert == null)
             {
                 throw new IllegalConfigurationException("Cannot find a certificate with alias '" + fileKeyStore.getCertificateAlias()
-                        + "' in key store : " + fileKeyStore.getPath());
+                        + "' in key store : " + fileKeyStore.getStoreUrl());
             }
         }
 
@@ -216,6 +217,12 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
         }
+    }
+
+    @Override
+    public String getStoreUrl()
+    {
+        return _storeUrl;
     }
 
     @Override
@@ -258,7 +265,7 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
 
         try
         {
-            URL url = getUrlFromString(_path);
+            URL url = getUrlFromString(_storeUrl);
             if (_certificateAlias != null)
             {
                 return new KeyManager[] {
@@ -300,5 +307,19 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
 
         }
         return url;
+    }
+
+    @SuppressWarnings(value = "unused")
+    private void postSetStoreUrl()
+    {
+        try
+        {
+            new URL(_storeUrl);
+            _path = null;
+        }
+        catch (MalformedURLException e)
+        {
+            _path = _storeUrl;
+        }
     }
 }

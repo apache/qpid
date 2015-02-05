@@ -127,7 +127,7 @@ public class TrustStoreRestTest extends QpidRestTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(TrustStore.NAME, name);
-        attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
+        attributes.put(FileTrustStore.STORE_URL, TestSSLConstants.TRUSTSTORE);
 
         getRestTestHelper().submitRequest("truststore/" + name , "PUT", attributes, HttpServletResponse.SC_OK);
 
@@ -151,7 +151,7 @@ public class TrustStoreRestTest extends QpidRestTestCase
         Map<String, Object> trustStoreAttributes = new HashMap<String, Object>();
         trustStoreAttributes.put(TrustStore.NAME, name);
         //deliberately using the client trust store to differentiate from the one we are already for broker
-        trustStoreAttributes.put(FileTrustStore.PATH, truststorePath);
+        trustStoreAttributes.put(FileTrustStore.STORE_URL, truststorePath);
         trustStoreAttributes.put(FileTrustStore.PASSWORD, truststorePassword);
         trustStoreAttributes.put(FileTrustStore.PEERS_ONLY, peersOnly);
 
@@ -163,7 +163,7 @@ public class TrustStoreRestTest extends QpidRestTestCase
         assertEquals("default systests trust store is missing",
                 name, truststore.get(TrustStore.NAME));
         assertEquals("unexpected path to trust store",
-                path, truststore.get(FileTrustStore.PATH));
+                path, truststore.get(FileTrustStore.STORE_URL));
         assertEquals("unexpected (dummy) password of default systests trust store",
                      AbstractConfiguredObject.SECURED_STRING_VALUE, truststore.get(FileTrustStore.PASSWORD));
         assertEquals("unexpected type of default systests trust store",

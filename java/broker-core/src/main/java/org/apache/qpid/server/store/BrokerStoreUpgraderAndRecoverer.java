@@ -245,8 +245,26 @@ public class BrokerStoreUpgraderAndRecoverer
             {
                 record = upgradeRootRecord(record);
             }
+            else if("KeyStore".equals(record.getType()))
+            {
+                record = upgradeKeyStore(record);
+            }
+            else if("TrustStore".equals(record.getType()))
+            {
+                record = upgradeKeyStore(record);
+            }
 
             getNextUpgrader().configuredObject(record);
+        }
+
+        private ConfiguredObjectRecord upgradeKeyStore(ConfiguredObjectRecord record)
+        {
+            Map<String, Object> attributes = new HashMap<>(record.getAttributes());
+            Object path = attributes.remove("path");
+            attributes.put("storeUrl", path);
+            record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), attributes, record.getParents());
+            getUpdateMap().put(record.getId(), record);
+            return record;
         }
 
         private boolean isAmqpPort(final Map<String, Object> attributes)

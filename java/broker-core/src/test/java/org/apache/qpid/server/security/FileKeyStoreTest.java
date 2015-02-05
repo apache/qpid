@@ -69,7 +69,7 @@ public class FileKeyStoreTest extends QpidTestCase
     {
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
-        attributes.put(FileKeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
+        attributes.put(FileKeyStore.STORE_URL, TestSSLConstants.BROKER_KEYSTORE);
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
 
         FileKeyStoreImpl fileKeyStore = (FileKeyStoreImpl) _factory.create(KeyStore.class, attributes,  _broker);
@@ -84,7 +84,7 @@ public class FileKeyStoreTest extends QpidTestCase
     {
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
-        attributes.put(FileKeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
+        attributes.put(FileKeyStore.STORE_URL, TestSSLConstants.BROKER_KEYSTORE);
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
         attributes.put(FileKeyStore.CERTIFICATE_ALIAS, TestSSLConstants.BROKER_KEYSTORE_ALIAS);
 
@@ -100,7 +100,7 @@ public class FileKeyStoreTest extends QpidTestCase
     {
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
-        attributes.put(FileKeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
+        attributes.put(FileKeyStore.STORE_URL, TestSSLConstants.BROKER_KEYSTORE);
         attributes.put(FileKeyStore.PASSWORD, "wrong");
 
         try
@@ -119,7 +119,7 @@ public class FileKeyStoreTest extends QpidTestCase
     {
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
-        attributes.put(FileKeyStore.PATH, TestSSLConstants.KEYSTORE);
+        attributes.put(FileKeyStore.STORE_URL, TestSSLConstants.KEYSTORE);
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
         attributes.put(FileKeyStore.CERTIFICATE_ALIAS, "notknown");
 
@@ -141,7 +141,7 @@ public class FileKeyStoreTest extends QpidTestCase
 
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
-        attributes.put(FileKeyStore.PATH, trustStoreAsDataUrl);
+        attributes.put(FileKeyStore.STORE_URL, trustStoreAsDataUrl);
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
 
         FileKeyStoreImpl fileKeyStore = (FileKeyStoreImpl) _factory.create(KeyStore.class, attributes,  _broker);
@@ -158,7 +158,7 @@ public class FileKeyStoreTest extends QpidTestCase
 
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
-        attributes.put(FileKeyStore.PATH, trustStoreAsDataUrl);
+        attributes.put(FileKeyStore.STORE_URL, trustStoreAsDataUrl);
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
         attributes.put(FileKeyStore.CERTIFICATE_ALIAS, TestSSLConstants.BROKER_KEYSTORE_ALIAS);
 
@@ -177,7 +177,7 @@ public class FileKeyStoreTest extends QpidTestCase
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
         attributes.put(FileKeyStore.PASSWORD, "wrong");
-        attributes.put(FileKeyStore.PATH, keyStoreAsDataUrl);
+        attributes.put(FileKeyStore.STORE_URL, keyStoreAsDataUrl);
 
         try
         {
@@ -198,7 +198,7 @@ public class FileKeyStoreTest extends QpidTestCase
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
-        attributes.put(FileKeyStore.PATH, keyStoreAsDataUrl);
+        attributes.put(FileKeyStore.STORE_URL, keyStoreAsDataUrl);
 
         try
         {
@@ -220,7 +220,7 @@ public class FileKeyStoreTest extends QpidTestCase
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
-        attributes.put(FileKeyStore.PATH, keyStoreAsDataUrl);
+        attributes.put(FileKeyStore.STORE_URL, keyStoreAsDataUrl);
         attributes.put(FileKeyStore.CERTIFICATE_ALIAS, "notknown");
 
         try
@@ -242,7 +242,7 @@ public class FileKeyStoreTest extends QpidTestCase
 
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
-        attributes.put(FileKeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
+        attributes.put(FileKeyStore.STORE_URL, TestSSLConstants.BROKER_KEYSTORE);
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
 
         FileKeyStoreImpl fileKeyStore = (FileKeyStoreImpl) _factory.create(KeyStore.class, attributes,  _broker);
@@ -283,7 +283,7 @@ public class FileKeyStoreTest extends QpidTestCase
 
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
-        attributes.put(FileKeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
+        attributes.put(FileKeyStore.STORE_URL, TestSSLConstants.BROKER_KEYSTORE);
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
 
         FileKeyStoreImpl fileKeyStore = (FileKeyStoreImpl) _factory.create(KeyStore.class, attributes,  _broker);
@@ -299,7 +299,7 @@ public class FileKeyStoreTest extends QpidTestCase
 
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
-        attributes.put(FileKeyStore.PATH, TestSSLConstants.BROKER_KEYSTORE);
+        attributes.put(FileKeyStore.STORE_URL, TestSSLConstants.BROKER_KEYSTORE);
         attributes.put(FileKeyStore.PASSWORD, TestSSLConstants.BROKER_KEYSTORE_PASSWORD);
 
         FileKeyStoreImpl fileKeyStore = (FileKeyStoreImpl) _factory.create(KeyStore.class, attributes,  _broker);

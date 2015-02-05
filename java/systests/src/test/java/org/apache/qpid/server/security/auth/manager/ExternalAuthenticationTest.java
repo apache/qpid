@@ -203,7 +203,7 @@ public class ExternalAuthenticationTest extends QpidBrokerTestCase
         //add the peersOnly store to the config
         Map<String, Object> sslTrustStoreAttributes = new HashMap<String, Object>();
         sslTrustStoreAttributes.put(TrustStore.NAME, peerStoreName);
-        sslTrustStoreAttributes.put(FileTrustStore.PATH, BROKER_PEERSTORE);
+        sslTrustStoreAttributes.put(FileTrustStore.STORE_URL, BROKER_PEERSTORE);
         sslTrustStoreAttributes.put(FileTrustStore.PASSWORD, BROKER_PEERSTORE_PASSWORD);
         sslTrustStoreAttributes.put(FileTrustStore.PEERS_ONLY, true);
         getBrokerConfiguration().addObjectConfiguration(TrustStore.class, sslTrustStoreAttributes);

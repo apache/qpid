@@ -183,7 +183,7 @@ public class BrokerACLTest extends QpidRestTestCase
         assertEquals("Setting of provider attribites should be allowed", 403, responseCode);
 
         Map<String, Object> provider = getRestTestHelper().getJsonAsSingletonList("authenticationprovider/" + providerName);
-        assertEquals("Unexpected PATH attribute value",
+        assertEquals("Unexpected STORE_URL attribute value",
                 providerData.get(ExternalFileBasedAuthenticationManager.PATH),
                 provider.get(ExternalFileBasedAuthenticationManager.PATH));
     }
@@ -922,7 +922,7 @@ public class BrokerACLTest extends QpidRestTestCase
     {
         Map<String, Object> keyStoreAttributes = new HashMap<String, Object>();
         keyStoreAttributes.put(KeyStore.NAME, name);
-        keyStoreAttributes.put(FileKeyStore.PATH, TestSSLConstants.KEYSTORE);
+        keyStoreAttributes.put(FileKeyStore.STORE_URL, TestSSLConstants.KEYSTORE);
         keyStoreAttributes.put(FileKeyStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
         keyStoreAttributes.put(FileKeyStore.CERTIFICATE_ALIAS, certAlias);
 
@@ -933,7 +933,7 @@ public class BrokerACLTest extends QpidRestTestCase
     {
         Map<String, Object> trustStoreAttributes = new HashMap<String, Object>();
         trustStoreAttributes.put(TrustStore.NAME, name);
-        trustStoreAttributes.put(FileTrustStore.PATH, TestSSLConstants.KEYSTORE);
+        trustStoreAttributes.put(FileTrustStore.STORE_URL, TestSSLConstants.KEYSTORE);
         trustStoreAttributes.put(FileTrustStore.PASSWORD, TestSSLConstants.KEYSTORE_PASSWORD);
         trustStoreAttributes.put(FileTrustStore.PEERS_ONLY, peersOnly);
 

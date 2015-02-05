@@ -73,7 +73,7 @@ public class FileTrustStoreTest extends QpidTestCase
     {
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileTrustStore.NAME, "myFileTrustStore");
-        attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
+        attributes.put(FileTrustStore.STORE_URL, TestSSLConstants.TRUSTSTORE);
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
 
         FileTrustStoreImpl fileTrustStore =
@@ -89,7 +89,7 @@ public class FileTrustStoreTest extends QpidTestCase
     {
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileTrustStore.NAME, "myFileTrustStore");
-        attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
+        attributes.put(FileTrustStore.STORE_URL, TestSSLConstants.TRUSTSTORE);
         attributes.put(FileTrustStore.PASSWORD, "wrong");
 
         try
@@ -108,7 +108,7 @@ public class FileTrustStoreTest extends QpidTestCase
     {
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileTrustStore.NAME, "myFileTrustStore");
-        attributes.put(FileTrustStore.PATH, TestSSLConstants.BROKER_PEERSTORE);
+        attributes.put(FileTrustStore.STORE_URL, TestSSLConstants.BROKER_PEERSTORE);
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.BROKER_PEERSTORE_PASSWORD);
         attributes.put(FileTrustStore.PEERS_ONLY, true);
 
@@ -129,7 +129,7 @@ public class FileTrustStoreTest extends QpidTestCase
 
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileTrustStore.NAME, "myFileTrustStore");
-        attributes.put(FileTrustStore.PATH, trustStoreAsDataUrl);
+        attributes.put(FileTrustStore.STORE_URL, trustStoreAsDataUrl);
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
 
         FileTrustStoreImpl fileTrustStore =
@@ -148,7 +148,7 @@ public class FileTrustStoreTest extends QpidTestCase
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileTrustStore.NAME, "myFileTrustStore");
         attributes.put(FileTrustStore.PASSWORD, "wrong");
-        attributes.put(FileTrustStore.PATH, trustStoreAsDataUrl);
+        attributes.put(FileTrustStore.STORE_URL, trustStoreAsDataUrl);
 
         try
         {
@@ -169,7 +169,7 @@ public class FileTrustStoreTest extends QpidTestCase
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileTrustStore.NAME, "myFileTrustStore");
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
-        attributes.put(FileTrustStore.PATH, trustStoreAsDataUrl);
+        attributes.put(FileTrustStore.STORE_URL, trustStoreAsDataUrl);
 
         try
         {
@@ -191,18 +191,18 @@ public class FileTrustStoreTest extends QpidTestCase
 
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileTrustStore.NAME, "myFileTrustStore");
-        attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
+        attributes.put(FileTrustStore.STORE_URL, TestSSLConstants.TRUSTSTORE);
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
 
         FileTrustStoreImpl fileTrustStore =
                 (FileTrustStoreImpl) _factory.create(TrustStore.class, attributes,  _broker);
 
-        assertEquals("Unexpected path value before change", TestSSLConstants.TRUSTSTORE, fileTrustStore.getPath());
+        assertEquals("Unexpected path value before change", TestSSLConstants.TRUSTSTORE, fileTrustStore.getStoreUrl());
 
         try
         {
             Map<String,Object> unacceptableAttributes = new HashMap<>();
-            unacceptableAttributes.put(FileTrustStore.PATH, "/not/a/truststore");
+            unacceptableAttributes.put(FileTrustStore.STORE_URL, "/not/a/truststore");
 
             fileTrustStore.setAttributes(unacceptableAttributes);
             fail("Exception not thrown");
@@ -213,17 +213,17 @@ public class FileTrustStoreTest extends QpidTestCase
             assertTrue("Exception text not as unexpected:" + message, message.contains("Cannot instantiate trust store"));
         }
 
-        assertEquals("Unexpected path value after failed change", TestSSLConstants.TRUSTSTORE, fileTrustStore.getPath());
+        assertEquals("Unexpected path value after failed change", TestSSLConstants.TRUSTSTORE, fileTrustStore.getStoreUrl());
 
         Map<String,Object> changedAttributes = new HashMap<>();
-        changedAttributes.put(FileTrustStore.PATH, TestSSLConstants.BROKER_TRUSTSTORE);
+        changedAttributes.put(FileTrustStore.STORE_URL, TestSSLConstants.BROKER_TRUSTSTORE);
         changedAttributes.put(FileTrustStore.PASSWORD, TestSSLConstants.BROKER_TRUSTSTORE_PASSWORD);
 
         fileTrustStore.setAttributes(changedAttributes);
 
         assertEquals("Unexpected path value after change that is expected to be successful",
                      TestSSLConstants.BROKER_TRUSTSTORE,
-                     fileTrustStore.getPath());
+                     fileTrustStore.getStoreUrl());
     }
 
     public void testDeleteTrustStore_Success() throws Exception
@@ -233,7 +233,7 @@ public class FileTrustStoreTest extends QpidTestCase
 
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileTrustStore.NAME, "myFileTrustStore");
-        attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
+        attributes.put(FileTrustStore.STORE_URL, TestSSLConstants.TRUSTSTORE);
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
 
         FileTrustStoreImpl fileTrustStore =
@@ -250,7 +250,7 @@ public class FileTrustStoreTest extends QpidTestCase
 
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileTrustStore.NAME, "myFileTrustStore");
-        attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
+        attributes.put(FileTrustStore.STORE_URL, TestSSLConstants.TRUSTSTORE);
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
 
         FileTrustStoreImpl fileTrustStore =
@@ -281,7 +281,7 @@ public class FileTrustStoreTest extends QpidTestCase
 
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileTrustStore.NAME, "myFileTrustStore");
-        attributes.put(FileTrustStore.PATH, TestSSLConstants.TRUSTSTORE);
+        attributes.put(FileTrustStore.STORE_URL, TestSSLConstants.TRUSTSTORE);
         attributes.put(FileTrustStore.PASSWORD, TestSSLConstants.TRUSTSTORE_PASSWORD);
 
         FileTrustStoreImpl fileTrustStore =

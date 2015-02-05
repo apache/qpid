@@ -52,8 +52,12 @@ public class KeyStoreRestTest extends QpidRestTestCase
         List<Map<String, Object>> keyStores = assertNumberOfKeyStores(1);
 
         Map<String, Object> keystore = keyStores.get(0);
-        assertKeyStoreAttributes(keystore, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE,
-                QPID_HOME + "/../" + TestSSLConstants.BROKER_KEYSTORE, null);
+
+        assertEquals("Unexpected name", TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE, keystore.get(KeyStore.NAME));
+        assertEquals("unexpected path to key store", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.STORE_URL));
+        assertEquals("unexpected (dummy) password of default systests key store", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.PASSWORD));
+        assertEquals("unexpected type of default systests key store", java.security.KeyStore.getDefaultType(), keystore.get(FileKeyStore.KEY_STORE_TYPE));
+        assertFalse("should not be a certificateAlias attribute", keystore.containsKey(FileKeyStore.CERTIFICATE_ALIAS));
     }
 
     public void testCreate() throws Exception
@@ -67,10 +71,14 @@ public class KeyStoreRestTest extends QpidRestTestCase
         createKeyStore(name, certAlias, TestSSLConstants.KEYSTORE, TestSSLConstants.KEYSTORE_PASSWORD);
         assertNumberOfKeyStores(2);
 
-        List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("keystore/" + name);
+        List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("keystore/" + name + "?actuals=true");
         assertNotNull("details cannot be null", keyStores);
 
-        assertKeyStoreAttributes(keyStores.get(0), name, TestSSLConstants.KEYSTORE, certAlias);
+        Map<String, Object> keystore = keyStores.get(0);
+        assertEquals("Unexpected name", name, keystore.get(KeyStore.NAME));
+        assertEquals("unexpected path to key store", TestSSLConstants.KEYSTORE, keystore.get(FileKeyStore.STORE_URL));
+        assertEquals("unexpected password", TestSSLConstants.KEYSTORE_PASSWORD, keystore.get(FileKeyStore.PASSWORD));
+        assertEquals("unexpected alias", certAlias, keystore.get(FileKeyStore.CERTIFICATE_ALIAS));
     }
 
     public void testCreateWithDataUrl() throws Exception
@@ -85,10 +93,14 @@ public class KeyStoreRestTest extends QpidRestTestCase
         createKeyStore(name, null, dataUrlForKeyStore, TestSSLConstants.KEYSTORE_PASSWORD);
         assertNumberOfKeyStores(2);
 
-        List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("keystore/" + name);
+        List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("keystore/" + name + "?actuals=true");
         assertNotNull("details cannot be null", keyStores);
 
-        assertKeyStoreAttributes(keyStores.get(0), name, dataUrlForKeyStore, null);
+        Map<String, Object> keystore = keyStores.get(0);
+        assertEquals("Unexpected name", name, keystore.get(KeyStore.NAME));
+        assertEquals("unexpected data", dataUrlForKeyStore, keystore.get(FileKeyStore.STORE_URL));
+        assertEquals("unexpected password", TestSSLConstants.KEYSTORE_PASSWORD, keystore.get(FileKeyStore.PASSWORD));
+        assertEquals("unexpected alias", null, keystore.get(FileKeyStore.CERTIFICATE_ALIAS));
     }
 
     public void testDelete() throws Exception
@@ -104,15 +116,17 @@ public class KeyStoreRestTest extends QpidRestTestCase
 
         getRestTestHelper().submitRequest("keystore/" + name, "DELETE", HttpServletResponse.SC_OK);
 
-        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
+        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("keystore/" + name + "?actuals=true");
         assertNotNull("details should not be null", keyStore);
         assertTrue("details should be empty as the keystore no longer exists", keyStore.isEmpty());
 
         //check only the default systests key store remains
         List<Map<String, Object>> keyStores = assertNumberOfKeyStores(1);
         Map<String, Object> keystore = keyStores.get(0);
-        assertKeyStoreAttributes(keystore, TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE,
-                QPID_HOME + "/../" + TestSSLConstants.BROKER_KEYSTORE, null);
+        assertEquals("Unexpected name", TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE, keystore.get(KeyStore.NAME));
+        assertEquals("unexpected path to key store", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.STORE_URL));
+        assertEquals("unexpected (dummy) password of default systests key store", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.PASSWORD));
+        assertFalse("should not be a certificateAlias attribute", keystore.containsKey(FileKeyStore.CERTIFICATE_ALIAS));
     }
 
     public void testUpdate() throws Exception
@@ -127,14 +141,18 @@ public class KeyStoreRestTest extends QpidRestTestCase
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(KeyStore.NAME, name);
-        attributes.put(FileKeyStore.PATH, TestSSLConstants.UNTRUSTED_KEYSTORE);
+        attributes.put(FileKeyStore.STORE_URL, TestSSLConstants.UNTRUSTED_KEYSTORE);
 
         getRestTestHelper().submitRequest("keystore/" + name, "PUT", attributes, HttpServletResponse.SC_OK);
 
-        List<Map<String, Object>> keyStore = getRestTestHelper().getJsonAsList("keystore/" + name);
-        assertNotNull("details should not be null", keyStore);
+        List<Map<String, Object>> keyStores = getRestTestHelper().getJsonAsList("keystore/" + name + "?actuals=true");
+        assertNotNull("details should not be null", keyStores);
 
-        assertKeyStoreAttributes(keyStore.get(0), name, TestSSLConstants.UNTRUSTED_KEYSTORE, null);
+        Map<String, Object> keystore = keyStores.get(0);
+        assertEquals("Unexpected name", name, keystore.get(KeyStore.NAME));
+        assertEquals("unexpected data", TestSSLConstants.UNTRUSTED_KEYSTORE, keystore.get(FileKeyStore.STORE_URL));
+        assertEquals("unexpected password", TestSSLConstants.KEYSTORE_PASSWORD, keystore.get(FileKeyStore.PASSWORD));
+        assertEquals("unexpected alias", null, keystore.get(FileKeyStore.CERTIFICATE_ALIAS));
     }
 
 
@@ -151,7 +169,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
     {
         Map<String, Object> keyStoreAttributes = new HashMap<>();
         keyStoreAttributes.put(KeyStore.NAME, name);
-        keyStoreAttributes.put(FileKeyStore.PATH, keyStorePath);
+        keyStoreAttributes.put(FileKeyStore.STORE_URL, keyStorePath);
         keyStoreAttributes.put(FileKeyStore.PASSWORD, keystorePassword);
         if (certAlias != null)
         {
@@ -161,26 +179,4 @@ public class KeyStoreRestTest extends QpidRestTestCase
         getRestTestHelper().submitRequest("keystore/" + name, "PUT", keyStoreAttributes, HttpServletResponse.SC_CREATED);
     }
 
-    private void assertKeyStoreAttributes(Map<String, Object> keystore, String name, String path, String certAlias)
-    {
-        assertEquals("default systests key store is missing",
-                name, keystore.get(KeyStore.NAME));
-        assertEquals("unexpected path to key store",
-                path, keystore.get(FileKeyStore.PATH));
-        assertEquals("unexpected (dummy) password of default systests key store",
-                     AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.PASSWORD));
-        assertEquals("unexpected type of default systests key store",
-                java.security.KeyStore.getDefaultType(), keystore.get(FileKeyStore.KEY_STORE_TYPE));
-        if(certAlias == null)
-        {
-            assertFalse("should not be a certificateAlias attribute",
-                            keystore.containsKey(FileKeyStore.CERTIFICATE_ALIAS));
-        }
-        else
-        {
-            assertEquals("unexpected certificateAlias value",
-                         certAlias, keystore.get(FileKeyStore.CERTIFICATE_ALIAS));
-
-        }
-    }
 }

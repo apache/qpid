@@ -64,7 +64,8 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     private String _trustStoreType;
     @ManagedAttributeField
     private String _trustManagerFactoryAlgorithm;
-    @ManagedAttributeField
+    @ManagedAttributeField(afterSet = "postSetStoreUrl")
+    private String _storeUrl;
     private String _path;
     @ManagedAttributeField
     private boolean _peersOnly;
@@ -193,7 +194,7 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     {
         try
         {
-            URL trustStoreUrl = getUrlFromString(trustStore.getPath());
+            URL trustStoreUrl = getUrlFromString(trustStore.getStoreUrl());
             SSLUtil.getInitializedKeyStore(trustStoreUrl, trustStore.getPassword(), trustStore.getTrustStoreType());
         }
         catch (Exception e)
@@ -201,11 +202,11 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
             final String message;
             if (e instanceof IOException && e.getCause() != null && e.getCause() instanceof UnrecoverableKeyException)
             {
-                message = "Check trust store password. Cannot instantiate trust store from '" + trustStore.getPath() + "'.";
+                message = "Check trust store password. Cannot instantiate trust store from '" + trustStore.getStoreUrl() + "'.";
             }
             else
             {
-                message = "Cannot instantiate trust store from '" + trustStore.getPath() + "'.";
+                message = "Cannot instantiate trust store from '" + trustStore.getStoreUrl() + "'.";
             }
 
             throw new IllegalConfigurationException(message, e);
@@ -219,6 +220,12 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
         {
             throw new IllegalConfigurationException("Unknown trustManagerFactoryAlgorithm: " + trustStore.getTrustManagerFactoryAlgorithm());
         }
+    }
+
+    @Override
+    public String getStoreUrl()
+    {
+        return _storeUrl;
     }
 
     @Override
@@ -263,7 +270,7 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
 
         try
         {
-            URL trustStoreUrl = getUrlFromString(_path);
+            URL trustStoreUrl = getUrlFromString(_storeUrl);
 
             KeyStore ts = SSLUtil.getInitializedKeyStore(trustStoreUrl, trustStorePassword, trustStoreType);
             final TrustManagerFactory tmf = TrustManagerFactory
@@ -328,4 +335,17 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
         return url;
     }
 
+    @SuppressWarnings(value = "unused")
+    private void postSetStoreUrl()
+    {
+        try
+        {
+            new URL(_storeUrl);
+            _path = null;
+        }
+        catch (MalformedURLException e)
+        {
+            _path = _storeUrl;
+        }
+    }
 }

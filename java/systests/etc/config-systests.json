@@ -29,12 +29,12 @@
   } ],
   "keystores" : [ {
     "name" : "systestsKeyStore",
-    "path" : "${QPID_HOME}${file.separator}..${file.separator}test-profiles${file.separator}test_resources${file.separator}ssl${file.separator}java_broker_keystore.jks",
+    "storeUrl" : "${QPID_HOME}${file.separator}..${file.separator}test-profiles${file.separator}test_resources${file.separator}ssl${file.separator}java_broker_keystore.jks",
     "password" : "password"
   } ],
   "truststores" : [ {
     "name" : "systestsTrustStore",
-    "path" : "${QPID_HOME}${file.separator}..${file.separator}test-profiles${file.separator}test_resources${file.separator}ssl${file.separator}java_broker_truststore.jks",
+    "storeUrl" : "${QPID_HOME}${file.separator}..${file.separator}test-profiles${file.separator}test_resources${file.separator}ssl${file.separator}java_broker_truststore.jks",
     "password" : "password"
   } ],
   "ports" : [  {
