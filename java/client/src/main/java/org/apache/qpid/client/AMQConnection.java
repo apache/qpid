@@ -64,6 +64,7 @@ import org.apache.qpid.AMQUnresolvedAddressException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.security.CallbackHandlerRegistry;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -192,6 +193,17 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private boolean _compressMessages;
     private int _messageCompressionThresholdSize;
 
+    static
+    {
+        // The registering of any additional SASL mechanisms with the Java Security API requires
+        // SecurityManager permissions.  In execution environments such as web containers,
+        // this may require adjustments to the Java security.policy.
+        CallbackHandlerRegistry registry = CallbackHandlerRegistry.getInstance();
+        if (_logger.isDebugEnabled())
+        {
+           _logger.debug("Loaded mechanisms " + registry.getMechanisms());
+        }
+    }
     /**
      * @param broker      brokerdetails
      * @param username    username
