@@ -42,6 +42,7 @@ import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.StringUtil;
 import org.apache.qpid.util.FileUtils;
 
 /**
@@ -50,6 +51,8 @@ import org.apache.qpid.util.FileUtils;
  */
 public class Main
 {
+    private static final int MANAGEMENT_MODE_PASSWORD_LENGTH = 10;
+
     private static final Option OPTION_HELP = new Option("h", "help", false, "print this message");
 
     private static final Option OPTION_VERSION = new Option("v", "version", false, "print the version information and exit");
@@ -305,10 +308,11 @@ public class Main
                 options.setManagementModeQuiesceVirtualHosts(quiesceVhosts);
 
                 String password = _commandLine.getOptionValue(OPTION_MM_PASSWORD.getOpt());
-                if (password != null)
+                if (password == null)
                 {
-                    options.setManagementModePassword(password);
+                    password = new StringUtil().randomAlphaNumericString(MANAGEMENT_MODE_PASSWORD_LENGTH);
                 }
+                options.setManagementModePassword(password);
             }
             setExceptionHandler();
 
