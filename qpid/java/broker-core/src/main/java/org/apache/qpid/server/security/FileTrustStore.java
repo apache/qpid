@@ -22,6 +22,7 @@ package org.apache.qpid.server.security;
 
 import javax.net.ssl.KeyManagerFactory;
 
+import org.apache.qpid.server.model.DerivedAttribute;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedContextDefault;
 import org.apache.qpid.server.model.ManagedObject;
@@ -35,7 +36,7 @@ public interface FileTrustStore<X extends FileTrustStore<X>> extends TrustStore<
     String PEERS_ONLY = "peersOnly";
     String TRUST_STORE_TYPE = "trustStoreType";
     String PASSWORD = "password";
-    String PATH = "path";
+    String STORE_URL = "storeUrl";
     @ManagedContextDefault(name = "trustStoreFile.trustStoreType")
     RuntimeDefault<String> DEFAULT_TRUSTSTORE_TYPE =
             new RuntimeDefault<String>()
@@ -58,10 +59,13 @@ public interface FileTrustStore<X extends FileTrustStore<X>> extends TrustStore<
             };
 
 
-    @ManagedAttribute(defaultValue = "${this:path}")
+    @ManagedAttribute(defaultValue = "${this:storeUrl}")
     String getDescription();
 
     @ManagedAttribute( mandatory = true )
+    String getStoreUrl();
+
+    @DerivedAttribute
     String getPath();
 
     @ManagedAttribute( defaultValue = "${trustStoreFile.trustManagerFactoryAlgorithm}")

@@ -22,6 +22,7 @@ package org.apache.qpid.server.security;
 
 import javax.net.ssl.KeyManagerFactory;
 
+import org.apache.qpid.server.model.DerivedAttribute;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedContextDefault;
@@ -35,7 +36,8 @@ public interface FileKeyStore<X extends FileKeyStore<X>> extends KeyStore<X>
     String CERTIFICATE_ALIAS = "certificateAlias";
     String KEY_STORE_TYPE = "keyStoreType";
     String PASSWORD = "password";
-    String PATH = "path";
+    String STORE_URL = "storeUrl";
+
     @ManagedContextDefault(name = "keyStoreFile.keyStoreType")
     RuntimeDefault<String> DEFAULT_KEYSTORE_TYPE =
             new RuntimeDefault<String>()
@@ -60,7 +62,10 @@ public interface FileKeyStore<X extends FileKeyStore<X>> extends KeyStore<X>
     @ManagedAttribute(defaultValue = "${this:path}")
     String getDescription();
 
-    @ManagedAttribute(  mandatory = true)
+    @ManagedAttribute(  mandatory = true, secure = true)
+    String getStoreUrl();
+
+    @DerivedAttribute
     String getPath();
 
     @ManagedAttribute
