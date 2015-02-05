@@ -413,7 +413,7 @@
         </row>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-MNG-1002">
           <entry morerows="1">MNG-1002</entry>
-          <entry>Starting : <replaceable>type</replaceable> : Listening on port
+          <entry>Starting : <replaceable>type</replaceable> : Listening on <replaceable>transporttype</replaceable> port
               <replaceable>port</replaceable>
           </entry>
         </row>
@@ -448,16 +448,6 @@
         <row>
           <entry>
             <para>Indicates that a Management plugin is stopped.</para>
-          </entry>
-        </row>
-        <row id="Java-Broker-Appendix-Operation-Logging-Message-MNG-1006">
-          <entry morerows="1">MNG-1006</entry>
-          <entry>Using SSL Keystore : <replaceable>file</replaceable></entry>
-        </row>
-        <row>
-          <entry>
-            <para>Indicates that a Management transport is secured by SSL and using the given
-              keystore file.</para>
           </entry>
         </row>
         <row id="Java-Broker-Appendix-Operation-Logging-Message-MNG-1007">
