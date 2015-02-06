@@ -62,7 +62,7 @@ public interface FileTrustStore<X extends FileTrustStore<X>> extends TrustStore<
     @ManagedAttribute(defaultValue = "${this:storeUrl}")
     String getDescription();
 
-    @ManagedAttribute( mandatory = true )
+    @ManagedAttribute( mandatory = true, oversize = true, oversizedAltText = OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT)
     String getStoreUrl();
 
     @DerivedAttribute

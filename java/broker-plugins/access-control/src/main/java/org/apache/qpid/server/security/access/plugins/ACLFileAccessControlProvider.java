@@ -27,6 +27,6 @@ import org.apache.qpid.server.model.ManagedObject;
 @ManagedObject( category = false, type="AclFile" )
 public interface ACLFileAccessControlProvider<X extends ACLFileAccessControlProvider<X>> extends AccessControlProvider<X>
 {
-    @ManagedAttribute( mandatory = true, description = "File location" )
+    @ManagedAttribute( mandatory = true, description = "File location", oversize = true, oversizedAltText = OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT)
     String getPath();
 }

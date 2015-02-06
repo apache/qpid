@@ -31,13 +31,13 @@ public interface NonJavaKeyStore<X extends NonJavaKeyStore<X>> extends KeyStore<
     @ManagedAttribute(defaultValue = "${this:subjectName}")
     String getDescription();
 
-    @ManagedAttribute( mandatory = true, secure = true )
+    @ManagedAttribute( mandatory = true, secure = true, oversize = true, oversizedAltText = OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT )
     String getPrivateKeyUrl();
 
-    @ManagedAttribute( mandatory = true )
+    @ManagedAttribute( mandatory = true, oversize = true, oversizedAltText = OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT )
     String getCertificateUrl();
 
-    @ManagedAttribute
+    @ManagedAttribute( oversize = true, oversizedAltText = OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT )
     String getIntermediateCertificateUrl();
 
     @DerivedAttribute

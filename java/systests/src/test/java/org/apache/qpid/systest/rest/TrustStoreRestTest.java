@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.FileTrustStore;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -36,6 +37,7 @@ import org.apache.qpid.util.FileUtils;
 
 public class TrustStoreRestTest extends QpidRestTestCase
 {
+
     @Override
     public void setUp() throws Exception
     {
@@ -51,8 +53,14 @@ public class TrustStoreRestTest extends QpidRestTestCase
         List<Map<String, Object>> trustStores = assertNumberOfTrustStores(1);
 
         Map<String, Object> truststore = trustStores.get(0);
-        assertTrustStoreAttributes(truststore, TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE,
-                QPID_HOME + "/../" + TestSSLConstants.BROKER_TRUSTSTORE, false);
+        assertEquals("default systests trust store is missing",
+                TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE, truststore.get(TrustStore.NAME));
+        assertEquals("unexpected store URL", ConfiguredObject.OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT, truststore.get(FileTrustStore.STORE_URL));
+        assertEquals("unexpected (dummy) password of default systests trust store",
+                     AbstractConfiguredObject.SECURED_STRING_VALUE, truststore.get(FileTrustStore.PASSWORD));
+        assertEquals("unexpected type of default systests trust store",
+                java.security.KeyStore.getDefaultType(), truststore.get(FileTrustStore.TRUST_STORE_TYPE));
+        assertEquals("unexpected peersOnly value", false, truststore.get(FileTrustStore.PEERS_ONLY));
     }
 
     public void testCreate() throws Exception
@@ -68,7 +76,12 @@ public class TrustStoreRestTest extends QpidRestTestCase
         List<Map<String, Object>> trustStores = getRestTestHelper().getJsonAsList("truststore/" + name);
         assertNotNull("details cannot be null", trustStores);
 
-        assertTrustStoreAttributes(trustStores.get(0), name, TestSSLConstants.TRUSTSTORE, true);
+        Map<String, Object> truststore = trustStores.get(0);
+        assertEquals("unexpected trust store name", name, truststore.get(TrustStore.NAME));
+        assertEquals("unexpected store URL", TestSSLConstants.TRUSTSTORE, truststore.get(FileTrustStore.STORE_URL));
+        assertEquals("unexpected password value", AbstractConfiguredObject.SECURED_STRING_VALUE, truststore.get(FileTrustStore.PASSWORD));
+        assertEquals("unexpected type", java.security.KeyStore.getDefaultType(), truststore.get(FileTrustStore.TRUST_STORE_TYPE));
+        assertEquals("unexpected peersOnly value", true, truststore.get(FileTrustStore.PEERS_ONLY));
     }
 
     public void testCreateUsingDataUrl() throws Exception
@@ -88,7 +101,12 @@ public class TrustStoreRestTest extends QpidRestTestCase
         List<Map<String, Object>> trustStores = getRestTestHelper().getJsonAsList("truststore/" + name);
         assertNotNull("details cannot be null", trustStores);
 
-        assertTrustStoreAttributes(trustStores.get(0), name, dataUrlForTruststore, false);
+        Map<String, Object> truststore = trustStores.get(0);
+        assertEquals("nexpected trust store name", name, truststore.get(TrustStore.NAME));
+        assertEquals("unexpected store URL value",  ConfiguredObject.OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT, truststore.get(FileTrustStore.STORE_URL));
+        assertEquals("unexpected password value", AbstractConfiguredObject.SECURED_STRING_VALUE, truststore.get(FileTrustStore.PASSWORD));
+        assertEquals("unexpected type of trust store", java.security.KeyStore.getDefaultType(), truststore.get(FileTrustStore.TRUST_STORE_TYPE));
+        assertEquals("unexpected peersOnly value", false, truststore.get(FileTrustStore.PEERS_ONLY));
     }
 
     public void testDelete() throws Exception
@@ -110,8 +128,11 @@ public class TrustStoreRestTest extends QpidRestTestCase
         //check only the default systests trust store remains
         List<Map<String, Object>> trustStores = assertNumberOfTrustStores(1);
         Map<String, Object> truststore = trustStores.get(0);
-        assertTrustStoreAttributes(truststore, TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE,
-                QPID_HOME + "/../" + TestSSLConstants.BROKER_TRUSTSTORE, false);
+        assertEquals("unexpected name", TestBrokerConfiguration.ENTRY_NAME_SSL_TRUSTSTORE, truststore.get(TrustStore.NAME));
+        assertEquals("unexpected store URL value",  ConfiguredObject.OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT, truststore.get(FileTrustStore.STORE_URL));
+        assertEquals("unexpected password value", AbstractConfiguredObject.SECURED_STRING_VALUE, truststore.get(FileTrustStore.PASSWORD));
+        assertEquals("unexpected type of  trust store", java.security.KeyStore.getDefaultType(), truststore.get(FileTrustStore.TRUST_STORE_TYPE));
+        assertEquals("unexpected peersOnly value", false, truststore.get(FileTrustStore.PEERS_ONLY));
     }
 
 
@@ -134,7 +155,12 @@ public class TrustStoreRestTest extends QpidRestTestCase
         List<Map<String, Object>> trustStore = getRestTestHelper().getJsonAsList("truststore/" + name);
         assertNotNull("details should not be null", trustStore);
 
-        assertTrustStoreAttributes(trustStore.get(0), name, TestSSLConstants.TRUSTSTORE, false);
+        Map<String, Object> truststore = trustStore.get(0);
+        assertEquals("unexpected name", name, truststore.get(TrustStore.NAME));
+        assertEquals("unexpected path to trust store",  TestSSLConstants.TRUSTSTORE, truststore.get(FileTrustStore.STORE_URL));
+        assertEquals("unexpected password", AbstractConfiguredObject.SECURED_STRING_VALUE, truststore.get(FileTrustStore.PASSWORD));
+        assertEquals("unexpected type", java.security.KeyStore.getDefaultType(), truststore.get(FileTrustStore.TRUST_STORE_TYPE));
+        assertEquals("unexpected peersOnly value", false, truststore.get(FileTrustStore.PEERS_ONLY));
     }
 
     private List<Map<String, Object>> assertNumberOfTrustStores(int numberOfTrustStores) throws Exception
@@ -158,17 +184,4 @@ public class TrustStoreRestTest extends QpidRestTestCase
         getRestTestHelper().submitRequest("truststore/" + name, "PUT", trustStoreAttributes, HttpServletResponse.SC_CREATED);
     }
 
-    private void assertTrustStoreAttributes(Map<String, Object> truststore, String name, String path, boolean peersOnly)
-    {
-        assertEquals("default systests trust store is missing",
-                name, truststore.get(TrustStore.NAME));
-        assertEquals("unexpected path to trust store",
-                path, truststore.get(FileTrustStore.STORE_URL));
-        assertEquals("unexpected (dummy) password of default systests trust store",
-                     AbstractConfiguredObject.SECURED_STRING_VALUE, truststore.get(FileTrustStore.PASSWORD));
-        assertEquals("unexpected type of default systests trust store",
-                java.security.KeyStore.getDefaultType(), truststore.get(FileTrustStore.TRUST_STORE_TYPE));
-        assertEquals("unexpected peersOnly value",
-                peersOnly, truststore.get(FileTrustStore.PEERS_ONLY));
-    }
 }
