@@ -221,7 +221,11 @@ size_t Connection::decode(const char* buffer, size_t size)
         }
         return n;
     } else if (n == PN_ERR) {
-        throw Exception(qpid::amqp::error_conditions::DECODE_ERROR, QPID_MSG("Error on input: " << getError()));
+        std::string error;
+        checkTransportError(error);
+        QPID_LOG_CAT(error, network, id << " connection error: " << error);
+        out.abort();
+        return 0;
     } else {
         return 0;
     }
@@ -246,7 +250,11 @@ size_t Connection::encode(char* buffer, size_t size)
         }
         return 0;
     } else if (n == PN_ERR) {
-        throw Exception(qpid::amqp::error_conditions::INTERNAL_ERROR, QPID_MSG("Error on output: " << getError()));
+        std::string error;
+        checkTransportError(error);
+        QPID_LOG_CAT(error, network, id << " connection error: " << error);
+        out.abort();
+        return 0;
     } else {
         haveOutput = false;
         return 0;
