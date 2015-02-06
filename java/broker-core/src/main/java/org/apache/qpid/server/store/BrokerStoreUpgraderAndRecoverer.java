@@ -54,7 +54,7 @@ public class BrokerStoreUpgraderAndRecoverer
         register(new Upgrader_1_1_to_1_2());
         register(new Upgrader_1_2_to_1_3());
         register(new Upgrader_1_3_to_2_0());
-        register(new Upgrader_2_0_to_2_1());
+        register(new Upgrader_2_0_to_3_0());
     }
 
     private void register(StoreUpgraderPhase upgrader)
@@ -217,11 +217,11 @@ public class BrokerStoreUpgraderAndRecoverer
         }
 
     }
-    private class Upgrader_2_0_to_2_1 extends StoreUpgraderPhase
+    private class Upgrader_2_0_to_3_0 extends StoreUpgraderPhase
     {
-        public Upgrader_2_0_to_2_1()
+        public Upgrader_2_0_to_3_0()
         {
-            super("modelVersion", "2.0", "2.1");
+            super("modelVersion", "2.0", "3.0");
         }
 
         @Override
