@@ -793,7 +793,11 @@ std::size_t ConnectionContext::decodePlain(const char* buffer, std::size_t size)
         lock.notifyAll();
         return n;
     } else if (n == PN_ERR) {
-        throw MessagingException(QPID_MSG("Error on input: " << getError()));
+        std::string error;
+        checkTransportError(error);
+        QPID_LOG_CAT(error, network, id << " connection error: " << error);
+        transport->abort();
+        return 0;
     } else {
         return 0;
     }
@@ -818,7 +822,11 @@ std::size_t ConnectionContext::encodePlain(char* buffer, std::size_t size)
         if (notifyOnWrite) lock.notifyAll();
         return n;
     } else if (n == PN_ERR) {
-        throw MessagingException(QPID_MSG("Error on output: " << getError()));
+        std::string error;
+        checkTransportError(error);
+        QPID_LOG_CAT(error, network, id << " connection error: " << error);
+        transport->abort();
+        return 0;
     } else if (n == PN_EOS) {
         haveOutput = false;
         // Normal close, or error?
