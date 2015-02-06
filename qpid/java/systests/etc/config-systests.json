@@ -21,7 +21,7 @@
 {
   "name": "Broker",
   "defaultVirtualHost" : "test",
-  "modelVersion": "2.1",
+  "modelVersion": "3.0",
   "authenticationproviders" : [ {
     "name" : "plain",
     "type" : "PlainPasswordFile",

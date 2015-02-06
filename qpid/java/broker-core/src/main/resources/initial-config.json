@@ -20,7 +20,7 @@
  */
 {
   "name": "${broker.name}",
-  "modelVersion": "2.1",
+  "modelVersion": "3.0",
   "defaultVirtualHost" : "default",
   "authenticationproviders" : [ {
     "name" : "passwordFile",
