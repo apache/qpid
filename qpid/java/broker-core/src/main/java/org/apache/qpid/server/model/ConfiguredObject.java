@@ -35,6 +35,8 @@ import org.apache.qpid.server.store.ConfiguredObjectRecord;
  */
 public interface ConfiguredObject<X extends ConfiguredObject<X>>
 {
+    String OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT = "Value is too long to display";
+
     String ID = "id";
     String NAME = "name";
     String TYPE = "type";

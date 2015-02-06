@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 
 
 import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.security.FileKeyStore;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
@@ -98,7 +99,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
 
         Map<String, Object> keystore = keyStores.get(0);
         assertEquals("Unexpected name", name, keystore.get(KeyStore.NAME));
-        assertEquals("unexpected data", dataUrlForKeyStore, keystore.get(FileKeyStore.STORE_URL));
+        assertEquals("unexpected data", ConfiguredObject.OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT, keystore.get(FileKeyStore.STORE_URL));
         assertEquals("unexpected password", TestSSLConstants.KEYSTORE_PASSWORD, keystore.get(FileKeyStore.PASSWORD));
         assertEquals("unexpected alias", null, keystore.get(FileKeyStore.CERTIFICATE_ALIAS));
     }

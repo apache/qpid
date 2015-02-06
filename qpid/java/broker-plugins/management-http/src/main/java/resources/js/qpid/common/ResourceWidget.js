@@ -168,6 +168,10 @@ function (declare, array, lang, util, _WidgetBase, _TemplatedMixin, _WidgetsInTe
             {
                 console.log(message);
             }
+       },
+       _setPlaceHolderAttr: function(newValue)
+       {
+            this.resourceLocation.set("placeHolder", newValue);
        }
      }
    );

@@ -53,13 +53,15 @@ define(["dojo/dom","dojo/query", "dojo/_base/array", "dijit/registry","qpid/comm
                         var name = item.id.replace("addStore.","");
                         if (name in attributes )
                         {
-                            if  (item.type != "password")
+                            var attribute = attributes[name];
+                            if (attribute.secure || attribute.oversize)
                             {
-                                item.set("value", effectiveData[name]);
+                                 item.set("required", false);
+                                 item.set("placeHolder", effectiveData[name]);
                             }
                             else
                             {
-                                item.set("required", effectiveData?false:true);
+                                item.set("value", effectiveData[name]);
                             }
                         }
                     });

@@ -188,7 +188,10 @@ public class MetaDataServlet extends AbstractServlet
             {
                 attrDetails.put("secure",attribute.isSecure());
             }
-
+            if(attribute.isOversized())
+            {
+                attrDetails.put("oversize", attribute.isOversized());
+            }
             attributeDetails.put(attribute.getName(), attrDetails);
         }
         return attributeDetails;

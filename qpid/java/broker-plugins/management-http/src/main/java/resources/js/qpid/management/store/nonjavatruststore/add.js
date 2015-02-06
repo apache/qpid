@@ -43,17 +43,28 @@ define(["dojo/dom","dojo/query", "dojo/_base/array", "dijit/registry","qpid/comm
             },
             update: function(effectiveData)
             {
-                var attributes = metadata.getMetaData("TrustStore", "NonJavaTrustStore").attributes;
-                var widgets = registry.findWidgets(this.containerNode);
-                var that=this;
-                array.forEach(widgets, function(item)
-                    {
-                        var name = item.id.replace("addStore.","");
-                        var val = effectiveData[name];
-                        item.set("value", val);
-
-                    });
-
+                if (effectiveData)
+                {
+                    var attributes = metadata.getMetaData("TrustStore", "NonJavaTrustStore").attributes;
+                    var widgets = registry.findWidgets(this.containerNode);
+                    array.forEach(widgets, function(item)
+                        {
+                            var name = item.id.replace("addStore.","");
+                            if (name in attributes )
+                            {
+                                var attribute = attributes[name];
+                                if (attribute.oversize || attribute.secure)
+                                {
+                                     item.set("required", false);
+                                     item.set("placeHolder", effectiveData[name]);
+                                }
+                                else
+                                {
+                                    item.set("value", effectiveData[name]);
+                                }
+                            }
+                        });
+                }
             }
         };
 
