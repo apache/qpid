@@ -29,6 +29,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.management.plugin.HttpManagement;
+import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.Plugin;
 import org.apache.qpid.server.model.State;
@@ -183,7 +184,7 @@ public class AccessControlProviderRestTest extends QpidRestTestCase
 
         getRestTestHelper().setUsernameAndPassword(BrokerOptions.MANAGEMENT_MODE_USER_NAME, MANAGEMENT_MODE_PASSWORD);
 
-        Map<String, Object> acl = getRestTestHelper().getJsonAsSingletonList("accesscontrolprovider/" + TestBrokerConfiguration.ENTRY_NAME_ACL_FILE);
+        Map<String, Object> acl = getRestTestHelper().getJsonAsSingletonList("accesscontrolprovider/" + TestBrokerConfiguration.ENTRY_NAME_ACL_FILE + "?" + RestServlet.OVERSIZE_PARAM + "=" + (file.getAbsolutePath().length()+10));
         assertEquals("Unexpected id", id.toString(), acl.get(AccessControlProvider.ID));
         assertEquals("Unexpected path", file.getAbsolutePath() , acl.get(FileAccessControlProviderConstants.PATH));
         assertEquals("Unexpected state", State.ERRORED.name() , acl.get(AccessControlProvider.STATE));
