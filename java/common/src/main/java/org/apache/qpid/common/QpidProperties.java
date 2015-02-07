@@ -22,11 +22,7 @@ package org.apache.qpid.common;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 import java.util.Properties;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * QpidProperties captures the project name, version number, and source code repository revision number from a properties
@@ -37,18 +33,9 @@ import org.slf4j.LoggerFactory;
  *
  * <p>To get the build version of any Qpid code call the {@link #main} method. This version string is usually also
  * printed to the console on broker start up.
- * <p>
- * TODO  Code to locate/load/log properties can be factored into a reusable properties utils class. Avoid having this
- *       same snippet of loading code scattered in many places.
- * <p>
- * TODO  Could also add a build number property for a sequential build number assigned by an automated build system, for
- *       build reproducability purposes.
  */
 public class QpidProperties
 {
-    /** Used for debugging purposes. */
-    private static final Logger _logger = LoggerFactory.getLogger(QpidProperties.class);
-
     /** The name of the version properties file to load from the class path. */
     public static final String VERSION_RESOURCE = "qpidversion.properties";
 
@@ -68,13 +55,13 @@ public class QpidProperties
     private static final String DEFAULT = "unknown";
 
     /** Holds the product name. */
-    private static String productName = DEFAULT;
+    private static final String productName;
 
     /** Holds the product version. */
-    private static String releaseVersion = DEFAULT;
+    private static final String releaseVersion;
 
     /** Holds the source code revision. */
-    private static String buildVersion = DEFAULT;
+    private static final String buildVersion;
 
     private static final Properties properties = new Properties();
 
@@ -82,40 +69,24 @@ public class QpidProperties
     static
     {
 
-        try
+        try(InputStream propertyStream = QpidProperties.class.getClassLoader().getResourceAsStream(VERSION_RESOURCE))
         {
-            InputStream propertyStream = QpidProperties.class.getClassLoader().getResourceAsStream(VERSION_RESOURCE);
-            if (propertyStream == null)
-            {
-                _logger.warn("Unable to find resource " + VERSION_RESOURCE + " from classloader");
-            }
-            else
+            if (propertyStream != null)
             {
                 properties.load(propertyStream);
-
-                if (_logger.isDebugEnabled())
-                {
-                    _logger.debug("Dumping QpidProperties");
-                    for (Map.Entry<Object, Object> entry : properties.entrySet())
-                    {
-                        _logger.debug("Property: " + entry.getKey() + " Value: " + entry.getValue());
-                    }
-
-                    _logger.debug("End of property dump");
-                }
-
-                productName = readPropertyValue(properties, PRODUCT_NAME_PROPERTY);
-                String versionSuffix = (String) properties.get(RELEASE_VERSION_SUFFIX);
-                String version = readPropertyValue(properties, RELEASE_VERSION_PROPERTY);
-                releaseVersion = versionSuffix == null || "".equals(versionSuffix) ? version : version + ";" + versionSuffix;
-                buildVersion = readPropertyValue(properties, BUILD_VERSION_PROPERTY);
             }
         }
         catch (IOException e)
         {
-            // Log a warning about this and leave the values initialized to unknown.
-            _logger.error("Could not load version.properties resource: " + e, e);
+            // Ignore, most likely running within an IDE, values will have the DEFAULT text
         }
+
+        String versionSuffix = properties.getProperty(RELEASE_VERSION_SUFFIX);
+        String version = properties.getProperty(RELEASE_VERSION_PROPERTY, DEFAULT);
+
+        productName = properties.getProperty(PRODUCT_NAME_PROPERTY, DEFAULT);
+        releaseVersion = versionSuffix == null || "".equals(versionSuffix) ? version : version + ";" + versionSuffix;
+        buildVersion =  properties.getProperty(BUILD_VERSION_PROPERTY, DEFAULT);
     }
 
     public static Properties asProperties()
@@ -161,27 +132,6 @@ public class QpidProperties
     public static String getVersionString()
     {
         return getProductName() + " - " + getReleaseVersion() + " build: " + getBuildVersion();
-    }
-
-    /**
-     * Helper method to extract a named property from properties.
-     *
-     * @param props        The properties.
-     * @param propertyName The named property to extract.
-     *
-     * @return The extracted property or a default value if the properties do not contain the named property.
-     *
-     * @todo A bit pointless.
-     */
-    private static String readPropertyValue(Properties props, String propertyName)
-    {
-        String retVal = (String) props.get(propertyName);
-        if (retVal == null)
-        {
-            retVal = DEFAULT;
-        }
-
-        return retVal;
     }
 
     /**

@@ -66,6 +66,7 @@ import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.security.CallbackHandlerRegistry;
 import org.apache.qpid.client.state.AMQStateManager;
+import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -195,6 +196,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     static
     {
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Qpid version : " +  QpidProperties.getVersionString());
+        }
+
         // The registering of any additional SASL mechanisms with the Java Security API requires
         // SecurityManager permissions.  In execution environments such as web containers,
         // this may require adjustments to the Java security.policy.
