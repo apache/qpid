@@ -66,7 +66,6 @@ NullSaslServer::Status NullSaslServer::start(const std::string& mechanism, const
 
 NullSaslServer::Status NullSaslServer::step(const std::string* /*response*/, std::string& /*challenge*/)
 {
-    assert(false);
     return FAIL;
 }
 std::string NullSaslServer::getMechanisms()
