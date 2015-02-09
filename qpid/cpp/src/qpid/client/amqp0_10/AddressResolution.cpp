@@ -548,8 +548,8 @@ Subscription::Subscription(const Address& address, const std::string& type)
     if ((Opt(address)/LINK).hasKey(TIMEOUT)) {
         const Variant* timeout = (Opt(address)/LINK/TIMEOUT).value;
         if (timeout->asUint32()) queueOptions.setInt("qpid.auto_delete_timeout", timeout->asUint32());
-    } else if (durable && !reliable && !(Opt(address)/LINK/X_DECLARE).hasKey(AUTO_DELETE)) {
-        //if durable but not reliable, and auto-delete not
+    } else if (durable && !AddressResolution::is_reliable(address) && !(Opt(address)/LINK/X_DECLARE).hasKey(AUTO_DELETE)) {
+        //if durable, not explicitly reliable, and auto-delete not
         //explicitly set, then set a non-zero default for the
         //autodelete timeout
         queueOptions.setInt("qpid.auto_delete_timeout", 2*60);
