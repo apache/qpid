@@ -338,14 +338,13 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     @SuppressWarnings(value = "unused")
     private void postSetStoreUrl()
     {
-        try
-        {
-            new URL(_storeUrl);
-            _path = null;
-        }
-        catch (MalformedURLException e)
+        if (_storeUrl != null && !_storeUrl.startsWith("data:"))
         {
             _path = _storeUrl;
+        }
+        else
+        {
+            _path = null;
         }
     }
 }
