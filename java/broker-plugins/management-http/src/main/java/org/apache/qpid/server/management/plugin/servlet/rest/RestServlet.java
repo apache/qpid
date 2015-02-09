@@ -371,7 +371,7 @@ public class RestServlet extends AbstractServlet
         {
 
             output.add(_objectConverter.convertObjectToMap(configuredObject, getConfiguredClass(),
-                    depth, actuals, inheritedActuals, includeSystemContext, extractInitialConfig, oversizeThreshold));
+                    depth, actuals, inheritedActuals, includeSystemContext, extractInitialConfig, oversizeThreshold, request.isSecure()));
         }
 
 
