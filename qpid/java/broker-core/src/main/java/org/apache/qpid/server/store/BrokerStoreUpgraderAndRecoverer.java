@@ -247,23 +247,26 @@ public class BrokerStoreUpgraderAndRecoverer
             }
             else if("KeyStore".equals(record.getType()))
             {
-                record = upgradeKeyStore(record);
+                record = upgradeKeyStoreRecordIfTypeTheSame(record, "FileKeyStore");
             }
             else if("TrustStore".equals(record.getType()))
             {
-                record = upgradeKeyStore(record);
+                record = upgradeKeyStoreRecordIfTypeTheSame(record, "FileTrustStore");
             }
 
             getNextUpgrader().configuredObject(record);
         }
 
-        private ConfiguredObjectRecord upgradeKeyStore(ConfiguredObjectRecord record)
+        private ConfiguredObjectRecord upgradeKeyStoreRecordIfTypeTheSame(ConfiguredObjectRecord record, String expectedType)
         {
             Map<String, Object> attributes = new HashMap<>(record.getAttributes());
-            Object path = attributes.remove("path");
-            attributes.put("storeUrl", path);
-            record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), attributes, record.getParents());
-            getUpdateMap().put(record.getId(), record);
+            if (expectedType.equals(attributes.get("type")))
+            {
+                Object path = attributes.remove("path");
+                attributes.put("storeUrl", path);
+                record = new ConfiguredObjectRecordImpl(record.getId(), record.getType(), attributes, record.getParents());
+                getUpdateMap().put(record.getId(), record);
+            }
             return record;
         }
 
