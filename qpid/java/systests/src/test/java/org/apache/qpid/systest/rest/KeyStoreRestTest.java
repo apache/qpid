@@ -77,7 +77,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
 
         Map<String, Object> keystore = keyStores.get(0);
         assertEquals("Unexpected name", name, keystore.get(KeyStore.NAME));
-        assertEquals("unexpected path to key store", TestSSLConstants.KEYSTORE, keystore.get(FileKeyStore.STORE_URL));
+        assertEquals("unexpected path to key store", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.STORE_URL));
         assertEquals("unexpected password", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.PASSWORD));
         assertEquals("unexpected alias", certAlias, keystore.get(FileKeyStore.CERTIFICATE_ALIAS));
     }
@@ -99,7 +99,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
 
         Map<String, Object> keystore = keyStores.get(0);
         assertEquals("Unexpected name", name, keystore.get(KeyStore.NAME));
-        assertEquals("unexpected data", ConfiguredObject.OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT, keystore.get(FileKeyStore.STORE_URL));
+        assertEquals("unexpected data", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.STORE_URL));
         assertEquals("unexpected password", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.PASSWORD));
         assertEquals("unexpected alias", null, keystore.get(FileKeyStore.CERTIFICATE_ALIAS));
     }
@@ -151,7 +151,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
 
         Map<String, Object> keystore = keyStores.get(0);
         assertEquals("Unexpected name", name, keystore.get(KeyStore.NAME));
-        assertEquals("unexpected data", TestSSLConstants.UNTRUSTED_KEYSTORE, keystore.get(FileKeyStore.STORE_URL));
+        assertEquals("unexpected data", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.STORE_URL));
         assertEquals("unexpected password", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.PASSWORD));
         assertEquals("unexpected alias", null, keystore.get(FileKeyStore.CERTIFICATE_ALIAS));
     }
