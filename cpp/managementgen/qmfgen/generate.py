@@ -257,6 +257,8 @@ class CMakeLists(Makefile):
 
 
 class Generator:
+  verbose = False
+  
   """
   This class manages code generation using template files.  It is instantiated
   once for an entire code generation session.
@@ -350,7 +352,9 @@ class Generator:
       pass
 
     os.rename (tempFile, target)
-    print "Generated:", target
+
+    if self.verbose:
+      print "Generated:", target
 
   def targetPackageFile (self, schema, templateFile):
     dot = templateFile.find(".")
