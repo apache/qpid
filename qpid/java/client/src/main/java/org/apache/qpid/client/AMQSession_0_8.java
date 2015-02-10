@@ -772,42 +772,47 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
     private void returnBouncedMessage(final ReturnMessage msg)
     {
-        getAMQConnection().performConnectionTask(new Runnable()
+        try
         {
-            public void run()
+            // Bounced message is processed here, away from the mina thread
+            AbstractJMSMessage bouncedMessage =
+                    getMessageFactoryRegistry().createMessage(0,
+                                                              false,
+                                                              msg.getExchange(),
+                                                              msg.getRoutingKey(),
+                                                              msg.getContentHeader(),
+                                                              msg.getBodies(),
+                                                              _queueDestinationCache,
+                                                              _topicDestinationCache,
+                                                              AMQDestination.UNKNOWN_TYPE);
+            AMQConstant errorCode = AMQConstant.getConstant(msg.getReplyCode());
+            AMQShortString reason = msg.getReplyText();
+            _logger.debug("Message returned with error code " + errorCode + " (" + reason + ")");
+
+            // @TODO should this be moved to an exception handler of sorts. Somewhere errors are converted to correct execeptions.
+            if (errorCode == AMQConstant.NO_CONSUMERS)
             {
-                try
-                {
-                    // Bounced message is processed here, away from the mina thread
-                    AbstractJMSMessage bouncedMessage =
-                            getMessageFactoryRegistry().createMessage(0, false, msg.getExchange(),
-                                    msg.getRoutingKey(), msg.getContentHeader(), msg.getBodies(), _queueDestinationCache,
-                                    _topicDestinationCache, AMQDestination.UNKNOWN_TYPE);
-                    AMQConstant errorCode = AMQConstant.getConstant(msg.getReplyCode());
-                    AMQShortString reason = msg.getReplyText();
-                    _logger.debug("Message returned with error code " + errorCode + " (" + reason + ")");
-
-                    // @TODO should this be moved to an exception handler of sorts. Somewhere errors are converted to correct execeptions.
-                    if (errorCode == AMQConstant.NO_CONSUMERS)
-                    {
-                        getAMQConnection().exceptionReceived(new AMQNoConsumersException("Error: " + reason, bouncedMessage, null));
-                    } else if (errorCode == AMQConstant.NO_ROUTE)
-                    {
-                        getAMQConnection().exceptionReceived(new AMQNoRouteException("Error: " + reason, bouncedMessage, null));
-                    } else
-                    {
-                        getAMQConnection().exceptionReceived(
-                                new AMQUndeliveredException(errorCode, "Error: " + reason, bouncedMessage, null));
-                    }
-
-                } catch (Exception e)
-                {
-                    _logger.error(
-                            "Caught exception trying to raise undelivered message exception (dump follows) - ignoring...",
-                            e);
-                }
+                getAMQConnection().exceptionReceived(new AMQNoConsumersException("Error: " + reason,
+                                                                                 bouncedMessage,
+                                                                                 null));
             }
-        });
+            else if (errorCode == AMQConstant.NO_ROUTE)
+            {
+                getAMQConnection().exceptionReceived(new AMQNoRouteException("Error: " + reason, bouncedMessage, null));
+            }
+            else
+            {
+                getAMQConnection().exceptionReceived(
+                        new AMQUndeliveredException(errorCode, "Error: " + reason, bouncedMessage, null));
+            }
+
+        }
+        catch (Exception e)
+        {
+            _logger.error(
+                    "Caught exception trying to raise undelivered message exception (dump follows) - ignoring...",
+                    e);
+        }
     }
 
 

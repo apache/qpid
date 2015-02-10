@@ -35,4 +35,6 @@ public @interface ManagedAttribute
     String defaultValue() default "";
     String description() default "";
     String[] validValues() default {};
+    boolean oversize() default false;
+    String oversizedAltText() default "";
 }

@@ -22,13 +22,14 @@
 #include "Transport.h"
 #include "qpid/messaging/exceptions.h"
 #include "qpid/sys/Poller.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace messaging {
 namespace amqp {
 
-DriverImpl::DriverImpl() : poller(new qpid::sys::Poller)
+DriverImpl::DriverImpl() : poller(new qpid::sys::Poller), timer(new qpid::sys::Timer)
 {
     start();
 }
@@ -48,6 +49,7 @@ void DriverImpl::stop()
     QPID_LOG(debug, "Driver stopped");
     poller->shutdown();
     thread.join();
+    timer->stop();
 }
 
 boost::shared_ptr<Transport> DriverImpl::getTransport(const std::string& protocol, TransportContext& connection)

@@ -29,6 +29,7 @@
 namespace qpid {
 namespace sys {
 class Poller;
+class Timer;
 }
 namespace messaging {
 namespace amqp {
@@ -47,11 +48,14 @@ class DriverImpl
     void stop();
 
     boost::shared_ptr<Transport> getTransport(const std::string& protocol, TransportContext& connection);
+    sys::Timer& getTimer() { return *timer; }
 
     static boost::shared_ptr<DriverImpl> getDefault();
   private:
     boost::shared_ptr<qpid::sys::Poller> poller;
     qpid::sys::Thread thread;
+    std::auto_ptr<sys::Timer> timer;
+
     static qpid::sys::Mutex defaultLock;
     static boost::weak_ptr<DriverImpl> theDefault;
 };

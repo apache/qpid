@@ -30,6 +30,7 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Group;
+import org.apache.qpid.server.model.GroupManagingGroupProvider;
 import org.apache.qpid.server.model.GroupMember;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.ManagedObject;
@@ -38,7 +39,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 
 @ManagedObject(category = false, type = GroupProviderImpl.CONFIG_TYPE)
-public class GroupProviderImpl extends AbstractConfiguredObject<GroupProviderImpl> implements GroupProvider<GroupProviderImpl>
+public class GroupProviderImpl extends AbstractConfiguredObject<GroupProviderImpl> implements GroupProvider<GroupProviderImpl>, GroupManagingGroupProvider
 {
 
     public static final String CONFIG_TYPE = "ManagedGroupProvider";

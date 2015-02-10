@@ -1,0 +1,66 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
+
+<div>
+    <div id="addStore.oldBrowserWarning" class="infoMessage hidden clear"></div>
+
+    <div class="clear">
+        <div id="addStore.privateKeyLabel" class="formLabel-labelCell tableContainer-labelCell">Private Key (Server path or upload)*:</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" id="addStore.privateKeyUrl"
+                   data-dojo-type="qpid/common/ResourceWidget"
+                   data-dojo-props="
+                              name: 'privateKeyUrl',
+                              placeHolder: 'path to file with private key in PEM/DER format',
+                              required: true,
+                              promptMessage: 'Enter broker server path to file containing unencrypted private key in DER or PEM format',
+                              title: 'Enter broker server path to file containing unencrypted private key in DER or PEM format'" />
+
+        </div>
+    </div>
+
+    <div class="clear">
+        <div id="addStore.serverPathLabel" class="formLabel-labelCell tableContainer-labelCell">Certificate (Server path or upload)*:</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" id="addStore.certificateUrl"
+                   data-dojo-type="qpid/common/ResourceWidget"
+                   data-dojo-props="
+                              name: 'certificateUrl',
+                              placeHolder: 'path to file with certificate in PEM/DER format',
+                              required: true,
+                              promptMessage: 'Enter broker server path to file containing certificate in DER or PEM format',
+                              title: 'Enter broker server path to file containing certificate in DER or PEM format'" />
+        </div>
+    </div>
+
+    <div class="clear">
+        <div id="addStore.intermediateCertificateLabel" class="formLabel-labelCell tableContainer-labelCell">Intermediate Certificates (Server path or upload):</div>
+        <div class="formLabel-controlCell tableContainer-valueCell">
+            <input type="text" id="addStore.intermediateCertificateUrl"
+                   data-dojo-type="qpid/common/ResourceWidget"
+                   data-dojo-props="
+                              name: 'intermediateCertificateUrl',
+                              placeHolder: 'path to file with certificates in PEM/DER format',
+                              required: false,
+                              promptMessage: 'Enter broker server path to file containing intermediate certificates in DER or PEM format',
+                              title: 'Enter path to file containing intermediate certificates in format DER or PEM'" />
+        </div>
+    </div>
+</div>

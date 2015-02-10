@@ -598,35 +598,38 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
             if (sendClose)
             {
+
                 // The Synchronized block only needs to protect network traffic.
-                synchronized (_connection.getFailoverMutex())
+
+                try
                 {
-                    try
+                    // If the session is open or we are in the process
+                    // of closing the session then send a cance
+                    // no point otherwise as the connection will be gone
+                    if (!_session.isClosed() || _session.isClosing())
                     {
-                        // If the session is open or we are in the process
-                        // of closing the session then send a cance
-                        // no point otherwise as the connection will be gone
-                        if (!_session.isClosed() || _session.isClosing())
+                        synchronized(_session.getMessageDeliveryLock())
                         {
-                            synchronized(_session.getMessageDeliveryLock())
+                            synchronized (_connection.getFailoverMutex())
                             {
                                 sendCancel();
                             }
                         }
                     }
-                    catch (AMQException e)
-                    {
-                        throw new JMSAMQException("Error closing consumer: " + e, e);
-                    }
-                    catch (FailoverException e)
-                    {
-                        throw new JMSAMQException("FailoverException interrupted basic cancel.", e);
-                    }
-                    catch (TransportException e)
-                    {
-                        throw _session.toJMSException("Exception while closing consumer: " + e.getMessage(), e);
-                    }
                 }
+                catch (AMQException e)
+                {
+                    throw new JMSAMQException("Error closing consumer: " + e, e);
+                }
+                catch (FailoverException e)
+                {
+                    throw new JMSAMQException("FailoverException interrupted basic cancel.", e);
+                }
+                catch (TransportException e)
+                {
+                    throw _session.toJMSException("Exception while closing consumer: " + e.getMessage(), e);
+                }
+
             }
             else
             {

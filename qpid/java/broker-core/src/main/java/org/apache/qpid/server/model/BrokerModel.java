@@ -42,12 +42,13 @@ public final class BrokerModel extends Model
      * 1.3 Truststore/Keystore type => trustStoreType / type => keyStoreType
      * 1.4 Separate messageStoreSettings from virtualhost
      * 2.0 Introduce VirtualHostNode as a child of a Broker instead of VirtualHost
-     * 2.1 Add VH aliases;
+     * 3.0 Add VH aliases;
      *     Remove Broker#supportedVirtualHostNodeTypes, #supportedVirtualHostTypes, #supportedAuthenticationProviders,
      *            supportedPreferencesProviderTypes, VH#supportedExchangeTypes, VH#supportedQueueTypes
+     *     Renamed FileTrustStore/FileKeyStore.path => FileTrustStore/FileKeyStore.storeUrl
      */
-    public static final int MODEL_MAJOR_VERSION = 2;
-    public static final int MODEL_MINOR_VERSION = 1;
+    public static final int MODEL_MAJOR_VERSION = 3;
+    public static final int MODEL_MINOR_VERSION = 0;
     public static final String MODEL_VERSION = MODEL_MAJOR_VERSION + "." + MODEL_MINOR_VERSION;
     private static final Model MODEL_INSTANCE = new BrokerModel();
     private final Map<Class<? extends ConfiguredObject>, Collection<Class<? extends ConfiguredObject>>> _parents =

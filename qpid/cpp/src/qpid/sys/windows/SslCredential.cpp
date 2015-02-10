@@ -34,7 +34,7 @@ namespace sys {
 namespace windows {
 
 
-SslCredential::SslCredential() : certStore(0), cert(0)
+SslCredential::SslCredential() : certStore(0), cert(0), hostnameVerification(true)
 {
     SecInvalidateHandle(&credHandle);
     memset(&cred, 0, sizeof(cred));
@@ -60,6 +60,8 @@ bool SslCredential::load(const std::string& certName)
         cred.paCred = &cert;
         cred.cCreds = 1;
     }
+    if (!hostnameVerification)
+        cred.dwFlags |= SCH_CRED_NO_SERVERNAME_CHECK;
 
     SECURITY_STATUS status = ::AcquireCredentialsHandle(NULL,
                                                         UNISP_NAME,
@@ -87,6 +89,10 @@ std::string SslCredential::error()
     if (!loadError.logMessage.empty())
         QPID_LOG(warning, loadError.logMessage);
     return loadError.error;
+}
+
+void SslCredential::ignoreHostnameVerificationFailure(){
+    hostnameVerification = false;
 }
 
 void SslCredential::loadPrivCertStore()

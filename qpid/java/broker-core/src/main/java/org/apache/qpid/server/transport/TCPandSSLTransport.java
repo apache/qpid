@@ -24,6 +24,7 @@ import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
 
 import java.net.InetSocketAddress;
 import java.util.EnumSet;
+import java.util.Collection;
 import java.util.Set;
 
 import javax.net.ssl.SSLContext;
@@ -124,25 +125,37 @@ class TCPandSSLTransport implements AcceptingTransport
         }
 
         @Override
+        public Collection<String> getEnabledCipherSuites()
+        {
+            return _port.getEnabledCipherSuites();
+        }
+
+        @Override
+        public Collection<String> getDisabledCipherSuites()
+        {
+            return _port.getDisabledCipherSuites();
+        }
+
+        @Override
         public boolean needClientAuth()
         {
             return _port.getNeedClientAuth();
         }
 
         @Override
-        public Boolean getTcpNoDelay()
+        public boolean getTcpNoDelay()
         {
             return _port.isTcpNoDelay();
         }
 
         @Override
-        public Integer getSendBufferSize()
+        public int getSendBufferSize()
         {
             return _port.getSendBufferSize();
         }
 
         @Override
-        public Integer getReceiveBufferSize()
+        public int getReceiveBufferSize()
         {
             return _port.getReceiveBufferSize();
         }

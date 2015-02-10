@@ -54,6 +54,19 @@ public class ConfiguredDerivedAttribute<C extends ConfiguredObject, T>  extends 
         return _annotation.persist();
     }
 
+    @Override
+    public boolean isOversized()
+    {
+        return _annotation.oversize();
+    }
+
+    @Override
+    public String getOversizedAltText()
+    {
+        return "";
+    }
+
+
     public String getDescription()
     {
         return _annotation.description();

@@ -34,7 +34,7 @@ public interface NonJavaTrustStore<X extends NonJavaTrustStore<X>> extends Trust
     @ManagedAttribute(defaultValue = "${this:certificateDetails}")
     String getDescription();
 
-    @ManagedAttribute( mandatory = true )
+    @ManagedAttribute( mandatory = true, oversize = true, oversizedAltText = OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT )
     String getCertificatesUrl();
 
     enum CertificateDetails

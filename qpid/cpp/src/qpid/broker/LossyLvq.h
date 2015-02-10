@@ -28,6 +28,12 @@ namespace qpid {
 namespace broker {
 class MessageMap;
 
+// Disable inherited-by-dominance warning on MSVC. We know. It's ok.
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable : 4250)
+#endif
+
 /**
  * Combination of LossyQueue and Lvq behaviours.
  */
@@ -36,6 +42,11 @@ class LossyLvq : public Lvq, public LossyQueue
   public:
     LossyLvq(const std::string&, std::auto_ptr<MessageMap>, const QueueSettings&, MessageStore* const, management::Manageable*, Broker*);
 };
+
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
+
 }} // namespace qpid::broker
 
 #endif  /*!QPID_BROKER_LOSSYLVQ_H*/

@@ -47,7 +47,7 @@ class InlineAllocator : public BaseAllocator {
     InlineAllocator() : allocated(false) {}
     InlineAllocator(const InlineAllocator& x) : BaseAllocator(x), allocated(false) {}
 
-    pointer allocate(size_type n) {
+    pointer allocate(size_type n, std::allocator<void>::const_pointer = 0) {
         if (n <= Max && !allocated) {
             allocated=true;
             return reinterpret_cast<value_type*>(address());

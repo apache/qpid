@@ -80,16 +80,17 @@ define(["dojo/_base/lang",
             },
             show: function(effectiveData)
             {
+                this.effectiveData = effectiveData;
                 this.storeForm.reset();
 
                 if (effectiveData)
                 {
-                    this.effectiveData = effectiveData;
                     this._destroyTypeFields(this.containerNode);
                     this._initFields(effectiveData);
                 }
                 this.storeName.set("disabled", effectiveData == null ? false : true);
                 this.storeType.set("disabled", effectiveData == null ? false : true);
+                this.dialog.set("title", effectiveData == null ? "Add Key Store" : "Edit Key Store - " + effectiveData.name)
                 this.dialog.show();
             },
             _initFields:function(data)

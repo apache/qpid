@@ -152,6 +152,8 @@ public class NonBlockingNetworkTransport
                                               _sslContext,
                                               _config.wantClientAuth(),
                                               _config.needClientAuth(),
+                                              _config.getEnabledCipherSuites(),
+                                              _config.getDisabledCipherSuites(),
                                               new Runnable()
                                               {
 

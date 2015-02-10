@@ -149,9 +149,25 @@ public class Connection implements ExceptionHandler
                       final SSLContext sslContext,
                       final int channelMax) throws ConnectionException
     {
-        this(protocol, address, port, username, password, MAX_FRAME_SIZE,container,remoteHost,sslContext,
-             channelMax);
+        this(protocol, address, port, username, password,container,remoteHost,sslContext,
+             null, channelMax);
     }
+
+    public Connection(final String protocol,
+                      final String address,
+                      final int port,
+                      final String username,
+                      final String password,
+                      final Container container,
+                      final String remoteHost,
+                      final SSLContext sslContext,
+                      final SSLOptions sslOptions,
+                      final int channelMax) throws ConnectionException
+    {
+        this(protocol, address, port, username, password, MAX_FRAME_SIZE,container,remoteHost,sslContext,
+             sslOptions, channelMax);
+    }
+
 
     public Connection(final String address,
                       final int port,
@@ -163,7 +179,11 @@ public class Connection implements ExceptionHandler
                       boolean ssl,
                       int channelMax) throws ConnectionException
     {
-        this(ssl?"amqp":"amqps",address,port,username,password,maxFrameSize,container,remoteHostname,getSslContext(ssl),channelMax);
+        this(ssl?"amqp":"amqps",address,port,username,password,maxFrameSize,container,
+             remoteHostname,
+             getSslContext(ssl),
+             null,
+             channelMax);
     }
 
     private static SSLContext getSslContext(final boolean ssl) throws ConnectionException
@@ -187,7 +207,7 @@ public class Connection implements ExceptionHandler
                       final Container container,
                       final String remoteHostname,
                       SSLContext sslContext,
-                      int channelMax) throws ConnectionException
+                      final SSLOptions sslOptions, int channelMax) throws ConnectionException
     {
 
         _address = address;
@@ -255,7 +275,7 @@ public class Connection implements ExceptionHandler
 
         TransportProvider transportProvider = getTransportProvider(protocol);
 
-        transportProvider.connect(_conn,address,port, sslContext, this);
+        transportProvider.connect(_conn,address,port, sslContext, sslOptions, this);
 
 
         try

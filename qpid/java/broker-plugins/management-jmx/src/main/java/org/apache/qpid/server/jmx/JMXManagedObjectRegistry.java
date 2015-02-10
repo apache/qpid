@@ -36,6 +36,7 @@ import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.GeneralSecurityException;
 import java.util.HashMap;
+import java.util.Set;
 
 import javax.management.JMException;
 import javax.management.MBeanServer;
@@ -142,11 +143,9 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 throw new ServerScopedRuntimeException("Unable to create SSLContext for key store", e);
             }
 
-            getEventLogger().message(ManagementConsoleMessages.SSL_KEYSTORE(keyStore.getName()));
-
             //create the SSL RMI socket factories
             csf = new SslRMIClientSocketFactory();
-            ssf = new QpidSslRMIServerSocketFactory(sslContext);
+            ssf = new QpidSslRMIServerSocketFactory(sslContext,_connectorPort.getEnabledCipherSuites(), _connectorPort.getDisabledCipherSuites());
         }
         else
         {
@@ -252,8 +251,12 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         _cs.start();
 
-        String connectorServer = (connectorSslEnabled ? "SSL " : "") + "JMX RMIConnectorServer";
-        getEventLogger().message(ManagementConsoleMessages.LISTENING(connectorServer, jmxPortConnectorServer));
+        Set<Transport> connectorTransports = _connectorPort.getTransports();
+        for (Transport transport: connectorTransports)
+        {
+            getEventLogger().message(ManagementConsoleMessages.LISTENING("JMX RMIConnectorServer", transport.name(), jmxPortConnectorServer));
+        }
+
         getEventLogger().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
     }
 
@@ -263,7 +266,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         final RMIServerSocketFactory ssf = getRmiServerSocketFactory(useCustomRmiRegistry);
         Registry rmiRegistry = LocateRegistry.createRegistry(jmxPortRegistryServer, null, ssf);
 
-        getEventLogger().message(ManagementConsoleMessages.LISTENING("RMI Registry", jmxPortRegistryServer));
+        getEventLogger().message(ManagementConsoleMessages.LISTENING("RMI Registry", Transport.TCP.name(), jmxPortRegistryServer));
         return rmiRegistry;
     }
 

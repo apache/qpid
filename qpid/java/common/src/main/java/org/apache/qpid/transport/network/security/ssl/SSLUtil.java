@@ -24,6 +24,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -33,7 +36,10 @@ import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -266,7 +272,35 @@ public class SSLUtil
         return ks;
     }
 
-    public static void removeSSLv3Support(final SSLEngine engine)
+    private static interface SSLEntity
+    {
+        String[] getEnabledCipherSuites();
+
+        void setEnabledCipherSuites(String[] strings);
+
+        String[] getEnabledProtocols();
+
+        void setEnabledProtocols(String[] protocols);
+
+        String[] getSupportedCipherSuites();
+
+        String[] getSupportedProtocols();
+    }
+
+    private static SSLEntity asSSLEntity(final Object object, final Class<?> clazz)
+    {
+        return (SSLEntity) Proxy.newProxyInstance(SSLEntity.class.getClassLoader(), new Class[] { SSLEntity.class }, new InvocationHandler()
+        {
+            @Override
+            public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable
+            {
+                Method delegateMethod = clazz.getMethod(method.getName(), method.getParameterTypes());
+                return delegateMethod.invoke(object, args);
+            }
+        })   ;
+    }
+
+    private static void removeSSLv3Support(final SSLEntity engine)
     {
         List<String> enabledProtocols = Arrays.asList(engine.getEnabledProtocols());
         if(enabledProtocols.contains(SSLV3_PROTOCOL))
@@ -277,26 +311,61 @@ public class SSLUtil
         }
     }
 
-    public static void removeSSLv3Support(final SSLSocket socket)
+    public static void removeSSLv3Support(final SSLEngine engine)
     {
-        List<String> enabledProtocols = Arrays.asList(socket.getEnabledProtocols());
-        if(enabledProtocols.contains(SSLV3_PROTOCOL))
-        {
-            List<String> allowedProtocols = new ArrayList<>(enabledProtocols);
-            allowedProtocols.remove(SSLV3_PROTOCOL);
-            socket.setEnabledProtocols(allowedProtocols.toArray(new String[allowedProtocols.size()]));
-        }
+        removeSSLv3Support(asSSLEntity(engine, SSLEngine.class));
     }
 
+    public static void removeSSLv3Support(final SSLSocket socket)
+    {
+        removeSSLv3Support(asSSLEntity(socket, SSLSocket.class));
+    }
 
     public static void removeSSLv3Support(final SSLServerSocket socket)
     {
-        List<String> enabledProtocols = Arrays.asList(socket.getEnabledProtocols());
-        if(enabledProtocols.contains(SSLV3_PROTOCOL))
+        removeSSLv3Support(asSSLEntity(socket, SSLServerSocket.class));
+    }
+
+    private static void updateEnabledCipherSuites(final SSLEntity entity,
+                                                  final Collection<String> enabledCipherSuites,
+                                                  final Collection<String> disabledCipherSuites)
+    {
+        if(enabledCipherSuites != null && !enabledCipherSuites.isEmpty())
         {
-            List<String> allowedProtocols = new ArrayList<>(enabledProtocols);
-            allowedProtocols.remove(SSLV3_PROTOCOL);
-            socket.setEnabledProtocols(allowedProtocols.toArray(new String[allowedProtocols.size()]));
+            final Set<String> supportedSuites =
+                    new HashSet<>(Arrays.asList(entity.getSupportedCipherSuites()));
+            supportedSuites.retainAll(enabledCipherSuites);
+            entity.setEnabledCipherSuites(supportedSuites.toArray(new String[supportedSuites.size()]));
         }
+
+        if(disabledCipherSuites != null && !disabledCipherSuites.isEmpty())
+        {
+            final Set<String> enabledSuites = new HashSet<>(Arrays.asList(entity.getEnabledCipherSuites()));
+            enabledSuites.removeAll(disabledCipherSuites);
+            entity.setEnabledCipherSuites(enabledSuites.toArray(new String[enabledSuites.size()]));
+        }
+
+    }
+
+
+    public static void updateEnabledCipherSuites(final SSLEngine engine,
+                                                 final Collection<String> enabledCipherSuites,
+                                                 final Collection<String> disabledCipherSuites)
+    {
+        updateEnabledCipherSuites(asSSLEntity(engine, SSLEngine.class), enabledCipherSuites, disabledCipherSuites);
+    }
+
+    public static void updateEnabledCipherSuites(final SSLServerSocket socket,
+                                                 final Collection<String> enabledCipherSuites,
+                                                 final Collection<String> disabledCipherSuites)
+    {
+        updateEnabledCipherSuites(asSSLEntity(socket, SSLServerSocket.class), enabledCipherSuites, disabledCipherSuites);
+    }
+
+    public static void updateEnabledCipherSuites(final SSLSocket socket,
+                                                 final Collection<String> enabledCipherSuites,
+                                                 final Collection<String> disabledCipherSuites)
+    {
+        updateEnabledCipherSuites(asSSLEntity(socket, SSLSocket.class), enabledCipherSuites, disabledCipherSuites);
     }
 }

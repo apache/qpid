@@ -20,6 +20,8 @@
 @echo off
 REM Script to run the Qpid Java Broker
 
+SETLOCAL
+
 rem Guess QPID_HOME if not defined
 set CURRENT_DIR=%cd%
 if not "%QPID_HOME%" == "" goto gotHome
@@ -199,3 +201,4 @@ if "%debug%" == "true" echo %COMMAND%
 %COMMAND%
 
 :end
+ENDLOCAL

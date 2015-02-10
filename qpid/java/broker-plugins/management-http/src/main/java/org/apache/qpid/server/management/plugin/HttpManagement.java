@@ -46,7 +46,6 @@ import org.eclipse.jetty.server.SessionManager;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
-import org.eclipse.jetty.server.ssl.SslSocketConnector;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -139,7 +138,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         try
         {
             _server.start();
-            logOperationalListenMessages(_server);
+            logOperationalListenMessages(httpPorts);
         }
         catch (Exception e)
         {
@@ -352,6 +351,17 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         }
         SslContextFactory factory = new SslContextFactory();
         factory.addExcludeProtocols(SSLUtil.SSLV3_PROTOCOL);
+
+        if(port.getDisabledCipherSuites() != null)
+        {
+            factory.addExcludeCipherSuites(port.getDisabledCipherSuites().toArray(new String[port.getDisabledCipherSuites().size()]));
+        }
+
+        if(port.getEnabledCipherSuites() != null && !port.getEnabledCipherSuites().isEmpty())
+        {
+            factory.setIncludeCipherSuites(port.getEnabledCipherSuites().toArray(new String[port.getEnabledCipherSuites().size()]));
+        }
+
         boolean needClientCert = port.getNeedClientAuth() || port.getWantClientAuth();
 
         if (needClientCert && trustStores.isEmpty())
@@ -437,20 +447,14 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         root.addServlet(servletHolder, "/api/v" + BrokerModel.MODEL_MAJOR_VERSION + "/" + name + "/*");
     }
 
-    private void logOperationalListenMessages(Server server)
+    private void logOperationalListenMessages(Collection<Port<?>> ports)
     {
-        Connector[] connectors = server.getConnectors();
-        for (Connector connector : connectors)
+        for (Port port : ports)
         {
-            getBroker().getEventLogger().message(ManagementConsoleMessages.LISTENING(stringifyConnectorScheme(connector),
-                                                                                     connector.getPort()));
-            if (connector instanceof SslSocketConnector)
+            Set<Transport> transports = port.getTransports();
+            for (Transport transport: transports)
             {
-                SslContextFactory sslContextFactory = ((SslSocketConnector)connector).getSslContextFactory();
-                if (sslContextFactory != null && sslContextFactory.getKeyStorePath() != null)
-                {
-                    getBroker().getEventLogger().message(ManagementConsoleMessages.SSL_KEYSTORE(sslContextFactory.getKeyStorePath()));
-                }
+                getBroker().getEventLogger().message(ManagementConsoleMessages.LISTENING(Protocol.HTTP.name(), transport.name(), port.getPort()));
             }
         }
     }
@@ -460,15 +464,10 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         Connector[] connectors = server.getConnectors();
         for (Connector connector : connectors)
         {
-            getBroker().getEventLogger().message(ManagementConsoleMessages.SHUTTING_DOWN(stringifyConnectorScheme(connector),
-                                                                      connector.getPort()));
+            getBroker().getEventLogger().message(ManagementConsoleMessages.SHUTTING_DOWN(Protocol.HTTP.name(), connector.getPort()));
         }
     }
 
-    private String stringifyConnectorScheme(Connector connector)
-    {
-        return connector instanceof SslSocketConnector ? "HTTPS" : "HTTP";
-    }
 
     private Collection<Port<?>> getHttpPorts(Collection<Port<?>> ports)
     {

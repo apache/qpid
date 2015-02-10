@@ -808,7 +808,16 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      */
     public void close(long timeout) throws JMSException
     {
-        close(timeout, true);
+        synchronized (_messageDeliveryLock)
+        {
+            // We must close down all producers and consumers in an orderly fashion. This is the only method
+            // that can be called from a different thread of control from the one controlling the session.
+            synchronized (getFailoverMutex())
+            {
+
+                close(timeout, true);
+            }
+        }
     }
 
     private void close(long timeout, boolean sendClose) throws JMSException
@@ -822,51 +831,43 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         if (!setClosed())
         {
             setClosing(true);
-            synchronized (getFailoverMutex())
-            {
-                // We must close down all producers and consumers in an orderly fashion. This is the only method
-                // that can be called from a different thread of control from the one controlling the session.
-                synchronized (_messageDeliveryLock)
-                {
-                    // we pass null since this is not an error case
-                    closeProducersAndConsumers(null);
+            // we pass null since this is not an error case
+            closeProducersAndConsumers(null);
 
-                    try
+            try
+            {
+                // If the connection is open or we are in the process
+                // of closing the connection then send a cance
+                // no point otherwise as the connection will be gone
+                if (!_connection.isClosed() || _connection.isClosing())
+                {
+                    if (sendClose)
                     {
-                        // If the connection is open or we are in the process
-                        // of closing the connection then send a cance
-                        // no point otherwise as the connection will be gone
-                        if (!_connection.isClosed() || _connection.isClosing())
-                        {
-                            if (sendClose)
-                            {
-                                sendClose(timeout);
-                            }
-                        }
-                    }
-                    catch (AMQException e)
-                    {
-                        JMSException jmse = new JMSException("Error closing session: " + e);
-                        jmse.setLinkedException(e);
-                        jmse.initCause(e);
-                        throw jmse;
-                    }
-                    // This is ignored because the channel is already marked as closed so the fail-over process will
-                    // not re-open it.
-                    catch (FailoverException e)
-                    {
-                        _logger.debug(
-                                "Got FailoverException during channel close, ignored as channel already marked as closed.");
-                    }
-                    catch (TransportException e)
-                    {
-                        throw toJMSException("Error closing session:" + e.getMessage(), e);
-                    }
-                    finally
-                    {
-                        _connection.deregisterSession(_channelId);
+                        sendClose(timeout);
                     }
                 }
+            }
+            catch (AMQException e)
+            {
+                JMSException jmse = new JMSException("Error closing session: " + e);
+                jmse.setLinkedException(e);
+                jmse.initCause(e);
+                throw jmse;
+            }
+            // This is ignored because the channel is already marked as closed so the fail-over process will
+            // not re-open it.
+            catch (FailoverException e)
+            {
+                _logger.debug(
+                        "Got FailoverException during channel close, ignored as channel already marked as closed.");
+            }
+            catch (TransportException e)
+            {
+                throw toJMSException("Error closing session:" + e.getMessage(), e);
+            }
+            finally
+            {
+                _connection.deregisterSession(_channelId);
             }
         }
     }
@@ -899,24 +900,22 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         if (!setClosed())
         {
-            synchronized (_messageDeliveryLock)
+            // An AMQException has an error code and message already and will be passed in when closure occurs as a
+            // result of a channel close request
+            AMQException amqe;
+            if (e instanceof AMQException)
             {
-                // An AMQException has an error code and message already and will be passed in when closure occurs as a
-                // result of a channel close request
-                AMQException amqe;
-                if (e instanceof AMQException)
-                {
-                    amqe = (AMQException) e;
-                }
-                else
-                {
-                    amqe = new AMQException("Closing session forcibly", e);
-                }
-
-                _connection.deregisterSession(_channelId);
-                closeProducersAndConsumers(amqe);
+                amqe = (AMQException) e;
             }
+            else
+            {
+                amqe = new AMQException("Closing session forcibly", e);
+            }
+
+            _connection.deregisterSession(_channelId);
+            closeProducersAndConsumers(amqe);
         }
+
     }
 
     protected void stopDispatcherThread()

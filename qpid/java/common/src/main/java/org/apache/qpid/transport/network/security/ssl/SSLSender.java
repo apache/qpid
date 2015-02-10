@@ -142,7 +142,7 @@ public class SSLSender implements ByteBufferSender
 
     public void send(ByteBuffer appData)
     {
-        if (closed.get())
+        if (closed.get() && !_sslStatus.getSslErrorFlag())
         {
             throw new SenderException("SSL Sender is closed");
         }

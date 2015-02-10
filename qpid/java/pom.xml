@@ -74,6 +74,7 @@
     <dollar.sign>$</dollar.sign>
     <at.sign>@</at.sign>
     <bdb-version>5.0.104</bdb-version>
+    <derby-version>10.11.1.1</derby-version>
   </properties>
 
   <modules>

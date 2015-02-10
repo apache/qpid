@@ -1,0 +1,66 @@
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
+<div class="dijitHidden">
+    <div data-dojo-type="dijit/Dialog" data-dojo-props="title:'Add Store'" id="addGroupProvider">
+        <div id="addGroupProvider.contentPane">
+            <form id="addGroupProvider.form" method="post" data-dojo-type="dijit/form/Form">
+                <div class="formBox">
+                    <div class="clear">
+                        <div class="formLabel-labelCell tableContainer-labelCell">Name*:</div>
+                        <div class="formLabel-controlCell tableContainer-valueCell">
+                            <input type="text" id="addGroupProvider.name"
+                                   data-dojo-type="dijit/form/ValidationTextBox"
+                                   data-dojo-props="
+                              name: 'name',
+                              placeHolder: 'group provider name',
+                              required: true,
+                              promptMessage: 'Name of group provider, must be unique',
+                              title: 'Enter a unique group provider name per broker'" />
+                        </div>
+                    </div>
+                    <div class="clear">
+                        <div class="formLabel-labelCell tableContainer-labelCell">Type*:</div>
+                        <div class="tableContainer-valueCell formLabel-controlCell">
+                            <select id="addGroupProvider.type" data-dojo-type="dijit/form/FilteringSelect"
+                                    data-dojo-props="
+                                    name: 'type',
+                                    required: true,
+                                    placeHolder: 'group provider type',
+                                    promptMessage: 'Type of group provider',
+                                    title: 'Select type',
+                                    searchAttr: 'name'">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="clear">
+                        <div id="addGroupProvider.typeFields"></div>
+                    </div>
+                </div>
+            </form>
+            <div class="clear">
+            </div>
+        </div>
+
+        <div class="dijitDialogPaneActionBar qpidDialogPaneActionBar">
+            <button data-dojo-type="dijit/form/Button" id="addGroupProvider.addButton" data-dojo-props="label: 'Save'" type="submit"></button>
+            <button data-dojo-type="dijit/form/Button" id="addGroupProvider.cancelButton" data-dojo-props="label: 'Cancel'" ></button>
+        </div>
+    </div>
+</div>

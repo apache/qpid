@@ -20,6 +20,19 @@
  */
 package org.apache.qpid.configuration;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.common.QpidProperties;
+
 /**
  * Centralised record of Qpid common properties.
  *
@@ -27,6 +40,8 @@ package org.apache.qpid.configuration;
  */
 public class CommonProperties
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CommonProperties.class);
+
     /**
      * The timeout used by the IO layer for timeouts such as send timeout in IoSender, and the close timeout for IoSender and IoReceiver
      */
@@ -36,6 +51,45 @@ public class CommonProperties
     public static final String HANDSHAKE_TIMEOUT_PROP_NAME = "qpid.handshake_timeout";
     public static final int HANDSHAKE_TIMEOUT_DEFAULT = 2;
 
+    static
+    {
+
+        Properties props = new Properties(QpidProperties.asProperties());
+        String initialProperties = System.getProperty("qpid.common_properties_file");
+        URL initialPropertiesLocation = null;
+        try
+        {
+            if (initialProperties == null)
+            {
+                initialPropertiesLocation = CommonProperties.class.getClassLoader().getResource("qpid-common.properties");
+            }
+            else
+            {
+                initialPropertiesLocation = (new File(initialProperties)).toURI().toURL();
+            }
+
+            if (initialPropertiesLocation != null)
+            {
+                props.load(initialPropertiesLocation.openStream());
+            }
+        }
+        catch (MalformedURLException e)
+        {
+            LOGGER.warn("Could not open common properties file '"+initialProperties+"'.", e);
+        }
+        catch (IOException e)
+        {
+            LOGGER.warn("Could not open common properties file '" + initialPropertiesLocation + "'.", e);
+        }
+
+        Set<String> propertyNames = new HashSet<>(props.stringPropertyNames());
+        propertyNames.removeAll(System.getProperties().stringPropertyNames());
+        for (String propName : propertyNames)
+        {
+            System.setProperty(propName, props.getProperty(propName));
+        }
+
+    }
 
     private CommonProperties()
     {

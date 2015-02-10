@@ -27,6 +27,11 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 @ManagedObject(category=true, managesChildren=false)
 public interface VirtualHostNode<X extends VirtualHostNode<X>> extends ConfiguredObject<X>
 {
+    String QPID_INITIAL_CONFIG_VIRTUALHOST_CONFIG_VAR = "qpid.initial_config_virtualhost_config";
+    @ManagedContextDefault(name = QPID_INITIAL_CONFIG_VIRTUALHOST_CONFIG_VAR)
+    String DEFAULT_INITIAL_CONFIG_VIRTUALHOST_CONFIG_VAR = "{ \"type\" : \"DERBY\" }";
+
+
     String VIRTUALHOST_INITIAL_CONFIGURATION = "virtualHostInitialConfiguration";
 
     String VIRTUALHOST_BLUEPRINT_CONTEXT_VAR = "virtualhostBlueprint";

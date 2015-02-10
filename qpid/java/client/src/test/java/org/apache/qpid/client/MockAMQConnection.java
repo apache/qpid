@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.client;
 
+import java.io.IOException;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.url.URLSyntaxException;
-
-import java.io.IOException;
 
 public class MockAMQConnection extends AMQConnection
 {
@@ -59,5 +59,11 @@ public class MockAMQConnection extends AMQConnection
     public AMQConnectionDelegate getDelegate()
     {
         return super.getDelegate();
+    }
+
+    @Override
+    public void performConnectionTask(final Runnable task)
+    {
+        task.run();
     }
 }

@@ -962,8 +962,11 @@ class Engine:
             lnk.options['node'] = {}
           if 'x-declare' not in lnk.options['node']:
             lnk.options['node']['x-declare'] = {}
-          lnk.options['node']['x-declare']['auto-delete'] = "True"
-          lnk.options['node']['x-declare']['exclusive'] = "True"
+          xdeclare = lnk.options['node']['x-declare']
+          if 'auto-delete' not in xdeclare:
+            xdeclare['auto-delete'] = "True"
+          if 'exclusive' not in xdeclare:
+            xdeclare['exclusive'] = "True"
       except address.LexError, e:
         return MalformedAddress(text=str(e))
       except address.ParseError, e:

@@ -93,7 +93,7 @@ private:
 AsynchAcceptor::AsynchAcceptor(const Socket& s,
                                AsynchAcceptor::Callback callback) :
     acceptedCallback(callback),
-    handle(s, boost::bind(&AsynchAcceptor::readable, this, _1), 0, 0),
+    handle((const IOHandle&)s, boost::bind(&AsynchAcceptor::readable, this, _1), 0, 0),
     socket(s) {
 
     s.setNonblocking();
@@ -167,7 +167,7 @@ AsynchConnector::AsynchConnector(const Socket& s,
                                  const std::string& port,
                                  ConnectedCallback connCb,
                                  FailedCallback failCb) :
-    DispatchHandle(s,
+    DispatchHandle((const IOHandle&)s,
                    0,
                    boost::bind(&AsynchConnector::connComplete, this, _1),
                    boost::bind(&AsynchConnector::connComplete, this, _1)),
@@ -308,7 +308,7 @@ AsynchIO::AsynchIO(const Socket& s,
                    ReadCallback rCb, EofCallback eofCb, DisconnectCallback disCb,
                    ClosedCallback cCb, BuffersEmptyCallback eCb, IdleCallback iCb) :
 
-    DispatchHandle(s, 
+    DispatchHandle((const IOHandle&)s,
                    boost::bind(&AsynchIO::readable, this, _1),
                    boost::bind(&AsynchIO::writeable, this, _1),
                    boost::bind(&AsynchIO::disconnected, this, _1)),

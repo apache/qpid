@@ -39,7 +39,7 @@ namespace qpid {
  * The name must be unique among sessions with the same authentication
  * principal.
  */
-class SessionId : boost::totally_ordered1<SessionId> {
+class SessionId : private boost::totally_ordered1<SessionId> {
     std::string userId;
     std::string name;
   public:

@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -87,6 +88,8 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
                                      final SSLContext sslContext,
                                      final boolean wantClientAuth,
                                      final boolean needClientAuth,
+                                     final Collection<String> enabledCipherSuites,
+                                     final Collection<String> disabledCipherSuites,
                                      final Runnable onTransportEncryptionAction)
     {
         _connection = connection;
@@ -112,6 +115,8 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
             _sslEngine = _sslContext.createSSLEngine();
             _sslEngine.setUseClientMode(false);
             SSLUtil.removeSSLv3Support(_sslEngine);
+            SSLUtil.updateEnabledCipherSuites(_sslEngine, enabledCipherSuites, disabledCipherSuites);
+
             if(needClientAuth)
             {
                 _sslEngine.setNeedClientAuth(true);

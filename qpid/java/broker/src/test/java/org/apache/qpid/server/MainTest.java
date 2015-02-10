@@ -188,7 +188,7 @@ public class MainTest extends QpidTestCase
         assertTrue(options.isManagementMode());
         assertEquals(password, options.getManagementModePassword());
 
-        options = startDummyMain("-mmpass " + password);
+        options = startDummyMain("-mm -mmpass " + password);
         assertNotNull(options.getManagementModePassword());
     }
 

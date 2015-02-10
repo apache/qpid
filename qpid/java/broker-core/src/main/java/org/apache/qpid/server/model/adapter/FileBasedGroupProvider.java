@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.server.model.adapter;
 
+import org.apache.qpid.server.model.GroupManagingGroupProvider;
 import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedObject;
 
 @ManagedObject( category = false, type = "GroupFile" )
-public interface FileBasedGroupProvider<X extends FileBasedGroupProvider<X>> extends GroupProvider<X>
+public interface FileBasedGroupProvider<X extends FileBasedGroupProvider<X>> extends GroupProvider<X>, GroupManagingGroupProvider
 {
     String PATH="path";
 

@@ -40,5 +40,5 @@ void uuid_generate (uint8_t out[qpid::sys::UuidSize])
     out[7] = (uuid.time_hi_and_version & 0x00ff);
     out[8] = uuid.clock_seq_hi_and_reserved;
     out[9] = uuid.clock_seq_low;
-    ::memcpy(&out[10], &uuid.node, _UUID_NODE_LEN);
+    ::memcpy(&out[10], &uuid.node, sizeof(uuid.node));
 }

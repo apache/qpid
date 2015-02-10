@@ -44,7 +44,7 @@ class OwnershipToken;
  * are deleted when and only when they are no longer in use.
  *
  */
-class QueueRegistry : QueueFactory {
+class QueueRegistry : private QueueFactory {
   public:
     QPID_BROKER_EXTERN QueueRegistry(Broker* b = 0);
     QPID_BROKER_EXTERN ~QueueRegistry();

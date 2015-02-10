@@ -26,6 +26,10 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,7 +44,7 @@ import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.amqp_1_0.type.SaslFrameBody;
 
-class TCPTransportProvier implements TransportProvider
+class TCPTransportProvider implements TransportProvider
 {
     private static final Logger RAW_LOGGER = Logger.getLogger("RAW");
 
@@ -57,7 +61,7 @@ class TCPTransportProvier implements TransportProvider
     private long _readIdleTimeout = Long.getLong("qpid.connection_read_idle_timeout", -1L);
     private final AtomicLong _threadNameIndex = new AtomicLong();
 
-    public TCPTransportProvier(final String transport)
+    public TCPTransportProvider(final String transport)
     {
         _transport = transport;
     }
@@ -67,7 +71,7 @@ class TCPTransportProvier implements TransportProvider
                         final String address,
                         final int port,
                         final SSLContext sslContext,
-                        final ExceptionHandler exceptionHandler) throws ConnectionException
+                        final SSLOptions sslOptions, final ExceptionHandler exceptionHandler) throws ConnectionException
     {
         try
         {
@@ -75,7 +79,30 @@ class TCPTransportProvier implements TransportProvider
             {
                 final SSLSocketFactory socketFactory = sslContext.getSocketFactory();
                 SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(address, port);
-                SSLUtil.removeSSLv3Support(sslSocket);
+                if(sslOptions == null)
+                {
+                    SSLUtil.removeSSLv3Support(sslSocket);
+                }
+                else
+                {
+                    final List<String> enabledProtocols = sslOptions.getEnabledProtocols();
+                    final List<String> disabledProtocols = sslOptions.getDisabledProtocols();
+
+                    if(enabledProtocols != null && !enabledProtocols.isEmpty())
+                    {
+                        final Set<String> supportedSuites =
+                                new HashSet<>(Arrays.asList(sslSocket.getSupportedProtocols()));
+                        supportedSuites.retainAll(enabledProtocols);
+                        sslSocket.setEnabledProtocols(supportedSuites.toArray(new String[supportedSuites.size()]));
+                    }
+
+                    if(disabledProtocols != null && !disabledProtocols.isEmpty())
+                    {
+                        final Set<String> enabledSuites = new HashSet<>(Arrays.asList(sslSocket.getEnabledProtocols()));
+                        enabledSuites.removeAll(disabledProtocols);
+                        sslSocket.setEnabledProtocols(enabledSuites.toArray(new String[enabledSuites.size()]));
+                    }
+                }
                 sslSocket.startHandshake();
                 conn.setExternalPrincipal(sslSocket.getSession().getLocalPrincipal());
                 _socket=sslSocket;

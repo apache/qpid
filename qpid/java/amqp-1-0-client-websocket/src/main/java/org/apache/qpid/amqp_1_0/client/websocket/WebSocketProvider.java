@@ -33,6 +33,7 @@ import org.eclipse.jetty.websocket.WebSocketClient;
 import org.eclipse.jetty.websocket.WebSocketClientFactory;
 
 import org.apache.qpid.amqp_1_0.client.ConnectionException;
+import org.apache.qpid.amqp_1_0.client.SSLOptions;
 import org.apache.qpid.amqp_1_0.client.SSLUtil;
 import org.apache.qpid.amqp_1_0.client.TransportProvider;
 import org.apache.qpid.amqp_1_0.codec.FrameWriter;
@@ -111,7 +112,9 @@ class WebSocketProvider implements TransportProvider
     public void connect(final ConnectionEndpoint conn,
                         final String address,
                         final int port,
-                        final SSLContext sslContext, final ExceptionHandler exceptionHandler) throws ConnectionException
+                        final SSLContext sslContext,
+                        final SSLOptions sslOptions,
+                        final ExceptionHandler exceptionHandler) throws ConnectionException
     {
 
         try

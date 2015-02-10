@@ -29,7 +29,7 @@ define(["dojo/_base/xhr",
      _init: function ()
      {
        var that = this;
-       xhr.get({sync: true, handleAs: "json", url: "service/metadata", load: function(metadata){that._onMetadata(metadata)}});
+       xhr.get({sync: true, handleAs: "json", url: "service/metadata", load: function(data){that._onMetadata(data)}});
      },
      _onMetadata: function (metadata)
      {
@@ -68,7 +68,8 @@ define(["dojo/_base/xhr",
      },
      implementsManagedInterface: function (category, type, managedInterfaceName)
      {
-        return this.getMetaData(category, type).managedInterfaces.indexOf(managedInterfaceName) >= 0;
+        var managedInterfaces = this.getMetaData(category, type).managedInterfaces;
+        return array.indexOf(managedInterfaces, managedInterfaceName) >= 0 ;
      },
      validChildTypes: function (category, type, childCategory)
      {

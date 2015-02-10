@@ -23,6 +23,7 @@ package org.apache.qpid.transport.network.io;
 import java.net.SocketAddress;
 import java.nio.channels.SocketChannel;
 import java.security.Principal;
+import java.util.Collection;
 import java.util.Set;
 
 import javax.net.ssl.SSLContext;
@@ -61,7 +62,10 @@ public class NonBlockingConnection implements NetworkConnection
                                  final SSLContext sslContext,
                                  final boolean wantClientAuth,
                                  final boolean needClientAuth,
-                                 final Runnable onTransportEncryptionAction, final SelectorThread selectorThread)
+                                 final Collection<String> enabledCipherSuites,
+                                 final Collection<String> disabledCipherSuites,
+                                 final Runnable onTransportEncryptionAction,
+                                 final SelectorThread selectorThread)
     {
         _socketChannel = socketChannel;
         _timeout = timeout;
@@ -69,9 +73,19 @@ public class NonBlockingConnection implements NetworkConnection
         _selector = selectorThread;
 
         _nonBlockingSenderReceiver = new NonBlockingSenderReceiver(this,
-                                                                   delegate, receiveBufferSize, ticker, encryptionSet, sslContext, wantClientAuth, needClientAuth, onTransportEncryptionAction);
+                                                                   delegate,
+                                                                   receiveBufferSize,
+                                                                   ticker,
+                                                                   encryptionSet,
+                                                                   sslContext,
+                                                                   wantClientAuth,
+                                                                   needClientAuth,
+                                                                   enabledCipherSuites,
+                                                                   disabledCipherSuites,
+                                                                   onTransportEncryptionAction);
 
     }
+
 
     public Ticker getTicker()
     {

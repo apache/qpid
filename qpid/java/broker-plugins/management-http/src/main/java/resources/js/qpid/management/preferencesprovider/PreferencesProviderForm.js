@@ -125,7 +125,8 @@ function (util, metadata, xhr, declare, array, domConstruct, win, query, json, _
         this.preferencesProviderNameWidget.set("value", data.name);
         if (data.type == this.preferencesProviderTypeWidget.get("value"))
         {
-            this._toggleWidgets(data.type);
+            // re-create UI anyway
+            this._preferencesProviderTypeChanged(data.type);
         }
         else
         {
@@ -192,6 +193,10 @@ function (util, metadata, xhr, declare, array, domConstruct, win, query, json, _
         if (disabled)
         {
             this.reset();
+        }
+        else
+        {
+            this._toggleWidgets(this.preferencesProviderTypeWidget.value);
         }
     },
   });

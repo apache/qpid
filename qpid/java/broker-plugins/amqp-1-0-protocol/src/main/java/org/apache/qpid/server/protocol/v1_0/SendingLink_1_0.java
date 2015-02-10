@@ -496,6 +496,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 && hasCredit())
         {
             _draining = true;
+            _target.flush();
         }
 
         while(!_resumeAcceptedTransfers.isEmpty() && getEndpoint().hasCreditToSend())

@@ -23,7 +23,7 @@
 
 #if defined(_MSC_VER) || defined(_LIBCPP_VERSION) || __cplusplus >= 201103L
 #  include <unordered_map>
-#elif defined(__SUNPRO_CC)
+#elif defined(__SUNPRO_CC) || defined(__IBMCPP__)
 #  include <boost/tr1/unordered_map.hpp>
 #else
 #  include <tr1/unordered_map>

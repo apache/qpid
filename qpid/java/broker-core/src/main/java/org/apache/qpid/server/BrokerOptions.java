@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.SystemConfig;
-import org.apache.qpid.server.util.StringUtil;
 
 public class BrokerOptions
 {
@@ -58,7 +57,6 @@ public class BrokerOptions
         BrokerOptions.class.getClassLoader().getResource(DEFAULT_INITIAL_CONFIG_NAME).toExternalForm();
 
     public static final String MANAGEMENT_MODE_USER_NAME = "mm_admin";
-    private static final int MANAGEMENT_MODE_PASSWORD_LENGTH = 10;
 
     private static final File FALLBACK_WORK_DIR = new File(System.getProperty("user.dir"), "work");
 
@@ -79,7 +77,6 @@ public class BrokerOptions
     private boolean _skipLoggingConfiguration;
     private boolean _overwriteConfigurationStore;
     private Map<String, String> _configProperties = new HashMap<String,String>();
-    private String _initialSystemProperties;
     private boolean _startupLoggedToSystemOut = true;
 
     public Map<String, Object> convertToSystemConfigAttributes()
@@ -102,11 +99,6 @@ public class BrokerOptions
 
     public String getManagementModePassword()
     {
-        if(_managementModePassword == null)
-        {
-            _managementModePassword = new StringUtil().randomAlphaNumericString(MANAGEMENT_MODE_PASSWORD_LENGTH);
-        }
-
         return _managementModePassword;
     }
 
