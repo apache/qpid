@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.Constant;
 import org.apache.qpid.transport.network.Assembler;
@@ -55,6 +56,8 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     private long _lastWriteTime = _createTime;
     private volatile boolean _transportBlockedForWriting;
 
+    private volatile boolean _messageAssignmentSuspended;
+
     public ProtocolEngine_0_10(ServerConnection conn,
                                NetworkConnection network)
     {
@@ -66,6 +69,20 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
             setNetworkConnection(network, network.getSender());
         }
     }
+
+    @Override
+    public boolean isMessageAssignmentSuspended()
+    {
+        return _messageAssignmentSuspended;
+    }
+
+    @Override
+    public void setMessageAssignmentSuspended(final boolean messageAssignmentSuspended)
+    {
+        _messageAssignmentSuspended = messageAssignmentSuspended;
+    }
+
+
 
     public void setNetworkConnection(final NetworkConnection network, final ByteBufferSender sender)
     {
@@ -252,4 +269,12 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         _connection.transportStateChanged();
     }
 
+    @Override
+    public void processPendingMessages()
+    {
+        for (AMQSessionModel session : _connection.getSessionModels())
+        {
+            session.processPendingMessages();
+        }
+    }
 }

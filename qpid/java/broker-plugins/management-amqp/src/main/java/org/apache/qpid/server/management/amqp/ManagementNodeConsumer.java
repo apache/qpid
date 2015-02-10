@@ -164,6 +164,12 @@ class ManagementNodeConsumer implements ConsumerImpl
 
     }
 
+    @Override
+    public ConsumerTarget getTarget()
+    {
+        return _target;
+    }
+
     ManagementNode getManagementNode()
     {
         return _managementNode;

@@ -65,7 +65,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     private final AmqpPort<?> _port;
     private final Broker<?> _broker;
     private final SubjectCreator _subjectCreator;
-    private final ServerProtocolEngine _protocolEngine;
+    private final ProtocolEngine_1_0_0_SASL _protocolEngine;
     private VirtualHostImpl _vhost;
     private final Transport _transport;
     private final ConnectionEndpoint _conn;
@@ -110,7 +110,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
                           AmqpPort<?> port,
                           Transport transport,
                           final SubjectCreator subjectCreator,
-                          final ServerProtocolEngine protocolEngine)
+                          final ProtocolEngine_1_0_0_SASL protocolEngine)
     {
         _protocolEngine = protocolEngine;
         _broker = broker;
@@ -497,5 +497,17 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         {
             session.transportStateChanged();
         }
+    }
+
+    @Override
+    public void flushBatched()
+    {
+        _protocolEngine.flushBatched();
+    }
+
+    @Override
+    public boolean isMessageAssignmentSuspended()
+    {
+        return _protocolEngine.isMessageAssignmentSuspended();
     }
 }

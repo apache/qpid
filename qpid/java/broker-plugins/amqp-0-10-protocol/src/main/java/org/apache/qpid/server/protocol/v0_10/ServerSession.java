@@ -1135,6 +1135,15 @@ public class ServerSession extends Session
         }
     }
 
+    @Override
+    public void processPendingMessages()
+    {
+        for(ConsumerTarget target : getSubscriptions())
+        {
+            target.processPendingMessages();
+        }
+    }
+
 
     public final long getMaxUncommittedInMemorySize()
     {

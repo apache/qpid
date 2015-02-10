@@ -21,6 +21,7 @@
 package org.apache.qpid.server.protocol.v0_8;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -33,6 +34,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.consumer.AbstractConsumerTarget;
 import org.apache.qpid.server.consumer.ConsumerImpl;
+import org.apache.qpid.server.consumer.ConsumerMessageInstancePair;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
@@ -99,6 +101,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         return _consumers;
     }
 
+
     static final class BrowserConsumer extends ConsumerTarget_0_8
     {
         public BrowserConsumer(AMQChannel channel,
@@ -123,7 +126,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
          * @throws org.apache.qpid.AMQException
          */
         @Override
-        public long send(final ConsumerImpl consumer, MessageInstance entry, boolean batch)
+        public void doSend(final ConsumerImpl consumer, MessageInstance entry, boolean batch)
         {
             // We don't decrement the reference here as we don't want to consume the message
             // but we do want to send it to the client.
@@ -131,7 +134,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
             synchronized (getChannel())
             {
                 long deliveryTag = getChannel().getNextDeliveryTag();
-                return sendToClient(consumer, entry.getMessage(), entry.getInstanceProperties(), deliveryTag);
+                sendToClient(consumer, entry.getMessage(), entry.getInstanceProperties(), deliveryTag);
             }
 
         }
@@ -178,7 +181,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
          * @param batch
          */
         @Override
-        public long send(final ConsumerImpl consumer, MessageInstance entry, boolean batch)
+        public void doSend(final ConsumerImpl consumer, MessageInstance entry, boolean batch)
         {
             // if we do not need to wait for client acknowledgements
             // we can decrement the reference count immediately.
@@ -205,7 +208,6 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
 
             }
             ref.release();
-            return size;
 
         }
 
@@ -278,9 +280,10 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
          * @param batch
          */
         @Override
-        public long send(final ConsumerImpl consumer, MessageInstance entry, boolean batch)
+        public void doSend(final ConsumerImpl consumer, MessageInstance entry, boolean batch)
         {
 
+            // put queue entry on a list and then notify the connection to read list.
 
             synchronized (getChannel())
             {
@@ -292,9 +295,12 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
                 entry.addStateChangeListener(getReleasedStateChangeListener());
                 long size = sendToClient(consumer, entry.getMessage(), entry.getInstanceProperties(), deliveryTag);
                 entry.incrementDeliveryCount();
-                return size;
             }
+
+
         }
+
+
 
 
 
@@ -382,7 +388,8 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         return subscriber + "]";
     }
 
-    public boolean isSuspended()
+    @Override
+    public boolean doIsSuspended()
     {
         return getState()!=State.ACTIVE || _channel.isSuspended() || _deleted.get() || _channel.getConnectionModel().isStopped();
     }

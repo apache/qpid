@@ -685,4 +685,17 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
             ssn.transportStateChanged();
         }
     }
+
+    @Override
+    public void flushBatched()
+    {
+        getSender().flush();
+    }
+
+
+    @Override
+    public boolean isMessageAssignmentSuspended()
+    {
+        return _serverProtocolEngine.isMessageAssignmentSuspended();
+    }
 }

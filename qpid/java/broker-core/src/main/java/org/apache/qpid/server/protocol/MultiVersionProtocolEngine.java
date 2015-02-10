@@ -84,6 +84,18 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         _onCloseTask = onCloseTask;
     }
 
+    @Override
+    public void setMessageAssignmentSuspended(final boolean value)
+    {
+        _delegate.setMessageAssignmentSuspended(value);
+    }
+
+    @Override
+    public boolean isMessageAssignmentSuspended()
+    {
+        return _delegate.isMessageAssignmentSuspended();
+    }
+
     public SocketAddress getRemoteAddress()
     {
         return _delegate.getRemoteAddress();
@@ -198,10 +210,33 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         return _delegate.getLastWriteTime();
     }
 
-
+    @Override
+    public void processPendingMessages()
+    {
+        _delegate.processPendingMessages();
+    }
 
     private class ClosedDelegateProtocolEngine implements ServerProtocolEngine
     {
+
+        @Override
+        public void setMessageAssignmentSuspended(final boolean value)
+        {
+
+        }
+
+        @Override
+        public boolean isMessageAssignmentSuspended()
+        {
+            return false;
+        }
+
+        @Override
+        public void processPendingMessages()
+        {
+
+        }
+
         public SocketAddress getRemoteAddress()
         {
             return _network.getRemoteAddress();
@@ -316,6 +351,23 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         public long getReadBytes()
         {
             return 0;
+        }
+
+        @Override
+        public void setMessageAssignmentSuspended(final boolean value)
+        {
+        }
+
+        @Override
+        public boolean isMessageAssignmentSuspended()
+        {
+            return false;
+        }
+
+        @Override
+        public void processPendingMessages()
+        {
+
         }
 
         public void received(ByteBuffer msg)

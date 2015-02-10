@@ -178,6 +178,18 @@ public class MockConsumer implements ConsumerTarget
         return size;
     }
 
+    @Override
+    public boolean hasMessagesToSend()
+    {
+        return false;
+    }
+
+    @Override
+    public void sendNextMessage()
+    {
+
+    }
+
     public void flushBatched()
     {
 
@@ -228,6 +240,12 @@ public class MockConsumer implements ConsumerTarget
         {
             _listener = null;
         }
+    }
+
+    @Override
+    public void processPendingMessages()
+    {
+
     }
 
     public ArrayList<MessageInstance> getMessages()
@@ -462,6 +480,12 @@ public class MockConsumer implements ConsumerTarget
         {
 
         }
+
+        @Override
+        public void processPendingMessages()
+        {
+
+        }
     }
 
     private static class MockConnectionModel implements AMQConnectionModel
@@ -591,6 +615,18 @@ public class MockConsumer implements ConsumerTarget
         public void removeSessionListener(final SessionModelListener listener)
         {
 
+        }
+
+        @Override
+        public void flushBatched()
+        {
+
+        }
+
+        @Override
+        public boolean isMessageAssignmentSuspended()
+        {
+            return false;
         }
 
         @Override

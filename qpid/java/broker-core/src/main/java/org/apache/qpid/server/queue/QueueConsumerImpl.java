@@ -507,6 +507,7 @@ class QueueConsumerImpl
         return _selector;
     }
 
+
     @Override
     public String toLogString()
     {

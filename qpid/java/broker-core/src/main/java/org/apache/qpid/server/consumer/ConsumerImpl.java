@@ -31,6 +31,8 @@ public interface ConsumerImpl
 
     void externalStateChange();
 
+    ConsumerTarget getTarget();
+
     enum Option
     {
         ACQUIRES,

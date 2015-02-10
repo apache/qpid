@@ -83,7 +83,8 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
         return _link.getEndpoint();
     }
 
-    public boolean isSuspended()
+    @Override
+    public boolean doIsSuspended()
     {
         return _link.getSession().getConnectionModel().isStopped() || getState() != State.ACTIVE;
 
@@ -113,22 +114,10 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
         }
     }
 
-    public long send(final ConsumerImpl consumer, MessageInstance entry, boolean batch)
+    public void doSend(final ConsumerImpl consumer, final MessageInstance entry, boolean batch)
     {
         // TODO
-        long size = entry.getMessage().getSize();
-        send(entry);
-        return size;
-    }
-
-    public void flushBatched()
-    {
-        // TODO
-    }
-
-    public void send(final MessageInstance queueEntry)
-    {
-        ServerMessage serverMessage = queueEntry.getMessage();
+        ServerMessage serverMessage = entry.getMessage();
         Message_1_0 message;
         if(serverMessage instanceof Message_1_0)
         {
@@ -168,7 +157,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
             payload.flip();
         }
 
-        if(queueEntry.getDeliveryCount() != 0)
+        if(entry.getDeliveryCount() != 0)
         {
             payload = payload.duplicate();
             ValueHandler valueHandler = new ValueHandler(_typeRegistry);
@@ -200,7 +189,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
                 header.setPriority(oldHeader.getPriority());
                 header.setTtl(oldHeader.getTtl());
             }
-            header.setDeliveryCount(UnsignedInteger.valueOf(queueEntry.getDeliveryCount()));
+            header.setDeliveryCount(UnsignedInteger.valueOf(entry.getDeliveryCount()));
             _sectionEncoder.reset();
             _sectionEncoder.encodeObject(header);
             Binary encodedHeader = _sectionEncoder.getEncoding();
@@ -230,10 +219,10 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
                 else
                 {
                     UnsettledAction action = _acquires
-                                             ? new DispositionAction(tag, queueEntry)
-                                             : new DoNothingAction(tag, queueEntry);
+                                             ? new DispositionAction(tag, entry)
+                                             : new DoNothingAction(tag, entry);
 
-                    _link.addUnsettled(tag, action, queueEntry);
+                    _link.addUnsettled(tag, action, entry);
                 }
 
                 if(_transactionId != null)
@@ -257,9 +246,9 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
 
                             public void onRollback()
                             {
-                                if(queueEntry.isAcquiredBy(getConsumer()))
+                                if(entry.isAcquiredBy(getConsumer()))
                                 {
-                                    queueEntry.release();
+                                    entry.release();
                                     _link.getEndpoint().updateDisposition(tag, (DeliveryState)null, true);
 
 
@@ -274,10 +263,15 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
             }
             else
             {
-                queueEntry.release();
+                entry.release();
             }
         }
 
+    }
+
+    public void flushBatched()
+    {
+        // TODO
     }
 
     public void queueDeleted()

@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,40 +15,38 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.consumer.ConsumerImpl;
-import org.apache.qpid.server.consumer.ConsumerTarget;
+package org.apache.qpid.server.consumer;
+
 import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.model.Consumer;
 
-public interface QueueConsumer<X extends QueueConsumer<X>> extends ConsumerImpl, Consumer<X>
+public class ConsumerMessageInstancePair
 {
+    private final ConsumerImpl _consumer;
+    private final MessageInstance _entry;
+    private final boolean _batch;
 
-    void flushBatched();
+    public ConsumerMessageInstancePair(final ConsumerImpl consumer, final MessageInstance entry, final boolean batch)
+    {
+        _consumer = consumer;
+        _entry = entry;
+        _batch = batch;
 
-    void queueEmpty();
+    }
 
-    boolean hasInterest(QueueEntry node);
+    public ConsumerImpl getConsumer()
+    {
+        return _consumer;
+    }
 
-    boolean wouldSuspend(QueueEntry entry);
+    public MessageInstance getEntry()
+    {
+        return _entry;
+    }
 
-    void restoreCredit(QueueEntry entry);
-
-    void send(QueueEntry entry, boolean batch);
-
-    void acquisitionRemoved(QueueEntry node);
-
-    void queueDeleted();
-
-    AMQQueue getQueue();
-
-    boolean resend(QueueEntry e);
-
-    MessageInstance.ConsumerAcquiredState<X> getOwningState();
-
-    QueueContext getQueueContext();
-
+    public boolean isBatch()
+    {
+        return _batch;
+    }
 }

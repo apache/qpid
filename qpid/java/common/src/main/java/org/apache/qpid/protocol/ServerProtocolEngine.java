@@ -34,4 +34,10 @@ public interface ServerProtocolEngine extends ProtocolEngine
     boolean isTransportBlockedForWriting();
 
     void setTransportBlockedForWriting(boolean blocked);
+
+    void setMessageAssignmentSuspended(boolean value);
+
+    boolean isMessageAssignmentSuspended();
+
+    void processPendingMessages();
 }

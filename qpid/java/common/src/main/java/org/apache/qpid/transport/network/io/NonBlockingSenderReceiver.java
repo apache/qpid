@@ -61,7 +61,7 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
 
     private final String _remoteSocketAddress;
     private final AtomicBoolean _closed = new AtomicBoolean(false);
-    private final ServerProtocolEngine _receiver;
+    private final ServerProtocolEngine _protocolEngine;
     private final int _receiveBufSize;
     private final Ticker _ticker;
     private final Set<TransportEncryption> _encryptionSet;
@@ -81,7 +81,7 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
 
 
     public NonBlockingSenderReceiver(final NonBlockingConnection connection,
-                                     ServerProtocolEngine receiver,
+                                     ServerProtocolEngine protocolEngine,
                                      int receiveBufSize,
                                      Ticker ticker,
                                      final Set<TransportEncryption> encryptionSet,
@@ -94,7 +94,7 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
     {
         _connection = connection;
         _socketChannel = connection.getSocketChannel();
-        _receiver = receiver;
+        _protocolEngine = protocolEngine;
         _receiveBufSize = receiveBufSize;
         _ticker = ticker;
         _encryptionSet = encryptionSet;
@@ -170,15 +170,22 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
                     _ticker.tick(currentTime);
                 }
 
-                _receiver.setTransportBlockedForWriting(!doWrite());
+                _protocolEngine.setMessageAssignmentSuspended(true);
+
+                _protocolEngine.processPendingMessages();
+
+                _protocolEngine.setTransportBlockedForWriting(!doWrite());
                 boolean dataRead = doRead();
                 _fullyWritten = doWrite();
-                _receiver.setTransportBlockedForWriting(!_fullyWritten);
+                _protocolEngine.setTransportBlockedForWriting(!_fullyWritten);
 
                 if(dataRead || (_workDone && _netInputBuffer != null && _netInputBuffer.position() != 0))
                 {
                     _stateChanged.set(true);
                 }
+
+                // tell all consumer targets that it is okay to accept more
+                _protocolEngine.setMessageAssignmentSuspended(false);
             }
             catch (IOException e)
             {
@@ -213,7 +220,7 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
 
             }
             LOGGER.debug("Closing receiver");
-            _receiver.closed();
+            _protocolEngine.closed();
 
             try
             {
@@ -373,7 +380,7 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
                 ByteBuffer dup = _currentBuffer.duplicate();
                 dup.flip();
                 _currentBuffer = _currentBuffer.slice();
-                _receiver.received(dup);
+                _protocolEngine.received(dup);
             }
         }
         else if(_transportEncryption == TransportEncryption.TLS)
@@ -414,7 +421,7 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
                     {
                         readData = true;
                     }
-                    _receiver.received(appInputBuffer);
+                    _protocolEngine.received(appInputBuffer);
                 }
                 while(unwrapped > 0 || tasksRun);
 
@@ -451,7 +458,7 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
 
                     if (_transportEncryption == TransportEncryption.NONE)
                     {
-                        _receiver.received(_netInputBuffer);
+                        _protocolEngine.received(_netInputBuffer);
                     }
                     else
                     {

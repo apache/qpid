@@ -1148,10 +1148,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                     else
                     {
                         deliverMessage(sub, entry, false);
-                        if(sub.acquires())
-                        {
-                            entry.unlockAcquisition();
-                        }
                     }
                 }
             }
@@ -1978,10 +1974,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                         else
                         {
                             deliverMessage(sub, node, batch);
-                            if(sub.acquires())
-                            {
-                                node.unlockAcquisition();
-                            }
                         }
 
                     }

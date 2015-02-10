@@ -56,6 +56,7 @@ import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.port.AmqpPort;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -135,6 +136,10 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
     private State _state = State.A;
 
+    private volatile boolean _messageAssignmentSuspended;
+
+
+
 
     public ProtocolEngine_1_0_0_SASL(final NetworkConnection networkDriver, final Broker<?> broker,
                                      long id, AmqpPort<?> port, Transport transport)
@@ -147,6 +152,19 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         {
             setNetworkConnection(networkDriver, networkDriver.getSender());
         }
+    }
+
+
+    @Override
+    public boolean isMessageAssignmentSuspended()
+    {
+        return _messageAssignmentSuspended;
+    }
+
+    @Override
+    public void setMessageAssignmentSuspended(final boolean messageAssignmentSuspended)
+    {
+        _messageAssignmentSuspended = messageAssignmentSuspended;
     }
 
 
@@ -576,4 +594,17 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
     }
 
+    public void flushBatched()
+    {
+        _sender.flush();
+    }
+
+    @Override
+    public void processPendingMessages()
+    {
+        for (AMQSessionModel session : _connection.getSessionModels())
+        {
+            session.processPendingMessages();
+        }
+    }
 }

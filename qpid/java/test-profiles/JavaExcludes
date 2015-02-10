@@ -27,3 +27,5 @@ org.apache.qpid.test.client.queue.QueuePolicyTest#testRejectPolicy
 //QPID-4153 Messages causing a runtime selector error should be dead-lettered (or something similar)
 org.apache.qpid.test.client.message.SelectorTest#testRuntimeSelectorError
 
+
+org.apache.qpid.server.protocol.v0_8.AckTest

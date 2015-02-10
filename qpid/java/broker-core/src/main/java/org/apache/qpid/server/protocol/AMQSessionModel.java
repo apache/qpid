@@ -115,4 +115,6 @@ public interface AMQSessionModel<T extends AMQSessionModel<T,C>, C extends AMQCo
     long getTransactionUpdateTime();
 
     void transportStateChanged();
+
+    void processPendingMessages();
 }

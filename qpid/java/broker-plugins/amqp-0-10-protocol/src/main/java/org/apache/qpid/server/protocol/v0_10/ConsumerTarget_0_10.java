@@ -104,7 +104,8 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         _name = name;
     }
 
-    public boolean isSuspended()
+    @Override
+    public boolean doIsSuspended()
     {
         return getState()!=State.ACTIVE || _deleted.get() || _session.isClosing() || _session.getConnectionModel().isStopped(); // TODO check for Session suspension
     }
@@ -195,7 +196,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
 
     private final AddMessageDispositionListenerAction _postIdSettingAction;
 
-    public long send(final ConsumerImpl consumer, final MessageInstance entry, boolean batch)
+    public void doSend(final ConsumerImpl consumer, final MessageInstance entry, boolean batch)
     {
         ServerMessage serverMsg = entry.getMessage();
 
@@ -346,7 +347,6 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
         {
             recordUnacknowledged(entry);
         }
-        return size;
     }
 
     void recordUnacknowledged(MessageInstance entry)

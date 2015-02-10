@@ -3606,4 +3606,14 @@ public class AMQChannel
             }
         }
     }
+
+    @Override
+    public void processPendingMessages()
+    {
+
+        for(ConsumerTarget target : _tag2SubscriptionTargetMap.values())
+        {
+            target.processPendingMessages();
+        }
+    }
 }

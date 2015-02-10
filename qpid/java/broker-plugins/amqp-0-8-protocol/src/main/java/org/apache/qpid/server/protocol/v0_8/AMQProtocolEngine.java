@@ -202,6 +202,22 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     private long _maxMessageSize;
     private volatile boolean _transportBlockedForWriting;
 
+    private volatile boolean _messageAssignmentSuspended;
+
+
+    @Override
+    public boolean isMessageAssignmentSuspended()
+    {
+        return _messageAssignmentSuspended;
+    }
+
+    @Override
+    public void setMessageAssignmentSuspended(final boolean messageAssignmentSuspended)
+    {
+        _messageAssignmentSuspended = messageAssignmentSuspended;
+    }
+
+
     public AMQProtocolEngine(Broker<?> broker,
                              final NetworkConnection network,
                              final long connectionId,
@@ -331,9 +347,9 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             {
 
                 final long arrivalTime = System.currentTimeMillis();
-                if(!_authenticated &&
-                   (arrivalTime - _creationTime) > _port.getContextValue(Long.class,
-                                                                         Port.CONNECTION_MAXIMUM_AUTHENTICATION_DELAY))
+                if (!_authenticated &&
+                    (arrivalTime - _creationTime) > _port.getContextValue(Long.class,
+                                                                          Port.CONNECTION_MAXIMUM_AUTHENTICATION_DELAY))
                 {
                     _logger.warn("Connection has taken more than "
                                  + _port.getContextValue(Long.class, Port.CONNECTION_MAXIMUM_AUTHENTICATION_DELAY)
@@ -388,7 +404,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                 }
                 catch (StoreException e)
                 {
-                    if(_virtualHost.getState() == State.ACTIVE)
+                    if (_virtualHost.getState() == State.ACTIVE)
                     {
                         throw e;
                     }
@@ -1362,7 +1378,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     {
         closeConnection(0, new AMQConnectionException(cause, message, 0, 0,
                                                       getMethodRegistry(),
-		                                              null));
+                                                      null));
     }
 
     public void block()
@@ -2049,4 +2065,12 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         return _closing.get();
     }
 
+    @Override
+    public void processPendingMessages()
+    {
+        for (AMQSessionModel session : getSessionModels())
+        {
+            session.processPendingMessages();
+        }
+    }
 }
