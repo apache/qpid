@@ -291,6 +291,12 @@ public class Connection implements ExceptionHandler
 
     private TransportProvider getTransportProvider(final String protocol) throws ConnectionException
     {
+        TCPTransportProviderFactory tcpTransportProviderFactory = new TCPTransportProviderFactory();
+        if(tcpTransportProviderFactory.getSupportedTransports().contains(protocol))
+        {
+            return tcpTransportProviderFactory.getProvider(protocol);
+        }
+
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         ServiceLoader<TransportProviderFactory> providerFactories = ServiceLoader.load(TransportProviderFactory.class, classLoader);
 
