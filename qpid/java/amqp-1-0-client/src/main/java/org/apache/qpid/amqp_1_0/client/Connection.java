@@ -179,7 +179,7 @@ public class Connection implements ExceptionHandler
                       boolean ssl,
                       int channelMax) throws ConnectionException
     {
-        this(ssl?"amqp":"amqps",address,port,username,password,maxFrameSize,container,
+        this(ssl?"amqps":"amqp",address,port,username,password,maxFrameSize,container,
              remoteHostname,
              getSslContext(ssl),
              null,

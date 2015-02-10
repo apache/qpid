@@ -225,8 +225,8 @@ public class FrameHandler implements ProtocolHandler
                     // PARSE HERE
                     try
                     {
-                        Object val = _typeHandler.parse(in);
-
+                        Object val = in.hasRemaining() ? _typeHandler.parse(in) : null;
+                        
                         if(in.hasRemaining())
                         {
                             if(val instanceof Transfer)
