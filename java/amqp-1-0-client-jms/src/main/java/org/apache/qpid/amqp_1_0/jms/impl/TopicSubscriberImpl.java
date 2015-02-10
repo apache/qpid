@@ -131,6 +131,13 @@ public class TopicSubscriberImpl extends MessageConsumerImpl implements TopicSub
 
     protected void closeUnderlyingReceiver(Receiver receiver)
     {
-        receiver.close();
+        if(isDurable())
+        {
+            receiver.detach();
+        }
+        else
+        {
+            receiver.close();
+        }
     }
 }
