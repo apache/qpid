@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -1353,16 +1354,23 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         if (exceptionListener != null)
         {
             performConnectionTask(new Runnable()
-                                    {
-                                        @Override
-                                        public void run()
-                                        {
-                                            // deliver the exception if there is a listener
-                                                exceptionListener.onException(je);
-                                        }
-                                    });
-        }
-        else
+                                  {
+                                      @Override
+                                      public void run()
+                                      {
+                                          // deliver the exception if there is a listener
+                                          try
+                                          {
+                                              exceptionListener.onException(je);
+                                          }
+                                          catch (RuntimeException e)
+                                          {
+                                              _logger.error("Exception occurred in ExceptionListener", e);
+                                          }
+                                      }
+                                  });
+            }
+            else
         {
             _logger.error("Throwable Received but no listener set: " + cause);
         }
@@ -1478,7 +1486,17 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public void performConnectionTask(Runnable task)
     {
-        _taskPool.execute(task);
+        try
+        {
+            _taskPool.execute(task);
+        }
+        catch (RejectedExecutionException e)
+        {
+            if(!(isClosed() || isClosing()))
+            {
+                throw e;
+            }
+        }
     }
 
     public AMQSession getSession(int channelId)
