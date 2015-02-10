@@ -291,7 +291,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
     public void closed(Connection conn)
     {
-        ConnectionException exc = exception;
+        final ConnectionException exc = exception;
         exception = null;
 
         if (exc == null)
@@ -299,7 +299,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             return;
         }
 
-        ConnectionClose close = exc.getClose();
+        final ConnectionClose close = exc.getClose();
         if (close == null || close.getReplyCode() == ConnectionCloseCode.CONNECTION_FORCED)
         {
             _conn.getProtocolHandler().setFailoverLatch(new CountDownLatch(1));
@@ -332,23 +332,31 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
         _conn.setClosed();
 
-        ExceptionListener listener = _conn.getExceptionListenerNoCheck();
+        final ExceptionListener listener = _conn.getExceptionListenerNoCheck();
         if (listener == null)
         {
             _logger.error("connection exception: " + conn, exc);
         }
         else
         {
-            String code = null;
-            if (close != null)
+            _conn.performConnectionTask(new Runnable()
             {
-                code = close.getReplyCode().toString();
-            }
+                @Override
+                public void run()
+                {
+                    String code = null;
+                    if (close != null)
+                    {
+                        code = close.getReplyCode().toString();
+                    }
 
-            JMSException ex = new JMSException(exc.getMessage(), code);
-            ex.setLinkedException(exc);
-            ex.initCause(exc);
-            listener.onException(ex);
+                    JMSException ex = new JMSException(exc.getMessage(), code);
+                    ex.setLinkedException(exc);
+                    ex.initCause(exc);
+                    listener.onException(ex);
+                }
+            });
+
         }
     }
 

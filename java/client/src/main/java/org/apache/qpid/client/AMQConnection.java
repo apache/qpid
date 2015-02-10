@@ -1349,16 +1349,25 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     private void deliverJMSExceptionToExceptionListenerOrLog(final JMSException je, final Throwable cause)
     {
-        // deliver the exception if there is a listener
-        ExceptionListener exceptionListener = getExceptionListenerNoCheck();
+        final ExceptionListener exceptionListener = getExceptionListenerNoCheck();
         if (exceptionListener != null)
         {
-            exceptionListener.onException(je);
+            performConnectionTask(new Runnable()
+                                    {
+                                        @Override
+                                        public void run()
+                                        {
+                                            // deliver the exception if there is a listener
+                                                exceptionListener.onException(je);
+                                        }
+                                    });
         }
         else
         {
             _logger.error("Throwable Received but no listener set: " + cause);
         }
+
+
     }
 
     private boolean hardError(Throwable cause)
