@@ -120,6 +120,7 @@ public abstract class AbstractConsumerTarget implements ConsumerTarget
         }
     }
 
+    @Override
     public final void notifyCurrentState()
     {
 

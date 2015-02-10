@@ -53,7 +53,9 @@ import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -165,6 +167,17 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     public void setMessageAssignmentSuspended(final boolean messageAssignmentSuspended)
     {
         _messageAssignmentSuspended = messageAssignmentSuspended;
+
+        if(!messageAssignmentSuspended)
+        {
+            for(AMQSessionModel<?,?> session : _connection.getSessionModels())
+            {
+                for(Consumer<?> consumer : session.getConsumers())
+                {
+                    ((ConsumerImpl)consumer).getTarget().notifyCurrentState();
+                }
+            }
+        }
     }
 
 

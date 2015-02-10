@@ -217,6 +217,12 @@ public class MockConsumer implements ConsumerTarget
        close();
     }
 
+    @Override
+    public void notifyCurrentState()
+    {
+
+    }
+
     public void setState(State state)
     {
         State oldState = _state;

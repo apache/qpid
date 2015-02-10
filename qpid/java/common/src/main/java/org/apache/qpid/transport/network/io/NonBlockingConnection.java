@@ -50,7 +50,6 @@ public class NonBlockingConnection implements NetworkConnection
     private Principal _principal;
     private boolean _principalChecked;
     private final Object _lock = new Object();
-    private boolean _stateChanged;
 
     public NonBlockingConnection(SocketChannel socketChannel,
                                  ServerProtocolEngine delegate,

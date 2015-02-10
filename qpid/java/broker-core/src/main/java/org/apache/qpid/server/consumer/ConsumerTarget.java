@@ -46,6 +46,8 @@ public interface ConsumerTarget
 
     void consumerRemoved(ConsumerImpl sub);
 
+    void notifyCurrentState();
+
     void addStateListener(StateChangeListener<ConsumerTarget, State> listener);
 
     long getUnacknowledgedBytes();

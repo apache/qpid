@@ -69,6 +69,7 @@ import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.Transport;
@@ -215,6 +216,17 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     public void setMessageAssignmentSuspended(final boolean messageAssignmentSuspended)
     {
         _messageAssignmentSuspended = messageAssignmentSuspended;
+
+        if(!messageAssignmentSuspended)
+        {
+            for(AMQSessionModel<?,?> session : getSessionModels())
+            {
+                for(Consumer<?> consumer : session.getConsumers())
+                {
+                    ((ConsumerImpl)consumer).getTarget().notifyCurrentState();
+                }
+            }
+        }
     }
 
 
