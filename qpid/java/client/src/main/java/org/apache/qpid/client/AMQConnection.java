@@ -865,13 +865,17 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public void close(long timeout) throws JMSException
     {
-        close(new ArrayList<AMQSession>(_sessions.values()), timeout);
-    }
+        boolean closed;
 
-    public void close(List<AMQSession> sessions, long timeout) throws JMSException
-    {
-        if (!setClosed())
+        synchronized (_sessionCreationLock)
         {
+            closed = setClosed();
+        }
+
+        if (!closed)
+        {
+            List<AMQSession> sessions = new ArrayList<>(_sessions.values());
+
             setClosing(true);
             try
             {
@@ -886,54 +890,52 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     private void doClose(List<AMQSession> sessions, long timeout) throws JMSException
     {
-        synchronized (_sessionCreationLock)
+        if (!sessions.isEmpty())
         {
-            if (!sessions.isEmpty())
+            AMQSession session = sessions.remove(0);
+            synchronized (session.getMessageDeliveryLock())
             {
-                AMQSession session = sessions.remove(0);
-                synchronized (session.getMessageDeliveryLock())
-                {
-                    doClose(sessions, timeout);
-                }
+                doClose(sessions, timeout);
             }
-            else
+        }
+        else
+        {
+            synchronized (getFailoverMutex())
             {
-                synchronized (getFailoverMutex())
+                try
                 {
                     try
                     {
-                        try
-                        {
-                            closeAllSessions(null, timeout);
-                        }
-                        finally
-                        {
-                            //This MUST occur after we have successfully closed all Channels/Sessions
-                            shutdownTaskPool(timeout);
-                        }
-                    }
-                    catch (JMSException e)
-                    {
-                        _logger.error("Error closing connection", e);
-                        JMSException jmse = new JMSException("Error closing connection: " + e);
-                        jmse.setLinkedException(e);
-                        jmse.initCause(e);
-                        throw jmse;
+                        closeAllSessions(null, timeout);
                     }
                     finally
                     {
-                        try
-                        {
-                            _delegate.closeConnection(timeout);
-                        }
-                        catch (Exception e)
-                        {
-                            _logger.warn("Error closing underlying protocol connection", e);
-                        }
+                        //This MUST occur after we have successfully closed all Channels/Sessions
+                        shutdownTaskPool(timeout);
+                    }
+                }
+                catch (JMSException e)
+                {
+                    _logger.error("Error closing connection", e);
+                    JMSException jmse = new JMSException("Error closing connection: " + e);
+                    jmse.setLinkedException(e);
+                    jmse.initCause(e);
+                    throw jmse;
+                }
+                finally
+                {
+                    try
+                    {
+                        _delegate.closeConnection(timeout);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.warn("Error closing underlying protocol connection", e);
                     }
                 }
             }
         }
+
     }
 
     private void shutdownTaskPool(final long timeout)
@@ -1308,28 +1310,29 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         try
         {
-            // get the failover mutex before trying to close
-            synchronized (getFailoverMutex())
+            // decide if we are going to close the session
+            if (hardError(cause))
             {
-                // decide if we are going to close the session
-                if (hardError(cause))
+                closer = (!setClosed()) || closer;
                 {
-                    closer = (!setClosed()) || closer;
-                    {
-                        _logger.info("Closing AMQConnection due to :" + cause);
-                    }
+                    _logger.info("Closing AMQConnection due to :" + cause);
                 }
-                else
-                {
-                    _logger.info("Not a hard-error connection not closing: " + cause);
-                }
+            }
+            else
+            {
+                _logger.info("Not a hard-error connection not closing: " + cause);
+            }
 
-                // if we are closing the connection, close sessions first
-                if (closer)
+
+            // if we are closing the connection, close sessions first
+            if (closer)
+            {
+                // get the failover mutex before trying to close
+                synchronized (getFailoverMutex())
                 {
                     try
                     {
-                        closeAllSessions(cause, -1); // FIXME: when doing this end up with RejectedExecutionException from executor.
+                        closeAllSessions(cause, -1);
                     }
                     catch (JMSException e)
                     {
