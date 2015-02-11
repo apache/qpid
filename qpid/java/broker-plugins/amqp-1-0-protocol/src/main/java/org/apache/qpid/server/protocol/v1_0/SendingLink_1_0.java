@@ -292,15 +292,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
                                 actualFilters.put(entry.getKey(), entry.getValue());
                             }
-                            catch (ParseException e)
-                            {
-                                Error error = new Error();
-                                error.setCondition(AmqpError.INVALID_FIELD);
-                                error.setDescription("Invalid JMS Selector: " + selectorFilter.getValue());
-                                error.setInfo(Collections.singletonMap(Symbol.valueOf("field"), Symbol.valueOf("filter")));
-                                throw new AmqpErrorException(error);
-                            }
-                            catch (SelectorParsingException e)
+                            catch (ParseException | SelectorParsingException e)
                             {
                                 Error error = new Error();
                                 error.setCondition(AmqpError.INVALID_FIELD);
@@ -362,6 +354,12 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
             if(noLocal)
             {
                 options.add(ConsumerImpl.Option.NO_LOCAL);
+            }
+
+            if(_durability == TerminusDurability.CONFIGURATION ||
+               _durability == TerminusDurability.UNSETTLED_STATE )
+            {
+                options.add(ConsumerImpl.Option.DURABLE);
             }
 
             try
