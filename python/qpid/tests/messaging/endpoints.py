@@ -660,6 +660,31 @@ class SessionTests(Base):
     except Detached:
       pass
 
+  def testRxCallback(self):
+    """Verify that the callback is invoked when a message is received.
+    """
+    ADDR = 'test-rx_callback-queue; {create: always, delete: receiver}'
+    class CallbackHandler:
+        def __init__(self):
+            self.handler_called = False
+        def __call__(self):
+            self.handler_called = True
+    cb = CallbackHandler()
+    self.ssn.set_message_received_handler(cb)
+    rcv = self.ssn.receiver(ADDR)
+    rcv.capacity = UNLIMITED
+    snd = self.ssn.sender(ADDR)
+    assert not cb.handler_called
+    snd.send("Ping")
+    deadline = time.time() + self.timeout()
+    while time.time() < deadline:
+        if cb.handler_called:
+            break;
+    assert cb.handler_called
+    snd.close()
+    rcv.close()
+
+
 RECEIVER_Q = 'test-receiver-queue; {create: always, delete: always}'
 
 class ReceiverTests(Base):
