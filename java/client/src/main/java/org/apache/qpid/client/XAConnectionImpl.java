@@ -29,7 +29,7 @@ import javax.jms.XATopicConnection;
 import javax.jms.XATopicSession;
 
 /**
- * This class implements the javax.njms.XAConnection interface
+ * This class implements the javax.jms.XAConnection interface
  */
 public class XAConnectionImpl extends AMQConnection implements XAConnection, XAQueueConnection, XATopicConnection
 {

@@ -833,7 +833,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     {
         if (suspend)
         {
-            for (BasicMessageConsumer consumer : getConsumers().values())
+            for (BasicMessageConsumer consumer : getConsumers())
             {
                 getQpidSession().messageStop(String.valueOf(consumer.getConsumerTag()),
                                              Option.UNRELIABLE);
@@ -842,7 +842,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
         else
         {
-            for (BasicMessageConsumer_0_10 consumer : getConsumers().values())
+            for (BasicMessageConsumer_0_10 consumer : getConsumers())
             {
                 String consumerTag = String.valueOf(consumer.getConsumerTag());
                 //only set if msg list is null
@@ -1320,7 +1320,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         drainDispatchQueue();
         setUsingDispatcherForCleanup(false);
 
-        for (BasicMessageConsumer consumer : getConsumers().values())
+        for (BasicMessageConsumer consumer : getConsumers())
         {
             List<Long> tags = consumer.drainReceiverQueueAndRetrieveDeliveryTags();
             getPrefetchedMessageTags().addAll(tags);
