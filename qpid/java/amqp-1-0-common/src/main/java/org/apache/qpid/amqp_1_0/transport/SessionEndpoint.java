@@ -98,6 +98,12 @@ public class SessionEndpoint
     private int _availableOutgoingCredit;
     private UnsignedInteger _lastSentIncomingLimit;
 
+    private final Error _sessionEndedLinkError =
+            new Error(LinkError.DETACH_FORCED,
+                     "Force detach the link because the session is remotely ended.");
+
+
+
     public SessionEndpoint(final ConnectionEndpoint connectionEndpoint)
     {
         this(connectionEndpoint, UnsignedInteger.valueOf(0));
@@ -240,17 +246,19 @@ public class SessionEndpoint
     private void detachLinks()
     {
         Collection<UnsignedInteger> handles = new ArrayList<UnsignedInteger>(_remoteLinkEndpoints.keySet());
-        Error error = new Error();
-        error.setCondition(LinkError.DETACH_FORCED);
-        error.setDescription("Force detach the link because the session is remotely ended.");
         for(UnsignedInteger handle : handles)
         {
             Detach detach = new Detach();
             detach.setClosed(false);
             detach.setHandle(handle);
-            detach.setError(error);
+            detach.setError(_sessionEndedLinkError);
             detach(handle, detach);
         }
+    }
+
+    public boolean isSyntheticError(Error error)
+    {
+        return error == _sessionEndedLinkError;
     }
 
     public short getSendingChannel()

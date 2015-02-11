@@ -46,6 +46,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageConverter;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
@@ -283,7 +284,12 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
     {
         //TODO
         getEndpoint().setSource(null);
-        getEndpoint().detach();
+        getEndpoint().close();
+
+        final LinkRegistry linkReg = getSession().getConnection()
+                .getVirtualHost()
+                .getLinkRegistry(getEndpoint().getSession().getConnection().getRemoteContainerId());
+        linkReg.unregisterSendingLink(getEndpoint().getName());
     }
 
     public boolean allocateCredit(final ServerMessage msg)
