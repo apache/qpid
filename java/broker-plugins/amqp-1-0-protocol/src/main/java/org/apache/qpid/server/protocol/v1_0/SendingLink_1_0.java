@@ -406,7 +406,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     {
         //TODO
         // if not durable or close
-        if(Boolean.TRUE.equals(detach.getClosed()) || !TerminusDurability.UNSETTLED_STATE.equals(_durability))
+        if(Boolean.TRUE.equals(detach.getClosed())
+           || !(TerminusDurability.UNSETTLED_STATE.equals(_durability)|| TerminusDurability.CONFIGURATION.equals(_durability)))
         {
             while(!_consumer.trySendLock())
             {
