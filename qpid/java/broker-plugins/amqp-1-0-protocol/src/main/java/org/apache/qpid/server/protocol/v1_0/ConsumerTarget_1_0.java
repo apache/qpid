@@ -426,7 +426,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
                                 modified.setDeliveryFailed(true);
                                 _link.getEndpoint().updateDisposition(_deliveryTag, modified, true);
                                 _link.getEndpoint().sendFlowConditional();
-                                _queueEntry.unlockAcquisition();
+                                _queueEntry.release();
                             }
                         }
                     });
