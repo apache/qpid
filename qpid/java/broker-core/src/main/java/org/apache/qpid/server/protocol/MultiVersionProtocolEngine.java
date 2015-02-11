@@ -30,7 +30,6 @@ import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Protocol;

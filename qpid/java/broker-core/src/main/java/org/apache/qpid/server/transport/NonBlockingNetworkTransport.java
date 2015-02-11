@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.transport.network.io;
+package org.apache.qpid.server.transport;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -33,10 +33,12 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.configuration.CommonProperties;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
-import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.protocol.ServerProtocolEngine;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.TransportEncryption;
+import org.apache.qpid.transport.network.io.AbstractNetworkTransport;
+import org.apache.qpid.transport.network.io.IdleTimeoutTicker;
 
 public class NonBlockingNetworkTransport
 {

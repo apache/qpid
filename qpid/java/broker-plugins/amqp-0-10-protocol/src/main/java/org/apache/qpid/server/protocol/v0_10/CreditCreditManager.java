@@ -21,7 +21,7 @@
 package org.apache.qpid.server.protocol.v0_10;
 
 
-import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.flow.AbstractFlowCreditManager;
 
 public class CreditCreditManager extends AbstractFlowCreditManager implements FlowCreditManager_0_10

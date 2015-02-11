@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.qpid.transport.network.io;
+package org.apache.qpid.server.transport;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;

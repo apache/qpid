@@ -23,7 +23,7 @@ package org.apache.qpid.server.protocol.v0_10;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.protocol.ServerProtocolEngine;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class WindowCreditManagerTest extends QpidTestCase

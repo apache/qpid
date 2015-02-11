@@ -1,4 +1,5 @@
 /*
+*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,11 +16,12 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-
-package org.apache.qpid.transport.network.io;
+package org.apache.qpid.server.transport;
 
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.Principal;
@@ -40,21 +42,30 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.protocol.ServerProtocolEngine;
 import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.SenderClosedException;
 import org.apache.qpid.transport.SenderException;
+import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.Ticker;
 import org.apache.qpid.transport.network.TransportEncryption;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 import org.apache.qpid.util.SystemUtils;
 
-public class NonBlockingSenderReceiver  implements ByteBufferSender
+public class NonBlockingConnection implements NetworkConnection, ByteBufferSender
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(NonBlockingSenderReceiver.class);
-    public static final int NUMBER_OF_BYTES_FOR_TLS_CHECK = 6;
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(NonBlockingConnection.class);
     private final SocketChannel _socketChannel;
+    private final long _timeout;
+    private final Ticker _ticker;
+    private final SelectorThread _selector;
+    private int _maxReadIdle;
+    private int _maxWriteIdle;
+    private Principal _principal;
+    private boolean _principalChecked;
+    private final Object _lock = new Object();
+
+    public static final int NUMBER_OF_BYTES_FOR_TLS_CHECK = 6;
 
     private final ConcurrentLinkedQueue<ByteBuffer> _buffers = new ConcurrentLinkedQueue<>();
     private final List<ByteBuffer> _encryptedOutput = new ArrayList<>();
@@ -63,11 +74,9 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
     private final AtomicBoolean _closed = new AtomicBoolean(false);
     private final ServerProtocolEngine _protocolEngine;
     private final int _receiveBufSize;
-    private final Ticker _ticker;
     private final Set<TransportEncryption> _encryptionSet;
     private final SSLContext _sslContext;
     private final Runnable _onTransportEncryptionAction;
-    private final NonBlockingConnection _connection;
     private ByteBuffer _netInputBuffer;
     private SSLEngine _sslEngine;
 
@@ -80,23 +89,28 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
     private boolean _workDone;
 
 
-    public NonBlockingSenderReceiver(final NonBlockingConnection connection,
-                                     ServerProtocolEngine protocolEngine,
-                                     int receiveBufSize,
-                                     Ticker ticker,
-                                     final Set<TransportEncryption> encryptionSet,
-                                     final SSLContext sslContext,
-                                     final boolean wantClientAuth,
-                                     final boolean needClientAuth,
-                                     final Collection<String> enabledCipherSuites,
-                                     final Collection<String> disabledCipherSuites,
-                                     final Runnable onTransportEncryptionAction)
+    public NonBlockingConnection(SocketChannel socketChannel,
+                                 ServerProtocolEngine delegate,
+                                 int sendBufferSize,
+                                 int receiveBufferSize,
+                                 long timeout,
+                                 Ticker ticker,
+                                 final Set<TransportEncryption> encryptionSet,
+                                 final SSLContext sslContext,
+                                 final boolean wantClientAuth,
+                                 final boolean needClientAuth,
+                                 final Collection<String> enabledCipherSuites,
+                                 final Collection<String> disabledCipherSuites,
+                                 final Runnable onTransportEncryptionAction,
+                                 final SelectorThread selectorThread)
     {
-        _connection = connection;
-        _socketChannel = connection.getSocketChannel();
-        _protocolEngine = protocolEngine;
-        _receiveBufSize = receiveBufSize;
+        _socketChannel = socketChannel;
+        _timeout = timeout;
         _ticker = ticker;
+        _selector = selectorThread;
+
+        _protocolEngine = delegate;
+        _receiveBufSize = receiveBufferSize;
         _encryptionSet = encryptionSet;
         _sslContext = sslContext;
         _onTransportEncryptionAction = onTransportEncryptionAction;
@@ -138,20 +152,112 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
             throw new SenderException("Unable to prepare the channel for non-blocking IO", e);
         }
 
+
+    }
+
+
+    public Ticker getTicker()
+    {
+        return _ticker;
+    }
+
+    public SocketChannel getSocketChannel()
+    {
+        return _socketChannel;
+    }
+
+    public void start()
+    {
+    }
+
+    public ByteBufferSender getSender()
+    {
+        return this;
+    }
+
+    public void close()
+    {
+        LOGGER.debug("Closing " + _remoteSocketAddress);
+        if(_closed.compareAndSet(false,true))
+        {
+            _stateChanged.set(true);
+            getSelector().wakeup();
+        }
+    }
+
+    public SocketAddress getRemoteAddress()
+    {
+        return _socketChannel.socket().getRemoteSocketAddress();
+    }
+
+    public SocketAddress getLocalAddress()
+    {
+        return _socketChannel.socket().getLocalSocketAddress();
+    }
+
+    public void setMaxWriteIdle(int sec)
+    {
+        _maxWriteIdle = sec;
+    }
+
+    public void setMaxReadIdle(int sec)
+    {
+        _maxReadIdle = sec;
     }
 
     @Override
-    public void send(final ByteBuffer msg)
+    public Principal getPeerPrincipal()
     {
-        if (_closed.get())
+        synchronized (_lock)
         {
-            throw new SenderClosedException("I/O for thread " + _remoteSocketAddress + " is already closed");
+            if(!_principalChecked)
+            {
+                if (_sslEngine != null)
+                {
+                    try
+                    {
+                        _principal = _sslEngine.getSession().getPeerPrincipal();
+                    }
+                    catch (SSLPeerUnverifiedException e)
+                    {
+                        return null;
+                    }
+                }
+
+                _principalChecked = true;
+            }
+
+            return _principal;
         }
-        // append to list and do selector wakeup
-        _buffers.add(msg);
-        _stateChanged.set(true);
     }
 
+    @Override
+    public int getMaxReadIdle()
+    {
+        return _maxReadIdle;
+    }
+
+    @Override
+    public int getMaxWriteIdle()
+    {
+        return _maxWriteIdle;
+    }
+
+    public boolean canRead()
+    {
+        return true;
+    }
+
+    public boolean waitingForWrite()
+    {
+        return !_fullyWritten;
+    }
+
+    public boolean isStateChanged()
+    {
+
+        return _stateChanged.get();
+    }
 
     public boolean doWork()
     {
@@ -190,7 +296,12 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
             catch (IOException e)
             {
                 LOGGER.info("Exception performing I/O for thread '" + _remoteSocketAddress + "': " + e);
-                close();
+                LOGGER.debug("Closing " + _remoteSocketAddress);
+                if(_closed.compareAndSet(false,true))
+                {
+                    _stateChanged.set(true);
+                    getSelector().wakeup();
+                }
             }
         }
         else
@@ -241,119 +352,22 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
 
     }
 
-    @Override
-    public void flush()
+    public SelectorThread getSelector()
     {
-        _stateChanged.set(true);
-        _connection.getSelector().wakeup();
-
+        return _selector;
     }
 
-    @Override
-    public void close()
+    public boolean looksLikeSSLv2ClientHello(final byte[] headerBytes)
     {
-        LOGGER.debug("Closing " + _remoteSocketAddress);
-        if(_closed.compareAndSet(false,true))
-        {
-            _stateChanged.set(true);
-            _connection.getSelector().wakeup();
-        }
+        return headerBytes[0] == -128 &&
+               headerBytes[3] == 3 && // SSL 3.0 / TLS 1.x
+               (headerBytes[4] == 0 || // SSL 3.0
+                headerBytes[4] == 1 || // TLS 1.0
+                headerBytes[4] == 2 || // TLS 1.1
+                headerBytes[4] == 3);
     }
 
-    private boolean doWrite() throws IOException
-    {
-
-        ByteBuffer[] bufArray = new ByteBuffer[_buffers.size()];
-        Iterator<ByteBuffer> bufferIterator = _buffers.iterator();
-        for (int i = 0; i < bufArray.length; i++)
-        {
-            bufArray[i] = bufferIterator.next();
-        }
-
-        int byteBuffersWritten = 0;
-
-        if(_transportEncryption == TransportEncryption.NONE)
-        {
-
-
-            long written = _socketChannel.write(bufArray);
-            if (LOGGER.isDebugEnabled())
-            {
-                LOGGER.debug("Written " + written + " bytes");
-            }
-
-            for (ByteBuffer buf : bufArray)
-            {
-                if (buf.remaining() == 0)
-                {
-                    byteBuffersWritten++;
-                    _buffers.poll();
-                }
-            }
-
-
-            return bufArray.length == byteBuffersWritten;
-        }
-        else if(_transportEncryption == TransportEncryption.TLS)
-        {
-            int remaining = 0;
-            do
-            {
-                if(_sslEngine.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.NEED_UNWRAP)
-                {
-                    _workDone = true;
-                    final ByteBuffer netBuffer = ByteBuffer.allocate(_sslEngine.getSession().getPacketBufferSize());
-                    _status = _sslEngine.wrap(bufArray, netBuffer);
-                    runSSLEngineTasks(_status);
-
-                    netBuffer.flip();
-                    remaining = netBuffer.remaining();
-                    if (remaining != 0)
-                    {
-                        _encryptedOutput.add(netBuffer);
-                    }
-                    for (ByteBuffer buf : bufArray)
-                    {
-                        if (buf.remaining() == 0)
-                        {
-                            byteBuffersWritten++;
-                            _buffers.poll();
-                        }
-                    }
-                }
-
-            }
-            while(remaining != 0 && _sslEngine.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.NEED_UNWRAP);
-            ByteBuffer[] encryptedBuffers = _encryptedOutput.toArray(new ByteBuffer[_encryptedOutput.size()]);
-            long written  = _socketChannel.write(encryptedBuffers);
-            if (LOGGER.isDebugEnabled())
-            {
-                LOGGER.debug("Written " + written + " encrypted bytes");
-            }
-            ListIterator<ByteBuffer> iter = _encryptedOutput.listIterator();
-            while(iter.hasNext())
-            {
-                ByteBuffer buf = iter.next();
-                if(buf.remaining() == 0)
-                {
-                    iter.remove();
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            return bufArray.length == byteBuffersWritten;
-
-        }
-        else
-        {
-            return true;
-        }
-    }
-
-    private boolean doRead() throws IOException
+    public boolean doRead() throws IOException
     {
         boolean readData = false;
         if(_transportEncryption == TransportEncryption.NONE)
@@ -475,7 +489,111 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
         return readData;
     }
 
-    private boolean runSSLEngineTasks(final SSLEngineResult status)
+    public boolean doWrite() throws IOException
+    {
+
+        ByteBuffer[] bufArray = new ByteBuffer[_buffers.size()];
+        Iterator<ByteBuffer> bufferIterator = _buffers.iterator();
+        for (int i = 0; i < bufArray.length; i++)
+        {
+            bufArray[i] = bufferIterator.next();
+        }
+
+        int byteBuffersWritten = 0;
+
+        if(_transportEncryption == TransportEncryption.NONE)
+        {
+
+
+            long written = _socketChannel.write(bufArray);
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Written " + written + " bytes");
+            }
+
+            for (ByteBuffer buf : bufArray)
+            {
+                if (buf.remaining() == 0)
+                {
+                    byteBuffersWritten++;
+                    _buffers.poll();
+                }
+            }
+
+
+            return bufArray.length == byteBuffersWritten;
+        }
+        else if(_transportEncryption == TransportEncryption.TLS)
+        {
+            int remaining = 0;
+            do
+            {
+                if(_sslEngine.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.NEED_UNWRAP)
+                {
+                    _workDone = true;
+                    final ByteBuffer netBuffer = ByteBuffer.allocate(_sslEngine.getSession().getPacketBufferSize());
+                    _status = _sslEngine.wrap(bufArray, netBuffer);
+                    runSSLEngineTasks(_status);
+
+                    netBuffer.flip();
+                    remaining = netBuffer.remaining();
+                    if (remaining != 0)
+                    {
+                        _encryptedOutput.add(netBuffer);
+                    }
+                    for (ByteBuffer buf : bufArray)
+                    {
+                        if (buf.remaining() == 0)
+                        {
+                            byteBuffersWritten++;
+                            _buffers.poll();
+                        }
+                    }
+                }
+
+            }
+            while(remaining != 0 && _sslEngine.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.NEED_UNWRAP);
+            ByteBuffer[] encryptedBuffers = _encryptedOutput.toArray(new ByteBuffer[_encryptedOutput.size()]);
+            long written  = _socketChannel.write(encryptedBuffers);
+            if (LOGGER.isDebugEnabled())
+            {
+                LOGGER.debug("Written " + written + " encrypted bytes");
+            }
+            ListIterator<ByteBuffer> iter = _encryptedOutput.listIterator();
+            while(iter.hasNext())
+            {
+                ByteBuffer buf = iter.next();
+                if(buf.remaining() == 0)
+                {
+                    iter.remove();
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return bufArray.length == byteBuffersWritten;
+
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    public boolean looksLikeSSLv3ClientHello(final byte[] headerBytes)
+    {
+        return headerBytes[0] == 22 && // SSL Handshake
+               (headerBytes[1] == 3 && // SSL 3.0 / TLS 1.x
+                (headerBytes[2] == 0 || // SSL 3.0
+                 headerBytes[2] == 1 || // TLS 1.0
+                 headerBytes[2] == 2 || // TLS 1.1
+                 headerBytes[2] == 3)) && // TLS1.2
+               (headerBytes[5] == 1); // client_hello
+    }
+
+    public boolean runSSLEngineTasks(final SSLEngineResult status)
     {
         if(status.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_TASK)
         {
@@ -489,63 +607,28 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
         return false;
     }
 
-    private boolean looksLikeSSL(byte[] headerBytes)
+    public boolean looksLikeSSL(final byte[] headerBytes)
     {
         return looksLikeSSLv3ClientHello(headerBytes) || looksLikeSSLv2ClientHello(headerBytes);
     }
 
-    private boolean looksLikeSSLv3ClientHello(byte[] headerBytes)
+    @Override
+    public void send(final ByteBuffer msg)
     {
-        return headerBytes[0] == 22 && // SSL Handshake
-               (headerBytes[1] == 3 && // SSL 3.0 / TLS 1.x
-                (headerBytes[2] == 0 || // SSL 3.0
-                 headerBytes[2] == 1 || // TLS 1.0
-                 headerBytes[2] == 2 || // TLS 1.1
-                 headerBytes[2] == 3)) && // TLS1.2
-               (headerBytes[5] == 1); // client_hello
-    }
-
-    private boolean looksLikeSSLv2ClientHello(byte[] headerBytes)
-    {
-        return headerBytes[0] == -128 &&
-               headerBytes[3] == 3 && // SSL 3.0 / TLS 1.x
-               (headerBytes[4] == 0 || // SSL 3.0
-                headerBytes[4] == 1 || // TLS 1.0
-                headerBytes[4] == 2 || // TLS 1.1
-                headerBytes[4] == 3);
-    }
-
-    public Principal getPeerPrincipal()
-    {
-
-        if (_sslEngine != null)
+        if (_closed.get())
         {
-            try
-            {
-                return _sslEngine.getSession().getPeerPrincipal();
-            }
-            catch (SSLPeerUnverifiedException e)
-            {
-                return null;
-            }
+            throw new SenderClosedException("I/O for thread " + _remoteSocketAddress + " is already closed");
         }
-
-        return null;
+        // append to list and do selector wakeup
+        _buffers.add(msg);
+        _stateChanged.set(true);
     }
 
-    public boolean canRead()
+    @Override
+    public void flush()
     {
-        return true;
-    }
+        _stateChanged.set(true);
+        getSelector().wakeup();
 
-    public boolean waitingForWrite()
-    {
-        return !_fullyWritten;
     }
-
-    public boolean isStateChanged()
-    {
-        return _stateChanged.get();
-    }
-
 }
