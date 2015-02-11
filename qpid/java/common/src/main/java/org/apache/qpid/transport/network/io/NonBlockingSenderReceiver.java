@@ -244,7 +244,9 @@ public class NonBlockingSenderReceiver  implements ByteBufferSender
     @Override
     public void flush()
     {
+        _stateChanged.set(true);
         _connection.getSelector().wakeup();
+
     }
 
     @Override
