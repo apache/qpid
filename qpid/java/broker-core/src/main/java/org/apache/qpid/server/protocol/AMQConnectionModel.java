@@ -107,7 +107,7 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
 
     void removeSessionListener(SessionModelListener listener);
 
-    void flushBatched();
+    void notifyWork();
 
     boolean isMessageAssignmentSuspended();
 }

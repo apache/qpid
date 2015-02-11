@@ -85,7 +85,6 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
     private TransportEncryption _transportEncryption;
     private SSLEngineResult _status;
     private volatile boolean _fullyWritten = true;
-    private AtomicBoolean _stateChanged = new AtomicBoolean();
     private boolean _workDone;
 
 
@@ -180,7 +179,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
         LOGGER.debug("Closing " + _remoteSocketAddress);
         if(_closed.compareAndSet(false,true))
         {
-            _stateChanged.set(true);
+            _protocolEngine.notifyWork();
             getSelector().wakeup();
         }
     }
@@ -256,12 +255,12 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
     public boolean isStateChanged()
     {
 
-        return _stateChanged.get();
+        return _protocolEngine.hasWork();
     }
 
     public boolean doWork()
     {
-        _stateChanged.set(false);
+        _protocolEngine.clearWork();
         boolean closed = _closed.get();
         if (!closed)
         {
@@ -287,7 +286,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
 
                 if(dataRead || (_workDone && _netInputBuffer != null && _netInputBuffer.position() != 0))
                 {
-                    _stateChanged.set(true);
+                    _protocolEngine.notifyWork();
                 }
 
                 // tell all consumer targets that it is okay to accept more
@@ -299,7 +298,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
                 LOGGER.debug("Closing " + _remoteSocketAddress);
                 if(_closed.compareAndSet(false,true))
                 {
-                    _stateChanged.set(true);
+                    _protocolEngine.notifyWork();
                     getSelector().wakeup();
                 }
             }
@@ -621,13 +620,12 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
         }
         // append to list and do selector wakeup
         _buffers.add(msg);
-        _stateChanged.set(true);
+        _protocolEngine.notifyWork();
     }
 
     @Override
     public void flush()
     {
-        _stateChanged.set(true);
         getSelector().wakeup();
 
     }

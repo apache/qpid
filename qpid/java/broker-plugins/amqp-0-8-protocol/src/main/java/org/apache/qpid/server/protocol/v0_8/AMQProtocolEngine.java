@@ -97,6 +97,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                                           AMQConnectionModel<AMQProtocolEngine, AMQChannel>,
                                           ServerMethodProcessor<ServerChannelMethodProcessor>
 {
+
     enum ConnectionState
     {
         INIT,
@@ -118,6 +119,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     private static final long AWAIT_CLOSED_TIMEOUT = 60000;
     private final AmqpPort<?> _port;
     private final long _creationTime;
+    private final AtomicBoolean _stateChanged = new AtomicBoolean();
 
     private AMQShortString _contextKey;
 
@@ -339,10 +341,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         return _closing.get();
     }
 
-    public synchronized void flushBatched()
-    {
-        _sender.flush();
-    }
 
 
     public ClientDeliveryMethod createDeliveryMethod(int channelId)
@@ -2084,5 +2082,26 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         {
             session.processPendingMessages();
         }
+    }
+
+    @Override
+    public boolean hasWork()
+    {
+        return _stateChanged.get();
+    }
+
+    @Override
+    public void notifyWork()
+    {
+        _stateChanged.set(true);
+
+        // TODO
+        _sender.flush();
+    }
+
+    @Override
+    public void clearWork()
+    {
+        _stateChanged.set(false);
     }
 }

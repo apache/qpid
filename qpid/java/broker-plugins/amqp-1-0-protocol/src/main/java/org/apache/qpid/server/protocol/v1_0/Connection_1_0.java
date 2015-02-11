@@ -500,8 +500,11 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     }
 
     @Override
-    public void flushBatched()
+    public void notifyWork()
     {
+        _protocolEngine.notifyWork();
+
+        // TODO
         _protocolEngine.flushBatched();
     }
 

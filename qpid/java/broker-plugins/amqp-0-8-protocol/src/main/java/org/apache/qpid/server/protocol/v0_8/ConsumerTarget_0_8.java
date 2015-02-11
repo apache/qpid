@@ -21,7 +21,6 @@
 package org.apache.qpid.server.protocol.v0_8;
 
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,7 +33,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.consumer.AbstractConsumerTarget;
 import org.apache.qpid.server.consumer.ConsumerImpl;
-import org.apache.qpid.server.consumer.ConsumerMessageInstancePair;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
@@ -524,7 +522,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
     {
         _channel.getConnection().setDeferFlush(false);
 
-        _channel.getConnection().flushBatched();
+        _channel.getConnection().notifyWork();
     }
 
     protected void addUnacknowledgedMessage(MessageInstance entry)

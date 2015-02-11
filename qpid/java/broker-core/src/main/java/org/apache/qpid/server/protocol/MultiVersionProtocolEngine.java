@@ -215,6 +215,24 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         _delegate.processPendingMessages();
     }
 
+    @Override
+    public boolean hasWork()
+    {
+        return _delegate.hasWork();
+    }
+
+    @Override
+    public void notifyWork()
+    {
+        _delegate.notifyWork();
+    }
+
+    @Override
+    public void clearWork()
+    {
+        _delegate.clearWork();
+    }
+
     private class ClosedDelegateProtocolEngine implements ServerProtocolEngine
     {
 
@@ -232,6 +250,24 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         @Override
         public void processPendingMessages()
+        {
+
+        }
+
+        @Override
+        public boolean hasWork()
+        {
+            return false;
+        }
+
+        @Override
+        public void notifyWork()
+        {
+
+        }
+
+        @Override
+        public void clearWork()
         {
 
         }
@@ -365,6 +401,24 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         @Override
         public void processPendingMessages()
+        {
+
+        }
+
+        @Override
+        public boolean hasWork()
+        {
+            return false;
+        }
+
+        @Override
+        public void notifyWork()
+        {
+
+        }
+
+        @Override
+        public void clearWork()
         {
 
         }

@@ -24,6 +24,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.auth.Subject;
 
@@ -59,6 +60,7 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     private volatile boolean _transportBlockedForWriting;
 
     private volatile boolean _messageAssignmentSuspended;
+    private final AtomicBoolean _stateChanged = new AtomicBoolean();
 
     public ProtocolEngine_0_10(ServerConnection conn,
                                NetworkConnection network)
@@ -288,5 +290,23 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         {
             session.processPendingMessages();
         }
+    }
+
+    @Override
+    public boolean hasWork()
+    {
+        return _stateChanged.get();
+    }
+
+    @Override
+    public void notifyWork()
+    {
+        _stateChanged.set(true);
+    }
+
+    @Override
+    public void clearWork()
+    {
+        _stateChanged.set(false);
     }
 }

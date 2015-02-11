@@ -29,6 +29,7 @@ import java.security.PrivilegedAction;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
@@ -82,6 +83,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     private long _createTime = System.currentTimeMillis();
     private ConnectionEndpoint _endpoint;
     private long _connectionId;
+    private final AtomicBoolean _stateChanged = new AtomicBoolean();
 
     private static final ByteBuffer HEADER =
            ByteBuffer.wrap(new byte[]
@@ -619,5 +621,23 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         {
             session.processPendingMessages();
         }
+    }
+
+    @Override
+    public boolean hasWork()
+    {
+        return _stateChanged.get();
+    }
+
+    @Override
+    public void notifyWork()
+    {
+        _stateChanged.set(true);
+    }
+
+    @Override
+    public void clearWork()
+    {
+        _stateChanged.set(false);
     }
 }

@@ -161,7 +161,7 @@ public abstract class AbstractConsumerTarget implements ConsumerTarget
     {
         _queue.add(new ConsumerMessageInstancePair(consumer, entry, batch));
 
-        getSessionModel().getConnectionModel().flushBatched();
+        getSessionModel().getConnectionModel().notifyWork();
         return entry.getMessage().getSize();
     }
 

@@ -687,8 +687,11 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     }
 
     @Override
-    public void flushBatched()
+    public void notifyWork()
     {
+        _serverProtocolEngine.notifyWork();
+
+        // TODO
         getSender().flush();
     }
 

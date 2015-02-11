@@ -42,4 +42,10 @@ public interface ServerProtocolEngine extends ProtocolEngine
     boolean isMessageAssignmentSuspended();
 
     void processPendingMessages();
+
+    boolean hasWork();
+
+    void clearWork();
+
+    void notifyWork();
 }

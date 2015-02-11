@@ -624,7 +624,7 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
-        public void flushBatched()
+        public void notifyWork()
         {
 
         }
