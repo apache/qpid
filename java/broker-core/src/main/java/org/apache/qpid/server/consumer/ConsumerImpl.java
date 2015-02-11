@@ -37,7 +37,8 @@ public interface ConsumerImpl
         SEES_REQUEUES,
         TRANSIENT,
         EXCLUSIVE,
-        NO_LOCAL
+        NO_LOCAL,
+        DURABLE
     }
 
     long getBytesOut();
