@@ -464,7 +464,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 _consumer.releaseSendLock();
             }
         }
-        else if(detach == null || detach.getError() != null)
+        else if(detach.getError() != null
+                && !_linkAttachment.getEndpoint().getSession().isSyntheticError(detach.getError()))
         {
             _linkAttachment = null;
             _target.flowStateChanged();
