@@ -27,6 +27,7 @@ import static org.apache.qpid.configuration.ClientProperties.QPID_FLOW_CONTROL_W
 import static org.apache.qpid.configuration.ClientProperties.QPID_FLOW_CONTROL_WAIT_NOTIFY_PERIOD;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -330,10 +331,9 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         {
             _logger.debug("Prefetched message: _unacknowledgedMessageTags :" + getUnacknowledgedMessageTags());
         }
-        ArrayList<BasicMessageConsumer_0_8> consumersToCheck = new ArrayList<BasicMessageConsumer_0_8>(getConsumers().values());
         boolean messageListenerFound = false;
         boolean serverRejectBehaviourFound = false;
-        for(BasicMessageConsumer_0_8 consumer : consumersToCheck)
+        for(BasicMessageConsumer_0_8 consumer : getConsumers())
         {
             if (consumer.isMessageListenerSet())
             {
@@ -344,7 +344,6 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
                 serverRejectBehaviourFound = true;
             }
         }
-        _logger.debug("about to pre-reject messages for " + consumersToCheck.size() + " consumer(s)");
 
         if (serverRejectBehaviourFound)
         {
@@ -376,7 +375,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
         // consumer on the queue. Whilst this is within the JMS spec it is not
         // user friendly and avoidable.
         boolean normalRejectBehaviour = true;
-        for (BasicMessageConsumer_0_8 consumer : getConsumers().values())
+        for (BasicMessageConsumer_0_8 consumer : getConsumers())
         {
             if(RejectBehaviour.SERVER.equals(consumer.getRejectBehaviour()))
             {
