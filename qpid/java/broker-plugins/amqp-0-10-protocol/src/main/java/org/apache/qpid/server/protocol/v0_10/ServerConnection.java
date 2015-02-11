@@ -690,9 +690,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     public void notifyWork()
     {
         _serverProtocolEngine.notifyWork();
-
-        // TODO
-        getSender().flush();
     }
 
 

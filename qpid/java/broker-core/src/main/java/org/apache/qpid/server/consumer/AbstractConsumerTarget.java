@@ -30,12 +30,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.util.StateChangeListener;
 
 public abstract class AbstractConsumerTarget implements ConsumerTarget
 {
-
+    private static final Logger LOGGER = Logger.getLogger(AbstractConsumerTarget.class);
     private final AtomicReference<State> _state;
 
     private final Set<StateChangeListener<ConsumerTarget, State>> _stateChangeListeners = new
@@ -176,7 +178,6 @@ public abstract class AbstractConsumerTarget implements ConsumerTarget
     @Override
     public void sendNextMessage()
     {
-
         ConsumerMessageInstancePair consumerMessage = _queue.peek();
         if (consumerMessage != null)
         {

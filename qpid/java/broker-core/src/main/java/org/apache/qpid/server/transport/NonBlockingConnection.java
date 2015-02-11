@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.SenderClosedException;
 import org.apache.qpid.transport.SenderException;
@@ -113,6 +114,15 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
         _encryptionSet = encryptionSet;
         _sslContext = sslContext;
         _onTransportEncryptionAction = onTransportEncryptionAction;
+
+        delegate.setWorkListener(new Action<ServerProtocolEngine>()
+                                {
+                                    @Override
+                                    public void performAction(final ServerProtocolEngine object)
+                                    {
+                                        _selector.wakeup();
+                                    }
+                                });
 
         if(encryptionSet.size() == 1)
         {

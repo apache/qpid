@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -98,6 +99,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                                           ServerMethodProcessor<ServerChannelMethodProcessor>
 {
 
+
+
     enum ConnectionState
     {
         INIT,
@@ -120,6 +123,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     private final AmqpPort<?> _port;
     private final long _creationTime;
     private final AtomicBoolean _stateChanged = new AtomicBoolean();
+    private final AtomicReference<Action<ServerProtocolEngine>> _workListener = new AtomicReference<>();
 
     private AMQShortString _contextKey;
 
@@ -218,7 +222,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     public void setMessageAssignmentSuspended(final boolean messageAssignmentSuspended)
     {
         _messageAssignmentSuspended = messageAssignmentSuspended;
-
         if(!messageAssignmentSuspended)
         {
             for(AMQSessionModel<?,?> session : getSessionModels())
@@ -2095,13 +2098,24 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     {
         _stateChanged.set(true);
 
-        // TODO
-        _sender.flush();
+        final Action<ServerProtocolEngine> listener = _workListener.get();
+        _logger.info("Work lister is null? " + (listener == null));
+        if(listener != null)
+        {
+
+            listener.performAction(this);
+        }
     }
 
     @Override
     public void clearWork()
     {
         _stateChanged.set(false);
+    }
+
+    @Override
+    public void setWorkListener(final Action<ServerProtocolEngine> listener)
+    {
+        _workListener.set(listener);
     }
 }

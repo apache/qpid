@@ -23,6 +23,7 @@ package org.apache.qpid.server.protocol;
 import javax.security.auth.Subject;
 
 import org.apache.qpid.protocol.ProtocolEngine;
+import org.apache.qpid.server.util.Action;
 
 public interface ServerProtocolEngine extends ProtocolEngine
 {
@@ -48,4 +49,6 @@ public interface ServerProtocolEngine extends ProtocolEngine
     void clearWork();
 
     void notifyWork();
+
+    void setWorkListener(Action<ServerProtocolEngine> listener);
 }

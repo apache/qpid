@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 
@@ -36,6 +37,7 @@ import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
@@ -57,6 +59,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     private final Protocol _defaultSupportedReply;
 
     private volatile ServerProtocolEngine _delegate = new SelfDelegateProtocolEngine();
+    private final AtomicReference<Action<ServerProtocolEngine>> _workListener = new AtomicReference<>();
 
     public MultiVersionProtocolEngine(final Broker<?> broker,
                                       final Set<Protocol> supported,
@@ -228,6 +231,13 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     }
 
     @Override
+    public void setWorkListener(final Action<ServerProtocolEngine> listener)
+    {
+        _workListener.set(listener);
+        _delegate.setWorkListener(listener);
+    }
+
+    @Override
     public void clearWork()
     {
         _delegate.clearWork();
@@ -262,6 +272,12 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         @Override
         public void notifyWork()
+        {
+
+        }
+
+        @Override
+        public void setWorkListener(final Action<ServerProtocolEngine> listener)
         {
 
         }
@@ -418,6 +434,12 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         }
 
         @Override
+        public void setWorkListener(final Action<ServerProtocolEngine> listener)
+        {
+
+        }
+
+        @Override
         public void clearWork()
         {
 
@@ -512,7 +534,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                 else
                 {
                     _delegate = newDelegate;
-
+                    _delegate.setWorkListener(_workListener.get());
                     _header.flip();
                     _delegate.received(_header);
                     if(msg.hasRemaining())

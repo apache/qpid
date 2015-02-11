@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 
@@ -36,6 +37,7 @@ import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.Constant;
 import org.apache.qpid.transport.network.Assembler;
@@ -61,6 +63,8 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
 
     private volatile boolean _messageAssignmentSuspended;
     private final AtomicBoolean _stateChanged = new AtomicBoolean();
+    private final AtomicReference<Action<ServerProtocolEngine>> _workListener = new AtomicReference<>();
+
 
     public ProtocolEngine_0_10(ServerConnection conn,
                                NetworkConnection network)
@@ -302,11 +306,23 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     public void notifyWork()
     {
         _stateChanged.set(true);
+
+        final Action<ServerProtocolEngine> listener = _workListener.get();
+        if(listener != null)
+        {
+            listener.performAction(this);
+        }
     }
 
     @Override
     public void clearWork()
     {
         _stateChanged.set(false);
+    }
+
+    @Override
+    public void setWorkListener(final Action<ServerProtocolEngine> listener)
+    {
+        _workListener.set(listener);
     }
 }
