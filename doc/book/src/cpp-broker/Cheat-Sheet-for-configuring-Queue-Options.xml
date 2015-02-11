@@ -179,34 +179,7 @@
 	  <section role="h3" id="CheatSheetforconfiguringQueueOptions-Settingadditionalbehaviors"><title>
             Setting additional behaviors
           </title>
-          <section role="h4" id="CheatSheetforconfiguringQueueOptions-Queueeventgeneration"><title>
-            Queue
-            event generation
-          </title>
-          <para>
-            This option is used to determine whether enqueue/dequeue events
-            representing changes made to queue state are generated. These
-            events can then be processed by plugins such as that used for
-            <xref linkend="queue-state-replication"/>.
-          </para><para>
-            Example:
-          </para>
-            <programlisting>
-#include "qpid/client/QueueOptions.h"
-
-    QueueOptions options;
-    options.enableQueueEvents(1);
-    session.queueDeclare(arg::queue="my-queue", arg::arguments=options);
-</programlisting>
-          <para>
-            The boolean option indicates whether only enqueue events should
-            be generated. The key set by this is
-            'qpid.queue_event_generation' and the value is and integer value
-            of 1 (to replicate only enqueue events) or 2 (to replicate both
-            enqueue and dequeue events).
-          </para>
 	  <!--h3--></section>
-	  <!--h4--></section>
 	  <section role="h3" id="CheatSheetforconfiguringQueueOptions-OtherClients"><title>
             Other
             Clients

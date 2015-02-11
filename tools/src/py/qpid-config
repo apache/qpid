@@ -147,7 +147,6 @@ POLICY_TYPE  = "qpid.policy_type"
 LVQ_KEY = "qpid.last_value_queue_key"
 MSG_SEQUENCE = "qpid.msg_sequence"
 IVE = "qpid.ive"
-QUEUE_EVENT_GENERATION = "qpid.queue_event_generation"
 FLOW_STOP_COUNT   = "qpid.flow_stop_count"
 FLOW_RESUME_COUNT = "qpid.flow_resume_count"
 FLOW_STOP_SIZE    = "qpid.flow_stop_size"
@@ -164,7 +163,7 @@ REPLICATE = "qpid.replicate"
 SPECIAL_ARGS=[
     FILECOUNT,FILESIZE,EFP_PARTITION_NUM,EFP_POOL_FILE_SIZE,
     MAX_QUEUE_SIZE,MAX_QUEUE_COUNT,POLICY_TYPE,
-    LVQ_KEY,MSG_SEQUENCE,IVE,QUEUE_EVENT_GENERATION,
+    LVQ_KEY,MSG_SEQUENCE,IVE,
     FLOW_STOP_COUNT,FLOW_RESUME_COUNT,FLOW_STOP_SIZE,FLOW_RESUME_SIZE,
     MSG_GROUP_HDR_KEY,SHARED_MSG_GROUP,REPLICATE]
 
@@ -541,7 +540,6 @@ class BrokerManager:
                 if MAX_QUEUE_COUNT in args: print "--max-queue-count=%s" % args[MAX_QUEUE_COUNT],
                 if POLICY_TYPE in args: print "--limit-policy=%s" % args[POLICY_TYPE].replace("_", "-"),
                 if LVQ_KEY in args: print "--lvq-key=%s" % args[LVQ_KEY],
-                if QUEUE_EVENT_GENERATION in args: print "--generate-queue-events=%s" % args[QUEUE_EVENT_GENERATION],
                 if q.altExchange:
                     print "--alternate-exchange=%s" % q.altExchange,
                 if FLOW_STOP_SIZE in args: print "--flow-stop-size=%s" % args[FLOW_STOP_SIZE],
@@ -638,8 +636,6 @@ class BrokerManager:
 
         if config._lvq_key:
             declArgs[LVQ_KEY] = config._lvq_key
-        if config._eventGeneration:
-            declArgs[QUEUE_EVENT_GENERATION]  = config._eventGeneration
 
         if config._flowStopSize is not None:
             declArgs[FLOW_STOP_SIZE]  = config._flowStopSize

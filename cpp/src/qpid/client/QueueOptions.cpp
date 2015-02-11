@@ -40,8 +40,6 @@ const std::string QueueOptions::strRING_STRICT("ring_strict");
 const std::string QueueOptions::strLastValueQueue("qpid.last_value_queue");
 const std::string QueueOptions::strLVQMatchProperty("qpid.LVQ_key");
 const std::string QueueOptions::strLastValueQueueNoBrowse("qpid.last_value_queue_no_browse");
-const std::string QueueOptions::strQueueEventMode("qpid.queue_event_generation");
-
 
 QueueOptions::~QueueOptions()
 {}
@@ -99,11 +97,6 @@ void QueueOptions::clearSizePolicy()
 void QueueOptions::clearOrdering()
 {
     erase(strLastValueQueue);
-}
-
-void QueueOptions::enableQueueEvents(bool enqueueOnly)
-{
-    setInt(strQueueEventMode, enqueueOnly ? ENQUEUE_ONLY : ENQUEUE_AND_DEQUEUE);
 }
 
 }

@@ -30,7 +30,6 @@ public class QpidQueueOptions extends HashMap<String,Object>
     public static final String QPID_LVQ_KEY = "qpid.LVQ_key";
     public static final String QPID_LAST_VALUE_QUEUE = "qpid.last_value_queue";
     public static final String QPID_LAST_VALUE_QUEUE_NO_BROWSE = "qpid.last_value_queue_no_browse";
-    public static final String QPID_QUEUE_EVENT_GENERATION = "qpid.queue_event_generation";
 
     public void validatePolicyType(String type)
     {
@@ -83,16 +82,4 @@ public class QpidQueueOptions extends HashMap<String,Object>
         this.put(QPID_LVQ_KEY, key);
     }
     
-    public void setQueueEvents(String value)
-    {
-        if (value != null &&  (value.equals("1") || value.equals("2")))
-        {
-            this.put(QPID_QUEUE_EVENT_GENERATION, value);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Invalid value for " + 
-                    QPID_QUEUE_EVENT_GENERATION + " should be one of {1|2}");
-        }
-    }
 }

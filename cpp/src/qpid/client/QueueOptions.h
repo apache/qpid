@@ -75,28 +75,6 @@ class QPID_CLIENT_CLASS_EXTERN QueueOptions: public framing::FieldTable
      */
     QPID_CLIENT_EXTERN void clearOrdering();
 
-    /**
-     * Turns on event generation for this queue (either enqueue only
-     * or for enqueue and dequeue events); the events can then be
-     * processed by a regsitered broker plugin.
-     *
-     * DEPRECATED
-     *
-     * This is confusing to anyone who sees only the function call
-     * and not the variable name / doxygen. Consider the following call:
-     *
-     * options.enableQueueEvents(false);
-     *
-     * It looks like it disables queue events, but what it really does is
-     * enable both enqueue and dequeue events.
-     *
-     * Use setInt() instead:
-     *
-     * options.setInt("qpid.queue_event_generation", 2);
-     */
-
-    QPID_CLIENT_EXTERN void enableQueueEvents(bool enqueueOnly);
-
     static QPID_CLIENT_EXTERN const std::string strMaxCountKey;
     static QPID_CLIENT_EXTERN const std::string strMaxSizeKey;
     static QPID_CLIENT_EXTERN const std::string strTypeKey;
