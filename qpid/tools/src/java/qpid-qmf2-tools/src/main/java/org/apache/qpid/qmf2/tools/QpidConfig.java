@@ -344,7 +344,6 @@ public final class QpidConfig
     private String _order = "fifo";
     private boolean _msgSequence = false;
     private boolean _ive = false;
-    private long _eventGeneration = 0;
     private String _file = null;
 
     // New to Qpid 0.10 qpid-config
@@ -364,7 +363,6 @@ public final class QpidConfig
     private static final String LVQNB = "qpid.last_value_queue_no_browse";
     private static final String MSG_SEQUENCE = "qpid.msg_sequence";
     private static final String IVE = "qpid.ive";
-    private static final String QUEUE_EVENT_GENERATION = "qpid.queue_event_generation";
     private static final String FLOW_STOP_COUNT   = "qpid.flow_stop_count";
     private static final String FLOW_RESUME_COUNT = "qpid.flow_resume_count";
     private static final String FLOW_STOP_SIZE    = "qpid.flow_stop_size";
@@ -387,7 +385,6 @@ public final class QpidConfig
         SPECIAL_ARGS.add(LVQNB);
         SPECIAL_ARGS.add(MSG_SEQUENCE);
         SPECIAL_ARGS.add(IVE);
-        SPECIAL_ARGS.add(QUEUE_EVENT_GENERATION);
         SPECIAL_ARGS.add(FLOW_STOP_COUNT);
         SPECIAL_ARGS.add(FLOW_RESUME_COUNT);
         SPECIAL_ARGS.add(FLOW_STOP_SIZE);
@@ -714,11 +711,6 @@ for (Map.Entry<String, Object> entry  : args.entrySet()) {
                     System.out.printf("--order lvq-no-browse ");
                 }
 
-                if (args.containsKey(QUEUE_EVENT_GENERATION))
-                {
-                    System.out.printf("--generate-queue-events=%d ", QmfData.getLong(args.get(QUEUE_EVENT_GENERATION)));
-                }
- 
                 if (queue.hasValue("altExchange"))
                 {
                     ObjectId altExchangeRef = queue.getRefValue("altExchange");
@@ -934,11 +926,6 @@ for (Map.Entry<String, Object> entry  : args.entrySet()) {
         else if (_order.equals("lvq-no-browse"))
         {
             properties.put(LVQNB, 1l);
-        }
-
-        if (_eventGeneration > 0)
-        {
-            properties.put(QUEUE_EVENT_GENERATION, _eventGeneration);
         }
 
         if (_altExchange != null)
@@ -1391,11 +1378,6 @@ for (Map.Entry<String, Object> entry  : args.entrySet()) {
                 if (opt[0].equals("--ive"))
                 {
                     _ive = true;
-                }
-
-                if (opt[0].equals("--generate-queue-events"))
-                {
-                    _eventGeneration = Long.parseLong(opt[1]);
                 }
 
                 if (opt[0].equals("--force"))
