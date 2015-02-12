@@ -54,13 +54,17 @@ public abstract class AbstractConsumerTarget implements ConsumerTarget
     }
 
     @Override
-    public void processPendingMessages()
+    public void processPending()
     {
         while(hasMessagesToSend())
         {
             sendNextMessage();
         }
+
+        processClosed();
     }
+
+    protected abstract void processClosed();
 
     @Override
     public final boolean isSuspended()

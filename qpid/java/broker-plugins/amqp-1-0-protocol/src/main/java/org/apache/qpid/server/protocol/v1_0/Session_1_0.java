@@ -905,7 +905,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
         for(Consumer<?> consumer : getConsumers())
         {
 
-            ((ConsumerImpl)consumer).getTarget().processPendingMessages();
+            ((ConsumerImpl)consumer).getTarget().processPending();
         }
     }
 

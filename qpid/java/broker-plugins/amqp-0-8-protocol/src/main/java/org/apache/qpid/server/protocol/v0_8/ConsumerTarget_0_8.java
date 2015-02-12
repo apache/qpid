@@ -75,6 +75,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
     private final AtomicLong _unacknowledgedCount = new AtomicLong(0);
     private final AtomicLong _unacknowledgedBytes = new AtomicLong(0);
     private final List<ConsumerImpl> _consumers = new CopyOnWriteArrayList<>();
+    private final AtomicBoolean _needToClose = new AtomicBoolean();
 
 
     public static ConsumerTarget_0_8 createBrowserTarget(AMQChannel channel,
@@ -512,6 +513,15 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
     public void queueEmpty()
     {
         if (isAutoClose())
+        {
+            _needToClose.set(true);
+        }
+    }
+
+    @Override
+    protected void processClosed()
+    {
+        if (_needToClose.get() && getState() != State.CLOSED)
         {
             close();
             confirmAutoClose();

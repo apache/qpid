@@ -2141,7 +2141,8 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                             if (consumerDone)
                             {
                                 sub.flushBatched();
-                                if (lastLoop && !sub.isSuspended())
+                                boolean noMore = getNextAvailableEntry(sub) == null;
+                                if (lastLoop && noMore)
                                 {
                                     sub.queueEmpty();
                                 }

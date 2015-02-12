@@ -148,7 +148,6 @@ public class QueueBrowserAutoAckTest extends QpidBrokerTestCase
         assertEquals("Session reports Queue expectedDepth not as expected", expectedDepth, queueDepth);
 
 
-
         // Browse the queue to get a second opinion
         int msgCount = 0;
         Enumeration msgs = queueBrowser.getEnumeration();
@@ -268,7 +267,7 @@ public class QueueBrowserAutoAckTest extends QpidBrokerTestCase
         //validate all browsers get right message count.
         for (int count = 0; count < browserEnumerationCount; count++)
         {
-            assertEquals(msgCount[count], expectedMessages);
+            assertEquals("Unexpected count for browser " + count, expectedMessages, msgCount[count]);
         }
 
         try
@@ -317,7 +316,7 @@ public class QueueBrowserAutoAckTest extends QpidBrokerTestCase
         //Close this new connection
         connection.close();
 
-        _logger.info("All messages recevied from queue");
+        _logger.info("All messages received from queue");
 
         //ensure no message left.
         checkQueueDepth(0);
@@ -344,7 +343,7 @@ public class QueueBrowserAutoAckTest extends QpidBrokerTestCase
 
     /*
     * Test Messages Remain on Queue
-    * Create a queu and send messages to it. Browse them and then receive them all to verify they were still there
+    * Create a queue and send messages to it. Browse them and then receive them all to verify they were still there
     *
     */
     public void testQueueBrowserMsgsRemainOnQueue() throws Exception

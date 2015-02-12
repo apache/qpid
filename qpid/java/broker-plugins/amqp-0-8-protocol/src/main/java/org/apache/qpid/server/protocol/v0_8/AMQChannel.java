@@ -3613,7 +3613,7 @@ public class AMQChannel
 
         for(ConsumerTarget target : _tag2SubscriptionTargetMap.values())
         {
-            target.processPendingMessages();
+            target.processPending();
         }
     }
 }

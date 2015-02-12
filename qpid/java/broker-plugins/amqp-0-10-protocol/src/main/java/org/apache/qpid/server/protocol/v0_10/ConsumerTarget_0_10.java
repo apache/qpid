@@ -661,4 +661,10 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
     {
         return _unacknowledgedCount.longValue();
     }
+
+    @Override
+    protected void processClosed()
+    {
+
+    }
 }

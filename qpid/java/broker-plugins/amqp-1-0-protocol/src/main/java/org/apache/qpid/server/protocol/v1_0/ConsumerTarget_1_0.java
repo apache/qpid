@@ -535,4 +535,9 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
         return 0;
     }
 
+    @Override
+    protected void processClosed()
+    {
+
+    }
 }

@@ -1140,7 +1140,7 @@ public class ServerSession extends Session
     {
         for(ConsumerTarget target : getSubscriptions())
         {
-            target.processPendingMessages();
+            target.processPending();
         }
     }
 

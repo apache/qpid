@@ -33,7 +33,7 @@ public interface ConsumerTarget
 
     void removeStateChangeListener(StateChangeListener<ConsumerTarget, State> listener);
 
-    void processPendingMessages();
+    void processPending();
 
     enum State
     {
