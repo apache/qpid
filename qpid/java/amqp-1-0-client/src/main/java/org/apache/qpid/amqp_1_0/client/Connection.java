@@ -179,7 +179,7 @@ public class Connection implements ExceptionHandler
                       boolean ssl,
                       int channelMax) throws ConnectionException
     {
-        this(ssl?"amqp":"amqps",address,port,username,password,maxFrameSize,container,
+        this(ssl?"amqps":"amqp",address,port,username,password,maxFrameSize,container,
              remoteHostname,
              getSslContext(ssl),
              null,
@@ -291,6 +291,12 @@ public class Connection implements ExceptionHandler
 
     private TransportProvider getTransportProvider(final String protocol) throws ConnectionException
     {
+        TCPTransportProviderFactory tcpTransportProviderFactory = new TCPTransportProviderFactory();
+        if(tcpTransportProviderFactory.getSupportedTransports().contains(protocol))
+        {
+            return tcpTransportProviderFactory.getProvider(protocol);
+        }
+
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         ServiceLoader<TransportProviderFactory> providerFactories = ServiceLoader.load(TransportProviderFactory.class, classLoader);
 

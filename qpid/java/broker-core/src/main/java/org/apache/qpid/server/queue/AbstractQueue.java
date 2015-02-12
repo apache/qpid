@@ -246,6 +246,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     private final ConcurrentLinkedQueue<EnqueueRequest> _postRecoveryQueue = new ConcurrentLinkedQueue<>();
 
     private final QueueRunner _queueRunner = new QueueRunner(this);
+    private boolean _closing;
 
     protected AbstractQueue(Map<String, Object> attributes, VirtualHostImpl virtualHost)
     {
@@ -754,6 +755,15 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     }
 
+    @Override
+    protected void beforeClose()
+    {
+        _closing = true;
+        super.beforeClose();
+    }
+
+
+
     synchronized void unregisterConsumer(final QueueConsumerImpl consumer)
     {
         if (consumer == null)
@@ -794,7 +804,8 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             if(!consumer.isTransient()
                && ( getLifetimePolicy() == LifetimePolicy.DELETE_ON_NO_OUTBOUND_LINKS
                     || getLifetimePolicy() == LifetimePolicy.DELETE_ON_NO_LINKS )
-               && getConsumerCount() == 0)
+               && getConsumerCount() == 0
+               && !(consumer.isDurable() && _closing))
             {
 
                 if (_logger.isInfoEnabled())
@@ -1794,6 +1805,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         {
             ReferenceCountingExecutorService.getInstance().releaseExecutorService();
         }
+        _closing = false;
     }
 
     public void checkCapacity(AMQSessionModel channel)

@@ -215,7 +215,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                         registerConsumer(sendingLink);
 
                         link = sendingLink;
-                        if(TerminusDurability.UNSETTLED_STATE.equals(source.getDurable()))
+                        if(TerminusDurability.UNSETTLED_STATE.equals(source.getDurable()) || TerminusDurability.CONFIGURATION.equals(source.getDurable()))
                         {
                             linkRegistry.registerSendingLink(endpoint.getName(), sendingLink);
                         }
@@ -377,7 +377,8 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                         receivingLinkEndpoint.setLinkEventListener(new SubjectSpecificReceivingLinkListener(receivingLink));
 
                         link = receivingLink;
-                        if(TerminusDurability.UNSETTLED_STATE.equals(target.getDurable()))
+                        if(TerminusDurability.UNSETTLED_STATE.equals(target.getDurable())
+                           || TerminusDurability.CONFIGURATION.equals(target.getDurable()))
                         {
                             linkRegistry.registerReceivingLink(endpoint.getName(), receivingLink);
                         }

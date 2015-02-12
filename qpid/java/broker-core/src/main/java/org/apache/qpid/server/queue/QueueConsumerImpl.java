@@ -153,7 +153,7 @@ class QueueConsumerImpl
         attributes.put(EXCLUSIVE, optionSet.contains(Option.EXCLUSIVE));
         attributes.put(NO_LOCAL, optionSet.contains(Option.NO_LOCAL));
         attributes.put(DISTRIBUTION_MODE, optionSet.contains(Option.ACQUIRES) ? "MOVE" : "COPY");
-        attributes.put(DURABLE,false);
+        attributes.put(DURABLE,optionSet.contains(Option.DURABLE));
         attributes.put(LIFETIME_POLICY, LifetimePolicy.DELETE_ON_SESSION_END);
         if(filters != null)
         {

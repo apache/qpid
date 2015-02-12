@@ -457,6 +457,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                 case AWAITING_OPEN:
                 case CLOSE_SENT:
                     _state = ConnectionState.CLOSED;
+                    closeSender();
                     break;
                 case OPEN:
                     _state = ConnectionState.CLOSE_RECEIVED;

@@ -292,15 +292,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
                                 actualFilters.put(entry.getKey(), entry.getValue());
                             }
-                            catch (ParseException e)
-                            {
-                                Error error = new Error();
-                                error.setCondition(AmqpError.INVALID_FIELD);
-                                error.setDescription("Invalid JMS Selector: " + selectorFilter.getValue());
-                                error.setInfo(Collections.singletonMap(Symbol.valueOf("field"), Symbol.valueOf("filter")));
-                                throw new AmqpErrorException(error);
-                            }
-                            catch (SelectorParsingException e)
+                            catch (ParseException | SelectorParsingException e)
                             {
                                 Error error = new Error();
                                 error.setCondition(AmqpError.INVALID_FIELD);
@@ -364,6 +356,12 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 options.add(ConsumerImpl.Option.NO_LOCAL);
             }
 
+            if(_durability == TerminusDurability.CONFIGURATION ||
+               _durability == TerminusDurability.UNSETTLED_STATE )
+            {
+                options.add(ConsumerImpl.Option.DURABLE);
+            }
+
             try
             {
                 final String name;
@@ -408,7 +406,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     {
         //TODO
         // if not durable or close
-        if(!TerminusDurability.UNSETTLED_STATE.equals(_durability))
+        if(Boolean.TRUE.equals(detach.getClosed())
+           || !(TerminusDurability.UNSETTLED_STATE.equals(_durability)|| TerminusDurability.CONFIGURATION.equals(_durability)))
         {
             while(!_consumer.trySendLock())
             {
@@ -464,7 +463,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 _consumer.releaseSendLock();
             }
         }
-        else if(detach == null || detach.getError() != null)
+        else if(detach.getError() != null
+                && !_linkAttachment.getEndpoint().getSession().isSyntheticError(detach.getError()))
         {
             _linkAttachment = null;
             _target.flowStateChanged();
