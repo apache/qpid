@@ -224,7 +224,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private volatile boolean _usingDispatcherForCleanup;
 
     /** Used to indicates that the connection to which this session belongs, has been stopped. */
-    private boolean _connectionStopped;
+    private final AtomicBoolean _connectionStopped = new AtomicBoolean();
 
     /** Used to indicate that this session has a message listener attached to it. */
     private boolean _hasMessageListeners;
@@ -3410,25 +3410,28 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         // only call while holding lock
         final boolean connectionStopped()
         {
-            return _connectionStopped;
+            return _connectionStopped.get();
         }
 
         boolean setConnectionStopped(boolean connectionStopped)
         {
-            boolean currently;
-            synchronized (_lock)
+            boolean currently = _connectionStopped.get();
+            if(connectionStopped != currently)
             {
-                currently = _connectionStopped;
-                _connectionStopped = connectionStopped;
-                _lock.notify();
-
-                if (_dispatcherLogger.isDebugEnabled())
+                synchronized (_lock)
                 {
-                    _dispatcherLogger.debug("Set Dispatcher Connection " + (connectionStopped ? "Stopped" : "Started")
-                                            + ": Currently " + (currently ? "Stopped" : "Started"));
+                    _connectionStopped.set(connectionStopped);
+                    _lock.notify();
+
+                    if (_dispatcherLogger.isDebugEnabled())
+                    {
+                        _dispatcherLogger.debug("Set Dispatcher Connection " + (connectionStopped
+                                ? "Stopped"
+                                : "Started")
+                                                + ": Currently " + (currently ? "Stopped" : "Started"));
+                    }
                 }
             }
-
             return currently;
         }
 
