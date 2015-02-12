@@ -286,7 +286,16 @@ public class SelectorThread extends Thread
                                 @Override
                                 public void run()
                                 {
-                                    processConnection(connection);
+                                    String currentName = Thread.currentThread().getName();
+                                    try
+                                    {
+                                        Thread.currentThread().setName("NCS-"+connection.getRemoteAddress().toString());
+                                        processConnection(connection);
+                                    }
+                                    finally
+                                    {
+                                        Thread.currentThread().setName(currentName);
+                                    }
                                 }
                             });
         }

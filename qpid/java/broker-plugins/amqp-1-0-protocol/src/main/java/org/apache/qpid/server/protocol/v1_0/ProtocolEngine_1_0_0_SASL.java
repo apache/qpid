@@ -144,7 +144,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
     private State _state = State.A;
 
-    private volatile boolean _messageAssignmentSuspended;
+    private final AtomicReference<Thread> _messageAssignmentSuspended = new AtomicReference<>();
 
 
 
@@ -166,13 +166,14 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     @Override
     public boolean isMessageAssignmentSuspended()
     {
-        return _messageAssignmentSuspended;
+        Thread lock = _messageAssignmentSuspended.get();
+        return lock != null && _messageAssignmentSuspended.get() != Thread.currentThread();
     }
 
     @Override
     public void setMessageAssignmentSuspended(final boolean messageAssignmentSuspended)
     {
-        _messageAssignmentSuspended = messageAssignmentSuspended;
+        _messageAssignmentSuspended.set(messageAssignmentSuspended ? Thread.currentThread() : null);
 
         if(!messageAssignmentSuspended)
         {

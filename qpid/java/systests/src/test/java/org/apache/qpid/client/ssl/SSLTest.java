@@ -290,7 +290,8 @@ public class SSLTest extends QpidBrokerTestCase
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         e.printStackTrace(new PrintStream(bout));
         String strace = bout.toString();
-        assertTrue("Correct exception not thrown", strace.contains(expectedString));
+        assertTrue("Correct exception not thrown, expecting : " + expectedString + " got : " +e,
+                   strace.contains(expectedString));
     }
 
     public void testVerifyLocalHost() throws Exception

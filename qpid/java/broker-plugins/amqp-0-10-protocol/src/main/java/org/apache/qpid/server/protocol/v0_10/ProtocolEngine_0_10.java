@@ -61,7 +61,8 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     private long _lastWriteTime = _createTime;
     private volatile boolean _transportBlockedForWriting;
 
-    private volatile boolean _messageAssignmentSuspended;
+    private final AtomicReference<Thread> _messageAssignmentSuspended = new AtomicReference<>();
+
     private final AtomicBoolean _stateChanged = new AtomicBoolean();
     private final AtomicReference<Action<ServerProtocolEngine>> _workListener = new AtomicReference<>();
 
@@ -81,13 +82,15 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     @Override
     public boolean isMessageAssignmentSuspended()
     {
-        return _messageAssignmentSuspended;
+        Thread lock = _messageAssignmentSuspended.get();
+        return lock != null && _messageAssignmentSuspended.get() != Thread.currentThread();
     }
 
     @Override
     public void setMessageAssignmentSuspended(final boolean messageAssignmentSuspended)
     {
-        _messageAssignmentSuspended = messageAssignmentSuspended;
+        _messageAssignmentSuspended.set(messageAssignmentSuspended ? Thread.currentThread() : null);
+
         if(!messageAssignmentSuspended)
         {
            for(AMQSessionModel<?,?> session : _connection.getSessionModels())

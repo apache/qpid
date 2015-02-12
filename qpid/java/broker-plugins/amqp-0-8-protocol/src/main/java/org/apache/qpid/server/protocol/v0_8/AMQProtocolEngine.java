@@ -209,19 +209,20 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     private long _maxMessageSize;
     private volatile boolean _transportBlockedForWriting;
 
-    private volatile boolean _messageAssignmentSuspended;
+    private final AtomicReference<Thread> _messageAssignmentSuspended = new AtomicReference<>();
 
 
     @Override
     public boolean isMessageAssignmentSuspended()
     {
-        return _messageAssignmentSuspended;
+        Thread lock = _messageAssignmentSuspended.get();
+        return lock != null && _messageAssignmentSuspended.get() != Thread.currentThread();
     }
 
     @Override
     public void setMessageAssignmentSuspended(final boolean messageAssignmentSuspended)
     {
-        _messageAssignmentSuspended = messageAssignmentSuspended;
+        _messageAssignmentSuspended.set(messageAssignmentSuspended ? Thread.currentThread() : null);
         if(!messageAssignmentSuspended)
         {
             for(AMQSessionModel<?,?> session : getSessionModels())
