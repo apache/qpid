@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
@@ -249,7 +250,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         List<AMQSession> sessions = new ArrayList<AMQSession>(_conn.getSessions().values());
         for (AMQSession s : sessions)
         {
-            s.failoverPrep();
+            ((AMQSession_0_10)s).failoverPrep();
         }
     }
 
@@ -306,16 +307,21 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
             _qpidConnection.notifyFailoverRequired();
 
-            synchronized (_conn.getFailoverMutex())
+            final AtomicBoolean failoverDone = new AtomicBoolean();
+
+            _conn.doWithAllLocks(new Runnable()
             {
+                @Override
+                public void run()
+                {
                 try
                 {
                     if (_conn.firePreFailover(false) && _conn.attemptReconnection())
                     {
-                        _conn.failoverPrep();
+                        failoverPrep();
                         _conn.resubscribeSessions();
                         _conn.fireFailoverComplete();
-                        return;
+                        failoverDone.set(true);
                     }
                 }
                 catch (Exception e)
@@ -327,8 +333,18 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
                     _conn.getProtocolHandler().getFailoverLatch().countDown();
                     _conn.getProtocolHandler().setFailoverLatch(null);
                 }
+
+                }
+            });
+
+
+            if (failoverDone.get())
+            {
+                return;
             }
+
         }
+
 
         _conn.setClosed();
 
