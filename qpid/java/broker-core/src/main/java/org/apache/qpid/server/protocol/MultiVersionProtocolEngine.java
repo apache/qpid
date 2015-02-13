@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
@@ -383,6 +384,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     {
         private final ByteBuffer _header = ByteBuffer.allocate(MINIMUM_REQUIRED_HEADER_BYTES);
         private long _lastReadTime = System.currentTimeMillis();
+        private final AtomicBoolean _hasWork = new AtomicBoolean();
 
         public SocketAddress getRemoteAddress()
         {
@@ -424,13 +426,13 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         @Override
         public boolean hasWork()
         {
-            return false;
+            return _hasWork.get();
         }
 
         @Override
         public void notifyWork()
         {
-
+            _hasWork.set(true);
         }
 
         @Override
@@ -442,7 +444,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         @Override
         public void clearWork()
         {
-
+            _hasWork.set(false);
         }
 
         public void received(ByteBuffer msg)
@@ -533,6 +535,11 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                 }
                 else
                 {
+                    boolean hasWork = _delegate.hasWork();
+                    if (hasWork)
+                    {
+                        newDelegate.notifyWork();
+                    }
                     _delegate = newDelegate;
                     _delegate.setWorkListener(_workListener.get());
                     _header.flip();

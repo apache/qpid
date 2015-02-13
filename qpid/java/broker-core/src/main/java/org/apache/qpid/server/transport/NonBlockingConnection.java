@@ -271,7 +271,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
     public boolean doWork()
     {
         _protocolEngine.clearWork();
-        boolean closed = _closed.get();
+        final boolean closed = _closed.get();
         if (!closed)
         {
             try
