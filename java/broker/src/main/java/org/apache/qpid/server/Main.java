@@ -25,9 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -179,10 +176,13 @@ public class Main
 
     protected void execute() throws Exception
     {
-        String initialProperties = _commandLine.getOptionValue(OPTION_INITIAL_SYSTEM_PROPERTIES.getOpt());
-        populateSystemPropertiesFromDefaults(initialProperties);
-
         BrokerOptions options = new BrokerOptions();
+
+        String initialProperties = _commandLine.getOptionValue(OPTION_INITIAL_SYSTEM_PROPERTIES.getOpt());
+        if (initialProperties != null)
+        {
+            options.setInitialSystemProperties(initialProperties);
+        }
 
         String initialConfigLocation = _commandLine.getOptionValue(OPTION_INITIAL_CONFIGURATION_PATH.getOpt());
         if (initialConfigLocation != null)
@@ -318,33 +318,6 @@ public class Main
 
             startBroker(options);
         }
-    }
-
-    private void populateSystemPropertiesFromDefaults(final String initialProperties) throws IOException
-    {
-        URL initialPropertiesLocation;
-        if(initialProperties == null)
-        {
-            initialPropertiesLocation = getClass().getClassLoader().getResource("system.properties");
-        }
-        else
-        {
-            initialPropertiesLocation = (new File(initialProperties)).toURI().toURL();
-        }
-
-        Properties props = new Properties(QpidProperties.asProperties());
-        if(initialPropertiesLocation != null)
-        {
-            props.load(initialPropertiesLocation.openStream());
-        }
-
-        Set<String> propertyNames = new HashSet<>(props.stringPropertyNames());
-        propertyNames.removeAll(System.getProperties().stringPropertyNames());
-        for (String propName : propertyNames)
-        {
-            System.setProperty(propName, props.getProperty(propName));
-        }
-
     }
 
     private void copyInitialConfigFile(final BrokerOptions options, final File destinationFile)

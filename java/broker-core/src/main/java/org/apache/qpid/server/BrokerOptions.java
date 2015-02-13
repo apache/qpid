@@ -78,6 +78,7 @@ public class BrokerOptions
     private boolean _overwriteConfigurationStore;
     private Map<String, String> _configProperties = new HashMap<String,String>();
     private boolean _startupLoggedToSystemOut = true;
+    private String _initialSystemProperties;
 
     public Map<String, Object> convertToSystemConfigAttributes()
     {
@@ -389,5 +390,25 @@ public class BrokerOptions
     public void setStartupLoggedToSystemOut(boolean startupLoggedToSystemOut)
     {
         this._startupLoggedToSystemOut = startupLoggedToSystemOut;
+    }
+
+    /**
+     * Get the location of initial JVM system properties to set. This can be URL or a file path
+     *
+     * @return the location of initial JVM system properties to set.
+     */
+    public String getInitialSystemProperties()
+    {
+        return _initialSystemProperties;
+    }
+
+    /**
+     * Set the location of initial properties file to set as JVM system properties. This can be URL or a file path
+     *
+     * @param initialSystemProperties the location of initial JVM system properties.
+     */
+    public void setInitialSystemProperties(String initialSystemProperties)
+    {
+        _initialSystemProperties = initialSystemProperties;
     }
 }

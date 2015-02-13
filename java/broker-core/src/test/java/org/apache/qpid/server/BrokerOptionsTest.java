@@ -309,4 +309,14 @@ public class BrokerOptionsTest extends QpidTestCase
         assertEquals("unexpected number of entries", 2, props.keySet().size());
         assertEquals("value", props.get("name"));
     }
+
+
+    public void testSetInitialSystemProperties()
+    {
+        assertNull("Unexpected default value for initial system properties", _options.getInitialSystemProperties());
+
+        _options.setInitialSystemProperties("test.properties");
+
+        assertEquals("test.properties", _options.getInitialSystemProperties());
+    }
 }
