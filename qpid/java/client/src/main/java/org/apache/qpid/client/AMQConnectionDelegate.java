@@ -52,8 +52,6 @@ public interface AMQConnectionDelegate
 
     XASession createXASession(int ackMode) throws JMSException;
 
-    void failoverPrep();
-
     void resubscribeSessions() throws JMSException, AMQException, FailoverException;
 
     void closeConnection(long timeout) throws JMSException, AMQException;

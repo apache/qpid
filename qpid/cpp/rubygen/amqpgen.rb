@@ -489,6 +489,7 @@ class Generator
     @prefix=['']                # For indentation or comments.
     @indentstr='    '           # One indent level.
     @outdent=2
+    @verbose=false
   end
 
   # Declare next file to be public API
@@ -504,10 +505,14 @@ class Generator
       @out=String.new           # Generate in memory first
       yield if block
       if @path.exist? and @path.read == @out  
-        puts "Skipped #{@path} - unchanged" # Dont generate if unchanged
+        if @verbose
+          puts "Skipped #{@path} - unchanged" # Dont generate if unchanged
+        end
       else
         @path.open('w') { |f| f << @out }
-        puts "Generated #{@path}"
+        if @verbose
+          puts "Generated #{@path}"
+        end
       end
     end
   end

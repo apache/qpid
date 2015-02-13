@@ -1216,11 +1216,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return _failoverMutex;
     }
 
-    public void failoverPrep()
-    {
-        _delegate.failoverPrep();
-    }
-
     public void resubscribeSessions() throws JMSException, AMQException, FailoverException
     {
         _delegate.resubscribeSessions();
@@ -1653,4 +1648,46 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         return _messageCompressionThresholdSize;
     }
+
+    void doWithAllLocks(Runnable r)
+    {
+        doWithAllLocks(r, _sessions.values());
+
+    }
+
+    private void doWithAllLocks(final Runnable r, final List<AMQSession> sessions)
+    {
+        if (!sessions.isEmpty())
+        {
+            AMQSession session = sessions.remove(0);
+
+            final Object dispatcherLock = session.getDispatcherLock();
+            if (dispatcherLock != null)
+            {
+                synchronized (dispatcherLock)
+                {
+                    synchronized (session.getMessageDeliveryLock())
+                    {
+                        doWithAllLocks(r, sessions);
+                    }
+                }
+            }
+            else
+            {
+                synchronized (session.getMessageDeliveryLock())
+                {
+                    doWithAllLocks(r, sessions);
+                }
+            }
+        }
+        else
+        {
+            synchronized (getFailoverMutex())
+            {
+                r.run();
+            }
+        }
+    }
+
+
 }

@@ -1368,7 +1368,8 @@ class Engine:
       assert rcv.received < rcv.impending, "%s, %s" % (rcv.received, rcv.impending)
     rcv.received += 1
     log.debug("RCVD[%s]: %s", ssn.log_id, msg)
-    ssn.incoming.append(msg)
+    ssn.message_received(msg)
+
 
   def _decode(self, xfr):
     dp = EMPTY_DP

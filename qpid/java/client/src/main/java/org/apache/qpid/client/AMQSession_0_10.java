@@ -235,7 +235,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
     void failoverPrep()
     {
-        super.failoverPrep();
+        syncDispatchQueue(true);
         clearUnacked();
     }
 
