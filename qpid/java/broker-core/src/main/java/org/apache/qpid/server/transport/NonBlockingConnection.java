@@ -309,7 +309,6 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
                 if(_closed.compareAndSet(false,true))
                 {
                     _protocolEngine.notifyWork();
-                    getSelector().wakeup();
                 }
             }
         }
@@ -628,7 +627,6 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
         {
             throw new SenderClosedException("I/O for thread " + _remoteSocketAddress + " is already closed");
         }
-        // append to list and do selector wakeup
         _buffers.add(msg);
         _protocolEngine.notifyWork();
     }
