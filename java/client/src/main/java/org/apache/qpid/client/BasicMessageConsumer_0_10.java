@@ -412,7 +412,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
                                                 _capacity,
                                                 Option.UNRELIABLE);
             }
-            _0_10session.syncDispatchQueue();
+            _0_10session.syncDispatchQueue(false);
             o = super.getMessageFromQueue(-1);
         }
         if (_capacity == 0)

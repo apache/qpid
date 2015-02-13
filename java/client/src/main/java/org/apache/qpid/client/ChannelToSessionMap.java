@@ -22,13 +22,16 @@ package org.apache.qpid.client;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class ChannelToSessionMap
 {
-    private final Map<Integer, AMQSession> _sessionMap = new ConcurrentHashMap<>();
+    private final Map<Integer, AMQSession> _sessionMap = Collections.synchronizedMap(new LinkedHashMap<Integer, AMQSession>());
     private AtomicInteger _idFactory = new AtomicInteger(0);
     private int _maxChannelID;
     private int _minChannelID;
@@ -48,7 +51,7 @@ public final class ChannelToSessionMap
         _sessionMap.remove(channelId);
     }
 
-    public Collection<AMQSession> values()
+    public List<AMQSession> values()
     {
         return new ArrayList<>(_sessionMap.values());
     }

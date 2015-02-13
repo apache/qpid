@@ -169,7 +169,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private final Lock _subscriberDetails = new ReentrantLock(true);
     private final Lock _subscriberAccess = new ReentrantLock(true);
 
-    private final FlowControllingBlockingQueue _queue;
+    private final FlowControllingBlockingQueue<Dispatchable> _queue;
 
     private final AtomicLong _highestDeliveryTag = new AtomicLong(-1);
     private final AtomicLong _rollbackMark = new AtomicLong(-1);
@@ -358,7 +358,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         if (_acknowledgeMode == NO_ACKNOWLEDGE)
         {
             _queue =
-                    new FlowControllingBlockingQueue(_prefetchHighMark, _prefetchLowMark,
+                    new FlowControllingBlockingQueue<Dispatchable>(_prefetchHighMark, _prefetchLowMark,
                                                      new FlowControllingBlockingQueue.ThresholdListener()
                                                      {
                                                          private final AtomicBoolean _suspendState = new AtomicBoolean();
@@ -423,7 +423,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         else
         {
-            _queue = new FlowControllingBlockingQueue(_prefetchHighMark, null);
+            _queue = new FlowControllingBlockingQueue<Dispatchable>(_prefetchHighMark, null);
         }
 
         // Add creation logging to tie in with the existing close logging
@@ -1789,7 +1789,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             //in the pre-dispatch queue.
             _usingDispatcherForCleanup = true;
 
-            syncDispatchQueue();
+            syncDispatchQueue(false);
 
             // Set to false before sending the recover as 0-8/9/9-1 will
             //send messages back before the recover completes, and we
@@ -1881,7 +1881,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
                 setRollbackMark();
 
-                syncDispatchQueue();
+                syncDispatchQueue(false);
 
                 _dispatcher.rollback();
 
@@ -2201,21 +2201,17 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     }
 
-    void failoverPrep()
-    {
-        syncDispatchQueue();
-    }
 
-    void syncDispatchQueue()
+    void syncDispatchQueue(final boolean holdDispatchLock)
     {
-        if (Thread.currentThread() == _dispatcherThread)
+        if (Thread.currentThread() == _dispatcherThread || holdDispatchLock)
         {
             while (!super.isClosed() && !_queue.isEmpty())
             {
                 Dispatchable disp;
                 try
                 {
-                    disp = (Dispatchable) _queue.take();
+                    disp = _queue.take();
                 }
                 catch (InterruptedException e)
                 {
@@ -2267,7 +2263,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 Dispatchable disp;
                 try
                 {
-                    disp = (Dispatchable) _queue.take();
+                    disp = _queue.take();
                 }
                 catch (InterruptedException e)
                 {
@@ -3086,7 +3082,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     private void rejectMessagesForConsumerTag(int consumerTag, boolean requeue, boolean rejectAllConsumers)
     {
-        Iterator messages = _queue.iterator();
+        Iterator<Dispatchable> messages = _queue.iterator();
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Rejecting messages from _queue for Consumer tag(" + consumerTag + ") (PDispatchQ) requeue:"
@@ -3236,6 +3232,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public abstract boolean isFlowBlocked();
 
     public abstract void setFlowControl(final boolean active);
+
+    Object getDispatcherLock()
+    {
+        Dispatcher dispatcher = _dispatcher;
+        return dispatcher == null ? null : dispatcher._lock;
+    }
 
     public interface Dispatchable
     {
@@ -3389,10 +3391,18 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
             try
             {
-                Dispatchable disp;
-                while (((disp = (Dispatchable) _queue.take()) != null) && !_closed.get())
+
+                while (((_queue.blockingPeek()) != null) && !_closed.get())
                 {
-                    disp.dispatch(AMQSession.this);
+                    synchronized (_lock)
+                    {
+                        Dispatchable disp = _queue.nonBlockingTake();
+
+                        if(disp != null)
+                        {
+                            disp.dispatch(AMQSession.this);
+                        }
+                    }
                 }
             }
             catch (InterruptedException e)

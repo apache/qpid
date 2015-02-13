@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.client.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A blocking queue that emits events above a user specified threshold allowing the caller to take action (e.g. flow
@@ -37,12 +37,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * <p>
  * TODO  Make this implement java.util.Queue and hide the implementation. Then different queue types can be substituted.
  */
-public class FlowControllingBlockingQueue
+public class FlowControllingBlockingQueue<T>
 {
 	private static final Logger _logger = LoggerFactory.getLogger(FlowControllingBlockingQueue.class);
 	
     /** This queue is bounded and is used to store messages before being dispatched to the consumer */
-    private final Queue _queue = new ConcurrentLinkedQueue();
+    private final Queue<T> _queue = new ConcurrentLinkedQueue<T>();
 
     private final int _flowControlHighThreshold;
     private final int _flowControlLowThreshold;
@@ -82,9 +82,44 @@ public class FlowControllingBlockingQueue
         }
     }
 
-    public Object take() throws InterruptedException
+    public T blockingPeek() throws InterruptedException
     {
-        Object o = _queue.poll();
+        T o = _queue.peek();
+        if (o == null)
+        {
+            synchronized (this)
+            {
+                while ((o = _queue.peek()) == null)
+                {
+                    wait();
+                }
+            }
+        }
+        return o;
+    }
+
+    public T nonBlockingTake() throws InterruptedException
+    {
+        T o = _queue.poll();
+
+        if (o != null && !disableFlowControl && _listener != null)
+        {
+            synchronized (_listener)
+            {
+                if (_count-- == _flowControlLowThreshold)
+                {
+                    _listener.underThreshold(_count);
+                }
+            }
+
+        }
+
+        return o;
+    }
+
+    public T take() throws InterruptedException
+    {
+        T o = _queue.poll();
         if(o == null)
         {
             synchronized(this)
@@ -110,7 +145,7 @@ public class FlowControllingBlockingQueue
         return o;
     }
 
-    public void add(Object o)
+    public void add(T o)
     {
         synchronized(this)
         {
@@ -130,7 +165,7 @@ public class FlowControllingBlockingQueue
         }
     }
 
-    public Iterator iterator()
+    public Iterator<T> iterator()
     {
         return _queue.iterator();
     }
