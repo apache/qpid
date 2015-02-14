@@ -2160,7 +2160,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                             if (consumerDone)
                             {
                                 sub.flushBatched();
-                                if (lastLoop && !sub.isSuspended())
+                                if (lastLoop && getNextAvailableEntry(sub) == null)
                                 {
                                     sub.queueEmpty();
                                 }
