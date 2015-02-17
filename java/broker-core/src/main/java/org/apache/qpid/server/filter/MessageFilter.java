@@ -22,5 +22,6 @@ package org.apache.qpid.server.filter;
 
 public interface MessageFilter
 {
+    String getName();
     boolean matches(Filterable message);
 }

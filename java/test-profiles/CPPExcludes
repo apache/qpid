@@ -209,3 +209,7 @@ org.apache.qpid.test.unit.client.AMQSessionTest#testQueueDepthForQueueThatDoesNo
 org.apache.qpid.client.prefetch.PrefetchBehaviourTest#testPrefetchWindowExpandsOnReceiveTransaction
 
 org.apache.qpid.client.SyncPublishTest#*
+
+org.apache.qpid.server.queue.ArrivalTimeFilterTest#*
+org.apache.qpid.server.queue.DefaultFiltersTest#*
+

@@ -87,6 +87,12 @@ class HeadersBinding
                              +"' with arguments: " + _binding.getArguments());
                 _filter = new MessageFilter()
                     {
+                    @Override
+                        public String getName()
+                        {
+                            return "";
+                        }
+
                         @Override
                         public boolean matches(Filterable message)
                         {

@@ -69,6 +69,7 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
             consumerArguments.put(AMQPFilterTypes.NO_CONSUME.getValue(), Boolean.TRUE);
         }
 
+
         _topicDestinationCache = session.getTopicDestinationCache();
         _queueDestinationCache = session.getQueueDestinationCache();
 

@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.server.filter;
 
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.filter.SelectorParsingException;
 import org.apache.qpid.filter.selector.ParseException;
 import org.apache.qpid.filter.selector.TokenMgrError;
-
-import java.util.Map;
 
 
 public class FilterManagerFactory
@@ -54,20 +54,13 @@ public class FilterManagerFactory
 
                 if (selector instanceof String && !selector.equals(""))
                 {
-                    manager = new SimpleFilterManager();
+                    manager = new FilterManager();
                     try
                     {
-                        manager.add(new JMSSelectorFilter((String)selector));
+                        MessageFilter filter = new JMSSelectorFilter((String)selector);
+                        manager.add(filter.getName(), filter);
                     }
-                    catch (ParseException e)
-                    {
-                        throw new AMQInvalidArgumentException("Cannot parse JMS selector \"" + selector + "\"", e);
-                    }
-                    catch (SelectorParsingException e)
-                    {
-                        throw new AMQInvalidArgumentException("Cannot parse JMS selector \"" + selector + "\"", e);
-                    }
-                    catch (TokenMgrError e)
+                    catch (ParseException | SelectorParsingException | TokenMgrError e)
                     {
                         throw new AMQInvalidArgumentException("Cannot parse JMS selector \"" + selector + "\"", e);
                     }

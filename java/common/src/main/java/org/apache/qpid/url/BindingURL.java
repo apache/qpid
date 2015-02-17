@@ -20,6 +20,12 @@
  */
 package org.apache.qpid.url;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.qpid.framing.AMQShortString;
 
 /*
@@ -47,6 +53,18 @@ public interface BindingURL
      */
     public static final String OPTION_REJECT_BEHAVIOUR = "rejectbehaviour";
 
+    public static final Set<String> NON_CONSUMER_OPTIONS =
+            Collections.unmodifiableSet(new HashSet<String>(Arrays.asList(OPTION_EXCLUSIVE,
+                                                                          OPTION_AUTODELETE,
+                                                                          OPTION_DURABLE,
+                                                                          OPTION_BROWSE,
+                                                                          OPTION_ROUTING_KEY,
+                                                                          OPTION_BINDING_KEY,
+                                                                          OPTION_EXCHANGE_AUTODELETE,
+                                                                          OPTION_EXCHANGE_DURABLE,
+                                                                          OPTION_EXCHANGE_DURABLE,
+                                                                          OPTION_REJECT_BEHAVIOUR)));
+
 
     String getURL();
 
@@ -59,6 +77,9 @@ public interface BindingURL
     AMQShortString getQueueName();
 
     String getOption(String key);
+
+    Map<String,Object> getConsumerOptions();
+
 
     boolean containsOption(String key);
 

@@ -34,6 +34,10 @@ public interface Filterable
 
     Object getConnectionReference();
 
+    long getMessageNumber();
+
+    long getArrivalTime();
+
     public class Factory
     {
 
@@ -41,6 +45,7 @@ public interface Filterable
         {
             return new Filterable()
             {
+
                 @Override
                 public AMQMessageHeader getMessageHeader()
                 {
@@ -63,6 +68,18 @@ public interface Filterable
                 public Object getConnectionReference()
                 {
                     return message.getConnectionReference();
+                }
+
+                @Override
+                public long getMessageNumber()
+                {
+                    return message.getMessageNumber();
+                }
+
+                @Override
+                public long getArrivalTime()
+                {
+                    return message.getArrivalTime();
                 }
             };
         }
