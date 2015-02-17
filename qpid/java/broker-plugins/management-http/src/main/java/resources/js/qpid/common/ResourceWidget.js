@@ -44,6 +44,7 @@ function (declare, array, lang, util, _WidgetBase, _TemplatedMixin, _WidgetsInTe
        fileReaderSupported: window.FileReader ? true : false,
        displayWarningWhenFileReaderUnsupported: false,
        isDebug: false,
+       uploaded: false,
 
        buildRendering: function()
        {
@@ -127,6 +128,7 @@ function (declare, array, lang, util, _WidgetBase, _TemplatedMixin, _WidgetsInTe
        },
         _fileClearButtonClicked: function(event)
        {
+           this.uploaded = false;
            this.uploader.reset();
            this.set("value", this._resetValue);
        },
@@ -134,20 +136,17 @@ function (declare, array, lang, util, _WidgetBase, _TemplatedMixin, _WidgetsInTe
        {
            var serverPathValue = this.resourceLocation.get("value") || this._resetValue;
            this.set("value", serverPathValue);
+           if (this.uploaded )
+           {
+            this.uploaded = !serverPathValue;
+           }
        },
        _setValueAttr: function(newValue, priorityChange)
        {
-          var isDataUrl = newValue && newValue.indexOf("data:") == 0;
+          var isDataUrl = this.uploaded || ( newValue && newValue.indexOf("data:") == 0 );
           if (isDataUrl)
           {
-            this.uploadData.style.display = "block";
-            this.selectedFileStatus.className = "loadedIcon";
-            this.selectedFile.innerHTML = this.selectedFileName || "uploaded data";
-            this.resourceLocation.set("value", "");
-            this.resourceLocation.setDisabled(true);
-            this.resourceLocation.set("required", false);
-            this.clearButton.setDisabled(false);
-            this.selectedFileStatus.className = "loadedIcon";
+            this._initUploaded(true);
           }
           else
           {
@@ -172,6 +171,25 @@ function (declare, array, lang, util, _WidgetBase, _TemplatedMixin, _WidgetsInTe
        _setPlaceHolderAttr: function(newValue)
        {
             this.resourceLocation.set("placeHolder", newValue);
+       },
+       _setUploadedAttr: function(uploaded)
+       {
+           this.uploaded = uploaded;
+           this._initUploaded(uploaded);
+       },
+       _initUploaded: function(uploaded)
+       {
+          if (uploaded)
+          {
+            this.uploadData.style.display = "block";
+            this.selectedFileStatus.className = "loadedIcon";
+            this.selectedFile.innerHTML = this.selectedFileName || "uploaded data";
+            this.resourceLocation.set("value", "");
+            this.resourceLocation.setDisabled(true);
+            this.resourceLocation.set("required", false);
+            this.clearButton.setDisabled(false);
+            this.selectedFileStatus.className = "loadedIcon";
+          }
        }
      }
    );

@@ -62,7 +62,7 @@ public interface FileKeyStore<X extends FileKeyStore<X>> extends KeyStore<X>
     @ManagedAttribute(defaultValue = "${this:path}")
     String getDescription();
 
-    @ManagedAttribute(  mandatory = true, secure = true, oversize = true, oversizedAltText = OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT)
+    @ManagedAttribute(  mandatory = true, secure = true, oversize = true, oversizedAltText = OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT, secureValueFilter = "^data\\:.*")
     String getStoreUrl();
 
     @DerivedAttribute

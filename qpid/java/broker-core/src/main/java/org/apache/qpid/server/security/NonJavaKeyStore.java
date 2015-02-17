@@ -31,7 +31,7 @@ public interface NonJavaKeyStore<X extends NonJavaKeyStore<X>> extends KeyStore<
     @ManagedAttribute(defaultValue = "${this:subjectName}")
     String getDescription();
 
-    @ManagedAttribute( mandatory = true, secure = true, oversize = true, oversizedAltText = OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT )
+    @ManagedAttribute( mandatory = true, secure = true, oversize = true, oversizedAltText = OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT, secureValueFilter = "^data\\:.*")
     String getPrivateKeyUrl();
 
     @ManagedAttribute( mandatory = true, oversize = true, oversizedAltText = OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT )

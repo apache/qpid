@@ -55,7 +55,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
         Map<String, Object> keystore = keyStores.get(0);
 
         assertEquals("Unexpected name", TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE, keystore.get(KeyStore.NAME));
-        assertEquals("unexpected path to key store", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.STORE_URL));
+        assertEquals("unexpected path to key store", ConfiguredObject.OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT, keystore.get(FileKeyStore.STORE_URL));
         assertEquals("unexpected (dummy) password of default systests key store", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.PASSWORD));
         assertEquals("unexpected type of default systests key store", java.security.KeyStore.getDefaultType(), keystore.get(FileKeyStore.KEY_STORE_TYPE));
         assertFalse("should not be a certificateAlias attribute", keystore.containsKey(FileKeyStore.CERTIFICATE_ALIAS));
@@ -77,7 +77,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
 
         Map<String, Object> keystore = keyStores.get(0);
         assertEquals("Unexpected name", name, keystore.get(KeyStore.NAME));
-        assertEquals("unexpected path to key store", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.STORE_URL));
+        assertEquals("unexpected path to key store", TestSSLConstants.KEYSTORE, keystore.get(FileKeyStore.STORE_URL));
         assertEquals("unexpected password", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.PASSWORD));
         assertEquals("unexpected alias", certAlias, keystore.get(FileKeyStore.CERTIFICATE_ALIAS));
     }
@@ -125,7 +125,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
         List<Map<String, Object>> keyStores = assertNumberOfKeyStores(1);
         Map<String, Object> keystore = keyStores.get(0);
         assertEquals("Unexpected name", TestBrokerConfiguration.ENTRY_NAME_SSL_KEYSTORE, keystore.get(KeyStore.NAME));
-        assertEquals("unexpected path to key store", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.STORE_URL));
+        assertEquals("unexpected path to key store", ConfiguredObject.OVER_SIZED_ATTRIBUTE_ALTERNATIVE_TEXT, keystore.get(FileKeyStore.STORE_URL));
         assertEquals("unexpected (dummy) password of default systests key store", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.PASSWORD));
         assertFalse("should not be a certificateAlias attribute", keystore.containsKey(FileKeyStore.CERTIFICATE_ALIAS));
     }
@@ -151,7 +151,7 @@ public class KeyStoreRestTest extends QpidRestTestCase
 
         Map<String, Object> keystore = keyStores.get(0);
         assertEquals("Unexpected name", name, keystore.get(KeyStore.NAME));
-        assertEquals("unexpected data", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.STORE_URL));
+        assertEquals("unexpected data", TestSSLConstants.UNTRUSTED_KEYSTORE, keystore.get(FileKeyStore.STORE_URL));
         assertEquals("unexpected password", AbstractConfiguredObject.SECURED_STRING_VALUE, keystore.get(FileKeyStore.PASSWORD));
         assertEquals("unexpected alias", null, keystore.get(FileKeyStore.CERTIFICATE_ALIAS));
     }
