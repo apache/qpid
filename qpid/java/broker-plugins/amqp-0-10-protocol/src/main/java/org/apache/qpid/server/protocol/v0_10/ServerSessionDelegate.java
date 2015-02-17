@@ -33,13 +33,16 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
+import org.apache.qpid.server.filter.ArrivalTimeFilter;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
+import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.message.InstanceProperties;
@@ -256,6 +259,43 @@ public class ServerSessionDelegate extends SessionDelegate
                         exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "Exception Creating FilterManager");
                         return;
                     }
+
+
+                    if(method.hasArguments() && method.getArguments().containsKey(AMQPFilterTypes.REPLAY_PERIOD.toString()))
+                    {
+                        Object value = method.getArguments().get(AMQPFilterTypes.REPLAY_PERIOD.toString());
+                        final long period;
+                        if(value instanceof Number)
+                        {
+                            period = ((Number)value).longValue();
+                        }
+                        else if(value instanceof String)
+                        {
+                            try
+                            {
+                                period = Long.parseLong(value.toString());
+                            }
+                            catch (NumberFormatException e)
+                            {
+                                exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "Cannot parse value " + value + " as a number for filter " + AMQPFilterTypes.REPLAY_PERIOD.toString());
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "Cannot parse value " + value + " as a number for filter " + AMQPFilterTypes.REPLAY_PERIOD.toString());
+                            return;
+                        }
+                        final long startingFrom = System.currentTimeMillis() - (1000l * period);
+                        if(filterManager == null)
+                        {
+                            filterManager = new FilterManager();
+                        }
+                        MessageFilter filter = new ArrivalTimeFilter(startingFrom);
+                        filterManager.add(filter.getName(), filter);
+
+                    }
+
 
                     ConsumerTarget_0_10 target = new ConsumerTarget_0_10((ServerSession)session, destination,
                                                                                  method.getAcceptMode(),
@@ -1596,4 +1636,5 @@ public class ServerSessionDelegate extends SessionDelegate
         {
         }
     }
+
 }

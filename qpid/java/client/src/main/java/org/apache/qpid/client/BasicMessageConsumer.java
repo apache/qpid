@@ -187,6 +187,10 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         }
 
         final FieldTable ft = FieldTableFactory.newFieldTable();
+        if(destination.getConsumerArguments() != null)
+        {
+            ft.addAll(FieldTable.convertToFieldTable(destination.getConsumerArguments()));
+        }
         // rawSelector is used by HeadersExchange and is not a JMS Selector
         if (rawSelector != null)
         {
@@ -202,6 +206,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         {
             ft.put(AMQPFilterTypes.NO_LOCAL.getValue(), noLocal);
         }
+
 
         _arguments = ft;
         _addressType = _destination.getAddressType();

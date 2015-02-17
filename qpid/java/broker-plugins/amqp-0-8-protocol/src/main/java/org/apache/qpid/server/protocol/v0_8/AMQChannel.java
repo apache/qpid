@@ -60,11 +60,11 @@ import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
+import org.apache.qpid.server.filter.ArrivalTimeFilter;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
-import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.MessageOnlyCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
@@ -670,7 +670,7 @@ public class AMQChannel
      * @param tag       the tag chosen by the client (if null, server will generate one)
      * @param sources     the queues to subscribe to
      * @param acks      Are acks enabled for this subscriber
-     * @param filters   Filters to apply to this subscriber
+     * @param arguments   Filters to apply to this subscriber
      *
      * @param exclusive Flag requesting exclusive access to the queue
      * @return the consumer tag. This is returned to the subscriber and used in subsequent unsubscribe requests
@@ -678,7 +678,7 @@ public class AMQChannel
      * @throws org.apache.qpid.AMQException                  if something goes wrong
      */
     public AMQShortString consumeFromSource(AMQShortString tag, Collection<MessageSource> sources, boolean acks,
-                                            FieldTable filters, boolean exclusive, boolean noLocal)
+                                            FieldTable arguments, boolean exclusive, boolean noLocal)
             throws MessageSource.ExistingConsumerPreventsExclusive,
                    MessageSource.ExistingExclusiveConsumer,
                    AMQInvalidArgumentException,
@@ -697,19 +697,19 @@ public class AMQChannel
         ConsumerTarget_0_8 target;
         EnumSet<ConsumerImpl.Option> options = EnumSet.noneOf(ConsumerImpl.Option.class);
 
-        if(filters != null && Boolean.TRUE.equals(filters.get(AMQPFilterTypes.NO_CONSUME.getValue())))
+        if(arguments != null && Boolean.TRUE.equals(arguments.get(AMQPFilterTypes.NO_CONSUME.getValue())))
         {
-            target = ConsumerTarget_0_8.createBrowserTarget(this, tag, filters, _creditManager);
+            target = ConsumerTarget_0_8.createBrowserTarget(this, tag, arguments, _creditManager);
         }
         else if(acks)
         {
-            target = ConsumerTarget_0_8.createAckTarget(this, tag, filters, _creditManager);
+            target = ConsumerTarget_0_8.createAckTarget(this, tag, arguments, _creditManager);
             options.add(ConsumerImpl.Option.ACQUIRES);
             options.add(ConsumerImpl.Option.SEES_REQUEUES);
         }
         else
         {
-            target = ConsumerTarget_0_8.createNoAckTarget(this, tag, filters, _creditManager);
+            target = ConsumerTarget_0_8.createNoAckTarget(this, tag, arguments, _creditManager);
             options.add(ConsumerImpl.Option.ACQUIRES);
             options.add(ConsumerImpl.Option.SEES_REQUEUES);
         }
@@ -729,23 +729,66 @@ public class AMQChannel
 
         try
         {
-            FilterManager filterManager = FilterManagerFactory.createManager(FieldTable.convertToMap(filters));
+            FilterManager filterManager = FilterManagerFactory.createManager(FieldTable.convertToMap(arguments));
             if(noLocal)
             {
                 if(filterManager == null)
                 {
-                    filterManager = new SimpleFilterManager();
+                    filterManager = new FilterManager();
                 }
                 final Object connectionReference = getConnectionReference();
-                filterManager.add(new MessageFilter()
+                MessageFilter filter = new MessageFilter()
                 {
+
+                    @Override
+                    public String getName()
+                    {
+                        return AMQPFilterTypes.NO_LOCAL.toString();
+                    }
+
                     @Override
                     public boolean matches(final Filterable message)
                     {
                         return message.getConnectionReference() != connectionReference;
                     }
-                });
+                };
+                filterManager.add(filter.getName(), filter);
             }
+
+            if(arguments != null && arguments.containsKey(AMQPFilterTypes.REPLAY_PERIOD.toString()))
+            {
+                Object value = arguments.get(AMQPFilterTypes.REPLAY_PERIOD.toString());
+                final long period;
+                if(value instanceof Number)
+                {
+                    period = ((Number)value).longValue();
+                }
+                else if(value instanceof String)
+                {
+                    try
+                    {
+                        period = Long.parseLong(value.toString());
+                    }
+                    catch (NumberFormatException e)
+                    {
+                        throw new AMQInvalidArgumentException("Cannot parse value " + value + " as a number for filter " + AMQPFilterTypes.REPLAY_PERIOD.toString());
+                    }
+                }
+                else
+                {
+                    throw new AMQInvalidArgumentException("Cannot parse value " + value + " as a number for filter " + AMQPFilterTypes.REPLAY_PERIOD.toString());
+                }
+
+                final long startingFrom = System.currentTimeMillis() - (1000l * period);
+                if(filterManager == null)
+                {
+                    filterManager = new FilterManager();
+                }
+                MessageFilter filter = new ArrivalTimeFilter(startingFrom);
+                filterManager.add(filter.getName(), filter);
+
+            }
+
             for(MessageSource source : sources)
             {
                 ConsumerImpl sub =

@@ -126,7 +126,8 @@ public class Asserts
                                         Queue.MESSAGE_GROUP_SHARED_GROUPS,
                                         PriorityQueue.PRIORITIES,
                                         ConfiguredObject.CONTEXT,
-                                        ConfiguredObject.DESIRED_STATE);
+                                        ConfiguredObject.DESIRED_STATE,
+                                        Queue.DEFAULT_FILTERS);
 
         assertEquals("Unexpected value of queue attribute " + Queue.NAME, queueName, queueData.get(Queue.NAME));
         assertNotNull("Unexpected value of queue attribute " + Queue.ID, queueData.get(Queue.ID));

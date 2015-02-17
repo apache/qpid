@@ -62,6 +62,9 @@ public class QueueArgumentsConverter
 
     public static final String QPID_LAST_VALUE_QUEUE = "qpid.last_value_queue";
 
+    public static final String QPID_DEFAULT_FILTERS = "qpid.default_filters";
+
+
     /**
      * No-local queue argument is used to support the no-local feature of Durable Subscribers.
      */
@@ -99,6 +102,7 @@ public class QueueArgumentsConverter
 
         ATTRIBUTE_MAPPINGS.put(QPID_NO_LOCAL, Queue.NO_LOCAL);
         ATTRIBUTE_MAPPINGS.put(QPID_MESSAGE_DURABILITY, Queue.MESSAGE_DURABILITY);
+        ATTRIBUTE_MAPPINGS.put(QPID_DEFAULT_FILTERS, Queue.DEFAULT_FILTERS);
 
     }
 

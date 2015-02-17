@@ -38,7 +38,6 @@ import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
-import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
@@ -103,16 +102,23 @@ public class MockConsumer implements ConsumerTarget
     {
         if(_messageIds != null)
         {
-            SimpleFilterManager filters = new SimpleFilterManager();
-            filters.add(new MessageFilter()
+            FilterManager filters = new FilterManager();
+            MessageFilter filter = new MessageFilter()
             {
+                @Override
+                public String getName()
+                {
+                    return "";
+                }
+
                 @Override
                 public boolean matches(final Filterable message)
                 {
                     final String messageId = message.getMessageHeader().getMessageId();
                     return _messageIds.contains(messageId);
                 }
-            });
+            };
+            filters.add(filter.getName(), filter);
             return filters;
         }
         else

@@ -25,14 +25,18 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.log4j.Logger;
+
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.filter.BooleanExpression;
 import org.apache.qpid.filter.FilterableMessage;
 import org.apache.qpid.filter.SelectorParsingException;
 import org.apache.qpid.filter.selector.ParseException;
 import org.apache.qpid.filter.selector.SelectorParser;
 import org.apache.qpid.filter.selector.TokenMgrError;
+import org.apache.qpid.server.plugin.PluggableService;
 
 
+@PluggableService
 public class JMSSelectorFilter implements MessageFilter
 {
     private final static Logger _logger = org.apache.log4j.Logger.getLogger(JMSSelectorFilter.class);
@@ -44,6 +48,12 @@ public class JMSSelectorFilter implements MessageFilter
     {
         _selector = selector;
         _matcher = new SelectorParser().parse(selector);
+    }
+
+    @Override
+    public String getName()
+    {
+        return AMQPFilterTypes.JMS_SELECTOR.toString();
     }
 
     public boolean matches(Filterable message)

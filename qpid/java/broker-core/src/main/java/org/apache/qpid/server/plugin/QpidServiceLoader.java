@@ -19,8 +19,11 @@
 package org.apache.qpid.server.plugin;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
 
 import org.apache.log4j.Logger;
@@ -45,6 +48,16 @@ public class QpidServiceLoader
     public <C extends Pluggable> Iterable<C> atLeastOneInstanceOf(Class<C> clazz)
     {
         return instancesOf(clazz, true);
+    }
+
+    public <C extends Pluggable> Map<String,C> getInstancesByType(Class<C> clazz)
+    {
+        Map<String,C> instances = new HashMap<>();
+        for(C instance : instancesOf(clazz))
+        {
+            instances.put(instance.getType(), instance);
+        }
+        return Collections.unmodifiableMap(instances);
     }
 
     private <C extends Pluggable> Iterable<C> instancesOf(Class<C> clazz, boolean atLeastOne)

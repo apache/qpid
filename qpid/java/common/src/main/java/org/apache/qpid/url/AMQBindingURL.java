@@ -20,14 +20,15 @@
  */
 package org.apache.qpid.url;
 
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-
-import java.net.URISyntaxException;
-import java.util.HashMap;
 
 public class AMQBindingURL implements BindingURL
 {
@@ -133,6 +134,20 @@ public class AMQBindingURL implements BindingURL
     public String getOption(String key)
     {
         return _options.get(key);
+    }
+
+    @Override
+    public Map<String,Object> getConsumerOptions()
+    {
+        Map<String,Object> options = new HashMap<>();
+        for(Map.Entry<String,String> option : _options.entrySet())
+        {
+            if(!NON_CONSUMER_OPTIONS.contains(option.getKey()))
+            {
+                options.put(option.getKey(), option.getValue());
+            }
+        }
+        return options;
     }
 
     public void setOption(String key, String value)
