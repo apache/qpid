@@ -40,7 +40,7 @@ else (DEFINED linearstore_force)
                 # allow linearstore to be built
                 #
                 message(STATUS "BerkeleyDB for C++ and libaio found, Linearstore support may be enabled (currently experimental and disabled by default)")
-                set (linearstore_default OFF) # Temporarily disabled
+                set (linearstore_default ON)
             else (HAVE_AIO AND HAVE_AIO_H)
                 if (NOT HAVE_AIO)
                     message(STATUS "Linearstore requires libaio which is absent.")
