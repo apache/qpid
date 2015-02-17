@@ -21,10 +21,12 @@
 package org.apache.qpid.server.model;
 
 import java.lang.reflect.Method;
+import java.util.regex.Pattern;
 
 public class ConfiguredDerivedAttribute<C extends ConfiguredObject, T>  extends ConfiguredObjectAttribute<C,T>
 {
     private final DerivedAttribute _annotation;
+    private final Pattern _secureValuePattern;
 
     ConfiguredDerivedAttribute(final Class<C> clazz,
                                final Method getter,
@@ -32,6 +34,16 @@ public class ConfiguredDerivedAttribute<C extends ConfiguredObject, T>  extends 
     {
         super(clazz, getter);
         _annotation = annotation;
+
+        String secureValueFilter = _annotation.secureValueFilter();
+        if (secureValueFilter == null || "".equals(secureValueFilter))
+        {
+            _secureValuePattern = null;
+        }
+        else
+        {
+            _secureValuePattern = Pattern.compile(secureValueFilter);
+        }
     }
 
     public boolean isAutomated()
@@ -70,6 +82,12 @@ public class ConfiguredDerivedAttribute<C extends ConfiguredObject, T>  extends 
     public String getDescription()
     {
         return _annotation.description();
+    }
+
+    @Override
+    public Pattern getSecureValueFilter()
+    {
+        return _secureValuePattern;
     }
 
 }

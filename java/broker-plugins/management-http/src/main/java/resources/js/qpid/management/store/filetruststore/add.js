@@ -18,31 +18,42 @@
  * under the License.
  *
  */
-define(["dojo/dom","dojo/query", "dojo/_base/array", "dijit/registry","qpid/common/util", "qpid/common/metadata"],
-    function (dom, query, array, registry, util, metadata)
+define(["dojo/dom",
+        "dojo/query",
+        "dojo/_base/array",
+        "dijit/registry",
+        "qpid/common/util",
+        "qpid/common/metadata",
+        "dojo/parser",
+        "dojo/text!store/filetruststore/add.html",
+        "dojo/domReady!"],
+    function (dom, query, array, registry, util, metadata, parser, template)
     {
         var addTrustStore =
         {
-            init: function()
-            {
-            },
             show: function(data)
             {
                 var that=this;
-                util.parseHtmlIntoDiv(data.containerNode, "store/filetruststore/add.html");
-
                 this.containerNode = data.containerNode;
-
-                this.keyStoreOldBrowserWarning = dom.byId("addStore.oldBrowserWarning");
-
-                this.addButton = data.parent.addButton;
-
-                if (!window.FileReader)
+                data.containerNode.innerHTML = template;
+                parser.parse(this.containerNode).then(function(instances)
                 {
-                  // Fall back for IE8/9 which do not support FileReader
-                  this.keyStoreOldBrowserWarning.innerHTML = "File upload requires a more recent browser with HTML5 support";
-                  this.keyStoreOldBrowserWarning.className = this.keyStoreOldBrowserWarning.className.replace("hidden", "");
-                }
+                    that.keyStoreOldBrowserWarning = dom.byId("addStore.oldBrowserWarning");
+
+                    if (!window.FileReader)
+                    {
+                      // Fall back for IE8/9 which do not support FileReader
+                      that.keyStoreOldBrowserWarning.innerHTML = "File upload requires a more recent browser with HTML5 support";
+                      that.keyStoreOldBrowserWarning.className = that.keyStoreOldBrowserWarning.className.replace("hidden", "");
+                    }
+
+                    if (data.effectiveData)
+                    {
+                        that.update(data.effectiveData);
+                    }
+
+                    util.applyMetadataToWidgets(data.containerNode, "TrustStore", "FileTrustStore");
+                });
             },
             update: function(effectiveData)
             {
@@ -54,14 +65,25 @@ define(["dojo/dom","dojo/query", "dojo/_base/array", "dijit/registry","qpid/comm
                         if (name in attributes )
                         {
                             var attribute = attributes[name];
-                            if (attribute.secure || attribute.oversize)
+                            var value = effectiveData[name];
+                            if (value)
                             {
-                                 item.set("required", false);
-                                 item.set("placeHolder", effectiveData[name]);
-                            }
-                            else
-                            {
-                                item.set("value", effectiveData[name]);
+                                if (attribute.secure)
+                                {
+                                     if (!/^\*+/.test(value) )
+                                     {
+                                        item.set("value", value);
+                                     }
+                                     else
+                                     {
+                                        item.set("placeHolder", value);
+                                        item.set("required", false);
+                                     }
+                                }
+                                else
+                                {
+                                    item.set("value", value);
+                                }
                             }
                         }
                     });
@@ -69,14 +91,6 @@ define(["dojo/dom","dojo/query", "dojo/_base/array", "dijit/registry","qpid/comm
             }
         };
 
-        try
-        {
-            addTrustStore.init();
-        }
-        catch(e)
-        {
-            console.warn(e);
-        }
         return addTrustStore;
     }
 );

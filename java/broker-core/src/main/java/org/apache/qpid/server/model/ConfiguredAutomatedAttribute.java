@@ -28,6 +28,7 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
@@ -37,6 +38,7 @@ public class ConfiguredAutomatedAttribute<C extends ConfiguredObject, T>  extend
 
     private final ManagedAttribute _annotation;
     private final Method _validValuesMethod;
+    private final Pattern _secureValuePattern;
 
     ConfiguredAutomatedAttribute(final Class<C> clazz,
                                  final Method getter,
@@ -53,6 +55,16 @@ public class ConfiguredAutomatedAttribute<C extends ConfiguredObject, T>  extend
             validValuesMethod = getValidValuesMethod(validValue, clazz);
         }
         _validValuesMethod = validValuesMethod;
+
+        String secureValueFilter = _annotation.secureValueFilter();
+        if (secureValueFilter == null || "".equals(secureValueFilter))
+        {
+            _secureValuePattern = null;
+        }
+        else
+        {
+            _secureValuePattern = Pattern.compile(secureValueFilter);
+        }
     }
 
     private Method getValidValuesMethod(final String validValue, final Class<C> clazz)
@@ -138,6 +150,11 @@ public class ConfiguredAutomatedAttribute<C extends ConfiguredObject, T>  extend
     public String getDescription()
     {
         return _annotation.description();
+    }
+
+    public Pattern getSecureValueFilter()
+    {
+        return _secureValuePattern;
     }
 
     public Collection<String> validValues()
