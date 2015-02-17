@@ -40,7 +40,7 @@ else (DEFINED legacystore_force)
                 # allow legacystore to be built
                 #
                 message(STATUS "BerkeleyDB for C++ and libaio found, Legacystore support enabled")
-                set (legacystore_default ON)
+                set (legacystore_default OFF) # Disabled, deprecated. Use linearstore instead.
             else (HAVE_AIO AND HAVE_AIO_H)
                 if (NOT HAVE_AIO)
                     message(STATUS "Legacystore requires libaio which is absent.")
