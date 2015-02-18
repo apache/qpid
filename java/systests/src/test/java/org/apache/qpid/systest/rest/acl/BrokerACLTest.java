@@ -244,29 +244,6 @@ public class BrokerACLTest extends QpidRestTestCase
         assertPortDoesNotExist(portName);
     }
 
-    // TODO:  test disabled until allowing the updating of active ports outside management mode
-    public void DISABLED_testSetPortAttributesAllowed() throws Exception
-    {
-        getRestTestHelper().setUsernameAndPassword(ALLOWED_USER, ALLOWED_USER);
-
-        String portName = getTestName();
-
-        int responseCode = createPort(portName);
-        assertEquals("Port creation should be allowed", 201, responseCode);
-
-        assertPortExists(portName);
-
-
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(Port.NAME, portName);
-        attributes.put(Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
-        responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
-        assertEquals("Setting of port attribites should be allowed", 200, responseCode);
-
-        Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("port/" + portName);
-        assertEquals("Unexpected authentication provider attribute value", ANONYMOUS_AUTHENTICATION_PROVIDER,
-                port.get(Port.AUTHENTICATION_PROVIDER));
-    }
 
     public void testSetPortAttributesDenied() throws Exception
     {
@@ -284,7 +261,7 @@ public class BrokerACLTest extends QpidRestTestCase
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
         attributes.put(Port.PROTOCOLS, Arrays.asList(Protocol.AMQP_0_9));
-        attributes.put(Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
+        attributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
         responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Setting of port attribites should be denied", 403, responseCode);
 

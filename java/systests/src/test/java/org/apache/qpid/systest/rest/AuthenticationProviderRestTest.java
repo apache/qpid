@@ -46,16 +46,11 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
     {
         List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("authenticationprovider");
         assertNotNull("Providers details cannot be null", providerDetails);
-        assertEquals("Unexpected number of providers", 2, providerDetails.size());
+        assertEquals("Unexpected number of providers", 1, providerDetails.size());
         for (Map<String, Object> provider : providerDetails)
         {
             boolean managesPrincipals = true;
             String type = PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE;
-            if (ANONYMOUS_AUTHENTICATION_PROVIDER.equals(provider.get(AuthenticationProvider.NAME)))
-            {
-                type = AnonymousAuthenticationManager.PROVIDER_TYPE;
-                managesPrincipals = false;
-            }
             assertProvider(managesPrincipals, type , provider);
             Map<String, Object> data = getRestTestHelper().getJsonAsSingletonList("authenticationprovider/"
                     + provider.get(AuthenticationProvider.NAME));
@@ -256,53 +251,6 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
                 principalDatabase.delete();
             }
         }
-    }
-
-    public void testCreateAndDeletePasswordAuthenticationProviderWithNonExistingFile() throws Exception
-    {
-        stopBroker();
-        getBrokerConfiguration().setSaved(false);
-        getBrokerConfiguration().removeObjectConfiguration(AuthenticationProvider.class, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
-        getBrokerConfiguration().setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_AMQP_PORT, Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
-        getBrokerConfiguration().setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
-
-        startBroker();
-
-        File file = new File(TMP_FOLDER + File.separator + getTestName());
-        if (file.exists())
-        {
-            file.delete();
-        }
-        assertFalse("File " + file.getAbsolutePath() + " should not exist", file.exists());
-
-        // create provider
-        String providerName = "test-provider";
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(AuthenticationProvider.NAME, providerName);
-        attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
-        attributes.put(ExternalFileBasedAuthenticationManager.PATH, file.getAbsolutePath());
-
-        int responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
-        assertEquals("Password provider was not created", 201, responseCode);
-
-
-        Map<String, Object> providerDetails = getRestTestHelper().getJsonAsSingletonList("authenticationprovider/" + providerName);
-        assertNotNull("Providers details cannot be null", providerDetails);
-        assertEquals("Unexpected name", providerName, providerDetails.get(AuthenticationProvider.NAME));
-        assertEquals("Unexpected type", PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE, providerDetails.get(AuthenticationProvider.TYPE));
-        assertEquals("Unexpected path", file.getAbsolutePath(), providerDetails.get(
-                ExternalFileBasedAuthenticationManager.PATH));
-
-        assertTrue("User file should be created", file.exists());
-
-        responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName , "DELETE");
-        assertEquals("Unexpected response code for provider deletion", 200, responseCode);
-
-        List<Map<String, Object>> providers = getRestTestHelper().getJsonAsList("authenticationprovider/" + providerName);
-        assertNotNull("Providers details cannot be null", providers);
-        assertEquals("Unexpected number of providers", 0, providers.size());
-
-        assertFalse("File " + file.getAbsolutePath() + " should be deleted", file.exists());
     }
 
     private void assertProvider(boolean managesPrincipals, String type, Map<String, Object> provider)
