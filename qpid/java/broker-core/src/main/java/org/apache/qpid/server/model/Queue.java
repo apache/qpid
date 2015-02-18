@@ -51,6 +51,7 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     String MAXIMUM_MESSAGE_TTL = "maximumMessageTtl";
     String MINIMUM_MESSAGE_TTL = "minimumMessageTtl";
     String DEFAULT_FILTERS = "defaultFilters";
+    String ENSURE_NONDESTRUCTIVE_CONSUMERS = "ensureNondestructiveConsumers";
 
     String QUEUE_MINIMUM_ESTIMATED_MEMORY_FOOTPRINT = "queue.minimumEstimatedMemoryFootprint";
     @ManagedContextDefault( name = QUEUE_MINIMUM_ESTIMATED_MEMORY_FOOTPRINT)
@@ -69,6 +70,9 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 
     @ManagedAttribute( defaultValue = "NONE" )
     ExclusivityPolicy getExclusive();
+
+    @ManagedAttribute( defaultValue = "false" )
+    boolean isEnsureNondestructiveConsumers();
 
     @DerivedAttribute( persist = true )
     String getOwner();

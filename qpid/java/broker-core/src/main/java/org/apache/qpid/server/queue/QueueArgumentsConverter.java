@@ -64,12 +64,14 @@ public class QueueArgumentsConverter
 
     public static final String QPID_DEFAULT_FILTERS = "qpid.default_filters";
 
-
+    public static final String QPID_ENSURE_NONDESTRUCTIVE_CONSUMERS = "qpid.ensure_nondestructive_consumers";
     /**
      * No-local queue argument is used to support the no-local feature of Durable Subscribers.
      */
     public static final String QPID_NO_LOCAL = "no-local";
+
     static final Map<String, String> ATTRIBUTE_MAPPINGS = new LinkedHashMap<String, String>();
+
     static
     {
         ATTRIBUTE_MAPPINGS.put(X_QPID_MINIMUM_ALERT_REPEAT_GAP, Queue.ALERT_REPEAT_GAP);
@@ -103,6 +105,7 @@ public class QueueArgumentsConverter
         ATTRIBUTE_MAPPINGS.put(QPID_NO_LOCAL, Queue.NO_LOCAL);
         ATTRIBUTE_MAPPINGS.put(QPID_MESSAGE_DURABILITY, Queue.MESSAGE_DURABILITY);
         ATTRIBUTE_MAPPINGS.put(QPID_DEFAULT_FILTERS, Queue.DEFAULT_FILTERS);
+        ATTRIBUTE_MAPPINGS.put(QPID_ENSURE_NONDESTRUCTIVE_CONSUMERS, Queue.ENSURE_NONDESTRUCTIVE_CONSUMERS);
 
     }
 
