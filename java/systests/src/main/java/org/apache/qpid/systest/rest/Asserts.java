@@ -127,7 +127,8 @@ public class Asserts
                                         PriorityQueue.PRIORITIES,
                                         ConfiguredObject.CONTEXT,
                                         ConfiguredObject.DESIRED_STATE,
-                                        Queue.DEFAULT_FILTERS);
+                                        Queue.DEFAULT_FILTERS,
+                                        Queue.ENSURE_NONDESTRUCTIVE_CONSUMERS);
 
         assertEquals("Unexpected value of queue attribute " + Queue.NAME, queueName, queueData.get(Queue.NAME));
         assertNotNull("Unexpected value of queue attribute " + Queue.ID, queueData.get(Queue.ID));
