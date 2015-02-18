@@ -383,6 +383,7 @@ void Session::attach(pn_link_t* link)
         //i.e a subscription
         std::string name;
         if (pn_terminus_get_type(source) == PN_UNSPECIFIED) {
+            pn_terminus_set_type(pn_link_source(link), PN_UNSPECIFIED);
             throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, "No source specified!");
         } else if (pn_terminus_is_dynamic(source)) {
             name = generateName(link);
@@ -399,6 +400,7 @@ void Session::attach(pn_link_t* link)
         pn_terminus_t* target = pn_link_remote_target(link);
         std::string name;
         if (pn_terminus_get_type(target) == PN_UNSPECIFIED) {
+            pn_terminus_set_type(pn_link_target(link), PN_UNSPECIFIED);
             throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, "No target specified!");
         } else if (pn_terminus_get_type(target) == PN_COORDINATOR) {
             QPID_LOG(debug, "Received attach request for incoming link to transaction coordinator on " << this);
