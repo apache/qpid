@@ -36,7 +36,6 @@ import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class QpidRestTestCase extends QpidBrokerTestCase
 {
-    public static final String ANONYMOUS_AUTHENTICATION_PROVIDER = "testAnonymous";
     public static final String EXTERNAL_AUTHENTICATION_PROVIDER = "testExternal";
 
     public static final String TEST1_VIRTUALHOST = "test";
@@ -87,11 +86,6 @@ public class QpidRestTestCase extends QpidBrokerTestCase
         config.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PORT, _restTestHelper.getHttpPort());
         config.removeObjectConfiguration(Port.class, TestBrokerConfiguration.ENTRY_NAME_JMX_PORT);
         config.removeObjectConfiguration(Port.class, TestBrokerConfiguration.ENTRY_NAME_RMI_PORT);
-
-        Map<String, Object> anonymousProviderAttributes = new HashMap<String, Object>();
-        anonymousProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
-        anonymousProviderAttributes.put(AuthenticationProvider.NAME, ANONYMOUS_AUTHENTICATION_PROVIDER);
-        config.addObjectConfiguration(AuthenticationProvider.class, anonymousProviderAttributes);
 
         config.setObjectAttribute(AuthenticationProvider.class, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER,
                                   "secureOnlyMechanisms",

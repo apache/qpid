@@ -319,12 +319,12 @@ public class PortRestTest extends QpidRestTestCase
 
         attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
-        attributes.put(Port.AUTHENTICATION_PROVIDER, ANONYMOUS_AUTHENTICATION_PROVIDER);
+        attributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
         responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
         assertEquals("Unexpected response when trying to change auth provider to existing one", 200, responseCode);
 
         Map<String, Object> port = getRestTestHelper().getJsonAsSingletonList("port/" + portName);
-        assertEquals("Unexpected auth provider", ANONYMOUS_AUTHENTICATION_PROVIDER, port.get(Port.AUTHENTICATION_PROVIDER));
+        assertEquals("Unexpected auth provider", TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER, port.get(Port.AUTHENTICATION_PROVIDER));
     }
 
     public void testDefaultAmqpPortIsQuiescedWhenInManagementMode() throws Exception

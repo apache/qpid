@@ -53,7 +53,7 @@ public class StructureRestTest extends QpidRestTestCase
 
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> providers = (List<Map<String, Object>>) structure.get("authenticationproviders");
-        assertEquals("Unexpected number of authentication providers", 2, providers.size());
+        assertEquals("Unexpected number of authentication providers", 1, providers.size());
 
         for (String nodeName : EXPECTED_VIRTUALHOSTS)
         {

@@ -35,7 +35,6 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.memory.MemoryVirtualHostNode;
 import org.apache.qpid.systest.rest.QpidRestTestCase;
@@ -62,11 +61,6 @@ public class MBeanLifeCycleTest extends QpidRestTestCase
         TestBrokerConfiguration config = getBrokerConfiguration();
         config.addHttpManagementConfiguration();
         config.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.PORT, getRestTestHelper().getHttpPort());
-
-        Map<String, Object> anonymousProviderAttributes = new HashMap<String, Object>();
-        anonymousProviderAttributes.put(AuthenticationProvider.TYPE, AnonymousAuthenticationManager.PROVIDER_TYPE);
-        anonymousProviderAttributes.put(AuthenticationProvider.NAME, ANONYMOUS_AUTHENTICATION_PROVIDER);
-        config.addObjectConfiguration(AuthenticationProvider.class, anonymousProviderAttributes);
 
         // set password authentication provider on http port for the tests
         config.setObjectAttribute(Port.class, TestBrokerConfiguration.ENTRY_NAME_HTTP_PORT, Port.AUTHENTICATION_PROVIDER,
