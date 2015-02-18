@@ -320,12 +320,12 @@ public class Broker implements BrokerShutdownProvider
         }
     }
 
-    private void populateSystemPropertiesFromDefaults(final String initialProperties) throws IOException
+    public static void populateSystemPropertiesFromDefaults(final String initialProperties) throws IOException
     {
         URL initialPropertiesLocation;
         if(initialProperties == null)
         {
-            initialPropertiesLocation = getClass().getClassLoader().getResource("system.properties");
+            initialPropertiesLocation = Broker.class.getClassLoader().getResource("system.properties");
         }
         else
         {
@@ -335,7 +335,11 @@ public class Broker implements BrokerShutdownProvider
         Properties props = new Properties(QpidProperties.asProperties());
         if(initialPropertiesLocation != null)
         {
-            props.load(initialPropertiesLocation.openStream());
+
+            try(InputStream inStream = initialPropertiesLocation.openStream())
+            {
+                props.load(inStream);
+            }
         }
 
         Set<String> propertyNames = new HashSet<>(props.stringPropertyNames());
@@ -344,7 +348,6 @@ public class Broker implements BrokerShutdownProvider
         {
             System.setProperty(propName, props.getProperty(propName));
         }
-
     }
 
 

@@ -59,6 +59,7 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.server.Broker;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -189,6 +190,19 @@ public class QpidBrokerTestCase extends QpidTestCase
         _brokerConfigurations = new HashMap<Integer, TestBrokerConfiguration>();
         initialiseSpawnedBrokerLogConfigFile();
         _brokerCommandTemplate = BROKER_COMMAND_TEMPLATE;
+
+
+        if (JAVA.equals(_brokerLanguage))
+        {
+            try
+            {
+                Broker.populateSystemPropertiesFromDefaults(null);
+            }
+            catch (IOException ioe)
+            {
+                throw new RuntimeException("Failed to load Java broker system properties", ioe);
+            }
+        }
     }
 
     public TestBrokerConfiguration getBrokerConfiguration(int port)
