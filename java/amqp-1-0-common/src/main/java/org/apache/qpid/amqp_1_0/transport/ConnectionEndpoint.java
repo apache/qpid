@@ -451,6 +451,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         if (!_closedForInput)
         {
             _closedForInput = true;
+            _logger.received(_remoteAddress,(short)-1,"Underlying connection closed");
             switch (_state)
             {
                 case UNOPENED:
@@ -466,7 +467,6 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                     break;
                 default:
             }
-
             if (_receivingSessions != null)
             {
                 for (int i = 0; i < _receivingSessions.length; i++)
