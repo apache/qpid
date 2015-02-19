@@ -1564,23 +1564,30 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             else
             {
                 setVirtualHost(virtualHost);
-                try
+
+                if(virtualHost.authoriseCreateConnection(this))
                 {
-                    virtualHost.getSecurityManager().authoriseCreateConnection(this);
-                    if (getContextKey() == null)
+                    try
                     {
-                        setContextKey(new AMQShortString(Long.toString(System.currentTimeMillis())));
+                        if (getContextKey() == null)
+                        {
+                            setContextKey(new AMQShortString(Long.toString(System.currentTimeMillis())));
+                        }
+
+                        MethodRegistry methodRegistry = getMethodRegistry();
+                        AMQMethodBody responseBody = methodRegistry.createConnectionOpenOkBody(virtualHostName);
+
+                        writeFrame(responseBody.generateFrame(0));
+                        _state = ConnectionState.OPEN;
                     }
-
-                    MethodRegistry methodRegistry = getMethodRegistry();
-                    AMQMethodBody responseBody = methodRegistry.createConnectionOpenOkBody(virtualHostName);
-
-                    writeFrame(responseBody.generateFrame(0));
-                    _state = ConnectionState.OPEN;
+                    catch (AccessControlException e)
+                    {
+                        closeConnection(AMQConstant.ACCESS_REFUSED, e.getMessage(), 0);
+                    }
                 }
-                catch (AccessControlException e)
+                else
                 {
-                    closeConnection(AMQConstant.ACCESS_REFUSED, e.getMessage(),0);
+                    closeConnection(AMQConstant.ACCESS_REFUSED, "Connection refused",0);
                 }
             }
         }

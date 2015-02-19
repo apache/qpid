@@ -200,7 +200,12 @@ public class ServerConnectionDelegate extends ServerDelegate
             sconn.setVirtualHost(vhost);
             try
             {
-                vhost.getSecurityManager().authoriseCreateConnection(sconn);
+                if(!vhost.authoriseCreateConnection(sconn))
+                {
+                    sconn.setState(Connection.State.CLOSING);
+                    sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Connection not authorized"));
+                    return;
+                }
             }
             catch (AccessControlException e)
             {
@@ -215,7 +220,8 @@ public class ServerConnectionDelegate extends ServerDelegate
         else
         {
             sconn.setState(Connection.State.CLOSING);
-            sconn.invoke(new ConnectionClose(ConnectionCloseCode.INVALID_PATH, "Unknown virtualhost '"+vhostName+"'"));
+            sconn.invoke(new ConnectionClose(ConnectionCloseCode.INVALID_PATH,
+                                             "Unknown virtualhost '" + vhostName + "'"));
         }
 
     }

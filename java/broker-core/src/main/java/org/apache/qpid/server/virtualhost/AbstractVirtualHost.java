@@ -63,6 +63,7 @@ import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.ConnectionAdapter;
+import org.apache.qpid.server.plugin.ConnectionValidator;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -94,6 +95,8 @@ import org.apache.qpid.server.util.MapValueConverter;
 public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> extends AbstractConfiguredObject<X>
         implements VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>, IConnectionRegistry.RegistryChangeListener, EventListener
 {
+    private final Collection<ConnectionValidator> _connectionValidators = new ArrayList<>();
+
     private static enum BlockingType { STORE, FILESYSTEM };
 
     private static final String USE_ASYNC_RECOVERY = "use_async_message_store_recovery";
@@ -161,6 +164,12 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     @ManagedAttributeField
     private int _housekeepingThreadCount;
+
+    @ManagedAttributeField
+    private List<String> _enabledConnectionValidators;
+
+    @ManagedAttributeField
+    private List<String> _disabledConnectionValidators;
 
 
     private boolean _useAsyncRecoverer;
@@ -297,6 +306,19 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
 
         _fileSystemMaxUsagePercent = getContextValue(Integer.class, Broker.STORE_FILESYSTEM_MAX_USAGE_PERCENT);
+
+
+        QpidServiceLoader serviceLoader = new QpidServiceLoader();
+        for(ConnectionValidator validator : serviceLoader.instancesOf(ConnectionValidator.class))
+        {
+            if((_enabledConnectionValidators.isEmpty()
+                && (_disabledConnectionValidators.isEmpty()) || !_disabledConnectionValidators.contains(validator.getType()))
+               || _enabledConnectionValidators.contains(validator.getType()))
+            {
+                _connectionValidators.add(validator);
+            }
+
+        }
     }
 
     private void checkVHostStateIsActive()
@@ -438,6 +460,20 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _eventLogger;
     }
 
+    @Override
+    public boolean authoriseCreateConnection(final AMQConnectionModel<?, ?> connection)
+    {
+        getSecurityManager().authoriseCreateConnection(connection);
+        for(ConnectionValidator validator : _connectionValidators)
+        {
+            if(!validator.validateConnectionCreation(connection))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * Initialise a housekeeping task to iterate over queues cleaning expired messages with no consumers
      * and checking for idle or open transactions that have exceeded the permitted thresholds.
@@ -524,6 +560,19 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     {
         return _houseKeepingTasks.getActiveCount();
     }
+
+    @Override
+    public List<String> getEnabledConnectionValidators()
+    {
+        return _enabledConnectionValidators;
+    }
+
+    @Override
+    public List<String> getDisabledConnectionValidators()
+    {
+        return _disabledConnectionValidators;
+    }
+
 
     @Override
     public AMQQueue<?> getQueue(String name)

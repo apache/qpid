@@ -22,6 +22,7 @@ package org.apache.qpid.server.model;
 
 import java.security.AccessControlException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -42,6 +43,8 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     String STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "storeTransactionOpenTimeoutWarn";
     String HOUSE_KEEPING_THREAD_COUNT           = "houseKeepingThreadCount";
     String MODEL_VERSION                        = "modelVersion";
+    String ENABLED_CONNECTION_VALIDATORS        = "enabledConnectionValidators";
+    String DISABLED_CONNECTION_VALIDATORS       = "disabledConnectionValidators";
 
     @ManagedContextDefault( name = "queue.deadLetterQueueEnabled")
     public static final boolean DEFAULT_DEAD_LETTER_QUEUE_ENABLED = false;
@@ -87,6 +90,18 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
 
     @DerivedAttribute( persist = true )
     String getModelVersion();
+
+    @ManagedContextDefault( name = "virtualhost.enabledConnectionValidators")
+    String DEFAULT_ENABLED_VALIDATORS = "[]";
+
+    @ManagedAttribute( defaultValue = "${virtualhost.enabledConnectionValidators}")
+    List<String> getEnabledConnectionValidators();
+
+    @ManagedContextDefault( name = "virtualhost.disabledConnectionValidators")
+    String DEFAULT_DISABLED_VALIDATORS = "[]";
+
+    @ManagedAttribute( defaultValue = "${virtualhost.disabledConnectionValidators}")
+    List<String> getDisabledConnectionValidators();
 
     @ManagedStatistic
     long getQueueCount();
