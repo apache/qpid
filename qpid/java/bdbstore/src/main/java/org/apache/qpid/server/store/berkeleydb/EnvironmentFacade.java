@@ -27,14 +27,13 @@ import java.util.Map;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.Sequence;
 import com.sleepycat.je.SequenceConfig;
 import com.sleepycat.je.Transaction;
 
-import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.util.FutureResult;
 
 public interface EnvironmentFacade
 {
@@ -55,7 +54,7 @@ public interface EnvironmentFacade
 
     Transaction beginTransaction();
 
-    StoreFuture commit(com.sleepycat.je.Transaction tx, boolean sync);
+    FutureResult commit(com.sleepycat.je.Transaction tx, boolean sync);
 
     RuntimeException handleDatabaseException(String contextMessage, RuntimeException e);
 

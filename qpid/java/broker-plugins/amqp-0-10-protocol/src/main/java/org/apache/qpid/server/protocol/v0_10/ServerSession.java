@@ -75,7 +75,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.AlreadyKnownDtxException;
@@ -1012,17 +1012,17 @@ public class ServerSession extends Session
         return _unfinishedCommandsQueue.isEmpty() ? null : _unfinishedCommandsQueue.getLast();
     }
 
-    public void recordFuture(final StoreFuture future, final ServerTransaction.Action action)
+    public void recordFuture(final FutureResult future, final ServerTransaction.Action action)
     {
         _unfinishedCommandsQueue.add(new AsyncCommand(future, action));
     }
 
     private static class AsyncCommand
     {
-        private final StoreFuture _future;
+        private final FutureResult _future;
         private ServerTransaction.Action _action;
 
-        public AsyncCommand(final StoreFuture future, final ServerTransaction.Action action)
+        public AsyncCommand(final FutureResult future, final ServerTransaction.Action action)
         {
             _future = future;
             _action = action;

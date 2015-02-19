@@ -28,6 +28,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.util.FutureResult;
 
 @ManagedObject( creatable = false, category = false )
 /**
@@ -246,7 +247,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
 
     void open();
 
-    void close();
+    FutureResult close();
 
     TaskExecutor getTaskExecutor();
 

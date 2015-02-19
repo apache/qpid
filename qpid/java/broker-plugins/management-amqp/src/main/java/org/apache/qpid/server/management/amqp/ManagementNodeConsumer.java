@@ -29,6 +29,7 @@ import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.util.StateChangeListener;
 
 class ManagementNodeConsumer implements ConsumerImpl
@@ -122,9 +123,9 @@ class ManagementNodeConsumer implements ConsumerImpl
     }
 
     @Override
-    public void close()
+    public FutureResult close()
     {
-
+        return FutureResult.IMMEDIATE_FUTURE;
     }
 
     @Override

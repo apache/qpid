@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.util.FutureResult;
 
 public interface ConsumerImpl
 {
@@ -65,7 +66,7 @@ public interface ConsumerImpl
 
     boolean seesRequeues();
 
-    void close();
+    FutureResult close();
 
     boolean trySendLock();
 

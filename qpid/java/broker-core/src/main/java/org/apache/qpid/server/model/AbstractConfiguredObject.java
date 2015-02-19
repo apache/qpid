@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
@@ -68,6 +69,7 @@ import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.encryption.ConfigurationSecretEncrypter;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.util.Strings;
 
@@ -457,14 +459,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    protected void closeChildren()
+    protected FutureResult closeChildren()
     {
+        final List<FutureResult> childCloseFutures = new ArrayList<>();
         applyToChildren(new Action<ConfiguredObject<?>>()
         {
             @Override
             public void performAction(final ConfiguredObject<?> child)
             {
-                child.close();
+                childCloseFutures.add(child.close());
             }
         });
 
@@ -483,13 +486,67 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             childNameMap.clear();
         }
 
+
+        FutureResult futureResult;
+        if(childCloseFutures.isEmpty())
+        {
+            futureResult = FutureResult.IMMEDIATE_FUTURE;
+        }
+        else
+        {
+            futureResult = new FutureResult()
+                                {
+                                    @Override
+                                    public boolean isComplete()
+                                    {
+                                        for(FutureResult childResult : childCloseFutures)
+                                        {
+                                            if(!childResult.isComplete())
+                                            {
+                                                return false;
+                                            }
+                                        }
+                                        return true;
+                                    }
+
+                                    @Override
+                                    public void waitForCompletion()
+                                    {
+                                        for(FutureResult childResult : childCloseFutures)
+                                        {
+                                            childResult.waitForCompletion();
+                                        }
+                                    }
+
+
+                                    @Override
+                                    public void waitForCompletion(long timeout) throws TimeoutException
+                                    {
+                                        long startTime = System.currentTimeMillis();
+                                        long remaining = timeout;
+                                        for(FutureResult childResult : childCloseFutures)
+                                        {
+
+                                            childResult.waitForCompletion(remaining);
+                                            remaining = startTime + timeout - System.currentTimeMillis();
+                                            if(remaining < 0)
+                                            {
+                                                throw new TimeoutException("Completion did not occur within specified timeout: " + timeout);
+                                            }
+                                        }
+                                    }
+                                };
+        }
+        return futureResult;
     }
 
     @Override
-    public final void close()
+    public final FutureResult close()
     {
         if(_dynamicState.compareAndSet(DynamicState.OPENED, DynamicState.CLOSED))
         {
+            final CloseResult closeResult = new CloseResult();
+
             CloseFuture close = beforeClose();
 
             Runnable closeRunnable = new Runnable()
@@ -497,7 +554,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 @Override
                 public void run()
                 {
-                    closeChildren();
+                    final FutureResult result = closeChildren();
+                    closeResult.setChildFutureResult(result);
                     onClose();
                     unregister(false);
 
@@ -514,7 +572,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             }
 
             // if future not complete, schedule the remainder to be done once complete.
-
+            return closeResult;
+        }
+        else
+        {
+            return FutureResult.IMMEDIATE_FUTURE;
         }
     }
 
@@ -1896,6 +1958,72 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 }
 
             }
+        }
+    }
+
+    private static class CloseResult implements FutureResult
+    {
+        private volatile FutureResult _childFutureResult;
+
+        @Override
+        public boolean isComplete()
+        {
+            return _childFutureResult != null && _childFutureResult.isComplete();
+        }
+
+        @Override
+        public void waitForCompletion()
+        {
+            synchronized (this)
+            {
+                while (_childFutureResult == null)
+                {
+                    try
+                    {
+                        wait();
+                    }
+                    catch (InterruptedException e)
+                    {
+
+                    }
+                }
+            }
+            _childFutureResult.waitForCompletion();
+        }
+
+        @Override
+        public void waitForCompletion(final long timeout) throws TimeoutException
+        {
+            long startTime = System.currentTimeMillis();
+            long remaining = timeout;
+
+            synchronized (this)
+            {
+                while (_childFutureResult == null && remaining > 0)
+                {
+                    try
+                    {
+                        wait(remaining);
+                    }
+                    catch (InterruptedException e)
+                    {
+
+                    }
+                    remaining = startTime + timeout - System.currentTimeMillis();
+
+                    if(remaining < 0)
+                    {
+                        throw new TimeoutException("Completion did not occur within given tiemout: " + timeout);
+                    }
+                }
+            }
+            _childFutureResult.waitForCompletion(remaining);
+        }
+
+        public synchronized void setChildFutureResult(final FutureResult childFutureResult)
+        {
+            _childFutureResult = childFutureResult;
+            notifyAll();
         }
     }
 

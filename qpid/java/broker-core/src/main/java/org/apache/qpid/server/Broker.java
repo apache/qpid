@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.util.Properties;
+import java.util.concurrent.TimeoutException;
 
 import javax.security.auth.Subject;
 
@@ -49,6 +50,7 @@ import org.apache.qpid.server.plugin.PluggableFactoryLoader;
 import org.apache.qpid.server.plugin.SystemConfigFactory;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.FutureResult;
 
 public class Broker implements BrokerShutdownProvider
 {
@@ -102,10 +104,15 @@ public class Broker implements BrokerShutdownProvider
             {
                 if(_systemConfig != null)
                 {
-                    _systemConfig.close();
+                    final FutureResult closeResult = _systemConfig.close();
+                    closeResult.waitForCompletion(5000l);
                 }
                 _taskExecutor.stop();
 
+            }
+            catch (TimeoutException e)
+            {
+                LOGGER.warn("Attempting to cleanly shutdown took too long, exiting immediately");
             }
             finally
             {
