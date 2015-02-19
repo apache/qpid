@@ -21,6 +21,7 @@ package org.apache.qpid.server.virtualhost.berkeleydb;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -42,6 +43,7 @@ import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.model.VirtualHostNode;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -80,6 +82,13 @@ public class BDBHAReplicaVirtualHostImpl extends AbstractConfiguredObject<BDBHAR
     private long _storeTransactionOpenTimeoutWarn;
     @ManagedAttributeField
     private int _housekeepingThreadCount;
+
+    @ManagedAttributeField
+    private List<String> _enabledConnectionValidators;
+
+    @ManagedAttributeField
+    private List<String> _disabledConnectionValidators;
+
 
     @ManagedObjectFactoryConstructor
     public BDBHAReplicaVirtualHostImpl(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
@@ -446,6 +455,24 @@ public class BDBHAReplicaVirtualHostImpl extends AbstractConfiguredObject<BDBHAR
     @Override
     public void resetStatistics()
     {
+    }
+
+    @Override
+    public boolean authoriseCreateConnection(final AMQConnectionModel<?, ?> connection)
+    {
+        return false;
+    }
+
+    @Override
+    public List<String> getEnabledConnectionValidators()
+    {
+        return _enabledConnectionValidators;
+    }
+
+    @Override
+    public List<String> getDisabledConnectionValidators()
+    {
+        return _disabledConnectionValidators;
     }
 
     private void throwUnsupportedForReplica()
