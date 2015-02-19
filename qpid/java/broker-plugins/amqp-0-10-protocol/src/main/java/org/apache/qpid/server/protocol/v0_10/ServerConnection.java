@@ -23,6 +23,7 @@ package org.apache.qpid.server.protocol.v0_10;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SOCKET_FORMAT;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.USER_FORMAT;
+import static org.apache.qpid.transport.Connection.State.CLOSING;
 
 import java.net.SocketAddress;
 import java.security.Principal;
@@ -30,6 +31,8 @@ import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -81,8 +84,11 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     private boolean _blocking;
     private Transport _transport;
 
-    private final CopyOnWriteArrayList<Action<? super ServerConnection>> _taskList =
+    private final CopyOnWriteArrayList<Action<? super ServerConnection>> _connectionCloseTaskList =
             new CopyOnWriteArrayList<Action<? super ServerConnection>>();
+
+    private final Queue<Action<? super ServerConnection>> _asyncTaskList =
+            new ConcurrentLinkedQueue<>();
 
     private final CopyOnWriteArrayList<SessionModelListener> _sessionListeners =
             new CopyOnWriteArrayList<SessionModelListener>();
@@ -368,25 +374,35 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
         }
     }
 
-    public void close(AMQConstant cause, String message)
+    public void closeAsync(final AMQConstant cause, final String message)
     {
-        closeSubscriptions();
-        performDeleteTasks();
-        ConnectionCloseCode replyCode = ConnectionCloseCode.NORMAL;
-        try
+
+        addAsyncTask(new Action<ServerConnection>()
         {
-            replyCode = ConnectionCloseCode.get(cause.getCode());
-        }
-        catch (IllegalArgumentException iae)
-        {
-            // Ignore
-        }
-        close(replyCode, message);
+            @Override
+            public void performAction(final ServerConnection object)
+            {
+                closeSubscriptions();
+                performDeleteTasks();
+
+                setState(CLOSING);
+                ConnectionCloseCode replyCode = ConnectionCloseCode.NORMAL;
+                try
+                {
+                    replyCode = ConnectionCloseCode.get(cause.getCode());
+                }
+                catch (IllegalArgumentException iae)
+                {
+                    // Ignore
+                }
+                sendConnectionClose(replyCode, message);
+            }
+        });
     }
 
     protected void performDeleteTasks()
     {
-        for(Action<? super ServerConnection> task : _taskList)
+        for(Action<? super ServerConnection> task : _connectionCloseTaskList)
         {
             task.performAction(this);
         }
@@ -659,13 +675,19 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     @Override
     public void addDeleteTask(final Action<? super ServerConnection> task)
     {
-        _taskList.add(task);
+        _connectionCloseTaskList.add(task);
+    }
+
+    private void addAsyncTask(final Action<ServerConnection> action)
+    {
+        _asyncTaskList.add(action);
+        notifyWork();
     }
 
     @Override
     public void removeDeleteTask(final Action<? super ServerConnection> task)
     {
-        _taskList.remove(task);
+        _connectionCloseTaskList.remove(task);
     }
 
     public int getMessageCompressionThreshold()
@@ -697,5 +719,20 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     public boolean isMessageAssignmentSuspended()
     {
         return _serverProtocolEngine.isMessageAssignmentSuspended();
+    }
+
+    public void processPending()
+    {
+        while(_asyncTaskList.peek() != null)
+        {
+            Action<? super ServerConnection> asyncAction = _asyncTaskList.poll();
+            asyncAction.performAction(this);
+        }
+
+        for (AMQSessionModel session : getSessionModels())
+        {
+            session.processPendingMessages();
+        }
+
     }
 }

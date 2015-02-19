@@ -251,7 +251,7 @@ public class VirtualHostTest extends QpidTestCase
                      0,
                      virtualHost.getChildren(Connection.class).size());
 
-        verify(connection).close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
+        verify(connection).closeAsync(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
     }
 
     public void testDeleteVirtualHost_ClosesConnections()
@@ -276,7 +276,7 @@ public class VirtualHostTest extends QpidTestCase
                      0,
                      virtualHost.getChildren(Connection.class).size());
 
-        verify(connection).close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
+        verify(connection).closeAsync(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
     }
 
     public void testCreateDurableQueue()

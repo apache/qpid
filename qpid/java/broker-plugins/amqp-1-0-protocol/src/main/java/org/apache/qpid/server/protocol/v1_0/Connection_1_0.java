@@ -30,11 +30,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.security.auth.Subject;
 
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEventListener;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
@@ -58,6 +61,7 @@ import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+import org.apache.qpid.transport.Connection;
 
 public class Connection_1_0 implements ConnectionEventListener, AMQConnectionModel<Connection_1_0,Session_1_0>
 {
@@ -100,6 +104,11 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
 
     private List<Action<? super Connection_1_0>> _closeTasks =
             Collections.synchronizedList(new ArrayList<Action<? super Connection_1_0>>());
+
+    private final Queue<Action<? super Connection_1_0>> _asyncTaskList =
+            new ConcurrentLinkedQueue<>();
+
+
     private boolean _closedOnOpen;
 
 
@@ -213,6 +222,13 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
         _closeTasks.add( task );
     }
 
+    private void addAsyncTask(final Action<Connection_1_0> action)
+    {
+        _asyncTaskList.add(action);
+        notifyWork();
+    }
+
+
     public void closeReceived()
     {
         Collection<Session_1_0> sessions = new ArrayList(_sessions);
@@ -251,9 +267,19 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
 
 
     @Override
-    public void close(AMQConstant cause, String message)
+    public void closeAsync(AMQConstant cause, String message)
     {
-        _conn.close();
+        Action<Connection_1_0> action = new Action<Connection_1_0>()
+        {
+            @Override
+            public void performAction(final Connection_1_0 object)
+            {
+                _conn.close();
+
+            }
+        };
+        addAsyncTask(action);
+
     }
 
     @Override
@@ -509,5 +535,20 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     public boolean isMessageAssignmentSuspended()
     {
         return _protocolEngine.isMessageAssignmentSuspended();
+    }
+
+    public void processPending()
+    {
+        while(_asyncTaskList.peek() != null)
+        {
+            Action<? super Connection_1_0> asyncAction = _asyncTaskList.poll();
+            asyncAction.performAction(this);
+        }
+
+        for (AMQSessionModel session : getSessionModels())
+        {
+            session.processPendingMessages();
+        }
+
     }
 }

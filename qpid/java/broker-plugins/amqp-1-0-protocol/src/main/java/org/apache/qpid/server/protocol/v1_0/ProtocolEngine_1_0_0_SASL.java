@@ -620,12 +620,10 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     }
 
     @Override
-    public void processPendingMessages()
+    public void processPending()
     {
-        for (AMQSessionModel session : _connection.getSessionModels())
-        {
-            session.processPendingMessages();
-        }
+        _connection.processPending();
+
     }
 
     @Override

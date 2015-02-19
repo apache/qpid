@@ -1714,7 +1714,7 @@ public class AMQChannel
         receivedLock.lock();
         try
         {
-            _connection.close(AMQConstant.RESOURCE_ERROR, reason);
+            _connection.closeAsync(AMQConstant.RESOURCE_ERROR, reason);
         }
         finally
         {

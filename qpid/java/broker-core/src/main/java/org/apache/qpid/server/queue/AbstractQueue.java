@@ -756,10 +756,10 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     }
 
     @Override
-    protected void beforeClose()
+    protected org.apache.qpid.server.model.CloseFuture beforeClose()
     {
         _closing = true;
-        super.beforeClose();
+        return super.beforeClose();
     }
 
 

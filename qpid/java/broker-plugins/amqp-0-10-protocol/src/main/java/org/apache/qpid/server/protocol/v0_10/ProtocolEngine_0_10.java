@@ -291,12 +291,10 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     }
 
     @Override
-    public void processPendingMessages()
+    public void processPending()
     {
-        for (AMQSessionModel session : _connection.getSessionModels())
-        {
-            session.processPendingMessages();
-        }
+        _connection.processPending();
+
     }
 
     @Override

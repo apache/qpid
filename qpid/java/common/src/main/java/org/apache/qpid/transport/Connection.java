@@ -616,6 +616,12 @@ public class Connection extends ConnectionInvoker
         close(ConnectionCloseCode.CONNECTION_FORCED, "The connection was closed using the broker's management interface.");
     }
 
+
+    protected void sendConnectionClose(ConnectionCloseCode replyCode, String replyText, Option ... _options)
+    {
+        connectionClose(replyCode, replyText, _options);
+    }
+
     public void close(ConnectionCloseCode replyCode, String replyText, Option ... _options)
     {
         synchronized (lock)

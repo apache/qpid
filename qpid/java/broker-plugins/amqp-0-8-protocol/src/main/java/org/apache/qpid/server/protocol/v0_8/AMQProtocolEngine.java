@@ -36,8 +36,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -164,8 +166,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     /* AMQP Version for this session */
     private ProtocolVersion _protocolVersion = ProtocolVersion.getLatestSupportedVersion();
     private final MethodRegistry _methodRegistry = new MethodRegistry(_protocolVersion);
-    private final List<Action<? super AMQProtocolEngine>> _taskList =
+    private final List<Action<? super AMQProtocolEngine>> _connectionCloseTaskList =
             new CopyOnWriteArrayList<>();
+
+    private final Queue<Action<? super AMQProtocolEngine>> _asyncTaskList =
+            new ConcurrentLinkedQueue<>();
 
     private Map<Integer, Long> _closingChannelsList = new ConcurrentHashMap<>();
     private ProtocolOutputConverter _protocolOutputConverter;
@@ -849,6 +854,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                 finally
                 {
                     _receivedLock.unlock();
+
                     finishClose(connectionDropped);
                 }
 
@@ -890,7 +896,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             {
                 try
                 {
-                    for (Action<? super AMQProtocolEngine> task : _taskList)
+                    for (Action<? super AMQProtocolEngine> task : _connectionCloseTaskList)
                     {
                         task.performAction(this);
                     }
@@ -975,13 +981,15 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             try
             {
                 markChannelAwaitingCloseOk(channelId);
-                closeSession(false);
+                closeSession(false);  // currently performs the delete actions.
             }
             finally
             {
                 try
                 {
                     writeFrame(frame);
+
+                    // add an async job and not
                 }
                 finally
                 {
@@ -1133,12 +1141,12 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
 
     public void addDeleteTask(Action<? super AMQProtocolEngine> task)
     {
-        _taskList.add(task);
+        _connectionCloseTaskList.add(task);
     }
 
     public void removeDeleteTask(Action<? super AMQProtocolEngine> task)
     {
-        _taskList.remove(task);
+        _connectionCloseTaskList.remove(task);
     }
 
     public ProtocolOutputConverter getProtocolOutputConverter()
@@ -1388,11 +1396,29 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         writeFrame(responseBody.generateFrame(channelId));
     }
 
-    public void close(AMQConstant cause, String message)
+    public void closeAsync(final AMQConstant cause, final String message)
     {
-        closeConnection(0, new AMQConnectionException(cause, message, 0, 0,
-                                                      getMethodRegistry(),
-                                                      null));
+        _logger.debug("KWDEBUG About to schedule close");
+
+        Action<AMQProtocolEngine> action = new Action<AMQProtocolEngine>()
+        {
+            @Override
+            public void performAction(final AMQProtocolEngine object)
+            {
+                _logger.debug("KWDEBUG About to perform close");
+                closeConnection(0, new AMQConnectionException(cause, message, 0, 0,
+                                                              getMethodRegistry(),
+                                                              null));
+
+            }
+        };
+        addAsyncTask(action);
+    }
+
+    private void addAsyncTask(final Action<AMQProtocolEngine> action)
+    {
+        _asyncTaskList.add(action);
+        notifyWork();
     }
 
     public void block()
@@ -2080,8 +2106,14 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     }
 
     @Override
-    public void processPendingMessages()
+    public void processPending()
     {
+        while(_asyncTaskList.peek() != null)
+        {
+            Action<? super AMQProtocolEngine> asyncAction = _asyncTaskList.poll();
+            asyncAction.performAction(this);
+        }
+
         for (AMQSessionModel session : getSessionModels())
         {
             session.processPendingMessages();
@@ -2100,7 +2132,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         _stateChanged.set(true);
 
         final Action<ServerProtocolEngine> listener = _workListener.get();
-        _logger.info("Work lister is null? " + (listener == null));
         if(listener != null)
         {
 

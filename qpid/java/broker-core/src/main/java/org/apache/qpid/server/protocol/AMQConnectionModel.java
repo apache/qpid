@@ -40,7 +40,7 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
      * @param cause
      * @param message
      */
-    public void close(AMQConstant cause, String message);
+    public void closeAsync(AMQConstant cause, String message);
 
     public void block();
 
@@ -110,4 +110,5 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
     void notifyWork();
 
     boolean isMessageAssignmentSuspended();
+
 }

@@ -214,9 +214,9 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     }
 
     @Override
-    public void processPendingMessages()
+    public void processPending()
     {
-        _delegate.processPendingMessages();
+        _delegate.processPending();
     }
 
     @Override
@@ -260,7 +260,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         }
 
         @Override
-        public void processPendingMessages()
+        public void processPending()
         {
 
         }
@@ -418,7 +418,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         }
 
         @Override
-        public void processPendingMessages()
+        public void processPending()
         {
 
         }

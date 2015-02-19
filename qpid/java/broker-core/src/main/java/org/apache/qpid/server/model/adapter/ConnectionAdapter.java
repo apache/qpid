@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.CloseFuture;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.Port;
@@ -51,6 +52,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     private final Action _underlyingConnectionDeleteTask;
     private final AtomicBoolean _underlyingClosed = new AtomicBoolean(false);
     private AMQConnectionModel _underlyingConnection;
+    private final AtomicBoolean _closing = new AtomicBoolean();
 
     public ConnectionAdapter(final AMQConnectionModel conn)
     {
@@ -158,15 +160,42 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     @StateTransition( currentState = State.ACTIVE, desiredState = State.DELETED)
     private void doDelete()
     {
-        closeUnderlyingConnection();
+        asyncClose();
         deleted();
         setState(State.DELETED);
     }
 
     @Override
+    protected CloseFuture beforeClose()
+    {
+        _closing.set(true);
+
+        final ConnectionCloseFuture closeFuture = asyncClose();
+
+        return closeFuture;
+    }
+
+    private ConnectionCloseFuture asyncClose()
+    {
+        final ConnectionCloseFuture closeFuture = new ConnectionCloseFuture();
+
+        _underlyingConnection.addDeleteTask(new Action()
+        {
+            @Override
+            public void performAction(final Object object)
+            {
+                LOGGER.debug("KWDEBUG underlying connection deleted");
+                closeFuture.connectionClosed();
+            }
+        });
+
+        _underlyingConnection.closeAsync(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
+        return closeFuture;
+    }
+
+    @Override
     protected void onClose()
     {
-        closeUnderlyingConnection();
     }
 
     @Override
@@ -233,23 +262,54 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
         // SessionAdapter installs delete task to cause session model object to delete
     }
 
-    private void closeUnderlyingConnection()
-    {
-        if (_underlyingClosed.compareAndSet(false, true))
-        {
-            _underlyingConnection.removeDeleteTask(_underlyingConnectionDeleteTask);
-            try
-            {
-                _underlyingConnection.close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
-            }
-            catch (Exception e)
-            {
-                LOGGER.warn("Exception closing connection "
-                             + _underlyingConnection.getConnectionId()
-                             + " from "
-                             + _underlyingConnection.getRemoteAddressString(), e);
-            }
 
+    private static class ConnectionCloseFuture implements CloseFuture
+    {
+        private boolean _closed;
+
+        public synchronized void connectionClosed()
+        {
+            _closed = true;
+            notifyAll();
+
+        }
+
+        @Override
+        public void runWhenComplete(final Runnable closeRunnable)
+        {
+            if (_closed )
+            {
+                closeRunnable.run();
+            }
+            else
+            {
+                Thread t = new Thread(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        synchronized (ConnectionCloseFuture.this)
+                        {
+                            while (!_closed)
+                            {
+                                try
+                                {
+                                    ConnectionCloseFuture.this.wait();
+                                }
+                                catch (InterruptedException e)
+                                {
+                                }
+                            }
+
+                            closeRunnable.run();
+                        }
+                    }
+                });
+
+                t.setDaemon(true);
+                t.start();
+
+            }
         }
     }
 

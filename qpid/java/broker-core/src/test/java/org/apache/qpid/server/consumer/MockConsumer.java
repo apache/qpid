@@ -538,7 +538,7 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
-        public void close(AMQConstant cause, String message)
+        public void closeAsync(AMQConstant cause, String message)
         {
         }
 

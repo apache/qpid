@@ -70,6 +70,9 @@ public class AsynchMessageListenerTest extends QpidBrokerTestCase
 
     }
 
+
+
+
     public void testMessageListener() throws Exception
     {
         CountingMessageListener countingMessageListener = new CountingMessageListener(MSG_COUNT);

@@ -439,7 +439,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             catch (VirtualHostUnavailableException e)
             {
-                getServerConnection(serverSession).close(AMQConstant.CONNECTION_FORCED, e.getMessage());
+                getServerConnection(serverSession).closeAsync(AMQConstant.CONNECTION_FORCED, e.getMessage());
             }
             finally
             {

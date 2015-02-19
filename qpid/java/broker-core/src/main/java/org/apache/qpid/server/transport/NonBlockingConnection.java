@@ -287,7 +287,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
 
                 _protocolEngine.setMessageAssignmentSuspended(true);
 
-                _protocolEngine.processPendingMessages();
+                _protocolEngine.processPending();
 
                 _protocolEngine.setTransportBlockedForWriting(!doWrite());
                 boolean dataRead = doRead();

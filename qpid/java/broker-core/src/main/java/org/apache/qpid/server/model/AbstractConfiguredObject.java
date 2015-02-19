@@ -490,16 +490,37 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         if(_dynamicState.compareAndSet(DynamicState.OPENED, DynamicState.CLOSED))
         {
-            beforeClose();
-            closeChildren();
-            onClose();
-            unregister(false);
+            CloseFuture close = beforeClose();
+
+            Runnable closeRunnable = new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    closeChildren();
+                    onClose();
+                    unregister(false);
+
+                }
+            };
+
+            if (close == null)
+            {
+                closeRunnable.run();
+            }
+            else
+            {
+                close.runWhenComplete(closeRunnable);
+            }
+
+            // if future not complete, schedule the remainder to be done once complete.
 
         }
     }
 
-    protected void beforeClose()
+    protected CloseFuture beforeClose()
     {
+        return null;
     }
 
     protected void onClose()

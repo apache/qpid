@@ -677,9 +677,10 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
     @Override
-    protected void beforeClose()
+    protected CloseFuture beforeClose()
     {
         setState(State.UNAVAILABLE);
+        return null;
     }
 
     @Override

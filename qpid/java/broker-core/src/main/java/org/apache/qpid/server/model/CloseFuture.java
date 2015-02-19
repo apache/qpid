@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,39 +15,12 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.qpid.server.protocol;
 
-import javax.security.auth.Subject;
+package org.apache.qpid.server.model;
 
-import org.apache.qpid.protocol.ProtocolEngine;
-import org.apache.qpid.server.util.Action;
 
-public interface ServerProtocolEngine extends ProtocolEngine
+public interface CloseFuture
 {
-    /**
-     * Gets the connection ID associated with this ProtocolEngine
-     */
-    long getConnectionId();
-
-    Subject getSubject();
-
-    boolean isTransportBlockedForWriting();
-
-    void setTransportBlockedForWriting(boolean blocked);
-
-    void setMessageAssignmentSuspended(boolean value);
-
-    boolean isMessageAssignmentSuspended();
-
-    void processPending();
-
-    boolean hasWork();
-
-    void clearWork();
-
-    void notifyWork();
-
-    void setWorkListener(Action<ServerProtocolEngine> listener);
+    public void runWhenComplete(final Runnable closeRunnable);
 }
