@@ -62,9 +62,13 @@ define(["dojo/_base/xhr",
                this.contentPane = contentPane;
                this.contentPane.containerNode.innerHTML = markup;
 
-               parser.parse(this.contentPane.containerNode);
+               parser.parse(this.contentPane.containerNode).then(function(instances){self._postParse();});
+           };
+           LogViewer.prototype._postParse = function()
+           {
+               var self = this;
 
-               this.downloadLogsButton = registry.byNode(query(".downloadLogs", contentPane.containerNode)[0]);
+               this.downloadLogsButton = registry.byNode(query(".downloadLogs", this.contentPane.containerNode)[0]);
                this.downloadLogDialog = new LogFileDownloadDialog();
 
                this.downloadLogsButton.on("click", function(evt){

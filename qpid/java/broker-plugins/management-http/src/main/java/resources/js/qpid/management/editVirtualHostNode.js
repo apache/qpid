@@ -52,7 +52,11 @@ define(["dojo/_base/xhr",
       {
         var that=this;
         this.containerNode = domConstruct.create("div", {innerHTML: template});
-        parser.parse(this.containerNode);
+        parser.parse(this.containerNode).then(function(instances){ that._postParse();});
+      },
+      _postParse: function()
+      {
+        var that=this;
         this.typeFieldsContainer = dom.byId("editVirtualHostNode.typeFields");
         this.dialog = registry.byId("editVirtualHostNodeDialog");
         this.saveButton = registry.byId("editVirtualHostNode.saveButton");

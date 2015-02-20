@@ -51,9 +51,13 @@ return declare("qpid.management.logs.LogFileDownloadDialog", null, {
     closeButton: null,
 
     constructor: function(args){
+        var that = this;
         this.containerNode = domConstruct.create("div", {innerHTML: template});
-        parser.parse(this.containerNode);
-
+        parser.parse(this.containerNode).then(function(instances){that._postParse();});
+    },
+    _postParse: function()
+    {
+        var that = this;
         this.logFileTreeDiv = query(".logFilesGrid", this.containerNode)[0];
         this.downloadLogsButton = registry.byNode(query(".downloadLogsButton", this.containerNode)[0]);
         this.closeButton = registry.byNode(query(".downloadLogsDialogCloseButton", this.containerNode)[0]);

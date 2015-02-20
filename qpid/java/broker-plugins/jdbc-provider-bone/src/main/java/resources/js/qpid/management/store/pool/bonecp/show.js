@@ -40,13 +40,15 @@ define(["dojo/_base/xhr",
         sync: true,
         load:  function(template) {
           containerNode.innerHTML = template;
-          parser.parse(containerNode);
+          parser.parse(containerNode).then(function(instances)
+          {
+            for(var i=0; i<fieldNames.length;i++)
+            {
+                var fieldName = fieldNames[i];
+                that[fieldName]= query("." + fieldName, containerNode)[0];
+            }
+          });
         }});
-      for(var i=0; i<fieldNames.length;i++)
-      {
-        var fieldName = fieldNames[i];
-        this[fieldName]= query("." + fieldName, containerNode)[0];
-      }
     }
 
     BoneCP.prototype.update=function(data)

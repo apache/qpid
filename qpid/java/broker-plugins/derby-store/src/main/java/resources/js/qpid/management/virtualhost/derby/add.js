@@ -34,10 +34,11 @@ define(["dojo/_base/xhr",
         show: function (data)
         {
             this.containerNode = domConstruct.create("div", {innerHTML: template}, data.containerNode);
-            parser.parse(this.containerNode);
-
-            registry.byId("addVirtualHost.storeUnderfullSize").set("regExpGen", util.numericOrContextVarRegexp);
-            registry.byId("addVirtualHost.storeOverfullSize").set("regExpGen", util.numericOrContextVarRegexp);
+            parser.parse(this.containerNode).then(function(instances)
+            {
+                registry.byId("addVirtualHost.storeUnderfullSize").set("regExpGen", util.numericOrContextVarRegexp);
+                registry.byId("addVirtualHost.storeOverfullSize").set("regExpGen", util.numericOrContextVarRegexp);
+            });
         }
     };
   }

@@ -45,10 +45,15 @@ return declare("qpid.common.grid.ColumnDefDialog", null, {
 
   constructor: function(args){
       var grid = this.grid = args.grid;
-
+      var that = this;
       this.containerNode = dom.create("div", {innerHTML: template});
-      parser.parse(this.containerNode);
-
+      parser.parse(this.containerNode).then(function(instances)
+      {
+          that._postParse();
+      });
+  },
+  _postParse: function()
+  {
       var submitButton = registry.byNode(query(".displayButton", this.containerNode)[0]);
       this.closeButton = registry.byNode(query(".cancelButton", this.containerNode)[0]);
       var columnsContainer = query(".columnList", this.containerNode)[0];

@@ -47,14 +47,15 @@ define(["dojo/_base/xhr",
                       sync: true,
                       load:  function(data) {
                           node.innerHTML = data;
-                          parser.parse(node);
-
+                          parser.parse(node).then(function(instances)
+                          {
                           that.managementHttpUpdater= new ManagementHttpUpdater(node, pluginObject, controller);
                           that.managementHttpUpdater.update(true);
                           updater.add( that.managementHttpUpdater);
 
                           var editButton = query(".editPluginButton", node)[0];
                           connect.connect(registry.byNode(editButton), "onClick", function(evt){ that.edit(); });
+                          });
                       }});
         }
 

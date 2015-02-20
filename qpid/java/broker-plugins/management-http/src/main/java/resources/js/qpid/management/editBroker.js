@@ -55,8 +55,11 @@ define(["dojo/_base/xhr",
       {
         var that=this;
         this.containerNode = domConstruct.create("div", {innerHTML: template});
-        parser.parse(this.containerNode);
-
+        parser.parse(this.containerNode).then(function(instances){ that._postParse();});
+      },
+      _postParse: function()
+      {
+        var that=this;
         this.dialog = registry.byId("editBrokerDialog");
         this.saveButton = registry.byId("editBroker.saveButton");
         this.cancelButton = registry.byId("editBroker.cancelButton");

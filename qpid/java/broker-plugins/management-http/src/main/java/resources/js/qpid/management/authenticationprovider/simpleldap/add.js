@@ -24,8 +24,11 @@ define(["dojo/_base/xhr","dojo/query","dijit/registry","qpid/common/util","qpid/
         return {
             show: function(data)
             {
-                util.parseHtmlIntoDiv(data.containerNode, "authenticationprovider/simpleldap/add.html");
-
+                var that = this;
+                util.parseHtmlIntoDiv(data.containerNode, "authenticationprovider/simpleldap/add.html", function(){that._postParse(data);});
+            },
+            _postParse: function(data)
+            {
                 var that = this;
                 xhr.get({url: "api/latest/truststore", sync: true, handleAs: "json"}).then(
                     function(trustStores)

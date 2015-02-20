@@ -33,8 +33,11 @@ define(["qpid/common/util",
        return {
            show: function(data)
            {
-              util.buildEditUI(data.containerNode, "virtualhost/jdbc/edit.html", "editVirtualHost.", fieldNames, data.data);
-
+              var that = this;
+              util.buildEditUI(data.containerNode, "virtualhost/jdbc/edit.html", "editVirtualHost.", fieldNames, data.data, function(){that._postParse(data)});
+           },
+           _postParse: function(data)
+           {
               registry.byId("editVirtualHost.connectionUrl").set("regExpGen", util.jdbcUrlOrContextVarRegexp);
               registry.byId("editVirtualHost.username").set("regExpGen", util.nameOrContextVarRegexp);
 

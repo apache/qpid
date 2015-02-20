@@ -38,9 +38,16 @@ define(["dojo/_base/xhr",
     return {
         show: function (data)
         {
+            var that = this;
             this.containerNode = domConstruct.create("div", {innerHTML: template}, data.containerNode);
-            parser.parse(this.containerNode);
-
+            parser.parse(this.containerNode).then(function(instances)
+            {
+                that._postParse(data);
+            });
+        },
+        _postParse: function(data)
+        {
+            var that = this;
             registry.byId("addVirtualHostNode.connectionUrl").set("regExpGen", util.jdbcUrlOrContextVarRegexp);
             registry.byId("addVirtualHostNode.username").set("regExpGen", util.nameOrContextVarRegexp);
 
