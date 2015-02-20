@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.model;
 
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -36,6 +37,9 @@ public interface SystemConfig<X extends SystemConfig<X>> extends ConfiguredObjec
     String MANAGEMENT_MODE_PASSWORD = "managementModePassword";
     String INITIAL_CONFIGURATION_LOCATION = "initialConfigurationLocation";
     String STARTUP_LOGGED_TO_SYSTEM_OUT = "startupLoggedToSystemOut";
+
+    @ManagedContextDefault(name = BrokerProperties.POSIX_FILE_PERMISSIONS)
+    String DEFAULT_POSIX_FILE_PERMISSIONS = "rw-r-----";
 
     @ManagedAttribute(defaultValue = "false")
     boolean isManagementMode();
