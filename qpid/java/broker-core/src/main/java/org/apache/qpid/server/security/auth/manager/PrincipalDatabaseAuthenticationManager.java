@@ -23,6 +23,8 @@ package org.apache.qpid.server.security.auth.manager;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.Collection;
@@ -40,6 +42,7 @@ import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
@@ -56,6 +59,7 @@ import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.util.FileHelper;
 
 public abstract class PrincipalDatabaseAuthenticationManager<T extends PrincipalDatabaseAuthenticationManager<T>>
         extends AbstractAuthenticationManager<T>
@@ -96,7 +100,11 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         {
             try
             {
-                passwordFile.createNewFile();
+                Path path = new FileHelper().createNewFile(passwordFile, getContextValue(String.class, BrokerProperties.POSIX_FILE_PERMISSIONS));
+                if (!Files.exists(path))
+                {
+                    throw new IllegalConfigurationException(String.format("Cannot create password file at '%s'", _path));
+                }
             }
             catch (IOException e)
             {

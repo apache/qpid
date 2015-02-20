@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.util;
 
-public interface Action<T> extends BaseAction<T, RuntimeException>
+public interface BaseAction<T, E extends Exception>
 {
-    void performAction(T object);
+    void performAction(T object) throws E;
 }

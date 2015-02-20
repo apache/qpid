@@ -21,14 +21,14 @@
 
 package org.apache.qpid.server.model.adapter;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,6 +38,10 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.util.BaseAction;
+import org.apache.qpid.server.util.FileHelper;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -118,7 +122,7 @@ public class FileSystemPreferencesProviderImpl
         FileSystemPreferencesStore store = new FileSystemPreferencesStore(new File(_path));
 
         // we need to check and create file if it does not exist every time on open
-        store.createIfNotExist();
+        store.createIfNotExist(getContextValue(String.class, BrokerProperties.POSIX_FILE_PERMISSIONS));
         store.open();
         _store = store;
         _open = true;
@@ -184,6 +188,7 @@ public class FileSystemPreferencesProviderImpl
 
         if(_store != null)
         {
+            _store.close();
             _store.delete();
             deleted();
             _authenticationProvider.setPreferencesProvider(null);
@@ -280,7 +285,7 @@ public class FileSystemPreferencesProviderImpl
             else
             {
                 FileSystemPreferencesStore store = new FileSystemPreferencesStore(new File(_path));
-                store.createIfNotExist();
+                store.createIfNotExist(getContextValue(String.class, BrokerProperties.POSIX_FILE_PERMISSIONS));
                 store.open();
                 _store = store;
             }
@@ -334,9 +339,9 @@ public class FileSystemPreferencesProviderImpl
     {
         private final ObjectMapper _objectMapper;
         private final Map<String, Map<String, Object>> _preferences;
+        private final FileHelper _fileHelper;
         private File _storeFile;
         private FileLock _storeLock;
-        private RandomAccessFile _storeRAF;
 
         public FileSystemPreferencesStore(File preferencesFile)
         {
@@ -345,9 +350,10 @@ public class FileSystemPreferencesProviderImpl
             _objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
             _objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
             _preferences = new TreeMap<String, Map<String, Object>>();
+            _fileHelper = new FileHelper();
         }
 
-        public void createIfNotExist()
+        public void createIfNotExist(String filePermissions)
         {
             if (!_storeFile.exists())
             {
@@ -358,7 +364,8 @@ public class FileSystemPreferencesProviderImpl
                 }
                 try
                 {
-                    if (_storeFile.createNewFile() && !_storeFile.exists())
+                    Path path = _fileHelper.createNewFile(_storeFile, filePermissions);
+                    if (!Files.exists(path))
                     {
                         throw new IllegalConfigurationException(String.format("Cannot create preferences store file at '%s'", _storeFile.getAbsolutePath()));
                     }
@@ -391,42 +398,19 @@ public class FileSystemPreferencesProviderImpl
             }
             try
             {
-                _storeRAF = new RandomAccessFile(_storeFile, "rw");
-                FileChannel fileChannel = _storeRAF.getChannel();
-                try
+                getFileLock(_storeFile.getPath() + ".lck");
+                if (_storeFile.length() > 0)
                 {
-                    _storeLock = fileChannel.tryLock();
+                    Map<String, Map<String, Object>> preferencesMap = _objectMapper.readValue(_storeFile,
+                            new TypeReference<Map<String, Map<String, Object>>>()
+                            {
+                            });
+                    _preferences.putAll(preferencesMap);
                 }
-                catch (OverlappingFileLockException e)
-                {
-                    _storeLock = null;
-                }
-                if (_storeLock == null)
-                {
-                    throw new IllegalConfigurationException("Cannot get lock on store file " + _storeFile.getName()
-                            + " is another instance running?");
-                }
-                long fileSize = fileChannel.size();
-                if (fileSize > 0)
-                {
-                    ByteBuffer buffer = ByteBuffer.allocate((int) fileSize);
-                    fileChannel.read(buffer);
-                    buffer.rewind();
-                    buffer.flip();
-                    byte[] data = buffer.array();
-                    try
-                    {
-                        Map<String, Map<String, Object>> preferencesMap = _objectMapper.readValue(data,
-                                new TypeReference<Map<String, Map<String, Object>>>()
-                                {
-                                });
-                        _preferences.putAll(preferencesMap);
-                    }
-                    catch (JsonProcessingException e)
-                    {
-                        throw new IllegalConfigurationException("Cannot parse preferences json in " + _storeFile.getName(), e);
-                    }
-                }
+            }
+            catch (JsonProcessingException e)
+            {
+                throw new IllegalConfigurationException("Cannot parse preferences json in " + _storeFile.getName(), e);
             }
             catch (IOException e)
             {
@@ -443,6 +427,7 @@ public class FileSystemPreferencesProviderImpl
                     if (_storeLock != null)
                     {
                         _storeLock.release();
+                        _storeLock.channel().close();
                     }
                 }
                 catch (IOException e)
@@ -452,22 +437,7 @@ public class FileSystemPreferencesProviderImpl
                 finally
                 {
                     _storeLock = null;
-                    try
-                    {
-                        if (_storeRAF != null)
-                        {
-                            _storeRAF.close();
-                        }
-                    }
-                    catch (IOException e)
-                    {
-                        LOGGER.error("Cannot close preferences file", e);
-                    }
-                    finally
-                    {
-                        _storeRAF = null;
-                        _preferences.clear();
-                    }
+                    _preferences.clear();
                 }
             }
         }
@@ -544,16 +514,14 @@ public class FileSystemPreferencesProviderImpl
             checkStoreOpened();
             try
             {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                _objectMapper.writeValue(baos, _preferences);
-                FileChannel channel = _storeRAF.getChannel();
-                long currentSize = channel.size();
-                channel.position(0);
-                channel.write(ByteBuffer.wrap(baos.toByteArray()));
-                if (currentSize > baos.size())
+                _fileHelper.writeFileSafely(_storeFile.toPath(), new BaseAction<File, IOException>()
                 {
-                    channel.truncate(baos.size());
-                }
+                    @Override
+                    public void performAction(File file) throws IOException
+                    {
+                        _objectMapper.writeValue(file, _preferences);
+                    }
+                });
             }
             catch (IOException e)
             {
@@ -569,5 +537,32 @@ public class FileSystemPreferencesProviderImpl
             }
         }
 
+        private void getFileLock(String lockFilePath)
+        {
+            File lockFile = new File(lockFilePath);
+            try
+            {
+                lockFile.createNewFile();
+                lockFile.deleteOnExit();
+
+                @SuppressWarnings("resource")
+                FileOutputStream out = new FileOutputStream(lockFile);
+                FileChannel channel = out.getChannel();
+                _storeLock = channel.tryLock();
+            }
+            catch (IOException ioe)
+            {
+                throw new IllegalStateException("Cannot create the lock file " + lockFile.getName(), ioe);
+            }
+            catch(OverlappingFileLockException e)
+            {
+                _storeLock = null;
+            }
+
+            if(_storeLock == null)
+            {
+                throw new IllegalStateException("Cannot get lock on file " + lockFile.getAbsolutePath() + ". Is another instance running?");
+            }
+        }
     }
 }

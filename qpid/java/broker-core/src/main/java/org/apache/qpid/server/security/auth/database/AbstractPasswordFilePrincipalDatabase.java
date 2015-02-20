@@ -22,6 +22,8 @@ package org.apache.qpid.server.security.auth.database;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.util.BaseAction;
+import org.apache.qpid.server.util.FileHelper;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
@@ -36,7 +38,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
@@ -45,9 +46,9 @@ public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPr
     protected static final String DEFAULT_ENCODING = "utf-8";
 
     private final Pattern _regexp = Pattern.compile(":");
-    private final Map<String, U> _userMap = new HashMap<String, U>();
+    private final Map<String, U> _userMap = new HashMap<>();
     private final ReentrantLock _userUpdate = new ReentrantLock();
-    private final Random _random = new Random();
+    private final FileHelper _fileHelper = new FileHelper();
     private File _passwordFile;
 
     public final void open(File passwordFile) throws IOException
@@ -181,7 +182,7 @@ public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPr
         try
         {
             _userUpdate.lock();
-            final Map<String, U> newUserMap = new HashMap<String, U>();
+            final Map<String, U> newUserMap = new HashMap<>();
 
             BufferedReader reader = null;
             try
@@ -224,55 +225,6 @@ public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPr
 
     protected abstract Logger getLogger();
 
-    protected File createTempFileOnSameFilesystem()
-    {
-        File liveFile = _passwordFile;
-        File tmp;
-
-        do
-        {
-            tmp = new File(liveFile.getPath() + _random.nextInt() + ".tmp");
-        }
-        while(tmp.exists());
-
-        tmp.deleteOnExit();
-        return tmp;
-    }
-
-    protected void swapTempFileToLive(final File temp) throws IOException
-    {
-        File live = _passwordFile;
-        // Remove any existing ".old" file
-        final File old = new File(live.getAbsoluteFile() + ".old");
-        if (old.exists())
-        {
-            old.delete();
-        }
-
-        // Create an new ".old" file
-        if(!live.renameTo(old))
-        {
-            //unable to rename the existing file to the backup name
-            getLogger().error("Could not backup the existing password file");
-            throw new IOException("Could not backup the existing password file");
-        }
-
-        // Move temp file to be the new "live" file
-        if(!temp.renameTo(live))
-        {
-            //failed to rename the new file to the required filename
-            if(!old.renameTo(live))
-            {
-                //unable to return the backup to required filename
-                getLogger().error(
-                        "Could not rename the new password file into place, and unable to restore original file");
-                throw new IOException("Could not rename the new password file into place, and unable to restore original file");
-            }
-
-            getLogger().error("Could not rename the new password file into place");
-            throw new IOException("Could not rename the new password file into place");
-        }
-    }
 
     protected void savePasswordFile() throws IOException
     {
@@ -280,10 +232,25 @@ public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPr
         {
             _userUpdate.lock();
 
+            _fileHelper.writeFileSafely(_passwordFile.toPath(), new BaseAction<File,IOException>()
+            {
+                @Override
+                public void performAction(File file) throws IOException
+                {
+                    writeToFile(file);
+                }
+            });
+        }
+        finally
+        {
+            _userUpdate.unlock();
+        }
+    }
+
+    private void writeToFile(File tmp) throws IOException
+    {
             BufferedReader reader = null;
             PrintStream writer = null;
-
-            File tmp = createTempFileOnSameFilesystem();
 
             try
             {
@@ -364,13 +331,6 @@ public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPr
                     }
                 }
 
-            }
-
-            swapTempFileToLive(tmp);
-        }
-        finally
-        {
-            _userUpdate.unlock();
         }
     }
 
