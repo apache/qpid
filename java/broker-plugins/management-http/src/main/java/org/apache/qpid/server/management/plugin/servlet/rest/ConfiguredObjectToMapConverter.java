@@ -162,7 +162,7 @@ public class ConfiguredObjectToMapConverter
                             .getAttributeTypes(confObject.getClass())
                             .get(name);
 
-                    if (attribute.isSecure() && !(isSecureTransport && extractAsConfig))
+                    if (attribute.isSecureValue(value) && !(isSecureTransport && extractAsConfig))
                     {
                         // do not expose actual secure attribute value
                         // getAttribute() returns encoded value

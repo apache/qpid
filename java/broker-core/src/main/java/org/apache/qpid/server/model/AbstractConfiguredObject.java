@@ -44,7 +44,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
 
 import javax.security.auth.Subject;
 
@@ -1137,9 +1136,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         if(attr != null && (attr.isAutomated() || attr.isDerived()))
         {
             Object value = attr.getValue((X)this);
-            Pattern secureValueFilter = attr.getSecureValueFilter();
-            if(value != null && attr.isSecure() && !SecurityManager.isSystemProcess() &&
-                    (secureValueFilter == null || secureValueFilter.matcher(value.toString()).matches()))
+            if(value != null && !SecurityManager.isSystemProcess() && attr.isSecureValue(value))
             {
                 return SECURE_VALUES.get(value.getClass());
             }

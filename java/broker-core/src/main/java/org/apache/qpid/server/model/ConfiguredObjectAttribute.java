@@ -52,6 +52,23 @@ public abstract class ConfiguredObjectAttribute<C extends ConfiguredObject, T> e
 
     public abstract Pattern getSecureValueFilter();
 
+    public boolean isSecureValue(Object value)
+    {
+        if (isSecure())
+        {
+            Pattern filter = getSecureValueFilter();
+            if (filter == null)
+            {
+                return  true;
+            }
+            else
+            {
+                return filter.matcher(String.valueOf(value)).matches();
+            }
+        }
+        return false;
+    }
+
     public T convert(final Object value, C object)
     {
         final AttributeValueConverter<T> converter = getConverter();
