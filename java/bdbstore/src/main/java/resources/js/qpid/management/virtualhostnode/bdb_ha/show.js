@@ -82,11 +82,14 @@ define(["dojo/_base/xhr",
 
     function BDBHA(data)
     {
-      var containerNode = data.containerNode;
       this.parent = data.parent;
       var that = this;
-      util.buildUI(data.containerNode, data.parent, "virtualhostnode/bdb_ha/show.html", nodeFields, this);
-
+      util.buildUI(data.containerNode, data.parent, "virtualhostnode/bdb_ha/show.html", nodeFields, this, function(){that._postParse(data);});
+    };
+    BDBHA.prototype._postParse = function(data)
+    {
+      var that = this;
+      var containerNode = data.containerNode;
       this.designatedPrimaryContainer = findNode("designatedPrimaryContainer", containerNode);
       this.priorityContainer = findNode("priorityContainer", containerNode);
       this.quorumOverrideContainer = findNode("quorumOverrideContainer", containerNode);

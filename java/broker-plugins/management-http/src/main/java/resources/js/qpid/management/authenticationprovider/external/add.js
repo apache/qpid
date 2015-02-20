@@ -24,12 +24,15 @@ define(["dojo/query","dijit/registry","qpid/common/util"],
         return {
             show: function(data)
             {
-                util.parseHtmlIntoDiv(data.containerNode, "authenticationprovider/external/add.html");
-                if (data.data)
+                util.parseHtmlIntoDiv(data.containerNode, "authenticationprovider/external/add.html",
+                function()
                 {
-                    var useFullDN = registry.byNode(query(".useFullDN", data.containerNode)[0]);
-                    useFullDN.set("value", data.data.useFullDN);
-                }
+                    if (data.data)
+                    {
+                        var useFullDN = registry.byNode(query(".useFullDN", data.containerNode)[0]);
+                        useFullDN.set("value", data.data.useFullDN);
+                    }
+                });
             }
         };
     }

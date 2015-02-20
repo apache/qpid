@@ -40,8 +40,11 @@ define([
             {
                 var that=this;
                 this.containerNode = construct.create("div", {innerHTML: template});
-                parser.parse(this.containerNode);
-
+                parser.parse(this.containerNode).then(function(instances) { that._postParse(); });
+            },
+            _postParse: function()
+            {
+                var that=this;
                 this.preferencesProviderForm = registry.byId("addPreferencesProvider.preferencesProvider");
                 this.dialog = registry.byId("addPreferencesProvider");
 

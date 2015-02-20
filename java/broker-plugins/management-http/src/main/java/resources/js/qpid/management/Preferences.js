@@ -65,8 +65,15 @@ function (declare, xhr, event, connect, dom, domConstruct, parser, json, Memory,
 
       this.userPreferences = {};
       this.domNode = domConstruct.create("div", {innerHTML: markup});
-      this.preferencesDialog = parser.parse(this.domNode)[0];
-
+      parser.parse(this.domNode).then(function(instances)
+      {
+        that._postParse();
+      });
+    },
+    _postParse: function()
+    {
+      var that = this;
+      this.preferencesDialog = registry.byId("preferences.preferencesDialog");
       for(var i=0; i<preferenceNames.length; i++)
       {
         var name = preferenceNames[i];

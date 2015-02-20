@@ -33,15 +33,15 @@ define(["dojo/_base/xhr",
         show: function(data)
         {
             this.containerNode = domConstruct.create("div", {innerHTML: template}, data.containerNode);
-            parser.parse(this.containerNode);
+            parser.parse(this.containerNode).then(function(instances)
+            {
+                registry.byId("addVirtualHostNode.groupName").set("regExpGen", util.nameOrContextVarRegexp);
+                registry.byId("addVirtualHostNode.helperNodeName").set("regExpGen", util.nameOrContextVarRegexp);
+                registry.byId("addVirtualHostNode.helperAddress").set("regExpGen", util.nodeAddressOrContextVarRegexp);
+                registry.byId("addVirtualHostNode.address").set("regExpGen", util.nodeAddressOrContextVarRegexp);
 
-            registry.byId("addVirtualHostNode.groupName").set("regExpGen", util.nameOrContextVarRegexp);
-            registry.byId("addVirtualHostNode.helperNodeName").set("regExpGen", util.nameOrContextVarRegexp);
-            registry.byId("addVirtualHostNode.helperAddress").set("regExpGen", util.nodeAddressOrContextVarRegexp);
-            registry.byId("addVirtualHostNode.address").set("regExpGen", util.nodeAddressOrContextVarRegexp);
-
-            dom.byId("addVirtualHostNode.uploadFields").style.display = "none";
-
+                dom.byId("addVirtualHostNode.uploadFields").style.display = "none";
+            });
         }
     };
   }

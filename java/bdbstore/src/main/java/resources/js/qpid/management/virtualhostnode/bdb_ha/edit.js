@@ -32,8 +32,13 @@ define(["qpid/common/util",
        return {
            show: function(data)
            {
+              var that = this;
+              util.buildEditUI(data.containerNode, "virtualhostnode/bdb_ha/edit.html", "editVirtualHostNode.", fields, data.data,
+                function(){that._postParse(data);});
+           },
+           _postParse: function(data)
+           {
               var node = data.data;
-              util.buildEditUI(data.containerNode, "virtualhostnode/bdb_ha/edit.html", "editVirtualHostNode.", fields, node);
               if ( !(data.data.state == "ERRORED" || data.data.state == "STOPPED"))
               {
                   registry.byId("editVirtualHostNode.storePath").set("disabled", true);

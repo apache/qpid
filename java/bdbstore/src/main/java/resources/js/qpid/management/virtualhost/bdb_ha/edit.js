@@ -22,10 +22,12 @@ define(["qpid/common/util", "qpid/common/metadata", "dijit/registry", "dojo/domR
        return {
            show: function(data)
            {
-              util.buildEditUI(data.containerNode, "virtualhost/bdb_ha/edit.html", "editVirtualHost.", null, null);
-
-              registry.byId("editVirtualHost.storeUnderfullSize").set("regExpGen", util.numericOrContextVarRegexp);
-              registry.byId("editVirtualHost.storeOverfullSize").set("regExpGen", util.numericOrContextVarRegexp);
+              util.buildEditUI(data.containerNode, "virtualhost/bdb_ha/edit.html", "editVirtualHost.", null, null,
+              function()
+              {
+                  registry.byId("editVirtualHost.storeUnderfullSize").set("regExpGen", util.numericOrContextVarRegexp);
+                  registry.byId("editVirtualHost.storeOverfullSize").set("regExpGen", util.numericOrContextVarRegexp);
+              });
            }
        };
    }

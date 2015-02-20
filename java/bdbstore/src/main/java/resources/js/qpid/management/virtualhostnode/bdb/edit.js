@@ -22,8 +22,11 @@ define(["qpid/common/util", "dijit/registry", "dojo/domReady!"],
        return {
            show: function(data)
            {
-              util.buildEditUI(data.containerNode, "virtualhostnode/filebased/edit.html", "editVirtualHostNode.", ["storePath"], data.data);
-              registry.byId("editVirtualHostNode.storePath").set("disabled", !(data.data.state == "STOPPED" || data.data.state == "ERRORED"));
+              util.buildEditUI(data.containerNode, "virtualhostnode/filebased/edit.html", "editVirtualHostNode.", ["storePath"], data.data,
+              function()
+              {
+                registry.byId("editVirtualHostNode.storePath").set("disabled", !(data.data.state == "STOPPED" || data.data.state == "ERRORED"));
+              });
            }
        };
    }

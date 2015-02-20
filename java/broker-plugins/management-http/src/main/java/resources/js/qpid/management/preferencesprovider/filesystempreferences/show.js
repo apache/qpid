@@ -32,8 +32,10 @@ define(["dojo/_base/xhr",
       sync: true,
       load:  function(template) {
         containerNode.innerHTML = template;
-        parser.parse(containerNode);
-        that.preferencesProviderPath=query(".fileSystemPreferencesProviderPath", containerNode)[0];
+        parser.parse(containerNode).then(function(instances)
+        {
+            that.preferencesProviderPath=query(".fileSystemPreferencesProviderPath", containerNode)[0];
+        });
       }});
   }
 

@@ -56,7 +56,8 @@ define(["dojo/_base/xhr",
                         sync: true,
                         load:  function(data) {
                             contentPane.containerNode.innerHTML = data;
-                            parser.parse(contentPane.containerNode);
+                            parser.parse(contentPane.containerNode).then(function(instances)
+                            {
 
                             var authProviderUpdater = new AuthProviderUpdater(contentPane.containerNode, that.modelObj, that.controller, that);
                             that.authProviderUpdater = authProviderUpdater;
@@ -97,6 +98,7 @@ define(["dojo/_base/xhr",
                             }
 
                             updater.add( that.authProviderUpdater );
+                            });
                         }});
            };
 

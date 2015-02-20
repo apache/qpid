@@ -76,8 +76,8 @@ define(["dojo/_base/xhr",
                         sync: true,
                         load:  function(data) {
                             contentPane.containerNode.innerHTML = data;
-                            parser.parse(contentPane.containerNode);
-
+                            parser.parse(contentPane.containerNode).then(function(instances)
+                            {
                             that.groupUpdater = new GroupUpdater(contentPane.containerNode, that, that.controller);
                             that.groupUpdater.update();
                             updater.add( that.groupUpdater );
@@ -100,6 +100,7 @@ define(["dojo/_base/xhr",
                                                 "Are you sure you want to remove group member");
                                 }
                             );
+                            });
                         }});
            };
 

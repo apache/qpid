@@ -53,8 +53,11 @@ define(["dojo/_base/lang",
             {
                 var that=this;
                 this.containerNode = construct.create("div", {innerHTML: template});
-                parser.parse(this.containerNode);
-
+                parser.parse(this.containerNode).then(function(instances){  that._postParse(); });
+            },
+            _postParse: function()
+            {
+                var that=this;
                 this.accessControlProviderName = registry.byId("addAccessControlProvider.name");
                 this.accessControlProviderName.set("regExpGen", util.nameOrContextVarRegexp);
 

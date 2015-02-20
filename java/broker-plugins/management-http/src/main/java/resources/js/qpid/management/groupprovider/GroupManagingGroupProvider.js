@@ -54,9 +54,9 @@ define(["dojo/_base/xhr",
             var that = this;
             this.name = groupProviderObj.name;
             node.innerHTML = template;
-            parser.parse(node);
             this.controller = controller;
-
+            parser.parse(node).then(function(instances)
+            {
                      var groupDiv = query(".groups", node)[0];
 
                      var gridProperties = {
@@ -75,7 +75,7 @@ define(["dojo/_base/xhr",
                                                       indirectSelection: true
 
                                              }};
-            this.groupsGrid = new UpdatableStore([], groupDiv,
+                     that.groupsGrid = new UpdatableStore([], groupDiv,
                                         [ { name: "Group Name",    field: "name",      width: "100%" }
                                         ], function(obj) {
                                           connect.connect(obj.grid, "onRowDblClick", obj.grid,
@@ -86,10 +86,11 @@ define(["dojo/_base/xhr",
                                                   that.controller.show("group", name, groupProviderObj, theItem.id);
                                               });
                                       }, gridProperties, EnhancedGrid);
-            var addGroupButton = query(".addGroupButton", node)[0];
-            registry.byNode(addGroupButton).on("click", function(evt){ addGroup.show(groupProviderObj.name) });
-            var deleteWidget = registry.byNode(query(".deleteGroupButton", node)[0]);
-            deleteWidget.on("click", function(evt){ event.stop(evt); that.deleteGroups(); });
+                     var addGroupButton = query(".addGroupButton", node)[0];
+                     registry.byNode(addGroupButton).on("click", function(evt){ addGroup.show(groupProviderObj.name) });
+                     var deleteWidget = registry.byNode(query(".deleteGroupButton", node)[0]);
+                     deleteWidget.on("click", function(evt){ event.stop(evt); that.deleteGroups(); });
+            });
         }
 
         GroupManagingGroupProvider.prototype.deleteGroups = function()

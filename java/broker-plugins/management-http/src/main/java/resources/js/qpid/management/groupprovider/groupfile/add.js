@@ -25,12 +25,15 @@ define(["dojo/dom","dojo/query", "dojo/_base/array", "dijit/registry","qpid/comm
         return {    show: function(data)
                     {
                         var that=this;
-                        util.parseHtmlIntoDiv(data.containerNode, "groupprovider/groupfile/add.html");
-                        if (data.data)
+                        util.parseHtmlIntoDiv(data.containerNode, "groupprovider/groupfile/add.html",
+                        function()
                         {
-                            var pathWidget = registry.byNode(query(".addGroupProviderPath", data.containerNode)[0]);
-                            pathWidget.set("value", data.data.path);
-                        }
+                            if (data.data)
+                            {
+                                var pathWidget = registry.byNode(query(".addGroupProviderPath", data.containerNode)[0]);
+                                pathWidget.set("value", data.data.path);
+                            }
+                        });
                     }
                };
     }
