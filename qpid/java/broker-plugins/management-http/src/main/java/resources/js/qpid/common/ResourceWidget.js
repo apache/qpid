@@ -75,7 +75,7 @@ function (declare, array, lang, util, _WidgetBase, _TemplatedMixin, _WidgetsInTe
            {
              // Fall back for IE8/9 which do not support FileReader
              this.uploadFields.style.display = "none";
-             if (displayWarningWhenFileReaderUnsupported)
+             if (this.displayWarningWhenFileReaderUnsupported)
              {
                  this.unsupportedWarning.className = this.unsupportedWarning.className.replace("hidden", "");
              }
