@@ -1564,10 +1564,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             else
             {
                 setVirtualHost(virtualHost);
-
-                if(virtualHost.authoriseCreateConnection(this))
+                try
                 {
-                    try
+
+                    if(virtualHost.authoriseCreateConnection(this))
                     {
                         if (getContextKey() == null)
                         {
@@ -1579,15 +1579,16 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
 
                         writeFrame(responseBody.generateFrame(0));
                         _state = ConnectionState.OPEN;
+
                     }
-                    catch (AccessControlException e)
+                    else
                     {
-                        closeConnection(AMQConstant.ACCESS_REFUSED, e.getMessage(), 0);
+                        closeConnection(AMQConstant.ACCESS_REFUSED, "Connection refused",0);
                     }
                 }
-                else
+                catch (AccessControlException e)
                 {
-                    closeConnection(AMQConstant.ACCESS_REFUSED, "Connection refused",0);
+                    closeConnection(AMQConstant.ACCESS_REFUSED, e.getMessage(), 0);
                 }
             }
         }
