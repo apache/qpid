@@ -117,7 +117,12 @@ public class Message
 
     public Message(Collection<Section> sections)
     {
-        _payload.addAll(validateOrReorder(sections));
+        this(sections, false);
+    }
+
+    public Message(Collection<Section> sections, boolean validate)
+    {
+        _payload.addAll(validate ? validateOrReorder(sections) : sections);
     }
 
     public Message(Section section)
@@ -214,7 +219,8 @@ public class Message
         while(it.hasNext())
         {
             Collection<Class<? extends Section>> validSections = VALID_NEXT_SECTIONS.get(previousSection);
-            Class<? extends Section> sectionClass = it.next().getClass();
+            Section next = it.next();
+            Class<? extends Section> sectionClass = next.getClass();
             if(validSections == null || !validSections.contains(sectionClass))
             {
                 return false;

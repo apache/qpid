@@ -26,10 +26,9 @@ import java.util.List;
 import java.util.ListIterator;
 
 import org.apache.qpid.amqp_1_0.jms.AmqpMessage;
-import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Section;
+import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
 import org.apache.qpid.amqp_1_0.type.messaging.ApplicationProperties;
-import org.apache.qpid.amqp_1_0.type.messaging.Data;
 import org.apache.qpid.amqp_1_0.type.messaging.DeliveryAnnotations;
 import org.apache.qpid.amqp_1_0.type.messaging.Footer;
 import org.apache.qpid.amqp_1_0.type.messaging.Header;
@@ -39,7 +38,7 @@ import org.apache.qpid.amqp_1_0.type.messaging.Properties;
 public class AmqpMessageImpl extends MessageImpl implements AmqpMessage
 {
     private static final List<Section> EMPTY_MESSAGE =
-            Collections.<Section>singletonList(new Data(new Binary(new byte[0])));
+            Collections.<Section>singletonList(new AmqpValue(null));
     private List<Section> _sections;
 
     protected AmqpMessageImpl(Header header,
