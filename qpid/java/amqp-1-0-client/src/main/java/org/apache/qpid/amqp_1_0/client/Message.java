@@ -117,7 +117,7 @@ public class Message
 
     public Message(Collection<Section> sections)
     {
-        this(sections, false);
+        this(sections, true);
     }
 
     public Message(Collection<Section> sections, boolean validate)
