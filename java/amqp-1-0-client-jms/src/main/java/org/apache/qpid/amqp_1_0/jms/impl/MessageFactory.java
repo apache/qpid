@@ -226,6 +226,13 @@ class MessageFactory
                                               messageAnnotations, properties,appProperties,body,footer, _session);
             }
         }
+        else if(body.size() == 0)
+        {
+            message = new AmqpMessageImpl(header,
+                                          deliveryAnnotations,
+                                          messageAnnotations, properties,appProperties,
+                                          Collections.<Section>singletonList(new AmqpValue(null)),footer, _session);
+        }
         else
         {
             message = new AmqpMessageImpl(header,
