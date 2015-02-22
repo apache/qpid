@@ -1536,8 +1536,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 Object desired = attributes.get(name);
                 Object expected = getAttribute(name);
-                if(((_attributes.get(name) != null && !_attributes.get(name).equals(attributes.get(name)))
-                     || attributes.get(name) != null)
+                Object currentValue = _attributes.get(name);
+                if(((currentValue != null && !currentValue.equals(desired))
+                     || (currentValue == null && desired != null))
                     && changeAttribute(name, expected, desired))
                 {
                     attributeSet(name, expected, desired);
