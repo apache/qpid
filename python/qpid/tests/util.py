@@ -21,26 +21,32 @@ from qpid.util import get_client_properties_with_defaults
 
 class UtilTest (TestCase):
 
-  def test_get_spec_recommended_client_properties(self):
-    client_properties = get_client_properties_with_defaults(provided_client_properties={"mykey":"myvalue"})
+  def test_default_client_properties_08091(self):
+    client_properties = get_client_properties_with_defaults(version_property_key="version")
     self.assertTrue("product" in client_properties)
     self.assertTrue("version" in client_properties)
     self.assertTrue("platform" in client_properties)
 
-  def test_get_client_properties_with_provided_value(self):
+  def test_default_client_properties_010(self):
+    client_properties = get_client_properties_with_defaults(version_property_key="qpid.client_version")
+    self.assertTrue("product" in client_properties)
+    self.assertTrue("qpid.client_version" in client_properties)
+    self.assertTrue("platform" in client_properties)
+
+  def test_client_properties_with_provided_value(self):
     client_properties = get_client_properties_with_defaults(provided_client_properties={"mykey":"myvalue"})
     self.assertTrue("product" in client_properties)
     self.assertTrue("mykey" in client_properties)
     self.assertEqual("myvalue", client_properties["mykey"])
 
-  def test_get_client_properties_with_no_provided_values(self):
+  def test_client_properties_with_provided_value_that_overrides_default(self):
+    client_properties = get_client_properties_with_defaults(provided_client_properties={"product":"myproduct"})
+    self.assertEqual("myproduct", client_properties["product"])
+
+  def test_client_properties_with_no_provided_values(self):
     client_properties = get_client_properties_with_defaults(provided_client_properties=None)
     self.assertTrue("product" in client_properties)
 
     client_properties = get_client_properties_with_defaults()
     self.assertTrue("product" in client_properties)
-
-  def test_get_client_properties_with_provided_value_that_overrides_default(self):
-    client_properties = get_client_properties_with_defaults(provided_client_properties={"version":"myversion"})
-    self.assertEqual("myversion", client_properties["version"])
 
