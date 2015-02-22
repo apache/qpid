@@ -125,7 +125,8 @@ public class FileHelper
             }
             else
             {
-                throw new RuntimeException("Atomic move is unsupported and rename failed");
+                throw new RuntimeException("Atomic move is unsupported and rename from : '"
+                + sourceFile + "' to: '" + targetFile + "' failed.");
             }
         }
     }

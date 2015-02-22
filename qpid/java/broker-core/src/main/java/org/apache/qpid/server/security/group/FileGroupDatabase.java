@@ -34,7 +34,6 @@ import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.BaseAction;
 import org.apache.qpid.server.util.FileHelper;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -254,17 +253,9 @@ public class FileGroupDatabase implements GroupDatabase
             public void performAction(File file) throws IOException
             {
                 String comment = "Written " + new Date();
-                FileOutputStream fileOutputStream = new FileOutputStream(file);
-                try
+                try(FileOutputStream fileOutputStream = new FileOutputStream(file))
                 {
                     propertiesFile.store(fileOutputStream, comment);
-                }
-                finally
-                {
-                    if(fileOutputStream != null)
-                    {
-                        fileOutputStream.close();
-                    }
                 }
             }
         });
