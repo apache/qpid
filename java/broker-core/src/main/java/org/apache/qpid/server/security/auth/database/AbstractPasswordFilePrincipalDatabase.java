@@ -249,13 +249,9 @@ public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPr
 
     private void writeToFile(File tmp) throws IOException
     {
-            BufferedReader reader = null;
-            PrintStream writer = null;
-
-            try
+            try(PrintStream writer = new PrintStream(tmp);
+                BufferedReader reader = new BufferedReader(new FileReader(_passwordFile)))
             {
-                writer = new PrintStream(tmp);
-                reader = new BufferedReader(new FileReader(_passwordFile));
                 String line;
 
                 while ((line = reader.readLine()) != null)
@@ -313,25 +309,6 @@ public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPr
                 getLogger().error("Unable to create the new password file: " + e);
                 throw new IOException("Unable to create the new password file",e);
             }
-            finally
-            {
-
-                try
-                {
-                    if (reader != null)
-                    {
-                        reader.close();
-                    }
-                }
-                finally
-                {
-                    if (writer != null)
-                    {
-                        writer.close();
-                    }
-                }
-
-        }
     }
 
     protected abstract U createUserFromPassword(Principal principal, char[] passwd);

@@ -39,7 +39,6 @@ import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.util.BaseAction;
 import org.apache.qpid.server.util.FileHelper;
 import org.codehaus.jackson.JsonParser;
