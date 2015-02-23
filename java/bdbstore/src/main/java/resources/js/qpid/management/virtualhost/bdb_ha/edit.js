@@ -22,7 +22,7 @@ define(["qpid/common/util", "qpid/common/metadata", "dijit/registry", "dojo/domR
        return {
            show: function(data)
            {
-              util.buildEditUI(data.containerNode, "virtualhost/bdb_ha/edit.html", "editVirtualHost.", null, null,
+              util.parseHtmlIntoDiv(data.containerNode, "virtualhost/bdb_ha/edit.html",
               function()
               {
                   registry.byId("editVirtualHost.storeUnderfullSize").set("regExpGen", util.numericOrContextVarRegexp);
