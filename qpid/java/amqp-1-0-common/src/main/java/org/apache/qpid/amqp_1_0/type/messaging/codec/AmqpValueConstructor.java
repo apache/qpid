@@ -25,8 +25,8 @@ package org.apache.qpid.amqp_1_0.type.messaging.codec;
 
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructor;
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructorRegistry;
-import org.apache.qpid.amqp_1_0.type.*;
-import org.apache.qpid.amqp_1_0.type.messaging.*;
+import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.UnsignedLong;
 import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
 
 public class AmqpValueConstructor extends DescribedTypeConstructor<AmqpValue>
@@ -49,16 +49,7 @@ public class AmqpValueConstructor extends DescribedTypeConstructor<AmqpValue>
 
     public AmqpValue construct(Object underlying)
     {
-
-        if(underlying instanceof Object)
-        {
-            return new AmqpValue((Object)underlying);
-        }
-        else
-        {
-            // TODO - error
-            return null;
-        }
+        return new AmqpValue(underlying);
     }
 
 

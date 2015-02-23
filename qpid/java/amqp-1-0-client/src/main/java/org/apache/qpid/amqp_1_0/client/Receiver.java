@@ -318,7 +318,7 @@ public class Receiver implements DeliveryStateHandler
                         // todo - throw a sensible error
                         e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                     }
-                    m = new Message(sections);
+                    m = new Message(sections, false);
                     m.setDeliveryTag(deliveryTag);
                     m.setResume(resume);
                     m.setReceiver(this);
