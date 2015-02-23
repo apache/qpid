@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import os, socket, time, textwrap, re, sys, pkg_resources
+import os, socket, time, textwrap, re, sys
 
 try:
   from ssl import wrap_socket as ssl
@@ -51,6 +51,7 @@ def get_client_properties_with_defaults(provided_client_properties={}, version_p
     pass
 
   try:
+    import pkg_resources
     pkg = pkg_resources.require("qpid-python")
     version = pkg[0].version if pkg and pkg[0] and pkg[0].version else version
   except:
