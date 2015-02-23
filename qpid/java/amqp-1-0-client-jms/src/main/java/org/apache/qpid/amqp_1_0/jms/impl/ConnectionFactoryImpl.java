@@ -771,6 +771,16 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         return _sslEnabledProtocols;
     }
 
+    public SSLContext getSslContext()
+    {
+        return _sslContext;
+    }
+
+    public void setSslContext(final SSLContext sslContext)
+    {
+        _sslContext = sslContext;
+    }
+
     public void setSslEnabledProtocols(final String sslEnabledProtocols)
     {
         _sslEnabledProtocols = sslEnabledProtocols;
