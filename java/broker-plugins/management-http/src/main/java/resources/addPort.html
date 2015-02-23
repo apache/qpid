@@ -159,6 +159,23 @@
                 </div>
             </div>
 
+            <div id="formAddPort:maxOpenConnections" >
+                <div class="clear">
+                    <div class="formLabel-labelCell">
+                        <label for="formAddPort.transports">Maximum number of connections:</label>
+                    </div>
+                    <div class="formLabel-controlCell">
+                        <input id="formAddPort.maxOpenConnections" type="text"
+                               data-dojo-type="dijit.form.ValidationTextBox"
+                               data-dojo-props="
+                            name: 'maxOpenConnections',
+                            placeHolder: 'maximum number of connections',
+                            promptMessage: 'Maximum number of concurrent connections permitted by this port. The <code>-1</code> signifies no limit is imposed.',
+                            title: 'Enter a maximum number of connections'"/>
+                    </div>
+                </div>
+            </div>
+
             <div id="formAddPort:fieldsTransportSSL">
                 <div class="clear">
                     <div class="formLabel-labelCell">

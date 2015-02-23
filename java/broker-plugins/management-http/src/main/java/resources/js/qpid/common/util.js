@@ -737,6 +737,11 @@ define(["dojo/_base/xhr",
              return "^(\\d+)|" + singleContextVarRegexp + "$";
            }
 
+           util.signedOrContextVarRegexp = function(constraints)
+           {
+             return "^(-?\\d+)|" + singleContextVarRegexp + "$";
+           }
+
            util.nameOrContextVarRegexp = function(constraints)
            {
              return "^(\\w+)|" + singleContextVarRegexp + "$";

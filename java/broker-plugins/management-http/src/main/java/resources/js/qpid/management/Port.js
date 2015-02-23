@@ -138,12 +138,15 @@ define(["dojo/dom",
                            "needClientAuthValue",
                            "wantClientAuthValue",
                            "trustStoresValue",
+                           "connectionCountValue",
+                           "maxOpenConnectionsValue",
                            "authenticationProvider",
                            "bindingAddress",
                            "keyStore",
                            "needClientAuth",
                            "wantClientAuth",
-                           "trustStores"
+                           "trustStores",
+                           "maxOpenConnections"
                            ]);
 
                this.query = url;
@@ -151,6 +154,7 @@ define(["dojo/dom",
                xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
                                {
                                   that.portData = data[0];
+                                  util.flattenStatistics( that.portData );
                                   that.updateHeader();
                                });
 
@@ -178,6 +182,9 @@ define(["dojo/dom",
               this.protocolsValue.innerHTML = printArray( "protocols", this.portData);
               this.transportsValue.innerHTML = printArray( "transports", this.portData);
               this.bindingAddressValue.innerHTML = this.portData[ "bindingAddress" ] ? entities.encode(String(this.portData[ "bindingAddress" ])) : "" ;
+              this.connectionCountValue.innerHTML = this.portData[ "connectionCount" ] ? entities.encode(String(this.portData[ "connectionCount" ])) : "0" ;
+              this.maxOpenConnectionsValue.innerHTML = (this.portData[ "maxOpenConnections" ] && this.portData[ "maxOpenConnections" ] >= 0) ? entities.encode(String(this.portData[ "maxOpenConnections" ])) : "(no limit)" ;
+
               this.keyStoreValue.innerHTML = this.portData[ "keyStore" ] ? entities.encode(String(this.portData[ "keyStore" ])) : "";
               this.needClientAuthValue.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.portData[ "needClientAuth" ] ? "checked='checked'": "")+" />" ;
               this.wantClientAuthValue.innerHTML = "<input type='checkbox' disabled='disabled' "+(this.portData[ "wantClientAuth" ] ? "checked='checked'": "")+" />" ;
@@ -191,6 +198,9 @@ define(["dojo/dom",
               this.needClientAuth.style.display = "needClientAuth" in typeMetaData.attributes ? "block" : "none";
               this.wantClientAuth.style.display = "wantClientAuth" in typeMetaData.attributes ? "block" : "none";
               this.trustStores.style.display = "trustStores" in typeMetaData.attributes ? "block" : "none";
+
+              this.maxOpenConnections.style.display = "maxOpenConnections" in typeMetaData.attributes ? "block" : "none";
+
            };
 
            PortUpdater.prototype.update = function()
@@ -201,6 +211,7 @@ define(["dojo/dom",
               xhr.get({url: this.query, sync: properties.useSyncGet, handleAs: "json"}).then(function(data)
                    {
                       thisObj.portData = data[0];
+                      util.flattenStatistics( thisObj.portData );
                       thisObj.updateHeader();
                    });
            };

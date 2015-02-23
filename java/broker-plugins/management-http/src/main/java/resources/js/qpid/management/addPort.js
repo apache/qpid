@@ -79,6 +79,10 @@ define(["dojo/_base/xhr",
             registry.byId("formAddPort.bindingAddress").set("disabled", ! ("bindingAddress" in typeMetaData.attributes));
             dom.byId("formAddPort:fieldsBindingAddress").style.display = "bindingAddress" in typeMetaData.attributes ? "block" : "none";
 
+            //maxOpenConnections
+            registry.byId("formAddPort.maxOpenConnections").set("disabled", ! ("maxOpenConnections" in typeMetaData.attributes));
+            dom.byId("formAddPort:maxOpenConnections").style.display = "maxOpenConnections" in typeMetaData.attributes ? "block" : "none";
+
             //transports
             var transportsMultiSelect = dom.byId("formAddPort.transports");
             var transportsValidValues = typeMetaData.attributes.transports.validValues;
@@ -314,6 +318,7 @@ define(["dojo/_base/xhr",
             var nameWidget = registry.byId("formAddPort.name");
             var typeWidget = registry.byId("formAddPort.type");
             var portWidget = registry.byId("formAddPort.port");
+            var maxOpenConnectionsWidget = registry.byId("formAddPort.maxOpenConnections");
             var editWarning = dojo.byId("portEditWarning");
 
             var providerWidget = registry.byId("formAddPort.authenticationProvider");
@@ -418,6 +423,13 @@ define(["dojo/_base/xhr",
                        bindAddressWidget.set("disabled", ! ("bindingAddress" in typeMetaData.attributes));
                        dom.byId("formAddPort:fieldsBindingAddress").style.display = "bindingAddress" in typeMetaData.attributes ? "block" : "none";
 
+                       //maxOpenConnections
+                       var maxOpenConnectionsWidget = registry.byId("formAddPort.maxOpenConnections");
+                       maxOpenConnectionsWidget.set("regExpGen", util.signedOrContextVarRegexp);
+                       maxOpenConnectionsWidget.set("value", port.maxOpenConnections ? port.maxOpenConnections : "");
+                       maxOpenConnectionsWidget.set("disabled", ! ("maxOpenConnections" in typeMetaData.attributes));
+                       dom.byId("formAddPort:maxOpenConnections").style.display = "maxOpenConnections" in typeMetaData.attributes ? "block" : "none";
+
                        //ssl
                        keystoreWidget.set("value", port.keyStore ? port.keyStore : "");
                        if (port.trustStores)
@@ -447,6 +459,7 @@ define(["dojo/_base/xhr",
                        truststoreWidget.initialValue = port.trustStores;
                        transportWidget.initialValue = transportWidget.value;
                        providerWidget.initialValue = providerWidget.value;
+                       maxOpenConnectionsWidget.initialValue = maxOpenConnectionsWidget.value;
 
                        registry.byId("addPort").show();
                        util.applyMetadataToWidgets(registry.byId("addPort").domNode, "Port", portType);
@@ -465,8 +478,8 @@ define(["dojo/_base/xhr",
 
                 nameWidget.set("disabled", false);
                 nameWidget.set("regExpGen", util.nameOrContextVarRegexp);
-
                 portWidget.set("regExpGen", util.numericOrContextVarRegexp);
+                maxOpenConnectionsWidget.set("regExpGen", util.signedOrContextVarRegexp);
 
                 editWarning.style.display = "none";
                 registry.byId("addPort").show();
