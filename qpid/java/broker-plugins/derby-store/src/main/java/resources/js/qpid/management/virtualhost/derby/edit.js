@@ -22,7 +22,7 @@ define(["qpid/common/util", "dijit/registry", "dojo/domReady!"],
        return {
            show: function(data)
            {
-              util.buildEditUI(data.containerNode, "virtualhost/sizemonitoring/edit.html", "editVirtualHost.", null, null,
+              util.parseHtmlIntoDiv(data.containerNode, "virtualhost/sizemonitoring/edit.html",
               function()
               {
                   registry.byId("editVirtualHost.storeUnderfullSize").set("regExpGen", util.numericOrContextVarRegexp);

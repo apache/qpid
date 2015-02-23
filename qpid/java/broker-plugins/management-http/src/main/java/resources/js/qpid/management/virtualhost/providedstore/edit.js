@@ -20,11 +20,10 @@
 define(["dijit/registry", "qpid/common/util", "dojo/domReady!"],
    function (registry, util)
    {
-       var fieldNames = ["storeUnderfullSize", "storeOverfullSize"];
        return {
            show: function(data)
            {
-              util.buildEditUI(data.containerNode, "virtualhost/providedstore/edit.html", "editVirtualHost.", fieldNames, data.data,
+              util.parseHtmlIntoDiv(data.containerNode, "virtualhost/providedstore/edit.html",
               function()
               {
                   registry.byId("editVirtualHost.storeUnderfullSize").set("regExpGen", util.numericOrContextVarRegexp);

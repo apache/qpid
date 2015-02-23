@@ -565,29 +565,6 @@ define(["dojo/_base/xhr",
 
            }
 
-           util.buildEditUI = function(containerNode, htmlTemplateLocation, fieldNamePrefix, fieldNames, data, postParseCallback)
-           {
-               this.parseHtmlIntoDiv(containerNode, htmlTemplateLocation, function()
-               {
-
-                if (fieldNames)
-                {
-                   for(var i = 0; i < fieldNames.length; i++)
-                   {
-                     var fieldName = fieldNames[i];
-                     var widget = registry.byId(fieldNamePrefix + fieldName);
-                     widget.set("value", data[fieldName]);
-                   }
-                }
-
-                if (postParseCallback && typeof postParseCallback == "function")
-                {
-                    postParseCallback();
-                }
-
-               });
-           }
-
            util.updateUI = function(data, fieldNames, obj)
            {
              for(var i=0; i<fieldNames.length;i++)
