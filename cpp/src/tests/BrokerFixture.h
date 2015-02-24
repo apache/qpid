@@ -101,11 +101,13 @@ struct  BrokerFixture : private boost::noncopyable {
         opts.auth=false;
 
         // Argument parsing
-        std::vector<const char*> argv(args.size());
-        for (size_t i = 0; i<args.size(); ++i)
-            argv[i] = args[i].c_str();
-        Plugin::addOptions(opts);
-        opts.parse(argv.size(), &argv[0]);
+        if (args.size() > 0) {
+            std::vector<const char*> argv(args.size());
+            for (size_t i = 0; i<args.size(); ++i)
+                argv[i] = args[i].c_str();
+            Plugin::addOptions(opts);
+            opts.parse(argv.size(), &argv[0]);
+        }
         broker = Broker::create(opts);
         // TODO aconway 2007-12-05: At one point BrokerFixture
         // tests could hang in Connection ctor if the following
