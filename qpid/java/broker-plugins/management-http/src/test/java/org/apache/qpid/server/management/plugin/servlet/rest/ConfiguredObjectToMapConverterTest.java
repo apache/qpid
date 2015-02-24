@@ -313,6 +313,7 @@ public class ConfiguredObjectToMapConverterTest extends TestCase
         Map<String, ConfiguredObjectAttribute<?, ?>> attributeTypes = typeRegistry.getAttributeTypes(TestChild.class);
         ConfiguredObjectAttribute secureAttribute = mock(ConfiguredObjectAttribute.class);
         when(secureAttribute.isSecure()).thenReturn(true);
+        when(secureAttribute.isSecureValue(any())).thenReturn(true);
         when(attributeTypes.get(eq("secureAttribute"))).thenReturn(secureAttribute);
 
         TestChild mockChild = mock(TestChild.class);
