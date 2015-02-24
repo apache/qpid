@@ -159,9 +159,9 @@ public class ConnectionMBeanTest extends TestCase
 
     public void testGetObjectInstanceName()
     {
-        String remoteAddress = "testRemoteAddress";
-        String quotedRemoteAddress = "\"testRemoteAddress\"";
-        when(_mockConnection.getAttribute(Connection.REMOTE_ADDRESS)).thenReturn(remoteAddress);
+        String name = "[1] 127.0.0.1:5555";
+        String quotedRemoteAddress = "\"" + name +"\"";
+        when(_mockConnection.getName()).thenReturn(name);
         String objectInstanceName = _connectionMBean.getObjectInstanceName();
         assertEquals(quotedRemoteAddress, objectInstanceName);
     }
