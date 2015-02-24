@@ -42,7 +42,7 @@ include(CheckIncludeFiles)
 include(CheckIncludeFileCXX)
 include(CheckLibraryExists)
 include(CheckSymbolExists)
-include(CheckSizeTNativeType)
+include(CheckSizetDistinct)
 
 find_package(PkgConfig)
 find_package(Ruby)
@@ -351,7 +351,7 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   mark_as_advanced(QPID_POLLER)
 endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
 
-check_size_t_native_type (QPID_SIZE_T_NATIVE)
+check_size_t_distinct (QPID_SIZE_T_DISTINCT)
 
 option(BUILD_SASL "Build with Cyrus SASL support" ${SASL_FOUND})
 if (BUILD_SASL)
