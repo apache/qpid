@@ -34,6 +34,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
@@ -50,6 +51,7 @@ import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.group.FileGroupDatabase;
 import org.apache.qpid.server.security.group.GroupPrincipal;
+import org.apache.qpid.server.util.FileHelper;
 
 public class FileBasedGroupProviderImpl
         extends AbstractConfiguredObject<FileBasedGroupProviderImpl> implements FileBasedGroupProvider<FileBasedGroupProviderImpl>
@@ -162,9 +164,11 @@ public class FileBasedGroupProviderImpl
             {
                 throw new IllegalConfigurationException(String.format("Cannot create groups file at '%s'",_path));
             }
+
             try
             {
-                file.createNewFile();
+                String posixFileAttributes = getContextValue(String.class, BrokerProperties.POSIX_FILE_PERMISSIONS);
+                new FileHelper().createNewFile(file, posixFileAttributes);
             }
             catch (IOException e)
             {
