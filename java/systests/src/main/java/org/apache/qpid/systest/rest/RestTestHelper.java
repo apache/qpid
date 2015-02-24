@@ -31,10 +31,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.util.Collections;
@@ -575,4 +577,20 @@ public class RestTestHelper
         }
     }
 
+    public String encode(String value, String encoding) throws UnsupportedEncodingException
+    {
+        return URLEncoder.encode(value, encoding).replace("+", "%20");
+    }
+
+    public String encodeAsUTF(String value)
+    {
+        try
+        {
+            return encode(value, "UTF8");
+        }
+        catch(UnsupportedEncodingException e)
+        {
+            throw new RuntimeException("Unsupported encoding UTF8", e);
+        }
+    }
 }

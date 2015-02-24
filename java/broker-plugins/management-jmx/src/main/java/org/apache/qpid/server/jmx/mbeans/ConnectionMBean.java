@@ -100,7 +100,7 @@ public class ConnectionMBean extends AbstractStatisticsGatheringMBean<Connection
 
     public String getObjectInstanceName()
     {
-        return ObjectName.quote(getRemoteAddress());
+        return ObjectName.quote(getConfiguredObject().getName());
     }
 
     @Override
