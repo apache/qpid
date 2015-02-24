@@ -44,11 +44,7 @@ namespace qpid {
 namespace sys {
 
 long  SystemInfo::concurrency() {
-#ifdef _SC_NPROCESSORS_ONLN    // Linux specific.
     return sysconf(_SC_NPROCESSORS_ONLN);
-#else
-    return -1;
-#endif
 }
 
 bool SystemInfo::getLocalHostname (Address &address) {
