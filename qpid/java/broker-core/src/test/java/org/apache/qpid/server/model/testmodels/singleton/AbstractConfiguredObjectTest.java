@@ -22,14 +22,18 @@ import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.security.auth.Subject;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Model;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -475,5 +479,85 @@ public class AbstractConfiguredObjectTest extends QpidTestCase
                      });
 
 
+    }
+
+    public void testAttributeSetListenerFiring()
+    {
+        final String objectName = "listenerFiring";
+
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put(ConfiguredObject.NAME, objectName);
+        attributes.put(TestSingleton.STRING_VALUE, "first");
+
+        final TestSingleton object = _model.getObjectFactory().create(TestSingleton.class, attributes);
+
+        final AtomicInteger listenerCount = new AtomicInteger();
+        final LinkedHashMap<String, String> updates = new LinkedHashMap<>();
+        object.addChangeListener(new NoopConfigurationChangeListener()
+        {
+            @Override
+            public void attributeSet(final ConfiguredObject<?> object,
+                                     final String attributeName,
+                                     final Object oldAttributeValue,
+                                     final Object newAttributeValue)
+            {
+                listenerCount.incrementAndGet();
+                String delta = String.valueOf(oldAttributeValue) + "=>" + String.valueOf(newAttributeValue);
+                updates.put(attributeName, delta);
+            }
+        });
+
+        // Set updated value (should cause listener to fire)
+        object.setAttributes(Collections.singletonMap(TestSingleton.STRING_VALUE, "second"));
+
+        assertEquals(1, listenerCount.get());
+        String delta = updates.remove(TestSingleton.STRING_VALUE);
+        assertEquals("first=>second", delta);
+
+        // Set unchanged value (should not cause listener to fire)
+        object.setAttributes(Collections.singletonMap(TestSingleton.STRING_VALUE, "second"));
+        assertEquals(1, listenerCount.get());
+
+        // Set value to null (should cause listener to fire)
+        object.setAttributes(Collections.singletonMap(TestSingleton.STRING_VALUE, null));
+        assertEquals(2, listenerCount.get());
+        delta = updates.remove(TestSingleton.STRING_VALUE);
+        assertEquals("second=>null", delta);
+
+        // Set to null again (should not cause listener to fire)
+        object.setAttributes(Collections.singletonMap(TestSingleton.STRING_VALUE, null));
+        assertEquals(2, listenerCount.get());
+
+        // Set updated value (should cause listener to fire)
+        object.setAttributes(Collections.singletonMap(TestSingleton.STRING_VALUE, "third"));
+        assertEquals(3, listenerCount.get());
+        delta = updates.remove(TestSingleton.STRING_VALUE);
+        assertEquals("null=>third", delta);
+    }
+
+    private static class NoopConfigurationChangeListener implements ConfigurationChangeListener
+    {
+        @Override
+        public void stateChanged(final ConfiguredObject<?> object, final State oldState, final State newState)
+        {
+        }
+
+        @Override
+        public void childAdded(final ConfiguredObject<?> object, final ConfiguredObject<?> child)
+        {
+        }
+
+        @Override
+        public void childRemoved(final ConfiguredObject<?> object, final ConfiguredObject<?> child)
+        {
+        }
+
+        @Override
+        public void attributeSet(final ConfiguredObject<?> object,
+                                 final String attributeName,
+                                 final Object oldAttributeValue,
+                                 final Object newAttributeValue)
+        {
+        }
     }
 }
