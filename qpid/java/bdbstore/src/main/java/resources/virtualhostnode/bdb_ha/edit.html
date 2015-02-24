@@ -117,11 +117,11 @@
             <div data-dojo-type="dojo/store/Memory" data-dojo-id="nodePriorityStore"
                  data-dojo-props="data: [
                                                       {id: '0', name: 'Never'},
-                                                      {id: '1', name: 'Default', selected: '1'},
+                                                      {id: '1', name: 'Default'},
                                                       {id: '2', name: 'High'},
                                                       {id: '3', name: 'Highest'}
                                                    ]"></div>
-            <input id="editVirtualHostNode.priority" data-dojo-type="dijit/form/FilteringSelect" value="1"
+            <input id="editVirtualHostNode.priority" data-dojo-type="dijit/form/FilteringSelect"
                    data-dojo-props="
                                 name: 'priority',
                                 required: false,
@@ -135,9 +135,9 @@
         <div class="formLabel-labelCell tableContainer-labelCell">Required minimum number of nodes: </div>
         <div class="formLabel-controlCell tableContainer-valueCell">
             <div data-dojo-type="dojo/store/Memory" data-dojo-id="nodeQuorumOverrideStore"
-                 data-dojo-props="data: [{id: '0', name: 'Majority', selected: '1'}]"></div>
+                 data-dojo-props="data: [{id: '0', name: 'Majority'}]"></div>
             <input type="text" id="editVirtualHostNode.quorumOverride"
-                   data-dojo-type="dijit/form/FilteringSelect" value="0"
+                   data-dojo-type="dijit/form/FilteringSelect"
                    data-dojo-props="
                                 name: 'quorumOverride',
                                 required: false,

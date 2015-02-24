@@ -26,14 +26,11 @@ define(["qpid/common/util",
         "dojo/domReady!"],
    function (util, registry, Memory, ObjectStore, win)
    {
-       var fields = [ "storePath", "name", "groupName", "address",
-                      "designatedPrimary", "priority",  "quorumOverride"];
-
        return {
            show: function(data)
            {
               var that = this;
-              util.buildEditUI(data.containerNode, "virtualhostnode/bdb_ha/edit.html", "editVirtualHostNode.", fields, data.data,
+              util.parseHtmlIntoDiv(data.containerNode, "virtualhostnode/bdb_ha/edit.html",
                 function(){that._postParse(data);});
            },
            _postParse: function(data)

@@ -29,12 +29,12 @@ define(["qpid/common/util",
    function (util, poolTypeJsonString, array, json, string, Memory, dom, domConstruct, registry)
    {
 
-       var fieldNames = ["connectionUrl", "username", "connectionPoolType"];
        return {
            show: function(data)
            {
               var that = this;
-              util.buildEditUI(data.containerNode, "virtualhost/jdbc/edit.html", "editVirtualHost.", fieldNames, data.data, function(){that._postParse(data)});
+              util.parseHtmlIntoDiv(data.containerNode, "virtualhost/jdbc/edit.html",
+                function(){that._postParse(data)});
            },
            _postParse: function(data)
            {

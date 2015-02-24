@@ -28,13 +28,11 @@ define(["qpid/common/util",
         "dojo/domReady!"],
    function (util, poolTypeJsonString, array, json, string, Memory, dom, domConstruct, registry)
    {
-        var fieldNames = ["connectionUrl", "username", "connectionPoolType"];
         return {
             show: function(data)
             {
                 var that = this;
-                util.buildEditUI(data.containerNode, "virtualhostnode/jdbc/edit.html", "editVirtualHostNode.",
-                                 fieldNames, data.data, function(){ that._postParse(data);});
+                util.parseHtmlIntoDiv(data.containerNode, "virtualhostnode/jdbc/edit.html", function(){ that._postParse(data);});
             },
             _postParse: function(data)
             {
