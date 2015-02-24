@@ -37,8 +37,15 @@ define(["dojo/_base/xhr",
           var that=this;
 
           this.containerNode = domConstruct.create("div", {innerHTML: template}, data.containerNode);
-          parser.parse(this.containerNode);
+          parser.parse(this.containerNode).then(function(instances)
+          {
+            that._postParse(data);
+          });
 
+        },
+        _postParse: function(data)
+        {
+          var that=this;
           this.addVirtualHostNodeAddress = registry.byId("addVirtualHostNode.address");
           this.addVirtualHostNodeAddress.set("regExpGen", util.nodeAddressOrContextVarRegexp);
 
@@ -72,7 +79,6 @@ define(["dojo/_base/xhr",
           registry.byId("addVirtualHostNode.groupName").set("regExpGen", util.nameOrContextVarRegexp);
 
           dom.byId("addVirtualHostNode.uploadFields").style.display = "block";
-
         },
         _updatePermittedNodesJson: function ()
         {

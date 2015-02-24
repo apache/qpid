@@ -55,8 +55,8 @@ define(["dojo/_base/xhr",
                         load:  function(data) {
                             var containerNode = contentPane.containerNode;
                             containerNode.innerHTML = data;
-                            parser.parse(containerNode);
-
+                            parser.parse(containerNode).then(function(instances)
+                            {
                             that.vhostUpdater = new Updater(containerNode, that.modelObj, that.controller, that);
 
                             var addQueueButton = query(".addQueueButton", containerNode)[0];
@@ -149,6 +149,7 @@ define(["dojo/_base/xhr",
 
                             that.vhostUpdater.update();
                             updater.add( that.vhostUpdater );
+                            });
 
                         }});
 

@@ -53,14 +53,14 @@ define(["dojo/_base/xhr",
                                     sync: true,
                                     load:  function(data) {
                                         node.innerHTML = data;
-                                        parser.parse(node);
-
+                                        parser.parse(node).then(function(instances)
+                                        {
                                         that.groupDatabaseUpdater= new AclFileUpdater(node, aclProviderObj, controller);
 
                                         updater.add( that.groupDatabaseUpdater);
 
                                         that.groupDatabaseUpdater.update();
-
+                                        });
 
                                     }});
         }

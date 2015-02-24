@@ -56,8 +56,11 @@ define(["dojo/_base/xhr",
             {
                 var that=this;
                 this.containerNode = construct.create("div", {innerHTML: template});
-                parser.parse(this.containerNode);
-
+                parser.parse(this.containerNode).then(function(instances) { that._postParse(); });
+            },
+            _postParse: function()
+            {
+                var that = this;
                 this.authenticationProviderName = registry.byId("addAuthenticationProvider.name");
                 this.authenticationProviderName.set("regExpGen", util.nameOrContextVarRegexp);
                 this.authenticationProviderName.on("change", function(newValue){that.preferencesProviderForm.preferencesProviderNameWidget.set("value",newValue);});

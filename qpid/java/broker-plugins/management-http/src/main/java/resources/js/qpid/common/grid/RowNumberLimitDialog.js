@@ -41,11 +41,17 @@ return declare("qpid.management.logs.RowNumberLimitDialog", null, {
   grid: null,
   dialog: null,
 
-  constructor: function(domNode, limitChangedCallback){
-
+  constructor: function(domNode, limitChangedCallback)
+  {
+      var that = this;
       this.containerNode = dom.create("div", {innerHTML: template});
-      parser.parse(this.containerNode);
-
+      parser.parse(this.containerNode).then(function(instances)
+      {
+        that._postParse(domNode, limitChangedCallback);
+      });
+  },
+  _postParse: function(domNode, limitChangedCallback)
+  {
       this.rowNumberLimit = registry.byNode(query(".rowNumberLimit", this.containerNode)[0])
       this.submitButton = registry.byNode(query(".submitButton", this.containerNode)[0]);
       this.closeButton = registry.byNode(query(".cancelButton", this.containerNode)[0]);

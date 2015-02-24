@@ -43,14 +43,15 @@ define(["dojo/_base/xhr",
                       sync: true,
                       load:  function(data) {
                           node.innerHTML = data;
-                          parser.parse(node);
-
+                          parser.parse(node).then(function(instances)
+                          {
                           that.managementJmxUpdater= new ManagementJmxUpdater(node, pluginObject, controller);
                           that.managementJmxUpdater.update(true);
                           updater.add( that.managementJmxUpdater);
 
                           var editButton = query(".editPluginButton", node)[0];
                           connect.connect(registry.byNode(editButton), "onClick", function(evt){ that.edit(); });
+                          });
                       }});
         }
 

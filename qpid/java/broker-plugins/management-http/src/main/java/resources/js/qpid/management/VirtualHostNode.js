@@ -56,8 +56,10 @@ define(["dojo/_base/xhr",
                         sync: true,
                         load:  function(data) {
                             contentPane.containerNode.innerHTML = data;
-                            parser.parse(contentPane.containerNode);
-                            that.onOpen(contentPane.containerNode)
+                            parser.parse(contentPane.containerNode).then(function(instances)
+                            {
+                                that.onOpen(contentPane.containerNode)
+                            });
                        }});
 
            };

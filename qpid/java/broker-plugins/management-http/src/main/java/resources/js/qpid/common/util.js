@@ -528,40 +528,64 @@ define(["dojo/_base/xhr",
              return object1 === object2;
            }
 
-           util.parseHtmlIntoDiv = function(containerNode, htmlTemplateLocation)
+           util.parseHtmlIntoDiv = function(containerNode, htmlTemplateLocation, postParseCallback)
            {
                 xhr.get({url: htmlTemplateLocation,
                                   sync: true,
                                   load:  function(template) {
                                     containerNode.innerHTML = template;
-                                    parser.parse(containerNode);
+                                    parser.parse(containerNode).then(function(instances)
+                                                                     {
+                                                                        if (postParseCallback && typeof postParseCallback == "function")
+                                                                        {
+                                                                            postParseCallback();
+                                                                        }
+                                                                     });
                                   }});
            }
-           util.buildUI = function(containerNode, parent, htmlTemplateLocation, fieldNames, obj)
+           util.buildUI = function(containerNode, parent, htmlTemplateLocation, fieldNames, obj, postParseCallback)
            {
-                this.parseHtmlIntoDiv(containerNode, htmlTemplateLocation);
-                if (fieldNames && obj)
-                {
-                    for(var i=0; i<fieldNames.length;i++)
+                this.parseHtmlIntoDiv(containerNode, htmlTemplateLocation,
+                 function()
+                 {
+                    if (fieldNames && obj)
                     {
-                       var fieldName = fieldNames[i];
-                       obj[fieldName]= query("." + fieldName, containerNode)[0];
+                       for(var i=0; i<fieldNames.length;i++)
+                       {
+                          var fieldName = fieldNames[i];
+                          obj[fieldName]= query("." + fieldName, containerNode)[0];
+                       }
                     }
-                }
+
+                    if (postParseCallback && typeof postParseCallback == "function")
+                    {
+                        postParseCallback();
+                    }
+                 });
+
            }
 
-           util.buildEditUI = function(containerNode, htmlTemplateLocation, fieldNamePrefix, fieldNames, data)
+           util.buildEditUI = function(containerNode, htmlTemplateLocation, fieldNamePrefix, fieldNames, data, postParseCallback)
            {
-               this.parseHtmlIntoDiv(containerNode, htmlTemplateLocation);
-               if (fieldNames)
+               this.parseHtmlIntoDiv(containerNode, htmlTemplateLocation, function()
                {
+
+                if (fieldNames)
+                {
                    for(var i = 0; i < fieldNames.length; i++)
                    {
                      var fieldName = fieldNames[i];
                      var widget = registry.byId(fieldNamePrefix + fieldName);
                      widget.set("value", data[fieldName]);
                    }
-               }
+                }
+
+                if (postParseCallback && typeof postParseCallback == "function")
+                {
+                    postParseCallback();
+                }
+
+               });
            }
 
            util.updateUI = function(data, fieldNames, obj)

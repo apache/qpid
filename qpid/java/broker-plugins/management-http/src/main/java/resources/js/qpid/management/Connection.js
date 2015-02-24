@@ -50,14 +50,12 @@ define(["dojo/_base/xhr",
                         sync: true,
                         load:  function(data) {
                             contentPane.containerNode.innerHTML = data;
-                            parser.parse(contentPane.containerNode);
-
-                            that.connectionUpdater = new ConnectionUpdater(contentPane.containerNode, that.modelObj, that.controller);
-
-                            updater.add( that.connectionUpdater );
-
-                            that.connectionUpdater.update();
-
+                            parser.parse(contentPane.containerNode).then(function(instances)
+                            {
+                                that.connectionUpdater = new ConnectionUpdater(contentPane.containerNode, that.modelObj, that.controller);
+                                updater.add( that.connectionUpdater );
+                                that.connectionUpdater.update();
+                            });
                         }});
            };
 

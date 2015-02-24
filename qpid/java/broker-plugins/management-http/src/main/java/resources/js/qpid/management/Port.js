@@ -51,8 +51,8 @@ define(["dojo/dom",
                         sync: true,
                         load:  function(data) {
                             contentPane.containerNode.innerHTML = data;
-                            parser.parse(contentPane.containerNode);
-
+                            parser.parse(contentPane.containerNode).then(function(instances)
+                            {
                             that.portUpdater = new PortUpdater(contentPane.containerNode, that.modelObj, that.controller, "api/latest/port/" + encodeURIComponent(that.name));
 
                             updater.add( that.portUpdater );
@@ -72,6 +72,7 @@ define(["dojo/dom",
                                 function(evt){
                                   that.showEditDialog();
                                 });
+                            });
                         }});
            };
 

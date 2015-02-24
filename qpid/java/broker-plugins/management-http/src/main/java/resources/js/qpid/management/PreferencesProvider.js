@@ -51,8 +51,8 @@ define(["dojo/_base/xhr",
                sync: true,
                load:  function(data) {
                    node.innerHTML = data;
-                   parser.parse(node);
-
+                   parser.parse(node).then(function(instances)
+                   {
                    that.containerNode = node;
                    that.parentObject = parentObject;
                    that.preferencesProviderType=query(".preferencesProviderType", node)[0];
@@ -65,6 +65,7 @@ define(["dojo/_base/xhr",
                    editPreferencesProviderWidget.on("click", function(evt){ event.stop(evt); that.editPreferencesProvider();});
                    var deletePreferencesProviderWidget = registry.byNode(that.deletePreferencesProviderButton);
                    deletePreferencesProviderWidget.on("click", function(evt){ event.stop(evt); that.deletePreferencesProvider();});
+                   });
                }});
            };
 
