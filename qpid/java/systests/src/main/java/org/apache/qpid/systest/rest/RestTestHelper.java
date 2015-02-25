@@ -35,7 +35,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -305,7 +304,7 @@ public class RestTestHelper
     public void createNewGroupMember(String groupProviderName, String groupName, String memberName, int responseCode) throws IOException
     {
         HttpURLConnection connection = openManagementConnection(
-                "groupmember/" + URLDecoder.decode(groupProviderName, "UTF-8") + "/"+ URLDecoder.decode(groupName, "UTF-8") + "/" +  URLDecoder.decode(memberName, "UTF-8"),
+                "groupmember/" + encodeAsUTF(groupProviderName) + "/"+ encodeAsUTF(groupName) + "/" +  encodeAsUTF(memberName),
                 "PUT");
 
         Map<String, Object> groupMemberData = new HashMap<String, Object>();
@@ -325,7 +324,7 @@ public class RestTestHelper
     public void removeMemberFromGroup(String groupProviderName, String groupName, String memberName, int responseCode) throws IOException
     {
         HttpURLConnection connection = openManagementConnection(
-                "groupmember/" + URLDecoder.decode(groupProviderName, "UTF-8") + "/"+ URLDecoder.decode(groupName, "UTF-8") + "/" +  URLDecoder.decode(memberName, "UTF-8"),
+                "groupmember/" + encodeAsUTF(groupProviderName) + "/"+ encodeAsUTF(groupName) + "/" +  encodeAsUTF(memberName),
                 "DELETE");
 
         Assert.assertEquals("Unexpected response code", responseCode, connection.getResponseCode());
@@ -358,7 +357,7 @@ public class RestTestHelper
     public void createGroup(String groupName, String groupProviderName, int responseCode) throws IOException
     {
         HttpURLConnection connection = openManagementConnection(
-                "group/" + URLDecoder.decode(groupProviderName, "UTF-8") + "/"+ URLDecoder.decode(groupName, "UTF-8"),
+                "group/" + encodeAsUTF(groupProviderName) + "/"+ encodeAsUTF(groupName),
                 "PUT");
 
         Map<String, Object> groupData = new HashMap<String, Object>();
@@ -391,7 +390,7 @@ public class RestTestHelper
     public void removeGroup(String groupName, String groupProviderName, int responseCode) throws IOException
     {
         HttpURLConnection connection = openManagementConnection(
-                "group/" + URLDecoder.decode(groupProviderName, "UTF-8") + "/"+ URLDecoder.decode(groupName, "UTF-8"),
+                "group/" + encodeAsUTF(groupProviderName) + "/"+ encodeAsUTF(groupName),
                 "DELETE");
 
         Assert.assertEquals("Unexpected response code", responseCode, connection.getResponseCode());
