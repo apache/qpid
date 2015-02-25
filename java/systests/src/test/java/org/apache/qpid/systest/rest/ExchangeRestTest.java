@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.systest.rest;
 
-import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +64,7 @@ public class ExchangeRestTest extends QpidRestTestCase
         for (String exchangeName : EXPECTED_EXCHANGES)
         {
             Map<String, Object> exchange = getRestTestHelper().getJsonAsSingletonList("exchange/test/test/"
-                    + URLDecoder.decode(exchangeName, "UTF-8"));
+                    + getRestTestHelper().encodeAsUTF(exchangeName));
             assertExchange(exchangeName, exchange);
         }
     }

@@ -21,7 +21,6 @@
 package org.apache.qpid.systest.rest;
 
 import java.io.IOException;
-import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -197,7 +196,7 @@ public class QueueRestTest extends QpidRestTestCase
         bindingData.put(Binding.EXCHANGE, exchangeName);
         bindingData.put(Binding.QUEUE, queueName);
 
-        String url = "binding/test/test/" + URLDecoder.decode(exchangeName, "UTF-8") + "/" + queueName + "/" + bindingName;
+        String url = "binding/test/test/" + getRestTestHelper().encodeAsUTF(exchangeName) + "/" + queueName + "/" + bindingName;
         int responseCode = getRestTestHelper().submitRequest(url, "PUT", bindingData);
         assertEquals("Unexpected response code", 201, responseCode);
     }
