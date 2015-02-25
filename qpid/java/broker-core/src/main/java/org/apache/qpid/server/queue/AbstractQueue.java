@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
@@ -255,7 +256,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     private final QueueRunner _queueRunner = new QueueRunner(this);
     private boolean _closing;
-    private final ConcurrentHashMap<String,MessageFilter> _defaultFiltersMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String,MessageFilter> _defaultFiltersMap = new ConcurrentHashMap<>();
 
     protected AbstractQueue(Map<String, Object> attributes, VirtualHostImpl virtualHost)
     {
