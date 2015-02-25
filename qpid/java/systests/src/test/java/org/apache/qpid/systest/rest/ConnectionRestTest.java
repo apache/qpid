@@ -21,7 +21,6 @@
 package org.apache.qpid.systest.rest;
 
 import java.io.IOException;
-import java.net.URLDecoder;
 import java.util.List;
 import java.util.Map;
 
@@ -112,7 +111,7 @@ public class ConnectionRestTest extends QpidRestTestCase
         String connectionName = getConnectionName();
 
         Map<String, Object> connectionDetails = getRestTestHelper().getJsonAsSingletonList("connection/test/test/"
-                + URLDecoder.decode(connectionName, "UTF-8"));
+                + getRestTestHelper().encodeAsUTF(connectionName));
         assertConnection(connectionDetails);
     }
 
@@ -124,7 +123,7 @@ public class ConnectionRestTest extends QpidRestTestCase
         List<Map<String, Object>> connections = getRestTestHelper().getJsonAsList("connection/test/test");
         assertEquals("Unexpected number of connections before deletion", 1, connections.size());
 
-        String connectionUrl = "connection/test/test/" + URLDecoder.decode(connectionName, "UTF-8");
+        String connectionUrl = "connection/test/test/" + getRestTestHelper().encodeAsUTF(connectionName);
         getRestTestHelper().submitRequest(connectionUrl, "DELETE", HttpServletResponse.SC_OK);
 
         connections = getRestTestHelper().getJsonAsList("connection/test/test");
@@ -161,7 +160,7 @@ public class ConnectionRestTest extends QpidRestTestCase
         String connectionName = getConnectionName();
 
         List<Map<String, Object>> sessions = getRestTestHelper().getJsonAsList("session/test/test/"
-                + URLDecoder.decode(connectionName, "UTF-8"));
+                + getRestTestHelper().encodeAsUTF(connectionName));
         assertEquals("Unexpected number of sessions", 1, sessions.size());
         assertSession(sessions.get(0), (AMQSession<?, ?>) _session);
     }
@@ -172,7 +171,7 @@ public class ConnectionRestTest extends QpidRestTestCase
         String connectionName = getConnectionName();
 
         List<Map<String, Object>> sessions = getRestTestHelper().getJsonAsList("session/test/test/"
-                + URLDecoder.decode(connectionName, "UTF-8") + "/" + ((AMQSession<?, ?>) _session).getChannelId());
+                + getRestTestHelper().encodeAsUTF(connectionName) + "/" + ((AMQSession<?, ?>) _session).getChannelId());
         assertEquals("Unexpected number of sessions", 1, sessions.size());
         assertSession(sessions.get(0), (AMQSession<?, ?>) _session);
     }
@@ -187,7 +186,8 @@ public class ConnectionRestTest extends QpidRestTestCase
         String connectionName = getConnectionName();
 
         List<Map<String, Object>> sessions = getRestTestHelper().getJsonAsList("session/test/test/"
-                                                                               + URLDecoder.decode(connectionName, "UTF-8") + "/" + ((AMQSession<?, ?>) _session).getChannelId());
+                                                                               + getRestTestHelper().encodeAsUTF(connectionName)
+                                                                               + "/" + ((AMQSession<?, ?>) _session).getChannelId());
         assertEquals("Unexpected number of sessions", 1, sessions.size());
 
         final Map<String, Object> sessionData = sessions.get(0);
