@@ -36,17 +36,20 @@ namespace sys {
 struct ProtocolTimeoutTask : public sys::TimerTask {
     AsynchIOHandler& handler;
     std::string id;
+    Duration timeout;
 
-    ProtocolTimeoutTask(const std::string& i, const Duration& timeout, AsynchIOHandler& h) :
-        TimerTask(timeout, "ProtocolTimeout"),
+    ProtocolTimeoutTask(const std::string& i, const Duration& timeout_, AsynchIOHandler& h) :
+        TimerTask(timeout_, "ProtocolTimeout"),
         handler(h),
-        id(i)
+        id(i),
+        timeout(timeout_)
     {}
 
     void fire() {
         // If this fires it means that we didn't negotiate the connection in the timeout period
         // Schedule closing the connection for the io thread
-        QPID_LOG(error, "Connection " << id << " No protocol received closing");
+        QPID_LOG(error, "Connection " << id << " No protocol received after " << timeout
+                 << ", closing");
         handler.abort();
     }
 };
