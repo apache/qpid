@@ -23,7 +23,6 @@ import os, signal, string, tempfile, subprocess, socket, threading, time, imp, r
 import qpid, traceback, signal
 from qpid import connection, util
 from qpid.compat import format_exc
-from qpid.harness import Skipped
 from unittest import TestCase
 from copy import copy
 from threading import Thread, Lock, Condition

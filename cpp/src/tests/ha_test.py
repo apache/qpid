@@ -24,6 +24,7 @@ from brokertest import *
 from threading import Thread, Lock, Condition
 from logging import getLogger, WARN, ERROR, DEBUG, INFO
 from qpidtoollibs import BrokerAgent
+from qpid.harness import Skipped
 
 log = getLogger(__name__)
 
@@ -156,13 +157,20 @@ acl allow all all
         Broker.__init__(self, test, args, port=ha_port.port, **kwargs)
 
     # Do some static setup to locate the qpid-config and qpid-ha tools.
-    qpid_ha_script=import_script(os.path.join(os.getenv("PYTHON_COMMANDS"),"qpid-ha"))
-    qpid_config_path=os.path.join(os.getenv("PYTHON_COMMANDS"), "qpid-config")
-    assert os.path.isfile(qpid_config_path)
+    @property
+    def qpid_ha_script(self):
+        if not hasattr(self, "_qpid_ha_script"):
+            qpid_ha_exec = os.getenv("QPID_HA_EXEC")
+            if not qpid_ha_exec or not os.path.isfile(qpid_ha_exec):
+                raise Skipped("qpid-ha not available")
+            self._qpid_ha_script = import_script(qpid_ha_exec)
+        return self._qpid_ha_script
 
     def __repr__(self): return "<HaBroker:%s:%d>"%(self.log, self.port())
 
     def qpid_ha(self, args):
+        if not self.qpid_ha_script:
+            raise Skipped("qpid-ha not available")
         try:
             cred = self.client_credentials
             url = self.host_port()
@@ -216,12 +224,13 @@ acl allow all all
         agent = self.agent
         assert retry(lambda: agent.getQueue(queue) is None, timeout=timeout), "%s: queue %s still present"%(msg,queue)
 
-    # TODO aconway 2012-05-01: do direct python call to qpid-config code.
     def qpid_config(self, args):
+        qpid_config_exec = os.getenv("QPID_CONFIG_EXEC")
+        if not qpid_config_exec or not os.path.isfile(qpid_config_exec):
+            raise Skipped("qpid-config not available")
         assert subprocess.call(
-            [self.qpid_config_path, "--broker", self.host_port()]+args,
-            stdout=1, stderr=subprocess.STDOUT
-            ) == 0
+            [qpid_config_exec, "--broker", self.host_port()]+args, stdout=1, stderr=subprocess.STDOUT
+        ) == 0, "qpid-config failed"
 
     def config_replicate(self, from_broker, queue):
         self.qpid_config(["add", "queue", "--start-replica", from_broker, queue])

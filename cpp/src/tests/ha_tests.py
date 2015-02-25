@@ -1631,12 +1631,14 @@ class TransactionTests(HaBrokerTest):
                     "*.tx.*"]).assert_exit_ok()
 
 if __name__ == "__main__":
-    outdir = "ha_tests.tmp"
-    shutil.rmtree(outdir, True)
-    qpid_ha = os.getenv("QPID_HA_EXEC")
-    if  qpid_ha and os.path.exists(qpid_ha):
+    qpid_ha_exec = os.getenv("QPID_HA_EXEC")
+    if qpid_ha_exec and os.path.isfile(qpid_ha_exec):
+        outdir = "ha_tests.tmp"
+        shutil.rmtree(outdir, True)
         os.execvp("qpid-python-test",
-                  ["qpid-python-test", "-m", "ha_tests", "-DOUTDIR=%s"%outdir]
+                ["qpid-python-test", "-m", "ha_tests", "-DOUTDIR=%s"%outdir]
                   + sys.argv[1:])
     else:
-        print "Skipping ha_tests, %s not available"%(qpid_ha)
+        print "Skipping ha_tests, qpid-ha not available"
+
+
