@@ -151,8 +151,8 @@ ConnectionContext::~ConnectionContext()
     if (ticker) ticker->cancel();
     close();
     sessions.clear();
-    pn_transport_free(engine);
     pn_connection_free(connection);
+    pn_transport_free(engine);
 }
 
 bool ConnectionContext::isOpen() const
