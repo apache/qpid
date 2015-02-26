@@ -165,8 +165,8 @@ Connection::~Connection()
 {
     if (ticker) ticker->cancel();
     getBroker().getConnectionObservers().closed(*this);
-    pn_transport_free(transport);
     pn_connection_free(connection);
+    pn_transport_free(transport);
 #ifdef HAVE_PROTON_EVENTS
     pn_collector_free(collector);
 #endif
