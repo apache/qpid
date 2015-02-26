@@ -24,7 +24,7 @@ import java.util.Collection;
 
 import org.apache.qpid.server.store.DurableConfigurationStore;
 
-@ManagedObject(category=true, managesChildren=false)
+@ManagedObject(category=true, managesChildren=true)
 public interface VirtualHostNode<X extends VirtualHostNode<X>> extends ConfiguredObject<X>
 {
     String QPID_INITIAL_CONFIG_VIRTUALHOST_CONFIG_VAR = "qpid.initial_config_virtualhost_config";

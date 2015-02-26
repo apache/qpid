@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.server.model;
 
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.model.ManagedObject;
-
 @ManagedObject(category=true, managesChildren=false, creatable=false)
 public interface RemoteReplicationNode<X extends RemoteReplicationNode<X>> extends ConfiguredObject<X>
 {

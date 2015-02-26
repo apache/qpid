@@ -25,7 +25,6 @@ import java.util.Collection;
 import org.apache.qpid.server.model.ConfigurationChangeListener;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 
 public class StoreConfigurationChangeListener implements ConfigurationChangeListener
@@ -51,8 +50,7 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
     @Override
     public void childAdded(ConfiguredObject<?> object, ConfiguredObject<?> child)
     {
-        // exclude VirtualHostNode children from storing in broker store
-        if (!(object instanceof VirtualHostNode))
+        if (!object.managesChildStorage())
         {
             child.addChangeListener(this);
             _store.update(true,child.asObjectRecord());
