@@ -129,9 +129,6 @@ class HaBroker(Broker):
         args += ["--load-module", BrokerTest.ha_lib,
                  # Non-standard settings for faster tests.
                  "--link-maintenance-interval=0.1",
-                 # Heartbeat and negotiate time are needed so that a broker wont
-                 # stall on an address that doesn't currently have a broker running.
-                 "--max-negotiate-time=1000",
                  "--ha-cluster=%s"%ha_cluster]
         # Add default --log-enable arguments unless args already has --log arguments.
         if not [l for l in args if l.startswith("--log")]:
@@ -195,23 +192,26 @@ acl allow all all
 
     def ha_status(self): return self.qmf().status
 
-    def wait_status(self, status, timeout=5):
+    def wait_status(self, status, timeout=10):
+
         def try_get_status():
             self._status = "<unknown>"
-            # Ignore ConnectionError, the broker may not be up yet.
             try:
                 self._status = self.ha_status()
-                return self._status == status;
-            except qm.ConnectionError: return False
+            except qm.ConnectionError, e:
+                # Record the error but don't raise, the broker may not be up yet.
+                self._status = "%s: %s" % (type(e).__name__, e)
+            return self._status == status;
         assert retry(try_get_status, timeout=timeout), "%s expected=%r, actual=%r"%(
             self, status, self._status)
 
-    def wait_queue(self, queue, timeout=1, msg="wait_queue"):
+    def wait_queue(self, queue, timeout=10, msg="wait_queue"):
         """ Wait for queue to be visible via QMF"""
         agent = self.agent
-        assert retry(lambda: agent.getQueue(queue) is not None, timeout=timeout), msg+"queue %s not present"%queue
+        assert retry(lambda: agent.getQueue(queue) is not None, timeout=timeout), \
+            "%s queue %s not present" % (msg, queue)
 
-    def wait_no_queue(self, queue, timeout=1, msg="wait_no_queue"):
+    def wait_no_queue(self, queue, timeout=10, msg="wait_no_queue"):
         """ Wait for queue to be invisible via QMF"""
         agent = self.agent
         assert retry(lambda: agent.getQueue(queue) is None, timeout=timeout), "%s: queue %s still present"%(msg,queue)
@@ -325,7 +325,7 @@ class HaCluster(object):
         ha_port = self._ports[i]
         b = HaBroker(ha_port.test, ha_port, brokers_url=self.url, name=name,
                      args=args, **self.kwargs)
-        b.ready(timeout=5)
+        b.ready(timeout=10)
         return b
 
     def start(self):
