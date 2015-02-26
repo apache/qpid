@@ -543,8 +543,8 @@ pn_state_t IS_CLOSED = PN_LOCAL_CLOSED | PN_REMOTE_CLOSED;
 
 void ConnectionContext::reset()
 {
-    pn_transport_free(engine);
     pn_connection_free(connection);
+    pn_transport_free(engine);
 
     engine = pn_transport();
     connection = pn_connection();
