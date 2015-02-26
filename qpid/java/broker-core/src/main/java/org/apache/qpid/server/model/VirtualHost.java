@@ -30,7 +30,7 @@ import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.store.MessageStore;
 
-@ManagedObject( managesChildren = true, defaultType = "ProvidedStore")
+@ManagedObject( defaultType = "ProvidedStore")
 public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>, E extends Exchange<?> > extends ConfiguredObject<X>
 {
 

@@ -385,7 +385,7 @@ public class ConfiguredObjectTypeRegistry
         return null;
     }
 
-    private Class<? extends ConfiguredObject> getTypeClass(final Class<? extends ConfiguredObject> clazz)
+    public Class<? extends ConfiguredObject> getTypeClass(final Class<? extends ConfiguredObject> clazz)
     {
         String typeName = getType(clazz);
         Class<? extends ConfiguredObject> typeClass = null;
