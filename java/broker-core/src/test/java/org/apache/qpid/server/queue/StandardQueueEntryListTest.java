@@ -155,7 +155,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
 
     public void testScavenge() throws Exception
     {
-        OrderedQueueEntryList sqel = new StandardQueueEntryList(null);
+        OrderedQueueEntryList sqel = new StandardQueueEntryList(mock(StandardQueueImpl.class));
         ConcurrentMap<Integer,QueueEntry> entriesMap = new ConcurrentHashMap<Integer,QueueEntry>();
 
 
@@ -215,6 +215,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
     {
         QueueEntry entry = entriesMap.remove(pos);
         boolean wasDeleted = entry.isDeleted();
+        entry.acquire();
         entry.delete();
         return entry.isDeleted() && !wasDeleted;
     }
