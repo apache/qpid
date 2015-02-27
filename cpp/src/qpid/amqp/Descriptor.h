@@ -49,6 +49,8 @@ struct Descriptor
     QPID_COMMON_EXTERN bool match(const std::string&, uint64_t) const;
     QPID_COMMON_EXTERN size_t getSize() const;
     QPID_COMMON_EXTERN Descriptor* nest(const Descriptor& d);
+    QPID_COMMON_EXTERN std::string symbol() const;
+    QPID_COMMON_EXTERN uint64_t code() const;
 };
 
 QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream& os, const Descriptor& d);

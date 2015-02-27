@@ -18,14 +18,16 @@
  * under the License.
  *
  */
-#include <iostream>
-#include "qpid/types/Variant.h"
-#include "qpid/amqp_0_10/Codecs.h"
 
 #include "unit_test.h"
+#include "qpid/types/Variant.h"
+#include "qpid/amqp_0_10/Codecs.h"
+#include <boost/assign.hpp>
+#include <iostream>
 
 using namespace qpid::types;
 using namespace qpid::amqp_0_10;
+using boost::assign::list_of;
 
 namespace qpid {
 namespace tests {
@@ -805,6 +807,22 @@ QPID_AUTO_TEST_CASE(parse)
     BOOST_CHECK(a.getType()==types::VAR_UINT64);
     a.parse("18446744073709551616");
     BOOST_CHECK(a.getType()==types::VAR_DOUBLE);
+}
+
+QPID_AUTO_TEST_CASE(described)
+{
+    Variant a;
+    BOOST_CHECK(!a.isDescribed());
+    a.getDescriptors().push_back("foo");
+    BOOST_CHECK(a.isDescribed());
+    BOOST_CHECK_EQUAL(a.getDescriptors(), list_of<Variant>("foo"));
+    a = 42;
+    BOOST_CHECK(a.isDescribed());
+    BOOST_CHECK_EQUAL(a.getDescriptors(), list_of<Variant>("foo"));
+    a.getDescriptors().push_back(33);
+    BOOST_CHECK_EQUAL(a.getDescriptors(), list_of<Variant>("foo")(33));
+    a.getDescriptors().clear();
+    BOOST_CHECK(!a.isDescribed());
 }
 
 QPID_AUTO_TEST_SUITE_END()

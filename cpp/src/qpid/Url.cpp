@@ -113,8 +113,10 @@ class UrlParser {
         const char* at = std::find(i, end, '@');
         if (at == end) return false;
         const char* slash = std::find(i, at, '/');
-        url.setUser(string(i, slash));
-        const char* pass = (slash == at) ? slash : slash+1;
+        const char* colon = std::find(i, at, ':');
+        const char* sep = std::min(slash, colon);
+        url.setUser(string(i, sep));
+        const char* pass = (sep == at) ? sep : sep+1;
         url.setPass(string(pass, at));
         i = at+1;
         return true;

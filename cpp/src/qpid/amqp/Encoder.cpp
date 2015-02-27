@@ -31,9 +31,16 @@
 #include <string.h>
 
 using namespace qpid::types::encodings;
+using qpid::types::Variant;
 
 namespace qpid {
 namespace amqp {
+
+Encoder::Overflow::Overflow() : Exception("Buffer overflow in encoder!") {}
+
+Encoder::Encoder(char* d, size_t s) : data(d), size(s), position(0), grow(false) {}
+
+Encoder::Encoder() : data(0), size(0), position(0), grow(true) {}
 
 namespace {
 template <typename T> size_t encode(char* data, T i);
@@ -406,6 +413,18 @@ void Encoder::writeList(const std::list<qpid::types::Variant>& value, const Desc
 
 void Encoder::writeValue(const qpid::types::Variant& value, const Descriptor* d)
 {
+    if (d) {
+        writeDescriptor(*d);    // Write this descriptor before any in the value.
+        d = 0;
+    }
+    // Write any descriptors attached to the value.
+    const Variant::List& descriptors = value.getDescriptors();
+    for (Variant::List::const_iterator i = descriptors.begin(); i != descriptors.end(); ++i) {
+        if (i->getType() == types::VAR_STRING)
+            writeDescriptor(Descriptor(CharSequence::create(i->asString())));
+        else
+            writeDescriptor(Descriptor(i->asUint64()));
+    }
     switch (value.getType()) {
       case qpid::types::VAR_VOID:
         writeNull(d);
@@ -477,18 +496,28 @@ void Encoder::writeDescriptor(const Descriptor& d)
           break;
     }
 }
+
 void Encoder::check(size_t s)
 {
     if (position + s > size) {
-        QPID_LOG(notice, "Buffer overflow for write of size " << s << " to buffer of size " << size << " at position " << position);
-        assert(false);
-        throw qpid::Exception("Buffer overflow in encoder!");
+        if (grow) {
+            buffer.resize(buffer.size() + s);
+            data = const_cast<char*>(buffer.data());
+            size = buffer.size();
+        }
+        else {
+            QPID_LOG(notice, "Buffer overflow for write of size " << s
+                     << " to buffer of size " << size << " at position " << position);
+            assert(false);
+            throw Overflow();
+        }
     }
 }
-Encoder::Encoder(char* d, size_t s) : data(d), size(s), position(0) {}
+
 size_t Encoder::getPosition() { return position; }
 size_t Encoder::getSize() const { return size; }
 char* Encoder::getData() { return data + position; }
+std::string Encoder::getBuffer() { return buffer; }
 void Encoder::resetPosition(size_t p) { assert(p <= size); position = p; }
 
 }} // namespace qpid::amqp

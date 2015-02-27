@@ -20,14 +20,14 @@
 absdir() { echo `cd $1 && pwd`; }
 
 # Environment variables substituted by cmake.
-srcdir=`absdir @abs_srcdir@`
-builddir=`absdir @abs_builddir@`
-top_srcdir=`absdir @abs_top_srcdir@`
-top_builddir=`absdir @abs_top_builddir@`
-moduledir=$top_builddir/src@builddir_lib_suffix@
-pythonswigdir=$top_builddir/bindings/qpid/python/
-pythonswiglibdir=$top_builddir/bindings/qpid/python@builddir_lib_suffix@
-testmoduledir=$builddir@builddir_lib_suffix@
+export srcdir=`absdir @abs_srcdir@`
+export builddir=`absdir @abs_builddir@`
+export top_srcdir=`absdir @abs_top_srcdir@`
+export top_builddir=`absdir @abs_top_builddir@`
+export moduledir=$top_builddir/src@builddir_lib_suffix@
+export pythonswigdir=$top_builddir/bindings/qpid/python/
+export pythonswiglibdir=$top_builddir/bindings/qpid/python@builddir_lib_suffix@
+export testmoduledir=$builddir@builddir_lib_suffix@
 export QPID_INSTALL_PREFIX=@prefix@
 
 # Tools substituted by cmake

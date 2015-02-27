@@ -21,11 +21,15 @@
 #include "SessionContext.h"
 #include "SenderContext.h"
 #include "ReceiverContext.h"
+#include "Transaction.h"
+#include "PnData.h"
 #include <boost/format.hpp>
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Duration.h"
 #include "qpid/messaging/exceptions.h"
 #include "qpid/log/Statement.h"
+#include "qpid/amqp/descriptors.h"
+
 extern "C" {
 #include <proton/engine.h>
 }
@@ -35,23 +39,32 @@ namespace messaging {
 namespace amqp {
 
 SessionContext::SessionContext(pn_connection_t* connection) : session(pn_session(connection)) {}
+
 SessionContext::~SessionContext()
 {
-    senders.clear(); receivers.clear();
-    pn_session_free(session);
+    // Clear all pointers to senders and receivers before we free the session.
+    senders.clear();
+    receivers.clear();
+    transaction.reset();        // Transaction is a sender.
+    if (!error && session)
+        pn_session_free(session);
 }
 
 boost::shared_ptr<SenderContext> SessionContext::createSender(const qpid::messaging::Address& address, bool setToOnSend)
 {
+    error.raise();
     std::string name = AddressHelper::getLinkName(address);
-    if (senders.find(name) != senders.end()) throw LinkError("Link name must be unique within the scope of the connection");
-    boost::shared_ptr<SenderContext> s(new SenderContext(session, name, address, setToOnSend));
+    if (senders.find(name) != senders.end())
+        throw LinkError("Link name must be unique within the scope of the connection");
+    boost::shared_ptr<SenderContext> s(
+        new SenderContext(session, name, address, setToOnSend, transaction));
     senders[name] = s;
     return s;
 }
 
 boost::shared_ptr<ReceiverContext> SessionContext::createReceiver(const qpid::messaging::Address& address)
 {
+    error.raise();
     std::string name = AddressHelper::getLinkName(address);
     if (receivers.find(name) != receivers.end()) throw LinkError("Link name must be unique within the scope of the connection");
     boost::shared_ptr<ReceiverContext> r(new ReceiverContext(session, name, address));
@@ -61,6 +74,7 @@ boost::shared_ptr<ReceiverContext> SessionContext::createReceiver(const qpid::me
 
 boost::shared_ptr<SenderContext> SessionContext::getSender(const std::string& name) const
 {
+    error.raise();
     SenderMap::const_iterator i = senders.find(name);
     if (i == senders.end()) {
         throw qpid::messaging::KeyError(std::string("No such sender") + name);
@@ -71,6 +85,7 @@ boost::shared_ptr<SenderContext> SessionContext::getSender(const std::string& na
 
 boost::shared_ptr<ReceiverContext> SessionContext::getReceiver(const std::string& name) const
 {
+    error.raise();
     ReceiverMap::const_iterator i = receivers.find(name);
     if (i == receivers.end()) {
         throw qpid::messaging::KeyError(std::string("No such receiver") + name);
@@ -81,16 +96,19 @@ boost::shared_ptr<ReceiverContext> SessionContext::getReceiver(const std::string
 
 void SessionContext::removeReceiver(const std::string& n)
 {
+    error.raise();
     receivers.erase(n);
 }
 
 void SessionContext::removeSender(const std::string& n)
 {
+    error.raise();
     senders.erase(n);
 }
 
 boost::shared_ptr<ReceiverContext> SessionContext::nextReceiver()
 {
+    error.raise();
     for (SessionContext::ReceiverMap::iterator i = receivers.begin(); i != receivers.end(); ++i) {
         if (i->second->hasCurrent()) {
             return i->second;
@@ -102,16 +120,19 @@ boost::shared_ptr<ReceiverContext> SessionContext::nextReceiver()
 
 uint32_t SessionContext::getReceivable()
 {
+    error.raise();
     return 0;//TODO
 }
 
 uint32_t SessionContext::getUnsettledAcks()
 {
+    error.raise();
     return 0;//TODO
 }
 
 qpid::framing::SequenceNumber SessionContext::record(pn_delivery_t* delivery)
 {
+    error.raise();
     qpid::framing::SequenceNumber id = next++;
     if (!pn_delivery_settled(delivery))
         unacked[id] = delivery;
@@ -121,22 +142,32 @@ qpid::framing::SequenceNumber SessionContext::record(pn_delivery_t* delivery)
 
 void SessionContext::acknowledge(DeliveryMap::iterator begin, DeliveryMap::iterator end)
 {
+    error.raise();
     for (DeliveryMap::iterator i = begin; i != end; ++i) {
-        QPID_LOG(debug, "Setting disposition for delivery " << i->first << " -> " << i->second);
-        pn_delivery_update(i->second, PN_ACCEPTED);
-        pn_delivery_settle(i->second);//TODO: different settlement modes?
+        types::Variant txState;
+        if (transaction) {
+            QPID_LOG(trace, "Setting disposition for transactional delivery "
+                     << i->first << " -> " << i->second);
+            transaction->acknowledge(i->second);
+        } else {
+            QPID_LOG(trace, "Setting disposition for delivery " << i->first << " -> " << i->second);
+            pn_delivery_update(i->second, PN_ACCEPTED);
+            pn_delivery_settle(i->second); //TODO: different settlement modes?
+        }
     }
     unacked.erase(begin, end);
 }
 
 void SessionContext::acknowledge()
 {
+    error.raise();
     QPID_LOG(debug, "acknowledging all " << unacked.size() << " messages");
     acknowledge(unacked.begin(), unacked.end());
 }
 
 void SessionContext::acknowledge(const qpid::framing::SequenceNumber& id, bool cumulative)
 {
+    error.raise();
     QPID_LOG(debug, "acknowledging selected messages, id=" << id << ", cumulative=" << cumulative);
     DeliveryMap::iterator i = unacked.find(id);
     if (i != unacked.end()) {
@@ -149,6 +180,7 @@ void SessionContext::acknowledge(const qpid::framing::SequenceNumber& id, bool c
 
 void SessionContext::nack(const qpid::framing::SequenceNumber& id, bool reject)
 {
+    error.raise();
     DeliveryMap::iterator i = unacked.find(id);
     if (i != unacked.end()) {
         if (reject) {
@@ -166,7 +198,9 @@ void SessionContext::nack(const qpid::framing::SequenceNumber& id, bool reject)
 
 bool SessionContext::settled()
 {
+    error.raise();
     bool result = true;
+
     for (SenderMap::iterator i = senders.begin(); i != senders.end(); ++i) {
         try {
             if (!i->second->closed() && !i->second->settled()) result = false;
@@ -189,8 +223,25 @@ std::string SessionContext::getName() const
 
 void SessionContext::reset(pn_connection_t* connection)
 {
-    session = pn_session(connection);
     unacked.clear();
+    if (transaction) {
+        if (transaction->isCommitting())
+            error = new TransactionUnknown("Transaction outcome unknown: transport failure");
+        else
+            error = new TransactionAborted("Transaction aborted: transport failure");
+        resetSession(0);
+        senders.clear();
+        receivers.clear();
+        transaction.reset();
+        return;
+    }
+    resetSession(pn_session(connection));
+
+}
+
+void SessionContext::resetSession(pn_session_t* session_) {
+    session = session_;
+    if (transaction) transaction->reset(session);
     for (SessionContext::SenderMap::iterator i = senders.begin(); i != senders.end(); ++i) {
         i->second->reset(session);
     }
@@ -198,4 +249,6 @@ void SessionContext::reset(pn_connection_t* connection)
         i->second->reset(session);
     }
 }
+
+
 }}} // namespace qpid::messaging::amqp

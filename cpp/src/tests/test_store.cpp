@@ -223,27 +223,18 @@ class TestStore : public NullMessageStore {
                  const boost::intrusive_ptr<PersistableMessage>& pmsg,
                  const PersistableQueue& queue)
     {
-        qpid::broker::amqp_0_10::MessageTransfer* msg =
-            dynamic_cast<qpid::broker::amqp_0_10::MessageTransfer*>(pmsg.get());
-        assert(msg);
-
         ostringstream o;
-        o << "<enqueue " << queue.getName() << " " << getContent(msg);
+        string data = getContent(pmsg);
+        o << "<enqueue " << queue.getName() << " " << data;
         if (tx) o << " tx=" << getId(*tx);
         o << ">";
         log(o.str());
 
         // Dump the message if there is a dump file.
         if (dump.get()) {
-            msg->getFrames().getMethod()->print(*dump);
-            *dump  << endl << "  ";
-            msg->getFrames().getHeaders()->print(*dump);
-            *dump << endl << "  ";
-            *dump << msg->getFrames().getContentSize() << endl;
+            *dump << "Message(" << data.size() << "): " << data << endl;
         }
         string logPrefix = "TestStore "+name+": ";
-        // Check the message for special instructions for this store.
-        string data = msg->getFrames().getContent();
         Action action(data);
         bool doComplete = true;
         if (action.index && action.executeIn(name)) {
@@ -258,7 +249,7 @@ class TestStore : public NullMessageStore {
                       QPID_LOG(error, logPrefix << "async-id needs argument: " << data);
                       break;
                   }
-                  asyncIds[action.args[0]] = msg;
+                  asyncIds[action.args[0]] = pmsg;
                   QPID_LOG(debug, logPrefix << "delayed completion " << action.args[0]);
                   doComplete = false;
                   break;
@@ -284,7 +275,7 @@ class TestStore : public NullMessageStore {
                 QPID_LOG(error, logPrefix << "unknown action: " << data);
             }
         }
-        if (doComplete) msg->enqueueComplete();
+        if (doComplete) pmsg->enqueueComplete();
     }
 
     void dequeue(TransactionContext* tx,

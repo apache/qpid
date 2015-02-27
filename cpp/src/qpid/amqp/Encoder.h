@@ -23,6 +23,7 @@
  */
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/amqp/Constructor.h"
+#include "qpid/Exception.h"
 #include <list>
 #include <map>
 #include <stddef.h>
@@ -43,6 +44,18 @@ struct Descriptor;
 class Encoder
 {
   public:
+    struct Overflow : public Exception { Overflow(); };
+
+    /** Create an encoder that writes into the buffer at data up to size bytes.
+     * Write operations throw Overflow if encoding exceeds size bytes.
+     */
+    QPID_COMMON_EXTERN Encoder(char* data, size_t size);
+
+    /** Create an encoder that manages its own buffer. Buffer grows to accomodate
+     * all encoded data. Call getBuffer() to get the buffer.
+     */
+    QPID_COMMON_EXTERN Encoder();
+
     void writeCode(uint8_t);
 
     void write(bool);
@@ -100,19 +113,27 @@ class Encoder
     QPID_COMMON_EXTERN void writeList(const std::list<qpid::types::Variant>& value, const Descriptor* d=0, bool large=true);
 
     void writeDescriptor(const Descriptor&);
-    QPID_COMMON_EXTERN Encoder(char* data, size_t size);
     QPID_COMMON_EXTERN size_t getPosition();
     void resetPosition(size_t p);
     char* skip(size_t);
     void writeBytes(const char* bytes, size_t count);
     virtual ~Encoder() {}
+
+    /** Return the total size of the buffer. */
     size_t getSize() const;
-  protected:
+
+    /** Return the growable buffer. */
+    std::string getBuffer();
+
+    /** Return the unused portion of the buffer. */
     char* getData();
+
   private:
     char* data;
     size_t size;
     size_t position;
+    bool grow;
+    std::string buffer;
 
     void write(const CharSequence& v, std::pair<uint8_t, uint8_t> codes, const Descriptor* d);
     void write(const std::string& v, std::pair<uint8_t, uint8_t> codes, const Descriptor* d);

@@ -197,7 +197,7 @@ int main(int argc, char ** argv)
             std::auto_ptr<FailoverUpdates> updates(opts.failoverUpdates ? new FailoverUpdates(connection) : 0);
             Session session = opts.tx ? connection.createTransactionalSession() : connection.createSession();
             Receiver receiver = session.createReceiver(opts.address);
-            receiver.setCapacity(opts.capacity);
+            receiver.setCapacity(std::min(opts.capacity, opts.messages));
             Message msg;
             uint count = 0;
             uint txCount = 0;
@@ -207,9 +207,9 @@ int main(int argc, char ** argv)
             Reporter<ThroughputAndLatency> reporter(std::cout, opts.reportEvery, opts.reportHeader);
             if (!opts.readyAddress.empty()) {
                 session.createSender(opts.readyAddress).send(msg);
-		if (opts.tx)
-		    session.commit();
-	    }
+                if (opts.tx)
+                    session.commit();
+            }
             // For receive rate calculation
             qpid::sys::AbsTime start = qpid::sys::now();
             int64_t interval = 0;
@@ -290,6 +290,7 @@ int main(int argc, char ** argv)
             connection.close();
             return 0;
         }
+        return 1;
     } catch(const std::exception& error) {
         std::cerr << "qpid-receive: " << error.what() << std::endl;
         connection.close();
