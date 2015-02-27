@@ -26,6 +26,7 @@
 #include <boost/shared_ptr.hpp>
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/framing/SequenceNumber.h"
+#include "qpid/sys/ExceptionHolder.h"
 
 struct pn_connection_t;
 struct pn_session_t;
@@ -42,6 +43,8 @@ namespace amqp {
 class ConnectionContext;
 class SenderContext;
 class ReceiverContext;
+class Transaction;
+
 /**
  *
  */
@@ -63,23 +66,29 @@ class SessionContext
     bool settled();
     void setName(const std::string&);
     std::string getName() const;
+
+    void nack(const qpid::framing::SequenceNumber& id, bool reject);
+
   private:
     friend class ConnectionContext;
     typedef std::map<std::string, boost::shared_ptr<SenderContext> > SenderMap;
     typedef std::map<std::string, boost::shared_ptr<ReceiverContext> > ReceiverMap;
     typedef std::map<qpid::framing::SequenceNumber, pn_delivery_t*> DeliveryMap;
+
     pn_session_t* session;
     SenderMap senders;
+    boost::shared_ptr<Transaction> transaction;
     ReceiverMap receivers;
     DeliveryMap unacked;
     qpid::framing::SequenceNumber next;
     std::string name;
+    sys::ExceptionHolder error;
 
     qpid::framing::SequenceNumber record(pn_delivery_t*);
     void acknowledge();
     void acknowledge(const qpid::framing::SequenceNumber& id, bool cummulative);
     void acknowledge(DeliveryMap::iterator begin, DeliveryMap::iterator end);
-    void nack(const qpid::framing::SequenceNumber& id, bool reject);
+    void resetSession(pn_session_t*);
 };
 }}} // namespace qpid::messaging::amqp
 

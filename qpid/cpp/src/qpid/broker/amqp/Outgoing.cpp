@@ -28,6 +28,7 @@
 #include "qpid/broker/TopicKeyNode.h"
 #include "qpid/sys/OutputControl.h"
 #include "qpid/amqp/descriptors.h"
+#include "qpid/amqp/Descriptor.h"
 #include "qpid/amqp/MessageEncoder.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -90,13 +91,13 @@ bool OutgoingFromQueue::doWork()
                 return true;
             } else {
                 pn_link_drained(link);
-                QPID_LOG(debug, "No message available on " << queue->getName());
+                QPID_LOG(trace, "No message available on " << queue->getName());
             }
         } catch (const qpid::framing::ResourceDeletedException& e) {
             throw Exception(qpid::amqp::error_conditions::RESOURCE_DELETED, e.what());
         }
     } else {
-        QPID_LOG(debug, "Can't deliver to " << getName() << " from " << queue->getName() << ": " << pn_link_credit(link));
+        QPID_LOG(trace, "Can't deliver to " << getName() << " from " << queue->getName() << ": " << pn_link_credit(link));
     }
     return false;
 }

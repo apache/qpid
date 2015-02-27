@@ -23,11 +23,13 @@
  */
 namespace qpid {
 namespace types {
+
 namespace encodings {
 const std::string BINARY("binary");
 const std::string UTF8("utf8");
 const std::string ASCII("ascii");
 }
+
 }} // namespace qpid::types
 
 #endif  /*!QPID_TYPES_ENCODINGS_H*/

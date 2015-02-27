@@ -32,28 +32,29 @@ namespace messaging {
 namespace amqp {
 
 /**
- *  Helper class to read/write messaging types to/from pn_data_t.
+ *  Helper class to put/get messaging types to/from pn_data_t.
  */
 class PnData
 {
   public:
+    pn_data_t* data;
+
     PnData(pn_data_t* d) : data(d) {}
 
-    void write(const types::Variant& value);
-    void write(const types::Variant::Map& map);
-    void write(const types::Variant::List& list);
+    void put(const types::Variant& value);
+    void put(const types::Variant::Map& map);
+    void put(const types::Variant::List& list);
+    void put(int32_t n) { pn_data_put_int(data, n); }
+    void putSymbol(const std::string& symbol) { pn_data_put_symbol(data, bytes(symbol)); }
 
-    bool read(pn_type_t type, types::Variant& value);
-    bool read(types::Variant& value);
-    void readList(types::Variant::List& value);
-    void readMap(types::Variant::Map& value);
-    void readArray(types::Variant::List& value);
+    bool get(pn_type_t type, types::Variant& value);
+    bool get(types::Variant& value);
+    void getList(types::Variant::List& value);
+    void getMap(types::Variant::Map& value);
+    void getArray(types::Variant::List& value);
 
-    static pn_bytes_t str(const std::string&);
-    static std::string str(const pn_bytes_t&);
-
-  private:
-    pn_data_t* data;
+    static pn_bytes_t bytes(const std::string&);
+    static std::string string(const pn_bytes_t&);
 };
 }}} // namespace messaging::amqp
 

@@ -89,7 +89,9 @@ class QPID_TYPES_CLASS_EXTERN Variant
     QPID_TYPES_EXTERN Variant(float);
     QPID_TYPES_EXTERN Variant(double);
     QPID_TYPES_EXTERN Variant(const std::string&);
+    QPID_TYPES_EXTERN Variant(const std::string& value, const std::string& encoding);
     QPID_TYPES_EXTERN Variant(const char*);
+    QPID_TYPES_EXTERN Variant(const char* value, const char* encoding);
     QPID_TYPES_EXTERN Variant(const Map&);
     QPID_TYPES_EXTERN Variant(const List&);
     QPID_TYPES_EXTERN Variant(const Variant&);
@@ -156,9 +158,10 @@ class QPID_TYPES_CLASS_EXTERN Variant
     QPID_TYPES_EXTERN Map& asMap();
     QPID_TYPES_EXTERN const List& asList() const;
     QPID_TYPES_EXTERN List& asList();
+
     /**
-     * Unlike asString(), getString() will not do any conversions and
-     * will throw InvalidConversion if the type is not STRING.
+     * Unlike asString(), getString() will not do any conversions.
+     * @exception InvalidConversion if the type is not STRING.
      */
     QPID_TYPES_EXTERN const std::string& getString() const;
     QPID_TYPES_EXTERN std::string& getString();
@@ -168,9 +171,45 @@ class QPID_TYPES_CLASS_EXTERN Variant
 
     QPID_TYPES_EXTERN bool isEqualTo(const Variant& a) const;
 
+    /** Reset value to VOID, does not reset the descriptors. */
     QPID_TYPES_EXTERN void reset();
+
+    /** True if there is at least one descriptor associated with this variant. */
+    QPID_TYPES_EXTERN bool isDescribed() const;
+
+    /** Get the first descriptor associated with this variant.
+     *
+     * Normally there is at most one descriptor, when there are multiple
+     * descriptors use getDescriptors()
+     *
+     *@return The first descriptor or VOID if there is no descriptor.
+     *@see isDescribed, getDescriptors
+     */
+    QPID_TYPES_EXTERN Variant getDescriptor() const;
+
+    /** Set a single descriptor for this Variant. The descriptor must be a string or integer. */
+    QPID_TYPES_EXTERN void setDescriptor(const Variant& descriptor);
+
+    /** Return a modifiable list of descriptors for this Variant.
+     * Used in case where there are multiple descriptors, for a single descriptor use
+     * getDescriptor and setDescriptor.
+     */
+    QPID_TYPES_EXTERN List& getDescriptors();
+
+    /** Return the list of descriptors for this Variant.
+     * Used in case where there are multiple descriptors, for a single descriptor use
+     * getDescriptor and setDescriptor.
+     */
+    QPID_TYPES_EXTERN const List& getDescriptors() const;
+
+    /** Create a described value */
+    QPID_TYPES_EXTERN static Variant described(const Variant& descriptor, const Variant& value);
+
+    /** Create a described list, a common special case */
+    QPID_TYPES_EXTERN static Variant described(const Variant& descriptor, const List& value);
+
   private:
-    VariantImpl* impl;
+    mutable VariantImpl* impl;
 };
 
 #ifndef SWIG

@@ -144,6 +144,8 @@ if (BUILD_AMQP)
          qpid/messaging/amqp/SessionHandle.cpp
          qpid/messaging/amqp/TcpTransport.h
          qpid/messaging/amqp/TcpTransport.cpp
+         qpid/messaging/amqp/Transaction.h
+         qpid/messaging/amqp/Transaction.cpp
         )
 
     if (WIN32)

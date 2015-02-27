@@ -132,7 +132,7 @@ class HaBroker(Broker):
                  "--link-maintenance-interval=0.1",
                  "--ha-cluster=%s"%ha_cluster]
         # Add default --log-enable arguments unless args already has --log arguments.
-        if not [l for l in args if l.startswith("--log")]:
+        if not env_has_log_config() and not [l for l in args if l.startswith("--log")]:
             args += ["--log-enable=info+", "--log-enable=debug+:ha::"]
         if not [h for h in args if h.startswith("--link-heartbeat-interval")]:
             args += ["--link-heartbeat-interval=%s"%(HaBroker.heartbeat)]

@@ -91,7 +91,7 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     std::pair<TxBuffer*,uint64_t> getTransactionalState(pn_delivery_t*);
     //transaction coordination:
     std::string declare();
-    void discharge(const std::string& id, bool failed);
+    void discharge(const std::string& id, bool failed, pn_delivery_t*);
     void abort();
   protected:
     void detachedByManagement();
@@ -109,9 +109,18 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     std::set< boost::shared_ptr<Queue> > exclusiveQueues;
     Authorise authorise;
     bool detachRequested;
-    boost::intrusive_ptr<TxBuffer> txn;
-    std::string txnId;
-    qpid::sys::AtomicValue<bool> commitPending;
+
+    struct Transaction {
+        Transaction(Session&);
+        void dischargeComplete();
+
+        Session& session;
+        boost::intrusive_ptr<TxBuffer> buffer;
+        std::string id;
+        qpid::sys::AtomicValue<bool> commitPending;
+        pn_delivery_t* discharge;
+    };
+    Transaction tx;
 
     struct ResolvedNode
     {

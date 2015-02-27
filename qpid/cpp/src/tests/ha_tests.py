@@ -1025,8 +1025,8 @@ class LongTests(HaBrokerTest):
              "--broker", brokers[0].host_port(),
              "--address", "q;{create:always}",
              "--messages=1000",
-             "--tx=10"
-             # TODO aconway 2014-02-21: can't use amqp1.0 for transactions yet
+             "--tx=10",
+             "--connection-options={protocol:%s}" % self.tx_protocol
              ])
         receiver = self.popen(
             ["qpid-receive",
@@ -1034,8 +1034,8 @@ class LongTests(HaBrokerTest):
              "--address", "q;{create:always}",
              "--messages=990",
              "--timeout=10",
-             "--tx=10"
-             # TODO aconway 2014-02-21: can't use amqp1.0 for transactions yet
+             "--tx=10",
+             "--connection-options={protocol:%s}" % self.tx_protocol
              ])
         self.assertEqual(sender.wait(), 0)
         self.assertEqual(receiver.wait(), 0)
@@ -1268,7 +1268,7 @@ class StoreTests(HaBrokerTest):
         """Verify that a backup erases queue data from store recovery before
         doing catch-up from the primary."""
         if self.check_skip(): return
-        cluster = HaCluster(self, 2, args=['--log-enable=trace+:ha', '--log-enable=trace+:Store'])
+        cluster = HaCluster(self, 2)
         sn = cluster[0].connect(heartbeat=HaBroker.heartbeat).session()
         s1 = sn.sender("q1;{create:always,node:{durable:true}}")
         for m in ["foo","bar"]: s1.send(qm.Message(m, durable=True))
@@ -1532,7 +1532,7 @@ class TransactionTests(HaBrokerTest):
             except qm.TransactionUnknown: pass
             for b in cluster: self.assert_tx_clean(b)
             try: tx.connection.close()
-            except TransactionUnknown: pass # Occasionally get exception on close.
+            except qm.TransactionUnknown: pass # Occasionally get exception on close.
         finally: l.restore()
 
     def test_tx_no_backups(self):
@@ -1622,17 +1622,20 @@ class TransactionTests(HaBrokerTest):
             import qpid_tests.broker_0_10
         except ImportError:
             raise Skipped("Tests not found")
-
         cluster = HaCluster(self, 3)
-        self.popen(["qpid-txtest", "-p%s"%cluster[0].port()]).assert_exit_ok()
+        if "QPID_PORT" in os.environ: del os.environ["QPID_PORT"]
+        self.popen(["qpid-txtest2", "--broker", cluster[0].host_port()]).assert_exit_ok()
+        print
         self.popen(["qpid-python-test",
                     "-m", "qpid_tests.broker_0_10",
+                    "-m", "qpid_tests.broker_1_0",
                     "-b", "localhost:%s"%(cluster[0].port()),
-                    "*.tx.*"]).assert_exit_ok()
+                    "*.tx.*"], stdout=None, stderr=None).assert_exit_ok()
 
 if __name__ == "__main__":
     qpid_ha_exec = os.getenv("QPID_HA_EXEC")
     if qpid_ha_exec and os.path.isfile(qpid_ha_exec):
+        BrokerTest.amqp_tx_warning()
         outdir = "ha_tests.tmp"
         shutil.rmtree(outdir, True)
         os.execvp("qpid-python-test",

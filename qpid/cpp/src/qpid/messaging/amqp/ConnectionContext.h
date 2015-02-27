@@ -34,6 +34,7 @@
 #include "qpid/sys/Monitor.h"
 #include "qpid/types/Variant.h"
 #include "qpid/messaging/amqp/TransportContext.h"
+#include "SenderContext.h"
 
 struct pn_connection_t;
 struct pn_link_t;
@@ -59,7 +60,6 @@ class DriverImpl;
 class ReceiverContext;
 class Sasl;
 class SessionContext;
-class SenderContext;
 class Transport;
 
 /**
@@ -82,10 +82,20 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     void detach(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
     void drain_and_release_messages(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
     bool isClosed(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
-    void send(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext> ctxt, const qpid::messaging::Message& message, bool sync);
+
+    // Link operations
+    void send(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext> ctxt,
+              const qpid::messaging::Message& message, bool sync,
+              SenderContext::Delivery** delivery);
+
     bool fetch(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk, qpid::messaging::Message& message, qpid::messaging::Duration timeout);
     bool get(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk, qpid::messaging::Message& message, qpid::messaging::Duration timeout);
+
+    // Session operations
     void acknowledge(boost::shared_ptr<SessionContext> ssn, qpid::messaging::Message* message, bool cumulative);
+    void commit(boost::shared_ptr<SessionContext> ssn);
+    void rollback(boost::shared_ptr<SessionContext> ssn);
+
     void nack(boost::shared_ptr<SessionContext> ssn, qpid::messaging::Message& message, bool reject);
     void sync(boost::shared_ptr<SessionContext> ssn);
     boost::shared_ptr<ReceiverContext> nextReceiver(boost::shared_ptr<SessionContext> ssn, qpid::messaging::Duration timeout);
@@ -93,10 +103,10 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     void setOption(const std::string& name, const qpid::types::Variant& value);
     std::string getAuthenticatedUsername();
 
+    // Link operations
     void setCapacity(boost::shared_ptr<SenderContext>, uint32_t);
     uint32_t getCapacity(boost::shared_ptr<SenderContext>);
     uint32_t getUnsettled(boost::shared_ptr<SenderContext>);
-
     void setCapacity(boost::shared_ptr<ReceiverContext>, uint32_t);
     uint32_t getCapacity(boost::shared_ptr<ReceiverContext>);
     uint32_t getAvailable(boost::shared_ptr<ReceiverContext>);
@@ -159,9 +169,12 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     bool notifyOnWrite;
     boost::intrusive_ptr<qpid::sys::TimerTask> ticker;
 
-    void check();
+    bool check();
     bool checkDisconnected();
     void waitNoReconnect();
+
+    // NOTE: All wait*() functions must be called in a loop that checks for the
+    // waited condition with the lock held.
     void wait();
     void waitUntil(qpid::sys::AbsTime until);
     void wait(boost::shared_ptr<SessionContext>);
@@ -170,10 +183,12 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     void wait(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>);
     void waitUntil(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>, qpid::sys::AbsTime until);
     void waitUntil(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>, qpid::sys::AbsTime until);
+
     void checkClosed(boost::shared_ptr<SessionContext>);
     void checkClosed(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
     void checkClosed(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>);
     void checkClosed(boost::shared_ptr<SessionContext>, pn_link_t*);
+
     void wakeupDriver();
     void attach(boost::shared_ptr<SessionContext>, pn_link_t*, int credit=0);
     void autoconnect();
@@ -194,8 +209,18 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     std::string getError();
     bool useSasl();
     void setProperties();
+
     void configureConnection();
     bool checkTransportError(std::string&);
+
+    void discharge(boost::shared_ptr<SessionContext>, bool fail);
+    void startTxSession(boost::shared_ptr<SessionContext>);
+
+    void syncLH(boost::shared_ptr<SessionContext> ssn, sys::Monitor::ScopedLock&);
+    void sendLH(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext> ctxt,
+                const qpid::messaging::Message& message, bool sync,
+                SenderContext::Delivery** delivery, sys::Monitor::ScopedLock&);
+    void acknowledgeLH(boost::shared_ptr<SessionContext> ssn, qpid::messaging::Message* message, bool cumulative, sys::Monitor::ScopedLock&);
 };
 
 }}} // namespace qpid::messaging::amqp

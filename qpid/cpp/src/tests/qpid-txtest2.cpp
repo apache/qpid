@@ -353,10 +353,11 @@ int main(int argc, char** argv)
             if (opts.init) controller.init();
             if (opts.transfer) controller.transfer();
             if (opts.check) return controller.check();
+            return 0;
         }
-        return 0;
+        return 1;
     } catch(const std::exception& e) {
-	std::cout << argv[0] << ": " << e.what() << std::endl;
+	std::cerr << argv[0] << ": " << e.what() << std::endl;
     }
     return 2;
 }

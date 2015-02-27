@@ -19,11 +19,17 @@
  *
  */
 #include "Descriptor.h"
+#include "descriptors.h"
+#include <qpid/framing/reply_exceptions.h>
+#include <map>
 
 namespace qpid {
 namespace amqp {
+
 Descriptor::Descriptor(uint64_t code) : type(NUMERIC) { value.code = code; }
+
 Descriptor::Descriptor(const CharSequence& symbol) : type(SYMBOLIC) { value.symbol = symbol; }
+
 bool Descriptor::match(const std::string& symbol, uint64_t code) const
 {
     switch (type) {
@@ -58,20 +64,85 @@ Descriptor* Descriptor::nest(const Descriptor& d)
     return nested.get();
 }
 
-std::ostream& operator<<(std::ostream& os, const Descriptor& d)
-{
-    switch (d.type) {
-      case Descriptor::SYMBOLIC:
-        if (d.value.symbol.data && d.value.symbol.size) os << std::string(d.value.symbol.data, d.value.symbol.size);
-        else os << "null";
-        break;
-      case Descriptor::NUMERIC:
-        os << "0x" << std::hex << d.value.code;
-        break;
+namespace {
+
+class DescriptorMap {
+    typedef std::map<uint64_t, std::string> SymbolMap;
+    typedef std::map<std::string, uint64_t> CodeMap;
+
+    SymbolMap symbols;
+    CodeMap codes;
+
+  public:
+    DescriptorMap() {
+        symbols[message::HEADER_CODE] = message::HEADER_SYMBOL;
+        symbols[message::DELIVERY_ANNOTATIONS_CODE] = message::DELIVERY_ANNOTATIONS_SYMBOL;
+        symbols[message::MESSAGE_ANNOTATIONS_CODE] = message::MESSAGE_ANNOTATIONS_SYMBOL;
+        symbols[message::PROPERTIES_CODE] = message::PROPERTIES_SYMBOL;
+        symbols[message::APPLICATION_PROPERTIES_CODE] = message::APPLICATION_PROPERTIES_SYMBOL;
+        symbols[message::DATA_CODE] = message::DATA_SYMBOL;
+        symbols[message::AMQP_SEQUENCE_CODE] = message::AMQP_SEQUENCE_SYMBOL;
+        symbols[message::AMQP_VALUE_CODE] = message::AMQP_VALUE_SYMBOL;
+        symbols[message::FOOTER_CODE] = message::FOOTER_SYMBOL;
+        symbols[message::ACCEPTED_CODE] = message::ACCEPTED_SYMBOL;
+        symbols[sasl::SASL_MECHANISMS_CODE] = sasl::SASL_MECHANISMS_SYMBOL;
+        symbols[sasl::SASL_INIT_CODE] = sasl::SASL_INIT_SYMBOL;
+        symbols[sasl::SASL_CHALLENGE_CODE] = sasl::SASL_CHALLENGE_SYMBOL;
+        symbols[sasl::SASL_RESPONSE_CODE] = sasl::SASL_RESPONSE_SYMBOL;
+        symbols[sasl::SASL_OUTCOME_CODE] = sasl::SASL_OUTCOME_SYMBOL;
+        symbols[filters::LEGACY_DIRECT_FILTER_CODE] = filters::LEGACY_DIRECT_FILTER_SYMBOL;
+        symbols[filters::LEGACY_TOPIC_FILTER_CODE] = filters::LEGACY_TOPIC_FILTER_SYMBOL;
+        symbols[filters::LEGACY_HEADERS_FILTER_CODE] = filters::LEGACY_HEADERS_FILTER_SYMBOL;
+        symbols[filters::SELECTOR_FILTER_CODE] = filters::SELECTOR_FILTER_SYMBOL;
+        symbols[filters::XQUERY_FILTER_CODE] = filters::XQUERY_FILTER_SYMBOL;
+        symbols[lifetime_policy::DELETE_ON_CLOSE_CODE] = lifetime_policy::DELETE_ON_CLOSE_SYMBOL;
+        symbols[lifetime_policy::DELETE_ON_NO_LINKS_CODE] = lifetime_policy::DELETE_ON_NO_LINKS_SYMBOL;
+        symbols[lifetime_policy::DELETE_ON_NO_MESSAGES_CODE] = lifetime_policy::DELETE_ON_NO_MESSAGES_SYMBOL;
+        symbols[lifetime_policy::DELETE_ON_NO_LINKS_OR_MESSAGES_CODE] = lifetime_policy::DELETE_ON_NO_LINKS_OR_MESSAGES_SYMBOL;
+        symbols[transaction::DECLARE_CODE] = transaction::DECLARE_SYMBOL;
+        symbols[transaction::DISCHARGE_CODE] = transaction::DISCHARGE_SYMBOL;
+        symbols[transaction::DECLARED_CODE] = transaction::DECLARED_SYMBOL;
+        symbols[transaction::TRANSACTIONAL_STATE_CODE] = transaction::TRANSACTIONAL_STATE_SYMBOL;
+        symbols[0] = "unknown-descriptor";
+
+        for (SymbolMap::const_iterator i = symbols.begin(); i != symbols.end(); ++i)
+            codes[i->second] = i->first;
     }
-    if (d.nested.get()) {
-        os << " ->(" << *d.nested << ")";
+
+    std::string operator[](uint64_t code) const {
+        SymbolMap::const_iterator i = symbols.find(code);
+        return (i == symbols.end()) ? "unknown-descriptor" : i->second;
     }
-    return os;
+
+    uint64_t operator[](const std::string& symbol) const {
+         CodeMap::const_iterator i = codes.find(symbol);
+         return (i == codes.end()) ? 0 : i->second;
+     }
+};
+
+DescriptorMap DESCRIPTOR_MAP;
 }
+
+std::string Descriptor::symbol() const {
+    switch (type) {
+      case Descriptor::NUMERIC: return DESCRIPTOR_MAP[value.code];
+      case Descriptor::SYMBOLIC: return value.symbol.str();
+    }
+    assert(0);
+    return std::string();
+}
+
+uint64_t Descriptor::code() const {
+    switch (type) {
+      case Descriptor::NUMERIC: return value.code;
+      case Descriptor::SYMBOLIC: return DESCRIPTOR_MAP[value.symbol.str()];
+    }
+    assert(0);
+    return 0;
+}
+
+std::ostream& operator<<(std::ostream& os, const Descriptor& d) {
+    return os << d.symbol() << "(" << "0x" << std::hex << d.code() << ")";
+}
+
 }} // namespace qpid::amqp

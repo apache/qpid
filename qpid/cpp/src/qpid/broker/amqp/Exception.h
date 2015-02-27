@@ -22,6 +22,7 @@
  *
  */
 #include <string>
+#include <qpid/Exception.h>
 
 namespace qpid {
 namespace broker {
@@ -29,7 +30,7 @@ namespace amqp {
 /**
  * Exception to signal various AMQP 1.0 defined conditions
  */
-class Exception : public std::exception
+class Exception : public qpid::Exception
 {
   public:
     Exception(const std::string& name, const std::string& description);
