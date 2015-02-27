@@ -371,11 +371,16 @@ public abstract class QueueEntryImpl implements QueueEntry
         }
     }
 
-    private void dequeue()
+    private boolean dequeue()
     {
         EntryState state = _state;
 
-        if((state.getState() == State.ACQUIRED) &&_stateUpdater.compareAndSet(this, state, DEQUEUED_STATE))
+        while(state.getState() == State.ACQUIRED && !_stateUpdater.compareAndSet(this, state, DEQUEUED_STATE))
+        {
+            state = _state;
+        }
+
+        if(state.getState() == State.ACQUIRED)
         {
             if (state instanceof ConsumerAcquiredState || state instanceof LockedAcquiredState)
             {
@@ -387,7 +392,11 @@ public abstract class QueueEntryImpl implements QueueEntry
             {
                 notifyStateChange(state.getState() , QueueEntry.State.DEQUEUED);
             }
-
+            return true;
+        }
+        else
+        {
+            return false;
         }
 
     }
@@ -420,9 +429,10 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     public void delete()
     {
-        dequeue();
-
-        dispose();
+        if(dequeue())
+        {
+            dispose();
+        }
     }
 
     public int routeToAlternate(final Action<? super MessageInstance> action, ServerTransaction txn)

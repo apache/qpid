@@ -137,6 +137,7 @@ public class SortedQueueEntryTest extends QueueEntryImplTestBase
     public void testTraverseWithDeletedEntries()
     {
         // Delete 2nd queue entry
+        _queueEntry3.acquire();
         _queueEntry3.delete();
         assertTrue(_queueEntry3.isDeleted());
 

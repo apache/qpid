@@ -113,6 +113,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
      */
     private void delete()
     {
+        _queueEntry.acquire();
         _queueEntry.delete();
         assertTrue("Queue entry should be in DELETED state after invoking of delete method",
                 _queueEntry.isDeleted());
