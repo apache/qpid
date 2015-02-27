@@ -93,6 +93,7 @@ public class LastValueQueueListTest extends TestCase
         ServerMessage message = createTestServerMessage(null);
 
         QueueEntry addedEntry = _list.add(message);
+        addedEntry.acquire();
         addedEntry.delete();
 
         int numberOfEntries = countEntries(_list);
@@ -113,6 +114,7 @@ public class LastValueQueueListTest extends TestCase
         ServerMessage message = createTestServerMessage(TEST_KEY_VALUE);
 
         QueueEntry addedEntry = _list.add(message);
+        addedEntry.acquire();
         addedEntry.delete();
 
         int numberOfEntries = countEntries(_list);
@@ -173,6 +175,7 @@ public class LastValueQueueListTest extends TestCase
         assertEquals(1, countEntries(_list));
         assertEquals(1, _list.getLatestValuesMap().size());
 
+        addedEntry.acquire();
         addedEntry.delete();
 
         assertEquals(0, countEntries(_list));
@@ -193,7 +196,9 @@ public class LastValueQueueListTest extends TestCase
         assertEquals(2, countEntries(_list));
         assertEquals(2, _list.getLatestValuesMap().size());
 
+        addedEntry1.acquire();
         addedEntry1.delete();
+        addedEntry2.acquire();
         addedEntry2.delete();
 
         assertEquals(0, countEntries(_list));

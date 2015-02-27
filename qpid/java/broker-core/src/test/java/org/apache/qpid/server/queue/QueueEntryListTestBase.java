@@ -196,6 +196,7 @@ public abstract class QueueEntryListTestBase extends TestCase
         final QueueEntry head = getTestList().getHead();
 
         final QueueEntry first = getTestList().next(head);
+        first.acquire();
         first.delete();
 
         final QueueEntry second = getTestList().next(head);
@@ -226,6 +227,7 @@ public abstract class QueueEntryListTestBase extends TestCase
         assertNull(list.next(queueEntry2));
 
         //'delete' the 2nd QueueEntry
+        queueEntry2.acquire();
         queueEntry2.delete();
         assertTrue("Deleting node should have succeeded", queueEntry2.isDeleted());
 
