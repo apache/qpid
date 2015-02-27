@@ -87,11 +87,12 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
         verify(_store).update(eq(false),any(ConfiguredObjectRecord.class));
     }
 
-    public void testChildAddedForVirtualHostNode()
+    public void testChildAddedWhereParentManagesChildStorage()
     {
         notifyBrokerStarted();
 
         VirtualHostNode<?> object = mock(VirtualHostNode.class);
+        when(object.managesChildStorage()).thenReturn(true);
         VirtualHost<?,?,?> virtualHost = mock(VirtualHost.class);
         _listener.childAdded(object, virtualHost);
         verifyNoMoreInteractions(_store);

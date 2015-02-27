@@ -25,7 +25,7 @@ import org.apache.qpid.server.model.GroupProvider;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedObject;
 
-@ManagedObject( category = false, type = "GroupFile" )
+@ManagedObject( category = false, type = "GroupFile", managesChildren = true )
 public interface FileBasedGroupProvider<X extends FileBasedGroupProvider<X>> extends GroupProvider<X>, GroupManagingGroupProvider
 {
     String PATH="path";

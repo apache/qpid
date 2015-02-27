@@ -238,6 +238,9 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     void setAttributes(Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException;
 
     Class<? extends ConfiguredObject> getCategoryClass();
+    Class<? extends ConfiguredObject> getTypeClass();
+
+    boolean managesChildStorage();
 
     <C extends ConfiguredObject<C>> C findConfiguredObject(Class<C> clazz, String name);
 

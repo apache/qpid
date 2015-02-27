@@ -28,7 +28,7 @@ import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
-@ManagedObject( category = false, type = "Base64MD5PasswordFile" )
+@ManagedObject( category = false, managesChildren = true, type = "Base64MD5PasswordFile" )
 public class Base64MD5PasswordDatabaseAuthenticationManager
         extends PrincipalDatabaseAuthenticationManager<Base64MD5PasswordDatabaseAuthenticationManager>
 {
