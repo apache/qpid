@@ -7,7 +7,7 @@ Some initial helper info can be found below.
 
 ==== Building the code and running the tests ====
 
-Here are some example Maven build commands that you may find usefull.
+Here are some example Maven build commands that you may find useful.
 
 Clean previous builds output and install all modules to local repository without
 running any of the unit or system tests.
