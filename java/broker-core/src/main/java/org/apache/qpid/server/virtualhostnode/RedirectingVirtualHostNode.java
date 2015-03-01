@@ -18,13 +18,19 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.plugin;
+package org.apache.qpid.server.virtualhostnode;
 
-import java.util.List;
+import java.util.Map;
 
-import org.apache.qpid.server.filter.MessageFilter;
+import org.apache.qpid.server.model.ManagedAttribute;
+import org.apache.qpid.server.model.ManagedObject;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.VirtualHostNode;
 
-public interface MessageFilterFactory extends Pluggable
+@ManagedObject(type= RedirectingVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE, category=false, validChildTypes = "org.apache.qpid.server.virtualhostnode.RedirectingVirtualHostNodeImpl#getSupportedChildTypes()")
+public interface RedirectingVirtualHostNode<X extends RedirectingVirtualHostNode<X>> extends VirtualHostNode<X>
 {
-    MessageFilter newInstance(List<String> arguments);
+
+    @ManagedAttribute( defaultValue = "{}")
+    Map<Port<?>, String> getRedirects();
 }

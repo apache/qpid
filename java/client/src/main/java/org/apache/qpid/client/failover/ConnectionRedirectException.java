@@ -18,13 +18,29 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.plugin;
+package org.apache.qpid.client.failover;
 
-import java.util.List;
+import org.apache.qpid.AMQException;
 
-import org.apache.qpid.server.filter.MessageFilter;
-
-public interface MessageFilterFactory extends Pluggable
+public class ConnectionRedirectException extends AMQException
 {
-    MessageFilter newInstance(List<String> arguments);
+    private final String _host;
+    private final int _port;
+
+    public ConnectionRedirectException(final String host, final int port)
+    {
+        super("Redirecting to " + host + ":" + port);
+        _host = host;
+        _port = port;
+    }
+
+    public String getHost()
+    {
+        return _host;
+    }
+
+    public int getPort()
+    {
+        return _port;
+    }
 }

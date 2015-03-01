@@ -184,7 +184,8 @@ public class ServerConnectionDelegate extends ServerDelegate
             vhostName = "";
         }
 
-        vhost = ((AmqpPort)sconn.getPort()).getVirtualHost(vhostName);
+        AmqpPort port = (AmqpPort) sconn.getPort();
+        vhost = port.getVirtualHost(vhostName);
 
 
 
@@ -193,7 +194,16 @@ public class ServerConnectionDelegate extends ServerDelegate
             if (vhost.getState() != State.ACTIVE)
             {
                 sconn.setState(Connection.State.CLOSING);
-                sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Virtual host '"+vhostName+"' is not active"));
+                final String redirectHost = vhost.getRedirectHost(port);
+                if(redirectHost == null)
+                {
+                    sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED,
+                                                     "Virtual host '" + vhostName + "' is not active"));
+                }
+                else
+                {
+                    sconn.invoke(new ConnectionRedirect(redirectHost, new ArrayList<Object>()));
+                }
                 return;
             }
 

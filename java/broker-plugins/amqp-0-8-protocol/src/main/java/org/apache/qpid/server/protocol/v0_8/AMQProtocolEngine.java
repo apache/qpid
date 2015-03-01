@@ -1544,7 +1544,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             virtualHostStr = virtualHostName == null ? null : virtualHostName.toString();
         }
 
-        VirtualHostImpl virtualHost = ((AmqpPort)getPort()).getVirtualHost(virtualHostStr);
+        VirtualHostImpl<?,?,?> virtualHost = ((AmqpPort)getPort()).getVirtualHost(virtualHostStr);
 
         if (virtualHost == null)
         {
@@ -1557,8 +1557,16 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             // Check virtualhost access
             if (virtualHost.getState() != State.ACTIVE)
             {
-                closeConnection(AMQConstant.CONNECTION_FORCED,
-                                "Virtual host '" + virtualHost.getName() + "' is not active",0);
+                String redirectHost = virtualHost.getRedirectHost(getPort());
+                if(redirectHost != null)
+                {
+                    closeConnection(0, new AMQFrame(0,new ConnectionRedirectBody(getProtocolVersion(),AMQShortString.valueOf(redirectHost), null)));
+                }
+                else
+                {
+                    closeConnection(AMQConstant.CONNECTION_FORCED,
+                                    "Virtual host '" + virtualHost.getName() + "' is not active", 0);
+                }
 
             }
             else
@@ -1754,7 +1762,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         _logger.info("Locale selected: " + locale);
 
         SubjectCreator subjectCreator = getSubjectCreator();
-        SaslServer ss = null;
+        SaslServer ss;
         try
         {
             ss = subjectCreator.createSaslServer(String.valueOf(mechanism),

@@ -63,6 +63,7 @@ import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.ConnectionAdapter;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.plugin.ConnectionValidator;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
@@ -932,6 +933,12 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             return _empty;
         }
+    }
+
+    @Override
+    public String getRedirectHost(final AmqpPort<?> port)
+    {
+        return null;
     }
 
     private class VirtualHostHouseKeepingTask extends HouseKeepingTask

@@ -50,6 +50,25 @@ abstract class AttributeValueConverter<T>
         }
     };
 
+    static final AttributeValueConverter<Object> OBJECT_CONVERTER = new AttributeValueConverter<Object>()
+    {
+        @Override
+        public Object convert(final Object value, final ConfiguredObject object)
+        {
+            if(value instanceof String)
+            {
+                return AbstractConfiguredObject.interpolate(object, (String) value);
+            }
+            else if(value == null)
+            {
+                return null;
+            }
+            else
+            {
+                return value;
+            }
+        }
+    };
     static final AttributeValueConverter<UUID> UUID_CONVERTER = new AttributeValueConverter<UUID>()
     {
         @Override
@@ -398,7 +417,17 @@ abstract class AttributeValueConverter<T>
         }
         else if(Map.class.isAssignableFrom(type))
         {
-            return (AttributeValueConverter<X>) MAP_CONVERTER;
+            if(returnType instanceof ParameterizedType)
+            {
+                Type keyType = ((ParameterizedType) returnType).getActualTypeArguments()[0];
+                Type valueType = ((ParameterizedType) returnType).getActualTypeArguments()[1];
+
+                return (AttributeValueConverter<X>) new GenericMapConverter(keyType,valueType);
+            }
+            else
+            {
+                return (AttributeValueConverter<X>) MAP_CONVERTER;
+            }
         }
         else if(Collection.class.isAssignableFrom(type))
         {
@@ -415,6 +444,10 @@ abstract class AttributeValueConverter<T>
         else if(ConfiguredObject.class.isAssignableFrom(type))
         {
             return (AttributeValueConverter<X>) new ConfiguredObjectConverter(type);
+        }
+        else if(Object.class == type)
+        {
+            return (AttributeValueConverter<X>) OBJECT_CONVERTER;
         }
         throw new IllegalArgumentException("Cannot create attribute converter of type " + type.getName());
     }
@@ -574,6 +607,62 @@ abstract class AttributeValueConverter<T>
             }
         }
     }
+
+    public static class GenericMapConverter extends AttributeValueConverter<Map>
+    {
+
+        private final AttributeValueConverter<?> _keyConverter;
+        private final AttributeValueConverter<?> _valueConverter;
+
+
+        public GenericMapConverter(final Type keyType, final Type valueType)
+        {
+            _keyConverter = getConverter(getRawType(keyType), keyType);
+
+            _valueConverter = getConverter(getRawType(valueType), valueType);
+        }
+
+
+        @Override
+        public Map convert(final Object value, final ConfiguredObject object)
+        {
+            if(value instanceof Map)
+            {
+                Map<?,?> original = (Map<?,?>)value;
+                Map converted = new LinkedHashMap(original.size());
+                for(Map.Entry<?,?> entry : original.entrySet())
+                {
+                    converted.put(_keyConverter.convert(entry.getKey(),object),
+                                  _valueConverter.convert(entry.getValue(), object));
+                }
+                return Collections.unmodifiableMap(converted);
+            }
+            else if(value == null)
+            {
+                return null;
+            }
+            else
+            {
+                if(value instanceof String)
+                {
+                    String interpolated = AbstractConfiguredObject.interpolate(object, (String) value);
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    try
+                    {
+                        return convert(objectMapper.readValue(interpolated, Map.class), object);
+                    }
+                    catch (IOException e)
+                    {
+                        // fall through to the non-JSON single object case
+                    }
+                }
+
+                throw new IllegalArgumentException("Cannot convert type " + value.getClass() + " to a Map");
+            }
+
+        }
+    }
+
 
     static final class EnumConverter<X extends Enum<X>> extends AttributeValueConverter<X>
     {

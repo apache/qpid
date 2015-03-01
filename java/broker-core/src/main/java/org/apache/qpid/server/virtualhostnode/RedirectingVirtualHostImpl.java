@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,9 +16,9 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-
-package org.apache.qpid.server.virtualhost.berkeleydb;
+package org.apache.qpid.server.virtualhostnode;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -55,13 +56,12 @@ import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.HouseKeepingTask;
 import org.apache.qpid.server.virtualhost.RequiredExchangeException;
 
-/**
-  Object that represents the VirtualHost whilst the VirtualHostNode is in the replica role.  The
-  real virtualhost will be elsewhere in the group.
- */
-@ManagedObject( category = false, type = "BDB_HA_REPLICA", register = false )
-public class BDBHAReplicaVirtualHostImpl extends AbstractConfiguredObject<BDBHAReplicaVirtualHostImpl> implements BDBHAReplicaVirtualHost<BDBHAReplicaVirtualHostImpl>
+@ManagedObject( category = false, type = RedirectingVirtualHostImpl.TYPE, register = false )
+class RedirectingVirtualHostImpl
+    extends AbstractConfiguredObject<RedirectingVirtualHostImpl>
+        implements RedirectingVirtualHost<RedirectingVirtualHostImpl>
 {
+    public static final String TYPE = "REDIRECTOR";
     private final StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     @ManagedAttributeField
@@ -92,7 +92,7 @@ public class BDBHAReplicaVirtualHostImpl extends AbstractConfiguredObject<BDBHAR
 
 
     @ManagedObjectFactoryConstructor
-    public BDBHAReplicaVirtualHostImpl(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
+    public RedirectingVirtualHostImpl(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
     {
         super(parentsMap(virtualHostNode), attributes);
 
@@ -108,7 +108,7 @@ public class BDBHAReplicaVirtualHostImpl extends AbstractConfiguredObject<BDBHAR
     {
         super.validateChange(proxyForValidation, changedAttributes);
 
-        throwUnsupportedForReplica();
+        throwUnsupportedForRedirector();
     }
 
     @Override
@@ -122,14 +122,14 @@ public class BDBHAReplicaVirtualHostImpl extends AbstractConfiguredObject<BDBHAR
                                                       final Map<String, Object> attributes,
                                                       final ConfiguredObject... otherParents)
     {
-        throwUnsupportedForReplica();
+        throwUnsupportedForRedirector();
         return null;
     }
 
     @Override
     public ExchangeImpl createExchange(final Map<String, Object> attributes)
     {
-        throwUnsupportedForReplica();
+        throwUnsupportedForRedirector();
         return null;
     }
 
@@ -137,7 +137,7 @@ public class BDBHAReplicaVirtualHostImpl extends AbstractConfiguredObject<BDBHAR
     public void removeExchange(final ExchangeImpl<?> exchange, final boolean force)
             throws ExchangeIsAlternateException, RequiredExchangeException
     {
-        throwUnsupportedForReplica();
+        throwUnsupportedForRedirector();
     }
 
     @Override
@@ -155,14 +155,14 @@ public class BDBHAReplicaVirtualHostImpl extends AbstractConfiguredObject<BDBHAR
     @Override
     public AMQQueue<?> createQueue(final Map<String, Object> attributes)
     {
-        throwUnsupportedForReplica();
+        throwUnsupportedForRedirector();
         return null;
     }
 
     @Override
     public void executeTransaction(final TransactionalOperation op)
     {
-        throwUnsupportedForReplica();
+        throwUnsupportedForRedirector();
     }
 
     @Override
@@ -174,7 +174,7 @@ public class BDBHAReplicaVirtualHostImpl extends AbstractConfiguredObject<BDBHAR
     @Override
     public String getRedirectHost(final AmqpPort<?> port)
     {
-        return null;
+        return ((RedirectingVirtualHostNode<?>)(getParent(VirtualHostNode.class))).getRedirects().get(port);
     }
 
     @Override
@@ -306,7 +306,7 @@ public class BDBHAReplicaVirtualHostImpl extends AbstractConfiguredObject<BDBHAR
     @Override
     public int removeQueue(final AMQQueue<?> queue)
     {
-        throwUnsupportedForReplica();
+        throwUnsupportedForRedirector();
         return 0;
     }
 
@@ -407,7 +407,7 @@ public class BDBHAReplicaVirtualHostImpl extends AbstractConfiguredObject<BDBHAR
     @Override
     public ScheduledFuture<?> scheduleTask(final long delay, final Runnable timeoutTask)
     {
-        throwUnsupportedForReplica();
+        throwUnsupportedForRedirector();
         return null;
     }
 
@@ -426,13 +426,13 @@ public class BDBHAReplicaVirtualHostImpl extends AbstractConfiguredObject<BDBHAR
     @Override
     public void registerMessageReceived(final long messageSize, final long timestamp)
     {
-        throwUnsupportedForReplica();
+        throwUnsupportedForRedirector();
     }
 
     @Override
     public void registerMessageDelivered(final long messageSize)
     {
-        throwUnsupportedForReplica();
+        throwUnsupportedForRedirector();
     }
 
     @Override
@@ -482,10 +482,11 @@ public class BDBHAReplicaVirtualHostImpl extends AbstractConfiguredObject<BDBHAR
         return _disabledConnectionValidators;
     }
 
-    private void throwUnsupportedForReplica()
+    private void throwUnsupportedForRedirector()
     {
         throw new IllegalStateException("The virtual host state of " + getState()
                                         + " does not permit this operation.");
     }
+
 
 }

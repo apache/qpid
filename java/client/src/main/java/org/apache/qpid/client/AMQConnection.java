@@ -62,6 +62,7 @@ import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQProtocolException;
 import org.apache.qpid.AMQUnresolvedAddressException;
+import org.apache.qpid.client.failover.ConnectionRedirectException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
@@ -462,9 +463,22 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             }
             else if (!isConnected())
             {
-                retryAllowed = _failoverPolicy.failoverAllowed();
-                brokerDetails = _failoverPolicy.getNextBrokerDetails();
-                _protocolHandler.setStateManager(new AMQStateManager(_protocolHandler.getProtocolSession()));
+                if(connectionException instanceof ConnectionRedirectException)
+                {
+                    ConnectionRedirectException redirect = (ConnectionRedirectException) connectionException;
+                    retryAllowed = true;
+                    brokerDetails = new AMQBrokerDetails(brokerDetails);
+                    brokerDetails.setHost(redirect.getHost());
+                    brokerDetails.setPort(redirect.getPort());
+                    _protocolHandler.setStateManager(new AMQStateManager(_protocolHandler.getProtocolSession()));
+
+                }
+                else
+                {
+                    retryAllowed = _failoverPolicy.failoverAllowed();
+                    brokerDetails = _failoverPolicy.getNextBrokerDetails();
+                    _protocolHandler.setStateManager(new AMQStateManager(_protocolHandler.getProtocolSession()));
+                }
 
             }
         }
@@ -599,9 +613,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         _virtualHost = virtualHost;
     }
 
-    public boolean attemptReconnection(String host, int port)
+    public boolean attemptReconnection(String host, int port, final boolean useFailoverConfigOnFailure)
     {
-        BrokerDetails bd = new AMQBrokerDetails(host, port);
+        BrokerDetails bd = new AMQBrokerDetails(_failoverPolicy.getCurrentBrokerDetails());
+        bd.setHost(host);
+        bd.setPort(port);
 
         _failoverPolicy.setBroker(bd);
 
@@ -618,10 +634,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 _logger.info("Unable to connect to broker at " + bd);
             }
 
-            attemptReconnection();
+            return useFailoverConfigOnFailure && attemptReconnection();
         }
 
-        return false;
     }
 
     public boolean attemptReconnection()
@@ -629,32 +644,41 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         BrokerDetails broker = null;
         while (_failoverPolicy.failoverAllowed() && (broker = _failoverPolicy.getNextBrokerDetails()) != null)
         {
-            try
+            if (attemptConnection(broker))
             {
-                makeBrokerConnection(broker);
                 return true;
-            }
-            catch (Exception e)
-            {
-                if (!(e instanceof AMQException))
-                {
-                    if (_logger.isInfoEnabled())
-                    {
-                        _logger.info("Unable to connect to broker at " + _failoverPolicy.getCurrentBrokerDetails(), e);
-                    }
-                }
-                else
-                {
-                    if (_logger.isInfoEnabled())
-                    {
-                        _logger.info(e.getMessage() + ":Unable to connect to broker at "
-                                     + _failoverPolicy.getCurrentBrokerDetails());
-                    }
-                }
             }
         }
 
         // connection unsuccessful
+        return false;
+    }
+
+    private boolean attemptConnection(final BrokerDetails broker)
+    {
+        try
+        {
+            makeBrokerConnection(broker);
+            return true;
+        }
+        catch (Exception e)
+        {
+            if (!(e instanceof AMQException))
+            {
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Unable to connect to broker at " + _failoverPolicy.getCurrentBrokerDetails(), e);
+                }
+            }
+            else
+            {
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info(e.getMessage() + ":Unable to connect to broker at "
+                                 + _failoverPolicy.getCurrentBrokerDetails());
+                }
+            }
+        }
         return false;
     }
 
