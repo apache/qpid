@@ -53,7 +53,8 @@ def get_client_properties_with_defaults(provided_client_properties={}, version_p
   try:
     import pkg_resources
     pkg = pkg_resources.require("qpid-python")
-    version = pkg[0].version if pkg and pkg[0] and pkg[0].version else version
+    if pkg and pkg[0] and pkg[0].version:
+      version = pkg[0].version
   except:
     pass
 
