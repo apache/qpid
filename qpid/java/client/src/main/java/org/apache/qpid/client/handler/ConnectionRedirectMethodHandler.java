@@ -20,13 +20,18 @@
  */
 package org.apache.qpid.client.handler;
 
+import java.nio.ByteBuffer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.failover.ConnectionRedirectException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.ConnectionRedirectBody;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.TransportException;
 
 public class ConnectionRedirectMethodHandler implements StateAwareMethodListener<ConnectionRedirectBody>
 {
@@ -65,7 +70,21 @@ public class ConnectionRedirectMethodHandler implements StateAwareMethodListener
 
         }
 
-        session.failover(host, port);
+        session.notifyError(new ConnectionRedirectException(host,port));
+
+        Sender<ByteBuffer> sender = session.getSender();
+
+        // Close the open TCP connection
+        try
+        {
+            sender.close();
+        }
+        catch(TransportException e)
+        {
+            //Ignore, they are already logged by the Sender and this
+            //is a connection-close being processed by the IoReceiver
+            //which will as it closes initiate failover if necessary.
+        }
     }
 
 }

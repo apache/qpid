@@ -794,14 +794,6 @@ public class AMQProtocolHandler implements ProtocolEngine
         return _writtenBytes;
     }
 
-    public void failover(String host, int port)
-    {
-        _failoverHandler.setHost(host);
-        _failoverHandler.setPort(port);
-        // see javadoc for FailoverHandler to see rationale for separate thread
-        startFailoverThread();
-    }
-
     public void blockUntilNotFailingOver() throws InterruptedException
     {
         synchronized(_failoverLatchChange)

@@ -20,12 +20,6 @@
  */
 package org.apache.qpid.transport;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.test.utils.QpidTestCase;
-import org.apache.qpid.transport.network.ConnectionBinding;
-import org.apache.qpid.transport.network.io.IoAcceptor;
-import org.apache.qpid.transport.util.Waiter;
-
 import static org.apache.qpid.transport.Option.EXPECTED;
 import static org.apache.qpid.transport.Option.NONE;
 import static org.apache.qpid.transport.Option.SYNC;
@@ -36,6 +30,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.transport.network.ConnectionBinding;
+import org.apache.qpid.transport.network.io.IoAcceptor;
+import org.apache.qpid.transport.util.Waiter;
 
 /**
  * ConnectionTest
@@ -170,6 +171,12 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
                 {
                     closed.countDown();
                 }
+            }
+
+            @Override
+            public boolean redirect(final String host, final List<Object> knownHosts)
+            {
+                return false;
             }
         });
         conn.connect("localhost", port, null, "guest", "guest", false, null);
@@ -436,6 +443,12 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
             queue = true;
             conn.connect("localhost", port, null, "guest", "guest", false, null);
             conn.resume();
+        }
+
+        @Override
+        public boolean redirect(final String host, final List<Object> knownHosts)
+        {
+            return false;
         }
     }
 

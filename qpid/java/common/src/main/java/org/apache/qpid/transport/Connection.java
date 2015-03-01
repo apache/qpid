@@ -81,6 +81,7 @@ public class Connection extends ConnectionInvoker
     private NetworkConnection _networkConnection;
     private FrameSizeObserver _frameSizeObserver;
     private boolean _messageCompressionSupported;
+    private final AtomicBoolean _redirecting = new AtomicBoolean();
 
     public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD, RESUMING }
 
@@ -92,6 +93,12 @@ public class Connection extends ConnectionInvoker
             log.error(exception, "connection exception");
         }
         public void closed(Connection conn) {}
+
+        @Override
+        public boolean redirect(final String host, final List<Object> knownHosts)
+        {
+            return false;
+        }
     }
 
     public static interface SessionFactory
@@ -149,6 +156,11 @@ public class Connection extends ConnectionInvoker
     public void addConnectionListener(ConnectionListener listener)
     {
         listeners.add(listener);
+    }
+
+    public List<ConnectionListener> getListeners()
+    {
+        return Collections.unmodifiableList(listeners);
     }
 
     public Sender<ProtocolEvent> getSender()
@@ -226,6 +238,7 @@ public class Connection extends ConnectionInvoker
         synchronized (lock)
         {
             conSettings = settings;
+            _redirecting.set(false);
             state = OPENING;
             userID = settings.getUsername();
             connectionLost.set(false);
@@ -259,7 +272,7 @@ public class Connection extends ConnectionInvoker
             send(new ProtocolHeader(1, 0, 10));
 
             Waiter w = new Waiter(lock, timeout);
-            while (w.hasTime() && state == OPENING && error == null)
+            while (w.hasTime() && ((state == OPENING && error == null) || isRedirecting()))
             {
                 w.await();
             }
@@ -863,4 +876,15 @@ public class Connection extends ConnectionInvoker
     {
         return _messageCompressionSupported;
     }
+
+    public boolean isRedirecting()
+    {
+        return _redirecting.get();
+    }
+
+    public void setRedirecting(final boolean redirecting)
+    {
+        _redirecting.set(redirecting);
+    }
+
 }

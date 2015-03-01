@@ -191,7 +191,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     private MessageDurability _messageDurability;
 
     @ManagedAttributeField
-    private Map<String, Map<String,List<Object>>> _defaultFilters;
+    private Map<String, Map<String,List<String>>> _defaultFilters;
 
     private Object _exclusiveOwner; // could be connection, session, Principal or a String for the container name
 
@@ -467,17 +467,17 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             final Map<String, MessageFilterFactory> messageFilterFactories =
                     qpidServiceLoader.getInstancesByType(MessageFilterFactory.class);
 
-            for (Map.Entry<String,Map<String,List<Object>>> entry : _defaultFilters.entrySet())
+            for (Map.Entry<String,Map<String,List<String>>> entry : _defaultFilters.entrySet())
             {
                 String name = String.valueOf(entry.getKey());
-                Map<String, List<Object>> filterValue = entry.getValue();
+                Map<String, List<String>> filterValue = entry.getValue();
                 if(filterValue.size() == 1)
                 {
                     String filterTypeName = String.valueOf(filterValue.keySet().iterator().next());
                     MessageFilterFactory filterFactory = messageFilterFactories.get(filterTypeName);
                     if(filterFactory != null)
                     {
-                        List<Object> filterArguments = filterValue.values().iterator().next();
+                        List<String> filterArguments = filterValue.values().iterator().next();
                         _defaultFiltersMap.put(name, filterFactory.newInstance(filterArguments));
                     }
                     else
@@ -599,7 +599,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     }
 
     @Override
-    public Map<String, Map<String, List<Object>>> getDefaultFilters()
+    public Map<String, Map<String, List<String>>> getDefaultFilters()
     {
         return _defaultFilters;
     }

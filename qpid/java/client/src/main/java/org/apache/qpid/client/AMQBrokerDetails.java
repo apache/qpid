@@ -20,17 +20,17 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.transport.ConnectionSettings;
-import org.apache.qpid.url.URLHelper;
-import org.apache.qpid.url.URLSyntaxException;
-
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.transport.ConnectionSettings;
+import org.apache.qpid.url.URLHelper;
+import org.apache.qpid.url.URLSyntaxException;
 
 public class AMQBrokerDetails implements BrokerDetails, Serializable
 {
@@ -41,6 +41,14 @@ public class AMQBrokerDetails implements BrokerDetails, Serializable
     private String _transport;
 
     private Map<String, String> _options = new HashMap<String, String>();
+
+    public AMQBrokerDetails(BrokerDetails details)
+    {
+        _host = details.getHost();
+        _port = details.getPort();
+        _transport = details.getTransport();
+        _options = new HashMap<>(details.getProperties());
+    }
 
     public AMQBrokerDetails(){}
     

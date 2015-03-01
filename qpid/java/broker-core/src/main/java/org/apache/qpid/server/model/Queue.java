@@ -163,7 +163,7 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     long getMaximumMessageTtl();
 
     @ManagedAttribute
-    Map<String, Map<String,List<Object>>> getDefaultFilters();
+    Map<String, Map<String,List<String>>> getDefaultFilters();
 
     //children
     Collection<? extends Binding> getBindings();

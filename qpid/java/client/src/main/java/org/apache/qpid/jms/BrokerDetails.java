@@ -98,7 +98,7 @@ public interface BrokerDetails
     /**
      * Sets the properties associated with this connection
      *
-     * @param props the new p[roperties.
+     * @param props the new properties.
      */
     public void setProperties(Map<String,String> props);
 

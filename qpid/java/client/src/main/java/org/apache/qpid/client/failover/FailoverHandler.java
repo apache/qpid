@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client.failover;
 
+import java.util.concurrent.CountDownLatch;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +29,6 @@ import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
-
-import java.util.concurrent.CountDownLatch;
 
 /**
  * FailoverHandler is a continuation that performs the failover procedure on a protocol session. As described in the
@@ -168,7 +168,7 @@ public class FailoverHandler implements Runnable
             // if _host has value then we are performing a redirect.
             if (_host != null)
             {
-                failoverSucceeded = _amqProtocolHandler.getConnection().attemptReconnection(_host, _port);
+                failoverSucceeded = _amqProtocolHandler.getConnection().attemptReconnection(_host, _port, true);
             }
             else
             {

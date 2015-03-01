@@ -18,13 +18,15 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.plugin;
+package org.apache.qpid.server.virtualhostnode;
 
-import java.util.List;
+import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.virtualhost.NonStandardVirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-import org.apache.qpid.server.filter.MessageFilter;
-
-public interface MessageFilterFactory extends Pluggable
+public interface RedirectingVirtualHost<X extends RedirectingVirtualHost<X>>
+        extends VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>,
+                NonStandardVirtualHost<X,AMQQueue<?>,ExchangeImpl<?>>
 {
-    MessageFilter newInstance(List<String> arguments);
 }

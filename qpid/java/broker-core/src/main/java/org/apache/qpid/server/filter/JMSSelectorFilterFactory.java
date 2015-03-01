@@ -38,16 +38,16 @@ public final class JMSSelectorFilterFactory implements MessageFilterFactory
     }
 
     @Override
-    public MessageFilter newInstance(final List<Object> arguments)
+    public MessageFilter newInstance(final List<String> arguments)
     {
         if(arguments == null || arguments.size() != 1)
         {
             throw new IllegalArgumentException("Cannot create a filter from these arguments: " + arguments);
         }
-        Object arg = arguments.get(0);
+        String arg = arguments.get(0);
         try
         {
-            return new JMSSelectorFilter(String.valueOf(arg));
+            return new JMSSelectorFilter(arg);
         }
         catch (ParseException | TokenMgrError | SelectorParsingException e)
         {

@@ -183,7 +183,15 @@ public class ClientDelegate extends ConnectionDelegate
     @Override
     public void connectionRedirect(Connection conn, ConnectionRedirect redir)
     {
-        throw new UnsupportedOperationException();
+        conn.setRedirecting(true);
+        conn.getSender().close();
+        for(ConnectionListener listener : conn.getListeners())
+        {
+            if(listener.redirect(redir.getHost(), redir.getKnownHosts()))
+            {
+                break;
+            }
+        }
     }
 
     @Override

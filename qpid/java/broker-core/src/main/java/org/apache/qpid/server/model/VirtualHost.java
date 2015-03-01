@@ -28,6 +28,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.store.MessageStore;
 
 @ManagedObject( defaultType = "ProvidedStore")
@@ -143,6 +144,8 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     void stop();
 
     void delete();
+
+    String getRedirectHost(AmqpPort<?> port);
 
     public static interface Transaction
     {

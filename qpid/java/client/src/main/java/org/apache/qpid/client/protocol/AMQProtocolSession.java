@@ -387,11 +387,6 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         return _protocolHandler.getSender();
     }
 
-    public void failover(String host, int port)
-    {
-        _protocolHandler.failover(host, port);
-    }
-
     protected AMQShortString generateQueueName()
     {
         int id;
