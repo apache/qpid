@@ -184,7 +184,6 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
             @Override
             public void performAction(final Object object)
             {
-                LOGGER.debug("KWDEBUG underlying connection deleted");
                 closeFuture.connectionClosed();
             }
         });

@@ -37,7 +37,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.security.auth.Subject;
 
-import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ConnectionEventListener;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
@@ -47,7 +46,6 @@ import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
 import org.apache.qpid.amqp_1_0.type.transport.End;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.model.Broker;
@@ -55,13 +53,13 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.protocol.SessionModelListener;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.transport.Connection;
 
 public class Connection_1_0 implements ConnectionEventListener, AMQConnectionModel<Connection_1_0,Session_1_0>
 {
@@ -295,9 +293,16 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     }
 
     @Override
-    public void closeSession(Session_1_0 session, AMQConstant cause, String message)
+    public void closeSessionAsync(final Session_1_0 session, final AMQConstant cause, final String message)
     {
-        session.close(cause, message);
+        addAsyncTask(new Action<Connection_1_0>()
+        {
+            @Override
+            public void performAction(final Connection_1_0 object)
+            {
+                session.close(cause, message);
+            }
+        });
     }
 
     @Override

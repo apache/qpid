@@ -40,7 +40,6 @@ import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Lock;
 
 import javax.security.auth.Subject;
 
@@ -97,7 +96,6 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
@@ -106,6 +104,7 @@ import org.apache.qpid.server.txn.LocalTransaction.ActivityTimeAccessor;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
+import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.virtualhost.ExchangeExistsException;
 import org.apache.qpid.server.virtualhost.ExchangeIsAlternateException;
 import org.apache.qpid.server.virtualhost.QueueExistsException;
@@ -1710,16 +1709,7 @@ public class AMQChannel
      */
     private void closeConnection(String reason) throws AMQException
     {
-        Lock receivedLock = _connection.getReceivedLock();
-        receivedLock.lock();
-        try
-        {
-            _connection.closeAsync(AMQConstant.RESOURCE_ERROR, reason);
-        }
-        finally
-        {
-            receivedLock.unlock();
-        }
+        _connection.closeAsync(AMQConstant.RESOURCE_ERROR, reason);
     }
 
     public void deadLetter(long deliveryTag)

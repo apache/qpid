@@ -41,7 +41,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.MessagePublishInfo;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageContentSource;
@@ -223,17 +222,6 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         // Override as we don't have a real IOSession to close.
         //  The alternative is to fully implement the TestIOSession to return a CloseFuture from close();
         //  Then the AMQMinaProtocolSession can join on the returning future without a NPE.
-    }
-
-    public void closeSession(AMQChannel session, AMQConstant cause, String message)
-    {
-        super.closeSession(session, cause, message);
-
-        //Simulate the Client responding with a CloseOK
-        // should really update the StateManger but we don't have access here
-        // changeState(AMQState.CONNECTION_CLOSED);
-        ((AMQChannel)session).getConnection().closeSession(false);
-
     }
 
     private class InternalWriteDeliverMethod implements ClientDeliveryMethod

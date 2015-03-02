@@ -380,7 +380,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                 _lastIoTime = arrivalTime;
                 _readBytes += msg.remaining();
 
-                _receivedLock.lock();
                 try
                 {
                     _decoder.decodeBuffer(msg);
@@ -431,10 +430,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                     {
                         _logger.error("Store Exception ignored as virtual host no longer active", e);
                     }
-                }
-                finally
-                {
-                    _receivedLock.unlock();
                 }
                 return null;
             }
@@ -846,14 +841,12 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             if(_closing.compareAndSet(false,true))
             {
                 // force sync of outstanding async work
-                _receivedLock.lock();
                 try
                 {
                     receivedComplete();
                 }
                 finally
                 {
-                    _receivedLock.unlock();
 
                     finishClose(connectionDropped);
                 }
@@ -918,30 +911,18 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     {
         synchronized(this)
         {
-            final boolean lockHeld = _receivedLock.isHeldByCurrentThread();
             final long endTime = System.currentTimeMillis() + AWAIT_CLOSED_TIMEOUT;
 
             while(!_closed && endTime > System.currentTimeMillis())
             {
                 try
                 {
-                    if(lockHeld)
-                    {
-                        _receivedLock.unlock();
-                    }
                     wait(1000);
                 }
                 catch (InterruptedException e)
                 {
                     Thread.currentThread().interrupt();
                     break;
-                }
-                finally
-                {
-                    if(lockHeld)
-                    {
-                        _receivedLock.lock();
-                    }
                 }
             }
 
@@ -1381,31 +1362,37 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         return String.valueOf(getRemoteAddress());
     }
 
-    public void closeSession(AMQChannel session, AMQConstant cause, String message)
+    public void closeSessionAsync(final AMQChannel session, final AMQConstant cause, final String message)
     {
-        int channelId = session.getChannelId();
-        closeChannel(channelId, cause, message);
+        addAsyncTask(new Action<AMQProtocolEngine>()
+        {
 
-        MethodRegistry methodRegistry = getMethodRegistry();
-        ChannelCloseBody responseBody =
-                methodRegistry.createChannelCloseBody(
-                        cause.getCode(),
-                        AMQShortString.validValueOf(message),
-                        0, 0);
+            @Override
+            public void performAction(final AMQProtocolEngine object)
+            {
+                int channelId = session.getChannelId();
+                closeChannel(channelId, cause, message);
 
-        writeFrame(responseBody.generateFrame(channelId));
+                MethodRegistry methodRegistry = getMethodRegistry();
+                ChannelCloseBody responseBody =
+                        methodRegistry.createChannelCloseBody(
+                                cause.getCode(),
+                                AMQShortString.validValueOf(message),
+                                0, 0);
+
+                writeFrame(responseBody.generateFrame(channelId));
+            }
+        });
+
     }
 
     public void closeAsync(final AMQConstant cause, final String message)
     {
-        _logger.debug("KWDEBUG About to schedule close");
-
         Action<AMQProtocolEngine> action = new Action<AMQProtocolEngine>()
         {
             @Override
             public void performAction(final AMQProtocolEngine object)
             {
-                _logger.debug("KWDEBUG About to perform close");
                 closeConnection(0, new AMQConnectionException(cause, message, 0, 0,
                                                               getMethodRegistry(),
                                                               null));

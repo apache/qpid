@@ -147,8 +147,6 @@ public class QueueBrowserAutoAckTest extends QpidBrokerTestCase
 
         assertEquals("Session reports Queue expectedDepth not as expected", expectedDepth, queueDepth);
 
-        getLogger().debug("KWDEBUG : About to check queue depth using browser");
-
 
         // Browse the queue to get a second opinion
         int msgCount = 0;

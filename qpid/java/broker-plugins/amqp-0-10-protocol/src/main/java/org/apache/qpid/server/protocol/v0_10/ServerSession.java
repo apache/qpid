@@ -189,7 +189,7 @@ public class ServerSession extends Session
             @Override
             public void doTimeoutAction(String reason)
             {
-                getConnectionModel().closeSession(ServerSession.this, AMQConstant.RESOURCE_ERROR, reason);
+                getConnectionModel().closeSessionAsync(ServerSession.this, AMQConstant.RESOURCE_ERROR, reason);
             }
         }, getVirtualHost());
 

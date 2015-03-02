@@ -20,18 +20,18 @@
  */
 package org.apache.qpid.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
 import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
 {
@@ -121,8 +121,6 @@ public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
         for (int i = 0; i < _numMessages; i++)
         {
             Message msg = consumer.receive(3000);
-
-            _logger.debug("KWDEBUG got " + msg);
 
             assertNotNull("Message " + i + " should not be null", msg);
             assertTrue("Message " + i + " should be a text message", msg instanceof TextMessage);

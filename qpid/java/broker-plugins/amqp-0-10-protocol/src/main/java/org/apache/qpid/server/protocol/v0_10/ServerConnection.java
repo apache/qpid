@@ -261,23 +261,32 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
         _onOpenTask = task;
     }
 
-    public void closeSession(ServerSession session, AMQConstant cause, String message)
+    public void closeSessionAsync(final ServerSession session, final AMQConstant cause, final String message)
     {
-        ExecutionException ex = new ExecutionException();
-        ExecutionErrorCode code = ExecutionErrorCode.INTERNAL_ERROR;
-        try
+        addAsyncTask(new Action<ServerConnection>()
         {
-	        code = ExecutionErrorCode.get(cause.getCode());
-        }
-        catch (IllegalArgumentException iae)
-        {
-            // Ignore, already set to INTERNAL_ERROR
-        }
-        ex.setErrorCode(code);
-        ex.setDescription(message);
-        session.invoke(ex);
 
-        session.close(cause, message);
+            @Override
+            public void performAction(final ServerConnection conn)
+            {
+                ExecutionException ex = new ExecutionException();
+                ExecutionErrorCode code = ExecutionErrorCode.INTERNAL_ERROR;
+                try
+                {
+                    code = ExecutionErrorCode.get(cause.getCode());
+                }
+                catch (IllegalArgumentException iae)
+                {
+                    // Ignore, already set to INTERNAL_ERROR
+                }
+                ex.setErrorCode(code);
+                ex.setDescription(message);
+                session.invoke(ex);
+
+                session.close(cause, message);
+            }
+        });
+
     }
 
     public LogSubject getLogSubject()

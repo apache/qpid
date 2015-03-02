@@ -53,7 +53,7 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
      * @param cause
      * @param message
      */
-    public void closeSession(S session, AMQConstant cause, String message);
+    public void closeSessionAsync(S session, AMQConstant cause, String message);
 
     public long getConnectionId();
 

@@ -543,8 +543,8 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
-        public void closeSession(AMQSessionModel session, AMQConstant cause,
-                String message)
+        public void closeSessionAsync(AMQSessionModel session, AMQConstant cause,
+                                      String message)
         {
         }
 
