@@ -62,7 +62,8 @@ public class DefaultDestination implements MessageDestination
         final AMQQueue q = _virtualHost.getQueue(routingAddress);
         if(q == null)
         {
-            if(routingAddress != null && routingAddress.contains("/") && !routingAddress.startsWith("/"))
+            routingAddress = _virtualHost.getLocalAddress(routingAddress);
+            if(routingAddress.contains("/") && !routingAddress.startsWith("/"))
             {
                 String[] parts = routingAddress.split("/",2);
                 ExchangeImpl exchange = _virtualHost.getExchange(parts[0]);
@@ -71,7 +72,7 @@ public class DefaultDestination implements MessageDestination
                     return exchange.send(message, parts[1], instanceProperties, txn, postEnqueueAction);
                 }
             }
-            else if(routingAddress == null || !routingAddress.contains("/"))
+            else if(!routingAddress.contains("/"))
             {
                 ExchangeImpl exchange = _virtualHost.getExchange(routingAddress);
                 if(exchange != null)

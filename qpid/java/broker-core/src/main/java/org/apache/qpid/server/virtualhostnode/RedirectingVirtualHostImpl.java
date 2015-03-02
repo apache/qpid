@@ -90,6 +90,8 @@ class RedirectingVirtualHostImpl
     @ManagedAttributeField
     private List<String> _disabledConnectionValidators;
 
+    @ManagedAttributeField
+    private List<String> _globalAddressDomains;
 
     @ManagedObjectFactoryConstructor
     public RedirectingVirtualHostImpl(final Map<String, Object> attributes, VirtualHostNode<?> virtualHostNode)
@@ -480,6 +482,29 @@ class RedirectingVirtualHostImpl
     public List<String> getDisabledConnectionValidators()
     {
         return _disabledConnectionValidators;
+    }
+
+    @Override
+    public List<String> getGlobalAddressDomains()
+    {
+        return _globalAddressDomains;
+    }
+
+    @Override
+    public String getLocalAddress(final String routingAddress)
+    {
+        String localAddress = routingAddress;
+        if(getGlobalAddressDomains() != null)
+        {
+            for(String domain : getGlobalAddressDomains())
+            {
+                if(localAddress.length() > routingAddress.length() - domain.length() && routingAddress.startsWith(domain + "/"))
+                {
+                    localAddress = routingAddress.substring(domain.length());
+                }
+            }
+        }
+        return localAddress;
     }
 
     private void throwUnsupportedForRedirector()
