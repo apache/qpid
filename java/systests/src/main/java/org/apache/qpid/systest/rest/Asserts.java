@@ -78,6 +78,7 @@ public class Asserts
                                 ConfiguredObject.DESIRED_STATE,
                                 VirtualHost.ENABLED_CONNECTION_VALIDATORS,
                                 VirtualHost.DISABLED_CONNECTION_VALIDATORS,
+                                VirtualHost.GLOBAL_ADDRESS_DOMAINS,
                                 VirtualHost.TYPE);
 
         assertEquals("Unexpected value of attribute " + VirtualHost.NAME,

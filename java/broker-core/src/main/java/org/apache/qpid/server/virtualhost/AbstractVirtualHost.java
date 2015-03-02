@@ -172,6 +172,8 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @ManagedAttributeField
     private List<String> _disabledConnectionValidators;
 
+    @ManagedAttributeField
+    private List<String> _globalAddressDomains;
 
     private boolean _useAsyncRecoverer;
 
@@ -222,6 +224,13 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
         }
+        if(getGlobalAddressDomains() != null)
+        {
+            for(String domain : getGlobalAddressDomains())
+            {
+                validateGlobalAddressDomain(domain);
+            }
+        }
     }
 
     @Override
@@ -240,6 +249,26 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                 throw new IntegrityViolationException("Cannot delete default virtual host '" + getName() + "'");
             }
         }
+        if(changedAttributes.contains(GLOBAL_ADDRESS_DOMAINS))
+        {
+            VirtualHost<?, ?, ?> virtualHost = (VirtualHost<?, ?, ?>) proxyForValidation;
+            if(virtualHost.getGlobalAddressDomains() != null)
+            {
+                for(String name : virtualHost.getGlobalAddressDomains())
+                {
+                    validateGlobalAddressDomain(name);
+                }
+            }
+        }
+    }
+
+    private void validateGlobalAddressDomain(final String name)
+    {
+        String regex = "/(/?)([\\w_\\-:.\\$]+/)*[\\w_\\-:.\\$]+";
+        if(!name.matches(regex))
+        {
+            throw new IllegalArgumentException("'"+name+"' is not a valid global address domain");
+        }
     }
 
     @Override
@@ -253,7 +282,16 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     {
         super.validateOnCreate();
         validateMessageStoreCreation();
+        if(getGlobalAddressDomains() != null)
+        {
+            for(String name : getGlobalAddressDomains())
+            {
+                validateGlobalAddressDomain(name);
+            }
+        }
     }
+
+
 
     private void validateMessageStoreCreation()
     {
@@ -574,11 +612,31 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _disabledConnectionValidators;
     }
 
+    @Override
+    public List<String> getGlobalAddressDomains()
+    {
+        return _globalAddressDomains;
+    }
 
     @Override
     public AMQQueue<?> getQueue(String name)
     {
-        return (AMQQueue<?>) getChildByName(Queue.class, name);
+        AMQQueue<?> childByName = (AMQQueue<?>) getChildByName(Queue.class, name);
+        if(childByName == null && getGlobalAddressDomains() != null)
+        {
+            for(String domain : getGlobalAddressDomains())
+            {
+                if(name.startsWith(domain + "/"))
+                {
+                    childByName = (AMQQueue<?>) getChildByName(Queue.class,name.substring(domain.length()));
+                    if(childByName != null)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        return childByName;
     }
 
     @Override
@@ -664,7 +722,22 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public ExchangeImpl getExchange(String name)
     {
-        return getChildByName(ExchangeImpl.class,name);
+        ExchangeImpl childByName = getChildByName(ExchangeImpl.class, name);
+        if(childByName == null && getGlobalAddressDomains() != null)
+        {
+            for(String domain : getGlobalAddressDomains())
+            {
+                if(name.startsWith(domain + "/"))
+                {
+                    childByName = getChildByName(ExchangeImpl.class,name.substring(domain.length()));
+                    if(childByName != null)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        return childByName;
     }
 
     @Override
@@ -719,6 +792,23 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             throws ExchangeIsAlternateException, RequiredExchangeException
     {
         exchange.deleteWithChecks();
+    }
+
+    @Override
+    public String getLocalAddress(final String routingAddress)
+    {
+        String localAddress = routingAddress;
+        if(getGlobalAddressDomains() != null)
+        {
+            for(String domain : getGlobalAddressDomains())
+            {
+                if(localAddress.length() > routingAddress.length() - domain.length() && routingAddress.startsWith(domain + "/"))
+                {
+                    localAddress = routingAddress.substring(domain.length());
+                }
+            }
+        }
+        return localAddress;
     }
 
     public SecurityManager getSecurityManager()

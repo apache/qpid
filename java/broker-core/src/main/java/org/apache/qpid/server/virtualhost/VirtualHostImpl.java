@@ -110,4 +110,6 @@ public interface VirtualHostImpl< X extends VirtualHostImpl<X,Q,E>, Q extends AM
     EventLogger getEventLogger();
 
     boolean authoriseCreateConnection(AMQConnectionModel<?, ?> connection);
+
+    String getLocalAddress(String routingAddress);
 }

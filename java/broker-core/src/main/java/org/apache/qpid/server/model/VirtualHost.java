@@ -46,6 +46,7 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     String MODEL_VERSION                        = "modelVersion";
     String ENABLED_CONNECTION_VALIDATORS        = "enabledConnectionValidators";
     String DISABLED_CONNECTION_VALIDATORS       = "disabledConnectionValidators";
+    String GLOBAL_ADDRESS_DOMAINS               = "globalAddressDomains";
 
     @ManagedContextDefault( name = "queue.deadLetterQueueEnabled")
     public static final boolean DEFAULT_DEAD_LETTER_QUEUE_ENABLED = false;
@@ -103,6 +104,9 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
 
     @ManagedAttribute( defaultValue = "${virtualhost.disabledConnectionValidators}")
     List<String> getDisabledConnectionValidators();
+
+    @ManagedAttribute( defaultValue = "[]")
+    List<String> getGlobalAddressDomains();
 
     @ManagedStatistic
     long getQueueCount();
