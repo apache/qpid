@@ -20,8 +20,10 @@
  */
 package org.apache.qpid.server.store;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -30,14 +32,19 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.model.Binding;
+import org.apache.qpid.server.model.ConfigurationChangeListener;
+import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
+import org.apache.qpid.server.util.Action;
 
 public class VirtualHostStoreUpgraderAndRecoverer
 {
@@ -509,12 +516,100 @@ public class VirtualHostStoreUpgraderAndRecoverer
 
     }
 
-    public void perform(DurableConfigurationStore durableConfigurationStore)
+    public void perform(final DurableConfigurationStore durableConfigurationStore)
     {
         String virtualHostCategory = VirtualHost.class.getSimpleName();
         GenericStoreUpgrader upgraderHandler = new GenericStoreUpgrader(virtualHostCategory, VirtualHost.MODEL_VERSION, durableConfigurationStore, _upgraders);
         upgraderHandler.upgrade();
 
         new GenericRecoverer(_virtualHostNode).recover(upgraderHandler.getRecords());
+
+        final StoreConfigurationChangeListener configChangeListener = new StoreConfigurationChangeListener(durableConfigurationStore);
+        if(_virtualHostNode.getVirtualHost() != null)
+        {
+            applyRecursively(_virtualHostNode.getVirtualHost(), new Action<ConfiguredObject<?>>()
+            {
+                @Override
+                public void performAction(final ConfiguredObject<?> object)
+                {
+                    object.addChangeListener(configChangeListener);
+                }
+            });
+        }
+        _virtualHostNode.addChangeListener(new ConfigurationChangeListener()
+        {
+            @Override
+            public void stateChanged(final ConfiguredObject<?> object, final State oldState, final State newState)
+            {
+
+            }
+
+            @Override
+            public void childAdded(final ConfiguredObject<?> object, final ConfiguredObject<?> child)
+            {
+                if(child instanceof VirtualHost)
+                {
+                    applyRecursively(child, new Action<ConfiguredObject<?>>()
+                    {
+                        @Override
+                        public void performAction(final ConfiguredObject<?> object)
+                        {
+                            if(object.isDurable())
+                            {
+                                durableConfigurationStore.update(true, object.asObjectRecord());
+                                object.addChangeListener(configChangeListener);
+                            }
+                        }
+                    });
+
+                }
+            }
+
+            @Override
+            public void childRemoved(final ConfiguredObject<?> object, final ConfiguredObject<?> child)
+            {
+                if(child instanceof VirtualHost)
+                {
+                    child.removeChangeListener(configChangeListener);
+                }
+            }
+
+            @Override
+            public void attributeSet(final ConfiguredObject<?> object,
+                                     final String attributeName,
+                                     final Object oldAttributeValue,
+                                     final Object newAttributeValue)
+            {
+
+            }
+        });
     }
+
+    private void applyRecursively(final ConfiguredObject<?> object, final Action<ConfiguredObject<?>> action)
+    {
+        applyRecursively(object, action, new HashSet<ConfiguredObject<?>>());
+    }
+
+    private void applyRecursively(final ConfiguredObject<?> object,
+                                  final Action<ConfiguredObject<?>> action,
+                                  final HashSet<ConfiguredObject<?>> visited)
+    {
+        if(!visited.contains(object))
+        {
+            visited.add(object);
+            action.performAction(object);
+            for(Class<? extends ConfiguredObject> childClass : object.getModel().getChildTypes(object.getCategoryClass()))
+            {
+                Collection<? extends ConfiguredObject> children = object.getChildren(childClass);
+                if(children != null)
+                {
+                    for(ConfiguredObject<?> child : children)
+                    {
+                        applyRecursively(child, action, visited);
+                    }
+                }
+            }
+        }
+    }
+
 }

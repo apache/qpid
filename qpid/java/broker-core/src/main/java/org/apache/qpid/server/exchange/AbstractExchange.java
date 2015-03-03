@@ -177,17 +177,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     }
 
     @Override
-    protected void onCreate()
-    {
-        super.onCreate();
-        if(isDurable())
-        {
-            getVirtualHost().getDurableConfigurationStore().create(asObjectRecord());
-        }
-
-    }
-
-    @Override
     public EventLogger getEventLogger()
     {
         return _virtualHost.getEventLogger();
@@ -213,12 +202,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             throw new RequiredExchangeException(getName());
         }
 
-        if (isDurable() && !isAutoDelete())
-        {
-            getVirtualHost().getDurableConfigurationStore().remove(asObjectRecord());
-
-        }
-
         if(_closed.compareAndSet(false,true))
         {
             List<BindingImpl> bindings = new ArrayList<BindingImpl>(_bindings);
@@ -241,11 +224,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             }
             _closeTaskList.clear();
 
-            if (isDurable() && !isAutoDelete())
-            {
-                getVirtualHost().getDurableConfigurationStore().remove(asObjectRecord());
-
-            }
         }
         deleted();
     }
@@ -665,10 +643,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             doRemoveBinding(b);
             queue.removeBinding(b);
 
-            if (b.isDurable())
-            {
-                _virtualHost.getDurableConfigurationStore().remove(b.asObjectRecord());
-            }
             b.delete();
         }
 
@@ -905,9 +879,5 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     protected void changeAttributes(final Map<String, Object> attributes)
     {
         super.changeAttributes(attributes);
-        if (isDurable() && getState() != State.DELETED)
-        {
-            this.getVirtualHost().getDurableConfigurationStore().update(false, asObjectRecord());
-        }
     }
 }

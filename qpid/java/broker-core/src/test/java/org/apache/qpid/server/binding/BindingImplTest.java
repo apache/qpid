@@ -35,6 +35,8 @@ import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class BindingImplTest extends QpidTestCase
@@ -57,7 +59,11 @@ public class BindingImplTest extends QpidTestCase
         attributes.put(Binding.ARGUMENTS, arguments);
         attributes.put(Binding.NAME, getTestName());
         AMQQueue queue = mock(AMQQueue.class);
+        VirtualHostImpl vhost = mock(VirtualHostImpl.class);
+        SecurityManager securityManager = mock(SecurityManager.class);
+        when(vhost.getSecurityManager()).thenReturn(securityManager);
         when(queue.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(queue.getVirtualHost()).thenReturn(vhost);
         when(queue.getModel()).thenReturn(_model);
         ExchangeImpl exchange = mock(ExchangeImpl.class);
         when(exchange.getTaskExecutor()).thenReturn(_taskExecutor);

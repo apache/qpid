@@ -57,6 +57,7 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
         notifyBrokerStarted();
         UUID id = UUID.randomUUID();
         ConfiguredObject object = mock(VirtualHost.class);
+        when(object.isDurable()).thenReturn(true);
         when(object.getId()).thenReturn(id);
         ConfiguredObjectRecord record = mock(ConfiguredObjectRecord.class);
         when(object.asObjectRecord()).thenReturn(record);
@@ -69,11 +70,13 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
         notifyBrokerStarted();
         Broker broker = mock(Broker.class);
         when(broker.getCategoryClass()).thenReturn(Broker.class);
+        when(broker.isDurable()).thenReturn(true);
         VirtualHost child = mock(VirtualHost.class);
         when(child.getCategoryClass()).thenReturn(VirtualHost.class);
         Model model = mock(Model.class);
         when(model.getChildTypes(any(Class.class))).thenReturn(Collections.<Class<? extends ConfiguredObject>>emptyList());
         when(child.getModel()).thenReturn(model);
+        when(child.isDurable()).thenReturn(true);
         _listener.childAdded(broker, child);
         verify(_store).update(eq(true), any(ConfiguredObjectRecord.class));
     }
@@ -83,6 +86,7 @@ public class StoreConfigurationChangeListenerTest extends QpidTestCase
         notifyBrokerStarted();
         Broker broker = mock(Broker.class);
         when(broker.getCategoryClass()).thenReturn(Broker.class);
+        when(broker.isDurable()).thenReturn(true);
         _listener.attributeSet(broker, Broker.CONNECTION_SESSION_COUNT_LIMIT, null, 1);
         verify(_store).update(eq(false),any(ConfiguredObjectRecord.class));
     }

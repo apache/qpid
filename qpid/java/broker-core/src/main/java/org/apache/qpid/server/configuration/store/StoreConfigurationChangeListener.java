@@ -42,7 +42,10 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
     {
         if (newState == State.DELETED)
         {
-            _store.remove(object.asObjectRecord());
+            if(object.isDurable())
+            {
+                _store.remove(object.asObjectRecord());
+            }
             object.removeChangeListener(this);
         }
     }
@@ -52,17 +55,21 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
     {
         if (!object.managesChildStorage())
         {
-            child.addChangeListener(this);
-            _store.update(true,child.asObjectRecord());
-
-            Class<? extends ConfiguredObject> categoryClass = child.getCategoryClass();
-            Collection<Class<? extends ConfiguredObject>> childTypes = child.getModel().getChildTypes(categoryClass);
-
-            for(Class<? extends ConfiguredObject> childClass : childTypes)
+            if(object.isDurable() && child.isDurable())
             {
-                for (ConfiguredObject<?> grandchild : child.getChildren(childClass))
+                child.addChangeListener(this);
+                _store.update(true, child.asObjectRecord());
+
+                Class<? extends ConfiguredObject> categoryClass = child.getCategoryClass();
+                Collection<Class<? extends ConfiguredObject>> childTypes =
+                        child.getModel().getChildTypes(categoryClass);
+
+                for (Class<? extends ConfiguredObject> childClass : childTypes)
                 {
-                    childAdded(child, grandchild);
+                    for (ConfiguredObject<?> grandchild : child.getChildren(childClass))
+                    {
+                        childAdded(child, grandchild);
+                    }
                 }
             }
         }
@@ -72,14 +79,20 @@ public class StoreConfigurationChangeListener implements ConfigurationChangeList
     @Override
     public void childRemoved(ConfiguredObject object, ConfiguredObject child)
     {
-        _store.remove(child.asObjectRecord());
+        if(child.isDurable())
+        {
+            _store.remove(child.asObjectRecord());
+        }
         child.removeChangeListener(this);
     }
 
     @Override
     public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
     {
-        _store.update(false, object.asObjectRecord());
+        if(object.isDurable())
+        {
+            _store.update(false, object.asObjectRecord());
+        }
     }
 
     @Override

@@ -77,7 +77,6 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
@@ -340,9 +339,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
         _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
         _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
-
-        addChangeListener(new StoreUpdatingChangeListener());
-
 
         _fileSystemMaxUsagePercent = getContextValue(Integer.class, Broker.STORE_FILESYSTEM_MAX_USAGE_PERCENT);
 
@@ -664,14 +660,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     {
         int purged = queue.deleteAndReturnCount();
 
-        if (queue.isDurable() && !(queue.getLifetimePolicy()
-                                   == LifetimePolicy.DELETE_ON_CONNECTION_CLOSE
-                                   || queue.getLifetimePolicy()
-                                      == LifetimePolicy.DELETE_ON_SESSION_END))
-        {
-            DurableConfigurationStore store = getDurableConfigurationStore();
-            store.remove(queue.asObjectRecord());
-        }
         return purged;
 }
 
@@ -1535,14 +1523,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return total;
     }
 
-    @Override
-    protected void onCreate()
-    {
-        super.onCreate();
-        ConfiguredObjectRecord record = asObjectRecord();
-        getDurableConfigurationStore().create(new ConfiguredObjectRecordImpl(record.getId(), record.getType(), record.getAttributes()));
-    }
-
     @StateTransition( currentState = { State.UNINITIALIZED,State.ERRORED }, desiredState = State.ACTIVE )
     private void onActivate()
     {
@@ -1652,44 +1632,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         });
 
         onActivate();
-    }
-
-    private class StoreUpdatingChangeListener implements ConfigurationChangeListener
-    {
-        @Override
-        public void stateChanged(final ConfiguredObject<?> object, final State oldState, final State newState)
-        {
-            if (object == AbstractVirtualHost.this && isDurable() && newState == State.DELETED)
-            {
-                getDurableConfigurationStore().remove(asObjectRecord());
-                object.removeChangeListener(this);
-            }
-        }
-
-        @Override
-        public void childAdded(final ConfiguredObject<?> object, final ConfiguredObject<?> child)
-        {
-
-        }
-
-        @Override
-        public void childRemoved(final ConfiguredObject<?> object, final ConfiguredObject<?> child)
-        {
-
-        }
-
-        @Override
-        public void attributeSet(final ConfiguredObject<?> object,
-                                 final String attributeName,
-                                 final Object oldAttributeValue,
-                                 final Object newAttributeValue)
-        {
-            if (object == AbstractVirtualHost.this && isDurable() && getState() != State.DELETED && isAttributePersisted(attributeName)
-                    && !(attributeName.equals(VirtualHost.DESIRED_STATE) && newAttributeValue.equals(State.DELETED)))
-            {
-                getDurableConfigurationStore().update(false, asObjectRecord());
-            }
-        }
     }
 
     private class FileSystemSpaceChecker extends HouseKeepingTask
