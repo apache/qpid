@@ -901,7 +901,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     }
 
     @Override
-    public void processPendingMessages()
+    public void processPending()
     {
         for(Consumer<?> consumer : getConsumers())
         {

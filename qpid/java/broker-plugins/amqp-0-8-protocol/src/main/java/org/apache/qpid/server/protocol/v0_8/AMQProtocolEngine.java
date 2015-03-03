@@ -44,8 +44,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
@@ -148,11 +146,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
      * The channels that the latest call to {@link #received(ByteBuffer)} applied to.
      * Used so we know which channels we need to call {@link AMQChannel#receivedComplete()}
      * on after handling the frames.
-     *
-     * Thread-safety: guarded by {@link #_receivedLock}.
      */
-    private final Set<AMQChannel> _channelsForCurrentMessage =
-            new HashSet<>();
+    private final Set<AMQChannel> _channelsForCurrentMessage = new HashSet<>();
 
     private AMQDecoder _decoder;
 
@@ -197,7 +192,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     private long _lastReceivedTime = System.currentTimeMillis();  // TODO consider if this is what we want?
     private boolean _blocking;
 
-    private final ReentrantLock _receivedLock;
     private AtomicLong _lastWriteTime = new AtomicLong(System.currentTimeMillis());
     private final Broker<?> _broker;
     private final Transport _transport;
@@ -251,7 +245,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         _port = port;
         _transport = transport;
         _maxNoOfChannels = broker.getConnection_sessionCountLimit();
-        _receivedLock = new ReentrantLock();
         _decoder = new BrokerDecoder(this);
         _connectionID = connectionId;
         _logSubject = new ConnectionLogSubject(this);
@@ -545,42 +538,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
 
 
     private final byte[] _reusableBytes = new byte[REUSABLE_BYTE_BUFFER_CAPACITY];
-    private final ByteBuffer _reusableByteBuffer = ByteBuffer.wrap(_reusableBytes);
     private final BytesDataOutput _reusableDataOutput = new BytesDataOutput(_reusableBytes);
-
-    private ByteBuffer asByteBuffer(AMQDataBlock block)
-    {
-        final int size = (int) block.getSize();
-
-        final byte[] data;
-
-
-        if(size > REUSABLE_BYTE_BUFFER_CAPACITY)
-        {
-            data= new byte[size];
-        }
-        else
-        {
-
-            data = _reusableBytes;
-        }
-        _reusableDataOutput.setBuffer(data);
-
-        try
-        {
-            block.writePayload(_reusableDataOutput);
-        }
-        catch (IOException e)
-        {
-            throw new ServerScopedRuntimeException(e);
-        }
-
-        final ByteBuffer copy = ByteBuffer.allocate(_reusableDataOutput.length());
-        copy.put(data, 0, _reusableDataOutput.length());
-        copy.flip();
-        return copy;
-    }
-
 
     /**
      * Convenience method that writes a frame to the protocol session. Equivalent to calling
@@ -1969,11 +1927,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         return _reference;
     }
 
-    public Lock getReceivedLock()
-    {
-        return _receivedLock;
-    }
-
     @Override
     public long getLastReadTime()
     {
@@ -2095,6 +2048,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     @Override
     public void processPending()
     {
+
+
         while(_asyncTaskList.peek() != null)
         {
             Action<? super AMQProtocolEngine> asyncAction = _asyncTaskList.poll();
@@ -2103,7 +2058,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
 
         for (AMQSessionModel session : getSessionModels())
         {
-            session.processPendingMessages();
+            session.processPending();
         }
     }
 

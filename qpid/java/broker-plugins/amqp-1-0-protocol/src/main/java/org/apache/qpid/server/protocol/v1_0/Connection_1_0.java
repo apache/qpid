@@ -552,7 +552,7 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
 
         for (AMQSessionModel session : getSessionModels())
         {
-            session.processPendingMessages();
+            session.processPending();
         }
 
     }

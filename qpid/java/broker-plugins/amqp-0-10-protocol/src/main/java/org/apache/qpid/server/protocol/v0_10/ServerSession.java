@@ -137,6 +137,7 @@ public class ServerSession extends Session
     private org.apache.qpid.server.model.Session<?> _modelObject;
     private long _blockTime;
     private long _blockingTimeout;
+    private boolean _wireBlockingState;
 
     public static interface MessageDispositionChangeListener
     {
@@ -208,10 +209,6 @@ public class ServerSession extends Session
             if (state == State.OPEN)
             {
                 getVirtualHost().getEventLogger().message(ChannelMessages.CREATE());
-                if(_blocking.get())
-                {
-                    invokeBlock();
-                }
             }
         }
         else
@@ -244,6 +241,17 @@ public class ServerSession extends Session
         invoke(new MessageSetFlowMode("", MessageFlowMode.CREDIT));
         invoke(new MessageStop(""));
     }
+
+    private void invokeUnblock()
+    {
+        MessageFlow mf = new MessageFlow();
+        mf.setUnit(MessageCreditUnit.MESSAGE);
+        mf.setDestination("");
+        _outstandingCredit.set(Integer.MAX_VALUE);
+        mf.setValue(Integer.MAX_VALUE);
+        invoke(mf);
+    }
+
 
     @Override
     protected boolean isFull(int id)
@@ -824,12 +832,11 @@ public class ServerSession extends Session
 
                 if(_blocking.compareAndSet(false,true))
                 {
+                    getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW_ENFORCED(name));
                     if(getState() == State.OPEN)
                     {
-                        invokeBlock();
+                        getConnection().notifyWork();
                     }
-                    _blockTime = System.currentTimeMillis();
-                    getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW_ENFORCED(name));
                 }
 
 
@@ -853,24 +860,17 @@ public class ServerSession extends Session
         {
             if(_blocking.compareAndSet(true,false) && !isClosing())
             {
-                _blockTime = 0l;
                 getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW_REMOVED());
-                MessageFlow mf = new MessageFlow();
-                mf.setUnit(MessageCreditUnit.MESSAGE);
-                mf.setDestination("");
-                _outstandingCredit.set(Integer.MAX_VALUE);
-                mf.setValue(Integer.MAX_VALUE);
-                invoke(mf);
-
-
+                getConnection().notifyWork();
             }
         }
     }
 
+
     boolean blockingTimeoutExceeded()
     {
         long blockTime = _blockTime;
-        boolean b = _blocking.get() && blockTime != 0 && (System.currentTimeMillis() - blockTime) > _blockingTimeout;
+        boolean b = _wireBlockingState && blockTime != 0 && (System.currentTimeMillis() - blockTime) > _blockingTimeout;
         return b;
     }
 
@@ -1136,8 +1136,25 @@ public class ServerSession extends Session
     }
 
     @Override
-    public void processPendingMessages()
+    public void processPending()
     {
+        boolean desiredBlockingState = _blocking.get();
+        if (desiredBlockingState != _wireBlockingState)
+        {
+            _wireBlockingState = desiredBlockingState;
+
+            if (desiredBlockingState)
+            {
+                invokeBlock();
+            }
+            else
+            {
+                invokeUnblock();
+            }
+            _blockTime = desiredBlockingState ? System.currentTimeMillis() : 0;
+        }
+
+
         for(ConsumerTarget target : getSubscriptions())
         {
             target.processPending();

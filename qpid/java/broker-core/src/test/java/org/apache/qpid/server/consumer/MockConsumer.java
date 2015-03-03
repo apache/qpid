@@ -488,7 +488,7 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
-        public void processPendingMessages()
+        public void processPending()
         {
 
         }

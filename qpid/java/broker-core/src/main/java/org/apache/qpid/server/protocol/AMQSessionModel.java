@@ -116,5 +116,5 @@ public interface AMQSessionModel<T extends AMQSessionModel<T,C>, C extends AMQCo
 
     void transportStateChanged();
 
-    void processPendingMessages();
+    void processPending();
 }

@@ -623,6 +623,8 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
     @Override
     public void send(final ByteBuffer msg)
     {
+        assert Thread.currentThread().getName().startsWith(SelectorThread.IO_THREAD_NAME_PREFIX) : "Send called by unexpected thread " + Thread.currentThread().getName();
+
         if (_closed.get())
         {
             throw new SenderClosedException("I/O for thread " + _remoteSocketAddress + " is already closed");
@@ -634,7 +636,5 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
     @Override
     public void flush()
     {
-        getSelector().wakeup();
-
     }
 }

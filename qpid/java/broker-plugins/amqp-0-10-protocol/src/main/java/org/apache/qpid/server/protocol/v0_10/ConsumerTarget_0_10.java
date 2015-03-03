@@ -632,7 +632,6 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
 
     public void flushBatched()
     {
-        _session.getConnection().flush();
     }
 
 

@@ -209,6 +209,8 @@ public class AMQChannel
     private final List<StoredMessage<MessageMetaData>> _uncommittedMessages = new ArrayList<>();
     private long _maxUncommittedInMemorySize;
 
+    private boolean _wireBlockingState;
+
     public AMQChannel(AMQProtocolEngine connection, int channelId, final MessageStore messageStore)
     {
         _creditManager = new Pre0_10CreditManager(0l,0l, connection);
@@ -1611,12 +1613,14 @@ public class AMQChannel
     {
         if(_blockingEntities.add(this))
         {
+
             if(_blocking.compareAndSet(false,true))
             {
                 getVirtualHost().getEventLogger().message(_logSubject,
                                                           ChannelMessages.FLOW_ENFORCED("** All Queues **"));
-                flow(false);
-                _blockTime = System.currentTimeMillis();
+
+
+                getConnection().notifyWork();
             }
         }
     }
@@ -1628,8 +1632,7 @@ public class AMQChannel
             if(_blockingEntities.isEmpty() && _blocking.compareAndSet(true,false))
             {
                 getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW_REMOVED());
-
-                flow(true);
+                getConnection().notifyWork();
             }
         }
     }
@@ -1643,8 +1646,7 @@ public class AMQChannel
             if(_blocking.compareAndSet(false,true))
             {
                 getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW_ENFORCED(queue.getName()));
-                flow(false);
-                _blockTime = System.currentTimeMillis();
+                getConnection().notifyWork();
 
             }
         }
@@ -1657,7 +1659,7 @@ public class AMQChannel
             if(_blockingEntities.isEmpty() && _blocking.compareAndSet(true,false) && !isClosing())
             {
                 getVirtualHost().getEventLogger().message(_logSubject, ChannelMessages.FLOW_REMOVED());
-                flow(true);
+                getConnection().notifyWork();
             }
         }
     }
@@ -2262,7 +2264,7 @@ public class AMQChannel
     private boolean blockingTimeoutExceeded()
     {
 
-        return _blocking.get() && (System.currentTimeMillis() - _blockTime) > _blockingTimeout;
+        return _wireBlockingState && (System.currentTimeMillis() - _blockTime) > _blockingTimeout;
     }
 
     @Override
@@ -3598,8 +3600,16 @@ public class AMQChannel
     }
 
     @Override
-    public void processPendingMessages()
+    public void processPending()
     {
+
+        boolean desiredBlockingState = _blocking.get();
+        if (desiredBlockingState != _wireBlockingState)
+        {
+            _wireBlockingState = desiredBlockingState;
+            flow(!desiredBlockingState);
+            _blockTime = desiredBlockingState ? System.currentTimeMillis() : 0;
+        }
 
         for(ConsumerTarget target : _tag2SubscriptionTargetMap.values())
         {

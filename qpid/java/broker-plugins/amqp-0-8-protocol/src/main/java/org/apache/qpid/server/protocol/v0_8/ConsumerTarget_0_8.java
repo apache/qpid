@@ -515,6 +515,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         if (isAutoClose())
         {
             _needToClose.set(true);
+            getChannel().getConnection().notifyWork();
         }
     }
 
@@ -531,8 +532,6 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
     public void flushBatched()
     {
         _channel.getConnection().setDeferFlush(false);
-
-        _channel.getConnection().notifyWork();
     }
 
     protected void addUnacknowledgedMessage(MessageInstance entry)

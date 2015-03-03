@@ -70,7 +70,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
 {
 
     private final Broker<?> _broker;
-    private Runnable _onOpenTask;
     private AtomicBoolean _logClosed = new AtomicBoolean(false);
 
     private final Subject _authorizedSubject = new Subject();
@@ -79,10 +78,10 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     private final long _connectionId;
     private final Object _reference = new Object();
     private VirtualHostImpl<?,?,?> _virtualHost;
-    private AmqpPort<?> _port;
-    private AtomicLong _lastIoTime = new AtomicLong();
+    private final AmqpPort<?> _port;
+    private final AtomicLong _lastIoTime = new AtomicLong();
     private boolean _blocking;
-    private Transport _transport;
+    private final Transport _transport;
 
     private final CopyOnWriteArrayList<Action<? super ServerConnection>> _connectionCloseTaskList =
             new CopyOnWriteArrayList<Action<? super ServerConnection>>();
@@ -95,7 +94,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
 
     private volatile boolean _stopped;
     private int _messageCompressionThreshold;
-    private int _maxMessageSize;
+    private final int _maxMessageSize;
 
     private ServerProtocolEngine _serverProtocolEngine;
 
@@ -149,10 +148,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
 
         if (state == State.OPEN)
         {
-            if (_onOpenTask != null)
-            {
-                _onOpenTask.run();
-            }
             getEventLogger().message(ConnectionMessages.OPEN(getClientId(),
                                                              "0-10",
                                                              getClientVersion(),
@@ -254,11 +249,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     public boolean isStopped()
     {
         return _stopped;
-    }
-
-    public void onOpen(final Runnable task)
-    {
-        _onOpenTask = task;
     }
 
     public void closeSessionAsync(final ServerSession session, final AMQConstant cause, final String message)
@@ -740,7 +730,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
 
         for (AMQSessionModel session : getSessionModels())
         {
-            session.processPendingMessages();
+            session.processPending();
         }
 
     }

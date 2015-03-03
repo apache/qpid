@@ -36,11 +36,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/**
-* Created by keith on 28/01/2015.
-*/
 public class SelectorThread extends Thread
 {
+    public static final String IO_THREAD_NAME_PREFIX  = "NCS-";
     private final Queue<Runnable> _tasks = new ConcurrentLinkedQueue<>();
     private final Queue<NonBlockingConnection> _unregisteredConnections = new ConcurrentLinkedQueue<>();
     private final Set<NonBlockingConnection> _unscheduledConnections = new HashSet<>();
@@ -289,7 +287,8 @@ public class SelectorThread extends Thread
                                     String currentName = Thread.currentThread().getName();
                                     try
                                     {
-                                        Thread.currentThread().setName("NCS-"+connection.getRemoteAddress().toString());
+                                        Thread.currentThread().setName(
+                                                IO_THREAD_NAME_PREFIX + connection.getRemoteAddress().toString());
                                         processConnection(connection);
                                     }
                                     finally
