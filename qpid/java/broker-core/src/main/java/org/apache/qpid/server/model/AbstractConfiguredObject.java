@@ -2035,9 +2035,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                     }
                     remaining = startTime + timeout - System.currentTimeMillis();
 
-                    if(remaining < 0)
+                    if(remaining <= 0)
                     {
-                        throw new TimeoutException("Completion did not occur within given tiemout: " + timeout);
+                        throw new TimeoutException("Completion did not occur within given timeout: " + timeout);
                     }
                 }
             }

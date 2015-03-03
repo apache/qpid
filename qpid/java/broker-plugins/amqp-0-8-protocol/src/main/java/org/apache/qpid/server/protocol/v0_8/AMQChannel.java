@@ -1277,7 +1277,8 @@ public class AMQChannel
 
         // stop all subscriptions
         _rollingBack = true;
-        boolean requiresSuspend = _suspended.compareAndSet(false,true);
+        boolean requiresSuspend = _suspended.compareAndSet(false,true);  // TODO This is probably superfluous owing to the
+        // message assignment suspended logic in NBC.
 
         // ensure all subscriptions have seen the change to the channel state
         for(ConsumerTarget_0_8 sub : _tag2SubscriptionTargetMap.values())
