@@ -26,6 +26,9 @@
 namespace qpid {
 namespace amqp {
 
+// NOTE: If you add descriptor symbols and codes here, you must also update the DescriptorMap
+// constructor in Descriptor.cpp.
+
 namespace message {
 const std::string HEADER_SYMBOL("amqp:header:list");
 const std::string PROPERTIES_SYMBOL("amqp:properties:list");
@@ -36,6 +39,7 @@ const std::string AMQP_SEQUENCE_SYMBOL("amqp:amqp-sequence:list");
 const std::string AMQP_VALUE_SYMBOL("amqp:amqp-value:*");
 const std::string DATA_SYMBOL("amqp:data:binary");
 const std::string FOOTER_SYMBOL("amqp:footer:map");
+const std::string ACCEPTED_SYMBOL("amqp:accepted:list");
 
 const uint64_t HEADER_CODE(0x70);
 const uint64_t DELIVERY_ANNOTATIONS_CODE(0x71);
@@ -46,6 +50,7 @@ const uint64_t DATA_CODE(0x75);
 const uint64_t AMQP_SEQUENCE_CODE(0x76);
 const uint64_t AMQP_VALUE_CODE(0x77);
 const uint64_t FOOTER_CODE(0x78);
+const uint64_t ACCEPTED_CODE(0x24);
 
 const Descriptor HEADER(HEADER_CODE);
 const Descriptor DELIVERY_ANNOTATIONS(DELIVERY_ANNOTATIONS_CODE);

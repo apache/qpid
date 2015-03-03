@@ -205,7 +205,7 @@ void ConnectionHandler::fail(const std::string& message)
 {
     errorCode = CLOSE_CODE_FRAMING_ERROR;
     errorText = message;
-    QPID_LOG(warning, message);
+    QPID_LOG(debug, message);
     setState(FAILED);
 }
 

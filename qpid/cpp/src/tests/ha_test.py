@@ -24,6 +24,7 @@ from brokertest import *
 from threading import Thread, Lock, Condition
 from logging import getLogger, WARN, ERROR, DEBUG, INFO
 from qpidtoollibs import BrokerAgent
+from qpid.harness import Skipped
 
 log = getLogger(__name__)
 
@@ -129,12 +130,9 @@ class HaBroker(Broker):
         args += ["--load-module", BrokerTest.ha_lib,
                  # Non-standard settings for faster tests.
                  "--link-maintenance-interval=0.1",
-                 # Heartbeat and negotiate time are needed so that a broker wont
-                 # stall on an address that doesn't currently have a broker running.
-                 "--max-negotiate-time=1000",
                  "--ha-cluster=%s"%ha_cluster]
         # Add default --log-enable arguments unless args already has --log arguments.
-        if not [l for l in args if l.startswith("--log")]:
+        if not env_has_log_config() and not [l for l in args if l.startswith("--log")]:
             args += ["--log-enable=info+", "--log-enable=debug+:ha::"]
         if not [h for h in args if h.startswith("--link-heartbeat-interval")]:
             args += ["--link-heartbeat-interval=%s"%(HaBroker.heartbeat)]
@@ -159,13 +157,20 @@ acl allow all all
         Broker.__init__(self, test, args, port=ha_port.port, **kwargs)
 
     # Do some static setup to locate the qpid-config and qpid-ha tools.
-    qpid_ha_script=import_script(os.path.join(os.getenv("PYTHON_COMMANDS"),"qpid-ha"))
-    qpid_config_path=os.path.join(os.getenv("PYTHON_COMMANDS"), "qpid-config")
-    assert os.path.isfile(qpid_config_path)
+    @property
+    def qpid_ha_script(self):
+        if not hasattr(self, "_qpid_ha_script"):
+            qpid_ha_exec = os.getenv("QPID_HA_EXEC")
+            if not qpid_ha_exec or not os.path.isfile(qpid_ha_exec):
+                raise Skipped("qpid-ha not available")
+            self._qpid_ha_script = import_script(qpid_ha_exec)
+        return self._qpid_ha_script
 
     def __repr__(self): return "<HaBroker:%s:%d>"%(self.log, self.port())
 
     def qpid_ha(self, args):
+        if not self.qpid_ha_script:
+            raise Skipped("qpid-ha not available")
         try:
             cred = self.client_credentials
             url = self.host_port()
@@ -195,33 +200,37 @@ acl allow all all
 
     def ha_status(self): return self.qmf().status
 
-    def wait_status(self, status, timeout=5):
+    def wait_status(self, status, timeout=10):
+
         def try_get_status():
             self._status = "<unknown>"
-            # Ignore ConnectionError, the broker may not be up yet.
             try:
                 self._status = self.ha_status()
-                return self._status == status;
-            except qm.ConnectionError: return False
+            except qm.ConnectionError, e:
+                # Record the error but don't raise, the broker may not be up yet.
+                self._status = "%s: %s" % (type(e).__name__, e)
+            return self._status == status;
         assert retry(try_get_status, timeout=timeout), "%s expected=%r, actual=%r"%(
             self, status, self._status)
 
-    def wait_queue(self, queue, timeout=1, msg="wait_queue"):
+    def wait_queue(self, queue, timeout=10, msg="wait_queue"):
         """ Wait for queue to be visible via QMF"""
         agent = self.agent
-        assert retry(lambda: agent.getQueue(queue) is not None, timeout=timeout), msg+"queue %s not present"%queue
+        assert retry(lambda: agent.getQueue(queue) is not None, timeout=timeout), \
+            "%s queue %s not present" % (msg, queue)
 
-    def wait_no_queue(self, queue, timeout=1, msg="wait_no_queue"):
+    def wait_no_queue(self, queue, timeout=10, msg="wait_no_queue"):
         """ Wait for queue to be invisible via QMF"""
         agent = self.agent
         assert retry(lambda: agent.getQueue(queue) is None, timeout=timeout), "%s: queue %s still present"%(msg,queue)
 
-    # TODO aconway 2012-05-01: do direct python call to qpid-config code.
     def qpid_config(self, args):
+        qpid_config_exec = os.getenv("QPID_CONFIG_EXEC")
+        if not qpid_config_exec or not os.path.isfile(qpid_config_exec):
+            raise Skipped("qpid-config not available")
         assert subprocess.call(
-            [self.qpid_config_path, "--broker", self.host_port()]+args,
-            stdout=1, stderr=subprocess.STDOUT
-            ) == 0
+            [qpid_config_exec, "--broker", self.host_port()]+args, stdout=1, stderr=subprocess.STDOUT
+        ) == 0, "qpid-config failed"
 
     def config_replicate(self, from_broker, queue):
         self.qpid_config(["add", "queue", "--start-replica", from_broker, queue])
@@ -325,7 +334,7 @@ class HaCluster(object):
         ha_port = self._ports[i]
         b = HaBroker(ha_port.test, ha_port, brokers_url=self.url, name=name,
                      args=args, **self.kwargs)
-        b.ready(timeout=5)
+        b.ready(timeout=10)
         return b
 
     def start(self):

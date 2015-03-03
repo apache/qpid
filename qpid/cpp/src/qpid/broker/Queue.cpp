@@ -297,6 +297,8 @@ void Queue::deliverTo(Message msg, TxBuffer* txn)
         if (txn) {
             TxOp::shared_ptr op(new TxPublish(msg, shared_from_this()));
             txn->enlist(op);
+            QPID_LOG(debug, "Message " << msg.getSequence() << " enqueue on " << name
+                     << " enlisted in " << txn);
         } else {
             if (enqueue(0, msg)) {
                 push(msg);

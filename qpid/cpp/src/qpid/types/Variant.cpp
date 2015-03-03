@@ -43,21 +43,23 @@ class VariantImpl
 {
   public:
     VariantImpl();
-    VariantImpl(bool);
-    VariantImpl(uint8_t);
-    VariantImpl(uint16_t);
-    VariantImpl(uint32_t);
-    VariantImpl(uint64_t);
-    VariantImpl(int8_t);
-    VariantImpl(int16_t);
-    VariantImpl(int32_t);
-    VariantImpl(int64_t);
-    VariantImpl(float);
-    VariantImpl(double);
-    VariantImpl(const std::string&, const std::string& encoding=std::string());
-    VariantImpl(const Variant::Map&);
-    VariantImpl(const Variant::List&);
-    VariantImpl(const Uuid&);
+    void reset();
+    void set(bool);
+    void set(uint8_t);
+    void set(uint16_t);
+    void set(uint32_t);
+    void set(uint64_t);
+    void set(int8_t);
+    void set(int16_t);
+    void set(int32_t);
+    void set(int64_t);
+    void set(float);
+    void set(double);
+    void set(const std::string&, const std::string& encoding=std::string());
+    void set(const Variant::Map&);
+    void set(const Variant::List&);
+    void set(const Uuid&);
+    void set(const Variant&);
     ~VariantImpl();
 
     VariantType getType() const;
@@ -90,9 +92,10 @@ class VariantImpl
     bool isEqualTo(VariantImpl&) const;
     bool isEquivalentTo(VariantImpl&) const;
 
-    static VariantImpl* create(const Variant&);
+    Variant::List descriptors;         // Optional descriptors for described value.
+
   private:
-    const VariantType type;
+    VariantType type;
     union {
         bool b;
         uint8_t ui8;
@@ -110,7 +113,7 @@ class VariantImpl
         Variant::List* list;
         std::string* string;
     } value;
-    std::string encoding;//optional encoding for variable length data
+    std::string encoding;       // Optional encoding for variable length data.
 
   template<class T> T convertFromString() const
     {
@@ -136,26 +139,34 @@ class VariantImpl
 
 };
 
+VariantImpl::VariantImpl() : type(VAR_VOID) {}
 
-VariantImpl::VariantImpl() : type(VAR_VOID) { value.i64 = 0; }
-VariantImpl::VariantImpl(bool b) : type(VAR_BOOL) { value.b = b; }
-VariantImpl::VariantImpl(uint8_t i) : type(VAR_UINT8) { value.ui8 = i; }
-VariantImpl::VariantImpl(uint16_t i) : type(VAR_UINT16) { value.ui16 = i; }
-VariantImpl::VariantImpl(uint32_t i) : type(VAR_UINT32) { value.ui32 = i; }
-VariantImpl::VariantImpl(uint64_t i) : type(VAR_UINT64) { value.ui64 = i; }
-VariantImpl::VariantImpl(int8_t i) : type(VAR_INT8) { value.i8 = i; }
-VariantImpl::VariantImpl(int16_t i) : type(VAR_INT16) { value.i16 = i; }
-VariantImpl::VariantImpl(int32_t i) : type(VAR_INT32) { value.i32 = i; }
-VariantImpl::VariantImpl(int64_t i) : type(VAR_INT64) { value.i64 = i; }
-VariantImpl::VariantImpl(float f) : type(VAR_FLOAT) { value.f = f; }
-VariantImpl::VariantImpl(double d) : type(VAR_DOUBLE) { value.d = d; }
-VariantImpl::VariantImpl(const std::string& s, const std::string& e)
-    : type(VAR_STRING), encoding(e) { value.string = new std::string(s); }
-VariantImpl::VariantImpl(const Variant::Map& m) : type(VAR_MAP) { value.map = new Variant::Map(m); }
-VariantImpl::VariantImpl(const Variant::List& l) : type(VAR_LIST) { value.list = new Variant::List(l); }
-VariantImpl::VariantImpl(const Uuid& u) : type(VAR_UUID) { value.uuid = new Uuid(u); }
+void VariantImpl::set(bool b) { reset(); type = VAR_BOOL; value.b = b; }
+void VariantImpl::set(uint8_t i) { reset(); type = VAR_UINT8; value.ui8 = i; }
+void VariantImpl::set(uint16_t i) { reset(); type = VAR_UINT16; value.ui16 = i; }
+void VariantImpl::set(uint32_t i) { reset(); type = VAR_UINT32; value.ui32 = i; }
+void VariantImpl::set(uint64_t i) { reset(); type = VAR_UINT64; value.ui64 = i; }
+void VariantImpl::set(int8_t i) { reset(); type = VAR_INT8; value.i8 = i; }
+void VariantImpl::set(int16_t i) { reset(); type = VAR_INT16; value.i16 = i; }
+void VariantImpl::set(int32_t i) { reset(); type = VAR_INT32; value.i32 = i; }
+void VariantImpl::set(int64_t i) { reset(); type = VAR_INT64; value.i64 = i; }
+void VariantImpl::set(float f) { reset(); type = VAR_FLOAT; value.f = f; }
+void VariantImpl::set(double d) { reset(); type = VAR_DOUBLE; value.d = d; }
+void VariantImpl::set(const std::string& s, const std::string& e) { reset();  type = VAR_STRING; encoding = e; value.string = new std::string(s); }
 
-VariantImpl::~VariantImpl() {
+void VariantImpl::set(const Variant::Map& m) {
+    reset();
+    type = VAR_MAP;
+    value.map = new Variant::Map(m);
+}
+
+void VariantImpl::set(const Variant::List& l) { reset(); type = VAR_LIST; value.list = new Variant::List(l); }
+
+void VariantImpl::set(const Uuid& u) { reset(); type = VAR_UUID; value.uuid = new Uuid(u); }
+
+VariantImpl::~VariantImpl() { reset(); }
+
+void VariantImpl::reset() {
     switch (type) {
       case VAR_STRING:
         delete value.string;
@@ -172,6 +183,7 @@ VariantImpl::~VariantImpl() {
       default:
         break;
     }
+    type = VAR_VOID;
 }
 
 VariantType VariantImpl::getType() const { return type; }
@@ -637,46 +649,50 @@ bool isIntegerType(VariantType type)
     }
 }
 
-VariantImpl* VariantImpl::create(const Variant& v)
+void VariantImpl::set(const Variant& v)
 {
     switch (v.getType()) {
-      case VAR_BOOL: return new VariantImpl(v.asBool());
-      case VAR_UINT8: return new VariantImpl(v.asUint8());
-      case VAR_UINT16: return new VariantImpl(v.asUint16());
-      case VAR_UINT32: return new VariantImpl(v.asUint32());
-      case VAR_UINT64: return new VariantImpl(v.asUint64());
-      case VAR_INT8: return new VariantImpl(v.asInt8());
-      case VAR_INT16: return new VariantImpl(v.asInt16());
-      case VAR_INT32: return new VariantImpl(v.asInt32());
-      case VAR_INT64: return new VariantImpl(v.asInt64());
-      case VAR_FLOAT: return new VariantImpl(v.asFloat());
-      case VAR_DOUBLE: return new VariantImpl(v.asDouble());
-      case VAR_STRING: return new VariantImpl(v.asString(), v.getEncoding());
-      case VAR_MAP: return new VariantImpl(v.asMap());
-      case VAR_LIST: return new VariantImpl(v.asList());
-      case VAR_UUID: return new VariantImpl(v.asUuid());
-      default: return new VariantImpl();
+      case VAR_BOOL: set(v.asBool()); break;
+      case VAR_UINT8: set(v.asUint8()); break;
+      case VAR_UINT16: set(v.asUint16()); break;
+      case VAR_UINT32: set(v.asUint32()); break;
+      case VAR_UINT64: set(v.asUint64()); break;
+      case VAR_INT8: set(v.asInt8()); break;
+      case VAR_INT16: set(v.asInt16()); break;
+      case VAR_INT32: set(v.asInt32()); break;
+      case VAR_INT64: set(v.asInt64()); break;
+      case VAR_FLOAT: set(v.asFloat()); break;
+      case VAR_DOUBLE: set(v.asDouble()); break;
+      case VAR_STRING: set(v.asString(), v.getEncoding()); break;
+      case VAR_MAP: set(v.asMap()); break;
+      case VAR_LIST: set(v.asList()); break;
+      case VAR_UUID: set(v.asUuid()); break;
+      default: reset();
     }
+    encoding = v.getEncoding();
+    descriptors = v.getDescriptors();
 }
 
-Variant::Variant() : impl(new VariantImpl()) {}
-Variant::Variant(bool b) : impl(new VariantImpl(b)) {}
-Variant::Variant(uint8_t i) : impl(new VariantImpl(i)) {}
-Variant::Variant(uint16_t i) : impl(new VariantImpl(i)) {}
-Variant::Variant(uint32_t i) : impl(new VariantImpl(i)) {}
-Variant::Variant(uint64_t i) : impl(new VariantImpl(i)) {}
-Variant::Variant(int8_t i) : impl(new VariantImpl(i)) {}
-Variant::Variant(int16_t i) : impl(new VariantImpl(i)) {}
-Variant::Variant(int32_t i) : impl(new VariantImpl(i)) {}
-Variant::Variant(int64_t i) : impl(new VariantImpl(i)) {}
-Variant::Variant(float f) : impl(new VariantImpl(f)) {}
-Variant::Variant(double d) : impl(new VariantImpl(d)) {}
-Variant::Variant(const std::string& s) : impl(new VariantImpl(s)) {}
-Variant::Variant(const char* s) : impl(new VariantImpl(std::string(s))) {}
-Variant::Variant(const Map& m) : impl(new VariantImpl(m)) {}
-Variant::Variant(const List& l) : impl(new VariantImpl(l)) {}
-Variant::Variant(const Variant& v) : impl(VariantImpl::create(v)) {}
-Variant::Variant(const Uuid& u) : impl(new VariantImpl(u)) {}
+Variant::Variant() : impl(0) {}
+Variant::Variant(bool b) : impl(new VariantImpl()) { impl->set(b); }
+Variant::Variant(uint8_t i) : impl(new VariantImpl()) { impl->set(i); }
+Variant::Variant(uint16_t i) : impl(new VariantImpl()) { impl->set(i); }
+Variant::Variant(uint32_t i) : impl(new VariantImpl()) { impl->set(i); }
+Variant::Variant(uint64_t i) : impl(new VariantImpl()) { impl->set(i); }
+Variant::Variant(int8_t i) : impl(new VariantImpl()) { impl->set(i); }
+Variant::Variant(int16_t i) : impl(new VariantImpl()) { impl->set(i); }
+Variant::Variant(int32_t i) : impl(new VariantImpl()) { impl->set(i); }
+Variant::Variant(int64_t i) : impl(new VariantImpl()) { impl->set(i); }
+Variant::Variant(float f) : impl(new VariantImpl()) { impl->set(f); }
+Variant::Variant(double d) : impl(new VariantImpl()) { impl->set(d); }
+Variant::Variant(const std::string& s) : impl(new VariantImpl()) { impl->set(s); }
+Variant::Variant(const std::string& s, const std::string& encoding) : impl(new VariantImpl()) { impl->set(s, encoding); }
+Variant::Variant(const char* s) : impl(new VariantImpl()) { impl->set(std::string(s)); }
+Variant::Variant(const char* s, const char* encoding) : impl(new VariantImpl()) { impl->set(std::string(s), std::string(encoding)); }
+Variant::Variant(const Map& m) : impl(new VariantImpl()) { impl->set(m); }
+Variant::Variant(const List& l) : impl(new VariantImpl()) { impl->set(l); }
+Variant::Variant(const Variant& v) : impl(new VariantImpl()) { impl->set(v); }
+Variant::Variant(const Uuid& u) : impl(new VariantImpl()) { impl->set(u); }
 
 Variant::~Variant() { if (impl) delete impl; }
 
@@ -686,116 +702,105 @@ void Variant::reset()
     impl = 0;
 }
 
+namespace {
+VariantImpl* assure(VariantImpl*& ptr) {
+    if (!ptr) ptr = new VariantImpl();
+    return ptr;
+}
+}
 
 Variant& Variant::operator=(bool b)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(b);
+    assure(impl)->set(b);
     return *this;
 }
 
 Variant& Variant::operator=(uint8_t i)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(i);
+    assure(impl)->set(i);
     return *this;
 }
 Variant& Variant::operator=(uint16_t i)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(i);
+    assure(impl)->set(i);
     return *this;
 }
 Variant& Variant::operator=(uint32_t i)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(i);
+    assure(impl)->set(i);
     return *this;
 }
 Variant& Variant::operator=(uint64_t i)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(i);
+    assure(impl)->set(i);
     return *this;
 }
 
 Variant& Variant::operator=(int8_t i)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(i);
+    assure(impl)->set(i);
     return *this;
 }
 Variant& Variant::operator=(int16_t i)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(i);
+    assure(impl)->set(i);
     return *this;
 }
 Variant& Variant::operator=(int32_t i)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(i);
+    assure(impl)->set(i);
     return *this;
 }
 Variant& Variant::operator=(int64_t i)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(i);
+    assure(impl)->set(i);
     return *this;
 }
 
 Variant& Variant::operator=(float f)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(f);
+    assure(impl)->set(f);
     return *this;
 }
 Variant& Variant::operator=(double d)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(d);
+    assure(impl)->set(d);
     return *this;
 }
 
 Variant& Variant::operator=(const std::string& s)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(s);
+    assure(impl)->set(s);
     return *this;
 }
 
 Variant& Variant::operator=(const char* s)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(std::string(s));
+    assure(impl)->set(std::string(s));
     return *this;
 }
 
 Variant& Variant::operator=(const Uuid& u)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(u);
+    assure(impl)->set(u);
     return *this;
 }
 
 Variant& Variant::operator=(const Map& m)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(m);
+    assure(impl)->set(m);
     return *this;
 }
 
 Variant& Variant::operator=(const List& l)
 {
-    if (impl) delete impl;
-    impl = new VariantImpl(l);
+    assure(impl)->set(l);
     return *this;
 }
 
 Variant& Variant::operator=(const Variant& v)
 {
-    if (impl) delete impl;
-    impl = VariantImpl::create(v);
+    assure(impl)->set(v);
     return *this;
 }
 
@@ -841,8 +846,7 @@ Variant::List& Variant::asList() { if (!impl) throw InvalidConversion("Can't con
 const std::string& Variant::getString() const { if (!impl) throw InvalidConversion("Can't convert VOID to STRING"); return impl->getString(); }
 std::string& Variant::getString() { if (!impl) throw InvalidConversion("Can't convert VOID to STRING"); return impl->getString(); }
 void Variant::setEncoding(const std::string& s) {
-    if (!impl) impl = new VariantImpl();
-    impl->setEncoding(s);
+    assure(impl)->setEncoding(s);
 }
 const std::string& Variant::getEncoding() const { return impl ? impl->getEncoding() : EMPTY; }
 
@@ -884,6 +888,12 @@ std::ostream& operator<<(std::ostream& out, const Variant::List& list)
 
 std::ostream& operator<<(std::ostream& out, const Variant& value)
 {
+    // Print the descriptors
+    const Variant::List& descriptors = value.getDescriptors();
+    for (Variant::List::const_iterator i = descriptors.begin(); i != descriptors.end(); ++i)
+        out << "@" << *i << " ";
+
+    // Print the value
     switch (value.getType()) {
       case VAR_MAP:
         out << value.asMap();
@@ -910,7 +920,43 @@ bool operator!=(const Variant& a, const Variant& b) { return !(a == b); }
 
 bool Variant::isEqualTo(const Variant& other) const
 {
+    if (isVoid() && other.isVoid()) return true;
+    if (isVoid() || other.isVoid()) return false;
     return impl && impl->isEqualTo(*other.impl);
+}
+
+bool Variant::isDescribed() const {
+    return impl && !impl->descriptors.empty();
+}
+
+Variant::List& Variant::getDescriptors() {
+    return assure(impl)->descriptors;
+}
+
+const Variant::List& Variant::getDescriptors() const {
+    return assure(impl)->descriptors;
+}
+
+Variant Variant::getDescriptor() const {
+    if (getDescriptors().size() > 0) return getDescriptors().front();
+    else return Variant();
+}
+
+void Variant::setDescriptor(const Variant& descriptor) {
+    getDescriptors().clear();
+    getDescriptors().push_back(descriptor);
+}
+
+Variant Variant::described(const Variant& descriptor, const Variant& value) {
+    Variant described(value);
+    described.setDescriptor(descriptor);
+    return described;
+}
+
+Variant Variant::described(const Variant& descriptor, const List& value) {
+    Variant described(value);
+    described.setDescriptor(descriptor);
+    return described;
 }
 
 }} // namespace qpid::types

@@ -42,12 +42,12 @@ SessionHandle::SessionHandle(boost::shared_ptr<ConnectionContext> c, boost::shar
 
 void SessionHandle::commit()
 {
-
+    connection->commit(session);
 }
 
 void SessionHandle::rollback()
 {
-
+    connection->rollback(session);
 }
 
 void SessionHandle::acknowledge(bool /*sync*/)

@@ -88,6 +88,7 @@ class AmqpBrokerTest(BrokerTest):
         result = self.popen(cmd, stdout=PIPE)
         r.fetch(timeout=1) # wait until receiver is actually ready
         s.acknowledge()
+        r.close()
         s.close()
         return result
 

@@ -89,7 +89,7 @@ class Client:
     self.password = password
     self.locale = locale
     self.tune_params = tune_params
-    self.client_properties=get_client_properties_with_defaults(provided_client_properties=client_properties)
+    self.client_properties=get_client_properties_with_defaults(provided_client_properties=client_properties, version_property_key="version")
     self.sasl_options = sasl_options
     self.socket = connect(self.host, self.port, connection_options)
     self.conn = Connection(self.socket, self.spec)

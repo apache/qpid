@@ -20,34 +20,53 @@
  */
 #include "PnData.h"
 #include "qpid/types/encodings.h"
+#include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace messaging {
 namespace amqp {
 
 using types::Variant;
+using namespace types::encodings;
 
-void PnData::write(const Variant::Map& map)
+// TODO aconway 2014-11-20: PnData duplicates functionality of qpid::amqp::Encoder,Decoder.
+// Collapse them all into a single proton-based codec.
+
+void PnData::put(const Variant::Map& map)
 {
     pn_data_put_map(data);
     pn_data_enter(data);
     for (Variant::Map::const_iterator i = map.begin(); i != map.end(); ++i) {
-        pn_data_put_string(data, str(i->first));
-        write(i->second);
+        pn_data_put_string(data, bytes(i->first));
+        put(i->second);
     }
     pn_data_exit(data);
 }
-void PnData::write(const Variant::List& list)
+
+void PnData::put(const Variant::List& list)
 {
     pn_data_put_list(data);
     pn_data_enter(data);
     for (Variant::List::const_iterator i = list.begin(); i != list.end(); ++i) {
-        write(*i);
+        put(*i);
     }
     pn_data_exit(data);
 }
-void PnData::write(const Variant& value)
+
+void PnData::put(const Variant& value)
 {
+    // Open data descriptors associated with the value.
+    const Variant::List& descriptors = value.getDescriptors();
+    for (Variant::List::const_iterator i = descriptors.begin(); i != descriptors.end(); ++i) {
+        pn_data_put_described(data);
+        pn_data_enter(data);
+        if (i->getType() == types::VAR_STRING)
+            pn_data_put_symbol(data, bytes(i->asString()));
+        else
+            pn_data_put_ulong(data, i->asUint64());
+    }
+
+    // Put the variant value
     switch (value.getType()) {
       case qpid::types::VAR_VOID:
         pn_data_put_null(data);
@@ -65,61 +84,70 @@ void PnData::write(const Variant& value)
         pn_data_put_double(data, value.asDouble());
         break;
       case qpid::types::VAR_STRING:
-        pn_data_put_string(data, str(value.asString()));
+        if (value.getEncoding() == ASCII)
+            pn_data_put_symbol(data, bytes(value.asString()));
+        else if (value.getEncoding() == BINARY)
+            pn_data_put_binary(data, bytes(value.asString()));
+        else
+            pn_data_put_string(data, bytes(value.asString()));
         break;
       case qpid::types::VAR_MAP:
-        write(value.asMap());
+        put(value.asMap());
         break;
       case qpid::types::VAR_LIST:
-        write(value.asList());
+        put(value.asList());
         break;
       default:
         break;
     }
+
+    // Close any descriptors.
+    for (Variant::List::const_iterator i = descriptors.begin(); i != descriptors.end(); ++i)
+        pn_data_exit(data);
 }
 
-bool PnData::read(qpid::types::Variant& value)
+bool PnData::get(qpid::types::Variant& value)
 {
-    return read(pn_data_type(data), value);
+    return get(pn_data_type(data), value);
 }
 
-void PnData::readList(qpid::types::Variant::List& value)
+void PnData::getList(qpid::types::Variant::List& value)
 {
     size_t count = pn_data_get_list(data);
     pn_data_enter(data);
     for (size_t i = 0; i < count && pn_data_next(data); ++i) {
         qpid::types::Variant e;
-        if (read(e)) value.push_back(e);
+        if (get(e)) value.push_back(e);
     }
     pn_data_exit(data);
 }
 
-void PnData::readMap(qpid::types::Variant::Map& value)
+void PnData::getMap(qpid::types::Variant::Map& value)
 {
     size_t count = pn_data_get_list(data);
     pn_data_enter(data);
     for (size_t i = 0; i < (count/2) && pn_data_next(data); ++i) {
-        std::string key = str(pn_data_get_symbol(data));
+        std::string key = string(pn_data_get_symbol(data));
         pn_data_next(data);
         qpid::types::Variant e;
-        if (read(e)) value[key]= e;
+        if (get(e)) value[key]= e;
     }
     pn_data_exit(data);
 }
 
-void PnData::readArray(qpid::types::Variant::List& value)
+void PnData::getArray(qpid::types::Variant::List& value)
 {
     size_t count = pn_data_get_array(data);
     pn_type_t type = pn_data_get_array_type(data);
     pn_data_enter(data);
     for (size_t i = 0; i < count && pn_data_next(data); ++i) {
         qpid::types::Variant e;
-        if (read(type, e)) value.push_back(e);
+        if (get(type, e)) value.push_back(e);
     }
     pn_data_exit(data);
 }
 
-bool PnData::read(pn_type_t type, qpid::types::Variant& value)
+bool PnData::get(pn_type_t type, qpid::types::Variant& value)
 {
     switch (type) {
       case PN_NULL:
@@ -168,41 +196,41 @@ bool PnData::read(pn_type_t type, qpid::types::Variant& value)
         value = qpid::types::Uuid(pn_data_get_uuid(data).bytes);
         return true;
       case PN_BINARY:
-        value = str(pn_data_get_binary(data));
+        value = string(pn_data_get_binary(data));
         value.setEncoding(qpid::types::encodings::BINARY);
         return true;
       case PN_STRING:
-        value = str(pn_data_get_string(data));
+        value = string(pn_data_get_string(data));
         value.setEncoding(qpid::types::encodings::UTF8);
         return true;
       case PN_SYMBOL:
-        value = str(pn_data_get_string(data));
+        value = string(pn_data_get_string(data));
         value.setEncoding(qpid::types::encodings::ASCII);
         return true;
       case PN_LIST:
         value = qpid::types::Variant::List();
-        readList(value.asList());
+        getList(value.asList());
         return true;
         break;
       case PN_MAP:
         value = qpid::types::Variant::Map();
-        readMap(value.asMap());
+        getMap(value.asMap());
         return true;
       case PN_ARRAY:
         value = qpid::types::Variant::List();
-        readArray(value.asList());
+        getArray(value.asList());
         return true;
       case PN_DESCRIBED:
+        // TODO aconway 2014-11-20: get described values.
       case PN_DECIMAL32:
       case PN_DECIMAL64:
       case PN_DECIMAL128:
       default:
         return false;
     }
-
 }
 
-pn_bytes_t PnData::str(const std::string& s)
+pn_bytes_t PnData::bytes(const std::string& s)
 {
     pn_bytes_t result;
     result.start = const_cast<char*>(s.data());
@@ -210,7 +238,7 @@ pn_bytes_t PnData::str(const std::string& s)
     return result;
 }
 
-std::string PnData::str(const pn_bytes_t& in)
+std::string PnData::string(const pn_bytes_t& in)
 {
     return std::string(in.start, in.size);
 }

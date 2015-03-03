@@ -100,6 +100,7 @@ namespace {
             boost::intrusive_ptr<qpid::broker::AsyncCompletion::Callback> copy(new Transfer(delivery, session));
             return copy;
         }
+
       private:
         pn_delivery_t* delivery;
         boost::shared_ptr<Session> session;
@@ -146,8 +147,8 @@ void DecodingIncoming::deliver(boost::intrusive_ptr<qpid::broker::amqp::Message>
 {
     qpid::broker::Message message(received, received);
     userid.verify(message.getUserId());
-    handle(message, session.getTransaction(delivery));
     received->begin();
+    handle(message, session.getTransaction(delivery));
     Transfer t(delivery, sessionPtr);
     received->end(t);
 }

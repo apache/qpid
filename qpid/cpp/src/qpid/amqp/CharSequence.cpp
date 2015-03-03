@@ -35,7 +35,7 @@ CharSequence::operator bool() const
 }
 std::string CharSequence::str() const
 {
-    return std::string(data, size);
+    return (data && size) ? std::string(data, size) : std::string();
 }
 
 CharSequence CharSequence::create()

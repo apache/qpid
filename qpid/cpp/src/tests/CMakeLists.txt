@@ -360,6 +360,11 @@ if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   # paged queue not yet implemented for windows
   add_test (paged_queue_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_paged_queue_tests${test_script_suffix})
 endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+
+if (BUILD_AMQP)
+  add_test (interop_tests ${python_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/interop_tests.py)
+endif (BUILD_AMQP)
+
 add_test (ha_tests ${python_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/ha_tests.py)
 add_test (qpidd_qmfv2_tests ${python_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/qpidd_qmfv2_tests.py)
 if (BUILD_AMQP)

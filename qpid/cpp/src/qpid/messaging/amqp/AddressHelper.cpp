@@ -510,9 +510,9 @@ void AddressHelper::checkAssertion(pn_terminus_t* terminus, CheckMode mode)
                             requested.erase(j->first);
                         }
                     } else if (key == AUTO_DELETE) {
-                        PnData(data).read(v);
+                        PnData(data).get(v);
                         isAutoDeleted = v.asBool();
-                    } else if (j != requested.end() && (PnData(data).read(v) && v.asString() == j->second.asString())) {
+                    } else if (j != requested.end() && (PnData(data).get(v) && v.asString() == j->second.asString())) {
                         requested.erase(j->first);
                     }
                 }
@@ -646,7 +646,7 @@ void AddressHelper::configure(pn_link_t* link, pn_terminus_t* terminus, CheckMod
                 } else {
                     pn_data_put_ulong(filter, i->descriptorCode);
                 }
-                PnData(filter).write(i->value);
+                PnData(filter).put(i->value);
                 pn_data_exit(filter);
             }
             pn_data_exit(filter);
@@ -733,7 +733,7 @@ void AddressHelper::setNodeProperties(pn_terminus_t* terminus)
                 putLifetimePolicy(data, toLifetimePolicy(i->second.asString()));
             } else {
                 pn_data_put_symbol(data, convert(i->first));
-                PnData(data).write(i->second);
+                PnData(data).put(i->second);
             }
         }
         pn_data_exit(data);

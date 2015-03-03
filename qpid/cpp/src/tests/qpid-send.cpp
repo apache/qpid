@@ -112,14 +112,14 @@ struct Options : public qpid::Options
           log(argv0),
           reportTotal(false),
           reportEvery(0),
-          reportHeader(true),
-          sendRate(0),
-          sequence(true),
-          timestamp(true),
-          groupPrefix("GROUP-"),
-          groupSize(10),
-          groupRandSize(false),
-          groupInterleave(1)
+        reportHeader(true),
+        sendRate(0),
+        sequence(true),
+        timestamp(true),
+        groupPrefix("GROUP-"),
+        groupSize(10),
+        groupRandSize(false),
+        groupInterleave(1)
     {
         addOptions()
             ("broker,b", qpid::optValue(url, "URL"), "url of broker to connect to")
@@ -272,7 +272,7 @@ class MapContentGenerator   : public ContentGenerator {
 // tag each generated message with a group identifer
 //
 class GroupGenerator {
-public:
+  public:
     GroupGenerator(const std::string& key,
                    const std::string& prefix,
                    const uint size,
@@ -351,7 +351,7 @@ int main(int argc, char ** argv)
     try {
         Options opts;
         if (opts.parse(argc, argv)) {
-             connection = Connection(opts.url, opts.connectionOptions);
+            connection = Connection(opts.url, opts.connectionOptions);
             connection.open();
             std::auto_ptr<FailoverUpdates> updates(opts.failoverUpdates ? new FailoverUpdates(connection) : 0);
             Session session = opts.tx ? connection.createTransactionalSession() : connection.createSession();
@@ -447,6 +447,7 @@ int main(int argc, char ** argv)
             connection.close();
             return 0;
         }
+        return 1;
     } catch(const std::exception& error) {
         std::cerr << "qpid-send: " << error.what() << std::endl;
         connection.close();

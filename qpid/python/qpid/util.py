@@ -42,15 +42,24 @@ except ImportError:
     def close(self):
       self.sock.close()
 
-def get_client_properties_with_defaults(provided_client_properties={}):
+def get_client_properties_with_defaults(provided_client_properties={}, version_property_key="qpid.client_version"):
   ppid = 0
+  version = "unidentified"
   try:
     ppid = os.getppid()
   except:
     pass
 
+  try:
+    import pkg_resources
+    pkg = pkg_resources.require("qpid-python")
+    if pkg and pkg[0] and pkg[0].version:
+      version = pkg[0].version
+  except:
+    pass
+
   client_properties = {"product": "qpid python client",
-                       "version": "development",
+                       version_property_key : version,
                        "platform": os.name,
                        "qpid.client_process": os.path.basename(sys.argv and sys.argv[0] or ''),
                        "qpid.client_pid": os.getpid(),
