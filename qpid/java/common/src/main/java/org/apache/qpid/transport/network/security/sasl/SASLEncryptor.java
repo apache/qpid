@@ -21,6 +21,8 @@
 package org.apache.qpid.transport.network.security.sasl;
 
 
+import java.util.List;
+
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 
@@ -56,7 +58,13 @@ public abstract class SASLEncryptor implements ConnectionListener
             }
         }
     }
-    
+
+    @Override
+    public boolean redirect(final String host, final List<Object> knownHosts)
+    {
+        return false;
+    }
+
     public void exception(Connection conn, ConnectionException exception){}
     public void closed(Connection conn) {}
     

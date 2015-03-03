@@ -21,6 +21,8 @@
 package org.apache.qpid.transport;
 
 
+import java.util.List;
+
 /**
  * ConnectionListener
  *
@@ -35,4 +37,5 @@ public interface ConnectionListener
 
     void closed(Connection connection);
 
+    boolean redirect(String host, List<Object> knownHosts);
 }

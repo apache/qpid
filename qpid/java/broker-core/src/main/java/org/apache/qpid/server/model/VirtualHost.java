@@ -22,14 +22,16 @@ package org.apache.qpid.server.model;
 
 import java.security.AccessControlException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.message.MessageInstance;
+import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.store.MessageStore;
 
-@ManagedObject( managesChildren = true, defaultType = "ProvidedStore")
+@ManagedObject( defaultType = "ProvidedStore")
 public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>, E extends Exchange<?> > extends ConfiguredObject<X>
 {
 
@@ -42,6 +44,9 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     String STORE_TRANSACTION_OPEN_TIMEOUT_WARN  = "storeTransactionOpenTimeoutWarn";
     String HOUSE_KEEPING_THREAD_COUNT           = "houseKeepingThreadCount";
     String MODEL_VERSION                        = "modelVersion";
+    String ENABLED_CONNECTION_VALIDATORS        = "enabledConnectionValidators";
+    String DISABLED_CONNECTION_VALIDATORS       = "disabledConnectionValidators";
+    String GLOBAL_ADDRESS_DOMAINS               = "globalAddressDomains";
 
     @ManagedContextDefault( name = "queue.deadLetterQueueEnabled")
     public static final boolean DEFAULT_DEAD_LETTER_QUEUE_ENABLED = false;
@@ -88,6 +93,21 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     @DerivedAttribute( persist = true )
     String getModelVersion();
 
+    @ManagedContextDefault( name = "virtualhost.enabledConnectionValidators")
+    String DEFAULT_ENABLED_VALIDATORS = "[]";
+
+    @ManagedAttribute( defaultValue = "${virtualhost.enabledConnectionValidators}")
+    List<String> getEnabledConnectionValidators();
+
+    @ManagedContextDefault( name = "virtualhost.disabledConnectionValidators")
+    String DEFAULT_DISABLED_VALIDATORS = "[]";
+
+    @ManagedAttribute( defaultValue = "${virtualhost.disabledConnectionValidators}")
+    List<String> getDisabledConnectionValidators();
+
+    @ManagedAttribute( defaultValue = "[]")
+    List<String> getGlobalAddressDomains();
+
     @ManagedStatistic
     long getQueueCount();
 
@@ -128,6 +148,8 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     void stop();
 
     void delete();
+
+    String getRedirectHost(AmqpPort<?> port);
 
     public static interface Transaction
     {

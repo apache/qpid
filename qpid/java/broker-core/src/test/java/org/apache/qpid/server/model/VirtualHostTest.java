@@ -45,6 +45,7 @@ import org.mockito.stubbing.Answer;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.configuration.store.StoreConfigurationChangeListener;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.connection.IConnectionRegistry.RegistryChangeListener;
@@ -66,6 +67,7 @@ public class VirtualHostTest extends QpidTestCase
     private VirtualHostNode<?> _virtualHostNode;
     private DurableConfigurationStore _configStore;
     private VirtualHost<?, ?, ?> _virtualHost;
+    private StoreConfigurationChangeListener _storeConfigurationChangeListener;
 
     @Override
     protected void setUp() throws Exception
@@ -79,8 +81,12 @@ public class VirtualHostTest extends QpidTestCase
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
 
         _virtualHostNode = mock(VirtualHostNode.class);
+        when(_virtualHostNode.isDurable()).thenReturn(true);
         _configStore = mock(DurableConfigurationStore.class);
+        _storeConfigurationChangeListener = new StoreConfigurationChangeListener(_configStore);
+
         when(_virtualHostNode.getConfigurationStore()).thenReturn(_configStore);
+
 
         // Virtualhost needs the EventLogger from the SystemContext.
         when(_virtualHostNode.getParent(Broker.class)).thenReturn(_broker);
@@ -122,7 +128,7 @@ public class VirtualHostTest extends QpidTestCase
         assertEquals("Unexpected name", virtualHostName, virtualHost.getName());
         assertEquals("Unexpected state", State.ACTIVE, virtualHost.getState());
 
-        verify(_configStore).create(matchesRecord(virtualHost.getId(), virtualHost.getType()));
+        verify(_configStore).update(eq(true),matchesRecord(virtualHost.getId(), virtualHost.getType()));
     }
 
     public void testDeleteVirtualHost()
@@ -170,7 +176,7 @@ public class VirtualHostTest extends QpidTestCase
         virtualHost.start();
         assertEquals("Unexpected state", State.ACTIVE, virtualHost.getState());
 
-        verify(_configStore, times(1)).create(matchesRecord(virtualHost.getId(), virtualHost.getType()));
+        verify(_configStore, times(1)).update(eq(true), matchesRecord(virtualHost.getId(), virtualHost.getType()));
         verify(_configStore, times(2)).update(eq(false), matchesRecord(virtualHost.getId(), virtualHost.getType()));
     }
 
@@ -293,7 +299,7 @@ public class VirtualHostTest extends QpidTestCase
         assertNotNull(queue.getId());
         assertEquals(queueName, queue.getName());
 
-        verify(_configStore).create(matchesRecord(queue.getId(), queue.getType()));
+        verify(_configStore).update(eq(true),matchesRecord(queue.getId(), queue.getType()));
     }
 
     public void testCreateNonDurableQueue()
@@ -396,7 +402,10 @@ public class VirtualHostTest extends QpidTestCase
         attributes.put(VirtualHost.TYPE, TestMemoryVirtualHost.VIRTUAL_HOST_TYPE);
 
         TestMemoryVirtualHost host = new TestMemoryVirtualHost(attributes, _virtualHostNode);
+        host.addChangeListener(_storeConfigurationChangeListener);
         host.create();
+        // Fire the child added event on the node
+        _storeConfigurationChangeListener.childAdded(_virtualHostNode,host);
         _virtualHost = host;
         return host;
     }

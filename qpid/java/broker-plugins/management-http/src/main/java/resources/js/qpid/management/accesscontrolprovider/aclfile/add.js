@@ -31,8 +31,11 @@ define(["dojo/dom","dojo/query","dijit/registry","qpid/common/util"],
             show: function(data)
             {
                 var that=this;
-                util.parseHtmlIntoDiv(data.containerNode, "accesscontrolprovider/aclfile/add.html");
-
+                util.parseHtmlIntoDiv(data.containerNode, "accesscontrolprovider/aclfile/add.html", function(){that._postParse(data);});
+            },
+            _postParse: function(data)
+            {
+                var that=this;
                 this.aclServerPath = registry.byId("addAccessControlProvider.serverPath");
                 this.aclUploadFields = dom.byId("addAccessControlProvider.uploadFields");
                 this.aclSelectedFileContainer = dom.byId("addAccessControlProvider.selectedFile");

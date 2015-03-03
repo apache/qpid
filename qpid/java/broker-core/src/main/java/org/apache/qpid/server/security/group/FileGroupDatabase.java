@@ -34,6 +34,8 @@ import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.util.BaseAction;
+import org.apache.qpid.server.util.FileHelper;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 /**
@@ -232,9 +234,9 @@ public class FileGroupDatabase implements GroupDatabase
         }
     }
 
-    private synchronized void writeGroupFile(String groupFile) throws IOException
+    private synchronized void writeGroupFile(final String groupFile) throws IOException
     {
-        Properties propertiesFile = new Properties();
+        final Properties propertiesFile = new Properties();
 
         for (String group : _groupToUserMap.keySet())
         {
@@ -244,19 +246,19 @@ public class FileGroupDatabase implements GroupDatabase
             propertiesFile.setProperty(group + ".users", userList);
         }
 
-        String comment = "Written " + new Date();
-        FileOutputStream fileOutputStream = new FileOutputStream(groupFile);
-        try
+
+        new FileHelper().writeFileSafely(new File(groupFile).toPath(), new BaseAction<File, IOException>()
         {
-            propertiesFile.store(fileOutputStream, comment);
-        }
-        finally
-        {
-            if(fileOutputStream != null)
+            @Override
+            public void performAction(File file) throws IOException
             {
-                fileOutputStream.close();
+                String comment = "Written " + new Date();
+                try(FileOutputStream fileOutputStream = new FileOutputStream(file))
+                {
+                    propertiesFile.store(fileOutputStream, comment);
+                }
             }
-        }
+        });
     }
 
     private void validatePropertyNameIsGroupName(String propertyName)

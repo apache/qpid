@@ -32,4 +32,5 @@ public @interface DerivedAttribute
     boolean persist() default false;
     String description() default "";
     boolean oversize() default false;
+    String secureValueFilter() default "";
 }

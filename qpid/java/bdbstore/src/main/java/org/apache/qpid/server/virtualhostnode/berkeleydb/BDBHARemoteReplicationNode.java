@@ -25,7 +25,7 @@ import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.RemoteReplicationNode;
 
-@ManagedObject(category=false, managesChildren=false, creatable=false)
+@ManagedObject(category=false, creatable=false)
 public interface BDBHARemoteReplicationNode<X extends BDBHARemoteReplicationNode<X>> extends RemoteReplicationNode<X>
 {
     String GROUP_NAME = "groupName";

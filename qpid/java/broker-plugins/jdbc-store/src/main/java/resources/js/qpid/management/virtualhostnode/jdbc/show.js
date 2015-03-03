@@ -27,10 +27,13 @@ define(["qpid/common/util", "dojo/query", "dojo/_base/array", "dojo/dom-construc
     function Jdbc(data)
     {
       this.parent = data.parent;
-      util.buildUI(data.containerNode, data.parent, "virtualhostnode/jdbc/show.html", fieldNames, this);
-
-      this.usernameAttributeContainer=query(".usernameAttributeContainer", data.containerNode)[0];
-      this.connectionPoolTypeAttributeContainer=query(".connectionPoolTypeAttributeContainer", data.containerNode)[0];
+      var that = this;
+      util.buildUI(data.containerNode, data.parent, "virtualhostnode/jdbc/show.html", fieldNames, this,
+      function()
+      {
+          that.usernameAttributeContainer=query(".usernameAttributeContainer", data.containerNode)[0];
+          that.connectionPoolTypeAttributeContainer=query(".connectionPoolTypeAttributeContainer", data.containerNode)[0];
+      });
     }
 
     Jdbc.prototype.update=function(data)

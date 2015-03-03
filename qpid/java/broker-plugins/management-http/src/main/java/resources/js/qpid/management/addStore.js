@@ -53,8 +53,11 @@ define(["dojo/_base/lang",
             {
                 var that=this;
                 this.containerNode = construct.create("div", {innerHTML: template});
-                parser.parse(this.containerNode);
-
+                parser.parse(this.containerNode).then(function(instances) { that._postParse(); });
+            },
+            _postParse: function()
+            {
+                var that=this;
                 this.storeName = registry.byId("addStore.name");
                 this.storeName.set("regExpGen", util.nameOrContextVarRegexp);
 
@@ -81,11 +84,11 @@ define(["dojo/_base/lang",
             show: function(effectiveData)
             {
                 this.effectiveData = effectiveData;
+                this._destroyTypeFields(this.containerNode);
                 this.storeForm.reset();
 
                 if (effectiveData)
                 {
-                    this._destroyTypeFields(this.containerNode);
                     this._initFields(effectiveData);
                 }
                 this.storeName.set("disabled", effectiveData == null ? false : true);
@@ -185,11 +188,6 @@ define(["dojo/_base/lang",
                          {
                              typeUI.show({containerNode:typeFieldsContainer, parent: that, data: that.initialData, effectiveData: that.effectiveData});
                              util.applyMetadataToWidgets(typeFieldsContainer, category, type);
-                             if (that.effectiveData)
-                             {
-                                typeUI.update(that.effectiveData);
-                                that.effectiveData = undefined;
-                             }
                          }
                          catch(e)
                          {

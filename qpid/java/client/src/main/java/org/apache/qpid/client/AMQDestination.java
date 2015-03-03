@@ -89,6 +89,8 @@ public abstract class AMQDestination implements Destination, Referenceable, Exte
 
     private RejectBehaviour _rejectBehaviour;
 
+    private Map<String,Object> _consumerArguments;
+
     public static final int QUEUE_TYPE = 1;
     public static final int TOPIC_TYPE = 2;
     public static final int UNKNOWN_TYPE = 3;
@@ -299,6 +301,7 @@ public abstract class AMQDestination implements Destination, Referenceable, Exte
         _bindingKeys = binding.getBindingKeys() == null || binding.getBindingKeys().length == 0 ? new AMQShortString[0] : binding.getBindingKeys();
         final String rejectBehaviourValue = binding.getOption(BindingURL.OPTION_REJECT_BEHAVIOUR);
         _rejectBehaviour = rejectBehaviourValue == null ? null : RejectBehaviour.valueOf(rejectBehaviourValue.toUpperCase());
+        _consumerArguments = binding.getConsumerOptions();
     }
 
     protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, AMQShortString queueName)
@@ -716,6 +719,11 @@ public abstract class AMQDestination implements Destination, Referenceable, Exte
             }
         }
         return result;
+    }
+
+    public Map<String, Object> getConsumerArguments()
+    {
+        return _consumerArguments;
     }
 
     public Reference getReference() throws NamingException

@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,6 +42,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.configuration.BrokerProperties;
+import org.apache.qpid.server.util.BaseAction;
+import org.apache.qpid.server.util.FileHelper;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.Version;
@@ -85,6 +90,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     private final Map<String, List<UUID>> _idsByType = new HashMap<String, List<UUID>>();
     private final ObjectMapper _objectMapper = new ObjectMapper();
     private final Class<? extends ConfiguredObject> _rootClass;
+    private final FileHelper _fileHelper;
 
     private Map<String,Class<? extends ConfiguredObject>> _classNameMapping;
     private String _directoryName;
@@ -123,6 +129,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         _objectMapper.registerModule(_module);
         _objectMapper.enable(SerializationConfig.Feature.INDENT_OUTPUT);
         _rootClass = rootClass;
+        _fileHelper = new FileHelper();
     }
 
     @Override
@@ -173,7 +180,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
             _directoryName = fileFromSettings.getParent();
             _configFileName = fileFromSettings.getName();
             _backupFileName = fileFromSettings.getName() + ".bak";
-            _tempFileName = fileFromSettings.getName() + ".tmp";;
+            _tempFileName = fileFromSettings.getName() + ".tmp";
 
             _lockFileName = fileFromSettings.getName() + ".lck";
         }
@@ -191,56 +198,45 @@ public class JsonFileConfigStore implements DurableConfigurationStore
         checkDirectoryIsWritable(_directoryName);
         getFileLock();
 
-        if(!fileExists(_configFileName))
+        Path storeFile = new File(_directoryName, _configFileName).toPath();
+        Path backupFile = new File(_directoryName, _backupFileName).toPath();
+        if(!Files.exists(storeFile))
         {
-            if(!fileExists(_backupFileName))
+            if(!Files.exists(backupFile))
             {
-                File newFile = new File(_directoryName, _configFileName);
                 try
                 {
-                    _objectMapper.writeValue(newFile, Collections.emptyMap());
+                    String posixFileAttributes = _parent.getContextValue(String.class, BrokerProperties.POSIX_FILE_PERMISSIONS);
+                    storeFile = _fileHelper.createNewFile(storeFile, posixFileAttributes);
+                    _objectMapper.writeValue(storeFile.toFile(), Collections.emptyMap());
                 }
                 catch (IOException e)
                 {
-                    throw new StoreException("Could not write configuration file " + newFile, e);
+                    throw new StoreException("Could not write configuration file " + storeFile, e);
                 }
             }
             else
             {
-                renameFile(_backupFileName, _configFileName);
+                try
+                {
+                    _fileHelper.atomicFileMoveOrReplace(backupFile, storeFile);
+                }
+                catch (IOException e)
+                {
+                    throw new StoreException("Could not move backup to configuration file " + storeFile, e);
+                }
             }
         }
-        deleteFileIfExists(_backupFileName);
-    }
 
-    private void renameFile(String fromFileName, String toFileName)
-    {
-        File toFile = deleteFileIfExists(toFileName);
-        File fromFile = new File(_directoryName, fromFileName);
-
-        if(!fromFile.renameTo(toFile))
+        try
         {
-            throw new StoreException("Cannot rename file " + fromFile.getAbsolutePath() + " to " + toFile.getAbsolutePath());
+            Files.deleteIfExists(backupFile);
         }
-    }
-
-    private File deleteFileIfExists(final String toFileName)
-    {
-        File toFile = new File(_directoryName, toFileName);
-        if(toFile.exists())
+        catch (IOException e)
         {
-            if(!toFile.delete())
-            {
-                throw new StoreException("Cannot delete file " + toFile.getAbsolutePath());
-            }
+            throw new StoreException("Could not delete backup file " + backupFile, e);
         }
-        return toFile;
-    }
 
-    private boolean fileExists(String fileName)
-    {
-        File file = new File(_directoryName, fileName);
-        return file.exists();
     }
 
     private void getFileLock()
@@ -396,7 +392,7 @@ public class JsonFileConfigStore implements DurableConfigurationStore
     private void save()
     {
         UUID rootId = getRootId();
-        Map<String, Object> data = null;
+        final Map<String, Object> data;
 
         if (rootId == null)
         {
@@ -409,15 +405,18 @@ public class JsonFileConfigStore implements DurableConfigurationStore
 
         try
         {
-            deleteFileIfExists(_tempFileName);
-            deleteFileIfExists(_backupFileName);
-
-            File tmpFile = new File(_directoryName, _tempFileName);
-            _objectMapper.writeValue(tmpFile, data);
-            renameFile(_configFileName, _backupFileName);
-            renameFile(tmpFile.getName(),_configFileName);
-            tmpFile.delete();
-            deleteFileIfExists(_backupFileName);
+            Path tmpFile = new File(_directoryName, _tempFileName).toPath();
+            _fileHelper.writeFileSafely( new File(_directoryName, _configFileName).toPath(),
+                    new File(_directoryName, _backupFileName).toPath(),
+                    tmpFile,
+                    new BaseAction<File, IOException>()
+                    {
+                        @Override
+                        public void performAction(File file) throws IOException
+                        {
+                            _objectMapper.writeValue(file, data);
+                        }
+                    });
         }
         catch (IOException e)
         {

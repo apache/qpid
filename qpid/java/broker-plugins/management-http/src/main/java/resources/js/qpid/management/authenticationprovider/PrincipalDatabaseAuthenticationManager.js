@@ -51,8 +51,10 @@ define(["dojo/_base/xhr",
                                     sync: true,
                                     load:  function(data) {
                                         node.innerHTML = data;
-                                        parser.parse(node);
-                                        that.init(node, authProviderObj, controller);
+                                        parser.parse(node).then(function(instances)
+                                        {
+                                            that.init(node, authProviderObj, controller);
+                                        });
                                     }});
         }
 

@@ -22,6 +22,7 @@ package org.apache.qpid.server.model;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.regex.Pattern;
 
 public abstract class ConfiguredObjectAttribute<C extends ConfiguredObject, T> extends ConfiguredObjectAttributeOrStatistic<C,T>
 {
@@ -48,6 +49,25 @@ public abstract class ConfiguredObjectAttribute<C extends ConfiguredObject, T> e
     public abstract String getOversizedAltText();
 
     public abstract String getDescription();
+
+    public abstract Pattern getSecureValueFilter();
+
+    public boolean isSecureValue(Object value)
+    {
+        if (isSecure())
+        {
+            Pattern filter = getSecureValueFilter();
+            if (filter == null)
+            {
+                return  true;
+            }
+            else
+            {
+                return filter.matcher(String.valueOf(value)).matches();
+            }
+        }
+        return false;
+    }
 
     public T convert(final Object value, C object)
     {

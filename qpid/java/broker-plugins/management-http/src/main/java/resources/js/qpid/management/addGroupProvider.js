@@ -53,8 +53,11 @@ define([
             {
                 var that=this;
                 this.containerNode = construct.create("div", {innerHTML: template});
-                parser.parse(this.containerNode);
-
+                parser.parse(this.containerNode).then(function(instances) { that._postParse(); });
+            },
+            _postParse: function()
+            {
+                var that=this;
                 this.groupProviderName = registry.byId("addGroupProvider.name");
                 this.groupProviderName.set("regExpGen", util.nameOrContextVarRegexp);
 

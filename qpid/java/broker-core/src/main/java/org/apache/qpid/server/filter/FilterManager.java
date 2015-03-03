@@ -14,26 +14,62 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.
+ *  under the License.    
  *
- *
+ * 
  */
 package org.apache.qpid.server.filter;
-//
-// Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
-//
 
 import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-public interface FilterManager
+public class FilterManager
 {
-    void add(MessageFilter filter);
 
-    void remove(MessageFilter filter);
+    private final Map<String, MessageFilter> _filters = new ConcurrentHashMap<>();
 
-    boolean allAllow(Filterable  msg);
+    public FilterManager()
+    {
+    }
 
-    Iterator<MessageFilter> filters();
+    public void add(String name, MessageFilter filter)
+    {
+        _filters.put(name, filter);
+    }
 
-    boolean hasFilters();
+    public boolean allAllow(Filterable msg)
+    {
+        for (MessageFilter filter : _filters.values())
+        {
+            if (!filter.matches(msg))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public Iterator<MessageFilter> filters()
+    {
+        return _filters.values().iterator();
+    }
+
+    public boolean hasFilters()
+    {
+        return !_filters.isEmpty();
+    }
+
+    public boolean hasFilter(final String name)
+    {
+        return _filters.containsKey(name);
+    }
+
+    @Override
+    public String toString()
+    {
+        return _filters.toString();
+    }
+
+
 }

@@ -27,10 +27,13 @@ define(["qpid/common/util", "dojo/query", "dojo/domReady!"],
 
     function BDB(data)
     {
-        util.buildUI(data.containerNode, data.parent, "virtualhost/bdb_ha/show.html", fields, this);
-
-        this[localTransactionSynchronizationPolicy]= query("." + localTransactionSynchronizationPolicy, data.containerNode)[0];
-        this[remoteTransactionSynchronizationPolicy]= query("."+ remoteTransactionSynchronizationPolicy, data.containerNode)[0];
+        var that = this;
+        util.buildUI(data.containerNode, data.parent, "virtualhost/bdb_ha/show.html", fields, this,
+        function()
+        {
+            that[localTransactionSynchronizationPolicy]= query("." + localTransactionSynchronizationPolicy, data.containerNode)[0];
+            that[remoteTransactionSynchronizationPolicy]= query("."+ remoteTransactionSynchronizationPolicy, data.containerNode)[0];
+        });
     }
 
     BDB.prototype.update = function(data)

@@ -122,8 +122,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     private final TaskExecutor _taskExecutor;
 
     private final Class<? extends ConfiguredObject> _category;
+    private final Class<? extends ConfiguredObject> _typeClass;
     private final Class<? extends ConfiguredObject> _bestFitInterface;
     private final Model _model;
+    private final boolean _managesChildStorage;
+
 
     @ManagedAttributeField
     private long _createdTime;
@@ -206,6 +209,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         _model = model;
 
         _category = ConfiguredObjectTypeRegistry.getCategory(getClass());
+        Class<? extends ConfiguredObject> typeClass = model.getTypeRegistry().getTypeClass(getClass());
+        _typeClass = typeClass == null ? _category : typeClass;
 
         _attributeTypes = model.getTypeRegistry().getAttributeTypes(getClass());
         _automatedFields = model.getTypeRegistry().getAutomatedFields(getClass());
@@ -242,6 +247,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
 
         _type = ConfiguredObjectTypeRegistry.getType(getClass());
+        _managesChildStorage = managesChildren(_category) || managesChildren(_typeClass);
         _bestFitInterface = calculateBestFitInterface();
 
         if(attributes.get(TYPE) != null && !_type.equals(attributes.get(TYPE)))
@@ -313,6 +319,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 }
             }
         }
+    }
+
+    private boolean managesChildren(final Class<? extends ConfiguredObject> clazz)
+    {
+        return clazz.getAnnotation(ManagedObject.class).managesChildren();
     }
 
     private Class<? extends ConfiguredObject> calculateBestFitInterface()
@@ -1056,9 +1067,22 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return _model;
     }
 
+    @Override
     public Class<? extends ConfiguredObject> getCategoryClass()
     {
         return _category;
+    }
+
+    @Override
+    public Class<? extends ConfiguredObject> getTypeClass()
+    {
+        return _typeClass;
+    }
+
+    @Override
+    public boolean managesChildStorage()
+    {
+        return _managesChildStorage;
     }
 
     public Map<String,String> getContext()
@@ -1219,8 +1243,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         if(attr != null && (attr.isAutomated() || attr.isDerived()))
         {
             Object value = attr.getValue((X)this);
-            if(value != null && attr.isSecure() &&
-               !SecurityManager.isSystemProcess())
+            if(value != null && !SecurityManager.isSystemProcess() && attr.isSecureValue(value))
             {
                 return SECURE_VALUES.get(value.getClass());
             }
@@ -1620,8 +1643,9 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 Object desired = attributes.get(name);
                 Object expected = getAttribute(name);
-                if(((_attributes.get(name) != null && !_attributes.get(name).equals(attributes.get(name)))
-                     || attributes.get(name) != null)
+                Object currentValue = _attributes.get(name);
+                if(((currentValue != null && !currentValue.equals(desired))
+                     || (currentValue == null && desired != null))
                     && changeAttribute(name, expected, desired))
                 {
                     attributeSet(name, expected, desired);

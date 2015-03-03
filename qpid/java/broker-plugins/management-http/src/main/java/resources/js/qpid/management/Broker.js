@@ -82,13 +82,9 @@ define(["dojo/_base/xhr",
                         sync: true,
                         load:  function(data) {
                             contentPane.containerNode.innerHTML = data;
-                            parser.parse(contentPane.containerNode);
-
+                            parser.parse(contentPane.containerNode).then(function(instances)
+                            {
                             that.brokerUpdater = new BrokerUpdater(contentPane.containerNode, that.modelObj, that.controller);
-
-                            updater.add( that.brokerUpdater );
-
-                            that.brokerUpdater.update();
 
                             var logViewerButton = query(".logViewer", contentPane.containerNode)[0];
                             registry.byNode(logViewerButton).on("click", function(evt){
@@ -233,6 +229,7 @@ define(["dojo/_base/xhr",
                                                 "Are you sure you want to delete access control provider");
                                 }
                             );
+                            });
                         }});
            };
 
@@ -554,6 +551,9 @@ define(["dojo/_base/xhr",
                                                        });
                                                }, gridProperties, EnhancedGrid);
                              that.displayACLWarnMessage(aclData);
+
+                             updater.add( that);
+
                          });
            }
 

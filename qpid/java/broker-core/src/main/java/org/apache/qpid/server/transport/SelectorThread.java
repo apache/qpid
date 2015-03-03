@@ -36,8 +36,13 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.LoggerFactory;
+
+
 public class SelectorThread extends Thread
 {
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(SelectorThread.class);
+
     public static final String IO_THREAD_NAME_PREFIX  = "NCS-";
     private final Queue<Runnable> _tasks = new ConcurrentLinkedQueue<>();
     private final Queue<NonBlockingConnection> _unregisteredConnections = new ConcurrentLinkedQueue<>();
@@ -165,7 +170,8 @@ public class SelectorThread extends Thread
                     NonBlockingConnection connection = iterator.next();
 
                     int period = connection.getTicker().getTimeToNextTick(currentTime);
-                    if (period < 0 || connection.isStateChanged())
+
+                    if (period <= 0 || connection.isStateChanged())
                     {
                         toBeScheduled.add(connection);
                         connection.getSocketChannel().register(_selector, 0).cancel();

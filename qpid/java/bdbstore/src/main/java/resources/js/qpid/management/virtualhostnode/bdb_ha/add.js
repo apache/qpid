@@ -37,15 +37,21 @@ define(["dojo/_base/xhr",
               var that=this;
 
               this.containerNode = domConstruct.create("div", {innerHTML: template}, data.containerNode);
-              parser.parse(this.containerNode);
+              parser.parse(this.containerNode).then(function(instances)
+              {
+                  // lookup field
+                  that.groupChoice = registry.byId("addVirtualHostNode.group");
+                  that.virtualHostNodeBdbhaTypeFieldsContainer = dom.byId("addVirtualHostNode.bdbha.typeFields");
 
-              // lookup field
-              this.groupChoice = registry.byId("addVirtualHostNode.group");
-              this.virtualHostNodeBdbhaTypeFieldsContainer = dom.byId("addVirtualHostNode.bdbha.typeFields");
-
-              // add callback
-              this.groupChoice.on("change", function(type){that._groupChoiceChanged(type, that.virtualHostNodeBdbhaTypeFieldsContainer, "qpid/management/virtualhostnode/bdb_ha/add/");});
-
+                  // add callback
+                  that.groupChoice.on("change",
+                                      function(type)
+                                      {
+                                        that._groupChoiceChanged(type,
+                                                                 that.virtualHostNodeBdbhaTypeFieldsContainer,
+                                                                 "qpid/management/virtualhostnode/bdb_ha/add/");
+                                      });
+              });
           },
           _groupChoiceChanged: function(type, typeFieldsContainer, urlStem)
           {

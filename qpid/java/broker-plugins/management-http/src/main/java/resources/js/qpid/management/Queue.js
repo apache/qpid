@@ -79,7 +79,8 @@ define(["dojo/_base/xhr",
                         sync: true,
                         load:  function(data) {
                             contentPane.containerNode.innerHTML = data;
-                            parser.parse(contentPane.containerNode);
+                            parser.parse(contentPane.containerNode).then(function(instances)
+                            {
 
                             that.queueUpdater = new QueueUpdater(contentPane.containerNode, that, that.controller);
 
@@ -180,6 +181,8 @@ define(["dojo/_base/xhr",
                                         editQueue.show({nodeName:that.modelObj.parent.parent.name, hostName:that.modelObj.parent.name,queueName:that.name});
                                     });
                             UserPreferences.addListener(that);
+
+                            });
                         }});
 
 

@@ -56,8 +56,13 @@ define(["dojo/_base/xhr",
                var that = this;
                this.contentPane = contentPane;
                contentPane.containerNode.innerHTML = template;
-               parser.parse(contentPane.containerNode);
+               parser.parse(contentPane.containerNode).then(function(instances) { that.onOpen(); });
+           };
 
+           GroupProvider.prototype.onOpen = function()
+           {
+               var that = this;
+               var contentPane = this.contentPane;
                this.groupProviderUpdater = new GroupProviderUpdater(contentPane.containerNode, this.modelObj, this.controller);
 
                // load data

@@ -109,6 +109,7 @@ public class SimpleQueueEntryImplTest extends QueueEntryImplTestBase
     public void testTraverseWithDeletedEntries()
     {
         // Delete 2nd queue entry
+        _queueEntry2.acquire();
         _queueEntry2.delete();
         assertTrue(_queueEntry2.isDeleted());
 

@@ -36,10 +36,12 @@ define(["dojo/query",
         {
             this.fields.push(name);
         }
-        util.buildUI(data.containerNode, data.parent, "store/nonjavatruststore/show.html", this.fields, this);
-        var gridNode = query(".details", data.containerNode)[0];
-        var dateTimeFormatter = function(value){ return value ? UserPreferences.formatDateTime(value, {addOffset: true, appendTimeZone: true}) : "";};
-        this.detailsGrid = new UpdatableStore([],
+        var that = this;
+        util.buildUI(data.containerNode, data.parent, "store/nonjavatruststore/show.html", this.fields, this, function()
+        {
+            var gridNode = query(".details", data.containerNode)[0];
+            var dateTimeFormatter = function(value){ return value ? UserPreferences.formatDateTime(value, {addOffset: true, appendTimeZone: true}) : "";};
+            that.detailsGrid = new UpdatableStore([],
                   gridNode,
                   [
                    { name: 'Subject', field: 'SUBJECT_NAME', width: '25%' },
@@ -47,6 +49,7 @@ define(["dojo/query",
                    { name: 'Valid from', field: 'VALID_START', width: '25%', formatter: dateTimeFormatter },
                    { name: 'Valid to', field: 'VALID_END', width: '25%', formatter: dateTimeFormatter}
                   ]);
+        });
     }
 
     NonJavaTrustStore.prototype.update = function(data)

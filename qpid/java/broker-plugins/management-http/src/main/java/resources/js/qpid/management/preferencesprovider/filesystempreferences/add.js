@@ -23,12 +23,15 @@ define(["dojo/query", "dijit/registry", "qpid/common/util"],
     return {
         show: function (data)
         {
-            util.parseHtmlIntoDiv(data.containerNode, "preferencesprovider/filesystempreferences/add.html");
-            if (data.data)
+            util.parseHtmlIntoDiv(data.containerNode, "preferencesprovider/filesystempreferences/add.html",
+            function()
             {
-                var pathWidget = registry.byNode(query(".addPreferencesProviderPath", data.containerNode)[0]);
-                pathWidget.set("value", data.data.path);
-            }
+                if (data.data)
+                {
+                    var pathWidget = registry.byNode(query(".addPreferencesProviderPath", data.containerNode)[0]);
+                    pathWidget.set("value", data.data.path);
+                }
+            });
         }
     };
   }

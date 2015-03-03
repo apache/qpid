@@ -23,9 +23,12 @@ package org.apache.qpid.server;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 import javax.security.auth.Subject;
@@ -34,6 +37,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
+import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
@@ -154,6 +158,8 @@ public class Broker implements BrokerShutdownProvider
 
     private void startupImpl(final BrokerOptions options) throws Exception
     {
+        populateSystemPropertiesFromDefaults(options.getInitialSystemProperties());
+
         String storeLocation = options.getConfigurationStoreLocation();
         String storeType = options.getConfigurationStoreType();
 
@@ -320,6 +326,37 @@ public class Broker implements BrokerShutdownProvider
             LOGGER.debug("Skipping shutdown hook removal as there either isn't one, or we are it.");
         }
     }
+
+    public static void populateSystemPropertiesFromDefaults(final String initialProperties) throws IOException
+    {
+        URL initialPropertiesLocation;
+        if(initialProperties == null)
+        {
+            initialPropertiesLocation = Broker.class.getClassLoader().getResource("system.properties");
+        }
+        else
+        {
+            initialPropertiesLocation = (new File(initialProperties)).toURI().toURL();
+        }
+
+        Properties props = new Properties(QpidProperties.asProperties());
+        if(initialPropertiesLocation != null)
+        {
+
+            try(InputStream inStream = initialPropertiesLocation.openStream())
+            {
+                props.load(inStream);
+            }
+        }
+
+        Set<String> propertyNames = new HashSet<>(props.stringPropertyNames());
+        propertyNames.removeAll(System.getProperties().stringPropertyNames());
+        for (String propName : propertyNames)
+        {
+            System.setProperty(propName, props.getProperty(propName));
+        }
+    }
+
 
     private class ShutdownService implements Runnable
     {

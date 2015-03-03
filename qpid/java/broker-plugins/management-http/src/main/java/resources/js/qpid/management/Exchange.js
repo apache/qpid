@@ -69,7 +69,8 @@ define(["dojo/_base/xhr",
                         sync: true,
                         load:  function(data) {
                             contentPane.containerNode.innerHTML = data;
-                            parser.parse(contentPane.containerNode);
+                            parser.parse(contentPane.containerNode).then(function(instances)
+                            {
 
                             that.exchangeUpdater = new ExchangeUpdater(contentPane.containerNode, that.modelObj, that.controller);
 
@@ -106,7 +107,7 @@ define(["dojo/_base/xhr",
                                             that.deleteExchange();
                                         });
                             }
-
+                            });
                         }});
            };
 

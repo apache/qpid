@@ -26,12 +26,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
+
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.filter.SelectorParsingException;
 import org.apache.qpid.filter.selector.ParseException;
 import org.apache.qpid.filter.selector.TokenMgrError;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageSource;
+import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.queue.AMQQueue;
 
 public class FilterSupport
@@ -57,15 +59,7 @@ public class FilterSupport
             {
                 selector = new JMSSelectorFilter(selectorString);
             }
-            catch (ParseException e)
-            {
-                throw new AMQInvalidArgumentException("Cannot parse JMS selector \"" + selectorString + "\"", e);
-            }
-            catch (SelectorParsingException e)
-            {
-                throw new AMQInvalidArgumentException("Cannot parse JMS selector \"" + selectorString + "\"", e);
-            }
-            catch (TokenMgrError e)
+            catch (ParseException | SelectorParsingException | TokenMgrError e)
             {
                 throw new AMQInvalidArgumentException("Cannot parse JMS selector \"" + selectorString + "\"", e);
             }
@@ -119,6 +113,7 @@ public class FilterSupport
         }
     }
 
+    @PluggableService
     public static final class NoLocalFilter implements MessageFilter
     {
         private final MessageSource _queue;
@@ -126,6 +121,12 @@ public class FilterSupport
         private NoLocalFilter(MessageSource queue)
         {
             _queue = queue;
+        }
+
+        @Override
+        public String getName()
+        {
+            return AMQPFilterTypes.NO_LOCAL.toString();
         }
 
         public boolean matches(Filterable message)
@@ -165,6 +166,8 @@ public class FilterSupport
         {
             return _queue != null ? _queue.hashCode() : 0;
         }
+
+
     }
 
     static final class CompoundFilter implements MessageFilter
@@ -176,6 +179,12 @@ public class FilterSupport
         {
             _noLocalFilter = filter;
             _jmsSelectorFilter = jmsSelectorFilter;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "";
         }
 
         public boolean matches(Filterable message)
@@ -216,5 +225,7 @@ public class FilterSupport
             result = 31 * result + (_jmsSelectorFilter != null ? _jmsSelectorFilter.hashCode() : 0);
             return result;
         }
+
+
     }
 }

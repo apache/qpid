@@ -162,14 +162,14 @@ public class ConfiguredObjectToMapConverter
                             .getAttributeTypes(confObject.getClass())
                             .get(name);
 
-                    if (attribute.isSecure() && !(isSecureTransport && extractAsConfig))
+                    if (attribute.isSecureValue(value) && !(isSecureTransport && extractAsConfig))
                     {
                         // do not expose actual secure attribute value
                         // getAttribute() returns encoded value
                         value =  confObject.getAttribute(name);
                     }
 
-                    if(attribute.isOversized() && !extractAsConfig)
+                    if(attribute.isOversized() && !extractAsConfig && !useActualValues)
                     {
                         String valueString = String.valueOf(value);
                         if(valueString.length() > oversizeThreshold)

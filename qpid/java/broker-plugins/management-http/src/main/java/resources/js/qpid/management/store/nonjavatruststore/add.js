@@ -18,64 +18,77 @@
  * under the License.
  *
  */
-define(["dojo/dom","dojo/query", "dojo/_base/array", "dijit/registry","qpid/common/util", "qpid/common/metadata"],
-    function (dom, query, array, registry, util, metadata)
+define(["dojo/dom",
+        "dojo/query",
+        "dojo/_base/array",
+        "dijit/registry",
+        "qpid/common/util",
+        "qpid/common/metadata",
+        "dojo/parser",
+        "dojo/text!store/nonjavatruststore/add.html",
+        "dojo/domReady!"],
+    function (dom, query, array, registry, util, metadata, parser, template)
     {
         var addKeyStore =
         {
-            init: function()
-            {
-            },
             show: function(data)
             {
                 var that=this;
-                util.parseHtmlIntoDiv(data.containerNode, "store/nonjavatruststore/add.html");
-
-                this.keyStoreOldBrowserWarning = dom.byId("addStore.oldBrowserWarning");
-                this.addButton = data.parent.addButton;
                 this.containerNode = data.containerNode;
-
-                if (!window.FileReader)
+                data.containerNode.innerHTML = template;
+                parser.parse(this.containerNode).then(function(instances)
                 {
-                  this.keyStoreOldBrowserWarning.innerHTML = "File upload requires a more recent browser with HTML5 support";
-                  this.keyStoreOldBrowserWarning.className = this.keyStoreOldBrowserWarning.className.replace("hidden", "");
-                }
+                    that.keyStoreOldBrowserWarning = dom.byId("addStore.oldBrowserWarning");
+
+                    if (!window.FileReader)
+                    {
+                      that.keyStoreOldBrowserWarning.innerHTML = "File upload requires a more recent browser with HTML5 support";
+                      that.keyStoreOldBrowserWarning.className = that.keyStoreOldBrowserWarning.className.replace("hidden", "");
+                    }
+
+                    if (data.effectiveData)
+                    {
+                        that.update(data.effectiveData);
+                    }
+
+                    util.applyMetadataToWidgets(data.containerNode, "TrustStore", "NonJavaTrustStore");
+                });
             },
             update: function(effectiveData)
             {
-                if (effectiveData)
-                {
-                    var attributes = metadata.getMetaData("TrustStore", "NonJavaTrustStore").attributes;
-                    var widgets = registry.findWidgets(this.containerNode);
-                    array.forEach(widgets, function(item)
+                var attributes = metadata.getMetaData("TrustStore", "NonJavaTrustStore").attributes;
+                var widgets = registry.findWidgets(this.containerNode);
+                array.forEach(widgets, function(item)
+                    {
+                        var name = item.id.replace("addStore.","");
+                        if (name in attributes )
                         {
-                            var name = item.id.replace("addStore.","");
-                            if (name in attributes )
+                            var attribute = attributes[name];
+                            var value = effectiveData[name];
+                            if (value)
                             {
-                                var attribute = attributes[name];
-                                if (attribute.oversize || attribute.secure)
+                                if (attribute.secure)
                                 {
-                                     item.set("required", false);
-                                     item.set("placeHolder", effectiveData[name]);
+                                     if (!/^\*+/.test(value) )
+                                     {
+                                        item.set("value", value);
+                                     }
+                                     else
+                                     {
+                                        item.set("placeHolder", value);
+                                        item.set("required", false);
+                                     }
                                 }
                                 else
                                 {
-                                    item.set("value", effectiveData[name]);
+                                    item.set("value", value);
                                 }
                             }
-                        });
-                }
+                        }
+                    });
             }
         };
 
-        try
-        {
-            addKeyStore.init();
-        }
-        catch(e)
-        {
-            console.warn(e);
-        }
         return addKeyStore;
     }
 );

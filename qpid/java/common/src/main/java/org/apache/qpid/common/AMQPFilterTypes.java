@@ -30,7 +30,8 @@ public enum AMQPFilterTypes
     JMS_SELECTOR("x-filter-jms-selector"),
     NO_CONSUME("x-filter-no-consume"),
     AUTO_CLOSE("x-filter-auto-close"),
-    NO_LOCAL("x-qpid-no-local");
+    NO_LOCAL("x-qpid-no-local"),
+    REPLAY_PERIOD("x-qpid-replay-period");
 
     /** The identifying string for the filter type. */
     private final AMQShortString _value;

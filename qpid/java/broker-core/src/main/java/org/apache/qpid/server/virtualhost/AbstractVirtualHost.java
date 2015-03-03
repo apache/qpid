@@ -63,6 +63,8 @@ import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.*;
 import org.apache.qpid.server.model.adapter.ConnectionAdapter;
+import org.apache.qpid.server.model.port.AmqpPort;
+import org.apache.qpid.server.plugin.ConnectionValidator;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.plugin.SystemNodeCreator;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -75,7 +77,6 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.store.ConfiguredObjectRecordImpl;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
@@ -94,6 +95,8 @@ import org.apache.qpid.server.util.MapValueConverter;
 public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> extends AbstractConfiguredObject<X>
         implements VirtualHostImpl<X, AMQQueue<?>, ExchangeImpl<?>>, IConnectionRegistry.RegistryChangeListener, EventListener
 {
+    private final Collection<ConnectionValidator> _connectionValidators = new ArrayList<>();
+
     private static enum BlockingType { STORE, FILESYSTEM };
 
     private static final String USE_ASYNC_RECOVERY = "use_async_message_store_recovery";
@@ -162,6 +165,14 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @ManagedAttributeField
     private int _housekeepingThreadCount;
 
+    @ManagedAttributeField
+    private List<String> _enabledConnectionValidators;
+
+    @ManagedAttributeField
+    private List<String> _disabledConnectionValidators;
+
+    @ManagedAttributeField
+    private List<String> _globalAddressDomains;
 
     private boolean _useAsyncRecoverer;
 
@@ -212,6 +223,13 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             throw new IllegalArgumentException(getClass().getSimpleName() + " must be durable");
         }
+        if(getGlobalAddressDomains() != null)
+        {
+            for(String domain : getGlobalAddressDomains())
+            {
+                validateGlobalAddressDomain(domain);
+            }
+        }
     }
 
     @Override
@@ -230,6 +248,26 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                 throw new IntegrityViolationException("Cannot delete default virtual host '" + getName() + "'");
             }
         }
+        if(changedAttributes.contains(GLOBAL_ADDRESS_DOMAINS))
+        {
+            VirtualHost<?, ?, ?> virtualHost = (VirtualHost<?, ?, ?>) proxyForValidation;
+            if(virtualHost.getGlobalAddressDomains() != null)
+            {
+                for(String name : virtualHost.getGlobalAddressDomains())
+                {
+                    validateGlobalAddressDomain(name);
+                }
+            }
+        }
+    }
+
+    private void validateGlobalAddressDomain(final String name)
+    {
+        String regex = "/(/?)([\\w_\\-:.\\$]+/)*[\\w_\\-:.\\$]+";
+        if(!name.matches(regex))
+        {
+            throw new IllegalArgumentException("'"+name+"' is not a valid global address domain");
+        }
     }
 
     @Override
@@ -243,7 +281,16 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     {
         super.validateOnCreate();
         validateMessageStoreCreation();
+        if(getGlobalAddressDomains() != null)
+        {
+            for(String name : getGlobalAddressDomains())
+            {
+                validateGlobalAddressDomain(name);
+            }
+        }
     }
+
+
 
     private void validateMessageStoreCreation()
     {
@@ -293,10 +340,20 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_OVERFULL);
         _messageStore.addEventListener(this, Event.PERSISTENT_MESSAGE_SIZE_UNDERFULL);
 
-        addChangeListener(new StoreUpdatingChangeListener());
-
-
         _fileSystemMaxUsagePercent = getContextValue(Integer.class, Broker.STORE_FILESYSTEM_MAX_USAGE_PERCENT);
+
+
+        QpidServiceLoader serviceLoader = new QpidServiceLoader();
+        for(ConnectionValidator validator : serviceLoader.instancesOf(ConnectionValidator.class))
+        {
+            if((_enabledConnectionValidators.isEmpty()
+                && (_disabledConnectionValidators.isEmpty()) || !_disabledConnectionValidators.contains(validator.getType()))
+               || _enabledConnectionValidators.contains(validator.getType()))
+            {
+                _connectionValidators.add(validator);
+            }
+
+        }
     }
 
     private void checkVHostStateIsActive()
@@ -438,6 +495,20 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _eventLogger;
     }
 
+    @Override
+    public boolean authoriseCreateConnection(final AMQConnectionModel<?, ?> connection)
+    {
+        getSecurityManager().authoriseCreateConnection(connection);
+        for(ConnectionValidator validator : _connectionValidators)
+        {
+            if(!validator.validateConnectionCreation(connection))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * Initialise a housekeeping task to iterate over queues cleaning expired messages with no consumers
      * and checking for idle or open transactions that have exceeded the permitted thresholds.
@@ -526,9 +597,42 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
     @Override
+    public List<String> getEnabledConnectionValidators()
+    {
+        return _enabledConnectionValidators;
+    }
+
+    @Override
+    public List<String> getDisabledConnectionValidators()
+    {
+        return _disabledConnectionValidators;
+    }
+
+    @Override
+    public List<String> getGlobalAddressDomains()
+    {
+        return _globalAddressDomains;
+    }
+
+    @Override
     public AMQQueue<?> getQueue(String name)
     {
-        return (AMQQueue<?>) getChildByName(Queue.class, name);
+        AMQQueue<?> childByName = (AMQQueue<?>) getChildByName(Queue.class, name);
+        if(childByName == null && getGlobalAddressDomains() != null)
+        {
+            for(String domain : getGlobalAddressDomains())
+            {
+                if(name.startsWith(domain + "/"))
+                {
+                    childByName = (AMQQueue<?>) getChildByName(Queue.class,name.substring(domain.length()));
+                    if(childByName != null)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        return childByName;
     }
 
     @Override
@@ -556,14 +660,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     {
         int purged = queue.deleteAndReturnCount();
 
-        if (queue.isDurable() && !(queue.getLifetimePolicy()
-                                   == LifetimePolicy.DELETE_ON_CONNECTION_CLOSE
-                                   || queue.getLifetimePolicy()
-                                      == LifetimePolicy.DELETE_ON_SESSION_END))
-        {
-            DurableConfigurationStore store = getDurableConfigurationStore();
-            store.remove(queue.asObjectRecord());
-        }
         return purged;
 }
 
@@ -614,7 +710,22 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @Override
     public ExchangeImpl getExchange(String name)
     {
-        return getChildByName(ExchangeImpl.class,name);
+        ExchangeImpl childByName = getChildByName(ExchangeImpl.class, name);
+        if(childByName == null && getGlobalAddressDomains() != null)
+        {
+            for(String domain : getGlobalAddressDomains())
+            {
+                if(name.startsWith(domain + "/"))
+                {
+                    childByName = getChildByName(ExchangeImpl.class,name.substring(domain.length()));
+                    if(childByName != null)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        return childByName;
     }
 
     @Override
@@ -669,6 +780,23 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             throws ExchangeIsAlternateException, RequiredExchangeException
     {
         exchange.deleteWithChecks();
+    }
+
+    @Override
+    public String getLocalAddress(final String routingAddress)
+    {
+        String localAddress = routingAddress;
+        if(getGlobalAddressDomains() != null)
+        {
+            for(String domain : getGlobalAddressDomains())
+            {
+                if(localAddress.length() > routingAddress.length() - domain.length() && routingAddress.startsWith(domain + "/"))
+                {
+                    localAddress = routingAddress.substring(domain.length());
+                }
+            }
+        }
+        return localAddress;
     }
 
     public SecurityManager getSecurityManager()
@@ -884,6 +1012,12 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         {
             return _empty;
         }
+    }
+
+    @Override
+    public String getRedirectHost(final AmqpPort<?> port)
+    {
+        return null;
     }
 
     private class VirtualHostHouseKeepingTask extends HouseKeepingTask
@@ -1390,14 +1524,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return total;
     }
 
-    @Override
-    protected void onCreate()
-    {
-        super.onCreate();
-        ConfiguredObjectRecord record = asObjectRecord();
-        getDurableConfigurationStore().create(new ConfiguredObjectRecordImpl(record.getId(), record.getType(), record.getAttributes()));
-    }
-
     @StateTransition( currentState = { State.UNINITIALIZED,State.ERRORED }, desiredState = State.ACTIVE )
     private void onActivate()
     {
@@ -1507,44 +1633,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         });
 
         onActivate();
-    }
-
-    private class StoreUpdatingChangeListener implements ConfigurationChangeListener
-    {
-        @Override
-        public void stateChanged(final ConfiguredObject<?> object, final State oldState, final State newState)
-        {
-            if (object == AbstractVirtualHost.this && isDurable() && newState == State.DELETED)
-            {
-                getDurableConfigurationStore().remove(asObjectRecord());
-                object.removeChangeListener(this);
-            }
-        }
-
-        @Override
-        public void childAdded(final ConfiguredObject<?> object, final ConfiguredObject<?> child)
-        {
-
-        }
-
-        @Override
-        public void childRemoved(final ConfiguredObject<?> object, final ConfiguredObject<?> child)
-        {
-
-        }
-
-        @Override
-        public void attributeSet(final ConfiguredObject<?> object,
-                                 final String attributeName,
-                                 final Object oldAttributeValue,
-                                 final Object newAttributeValue)
-        {
-            if (object == AbstractVirtualHost.this && isDurable() && getState() != State.DELETED && isAttributePersisted(attributeName)
-                    && !(attributeName.equals(VirtualHost.DESIRED_STATE) && newAttributeValue.equals(State.DELETED)))
-            {
-                getDurableConfigurationStore().update(false, asObjectRecord());
-            }
-        }
     }
 
     private class FileSystemSpaceChecker extends HouseKeepingTask

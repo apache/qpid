@@ -21,6 +21,8 @@
 package org.apache.qpid.server.model;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 import org.apache.qpid.server.store.MessageDurability;
@@ -48,6 +50,8 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
     String QUEUE_FLOW_STOPPED = "queueFlowStopped";
     String MAXIMUM_MESSAGE_TTL = "maximumMessageTtl";
     String MINIMUM_MESSAGE_TTL = "minimumMessageTtl";
+    String DEFAULT_FILTERS = "defaultFilters";
+    String ENSURE_NONDESTRUCTIVE_CONSUMERS = "ensureNondestructiveConsumers";
 
     String QUEUE_MINIMUM_ESTIMATED_MEMORY_FOOTPRINT = "queue.minimumEstimatedMemoryFootprint";
     @ManagedContextDefault( name = QUEUE_MINIMUM_ESTIMATED_MEMORY_FOOTPRINT)
@@ -66,6 +70,9 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 
     @ManagedAttribute( defaultValue = "NONE" )
     ExclusivityPolicy getExclusive();
+
+    @ManagedAttribute( defaultValue = "false" )
+    boolean isEnsureNondestructiveConsumers();
 
     @DerivedAttribute( persist = true )
     String getOwner();
@@ -154,6 +161,9 @@ public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 
     @ManagedAttribute
     long getMaximumMessageTtl();
+
+    @ManagedAttribute
+    Map<String, Map<String,List<String>>> getDefaultFilters();
 
     //children
     Collection<? extends Binding> getBindings();

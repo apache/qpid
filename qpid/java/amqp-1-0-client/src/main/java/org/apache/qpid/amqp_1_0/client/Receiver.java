@@ -38,8 +38,10 @@ import org.apache.qpid.amqp_1_0.transport.ReceivingLinkListener;
 import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.DeliveryState;
+import org.apache.qpid.amqp_1_0.type.ErrorCondition;
 import org.apache.qpid.amqp_1_0.type.Outcome;
 import org.apache.qpid.amqp_1_0.type.Section;
+import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 import org.apache.qpid.amqp_1_0.type.messaging.Modified;
@@ -58,6 +60,20 @@ import org.apache.qpid.amqp_1_0.type.transport.Transfer;
 
 public class Receiver implements DeliveryStateHandler
 {
+    private static final ErrorCondition UNKNOWN_ERROR_CONDITION = new ErrorCondition()
+    {
+        @Override
+        public Symbol getValue()
+        {
+            return Symbol.valueOf("Unknown");
+        }
+
+        @Override
+        public String toString()
+        {
+            return getValue().toString();
+        }
+    };
     private ReceivingLinkEndpoint _endpoint;
     private int _id;
     private static final UnsignedInteger DEFAULT_INITIAL_CREDIT = UnsignedInteger.valueOf(100);
@@ -196,16 +212,20 @@ public class Receiver implements DeliveryStateHandler
             {
                 throw new ConnectionErrorException(AmqpError.INTERNAL_ERROR,"Interrupted while waiting for detach following failed attach");
             }
-            throw new ConnectionErrorException(getError().getCondition(),
-                                               getError().getDescription() == null
-                                                       ? "AMQP error: '" + getError().getCondition().toString()
+
+            Error error = getError() == null
+                    ? new Error(UNKNOWN_ERROR_CONDITION, "Unknown")
+                    : getError();
+
+
+            ErrorCondition condition = error.getCondition() == null ? UNKNOWN_ERROR_CONDITION : error.getCondition();
+
+            throw new ConnectionErrorException(condition,
+                                               error.getDescription() == null
+                                                       ? "AMQP error: '" + condition.toString()
                                                          + "' when attempting to create a receiver"
                                                          + (source != null ? " from: '" + source.getAddress() +"'" : "")
-                                                       : getError().getDescription());
-        }
-        else
-        {
-
+                                                       : error.getDescription());
         }
     }
 
@@ -318,7 +338,7 @@ public class Receiver implements DeliveryStateHandler
                         // todo - throw a sensible error
                         e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                     }
-                    m = new Message(sections);
+                    m = new Message(sections, false);
                     m.setDeliveryTag(deliveryTag);
                     m.setResume(resume);
                     m.setReceiver(this);

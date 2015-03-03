@@ -28,12 +28,14 @@ define(["qpid/common/util",
         "dojo/domReady!"],
    function (util, poolTypeJsonString, array, json, string, Memory, dom, domConstruct, registry)
    {
-        var fieldNames = ["connectionUrl", "username", "connectionPoolType"];
         return {
             show: function(data)
             {
-                util.buildEditUI(data.containerNode, "virtualhostnode/jdbc/edit.html", "editVirtualHostNode.", fieldNames, data.data);
-
+                var that = this;
+                util.parseHtmlIntoDiv(data.containerNode, "virtualhostnode/jdbc/edit.html", function(){ that._postParse(data);});
+            },
+            _postParse: function(data)
+            {
                 registry.byId("editVirtualHostNode.connectionUrl").set("regExpGen", util.jdbcUrlOrContextVarRegexp);
                 registry.byId("editVirtualHostNode.username").set("regExpGen", util.nameOrContextVarRegexp);
 

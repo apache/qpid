@@ -52,7 +52,12 @@ define(["dojo/_base/xhr",
       {
         var that=this;
         this.containerNode = domConstruct.create("div", {innerHTML: template});
-        parser.parse(this.containerNode);
+        parser.parse(this.containerNode).then(function(instances){ that._postParse();});
+      },
+      _postParse: function()
+      {
+        var that=this;
+        this.allFieldsContainer = dom.byId("editVirtualHostNode.allFields");
         this.typeFieldsContainer = dom.byId("editVirtualHostNode.typeFields");
         this.dialog = registry.byId("editVirtualHostNodeDialog");
         this.saveButton = registry.byId("editVirtualHostNode.saveButton");
@@ -160,7 +165,7 @@ define(["dojo/_base/xhr",
                     TypeUI.show({containerNode:that.typeFieldsContainer, parent: that, data: actualData, effectiveData: effectiveData});
                     that.form.connectChildren();
 
-                    util.applyMetadataToWidgets(that.allFieldsContainer, "VirtualHostNode", actualData.type);
+                    util.applyToWidgets(that.allFieldsContainer, "VirtualHostNode", actualData.type, actualData);
                 }
                 catch(e)
                 {

@@ -65,8 +65,8 @@ import org.apache.qpid.filter.selector.ParseException;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
-import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.model.ExclusivityPolicy;
@@ -154,15 +154,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
                             actualFilters.put(entry.getKey(), entry.getValue());
                         }
-                        catch (ParseException e)
-                        {
-                            Error error = new Error();
-                            error.setCondition(AmqpError.INVALID_FIELD);
-                            error.setDescription("Invalid JMS Selector: " + selectorFilter.getValue());
-                            error.setInfo(Collections.singletonMap(Symbol.valueOf("field"), Symbol.valueOf("filter")));
-                            throw new AmqpErrorException(error);
-                        }
-                        catch (SelectorParsingException e)
+                        catch (ParseException | SelectorParsingException e)
                         {
                             Error error = new Error();
                             error.setCondition(AmqpError.INVALID_FIELD);
@@ -374,8 +366,16 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 {
                     name = getEndpoint().getName();
                 }
+
+                FilterManager filters = null;
+                if(messageFilter != null)
+                {
+                    filters = new FilterManager();
+                    filters.add(messageFilter.getName(), messageFilter);
+                }
+
                 _consumer = _queue.addConsumer(_target,
-                                               messageFilter == null ? null : new SimpleFilterManager(messageFilter),
+                                               filters,
                                                Message_1_0.class, name, options);
             }
             catch (MessageSource.ExistingExclusiveConsumer e)

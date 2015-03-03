@@ -30,7 +30,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
@@ -52,6 +54,7 @@ import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostUnavailableException;
 import org.apache.qpid.server.filter.FilterManager;
+import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
@@ -75,6 +78,8 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
+import org.apache.qpid.server.plugin.MessageFilterFactory;
+import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.SecurityManager;
@@ -186,6 +191,9 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     @ManagedAttributeField
     private MessageDurability _messageDurability;
 
+    @ManagedAttributeField
+    private Map<String, Map<String,List<String>>> _defaultFilters;
+
     private Object _exclusiveOwner; // could be connection, session, Principal or a String for the container name
 
     private final Set<NotificationCheck> _notificationChecks =
@@ -241,12 +249,15 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     private long _minimumMessageTtl;
     @ManagedAttributeField
     private long _maximumMessageTtl;
+    @ManagedAttributeField
+    private boolean _ensureNondestructiveConsumers;
 
     private final AtomicBoolean _recovering = new AtomicBoolean(true);
     private final ConcurrentLinkedQueue<EnqueueRequest> _postRecoveryQueue = new ConcurrentLinkedQueue<>();
 
     private final QueueRunner _queueRunner = new QueueRunner(this);
     private boolean _closing;
+    private final ConcurrentMap<String,MessageFilter> _defaultFiltersMap = new ConcurrentHashMap<>();
 
     protected AbstractQueue(Map<String, Object> attributes, VirtualHostImpl virtualHost)
     {
@@ -283,11 +294,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                          });
         }
 
-        if (isDurable())
-        {
-            _virtualHost.getDurableConfigurationStore().create(asObjectRecord());
-        }
-        else if(getMessageDurability() != MessageDurability.NEVER)
+        if(!isDurable() && getMessageDurability() != MessageDurability.NEVER)
         {
             Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(),
                          new PrivilegedAction<Object>()
@@ -351,17 +358,9 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
                 case PRINCIPAL:
                     _exclusiveOwner = sessionModel.getConnectionModel().getAuthorizedPrincipal();
-                    if(isDurable())
-                    {
-                        _virtualHost.getDurableConfigurationStore().update(false,asObjectRecord());
-                    }
                     break;
                 case CONTAINER:
                     _exclusiveOwner = sessionModel.getConnectionModel().getRemoteContainerName();
-                    if(isDurable())
-                    {
-                        _virtualHost.getDurableConfigurationStore().update(false,asObjectRecord());
-                    }
                     break;
                 case CONNECTION:
                     _exclusiveOwner = sessionModel.getConnectionModel();
@@ -450,6 +449,40 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         }
 
         _maxAsyncDeliveries = getContextValue(Integer.class, Queue.MAX_ASYNCHRONOUS_DELIVERIES);
+
+        if(_defaultFilters != null)
+        {
+            QpidServiceLoader qpidServiceLoader = new QpidServiceLoader();
+            final Map<String, MessageFilterFactory> messageFilterFactories =
+                    qpidServiceLoader.getInstancesByType(MessageFilterFactory.class);
+
+            for (Map.Entry<String,Map<String,List<String>>> entry : _defaultFilters.entrySet())
+            {
+                String name = String.valueOf(entry.getKey());
+                Map<String, List<String>> filterValue = entry.getValue();
+                if(filterValue.size() == 1)
+                {
+                    String filterTypeName = String.valueOf(filterValue.keySet().iterator().next());
+                    MessageFilterFactory filterFactory = messageFilterFactories.get(filterTypeName);
+                    if(filterFactory != null)
+                    {
+                        List<String> filterArguments = filterValue.values().iterator().next();
+                        _defaultFiltersMap.put(name, filterFactory.newInstance(filterArguments));
+                    }
+                    else
+                    {
+                        throw new IllegalArgumentException("Unknown filter type " + filterTypeName + ", known types are: " + messageFilterFactories.keySet());
+                    }
+                }
+                else
+                {
+                    throw new IllegalArgumentException("Filter value should be a map with one entry, having the type as key and the value being the filter arguments, not " + filterValue);
+
+                }
+
+            }
+        }
+
         updateAlertChecks();
     }
 
@@ -555,6 +588,12 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     }
 
     @Override
+    public Map<String, Map<String, List<String>>> getDefaultFilters()
+    {
+        return _defaultFilters;
+    }
+
+    @Override
     public final MessageDurability getMessageDurability()
     {
         return _messageDurability;
@@ -571,6 +610,14 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     {
         return _maximumMessageTtl;
     }
+
+    @Override
+    public boolean isEnsureNondestructiveConsumers()
+    {
+        return _ensureNondestructiveConsumers;
+    }
+
+
 
     @Override
     public Collection<String> getAvailableAttributes()
@@ -603,7 +650,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     @Override
     public synchronized QueueConsumerImpl addConsumer(final ConsumerTarget target,
-                                     final FilterManager filters,
+                                     FilterManager filters,
                                      final Class<? extends ServerMessage> messageClass,
                                      final String consumerName,
                                      EnumSet<ConsumerImpl.Option> optionSet)
@@ -698,6 +745,26 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         if(exclusive && getConsumerCount() != 0)
         {
             throw new ExistingConsumerPreventsExclusive();
+        }
+        if(!_defaultFiltersMap.isEmpty())
+        {
+            if(filters == null)
+            {
+                filters = new FilterManager();
+            }
+            for (Map.Entry<String,MessageFilter> filter : _defaultFiltersMap.entrySet())
+            {
+                if(!filters.hasFilter(filter.getKey()))
+                {
+                    filters.add(filter.getKey(), filter.getValue());
+                }
+            }
+        }
+
+        if(_ensureNondestructiveConsumers)
+        {
+            optionSet = EnumSet.copyOf(optionSet);
+            optionSet.removeAll(EnumSet.of(ConsumerImpl.Option.SEES_REQUEUES, ConsumerImpl.Option.ACQUIRES));
         }
 
         QueueConsumerImpl consumer = new QueueConsumerImpl(this,

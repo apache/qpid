@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.binding;
 
-import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,10 +44,8 @@ import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
-import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.util.StateChangeListener;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class BindingImpl
         extends AbstractConfiguredObject<BindingImpl>
@@ -106,26 +103,6 @@ public class BindingImpl
         {
             ((AbstractExchange)_exchange).doAddBinding(this);
         }
-    }
-
-    @Override
-    protected void onCreate()
-    {
-        super.onCreate();
-        try
-        {
-            _queue.getVirtualHost().getSecurityManager().authoriseCreateBinding(this);
-        }
-        catch(AccessControlException e)
-        {
-            deleted();
-            throw e;
-        }
-        if (isDurable())
-        {
-            _queue.getVirtualHost().getDurableConfigurationStore().create(asObjectRecord());
-        }
-
     }
 
     private static Map<String, Object> enhanceWithDurable(Map<String, Object> attributes,
@@ -263,12 +240,6 @@ public class BindingImpl
                     {
                         _arguments = arguments;
                         BindingImpl.super.setAttribute(ARGUMENTS, getActualAttributes().get(ARGUMENTS), arguments);
-                        if (isDurable())
-                        {
-                            VirtualHostImpl<?, ?, ?> vhost =
-                                    (VirtualHostImpl<?, ?, ?>) _exchange.getParent(VirtualHost.class);
-                            vhost.getDurableConfigurationStore().update(true, asObjectRecord());
-                        }
                     }
                 }
                );
@@ -278,6 +249,8 @@ public class BindingImpl
     @Override
     public void validateOnCreate()
     {
+        _queue.getVirtualHost().getSecurityManager().authoriseCreateBinding(this);
+
         AMQQueue queue = getAMQQueue();
         Map<String, Object> arguments = getArguments();
         if (arguments!=null && !arguments.isEmpty() && FilterSupport.argumentsContainFilter(arguments))

@@ -51,7 +51,8 @@ define(["dojo/dom",
                         sync: true,
                         load:  function(data) {
                             contentPane.containerNode.innerHTML = data;
-                            parser.parse(contentPane.containerNode);
+                            parser.parse(contentPane.containerNode).then(function(instances)
+                            {
 
                             that.keyStoreUpdater = new KeyStoreUpdater(contentPane.containerNode, that.modelObj, that.controller, that.url);
                             that.keyStoreUpdater.update();
@@ -75,6 +76,7 @@ define(["dojo/dom",
                                       addStore.show(data[0], that.url);
                                     });
                                 });
+                            });
                         }});
            };
 

@@ -19,31 +19,34 @@
 <div class="dijitHidden">
   <div data-dojo-type="dijit/Dialog" data-dojo-props="title:'Edit Virtual Host'" id="editVirtualHostNodeDialog">
       <form id="editVirtualHostNodeForm" method="post" data-dojo-type="dijit/form/Form">
-        <div id="editVirtualHostNode.contentPane">
-          <div class="editNoteBanner">NOTE: All changes will only take effect after Virtual Host Node restart.</div>
-          <div class="clear">
-              <div class="formLabel-labelCell tableContainer-labelCell">Name*:</div>
-              <div class="formLabel-controlCell tableContainer-valueCell">
-                  <input type="text" id="editVirtualHostNode.name"
-                         data-dojo-type="dijit/form/ValidationTextBox"
-                         data-dojo-props="
+          <div id="editVirtualHostNode.allFields">
+              <div id="editVirtualHostNode.contentPane">
+                  <div class="editNoteBanner">NOTE: All changes will only take effect after Virtual Host Node restart.</div>
+                  <div class="clear">
+                      <div class="formLabel-labelCell tableContainer-labelCell">Name*:</div>
+                      <div class="formLabel-controlCell tableContainer-valueCell">
+                          <input type="text" id="editVirtualHostNode.name"
+                                 data-dojo-type="dijit/form/ValidationTextBox"
+                                 data-dojo-props="
                               name: 'name',
                               placeHolder: 'name',
                               required: true,
                               missingMessage: 'Name must be supplied',
                               disabled: true,
                               title: 'Enter virtual host name'" />
+                      </div>
+                  </div>
+
+                  <div id="editVirtualHostNode.typeFields"></div>
+
+                  <div class="clear"></div>
+
+                  <div data-dojo-type="dijit/TitlePane" data-dojo-props="title: 'Context variables',  open: false">
+                      <div id="editVirtualHostNode.context" ></div>
+                  </div>
               </div>
           </div>
 
-          <div id="editVirtualHostNode.typeFields"></div>
-
-          <div class="clear"></div>
-
-          <div data-dojo-type="dijit/TitlePane" data-dojo-props="title: 'Context variables',  open: false">
-                  <div id="editVirtualHostNode.context" ></div>
-          </div>
-        </div>
         <div class="dijitDialogPaneActionBar qpidDialogPaneActionBar">
               <button data-dojo-type="dijit/form/Button" id="editVirtualHostNode.saveButton" data-dojo-props="label: 'Save'">Save</button>
               <button data-dojo-type="dijit/form/Button" id="editVirtualHostNode.cancelButton" data-dojo-props="label: 'Cancel'" ></button>

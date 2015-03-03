@@ -52,17 +52,19 @@ define(["dojo/_base/xhr",
                         sync: true,
                         load:  function(data) {
                             contentPane.containerNode.innerHTML = data;
-                            parser.parse(contentPane.containerNode);
+                            parser.parse(contentPane.containerNode).then(function(instances)
+                            {
 
-                            that.accessControlProviderUpdater = new AccessControlProviderUpdater(contentPane.containerNode, that.modelObj, that.controller);
+                                that.accessControlProviderUpdater = new AccessControlProviderUpdater(contentPane.containerNode, that.modelObj, that.controller);
 
-                            var deleteButton = query(".deleteAccessControlProviderButton", contentPane.containerNode)[0];
-                            var deleteWidget = registry.byNode(deleteButton);
-                            connect.connect(deleteWidget, "onClick",
+                                var deleteButton = query(".deleteAccessControlProviderButton", contentPane.containerNode)[0];
+                                var deleteWidget = registry.byNode(deleteButton);
+                                connect.connect(deleteWidget, "onClick",
                                             function(evt){
                                                 event.stop(evt);
                                                 that.deleteAccessControlProvider();
                                             });
+                            });
                         }});
            };
 

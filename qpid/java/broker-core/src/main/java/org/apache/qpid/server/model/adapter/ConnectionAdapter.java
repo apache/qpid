@@ -80,7 +80,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     {
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(ID, UUID.randomUUID());
-        attributes.put(NAME, _connection.getRemoteAddressString().replaceAll("/", ""));
+        attributes.put(NAME, "[" + _connection.getConnectionId() + "] " + _connection.getRemoteAddressString().replaceAll("/", ""));
         attributes.put(DURABLE, false);
         return attributes;
     }

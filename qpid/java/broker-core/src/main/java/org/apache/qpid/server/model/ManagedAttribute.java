@@ -37,4 +37,5 @@ public @interface ManagedAttribute
     String[] validValues() default {};
     boolean oversize() default false;
     String oversizedAltText() default "";
+    String secureValueFilter() default "";
 }
