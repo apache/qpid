@@ -293,11 +293,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                          });
         }
 
-        if (isDurable())
-        {
-            _virtualHost.getDurableConfigurationStore().create(asObjectRecord());
-        }
-        else if(getMessageDurability() != MessageDurability.NEVER)
+        if(!isDurable() && getMessageDurability() != MessageDurability.NEVER)
         {
             Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(),
                          new PrivilegedAction<Object>()
@@ -361,17 +357,9 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
                 case PRINCIPAL:
                     _exclusiveOwner = sessionModel.getConnectionModel().getAuthorizedPrincipal();
-                    if(isDurable())
-                    {
-                        _virtualHost.getDurableConfigurationStore().update(false,asObjectRecord());
-                    }
                     break;
                 case CONTAINER:
                     _exclusiveOwner = sessionModel.getConnectionModel().getRemoteContainerName();
-                    if(isDurable())
-                    {
-                        _virtualHost.getDurableConfigurationStore().update(false,asObjectRecord());
-                    }
                     break;
                 case CONNECTION:
                     _exclusiveOwner = sessionModel.getConnectionModel();
