@@ -493,7 +493,13 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
 
         public String getType()
         {
+            String subject = getSubject();
+            if(subject != null)
+            {
+                return subject;
+            }
 
+            // Use legacy annotation if present and there was no subject
             if(_messageAnnotations == null || _messageAnnotations.get(JMS_TYPE) == null)
             {
                 return null;
