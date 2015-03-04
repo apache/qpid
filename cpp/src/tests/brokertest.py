@@ -21,7 +21,6 @@
 
 import os, signal, string, tempfile, subprocess, socket, threading, time, imp, re
 import qpid, traceback, signal
-import proton
 from qpid import connection, util
 from qpid.compat import format_exc
 from unittest import TestCase
@@ -493,7 +492,16 @@ class BrokerTest(TestCase):
     test_store_lib = os.getenv("TEST_STORE_LIB")
     rootdir = os.getcwd()
 
-    PN_VERSION = (proton.VERSION_MAJOR, proton.VERSION_MINOR)
+    try:
+        import proton
+        PN_VERSION = (proton.VERSION_MAJOR, proton.VERSION_MINOR)
+    except ImportError:
+        # proton not on path, can't determine version
+        PN_VERSION = (0, 0)
+    except AttributeError:
+        # prior to 0.8 proton did not expose version info
+        PN_VERSION = (0, 7)
+
     PN_TX_VERSION = (0, 9)
 
     amqp_tx_supported = PN_VERSION >= PN_TX_VERSION
@@ -501,7 +509,12 @@ class BrokerTest(TestCase):
     @classmethod
     def amqp_tx_warning(cls):
         if not cls.amqp_tx_supported:
-            print "WARNING: Cannot test transactions over AMQP 1.0, proton version %s.%s < %s.%s" % (cls.PN_VERSION + cls.PN_TX_VERSION)
+            if cls.PN_VERSION == (0, 0):
+                print "WARNING: Cannot test transactions over AMQP 1.0, proton not on path so version could not be determined"
+            elif cls.PN_VERSION == (0, 7):
+                print "WARNING: Cannot test transactions over AMQP 1.0, proton version is 0.7 or less, %s.%s required" % cls.PN_TX_VERSION
+            else:
+                print "WARNING: Cannot test transactions over AMQP 1.0, proton version %s.%s < %s.%s" % (cls.PN_VERSION + cls.PN_TX_VERSION)
             return False
         return True
 
