@@ -706,8 +706,8 @@ void ManagementAgent::moveNewObjects()
 void ManagementAgent::periodicProcessing (void)
 {
 #define HEADROOM  4096
-    debugSnapshot("Management agent periodic processing");
     sys::Mutex::ScopedLock lock (userLock);
+    debugSnapshot("Management agent periodic processing");
     string              routingKey;
     string sBuf;
 
@@ -2704,6 +2704,8 @@ string ManagementAgent::summarizeAgents() {
 
 
 void ManagementAgent::debugSnapshot(const char* title) {
+    sys::Mutex::ScopedLock lock(addLock);
+    sys::Mutex::ScopedLock objLock (objectLock);
     QPID_LOG(debug, title << ": management snapshot: "
              << packages.size() << " packages, "
              << summarizeMap("objects", managementObjects)
