@@ -835,7 +835,7 @@ void Session::abort()
         tx.dischargeComplete();
         tx.buffer->rollback();
         txAborted();
-        tx.buffer.reset();
+        tx.buffer = boost::intrusive_ptr<TxBuffer>();
         QPID_LOG(debug, "Transaction " << tx.id << " rolled back");
     }
 }
@@ -848,7 +848,7 @@ void Session::committed(bool sync)
         if (tx.buffer.get()) {
             tx.buffer->endCommit(&connection.getBroker().getStore());
             txCommitted();
-            tx.buffer.reset();
+	    tx.buffer = boost::intrusive_ptr<TxBuffer>();
             QPID_LOG(debug, "Transaction " << tx.id << " comitted");
         } else {
             throw Exception(qpid::amqp::error_conditions::transaction::ROLLBACK, "tranaction vanished during async commit");

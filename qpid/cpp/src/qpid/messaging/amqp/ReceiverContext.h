@@ -46,7 +46,7 @@ class ReceiverContext
 {
   public:
     ReceiverContext(pn_session_t* session, const std::string& name, const qpid::messaging::Address& source);
-    ~ReceiverContext();
+    virtual ~ReceiverContext();
     void reset(pn_session_t* session);
     void setCapacity(uint32_t);
     uint32_t getCapacity();
