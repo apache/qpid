@@ -815,12 +815,16 @@ QPID_AUTO_TEST_CASE(described)
     BOOST_CHECK(!a.isDescribed());
     a.getDescriptors().push_back("foo");
     BOOST_CHECK(a.isDescribed());
-    BOOST_CHECK_EQUAL(a.getDescriptors(), list_of<Variant>("foo"));
+    BOOST_CHECK_EQUAL(a.getDescriptors().size(), 1U);
+    BOOST_CHECK_EQUAL(a.getDescriptors().front(), Variant("foo"));
     a = 42;
     BOOST_CHECK(a.isDescribed());
-    BOOST_CHECK_EQUAL(a.getDescriptors(), list_of<Variant>("foo"));
+    BOOST_CHECK_EQUAL(a.getDescriptors().size(), 1U);
+    BOOST_CHECK_EQUAL(a.getDescriptors().front(), Variant("foo"));
     a.getDescriptors().push_back(33);
-    BOOST_CHECK_EQUAL(a.getDescriptors(), list_of<Variant>("foo")(33));
+    BOOST_CHECK_EQUAL(a.getDescriptors().size(), 2U);
+    BOOST_CHECK_EQUAL(a.getDescriptors().front(), Variant("foo"));
+    BOOST_CHECK_EQUAL(*(++a.getDescriptors().begin()), Variant(33));
     a.getDescriptors().clear();
     BOOST_CHECK(!a.isDescribed());
 }
