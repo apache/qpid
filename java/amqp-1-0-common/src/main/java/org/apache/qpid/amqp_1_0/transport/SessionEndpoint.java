@@ -469,6 +469,7 @@ public class SessionEndpoint
             if(endpoint != null)
             {
                 endpoint.receiveFlow( flow );
+                endpoints.add(endpoint);
             }
             else
             {
