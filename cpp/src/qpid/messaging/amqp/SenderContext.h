@@ -76,7 +76,7 @@ class SenderContext
                   const qpid::messaging::Address& target,
                   bool setToOnSend,
                   const CoordinatorPtr& transaction = CoordinatorPtr());
-    ~SenderContext();
+    virtual ~SenderContext();
 
     virtual void reset(pn_session_t* session);
     virtual void close();
