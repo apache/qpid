@@ -456,7 +456,7 @@ public class SessionEndpoint
 
     public void receiveFlow(final Flow flow)
     {
-
+        Collection<LinkEndpoint> endpoints = new ArrayList<>();
         synchronized(getLock())
         {
             UnsignedInteger handle = flow.getHandle();
@@ -469,16 +469,19 @@ public class SessionEndpoint
             if(endpoint != null)
             {
                 endpoint.receiveFlow( flow );
+                endpoints.add(endpoint);
             }
             else
             {
-                for(LinkEndpoint le : _remoteLinkEndpoints.values())
-                {
-                    le.flowStateChanged();
-                }
+                endpoints.addAll(_remoteLinkEndpoints.values());
             }
 
             getLock().notifyAll();
+        }
+
+        for(LinkEndpoint le : endpoints)
+        {
+            le.flowStateChanged();
         }
 
 

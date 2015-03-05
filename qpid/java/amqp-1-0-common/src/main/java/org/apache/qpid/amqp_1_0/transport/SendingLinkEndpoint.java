@@ -21,14 +21,18 @@
 
 package org.apache.qpid.amqp_1_0.transport;
 
-import org.apache.qpid.amqp_1_0.type.*;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.DeliveryState;
+import org.apache.qpid.amqp_1_0.type.Outcome;
+import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.transport.Attach;
 import org.apache.qpid.amqp_1_0.type.transport.Flow;
 import org.apache.qpid.amqp_1_0.type.transport.Role;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class SendingLinkEndpoint extends LinkEndpoint<SendingLinkListener>
 {
@@ -162,7 +166,6 @@ public class SendingLinkEndpoint extends LinkEndpoint<SendingLinkListener>
                 setLinkCredit(limit.subtract(getDeliveryCount()));
             }
         }
-        getLinkEventListener().flowStateChanged();
 
     }
 
