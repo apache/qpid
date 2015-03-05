@@ -29,10 +29,13 @@ import java.security.PrivilegedExceptionAction;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import javax.security.auth.Subject;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -54,7 +57,6 @@ import org.apache.qpid.server.plugin.PluggableFactoryLoader;
 import org.apache.qpid.server.plugin.SystemConfigFactory;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.Action;
-import org.apache.qpid.server.util.FutureResult;
 
 public class Broker implements BrokerShutdownProvider
 {
@@ -108,13 +110,13 @@ public class Broker implements BrokerShutdownProvider
             {
                 if(_systemConfig != null)
                 {
-                    final FutureResult closeResult = _systemConfig.close();
-                    closeResult.waitForCompletion(5000l);
+                    ListenableFuture<Void> closeResult = _systemConfig.close();
+                    closeResult.get(5000l, TimeUnit.MILLISECONDS);
                 }
                 _taskExecutor.stop();
 
             }
-            catch (TimeoutException e)
+            catch (TimeoutException | InterruptedException | ExecutionException e)
             {
                 LOGGER.warn("Attempting to cleanly shutdown took too long, exiting immediately");
             }

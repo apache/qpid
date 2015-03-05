@@ -44,10 +44,15 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonProcessingException;
@@ -470,17 +475,65 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    protected FutureResult closeChildren()
+    private static class ChildCounter
     {
-        final List<FutureResult> childCloseFutures = new ArrayList<>();
+        private final AtomicInteger _count = new AtomicInteger();
+        private final Runnable _task;
+
+        private ChildCounter(final Runnable task)
+        {
+            _task = task;
+        }
+
+        public void incrementCount()
+        {
+            _count.incrementAndGet();
+        }
+
+        public void decrementCount()
+        {
+            if(_count.decrementAndGet() == 0)
+            {
+                _task.run();
+            }
+        }
+    }
+
+    protected final ListenableFuture<Void> closeChildren()
+    {
+        LOGGER.debug("KWDEBUG closing children");
+
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+        final ChildCounter counter = new ChildCounter(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                returnVal.set(null);
+            }
+        });
+        counter.incrementCount();
+
+
         applyToChildren(new Action<ConfiguredObject<?>>()
         {
             @Override
             public void performAction(final ConfiguredObject<?> child)
             {
-                childCloseFutures.add(child.close());
+                counter.incrementCount();
+                ListenableFuture<Void> close = child.close();
+                close.addListener(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        counter.decrementCount();
+                    }
+                }, MoreExecutors.sameThreadExecutor());
             }
         });
+
+        counter.decrementCount();
 
         for(Collection<ConfiguredObject<?>> childList : _children.values())
         {
@@ -497,101 +550,65 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             childNameMap.clear();
         }
 
-
-        FutureResult futureResult;
-        if(childCloseFutures.isEmpty())
-        {
-            futureResult = FutureResult.IMMEDIATE_FUTURE;
-        }
-        else
-        {
-            futureResult = new FutureResult()
-                                {
-                                    @Override
-                                    public boolean isComplete()
-                                    {
-                                        for(FutureResult childResult : childCloseFutures)
-                                        {
-                                            if(!childResult.isComplete())
-                                            {
-                                                return false;
-                                            }
-                                        }
-                                        return true;
-                                    }
-
-                                    @Override
-                                    public void waitForCompletion()
-                                    {
-                                        for(FutureResult childResult : childCloseFutures)
-                                        {
-                                            childResult.waitForCompletion();
-                                        }
-                                    }
-
-
-                                    @Override
-                                    public void waitForCompletion(long timeout) throws TimeoutException
-                                    {
-                                        long startTime = System.currentTimeMillis();
-                                        long remaining = timeout;
-                                        for(FutureResult childResult : childCloseFutures)
-                                        {
-
-                                            childResult.waitForCompletion(remaining);
-                                            remaining = startTime + timeout - System.currentTimeMillis();
-                                            if(remaining < 0)
-                                            {
-                                                throw new TimeoutException("Completion did not occur within specified timeout: " + timeout);
-                                            }
-                                        }
-                                    }
-                                };
-        }
-        return futureResult;
+        return returnVal;
     }
 
     @Override
-    public final FutureResult close()
+    public final ListenableFuture<Void> close()
     {
         if(_dynamicState.compareAndSet(DynamicState.OPENED, DynamicState.CLOSED))
         {
-            final CloseResult closeResult = new CloseResult();
+            final SettableFuture<Void> returnVal = SettableFuture.create();
 
-            CloseFuture close = beforeClose();
+            final ListenableFuture<Void> beforeClose = beforeClose();
 
-            Runnable closeRunnable = new Runnable()
+            if(beforeClose != null)
             {
-                @Override
-                public void run()
+                beforeClose.addListener(new Runnable()
                 {
-                    final FutureResult result = closeChildren();
-                    closeResult.setChildFutureResult(result);
-                    onClose();
-                    unregister(false);
-
-                }
-            };
-
-            if (close == null)
-            {
-                closeRunnable.run();
+                    @Override
+                    public void run()
+                    {
+                        final ListenableFuture<Void> childCloseFuture = closeChildren();
+                        childCloseFuture.addListener(new Runnable()
+                        {
+                            @Override
+                            public void run()
+                            {
+                                onClose();
+                                unregister(false);
+                                returnVal.set(null);
+                            }
+                        }, getTaskExecutor().getExecutor());
+                    }
+                }, getTaskExecutor().getExecutor());
             }
             else
             {
-                close.runWhenComplete(closeRunnable);
+                final ListenableFuture<Void> childCloseFuture = closeChildren();
+                childCloseFuture.addListener(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        onClose();
+                        unregister(false);
+                        returnVal.set(null);
+                    }
+                }, getTaskExecutor().getExecutor());
             }
 
-            // if future not complete, schedule the remainder to be done once complete.
-            return closeResult;
+            return returnVal;
+
+
         }
         else
         {
-            return FutureResult.IMMEDIATE_FUTURE;
+            return Futures.immediateFuture(null);
         }
     }
 
-    protected CloseFuture beforeClose()
+    protected ListenableFuture<Void> beforeClose()
     {
         return null;
     }
@@ -2013,6 +2030,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 }
             }
             _childFutureResult.waitForCompletion();
+
         }
 
         @Override
@@ -2042,6 +2060,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 }
             }
             _childFutureResult.waitForCompletion(remaining);
+
         }
 
         public synchronized void setChildFutureResult(final FutureResult childFutureResult)

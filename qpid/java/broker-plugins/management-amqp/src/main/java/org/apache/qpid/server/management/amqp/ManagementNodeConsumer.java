@@ -24,12 +24,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.internal.InternalMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.util.StateChangeListener;
 
 class ManagementNodeConsumer implements ConsumerImpl
@@ -123,9 +125,9 @@ class ManagementNodeConsumer implements ConsumerImpl
     }
 
     @Override
-    public FutureResult close()
+    public ListenableFuture<Void> close()
     {
-        return FutureResult.IMMEDIATE_FUTURE;
+        return Futures.immediateFuture(null);
     }
 
     @Override

@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.security.auth.Subject;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -62,6 +63,7 @@ import org.apache.qpid.server.message.MessageNode;
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.*;
+import org.apache.qpid.server.model.Connection;
 import org.apache.qpid.server.model.adapter.ConnectionAdapter;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.plugin.ConnectionValidator;
@@ -805,15 +807,18 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
     @Override
-    protected CloseFuture beforeClose()
+    protected ListenableFuture<Void> beforeClose()
     {
+        _logger.debug("KWDEBUG setting state to UNAVAILABLE");
         setState(State.UNAVAILABLE);
-        return null;
+
+        return super.beforeClose();
     }
 
     @Override
     protected void onClose()
     {
+        _logger.debug("KWDEBUG onClose");
         //Stop Connections
         _connectionRegistry.close();
         _dtxRegistry.close();
@@ -825,6 +830,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     private void closeMessageStore()
     {
+        _logger.debug("KWDEBUG closeMessageStore");
         if (getMessageStore() != null)
         {
             try
@@ -1308,6 +1314,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     @StateTransition( currentState = { State.UNINITIALIZED, State.ACTIVE, State.ERRORED }, desiredState = State.STOPPED )
     protected void doStop()
     {
+        // TODO - need to deal with async close children
         closeChildren();
         shutdownHouseKeeping();
         closeMessageStore();

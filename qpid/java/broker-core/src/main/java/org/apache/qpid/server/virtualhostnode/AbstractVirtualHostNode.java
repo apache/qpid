@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -186,7 +187,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     {
         setState(State.DELETED);
         deleteVirtualHostIfExists();
-        close();
+        final ListenableFuture<Void> closeFuture = close();
         deleted();
         DurableConfigurationStore configurationStore = getConfigurationStore();
         if (configurationStore != null)
@@ -212,6 +213,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
 
     protected void stopAndSetStateTo(State stoppedState)
     {
+        // TODO - deal with async close children
         closeChildren();
         closeConfigurationStoreSafely();
         setState(stoppedState);

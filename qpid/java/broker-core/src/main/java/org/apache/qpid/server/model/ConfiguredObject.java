@@ -26,9 +26,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
-import org.apache.qpid.server.util.FutureResult;
 
 @ManagedObject( creatable = false, category = false )
 /**
@@ -250,7 +251,7 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
 
     void open();
 
-    FutureResult close();
+    ListenableFuture<Void> close();
 
     TaskExecutor getTaskExecutor();
 

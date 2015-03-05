@@ -22,9 +22,10 @@ package org.apache.qpid.server.consumer;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.util.FutureResult;
 
 public interface ConsumerImpl
 {
@@ -66,7 +67,7 @@ public interface ConsumerImpl
 
     boolean seesRequeues();
 
-    FutureResult close();
+    ListenableFuture<Void> close();
 
     boolean trySendLock();
 

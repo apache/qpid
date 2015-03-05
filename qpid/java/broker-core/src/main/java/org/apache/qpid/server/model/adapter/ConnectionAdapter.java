@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.protocol.AMQConstant;
@@ -166,25 +168,24 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     }
 
     @Override
-    protected CloseFuture beforeClose()
+    protected ListenableFuture<Void> beforeClose()
     {
         _closing.set(true);
 
-        final ConnectionCloseFuture closeFuture = asyncClose();
+        return asyncClose();
 
-        return closeFuture;
     }
 
-    private ConnectionCloseFuture asyncClose()
+    private ListenableFuture<Void> asyncClose()
     {
-        final ConnectionCloseFuture closeFuture = new ConnectionCloseFuture();
+        final SettableFuture<Void> closeFuture = SettableFuture.create();
 
         _underlyingConnection.addDeleteTask(new Action()
         {
             @Override
             public void performAction(final Object object)
             {
-                closeFuture.connectionClosed();
+                closeFuture.set(null);
             }
         });
 
