@@ -334,24 +334,20 @@ amqp://guest:guest@clientid/?brokerlist='localhost:5671?key_store='/path/to/app1
           switches off the pre-fetching functionality. With maxprefetch=0 messages are fetched one by one without caching on the client.
       </para>
       <note>
-          <para>
-              Setting maxprefetch to 0 is recommended in sping-jms-based applications when
-              <emphasis>DefaultMassgeListenerContainer</emphasis> is configured with <emphasis>CachingConnectionFactory</emphasis>
-              and has <emphasis>cacheLevel</emphasis> set to either <emphasis>CACHE_CONSUMER</emphasis> or <emphasis>CACHE_SESSION</emphasis>
-              and dynamic consumer  scaling (concurrentConsumers!=maxConcurrentConsumers). With such configuration
-              <emphasis>DefaultMassgeListenerContainer</emphasis> can create new <emphasis>MessageConsumer</emphasis>
-              invokers and delete existing <emphasis>MessageConsumer</emphasis> invokers dynamically. On deletion of
-              <emphasis>MessageConsumer</emphasis> invoker, its JMS <emphasis>Session</emphasis> and <emphasis>MessageConsumer</emphasis>
-              are closed. However, with <emphasis>CachingConnectionFactory</emphasis> JMS <emphasis>Session</emphasis>
-              proxy objects are used and when method <emphasis>close</emphasis> of session proxy is invoked, the real Qpid
-              JMS <emphasis>Session</emphasis> object is not get closed. It can be returned into the session cache in active state.
-              If maxprefetch is not 0, the cached Qpid <emphasis>Session</emphasis> might have prefetched messages and
-              it even might continue prefetching of the messages until its prefetch limit is reached. As result,
-              because of prefetched messages being stack in not used cached <emphasis>Session</emphasis>,
-              the message flow between client and broker can stop making an impression as if message consumption is hang.
-              Setting maxprefetch to 0 prevents this problem from occurring.
-              <emphasis>SingleConnectionFactory</emphasis> should be used with maxprefetch>0.
-          </para>
+        <para> Setting maxprefetch to 0 is recommended in Spring-JMS based applications whenever
+            <emphasis>DefaultMassgeListenerContainer</emphasis> is configured with a
+            <emphasis>CachingConnectionFactory</emphasis> that has <emphasis>cacheLevel</emphasis>
+          set to either <emphasis>CACHE_CONSUMER</emphasis> or <emphasis>CACHE_SESSION</emphasis>.
+          In these configurations the Qpid JMS <emphasis>Session</emphasis> objects remain open in
+          Spring's dynamically scaled pools. If maxprefetch is not 0, any prefetched messages held
+          by the <emphasis>Session</emphasis> and any new ones subsequently sent to it (in the
+          background until prefetch is reached) will be effectively by 'stuck' (unavailable to the
+          application) until Spring decides to utilise the cached Session again. This can give the
+          impression that message delivery has stopped even though messages remain of the queue.
+          Setting maxprefetch to 0 prevents this problem from occurring.</para>
+        <para> If using maxprefetch &gt; 0 <emphasis>SingleConnectionFactory</emphasis> must be
+          used. SingleConnectionFactory does not have the same session/consumer caching behaviour so
+          does not exhibit the same problem. </para>
       </note>
     </section>
     <section id="JMS-Client-0-8-Client-Understanding-Session-TemporaryQueues">
