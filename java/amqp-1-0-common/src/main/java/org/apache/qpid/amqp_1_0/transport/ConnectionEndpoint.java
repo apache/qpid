@@ -33,6 +33,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -148,6 +149,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     private String _localHostname;
     private boolean _secure;
     private Principal _externalPrincipal;
+    private List<Runnable> _postLockActions = new ArrayList<>();
 
     public ConnectionEndpoint(Container container, SaslServerProvider cbs)
     {
@@ -663,14 +665,9 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         }
     }
 
-    public void receiveFlow(short channel, Flow flow)
+    public synchronized void receiveFlow(short channel, Flow flow)
     {
-        SessionEndpoint endPoint;
-        synchronized (this)
-        {
-            endPoint = getSession(channel);
-        }
-
+        SessionEndpoint endPoint = getSession(channel);
         if (endPoint != null)
         {
             endPoint.receiveFlow(flow);
@@ -797,20 +794,35 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         _logger = logger;
     }
 
-    public synchronized void receive(final short channel, final Object frame)
+    public void receive(final short channel, final Object frame)
     {
-        if (_logger.isEnabled())
+        List<Runnable> postLockActions;
+        synchronized(this)
         {
-            _logger.received(_remoteAddress, channel, frame);
+            if (_logger.isEnabled())
+            {
+                _logger.received(_remoteAddress, channel, frame);
+            }
+            if (frame instanceof FrameBody)
+            {
+                ((FrameBody) frame).invoke(channel, this);
+            }
+            else if (frame instanceof SaslFrameBody)
+            {
+                ((SaslFrameBody) frame).invoke(this);
+            }
+            postLockActions = _postLockActions;
+            _postLockActions = new ArrayList<>();
         }
-        if (frame instanceof FrameBody)
+        for(Runnable action : postLockActions)
         {
-            ((FrameBody) frame).invoke(channel, this);
+            action.run();
         }
-        else if (frame instanceof SaslFrameBody)
-        {
-            ((SaslFrameBody) frame).invoke(this);
-        }
+    }
+
+    synchronized void addPostLockAction(Runnable action)
+    {
+        _postLockActions.add(action);
     }
 
     public AMQPDescribedTypeRegistry getDescribedTypeRegistry()

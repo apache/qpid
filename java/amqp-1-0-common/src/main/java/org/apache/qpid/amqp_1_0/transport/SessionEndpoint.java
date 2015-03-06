@@ -456,32 +456,48 @@ public class SessionEndpoint
 
     public void receiveFlow(final Flow flow)
     {
-        Collection<LinkEndpoint> endpoints = new ArrayList<>();
-        synchronized(getLock())
+        synchronized (getLock())
         {
-            UnsignedInteger handle = flow.getHandle();
-            LinkEndpoint endpoint = handle == null ? null : _remoteLinkEndpoints.get(handle);
-
-            final UnsignedInteger nextOutgoingId = flow.getNextIncomingId() == null ? _initialOutgoingId : flow.getNextIncomingId();
-            int limit = (nextOutgoingId.intValue() + flow.getIncomingWindow().intValue());
-            _outgoingSessionCredit = UnsignedInteger.valueOf(limit - _nextOutgoingTransferId.intValue());
-
-            if(endpoint != null)
+            synchronized (getLock())
             {
-                endpoint.receiveFlow( flow );
-                endpoints.add(endpoint);
-            }
-            else
-            {
-                endpoints.addAll(_remoteLinkEndpoints.values());
-            }
+                UnsignedInteger handle = flow.getHandle();
+                final LinkEndpoint endpoint = handle == null ? null : _remoteLinkEndpoints.get(handle);
 
-            getLock().notifyAll();
-        }
+                final UnsignedInteger nextOutgoingId =
+                        flow.getNextIncomingId() == null ? _initialOutgoingId : flow.getNextIncomingId();
+                int limit = (nextOutgoingId.intValue() + flow.getIncomingWindow().intValue());
+                _outgoingSessionCredit = UnsignedInteger.valueOf(limit - _nextOutgoingTransferId.intValue());
 
-        for(LinkEndpoint le : endpoints)
-        {
-            le.flowStateChanged();
+                if (endpoint != null)
+                {
+                    getConnection().addPostLockAction(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            endpoint.receiveFlow(flow);
+                        }
+                    });
+                }
+                else
+                {
+                    final Collection<LinkEndpoint> allLinkEndpoints = _remoteLinkEndpoints.values();
+                    getConnection().addPostLockAction(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+
+                            for(LinkEndpoint le : allLinkEndpoints)
+                            {
+                                le.flowStateChanged();
+                            }
+                        }
+                    });
+                }
+
+                getLock().notifyAll();
+            }
         }
 
 
