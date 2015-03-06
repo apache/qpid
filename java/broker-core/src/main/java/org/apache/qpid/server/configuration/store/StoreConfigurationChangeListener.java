@@ -29,7 +29,7 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 
 public class StoreConfigurationChangeListener implements ConfigurationChangeListener
 {
-    private DurableConfigurationStore _store;
+    private final DurableConfigurationStore _store;
 
     public StoreConfigurationChangeListener(DurableConfigurationStore store)
     {

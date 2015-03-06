@@ -875,9 +875,4 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         _virtualHost.getSecurityManager().authoriseUpdate(this);
     }
 
-    @Override
-    protected void changeAttributes(final Map<String, Object> attributes)
-    {
-        super.changeAttributes(attributes);
-    }
 }
