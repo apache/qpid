@@ -663,9 +663,14 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         }
     }
 
-    public synchronized void receiveFlow(short channel, Flow flow)
+    public void receiveFlow(short channel, Flow flow)
     {
-        SessionEndpoint endPoint = getSession(channel);
+        SessionEndpoint endPoint;
+        synchronized (this)
+        {
+            endPoint = getSession(channel);
+        }
+
         if (endPoint != null)
         {
             endPoint.receiveFlow(flow);
