@@ -166,7 +166,14 @@ public class SendingLinkEndpoint extends LinkEndpoint<SendingLinkListener>
                 setLinkCredit(limit.subtract(getDeliveryCount()));
             }
         }
-
+        getSession().getConnection().addPostLockAction(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                flowStateChanged();
+            }
+        });
     }
 
     @Override
