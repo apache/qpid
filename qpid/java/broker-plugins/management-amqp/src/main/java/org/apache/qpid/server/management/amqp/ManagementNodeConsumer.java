@@ -125,9 +125,8 @@ class ManagementNodeConsumer implements ConsumerImpl
     }
 
     @Override
-    public ListenableFuture<Void> close()
+    public void close()
     {
-        return Futures.immediateFuture(null);
     }
 
     @Override

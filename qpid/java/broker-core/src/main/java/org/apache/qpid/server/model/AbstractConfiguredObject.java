@@ -43,12 +43,14 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 
+import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -169,7 +171,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     private final OwnAttributeResolver _attributeResolver = new OwnAttributeResolver(this);
 
-    @ManagedAttributeField( afterSet = "attainStateIfOpenedOrReopenFailed" )
+    @ManagedAttributeField
     private State _desiredState;
     private boolean _openComplete;
     private boolean _openFailed;
@@ -446,23 +448,57 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public final void open()
     {
-        if(_dynamicState.compareAndSet(DynamicState.UNINIT, DynamicState.OPENED))
-        {
-            _openFailed = false;
-            OpenExceptionHandler exceptionHandler = new OpenExceptionHandler();
-            try
-            {
-                doResolution(true, exceptionHandler);
-                doValidation(true, exceptionHandler);
-                doOpening(true, exceptionHandler);
-                doAttainState(exceptionHandler);
-            }
-            catch(RuntimeException e)
-            {
-                exceptionHandler.handleException(e, this);
-            }
-        }
+        doSync(openAsync());
     }
+
+
+    public final ListenableFuture<Void> openAsync()
+    {
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+
+        _taskExecutor.run(new VoidTask()
+        {
+
+            @Override
+            public void execute()
+            {
+                if (_dynamicState.compareAndSet(DynamicState.UNINIT, DynamicState.OPENED))
+                {
+                    _openFailed = false;
+                    OpenExceptionHandler exceptionHandler = new OpenExceptionHandler();
+                    try
+                    {
+                        doResolution(true, exceptionHandler);
+                        doValidation(true, exceptionHandler);
+                        doOpening(true, exceptionHandler);
+                        doAttainState(exceptionHandler).addListener(
+                                new Runnable()
+                                {
+                                    @Override
+                                    public void run()
+                                    {
+                                        returnVal.set(null);
+                                    }
+                                }, MoreExecutors.sameThreadExecutor()
+                                                                   );
+                    }
+                    catch (RuntimeException e)
+                    {
+                        exceptionHandler.handleException(e, AbstractConfiguredObject.this);
+                        returnVal.set(null);
+                    }
+                }
+                else
+                {
+                    returnVal.set(null);
+                }
+            }
+        });
+        return returnVal;
+
+    }
+
+
 
     public void registerWithParents()
     {
@@ -475,7 +511,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    private static class ChildCounter
+    private class ChildCounter
     {
         private final AtomicInteger _count = new AtomicInteger();
         private final Runnable _task;
@@ -501,8 +537,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     protected final ListenableFuture<Void> closeChildren()
     {
-        LOGGER.debug("KWDEBUG closing children");
-
         final SettableFuture<Void> returnVal = SettableFuture.create();
         final ChildCounter counter = new ChildCounter(new Runnable()
         {
@@ -510,6 +544,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             public void run()
             {
                 returnVal.set(null);
+                LOGGER.debug("All children closed " + AbstractConfiguredObject.this.getClass().getSimpleName() + " : " + getName() );
+
             }
         });
         counter.incrementCount();
@@ -521,7 +557,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             public void performAction(final ConfiguredObject<?> child)
             {
                 counter.incrementCount();
-                ListenableFuture<Void> close = child.close();
+                ListenableFuture<Void> close = child.closeAsync();
                 close.addListener(new Runnable()
                 {
                     @Override
@@ -554,8 +590,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
     @Override
-    public final ListenableFuture<Void> close()
+    public void close()
     {
+        doSync(closeAsync());
+    }
+
+    @Override
+    public final ListenableFuture<Void> closeAsync()
+    {
+        LOGGER.debug("Closing " + getClass().getSimpleName() + " : " + getName());
         if(_dynamicState.compareAndSet(DynamicState.OPENED, DynamicState.CLOSED))
         {
             final SettableFuture<Void> returnVal = SettableFuture.create();
@@ -577,6 +620,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                             {
                                 onClose();
                                 unregister(false);
+                                LOGGER.debug("Closed " + AbstractConfiguredObject.this.getClass().getSimpleName() + " : " + getName());
                                 returnVal.set(null);
                             }
                         }, getTaskExecutor().getExecutor());
@@ -591,8 +635,13 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                     @Override
                     public void run()
                     {
+
                         onClose();
                         unregister(false);
+                        LOGGER.debug("Closed "
+                                     + AbstractConfiguredObject.this.getClass().getSimpleName()
+                                     + " : "
+                                     + getName());
                         returnVal.set(null);
                     }
                 }, getTaskExecutor().getExecutor());
@@ -604,6 +653,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
         else
         {
+            LOGGER.debug("Closed " + getClass().getSimpleName() + " : " + getName());
+
             return Futures.immediateFuture(null);
         }
     }
@@ -619,48 +670,88 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public final void create()
     {
-        if(_dynamicState.compareAndSet(DynamicState.UNINIT, DynamicState.OPENED))
+        doSync(createAsync());
+    }
+
+    public final ListenableFuture<Void> createAsync()
+    {
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+
+        _taskExecutor.run(new VoidTask()
         {
-            final AuthenticatedPrincipal currentUser = SecurityManager.getCurrentUser();
-            if(currentUser != null)
-            {
-                String currentUserName = currentUser.getName();
-                _attributes.put(LAST_UPDATED_BY, currentUserName);
-                _attributes.put(CREATED_BY, currentUserName);
-                _lastUpdatedBy = currentUserName;
-                _createdBy = currentUserName;
-            }
-            final long currentTime = System.currentTimeMillis();
-            _attributes.put(LAST_UPDATED_TIME, currentTime);
-            _attributes.put(CREATED_TIME, currentTime);
-            _lastUpdatedTime = currentTime;
-            _createdTime = currentTime;
 
-            CreateExceptionHandler createExceptionHandler = new CreateExceptionHandler();
-            try
+            @Override
+            public void execute()
             {
-                doResolution(true, createExceptionHandler);
-                doValidation(true, createExceptionHandler);
-                validateOnCreate();
-                registerWithParents();
-            }
-            catch(RuntimeException e)
-            {
-                createExceptionHandler.handleException(e, this);
-            }
 
-            AbstractConfiguredObjectExceptionHandler unregisteringExceptionHandler = new CreateExceptionHandler(true);
-            try
-            {
-                doCreation(true, unregisteringExceptionHandler);
-                doOpening(true, unregisteringExceptionHandler);
-                doAttainState(unregisteringExceptionHandler);
+                if (_dynamicState.compareAndSet(DynamicState.UNINIT, DynamicState.OPENED))
+                {
+                    final AuthenticatedPrincipal currentUser = SecurityManager.getCurrentUser();
+                    if (currentUser != null)
+                    {
+                        String currentUserName = currentUser.getName();
+                        _attributes.put(LAST_UPDATED_BY, currentUserName);
+                        _attributes.put(CREATED_BY, currentUserName);
+                        _lastUpdatedBy = currentUserName;
+                        _createdBy = currentUserName;
+                    }
+                    final long currentTime = System.currentTimeMillis();
+                    _attributes.put(LAST_UPDATED_TIME, currentTime);
+                    _attributes.put(CREATED_TIME, currentTime);
+                    _lastUpdatedTime = currentTime;
+                    _createdTime = currentTime;
+
+                    CreateExceptionHandler createExceptionHandler = new CreateExceptionHandler();
+                    try
+                    {
+                        doResolution(true, createExceptionHandler);
+                        doValidation(true, createExceptionHandler);
+                        validateOnCreate();
+                        registerWithParents();
+                    }
+                    catch (RuntimeException e)
+                    {
+                        createExceptionHandler.handleException(e, AbstractConfiguredObject.this);
+                    }
+
+                    final AbstractConfiguredObjectExceptionHandler unregisteringExceptionHandler =
+                            new CreateExceptionHandler(true);
+                    try
+                    {
+                        doCreation(true, unregisteringExceptionHandler);
+                        doOpening(true, unregisteringExceptionHandler);
+                        Futures.addCallback(doAttainState(unregisteringExceptionHandler),
+                                            new FutureCallback<Void>()
+                                            {
+                                                @Override
+                                                public void onSuccess(final Void result)
+                                                {
+                                                    returnVal.set(null);
+                                                }
+
+                                                @Override
+                                                public void onFailure(final Throwable t)
+                                                {
+                                                    if (t instanceof RuntimeException)
+                                                    {
+                                                        unregisteringExceptionHandler.handleException((RuntimeException) t,
+                                                                                                      AbstractConfiguredObject.this);
+                                                    }
+                                                    returnVal.set(null);
+                                                }
+                                            },
+                                            getTaskExecutor().getExecutor());
+                    }
+                    catch (RuntimeException e)
+                    {
+                        unregisteringExceptionHandler.handleException(e, AbstractConfiguredObject.this);
+                        returnVal.set(null);
+                    }
+                }
             }
-            catch(RuntimeException e)
-            {
-                unregisteringExceptionHandler.handleException(e, this);
-            }
-        }
+        });
+
+        return returnVal;
     }
 
     protected void validateOnCreate()
@@ -710,8 +801,33 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
     }
 
-    private void doAttainState(final AbstractConfiguredObjectExceptionHandler exceptionHandler)
+    private ListenableFuture<Void> doAttainState(final AbstractConfiguredObjectExceptionHandler exceptionHandler)
     {
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+        final ChildCounter counter = new ChildCounter(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    attainState().addListener(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            returnVal.set(null);
+                        }
+                    }, getTaskExecutor().getExecutor());
+                }
+                catch(RuntimeException e)
+                {
+                    returnVal.set(null);
+                    throw e;
+                }
+            }
+        });
+        counter.incrementCount();
         applyToChildren(new Action<ConfiguredObject<?>>()
         {
             @Override
@@ -719,22 +835,36 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 if (child instanceof AbstractConfiguredObject)
                 {
-                    AbstractConfiguredObject configuredObject = (AbstractConfiguredObject) child;
+                    final AbstractConfiguredObject configuredObject = (AbstractConfiguredObject) child;
                     if (configuredObject._dynamicState.get() == DynamicState.OPENED)
                     {
-                        try
-                        {
-                            configuredObject.doAttainState(exceptionHandler);
-                        }
-                        catch (RuntimeException e)
-                        {
-                            exceptionHandler.handleException(e, configuredObject);
-                        }
+                        counter.incrementCount();
+                        Futures.addCallback(configuredObject.doAttainState(exceptionHandler),
+                                            new FutureCallback()
+                                            {
+                                                @Override
+                                                public void onSuccess(final Object result)
+                                                {
+                                                    counter.decrementCount();
+                                                }
+
+                                                @Override
+                                                public void onFailure(final Throwable t)
+                                                {
+                                                    if(t instanceof RuntimeException)
+                                                    {
+                                                        exceptionHandler.handleException((RuntimeException) t, configuredObject);
+                                                    }
+                                                    counter.decrementCount();
+                                                }
+                                            },getTaskExecutor().getExecutor());
+
                     }
                 }
             }
         });
-        attainState();
+        counter.decrementCount();
+        return returnVal;
     }
 
     protected void doOpening(boolean skipCheck, final AbstractConfiguredObjectExceptionHandler exceptionHandler)
@@ -990,16 +1120,17 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    private void attainStateIfOpenedOrReopenFailed()
+    private ListenableFuture<Void> attainStateIfOpenedOrReopenFailed()
     {
         if (_openComplete || getDesiredState() == State.DELETED)
         {
-            attainState();
+            return attainState();
         }
         else if (_openFailed)
         {
-            open();
+            return openAsync();
         }
+        return Futures.immediateFuture(null);
     }
 
     protected void onOpen()
@@ -1007,10 +1138,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     }
 
-    protected void attainState()
+    protected ListenableFuture<Void> attainState()
     {
         State currentState = getState();
         State desiredState = getDesiredState();
+        ListenableFuture<Void> returnVal;
         if(currentState != desiredState)
         {
             Method stateChangingMethod = getStateChangeMethod(currentState, desiredState);
@@ -1018,7 +1150,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 try
                 {
-                    stateChangingMethod.invoke(this);
+                    returnVal = (ListenableFuture<Void>) stateChangingMethod.invoke(this);
                 }
                 catch (IllegalAccessException e)
                 {
@@ -1038,7 +1170,16 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                     throw new ServerScopedRuntimeException("Unexpected checked exception when calling state transition", underlying);
                 }
             }
+            else
+            {
+                returnVal = Futures.immediateFuture(null);
+            }
         }
+        else
+        {
+            returnVal = Futures.immediateFuture(null);
+        }
+        return returnVal;
     }
 
     private Method getStateChangeMethod(final State currentState, final State desiredState)
@@ -1113,46 +1254,93 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
 
-    private State setDesiredState(final State desiredState)
+    private ListenableFuture<Void> setDesiredState(final State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
 
-        return runTask(new Task<State>()
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+        runTask(new Task<Void>()
                         {
                             @Override
-                            public State execute()
+                            public Void execute()
                             {
 
-                                State state = getState();
-                                if(desiredState == getDesiredState() && desiredState != state)
+                                final State state = getState();
+                                final State currentDesiredState = getDesiredState();
+                                if(desiredState == currentDesiredState && desiredState != state)
                                 {
-                                    attainStateIfOpenedOrReopenFailed();
-                                    final State currentState = getState();
-                                    if (currentState != state)
+                                    attainStateIfOpenedOrReopenFailed().addListener(new Runnable()
                                     {
-                                        notifyStateChanged(state, currentState);
+                                        @Override
+                                        public void run()
+                                        {
+                                            try
+                                            {
+                                                final State currentState = getState();
+                                                if (currentState != state)
+                                                {
+                                                    notifyStateChanged(state, currentState);
+                                                }
+                                            }
+                                            finally
+                                            {
+                                                returnVal.set(null);
+                                            }
+                                        }
                                     }
-                                    return currentState;
+                                    ,_taskExecutor.getExecutor());
                                 }
                                 else
                                 {
-                                    authoriseSetDesiredState(desiredState);
-
-                                    setAttributes(Collections.<String, Object>singletonMap(DESIRED_STATE,
-                                                                                           desiredState));
-
-                                    if (getState() == desiredState)
+                                    try
                                     {
-                                        notifyStateChanged(state, desiredState);
-                                        return desiredState;
+                                        authoriseSetDesiredState(desiredState);
+                                        validateChange(createProxyForValidation(Collections.<String, Object>singletonMap(
+                                                ConfiguredObject.DESIRED_STATE,
+                                                desiredState)), Collections.singleton(ConfiguredObject.DESIRED_STATE));
+
+                                        if (changeAttribute(ConfiguredObject.DESIRED_STATE, currentDesiredState, desiredState))
+                                        {
+                                            attributeSet(ConfiguredObject.DESIRED_STATE,
+                                                         currentDesiredState,
+                                                         desiredState);
+
+                                            attainStateIfOpenedOrReopenFailed().addListener(new Runnable()
+                                            {
+                                                @Override
+                                                public void run()
+                                                {
+                                                    try
+                                                    {
+                                                        if (getState() == desiredState)
+                                                        {
+                                                            notifyStateChanged(state, desiredState);
+                                                        }
+                                                    }
+                                                    finally
+                                                    {
+                                                        returnVal.set(null);
+                                                    }
+
+                                                }
+                                            }, _taskExecutor.getExecutor());
+                                        }
+                                        else
+                                        {
+                                            returnVal.set(null);
+                                        }
                                     }
-                                    else
+                                    catch (RuntimeException | Error e)
                                     {
-                                        return getState();
+                                        returnVal.set(null);
+                                        throw e;
                                     }
+
                                 }
+                                return null;
                             }
                         });
+        return returnVal;
     }
 
     @Override
@@ -1531,20 +1719,67 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public final void stop()
     {
-        setDesiredState(State.STOPPED);
+        doSync(setDesiredState(State.STOPPED));
     }
 
     public final void delete()
     {
-        if(getState() == State.UNINITIALIZED)
+        doSync(deleteAsync());
+    }
+
+    private void doSync(ListenableFuture<Void> async)
+    {
+        try
+        {
+            async.get();
+        }
+        catch (InterruptedException e)
+        {
+            throw new ServerScopedRuntimeException(e);
+        }
+        catch (ExecutionException e)
+        {
+            Throwable cause = e.getCause();
+            if(cause instanceof RuntimeException)
+            {
+                throw (RuntimeException) cause;
+            }
+            else if(cause instanceof Error)
+            {
+                throw (Error) cause;
+            }
+            else if(cause != null)
+            {
+                throw new ServerScopedRuntimeException(cause);
+            }
+            else
+            {
+                throw new ServerScopedRuntimeException(e);
+            }
+
+        }
+    }
+
+    public final ListenableFuture<Void> deleteAsync()
+    {
+       /* if(getState() == State.UNINITIALIZED)
         {
             _desiredState = State.DELETED;
         }
-        setDesiredState(State.DELETED);
+       */ return setDesiredState(State.DELETED);
 
     }
 
-    public final void start() { setDesiredState(State.ACTIVE); }
+    public final void start()
+    {
+        doSync(startAsync());
+    }
+
+    public ListenableFuture<Void> startAsync()
+    {
+        return setDesiredState(State.ACTIVE);
+    }
+
 
     protected void deleted()
     {
@@ -1629,19 +1864,49 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         _taskExecutor.run(task);
     }
 
+    @Override
+    public void setAttributes(Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException
+    {
+        doSync(setAttributesAsync(attributes));
+    }
 
     @Override
-    public void setAttributes(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException
+    public ListenableFuture<Void> setAttributesAsync(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
+        final Map<String,Object> updateAttributes = new HashMap<>(attributes);
+        Object desiredState = updateAttributes.remove(ConfiguredObject.DESIRED_STATE);
         runTask(new VoidTask()
         {
             @Override
             public void execute()
             {
                 authoriseSetAttributes(createProxyForValidation(attributes), attributes.keySet());
-                changeAttributes(attributes);
+                validateChange(createProxyForValidation(attributes), attributes.keySet());
+
+                changeAttributes(updateAttributes);
             }
         });
+        if(desiredState != null)
+        {
+            State state;
+            if(desiredState instanceof State)
+            {
+                state = (State)desiredState;
+            }
+            else if(desiredState instanceof String)
+            {
+                state = State.valueOf((String)desiredState);
+            }
+            else
+            {
+                throw new IllegalArgumentException("Cannot convert an object of type " + desiredState.getClass().getName() + " to a State");
+            }
+            return setDesiredState(state);
+        }
+        else
+        {
+            return Futures.immediateFuture(null);
+        }
     }
 
     protected void authoriseSetAttributes(final ConfiguredObject<?> proxyForValidation,
@@ -1652,7 +1917,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     protected void changeAttributes(final Map<String, Object> attributes)
     {
-        validateChange(createProxyForValidation(attributes), attributes.keySet());
         Collection<String> names = getAttributeNames();
         for (String name : names)
         {
@@ -2193,7 +2457,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 if (source.getState() != State.DELETED)
                 {
-                    source.delete();
+                    // TODO - RG - This isn't right :-(
+                    source.deleteAsync();
                 }
             }
             finally

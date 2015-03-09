@@ -37,10 +37,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.configuration.updater.Task;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
@@ -602,9 +605,18 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     }
 
     @Override
-    public boolean addBinding(String bindingKey, AMQQueue queue, Map<String, Object> arguments)
+    public boolean addBinding(final String bindingKey, final AMQQueue queue, final Map<String, Object> arguments)
     {
-        return makeBinding(null, bindingKey, queue, arguments, false);
+        return getTaskExecutor().run(new Task<Boolean>()
+                                    {
+
+                                        @Override
+                                        public Boolean execute()
+                                        {
+                                            return makeBinding(null, bindingKey, queue, arguments, false);
+                                        }
+                                    });
+
     }
 
     @Override
@@ -643,7 +655,15 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             doRemoveBinding(b);
             queue.removeBinding(b);
 
-            b.delete();
+            // TODO - RG - Fix bindings!
+            if(getTaskExecutor().isTaskExecutorThread())
+            {
+                b.deleteAsync();
+            }
+            else
+            {
+                b.delete();
+            }
         }
 
     }
@@ -695,7 +715,8 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                 attributes.put(Binding.ARGUMENTS, arguments);
 
                 BindingImpl b = new BindingImpl(attributes, queue, this);
-                b.create(); // Must be called before addBinding as it resolves automated attributes.
+                // TODO - RG - Fix Bindings
+                b.createAsync(); // Must be called before addBinding as it resolves automated attributes.
 
                 addBinding(b);
                 return true;
@@ -732,22 +753,24 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
 
 
     @StateTransition(currentState = {State.UNINITIALIZED,State.ERRORED}, desiredState = State.ACTIVE)
-    private void activate()
+    private ListenableFuture<Void> activate()
     {
         setState(State.ACTIVE);
+        return Futures.immediateFuture(null);
     }
 
 
     @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.DELETED)
-    private void doDeleteBeforeInitialize()
+    private ListenableFuture<Void>  doDeleteBeforeInitialize()
     {
         preSetAlternateExchange();
         setState(State.DELETED);
+        return Futures.immediateFuture(null);
     }
 
 
     @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
-    private void doDelete()
+    private ListenableFuture<Void> doDelete()
     {
         try
         {
@@ -757,8 +780,9 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         }
         catch (ExchangeIsAlternateException | RequiredExchangeException e)
         {
-            return;
+
         }
+        return Futures.immediateFuture(null);
     }
 
     @Override

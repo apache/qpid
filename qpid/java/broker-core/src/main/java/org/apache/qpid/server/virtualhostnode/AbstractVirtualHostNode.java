@@ -38,7 +38,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -122,16 +125,47 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     }
 
     @StateTransition( currentState = {State.UNINITIALIZED, State.STOPPED, State.ERRORED }, desiredState = State.ACTIVE )
-    protected void doActivate()
+    protected ListenableFuture<Void> doActivate()
     {
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+
         try
         {
-            activate();
-            setState(State.ACTIVE);
+            Futures.addCallback(activate(),
+                                new FutureCallback<Void>()
+                                {
+                                    @Override
+                                    public void onSuccess(final Void result)
+                                    {
+                                        try
+                                        {
+                                            setState(State.ACTIVE);
+                                        }
+                                        finally
+                                        {
+                                            returnVal.set(null);
+                                        }
+
+                                    }
+
+                                    @Override
+                                    public void onFailure(final Throwable t)
+                                    {
+
+                                        setState(State.ERRORED);
+                                        returnVal.set(null);
+                                        if (_broker.isManagementMode())
+                                        {
+                                            LOGGER.warn("Failed to make " + this + " active.", t);
+                                        }
+                                    }
+                                }, getTaskExecutor().getExecutor()
+                               );
         }
         catch(RuntimeException e)
         {
             setState(State.ERRORED);
+            returnVal.set(null);
             if (_broker.isManagementMode())
             {
                 LOGGER.warn("Failed to make " + this + " active.", e);
@@ -141,6 +175,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
                 throw e;
             }
         }
+        return returnVal;
     }
 
     @Override
@@ -183,40 +218,73 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     }
 
     @StateTransition( currentState = { State.ACTIVE, State.STOPPED, State.ERRORED}, desiredState = State.DELETED )
-    protected void doDelete()
+    protected ListenableFuture<Void> doDelete()
     {
+        final SettableFuture<Void> returnVal = SettableFuture.create();
         setState(State.DELETED);
         deleteVirtualHostIfExists();
-        final ListenableFuture<Void> closeFuture = close();
-        deleted();
-        DurableConfigurationStore configurationStore = getConfigurationStore();
-        if (configurationStore != null)
+        final ListenableFuture<Void> closeFuture = closeAsync();
+        closeFuture.addListener(new Runnable()
         {
-            configurationStore.onDelete(this);
-        }
+            @Override
+            public void run()
+            {
+                try
+                {
+                    deleted();
+                    DurableConfigurationStore configurationStore = getConfigurationStore();
+                    if (configurationStore != null)
+                    {
+                        configurationStore.onDelete(AbstractVirtualHostNode.this);
+                    }
+                }
+                finally
+                {
+                    returnVal.set(null);
+                }
+            }
+        }, getTaskExecutor().getExecutor());
+
+        return returnVal;
+
     }
 
-    protected void deleteVirtualHostIfExists()
+    protected ListenableFuture<Void> deleteVirtualHostIfExists()
     {
         VirtualHost<?, ?, ?> virtualHost = getVirtualHost();
         if (virtualHost != null)
         {
-            virtualHost.delete();
+            return virtualHost.deleteAsync();
+        }
+        else
+        {
+            return Futures.immediateFuture(null);
         }
     }
 
     @StateTransition( currentState = { State.ACTIVE, State.ERRORED, State.UNINITIALIZED }, desiredState = State.STOPPED )
-    protected void doStop()
+    protected ListenableFuture<Void> doStop()
     {
-        stopAndSetStateTo(State.STOPPED);
+        return stopAndSetStateTo(State.STOPPED);
     }
 
-    protected void stopAndSetStateTo(State stoppedState)
+    protected ListenableFuture<Void> stopAndSetStateTo(final State stoppedState)
     {
-        // TODO - deal with async close children
-        closeChildren();
-        closeConfigurationStoreSafely();
-        setState(stoppedState);
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+
+        ListenableFuture<Void> childCloseFuture = closeChildren();
+        childCloseFuture.addListener(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                closeConfigurationStoreSafely();
+                setState(stoppedState);
+                returnVal.set(null);
+            }
+        }, getTaskExecutor().getExecutor());
+
+        return returnVal;
     }
 
     @Override
@@ -311,7 +379,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
 
     protected abstract DurableConfigurationStore createConfigurationStore();
 
-    protected abstract void activate();
+    protected abstract ListenableFuture<Void> activate();
 
 
 

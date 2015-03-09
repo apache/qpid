@@ -26,6 +26,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -111,6 +113,18 @@ public class ConfiguredObjectFactoryImpl implements ConfiguredObjectFactory
 
         return factory.create(this, attributes, parents);
     }
+
+
+    @Override
+    public <X extends ConfiguredObject<X>> ListenableFuture<X> createAsync(Class<X> clazz,
+                                                    final Map<String, Object> attributes,
+                                                    final ConfiguredObject<?>... parents)
+    {
+        ConfiguredObjectTypeFactory<X> factory = getConfiguredObjectTypeFactory(clazz, attributes);
+
+        return factory.createAsync(this, attributes, parents);
+    }
+
 
     @Override
     public <X extends ConfiguredObject<X>> ConfiguredObjectTypeFactory<X> getConfiguredObjectTypeFactory(final Class<X> categoryClass,

@@ -23,6 +23,10 @@ package org.apache.qpid.server.model;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
+
 import org.apache.qpid.server.plugin.ConfiguredObjectTypeFactory;
 import org.apache.qpid.server.store.ConfiguredObjectDependency;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -57,6 +61,26 @@ abstract public class AbstractConfiguredObjectTypeFactory<X extends AbstractConf
         X instance = createInstance(attributes, parents);
         instance.create();
         return instance;
+    }
+
+
+    @Override
+    public ListenableFuture<X> createAsync(final ConfiguredObjectFactory factory,
+                    final Map<String, Object> attributes,
+                    final ConfiguredObject<?>... parents)
+    {
+        final SettableFuture<X> returnVal = SettableFuture.create();
+        final X instance = createInstance(attributes, parents);
+        final ListenableFuture<Void> createFuture = instance.createAsync();
+        createFuture.addListener(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                returnVal.set(instance);
+            }
+        }, MoreExecutors.sameThreadExecutor());
+        return returnVal;
     }
 
     protected abstract X createInstance(Map<String, Object> attributes, ConfiguredObject<?>... parents);

@@ -37,16 +37,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.BrokerProperties;
-import org.apache.qpid.server.util.BaseAction;
-import org.apache.qpid.server.util.FileHelper;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.type.TypeReference;
 
+import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -55,6 +56,8 @@ import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
+import org.apache.qpid.server.util.BaseAction;
+import org.apache.qpid.server.util.FileHelper;
 
 
 public class FileSystemPreferencesProviderImpl
@@ -128,7 +131,7 @@ public class FileSystemPreferencesProviderImpl
     }
 
     @StateTransition( currentState = {State.UNINITIALIZED, State.ERRORED}, desiredState = State.ACTIVE )
-    private void activate()
+    private ListenableFuture<Void> activate()
     {
         if (_store != null)
         {
@@ -138,6 +141,7 @@ public class FileSystemPreferencesProviderImpl
         {
             throw new IllegalStateException("Cannot open preferences provider " + getName() + " in state " + getState() );
         }
+        return Futures.immediateFuture(null);
     }
 
     @Override
@@ -171,33 +175,52 @@ public class FileSystemPreferencesProviderImpl
     }
 
     @StateTransition(currentState = { State.ACTIVE }, desiredState = State.QUIESCED)
-    private void doQuiesce()
+    private ListenableFuture<Void> doQuiesce()
     {
         if(_store != null)
         {
             _store.close();
         }
         setState(State.QUIESCED);
+        return Futures.immediateFuture(null);
     }
 
     @StateTransition(currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED }, desiredState = State.DELETED )
-    private void doDelete()
+    private ListenableFuture<Void> doDelete()
     {
-        close();
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+        closeAsync().addListener(
+                new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        try
+                        {
+                            if(_store != null)
+                            {
+                                _store.close();
+                                _store.delete();
+                                deleted();
+                                _authenticationProvider.setPreferencesProvider(null);
 
-        if(_store != null)
-        {
-            _store.close();
-            _store.delete();
-            deleted();
-            _authenticationProvider.setPreferencesProvider(null);
+                            }
+                            setState(State.DELETED);
+                        }
+                        finally
+                        {
+                            returnVal.set(null);
+                        }
+                    }
+                }, getTaskExecutor().getExecutor()
+                           );
 
-        }
-        setState(State.DELETED);
+        return returnVal;
+
     }
 
     @StateTransition(currentState = State.QUIESCED, desiredState = State.ACTIVE )
-    private void restart()
+    private ListenableFuture<Void> restart()
     {
         if (_store == null)
         {
@@ -206,6 +229,7 @@ public class FileSystemPreferencesProviderImpl
 
         _store.open();
         setState(State.ACTIVE);
+        return Futures.immediateFuture(null);
     }
 
     @Override

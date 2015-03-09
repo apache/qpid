@@ -40,6 +40,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.plugin.ConfiguredObjectRegistration;
@@ -801,20 +802,37 @@ public class ConfiguredObjectTypeRegistry
         {
             if(m.isAnnotationPresent(StateTransition.class))
             {
-                if(m.getParameterTypes().length == 0)
+                if(ListenableFuture.class.isAssignableFrom(m.getReturnType()))
                 {
-                    m.setAccessible(true);
-                    StateTransition annotation = m.getAnnotation(StateTransition.class);
-
-                    for(State state : annotation.currentState())
+                    if (m.getParameterTypes().length == 0)
                     {
-                        addStateTransition(state, annotation.desiredState(), m, map);
-                    }
+                        m.setAccessible(true);
+                        StateTransition annotation = m.getAnnotation(StateTransition.class);
 
+                        for (State state : annotation.currentState())
+                        {
+                            addStateTransition(state, annotation.desiredState(), m, map);
+                        }
+
+                    }
+                    else
+                    {
+                        throw new ServerScopedRuntimeException(
+                                "A state transition method must have no arguments. Method "
+                                + m.getName()
+                                + " on "
+                                + clazz.getName()
+                                + " does not meet this criteria.");
+                    }
                 }
                 else
                 {
-                    throw new ServerScopedRuntimeException("A state transition method must have no arguments. Method " + m.getName() + " on " + clazz.getName() + " does not meet this criteria.");
+                    throw new ServerScopedRuntimeException(
+                            "A state transition method must return a ListenableFuture. Method "
+                            + m.getName()
+                            + " on "
+                            + clazz.getName()
+                            + " does not meet this criteria.");
                 }
             }
         }

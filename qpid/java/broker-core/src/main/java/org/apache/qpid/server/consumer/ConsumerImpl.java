@@ -67,7 +67,7 @@ public interface ConsumerImpl
 
     boolean seesRequeues();
 
-    ListenableFuture<Void> close();
+    void close();
 
     boolean trySendLock();
 

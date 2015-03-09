@@ -22,6 +22,8 @@ package org.apache.qpid.server.queue;
 
 import java.util.Map;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.Port;
@@ -46,6 +48,14 @@ public class QueueFactory<X extends Queue<X>>  implements ConfiguredObjectTypeFa
                     final ConfiguredObject<?>... parents)
     {
         return getQueueFactory(factory, attributes).create(factory, attributes, parents);
+    }
+
+    @Override
+    public ListenableFuture<X> createAsync(final ConfiguredObjectFactory factory,
+                                           final Map<String, Object> attributes,
+                                           final ConfiguredObject<?>... parents)
+    {
+        return getQueueFactory(factory, attributes).createAsync(factory, attributes, parents);
     }
 
     @Override

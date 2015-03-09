@@ -28,6 +28,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.VoidTask;
 import org.apache.qpid.server.exchange.AbstractExchange;
@@ -195,7 +198,7 @@ public class BindingImpl
     }
 
     @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
-    private void doDelete()
+    private ListenableFuture<Void> doDelete()
     {
         if(_deleted.compareAndSet(false,true))
         {
@@ -208,12 +211,14 @@ public class BindingImpl
 
         deleted();
         setState(State.DELETED);
+        return Futures.immediateFuture(null);
     }
 
     @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
-    private void activate()
+    private ListenableFuture<Void> activate()
     {
         setState(State.ACTIVE);
+        return Futures.immediateFuture(null);
     }
 
     public void addStateChangeListener(StateChangeListener<BindingImpl,State> listener)

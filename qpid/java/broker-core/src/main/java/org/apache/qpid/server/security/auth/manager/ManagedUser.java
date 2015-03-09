@@ -27,6 +27,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.configuration.updater.VoidTask;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -96,10 +99,11 @@ class ManagedUser extends AbstractConfiguredObject<ManagedUser> implements User<
     }
 
     @StateTransition(currentState = {State.ACTIVE}, desiredState = State.DELETED)
-    private void doDelete()
+    private ListenableFuture<Void> doDelete()
     {
         _authenticationManager.getUserMap().remove(getName());
         deleted();
+        return Futures.immediateFuture(null);
     }
 
 

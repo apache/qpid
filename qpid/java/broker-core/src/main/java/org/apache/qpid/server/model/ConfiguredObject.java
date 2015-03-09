@@ -238,6 +238,8 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
                                                ConfiguredObject... otherParents);
 
     void setAttributes(Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException;
+    ListenableFuture<Void> setAttributesAsync(Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException;
+
 
     Class<? extends ConfiguredObject> getCategoryClass();
     Class<? extends ConfiguredObject> getTypeClass();
@@ -250,8 +252,12 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     ConfiguredObjectRecord asObjectRecord();
 
     void open();
+    ListenableFuture<Void> openAsync();
 
-    ListenableFuture<Void> close();
+    void close();
+    ListenableFuture<Void> closeAsync();
+
+    ListenableFuture<Void> deleteAsync();
 
     TaskExecutor getTaskExecutor();
 

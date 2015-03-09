@@ -23,6 +23,8 @@ package org.apache.qpid.server.model.port;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -105,6 +107,14 @@ public class PortFactory<X extends Port<X>> implements ConfiguredObjectTypeFacto
                     final ConfiguredObject<?>... parents)
     {
         return getPortFactory(factory, attributes, (Broker<?>)parents[0]).create(factory, attributes,parents);
+    }
+
+    @Override
+    public ListenableFuture<X> createAsync(final ConfiguredObjectFactory factory,
+                                           final Map<String, Object> attributes,
+                                           final ConfiguredObject<?>... parents)
+    {
+        return getPortFactory(factory, attributes, (Broker<?>)parents[0]).createAsync(factory, attributes,parents);
     }
 
     @Override

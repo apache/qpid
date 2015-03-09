@@ -32,6 +32,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
@@ -147,7 +150,8 @@ public class FileBasedGroupProviderImpl
             GroupAdapter groupAdapter = new GroupAdapter(attrMap);
             principals.add(groupAdapter);
             groupAdapter.registerWithParents();
-            groupAdapter.open();
+            // TODO - we know this is safe, but the sync method shouldn't really be called from the management thread
+            groupAdapter.openAsync();
         }
 
     }
@@ -265,7 +269,7 @@ public class FileBasedGroupProviderImpl
     }
 
     @StateTransition( currentState = { State.UNINITIALIZED, State.QUIESCED, State.ERRORED }, desiredState = State.ACTIVE )
-    private void activate()
+    private ListenableFuture<Void> activate()
     {
         if (_groupDatabase != null)
         {
@@ -282,29 +286,48 @@ public class FileBasedGroupProviderImpl
                 throw new IllegalConfigurationException(String.format("Cannot load groups from '%s'", getPath()));
             }
         }
+        return Futures.immediateFuture(null);
     }
 
     @StateTransition( currentState = { State.QUIESCED, State.ACTIVE, State.ERRORED}, desiredState = State.DELETED )
-    private void doDelete()
+    private ListenableFuture<Void> doDelete()
     {
-        close();
-        File file = new File(getPath());
-        if (file.exists())
-        {
-            if (!file.delete())
-            {
-                throw new IllegalConfigurationException("Cannot delete group file");
-            }
-        }
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+        closeAsync().addListener(
+                new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        try
+                        {
+                            File file = new File(getPath());
+                            if (file.exists())
+                            {
+                                if (!file.delete())
+                                {
+                                    throw new IllegalConfigurationException("Cannot delete group file");
+                                }
+                            }
 
-        deleted();
-        setState(State.DELETED);
+                            deleted();
+                            setState(State.DELETED);
+                        }
+                        finally
+                        {
+                            returnVal.set(null);
+                        }
+                    }
+                }, getTaskExecutor().getExecutor()
+                           );
+        return returnVal;
     }
 
     @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.QUIESCED)
-    private void startQuiesced()
+    private ListenableFuture<Void> startQuiesced()
     {
         setState(State.QUIESCED);
+        return Futures.immediateFuture(null);
     }
 
     public Set<Principal> getGroupPrincipalsForUser(String username)
@@ -377,9 +400,10 @@ public class FileBasedGroupProviderImpl
         }
 
         @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.ACTIVE )
-        private void activate()
+        private ListenableFuture<Void> activate()
         {
             setState(State.ACTIVE);
+            return Futures.immediateFuture(null);
         }
 
         @Override
@@ -396,7 +420,8 @@ public class FileBasedGroupProviderImpl
                 attrMap.put(GroupMember.NAME, principal.getName());
                 GroupMemberAdapter groupMemberAdapter = new GroupMemberAdapter(attrMap);
                 groupMemberAdapter.registerWithParents();
-                groupMemberAdapter.open();
+                // todo - this will be safe, but the synchronous open should not be called from the management thread
+                groupMemberAdapter.openAsync();
                 members.add(groupMemberAdapter);
             }
             _groupPrincipal = new GroupPrincipal(getName());
@@ -459,12 +484,13 @@ public class FileBasedGroupProviderImpl
         }
 
         @StateTransition( currentState = State.ACTIVE, desiredState = State.DELETED )
-        private void doDelete()
+        private ListenableFuture<Void> doDelete()
         {
             getSecurityManager().authoriseGroupOperation(Operation.DELETE, getName());
             _groupDatabase.removeGroup(getName());
             deleted();
             setState(State.DELETED);
+            return Futures.immediateFuture(null);
         }
 
         @Override
@@ -522,19 +548,21 @@ public class FileBasedGroupProviderImpl
             }
 
             @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
-            private void activate()
+            private ListenableFuture<Void> activate()
             {
                 setState(State.ACTIVE);
+                return Futures.immediateFuture(null);
             }
 
             @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
-            private void doDelete()
+            private ListenableFuture<Void> doDelete()
             {
                 getSecurityManager().authoriseGroupOperation(Operation.UPDATE, GroupAdapter.this.getName());
 
                 _groupDatabase.removeUserFromGroup(getName(), GroupAdapter.this.getName());
                 deleted();
                 setState(State.DELETED);
+                return Futures.immediateFuture(null);
             }
 
             @Override

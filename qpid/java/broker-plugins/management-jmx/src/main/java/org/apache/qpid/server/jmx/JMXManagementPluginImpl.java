@@ -32,6 +32,8 @@ import java.util.Set;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.JMException;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -105,7 +107,7 @@ public class JMXManagementPluginImpl
     }
 
     @StateTransition(currentState = {State.UNINITIALIZED,State.ERRORED}, desiredState = State.ACTIVE)
-    private void doStart() throws JMException, IOException
+    private ListenableFuture<Void> doStart() throws JMException, IOException
     {
         _allowPortActivation = true;
         Broker<?> broker = getBroker();
@@ -125,7 +127,8 @@ public class JMXManagementPluginImpl
                 registryPort.setPortManager(this);
                 if(port.getState() != State.ACTIVE)
                 {
-                    port.start();
+                    // TODO - RG
+                    port.startAsync();
                 }
 
             }
@@ -135,7 +138,7 @@ public class JMXManagementPluginImpl
                 connectorPort.setPortManager(this);
                 if(port.getState() != State.ACTIVE)
                 {
-                    port.start();
+                    port.startAsync();
                 }
 
             }
@@ -175,6 +178,7 @@ public class JMXManagementPluginImpl
         _objectRegistry.start();
         setState(State.ACTIVE);
         _allowPortActivation = false;
+        return Futures.immediateFuture(null);
     }
 
     @Override

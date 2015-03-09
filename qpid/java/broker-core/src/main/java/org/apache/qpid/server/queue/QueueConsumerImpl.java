@@ -191,7 +191,7 @@ class QueueConsumerImpl
 
         if(newState == ConsumerTarget.State.CLOSED && oldState != newState && !_closed.get())
         {
-            close();
+            closeAsync();
         }
         final StateChangeListener<? super QueueConsumerImpl, State> stateListener = getStateListener();
         if(stateListener != null)

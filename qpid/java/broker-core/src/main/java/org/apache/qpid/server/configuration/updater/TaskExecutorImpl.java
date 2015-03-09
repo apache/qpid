@@ -49,6 +49,7 @@ public class TaskExecutorImpl implements TaskExecutor
     private volatile Thread _taskThread;
     private final AtomicBoolean _running = new AtomicBoolean();
     private volatile ExecutorService _executor;
+    private final ImmediateIfSameThreadExecutor _wrappedExecutor = new ImmediateIfSameThreadExecutor();
 
 
     @Override
@@ -68,7 +69,7 @@ public class TaskExecutorImpl implements TaskExecutor
                 @Override
                 public Thread newThread(Runnable r)
                 {
-                    _taskThread = new Thread(r, TASK_EXECUTION_THREAD_NAME);
+                    _taskThread = new TaskThread(r, TASK_EXECUTION_THREAD_NAME, TaskExecutorImpl.this);
                     return _taskThread;
                 }
             });
@@ -281,7 +282,7 @@ public class TaskExecutorImpl implements TaskExecutor
     @Override
     public Executor getExecutor()
     {
-        return _executor;
+        return _wrappedExecutor;
     }
 
     public boolean isTaskExecutorThread()
@@ -378,6 +379,43 @@ public class TaskExecutorImpl implements TaskExecutor
         public T get(long timeout, TimeUnit unit)
         {
             return get();
+        }
+    }
+
+    private class ImmediateIfSameThreadExecutor implements Executor
+    {
+
+        @Override
+        public void execute(final Runnable command)
+        {
+            if(isTaskExecutorThread()
+               || (_executor == null && (Thread.currentThread() instanceof TaskThread
+                   && ((TaskThread)Thread.currentThread()).getTaskExecutor() == TaskExecutorImpl.this)))
+            {
+                command.run();
+            }
+            else
+            {
+                _executor.execute(command);
+            }
+
+        }
+    }
+
+    private static class TaskThread extends Thread
+    {
+
+        private final TaskExecutorImpl _taskExecutor;
+
+        public TaskThread(final Runnable r, final String name, final TaskExecutorImpl taskExecutor)
+        {
+            super(r, name);
+            _taskExecutor = taskExecutor;
+        }
+
+        public TaskExecutorImpl getTaskExecutor()
+        {
+            return _taskExecutor;
         }
     }
 }

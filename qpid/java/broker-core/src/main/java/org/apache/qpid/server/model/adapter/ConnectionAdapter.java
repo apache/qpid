@@ -160,11 +160,28 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     }
 
     @StateTransition( currentState = State.ACTIVE, desiredState = State.DELETED)
-    private void doDelete()
+    private ListenableFuture<Void> doDelete()
     {
-        asyncClose();
-        deleted();
-        setState(State.DELETED);
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+        asyncClose().addListener(
+                new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        try
+                        {
+                            deleted();
+                            setState(State.DELETED);
+                        }
+                        finally
+                        {
+                            returnVal.set(null);
+                        }
+                    }
+                }, getTaskExecutor().getExecutor()
+                                );
+        return returnVal;
     }
 
     @Override

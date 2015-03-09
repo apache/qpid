@@ -38,6 +38,9 @@ import java.util.Set;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
@@ -98,7 +101,7 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
     }
 
     @StateTransition(currentState = {State.ACTIVE, State.ERRORED}, desiredState = State.DELETED)
-    protected void doDelete()
+    protected ListenableFuture<Void> doDelete()
     {
         // verify that it is not in use
         String storeName = getName();
@@ -113,12 +116,14 @@ public class FileKeyStoreImpl extends AbstractConfiguredObject<FileKeyStoreImpl>
         }
         deleted();
         setState(State.DELETED);
+        return Futures.immediateFuture(null);
     }
 
     @StateTransition(currentState = {State.UNINITIALIZED, State.ERRORED}, desiredState = State.ACTIVE)
-    protected void doActivate()
+    protected ListenableFuture<Void> doActivate()
     {
         setState(State.ACTIVE);
+        return Futures.immediateFuture(null);
     }
 
     @Override

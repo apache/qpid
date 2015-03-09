@@ -36,7 +36,6 @@ public class LogRecordsRestTest extends QpidRestTestCase
         assertNotNull("Message id cannot be null", record.get("id"));
         assertNotNull("Message timestamp cannot be null", record.get("timestamp"));
         assertEquals("Unexpected log level", "INFO", record.get("level"));
-        assertEquals("Unexpected thread", "main", record.get("thread"));
         assertEquals("Unexpected logger", "qpid.message.broker.ready", record.get("logger"));
     }
 

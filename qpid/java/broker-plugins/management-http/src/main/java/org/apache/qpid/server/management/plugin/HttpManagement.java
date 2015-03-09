@@ -39,6 +39,8 @@ import javax.servlet.DispatcherType;
 import javax.servlet.MultipartConfigElement;
 import javax.servlet.http.HttpServletRequest;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
@@ -130,7 +132,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     }
 
     @StateTransition(currentState = {State.UNINITIALIZED,State.ERRORED}, desiredState = State.ACTIVE)
-    private void doStart()
+    private ListenableFuture<Void> doStart()
     {
         getBroker().getEventLogger().message(ManagementConsoleMessages.STARTUP(OPERATIONAL_LOGGING_NAME));
 
@@ -148,6 +150,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
 
         getBroker().getEventLogger().message(ManagementConsoleMessages.READY(OPERATIONAL_LOGGING_NAME));
         setState(State.ACTIVE);
+        return Futures.immediateFuture(null);
     }
 
     @Override
@@ -206,7 +209,9 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
 
                 if(port.getState() != State.ACTIVE)
                 {
-                    port.start();
+
+                    // TODO - RG
+                    port.startAsync();
                 }
                 Connector connector = null;
 

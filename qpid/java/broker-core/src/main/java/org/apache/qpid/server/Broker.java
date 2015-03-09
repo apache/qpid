@@ -110,8 +110,8 @@ public class Broker implements BrokerShutdownProvider
             {
                 if(_systemConfig != null)
                 {
-                    ListenableFuture<Void> closeResult = _systemConfig.close();
-                    closeResult.get(5000l, TimeUnit.MILLISECONDS);
+                    ListenableFuture<Void> closeResult = _systemConfig.closeAsync();
+                    closeResult.get(30000l, TimeUnit.MILLISECONDS);
                 }
                 _taskExecutor.stop();
 
