@@ -50,12 +50,11 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.test.utils.QpidTestCase;
-import org.mockito.verification.VerificationMode;
 
 public class AbstractVirtualHostTest extends QpidTestCase
 {
     private TaskExecutor _taskExecutor;
-    private VirtualHostNode<?> _node;
+    private VirtualHostNode _node;
     private MessageStore _failingStore;
 
     @Override
@@ -78,6 +77,7 @@ public class AbstractVirtualHostTest extends QpidTestCase
         when(_node.getModel()).thenReturn(BrokerModel.getInstance());
         when(_node.getTaskExecutor()).thenReturn(_taskExecutor);
         when(_node.getConfigurationStore()).thenReturn(mock(DurableConfigurationStore.class));
+        when(_node.getCategoryClass()).thenReturn(VirtualHostNode.class);
 
         _failingStore = mock(MessageStore.class);
         doThrow(new RuntimeException("Cannot open store")).when(_failingStore).openMessageStore(any(ConfiguredObject.class));

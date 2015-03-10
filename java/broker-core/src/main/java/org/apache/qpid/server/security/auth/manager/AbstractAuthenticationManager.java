@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -45,7 +44,6 @@ import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHostAlias;
 import org.apache.qpid.server.model.port.AbstractPortWithAuthProvider;
 import org.apache.qpid.server.security.SubjectCreator;
-import org.apache.qpid.server.security.access.Operation;
 
 public abstract class AbstractAuthenticationManager<T extends AbstractAuthenticationManager<T>>
     extends AbstractConfiguredObject<T>
@@ -150,28 +148,6 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
             return (C)pp;
         }
         throw new IllegalArgumentException("Cannot create child of class " + childClass.getSimpleName());
-    }
-
-
-    @Override
-    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
-    {
-        if(desiredState == State.DELETED)
-        {
-            if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), AuthenticationProvider.class, Operation.DELETE))
-            {
-                throw new AccessControlException("Deletion of authentication provider is denied");
-            }
-        }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
-    {
-        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), AuthenticationProvider.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting of authentication provider attributes is denied");
-        }
     }
 
     @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.QUIESCED )

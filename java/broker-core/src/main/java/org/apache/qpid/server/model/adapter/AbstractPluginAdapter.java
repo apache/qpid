@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -30,8 +29,6 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.Plugin;
-import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.security.access.Operation;
 
 public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends AbstractConfiguredObject<X> implements Plugin<X>
 {
@@ -68,27 +65,6 @@ public abstract class AbstractPluginAdapter<X extends Plugin<X>> extends Abstrac
     public <C extends ConfiguredObject> Collection<C> getChildren(Class<C> clazz)
     {
         return Collections.emptyList();
-    }
-
-    @Override
-    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
-    {
-        if(desiredState == State.DELETED)
-        {
-            if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), Plugin.class, Operation.DELETE))
-            {
-                throw new AccessControlException("Deletion of plugin is denied");
-            }
-        }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
-    {
-        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), Plugin.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting of plugin attributes is denied");
-        }
     }
 
     protected Broker<?> getBroker()

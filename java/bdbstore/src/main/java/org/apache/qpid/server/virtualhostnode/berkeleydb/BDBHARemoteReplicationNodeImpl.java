@@ -21,10 +21,8 @@
 
 package org.apache.qpid.server.virtualhostnode.berkeleydb;
 
-import java.security.AccessControlException;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.sleepycat.je.rep.MasterStateException;
 
@@ -43,7 +41,6 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.model.VirtualHostNode;
-import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 
 public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDBHARemoteReplicationNodeImpl> implements BDBHARemoteReplicationNode<BDBHARemoteReplicationNodeImpl>
@@ -119,27 +116,6 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
     public void deleted()
     {
         super.deleted();
-    }
-
-
-    @Override
-    protected void authoriseSetAttributes(final ConfiguredObject<?> proxyForValidation,
-                                          final Set<String> modifiedAttributes)
-    {
-        _broker.getSecurityManager().authoriseVirtualHostNode(getName(), Operation.UPDATE);
-    }
-
-    @Override
-    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
-    {
-        if(desiredState == State.DELETED)
-        {
-            _broker.getSecurityManager().authoriseVirtualHostNode(getName(), Operation.DELETE);
-        }
-        else
-        {
-            _broker.getSecurityManager().authoriseVirtualHostNode(getName(), Operation.UPDATE);
-        }
     }
 
     @Override

@@ -196,7 +196,10 @@ public class BrokerTestHelper
 
     public static ExchangeImpl<?> createExchange(String hostName, final boolean durable, final EventLogger eventLogger) throws Exception
     {
-        SecurityManager securityManager = new SecurityManager(mock(Broker.class), false);
+        Broker broker = mock(Broker.class);
+        when(broker.getModel()).thenReturn(BrokerModel.getInstance());
+        when(broker.getCategoryClass()).thenReturn(Broker.class);
+        SecurityManager securityManager = new SecurityManager(broker, false);
         final VirtualHostImpl<?,?,?> virtualHost = mock(VirtualHostImpl.class);
         when(virtualHost.getName()).thenReturn(hostName);
         when(virtualHost.getSecurityManager()).thenReturn(securityManager);

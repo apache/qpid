@@ -65,16 +65,6 @@ public class UserPreferencesServlet extends AbstractServlet
     private void getUserPreferences(String authenticationProviderName, String userId, HttpServletRequest request, HttpServletResponse response)
             throws IOException
     {
-        try
-        {
-            assertUserPreferencesOperationAuthorized(userId);
-        }
-        catch (SecurityException e)
-        {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Viewing of preferences is not allowed");
-            return;
-        }
-
         Map<String, Object> preferences = null;
         PreferencesProvider preferencesProvider = getPreferencesProvider(authenticationProviderName);
         if (preferencesProvider == null)
@@ -82,9 +72,17 @@ public class UserPreferencesServlet extends AbstractServlet
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Preferences provider is not configured");
             return;
         }
-        preferences =  preferencesProvider.getPreferences(userId);
+        try
+        {
+            preferences =  preferencesProvider.getPreferences(userId);
 
-        sendJsonResponse(preferences, request, response);
+            sendJsonResponse(preferences, request, response);
+        }
+        catch (SecurityException e)
+        {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Viewing of preferences is not allowed");
+            return;
+        }
     }
 
     private void getUserList(String[] pathElements, HttpServletRequest request, HttpServletResponse response) throws IOException
@@ -177,16 +175,6 @@ public class UserPreferencesServlet extends AbstractServlet
 
             String userId = elements[1];
 
-            try
-            {
-                assertUserPreferencesOperationAuthorized(userId);
-            }
-            catch (SecurityException e)
-            {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Deletion of preferences is not allowed");
-                return;
-            }
-
             String providerName =  elements[0];
             Set<String> users = providerUsers.get(providerName);
 
@@ -216,7 +204,15 @@ public class UserPreferencesServlet extends AbstractServlet
                 if (preferencesProvider != null && !usersToDelete.isEmpty())
                 {
                     String[] users = usersToDelete.toArray(new String[usersToDelete.size()]);
-                    preferencesProvider.deletePreferences(users);
+                    try
+                    {
+                        preferencesProvider.deletePreferences(users);
+                    }
+                    catch (SecurityException e)
+                    {
+                        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Deletion of preferences is not allowed");
+                        return;
+                    }
                 }
             }
         }
@@ -237,8 +233,4 @@ public class UserPreferencesServlet extends AbstractServlet
         return provider;
     }
 
-    private void assertUserPreferencesOperationAuthorized(String userId)
-    {
-        getBroker().getSecurityManager().authoriseUserOperation(Operation.UPDATE, userId);
-    }
 }

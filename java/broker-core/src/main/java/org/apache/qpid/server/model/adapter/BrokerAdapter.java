@@ -51,7 +51,6 @@ import org.apache.qpid.server.plugin.ConfigurationSecretEncrypterFactory;
 import org.apache.qpid.server.plugin.PluggableFactoryLoader;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
-import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.manager.SimpleAuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -875,35 +874,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     {
         Collection children = getChildren(TrustStore.class);
         return children;
-    }
-
-    @Override
-    protected <C extends ConfiguredObject> void authoriseCreateChild(Class<C> childClass, Map<String, Object> attributes,
-            ConfiguredObject... otherParents) throws AccessControlException
-    {
-        if (childClass == VirtualHostNode.class)
-        {
-            _securityManager.authoriseVirtualHostNode(String.valueOf(attributes.get(NAME)), Operation.CREATE);
-
-        }
-        else
-        {
-            if (!_securityManager.authoriseConfiguringBroker(String.valueOf(attributes.get(NAME)),
-                                                             childClass,
-                                                             Operation.CREATE))
-            {
-                throw new AccessControlException("Creation of new broker level entity is denied");
-            }
-        }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
-    {
-        if (!_securityManager.authoriseConfiguringBroker(getName(), Broker.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting of broker attributes is denied");
-        }
     }
 
     @Override

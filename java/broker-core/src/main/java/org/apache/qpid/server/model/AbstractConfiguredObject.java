@@ -1036,8 +1036,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                 }
                                 else
                                 {
-                                    authoriseSetDesiredState(desiredState);
-
                                     setAttributes(Collections.<String, Object>singletonMap(DESIRED_STATE,
                                                                                            desiredState));
 
@@ -1544,12 +1542,6 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         });
     }
 
-    protected void authoriseSetAttributes(final ConfiguredObject<?> proxyForValidation,
-                                          final Set<String> modifiedAttributes)
-    {
-
-    }
-
     protected void changeAttributes(final Map<String, Object> attributes)
     {
         validateChange(createProxyForValidation(attributes), attributes.keySet());
@@ -1608,17 +1600,61 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     {
         return (ConfiguredObject<?>) Proxy.newProxyInstance(getClass().getClassLoader(),
                                                             new Class<?>[]{_bestFitInterface},
-                                                            new AttributeGettingHandler(attributes));
+                                                            new AttributeGettingHandler(attributes, _attributeTypes, this));
     }
 
-    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
+    private ConfiguredObject<?> createProxyForAuthorisation(final Class<? extends ConfiguredObject> category,
+                                                            final Map<String, Object> attributes,
+                                                            final ConfiguredObject<?> parent,
+                                                            final ConfiguredObject<?>... otherParents)
     {
-        // allowed by default
+        return (ConfiguredObject<?>) Proxy.newProxyInstance(getClass().getClassLoader(),
+                                                            new Class<?>[]{category},
+                                                            new AuthorisationProxyInvocationHandler(attributes,
+                                                                    getModel().getTypeRegistry().getAttributeTypes(category),
+                                                                    category, parent, otherParents));
     }
 
-    protected <C extends ConfiguredObject> void authoriseCreateChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents) throws AccessControlException
+    protected final <C extends ConfiguredObject<?>> void authoriseCreateChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents) throws AccessControlException
     {
-        // allowed by default
+        ConfiguredObject<?> configuredObject = createProxyForAuthorisation(childClass, attributes, this, otherParents);
+        getSecurityManager().authoriseCreate(configuredObject);
+    }
+
+    protected final void authoriseCreate(ConfiguredObject<?> object) throws AccessControlException
+    {
+        getSecurityManager().authoriseCreate(object);
+    }
+
+    protected final void authoriseSetAttributes(final ConfiguredObject<?> proxyForValidation,
+                                                               final Set<String> modifiedAttributes)
+    {
+        if (modifiedAttributes.contains(DESIRED_STATE) && State.DELETED.equals(proxyForValidation.getDesiredState()))
+        {
+            authoriseDelete(this);
+            if (modifiedAttributes.size() == 1)
+            {
+                // nothing left to authorize
+                return;
+            }
+        }
+        getSecurityManager().authoriseUpdate(this);
+    }
+
+    protected final void authoriseDelete(ConfiguredObject<?> object)
+    {
+        getSecurityManager().authoriseDelete(object);
+    }
+
+    protected SecurityManager getSecurityManager()
+    {
+        Broker broker = getModel().getAncestor(Broker.class, getCategoryClass(), this);
+        if (broker != null )
+        {
+            return broker.getSecurityManager();
+        }
+        LOGGER.warn("Broker parent is not found for " + getName() + " of type " + getClass());
+        return null;
     }
 
     @Override
@@ -1903,15 +1939,23 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     }
 
 
-    private class AttributeGettingHandler implements InvocationHandler
+    private static class AttributeGettingHandler implements InvocationHandler
     {
-        private Map<String,Object> _attributes;
+        private final Map<String,Object> _attributes;
+        private final Map<String, ConfiguredObjectAttribute<?,?>> _attributeTypes;
+        private final ConfiguredObject<?> _configuredObject;
 
-        AttributeGettingHandler(final Map<String, Object> modifiedAttributes)
+        AttributeGettingHandler(final Map<String, Object> modifiedAttributes, Map<String, ConfiguredObjectAttribute<?,?>> attributeTypes, ConfiguredObject<?> configuredObject)
         {
-            Map<String,Object> combinedAttributes = new HashMap<String, Object>(getActualAttributes());
+            Map<String,Object> combinedAttributes = new HashMap<>();
+            if (configuredObject != null)
+            {
+                combinedAttributes.putAll(configuredObject.getActualAttributes());
+            }
             combinedAttributes.putAll(modifiedAttributes);
             _attributes = combinedAttributes;
+            _attributeTypes = attributeTypes;
+            _configuredObject = configuredObject;
         }
 
         @Override
@@ -1940,16 +1984,26 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
         protected Object getValue(final ConfiguredObjectAttribute attribute)
         {
+            Object value;
             if(attribute.isAutomated())
             {
-                ConfiguredAutomatedAttribute autoAttr = (ConfiguredAutomatedAttribute)attribute;
-                Object value = _attributes.get(attribute.getName());
-                return attribute.convert(value == null && !"".equals(autoAttr.defaultValue()) ? autoAttr.defaultValue() : value , AbstractConfiguredObject.this);
+                ConfiguredAutomatedAttribute autoAttr = (ConfiguredAutomatedAttribute) attribute;
+                value = _attributes.get(attribute.getName());
+                if (value == null && !"".equals(autoAttr.defaultValue()))
+                {
+                    value = autoAttr.defaultValue();
+                }
             }
             else
             {
-                return _attributes.get(attribute.getName());
+                value = _attributes.get(attribute.getName());
             }
+            return convert(attribute, value);
+        }
+
+        protected Object convert(ConfiguredObjectAttribute attribute, Object value)
+        {
+            return attribute.convert(value, _configuredObject);
         }
 
         private ConfiguredObjectAttribute getAttributeFromMethod(final Method method)
@@ -1963,6 +2017,54 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 }
             }
             throw new ServerScopedRuntimeException("Unable to find attribute definition for method " + method.getName());
+        }
+    }
+
+    private static class AuthorisationProxyInvocationHandler extends AttributeGettingHandler
+    {
+        private final Class<? extends ConfiguredObject> _category;
+        private final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> _parents;
+        private final ConfiguredObject<?> _parent   ;
+
+        AuthorisationProxyInvocationHandler(Map<String, Object> attributes,
+                                            Map<String, ConfiguredObjectAttribute<?, ?>> attributeTypes,
+                                            Class<? extends ConfiguredObject> categoryClass,
+                                            ConfiguredObject<?> parent,
+                                            ConfiguredObject<?>... parents)
+        {
+            super(attributes, attributeTypes, null);
+            _parent = parent;
+            _category = categoryClass;
+            _parents = new HashMap<>();
+            if (parents != null)
+            {
+                for (ConfiguredObject<?> parentObject : parents)
+                {
+                    _parents.put(parentObject.getCategoryClass(), parentObject);
+                }
+            }
+            _parents.put(parent.getCategoryClass(), parent);
+        }
+
+        @Override
+        public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable
+        {
+            if(method.getName().equals("getParent") && args != null && args.length == 1 && args[0] instanceof Class)
+            {
+                Class<ConfiguredObject> parentClass = (Class<ConfiguredObject> )args[0];
+                return _parents.get(parentClass);
+            }
+            else if(method.getName().equals("getCategoryClass"))
+            {
+                return _category;
+            }
+            return super.invoke(proxy, method, args);
+        }
+
+        @Override
+        protected Object convert(ConfiguredObjectAttribute attribute, Object value)
+        {
+            return attribute.convert(value, _parent);
         }
     }
 

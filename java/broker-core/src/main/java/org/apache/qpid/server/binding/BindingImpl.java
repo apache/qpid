@@ -45,6 +45,7 @@ import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.StateChangeListener;
 
 public class BindingImpl
@@ -249,7 +250,7 @@ public class BindingImpl
     @Override
     public void validateOnCreate()
     {
-        _queue.getVirtualHost().getSecurityManager().authoriseCreateBinding(this);
+        authoriseCreate(this);
 
         AMQQueue queue = getAMQQueue();
         Map<String, Object> arguments = getArguments();
@@ -264,6 +265,12 @@ public class BindingImpl
                 throw new IllegalConfigurationException(e.getMessage(), e);
             }
         }
+    }
+
+    @Override
+    protected SecurityManager getSecurityManager()
+    {
+        return _queue.getVirtualHost().getSecurityManager();
     }
 
 }

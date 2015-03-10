@@ -398,9 +398,9 @@ public class BDBHAVirtualHostNodeRestTest extends QpidRestTestCase
         assertNotNull("Node " + name + " has unexpected lastKnownReplicationId", lastKnownTransactionId);
         assertTrue("Node " + name + " has unexpected lastKnownReplicationId " + lastKnownTransactionId, lastKnownTransactionId > 0);
 
-        Long joinTime = (Long) nodeData.get(BDBHAVirtualHostNode.JOIN_TIME);
+        Number joinTime = (Number) nodeData.get(BDBHAVirtualHostNode.JOIN_TIME);
         assertNotNull("Node " + name + " has unexpected joinTime", joinTime);
-        assertTrue("Node " + name + " has unexpected joinTime " + joinTime, joinTime > 0);
+        assertTrue("Node " + name + " has unexpected joinTime " + joinTime, joinTime.longValue() > 0);
      }
 
     private void assertActualAndDesiredStates(final String restUrl,

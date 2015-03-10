@@ -29,6 +29,7 @@ import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
+import org.apache.qpid.server.security.SecurityManager;
 
 @ManagedObject( category = false,
                 type = TestStandardCarImpl.TEST_STANDARD_CAR_TYPE,
@@ -37,11 +38,13 @@ public class TestStandardCarImpl extends AbstractConfiguredObject<TestStandardCa
         implements TestStandardCar<TestStandardCarImpl>
 {
     public static final String TEST_STANDARD_CAR_TYPE = "testpertrolcar";
+    private final SecurityManager _securityManager;
 
     @ManagedObjectFactoryConstructor
     public TestStandardCarImpl(final Map<String, Object> attributes)
     {
         super(parentsMap(), attributes, newTaskExecutor(), TestModel.getInstance());
+        _securityManager = new SecurityManager(this, false);
     }
 
     private static CurrentThreadTaskExecutor newTaskExecutor()
@@ -56,5 +59,11 @@ public class TestStandardCarImpl extends AbstractConfiguredObject<TestStandardCa
     {
         Collection<String> types = Arrays.asList(TestPetrolEngineImpl.TEST_PETROL_ENGINE_TYPE, TestHybridEngineImpl.TEST_HYBRID_ENGINE_TYPE);
         return Collections.singletonMap(TestEngine.class.getSimpleName(), types);
+    }
+
+    @Override
+    protected SecurityManager getSecurityManager()
+    {
+        return _securityManager;
     }
 }

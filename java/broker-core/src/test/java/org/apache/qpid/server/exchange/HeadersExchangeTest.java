@@ -35,6 +35,9 @@ import java.util.Set;
 import java.util.UUID;
 
 import junit.framework.TestCase;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -70,7 +73,18 @@ public class HeadersExchangeTest extends TestCase
         _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
         _virtualHost = mock(VirtualHostImpl.class);
-        SecurityManager securityManager = mock(SecurityManager.class);
+
+        Broker broker = mock(Broker.class);
+        SecurityManager securityManager = new SecurityManager(broker, false);
+        when(broker.getCategoryClass()).thenReturn(Broker.class);
+        when(broker.getModel()).thenReturn(BrokerModel.getInstance());
+        when(broker.getSecurityManager()).thenReturn(securityManager);
+
+        VirtualHostNode virtualHostNode = mock(VirtualHostNode.class);
+        when(virtualHostNode.getCategoryClass()).thenReturn(VirtualHostNode.class);
+        when(virtualHostNode.getParent(Broker.class)).thenReturn(broker);
+        when(virtualHostNode.getModel()).thenReturn(BrokerModel.getInstance());
+
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
         when(_virtualHost.getCategoryClass()).thenReturn(VirtualHost.class);
@@ -78,6 +92,7 @@ public class HeadersExchangeTest extends TestCase
         _factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         when(_virtualHost.getObjectFactory()).thenReturn(_factory);
         when(_virtualHost.getModel()).thenReturn(_factory.getModel());
+        when(_virtualHost.getParent(VirtualHostNode.class)).thenReturn(virtualHostNode);
         Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(Exchange.ID, UUID.randomUUID());
         attributes.put(Exchange.NAME, "test");
@@ -149,6 +164,7 @@ public class HeadersExchangeTest extends TestCase
         AMQQueue q = mock(AMQQueue.class);
         when(q.toString()).thenReturn(name);
         when(q.getVirtualHost()).thenReturn(_virtualHost);
+        when(q.getParent(VirtualHost.class)).thenReturn(_virtualHost);
         when(q.getCategoryClass()).thenReturn(Queue.class);
         when(q.getObjectFactory()).thenReturn(_factory);
         when(q.getModel()).thenReturn(_factory.getModel());

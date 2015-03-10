@@ -37,7 +37,6 @@ import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.User;
-import org.apache.qpid.server.security.access.Operation;
 
 @ManagedObject( category = false, type = ManagedUser.MANAGED_USER_TYPE)
 class ManagedUser extends AbstractConfiguredObject<ManagedUser> implements User<ManagedUser>
@@ -85,16 +84,6 @@ class ManagedUser extends AbstractConfiguredObject<ManagedUser> implements User<
         }
     }
 
-    @Override
-    protected void authoriseSetDesiredState(final State desiredState) throws AccessControlException
-    {
-        if(desiredState == State.DELETED)
-        {
-            _authenticationManager.getSecurityManager().authoriseUserOperation(Operation.DELETE, getName());
-        }
-
-    }
-
     @StateTransition(currentState = {State.ACTIVE}, desiredState = State.DELETED)
     private void doDelete()
     {
@@ -102,31 +91,18 @@ class ManagedUser extends AbstractConfiguredObject<ManagedUser> implements User<
         deleted();
     }
 
-
     @Override
-    public void setAttributes(final Map<String, Object> attributes)
-            throws IllegalStateException, AccessControlException, IllegalArgumentException
+    protected boolean changeAttribute(String name, Object expected, Object desired)
     {
-        runTask(new VoidTask()
+        if (User.PASSWORD.equals(name))
         {
-
-            @Override
-            public void execute()
+            String storedPassword = _authenticationManager.createStoredPassword((String)desired);
+            if (!storedPassword.equals(getActualAttributes().get(User.PASSWORD)))
             {
-                Map<String, Object> modifiedAttributes = new HashMap<String, Object>(attributes);
-                final String newPassword = (String) attributes.get(User.PASSWORD);
-                if (attributes.containsKey(User.PASSWORD)
-                    && !newPassword.equals(getActualAttributes().get(User.PASSWORD)))
-                {
-                    modifiedAttributes.put(User.PASSWORD,
-                                           _authenticationManager.createStoredPassword(newPassword));
-
-                }
-                ManagedUser.super.setAttributes(modifiedAttributes);
+                desired = storedPassword;
             }
-        });
-
-
+        }
+        return super.changeAttribute(name, expected, desired);
     }
 
     @Override
@@ -138,10 +114,7 @@ class ManagedUser extends AbstractConfiguredObject<ManagedUser> implements User<
     @Override
     public void setPassword(final String password)
     {
-        _authenticationManager.getSecurityManager().authoriseUserOperation(Operation.UPDATE, getName());
-
-        changeAttribute(User.PASSWORD, getAttribute(User.PASSWORD),
-                        _authenticationManager.createStoredPassword(password));
+        setAttributes(Collections.<String, Object>singletonMap(User.PASSWORD, password));
 
     }
 

@@ -32,7 +32,6 @@ import java.net.URL;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessControlException;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -64,14 +63,12 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.IntegrityViolationException;
-import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
-import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
 
 @ManagedObject( category = false )
@@ -208,28 +205,6 @@ public class NonJavaKeyStoreImpl extends AbstractConfiguredObject<NonJavaKeyStor
     protected void doActivate()
     {
         setState(State.ACTIVE);
-    }
-
-    @Override
-    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
-    {
-        if (desiredState == State.DELETED)
-        {
-            if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), KeyStore.class, Operation.DELETE))
-            {
-                throw new AccessControlException("Deletion of key store is denied");
-            }
-        }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes)
-            throws AccessControlException
-    {
-        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), KeyStore.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting key store attributes is denied");
-        }
     }
 
     @Override

@@ -36,7 +36,6 @@ import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.util.BrokerTestHelper;
@@ -106,9 +105,7 @@ public class BDBHARemoteReplicationNodeTest extends QpidTestCase
         String remoteReplicationName = getName();
         BDBHARemoteReplicationNode remoteReplicationNode = createRemoteReplicationNode(remoteReplicationName);
 
-        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseVirtualHostNode(
-                remoteReplicationName,
-                Operation.UPDATE);
+        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseUpdate(remoteReplicationNode);
 
         assertNull(remoteReplicationNode.getDescription());
 
@@ -130,9 +127,7 @@ public class BDBHARemoteReplicationNodeTest extends QpidTestCase
         String remoteReplicationName = getName();
         BDBHARemoteReplicationNode remoteReplicationNode = createRemoteReplicationNode(remoteReplicationName);
 
-        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseVirtualHostNode(
-                remoteReplicationName,
-                Operation.DELETE);
+        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseDelete(remoteReplicationNode);
 
         assertNull(remoteReplicationNode.getDescription());
 

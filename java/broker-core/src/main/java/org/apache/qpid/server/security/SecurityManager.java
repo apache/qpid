@@ -20,13 +20,12 @@ package org.apache.qpid.server.security;
 
 import static org.apache.qpid.server.security.access.ObjectType.BROKER;
 import static org.apache.qpid.server.security.access.ObjectType.EXCHANGE;
-import static org.apache.qpid.server.security.access.ObjectType.GROUP;
 import static org.apache.qpid.server.security.access.ObjectType.METHOD;
 import static org.apache.qpid.server.security.access.ObjectType.QUEUE;
 import static org.apache.qpid.server.security.access.ObjectType.USER;
-import static org.apache.qpid.server.security.access.ObjectType.VIRTUALHOST;
-import static org.apache.qpid.server.security.access.ObjectType.VIRTUALHOSTNODE;
-import static org.apache.qpid.server.security.access.Operation.*;
+import static org.apache.qpid.server.security.access.Operation.ACCESS_LOGS;
+import static org.apache.qpid.server.security.access.Operation.PUBLISH;
+import static org.apache.qpid.server.security.access.Operation.PURGE;
 
 import java.security.AccessControlException;
 import java.security.AccessController;
@@ -39,15 +38,35 @@ import java.util.concurrent.ConcurrentMap;
 
 import javax.security.auth.Subject;
 
-import org.apache.qpid.server.binding.BindingImpl;
-import org.apache.qpid.server.consumer.ConsumerImpl;
-import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.AccessControlProvider;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.model.Connection;
+import org.apache.qpid.server.model.Consumer;
+import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.model.ExclusivityPolicy;
+import org.apache.qpid.server.model.Group;
+import org.apache.qpid.server.model.GroupMember;
+import org.apache.qpid.server.model.GroupProvider;
+import org.apache.qpid.server.model.KeyStore;
+import org.apache.qpid.server.model.LifetimePolicy;
+import org.apache.qpid.server.model.Model;
+import org.apache.qpid.server.model.Plugin;
+import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.model.RemoteReplicationNode;
+import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.TrustStore;
+import org.apache.qpid.server.model.User;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostAlias;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
-import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueConsumer;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectProperties.Property;
 import org.apache.qpid.server.security.access.ObjectType;
@@ -58,20 +77,22 @@ import org.apache.qpid.server.security.auth.TaskPrincipal;
 
 public class SecurityManager
 {
+    private static final Logger LOGGER = Logger.getLogger(SecurityManager.class);
+
     private static final Subject SYSTEM = new Subject(true,
                                                      Collections.singleton(new SystemPrincipal()),
                                                      Collections.emptySet(),
                                                      Collections.emptySet());
 
     private final boolean _managementMode;
-    private final Broker<?> _broker;
+    private final ConfiguredObject<?> _aclProvidersParent;
 
-    private final ConcurrentMap<PublishAccessCheckCacheEntry, PublishAccessCheck> _publishAccessCheckCache = new ConcurrentHashMap<PublishAccessCheckCacheEntry, SecurityManager.PublishAccessCheck>();
+    private final ConcurrentMap<PublishAccessCheckCacheEntry, PublishAccessCheck> _publishAccessCheckCache = new ConcurrentHashMap<>();
 
-    public SecurityManager(Broker<?> broker, boolean managementMode)
+    public SecurityManager(ConfiguredObject<?> aclProvidersParent, boolean managementMode)
     {
         _managementMode = managementMode;
-        _broker = broker;
+        _aclProvidersParent = aclProvidersParent;
     }
 
     public static Subject getSubjectWithAddedSystemRights()
@@ -97,11 +118,6 @@ public class SecurityManager
         subject.getPrincipals().add(new TaskPrincipal(taskName));
         subject.setReadOnly();
         return subject;
-    }
-
-    private String getPluginTypeName(AccessControl accessControl)
-    {
-        return accessControl.getClass().getName();
     }
 
     public static boolean isSystemProcess()
@@ -161,7 +177,7 @@ public class SecurityManager
         }
 
 
-        Collection<AccessControlProvider<?>> accessControlProviders = _broker.getAccessControlProviders();
+        Collection<AccessControlProvider> accessControlProviders = _aclProvidersParent.getChildren(AccessControlProvider.class);
         if(accessControlProviders != null && !accessControlProviders.isEmpty())
         {
             AccessControlProvider<?> accessControlProvider = accessControlProviders.iterator().next();
@@ -182,22 +198,6 @@ public class SecurityManager
         }
         // getting here means either allowed or abstained from all plugins
         return true;
-    }
-
-    public void authoriseCreateBinding(final BindingImpl binding)
-    {
-        boolean allowed = checkAllPlugins(new AccessCheck()
-        {
-            Result allowed(AccessControl plugin)
-            {
-                return plugin.authorise(BIND, EXCHANGE, new ObjectProperties(binding));
-            }
-        });
-
-        if(!allowed)
-        {
-            throw new AccessControlException("Permission denied: binding " + binding.getBindingKey());
-        }
     }
 
     public void authoriseMethod(final Operation operation, final String componentName, final String methodName, final String virtualHostName)
@@ -239,176 +239,300 @@ public class SecurityManager
         }
     }
 
-    public void authoriseVirtualHostNode(final String virtualHostNodeName, final Operation operation)
-    {
-        if(!checkAllPlugins(new AccessCheck()
-        {
-            Result allowed(AccessControl plugin)
-            {
-                ObjectProperties properties = new ObjectProperties(virtualHostNodeName);
-                return plugin.authorise(operation, VIRTUALHOSTNODE, properties);
-            }
-        }))
-        {
-            throw new AccessControlException(operation + " permission denied for " + VIRTUALHOSTNODE
-                                             + " : " + virtualHostNodeName);
-        }
-    }
-
-    public void authoriseVirtualHost(final String virtualHostName, final Operation operation)
-    {
-        if(!checkAllPlugins(new AccessCheck()
-        {
-            Result allowed(AccessControl plugin)
-            {
-                // We put the name into the properties under both name and virtualhost_name so the user may express predicates using either.
-                ObjectProperties properties = new ObjectProperties(virtualHostName);
-                properties.put(Property.VIRTUALHOST_NAME, virtualHostName);
-                return plugin.authorise(operation, VIRTUALHOST, properties);
-            }
-        }))
-        {
-            throw new AccessControlException(operation + " permission denied for " + VIRTUALHOST
-                                             + " : " + virtualHostName);
-        }
-    }
-
     public void authoriseCreateConnection(final AMQConnectionModel connection)
     {
         String virtualHostName = connection.getVirtualHostName();
-        try
-        {
-            authoriseVirtualHost(virtualHostName, Operation.ACCESS);
-        }
-        catch (AccessControlException ace)
+        ObjectProperties properties = new ObjectProperties(virtualHostName);
+        properties.put(Property.VIRTUALHOST_NAME, virtualHostName);
+        if (!checkAllPlugins(ObjectType.VIRTUALHOST,  properties, Operation.ACCESS))
         {
             throw new AccessControlException("Permission denied: " + virtualHostName);
         }
     }
 
-    public void authoriseCreateConsumer(final ConsumerImpl consumer)
+    public void authoriseCreate(ConfiguredObject<?> object)
     {
-        // TODO - remove cast to AMQQueue and allow testing of consumption from any MessageSource
-        final AMQQueue queue = (AMQQueue) consumer.getMessageSource();
+        authorise(Operation.CREATE, object);
+    }
 
-        if(!checkAllPlugins(new AccessCheck()
+    public void authoriseUpdate(ConfiguredObject<?> configuredObject)
+    {
+        authorise(Operation.UPDATE, configuredObject);
+    }
+
+    public void authoriseDelete(ConfiguredObject<?> configuredObject)
+    {
+        authorise(Operation.DELETE, configuredObject);
+    }
+
+    public void authorise(Operation operation, ConfiguredObject<?> configuredObject)
+    {
+        // If we are running as SYSTEM then no ACL checking
+        if(isSystemProcess() || _managementMode)
         {
-            Result allowed(AccessControl plugin)
+            return;
+        }
+
+        if (Operation.CREATE == operation && configuredObject instanceof RemoteReplicationNode)
+        {
+            // creation of remote replication node is out of control for user of this broker
+            return;
+        }
+
+        Class<? extends ConfiguredObject> categoryClass = configuredObject.getCategoryClass();
+        ObjectType objectType = getACLObjectTypeManagingConfiguredObjectOfCategory(categoryClass);
+        if (objectType == null)
+        {
+            LOGGER.warn("Cannot determine object type for " + configuredObject.getName() + " of category "
+                    + categoryClass + ". Skipping ACL check...");
+            return;
+        }
+
+        ObjectProperties properties = getACLObjectProperties(configuredObject, operation);
+        Operation authoriseOperation = validateAuthoriseOperation(operation, categoryClass);
+        if(!checkAllPlugins(objectType, properties, authoriseOperation))
+        {
+            String objectName = (String)configuredObject.getAttribute(ConfiguredObject.NAME);
+            StringBuilder exceptionMessage = new StringBuilder(String.format("Permission %s %s is denied for : %s %s '%s'",
+                    authoriseOperation.name(), objectType.name(), operation.name(), categoryClass.getSimpleName(), objectName ));
+            Model model = getModel();
+
+            Collection<Class<? extends ConfiguredObject>> parentClasses = model.getParentTypes(categoryClass);
+            if (parentClasses != null)
             {
-                return plugin.authorise(CONSUME, QUEUE, new ObjectProperties(queue));
+                exceptionMessage.append(" on");
+                for (Class<? extends ConfiguredObject> parentClass: parentClasses)
+                {
+                    String objectCategory = parentClass.getSimpleName();
+                    ConfiguredObject<?> parent = configuredObject.getParent(parentClass);
+                    exceptionMessage.append(" ").append(objectCategory);
+                    if (parent != null)
+                    {
+                        exceptionMessage.append(" '").append(parent.getAttribute(ConfiguredObject.NAME)).append("'");
+                    }
+                }
             }
-        }))
-        {
-            throw new AccessControlException("Permission denied: consume from queue '" + queue.getName() + "'.");
+            throw new AccessControlException(exceptionMessage.toString());
         }
     }
 
-    public void authoriseCreateExchange(final ExchangeImpl exchange)
+    private Model getModel()
     {
-        final String exchangeName = exchange.getName();
-        if(!checkAllPlugins(new AccessCheck()
+        return _aclProvidersParent.getModel();
+    }
+
+    private boolean checkAllPlugins(final ObjectType objectType, final ObjectProperties properties, final Operation authoriseOperation)
+    {
+        return checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
-                return plugin.authorise(CREATE, EXCHANGE, new ObjectProperties(exchange));
+                return plugin.authorise(authoriseOperation, objectType, properties);
             }
-        }))
-        {
-            throw new AccessControlException("Permission denied: exchange-name '" + exchangeName + "'");
-        }
+        });
     }
 
-    public void authoriseCreateQueue(final AMQQueue queue)
+    private Operation validateAuthoriseOperation(Operation operation, Class<? extends ConfiguredObject> category)
     {
-        final String queueName = queue.getName();
-        if(! checkAllPlugins(new AccessCheck()
+        if (operation == Operation.CREATE || operation == Operation.UPDATE)
         {
-            Result allowed(AccessControl plugin)
+            if (Binding.class.isAssignableFrom(category))
             {
-                return plugin.authorise(CREATE, QUEUE, new ObjectProperties(queue));
+                // CREATE BINDING is transformed into BIND EXCHANGE rule
+                return Operation.BIND;
             }
-        }))
-        {
-            throw new AccessControlException("Permission denied: queue-name '" + queueName + "'");
-        }
-    }
-
-
-    public void authoriseDelete(final AMQQueue queue)
-    {
-        if(!checkAllPlugins(new AccessCheck()
-        {
-            Result allowed(AccessControl plugin)
+            else if (Consumer.class.isAssignableFrom(category))
             {
-                return plugin.authorise(DELETE, QUEUE, new ObjectProperties(queue));
+                // CREATE CONSUMER is transformed into CONSUME QUEUE rule
+                return Operation.CONSUME;
             }
-        }))
-        {
-            throw new AccessControlException("Permission denied, delete queue: " + queue.getName());
-        }
-    }
-
-
-    public void authoriseUpdate(final AMQQueue queue)
-    {
-        if(!checkAllPlugins(new AccessCheck()
-        {
-            Result allowed(AccessControl plugin)
+            else if (GroupMember.class.isAssignableFrom(category))
             {
-                return plugin.authorise(UPDATE, QUEUE, new ObjectProperties(queue));
+                // CREATE GROUP MEMBER is transformed into UPDATE GROUP rule
+                return Operation.UPDATE;
             }
-        }))
-        {
-            throw new AccessControlException("Permission denied: update queue: " + queue.getName());
-        }
-    }
-
-
-    public void authoriseUpdate(final ExchangeImpl exchange)
-    {
-        if(!checkAllPlugins(new AccessCheck()
-        {
-            Result allowed(AccessControl plugin)
+            else if (isBrokerOrBrokerChild(category))
             {
-                return plugin.authorise(UPDATE, EXCHANGE, new ObjectProperties(exchange));
+                // CREATE/UPDATE broker child is transformed into CONFIGURE BROKER rule
+                return Operation.CONFIGURE;
             }
-        }))
-        {
-            throw new AccessControlException("Permission denied: update exchange: " + exchange.getName());
         }
-    }
-
-    public void authoriseDelete(final ExchangeImpl exchange)
-    {
-        if(! checkAllPlugins(new AccessCheck()
+        else if (operation == Operation.DELETE)
         {
-            Result allowed(AccessControl plugin)
+            if (Binding.class.isAssignableFrom(category))
             {
-                return plugin.authorise(DELETE, EXCHANGE, new ObjectProperties(exchange));
+                // DELETE BINDING is transformed into UNBIND EXCHANGE rule
+                return Operation.UNBIND;
             }
-        }))
-        {
-            throw new AccessControlException("Permission denied, delete exchange: '" + exchange.getName() + "'");
-        }
-    }
-
-    public void authoriseGroupOperation(final Operation operation, final String groupName)
-    {
-        if(!checkAllPlugins(new AccessCheck()
-        {
-            Result allowed(AccessControl plugin)
+            else if (isBrokerOrBrokerChild(category))
             {
-                return plugin.authorise(operation, GROUP, new ObjectProperties(groupName));
+                // DELETE broker child is transformed into CONFIGURE BROKER rule
+                return Operation.CONFIGURE;
             }
-        }))
-        {
-            throw new AccessControlException("Do not have permission" +
-                                             " to perform the " + operation + " on the group " + groupName);
+            else if (GroupMember.class.isAssignableFrom(category))
+            {
+                // DELETE GROUP MEMBER is transformed into UPDATE GROUP rule
+                return Operation.UPDATE;
+            }
         }
+        return operation;
     }
 
-    public void authoriseUserOperation(final Operation operation, final String userName)
+    private boolean isBrokerOrBrokerChild(Class<? extends ConfiguredObject> category)
     {
+        return Broker.class.isAssignableFrom(category)
+                || Port.class.isAssignableFrom(category)
+                || AuthenticationProvider.class.isAssignableFrom(category)
+                || AccessControlProvider.class.isAssignableFrom(category)
+                || GroupProvider.class.isAssignableFrom(category)
+                || KeyStore.class.isAssignableFrom(category)
+                || TrustStore.class.isAssignableFrom(category)
+                || Plugin.class.isAssignableFrom(category);
+    }
+
+    private ObjectProperties getACLObjectProperties(ConfiguredObject<?> configuredObject, Operation configuredObjectOperation)
+    {
+        String objectName = (String)configuredObject.getAttribute(ConfiguredObject.NAME);
+        Class<? extends ConfiguredObject> configuredObjectType = configuredObject.getCategoryClass();
+        ObjectProperties properties = new ObjectProperties(objectName);
+        if (configuredObject instanceof Binding)
+        {
+            Exchange<?> exchange = (Exchange<?>)configuredObject.getParent(Exchange.class);
+            Queue<?> queue = (Queue<?>)configuredObject.getParent(Queue.class);
+            properties.setName((String)exchange.getAttribute(Exchange.NAME));
+            properties.put(Property.QUEUE_NAME, (String)queue.getAttribute(Queue.NAME));
+            properties.put(Property.ROUTING_KEY, (String)configuredObject.getAttribute(Binding.NAME));
+            properties.put(Property.VIRTUALHOST_NAME, (String)queue.getParent(VirtualHost.class).getAttribute(VirtualHost.NAME));
+
+            // The temporary attribute (inherited from the binding's queue) seems to exist to allow the user to
+            // express rules about the binding of temporary queues (whose names cannot be predicted).
+            properties.put(Property.TEMPORARY, queue.getAttribute(Queue.LIFETIME_POLICY) != LifetimePolicy.PERMANENT);
+            properties.put(Property.DURABLE, (Boolean)queue.getAttribute(Queue.DURABLE));
+        }
+        else if (configuredObject instanceof Queue)
+        {
+            setQueueProperties(configuredObject, properties);
+        }
+        else if (configuredObject instanceof Exchange)
+        {
+            Object lifeTimePolicy = configuredObject.getAttribute(ConfiguredObject.LIFETIME_POLICY);
+            properties.put(Property.AUTO_DELETE, lifeTimePolicy != LifetimePolicy.PERMANENT);
+            properties.put(Property.TEMPORARY, lifeTimePolicy != LifetimePolicy.PERMANENT);
+            properties.put(Property.DURABLE, (Boolean) configuredObject.getAttribute(ConfiguredObject.DURABLE));
+            properties.put(Property.TYPE, (String) configuredObject.getAttribute(Exchange.TYPE));
+            VirtualHost virtualHost = configuredObject.getParent(VirtualHost.class);
+            properties.put(Property.VIRTUALHOST_NAME, (String)virtualHost.getAttribute(virtualHost.NAME));
+        }
+        else if (configuredObject instanceof QueueConsumer)
+        {
+            Queue<?> queue = (Queue<?>)configuredObject.getParent(Queue.class);
+            setQueueProperties(queue, properties);
+        }
+        else if (isBrokerOrBrokerChild(configuredObjectType))
+        {
+            String description = String.format("%s %s '%s'",
+                    configuredObjectOperation == null? null : configuredObjectOperation.name().toLowerCase(),
+                    configuredObjectType == null ? null : configuredObjectType.getSimpleName().toLowerCase(),
+                    objectName);
+            properties = new OperationLoggingDetails(description);
+        }
+        return properties;
+    }
+
+    private void setQueueProperties(ConfiguredObject<?>  queue, ObjectProperties properties)
+    {
+        properties.setName((String)queue.getAttribute(Exchange.NAME));
+        Object lifeTimePolicy = queue.getAttribute(ConfiguredObject.LIFETIME_POLICY);
+        properties.put(Property.AUTO_DELETE, lifeTimePolicy!= LifetimePolicy.PERMANENT);
+        properties.put(Property.TEMPORARY, lifeTimePolicy != LifetimePolicy.PERMANENT);
+        properties.put(Property.DURABLE, (Boolean)queue.getAttribute(ConfiguredObject.DURABLE));
+        properties.put(Property.EXCLUSIVE, queue.getAttribute(Queue.EXCLUSIVE) != ExclusivityPolicy.NONE);
+        Object alternateExchange = queue.getAttribute(Queue.ALTERNATE_EXCHANGE);
+        if (alternateExchange != null)
+        {
+            String name = alternateExchange instanceof ConfiguredObject ?
+                    (String)((ConfiguredObject)alternateExchange).getAttribute(ConfiguredObject.NAME) :
+                    String.valueOf(alternateExchange);
+            properties.put(Property.ALTERNATE,name);
+        }
+        String owner = (String)queue.getAttribute(Queue.OWNER);
+        if (owner != null)
+        {
+            properties.put(Property.OWNER, owner);
+        }
+        VirtualHost virtualHost = queue.getParent(VirtualHost.class);
+        properties.put(Property.VIRTUALHOST_NAME, (String)virtualHost.getAttribute(virtualHost.NAME));
+    }
+
+    private ObjectType getACLObjectTypeManagingConfiguredObjectOfCategory(Class<? extends ConfiguredObject> category)
+    {
+        if (Binding.class.isAssignableFrom(category))
+        {
+            return ObjectType.EXCHANGE;
+        }
+        else if (VirtualHostNode.class.isAssignableFrom(category))
+        {
+            return ObjectType.VIRTUALHOSTNODE;
+        }
+        else if (isBrokerOrBrokerChild(category))
+        {
+            return ObjectType.BROKER;
+        }
+        else if (Group.class.isAssignableFrom(category))
+        {
+            return ObjectType.GROUP;
+        }
+        else if (GroupMember.class.isAssignableFrom(category))
+        {
+            // UPDATE GROUP
+            return ObjectType.GROUP;
+        }
+        else if (User.class.isAssignableFrom(category))
+        {
+            return ObjectType.USER;
+        }
+        else if (VirtualHost.class.isAssignableFrom(category))
+        {
+            return ObjectType.VIRTUALHOST;
+        }
+        else if (VirtualHostAlias.class.isAssignableFrom(category))
+        {
+            return ObjectType.VIRTUALHOST;
+        }
+        else if (Queue.class.isAssignableFrom(category))
+        {
+            return ObjectType.QUEUE;
+        }
+        else if (Exchange.class.isAssignableFrom(category))
+        {
+            return ObjectType.EXCHANGE;
+        }
+        else if (Connection.class.isAssignableFrom(category))
+        {
+            // ACCESS VIRTUALHOST
+            return ObjectType.VIRTUALHOST;
+        }
+        else if (Session.class.isAssignableFrom(category))
+        {
+            // PUBLISH EXCHANGE
+            return ObjectType.EXCHANGE;
+        }
+        else if (Consumer.class.isAssignableFrom(category))
+        {
+            // CONSUME QUEUE
+            return ObjectType.QUEUE;
+        }
+        else if (RemoteReplicationNode.class.isAssignableFrom(category))
+        {
+            // VHN permissions apply to remote nodes
+            return ObjectType.VIRTUALHOSTNODE;
+        }
+        return null;
+    }
+
+    public void authoriseUserUpdate(final String userName)
+    {
+        final Operation operation = Operation.UPDATE;
         if(! checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
@@ -437,34 +561,21 @@ public class SecurityManager
         }
     }
 
-    public void authorisePurge(final AMQQueue queue)
+    public void authorisePurge(final Queue queue)
     {
+        final ObjectProperties properties = new ObjectProperties();
+        setQueueProperties(queue, properties);
         if(!checkAllPlugins(new AccessCheck()
         {
             Result allowed(AccessControl plugin)
             {
-                return plugin.authorise(PURGE, QUEUE, new ObjectProperties(queue));
+                return plugin.authorise(PURGE, QUEUE, properties);
             }
         }))
         {
             throw new AccessControlException("Permission denied: queue " + queue.getName());
         }
     }
-
-    public void authoriseUnbind(final BindingImpl binding)
-    {
-        if(! checkAllPlugins(new AccessCheck()
-        {
-            Result allowed(AccessControl plugin)
-            {
-                return plugin.authorise(UNBIND, EXCHANGE, new ObjectProperties(binding));
-            }
-        }))
-        {
-            throw new AccessControlException("Permission denied: unbinding " + binding.getBindingKey());
-        }
-    }
-
 
     private class PublishAccessCheck extends AccessCheck
     {
@@ -479,22 +590,6 @@ public class SecurityManager
         {
             return plugin.authorise(PUBLISH, EXCHANGE, _props);
         }
-    }
-
-    public boolean authoriseConfiguringBroker(String configuredObjectName, Class<? extends ConfiguredObject> configuredObjectType, Operation configuredObjectOperation)
-    {
-        String description = String.format("%s %s '%s'",
-                configuredObjectOperation == null? null : configuredObjectOperation.name().toLowerCase(),
-                configuredObjectType == null ? null : configuredObjectType.getSimpleName().toLowerCase(),
-                configuredObjectName);
-        final OperationLoggingDetails properties = new OperationLoggingDetails(description);
-        return checkAllPlugins(new AccessCheck()
-        {
-            Result allowed(AccessControl plugin)
-            {
-                return plugin.authorise(CONFIGURE, BROKER, properties);
-            }
-        });
     }
 
     public boolean authoriseLogsAccess()

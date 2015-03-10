@@ -268,12 +268,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     }
 
     @Override
-    protected void validateOnCreate()
-    {
-        _virtualHost.getSecurityManager().authoriseCreateQueue(this);
-    }
-
-    @Override
     protected void onCreate()
     {
         super.onCreate();
@@ -3004,12 +2998,6 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                 this.getVirtualHost().getDurableConfigurationStore().update(false, asObjectRecord());
             }
         }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
-    {
-        _virtualHost.getSecurityManager().authoriseUpdate(this);
     }
 
     int getMaxAsyncDeliveries()

@@ -49,7 +49,7 @@ import org.apache.qpid.util.FileUtils;
 
 public class FileKeyStoreTest extends QpidTestCase
 {
-    private final Broker<?> _broker = mock(Broker.class);
+    private final Broker _broker = mock(Broker.class);
     private final TaskExecutor _taskExecutor = CurrentThreadTaskExecutor.newStartedInstance();
     private final SecurityManager _securityManager = mock(SecurityManager.class);
     private final Model _model = BrokerModel.getInstance();
@@ -63,6 +63,7 @@ public class FileKeyStoreTest extends QpidTestCase
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
         when(_broker.getModel()).thenReturn(_model);
         when(_broker.getSecurityManager()).thenReturn(_securityManager);
+        when(_broker.getCategoryClass()).thenReturn(Broker.class);
     }
 
     public void testCreateKeyStoreFromFile_Success() throws Exception
@@ -237,9 +238,6 @@ public class FileKeyStoreTest extends QpidTestCase
 
     public void testUpdateKeyStore_Success() throws Exception
     {
-
-        when(_securityManager.authoriseConfiguringBroker(any(String.class), (Class<? extends ConfiguredObject>)any(), any(Operation.class))).thenReturn(true);
-
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
         attributes.put(FileKeyStore.STORE_URL, TestSSLConstants.BROKER_KEYSTORE);
@@ -278,9 +276,6 @@ public class FileKeyStoreTest extends QpidTestCase
 
     public void testDeleteKeyStore_Success() throws Exception
     {
-
-        when(_securityManager.authoriseConfiguringBroker(any(String.class), (Class<? extends ConfiguredObject>)any(), any(Operation.class))).thenReturn(true);
-
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
         attributes.put(FileKeyStore.STORE_URL, TestSSLConstants.BROKER_KEYSTORE);
@@ -293,10 +288,6 @@ public class FileKeyStoreTest extends QpidTestCase
 
     public void testDeleteKeyStore_KeyManagerInUseByPort() throws Exception
     {
-        when(_securityManager.authoriseConfiguringBroker(any(String.class),
-                                                         any(Class.class),
-                                                         any(Operation.class))).thenReturn(true);
-
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileKeyStore.NAME, "myFileKeyStore");
         attributes.put(FileKeyStore.STORE_URL, TestSSLConstants.BROKER_KEYSTORE);

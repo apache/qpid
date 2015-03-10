@@ -22,14 +22,10 @@
 package org.apache.qpid.server.security.access.plugins;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import javax.security.auth.Subject;
 
-import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLoggerProvider;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
@@ -65,8 +61,6 @@ public class RuleSetTest extends QpidTestCase
     private String _exchangeName = "amq.direct";
     private String _exchangeType = "direct";
     private Subject _testSubject = TestPrincipalUtils.createTestSubject(TEST_USER);
-    private AMQQueue<?> _queue;
-    private VirtualHost<?,?,?> _virtualHost;
 
     @Override
     public void setUp() throws Exception
@@ -74,11 +68,6 @@ public class RuleSetTest extends QpidTestCase
         super.setUp();
 
         _ruleSet = new RuleSet(mock(EventLoggerProvider.class));
-
-        _virtualHost = mock(VirtualHost.class);
-        _queue = mock(AMQQueue.class);
-        when(_queue.getName()).thenReturn(_queueName);
-        when(_queue.getParent(VirtualHost.class)).thenReturn(_virtualHost);
     }
 
     @Override
@@ -178,11 +167,13 @@ public class RuleSetTest extends QpidTestCase
     {
         _ruleSet.grant(0, TEST_USER, Permission.ALLOW, Operation.CREATE, ObjectType.QUEUE, new ObjectProperties(Property.VIRTUALHOST_NAME, ALLOWED_VH));
 
-        when(_virtualHost.getName()).thenReturn(ALLOWED_VH);
-        assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.CREATE, ObjectType.QUEUE, new ObjectProperties(_queue)));
+        ObjectProperties allowedQueueObjectProperties = new ObjectProperties(_queueName);
+        allowedQueueObjectProperties.put(Property.VIRTUALHOST_NAME, ALLOWED_VH);
+        assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.CREATE, ObjectType.QUEUE, new ObjectProperties(allowedQueueObjectProperties)));
 
-        when(_virtualHost.getName()).thenReturn(DENIED_VH);
-        assertEquals(Result.DEFER, _ruleSet.check(_testSubject, Operation.CREATE, ObjectType.QUEUE, new ObjectProperties(_queue)));
+        ObjectProperties deniedQueueObjectProperties = new ObjectProperties(_queueName);
+        deniedQueueObjectProperties.put(Property.VIRTUALHOST_NAME, DENIED_VH);
+        assertEquals(Result.DEFER, _ruleSet.check(_testSubject, Operation.CREATE, ObjectType.QUEUE, deniedQueueObjectProperties));
     }
 
     public void testQueueCreateNamedNullRoutingKey()
@@ -197,15 +188,16 @@ public class RuleSetTest extends QpidTestCase
     {
         _ruleSet.grant(0, TEST_USER, Permission.ALLOW, Operation.CREATE, ObjectType.EXCHANGE, new ObjectProperties(Property.VIRTUALHOST_NAME, ALLOWED_VH));
 
-        ExchangeImpl<?> exchange = mock(ExchangeImpl.class);
-        when(exchange.getParent(VirtualHost.class)).thenReturn(_virtualHost);
-        when(exchange.getType()).thenReturn(_exchangeType);
-        when(_virtualHost.getName()).thenReturn(ALLOWED_VH);
+        ObjectProperties allowedExchangeProperties = new ObjectProperties(_exchangeName);
+        allowedExchangeProperties.put(Property.TYPE, _exchangeType);
+        allowedExchangeProperties.put(Property.VIRTUALHOST_NAME, ALLOWED_VH);
 
-        assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.CREATE, ObjectType.EXCHANGE, new ObjectProperties(exchange)));
+        assertEquals(Result.ALLOWED, _ruleSet.check(_testSubject, Operation.CREATE, ObjectType.EXCHANGE, allowedExchangeProperties));
 
-        when(_virtualHost.getName()).thenReturn(DENIED_VH);
-        assertEquals(Result.DEFER, _ruleSet.check(_testSubject, Operation.CREATE, ObjectType.EXCHANGE, new ObjectProperties(exchange)));
+        ObjectProperties deniedExchangeProperties = new ObjectProperties(_exchangeName);
+        deniedExchangeProperties.put(Property.TYPE, _exchangeType);
+        deniedExchangeProperties.put(Property.VIRTUALHOST_NAME, DENIED_VH);
+        assertEquals(Result.DEFER, _ruleSet.check(_testSubject, Operation.CREATE, ObjectType.EXCHANGE, deniedExchangeProperties));
     }
 
     public void testExchangeCreate()

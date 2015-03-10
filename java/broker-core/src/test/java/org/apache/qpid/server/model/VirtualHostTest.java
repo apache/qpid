@@ -64,7 +64,7 @@ public class VirtualHostTest extends QpidTestCase
     private final SecurityManager _mockSecurityManager = mock(SecurityManager.class);
     private Broker _broker;
     private TaskExecutor _taskExecutor;
-    private VirtualHostNode<?> _virtualHostNode;
+    private VirtualHostNode _virtualHostNode;
     private DurableConfigurationStore _configStore;
     private VirtualHost<?, ?, ?> _virtualHost;
     private StoreConfigurationChangeListener _storeConfigurationChangeListener;
@@ -81,6 +81,8 @@ public class VirtualHostTest extends QpidTestCase
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
 
         _virtualHostNode = mock(VirtualHostNode.class);
+        when(_virtualHostNode.getParent(Broker.class)).thenReturn(_broker);
+        when(_virtualHostNode.getCategoryClass()).thenReturn(VirtualHostNode.class);
         when(_virtualHostNode.isDurable()).thenReturn(true);
         _configStore = mock(DurableConfigurationStore.class);
         _storeConfigurationChangeListener = new StoreConfigurationChangeListener(_configStore);
@@ -328,9 +330,7 @@ public class VirtualHostTest extends QpidTestCase
         String virtualHostName = getName();
         VirtualHost<?,?,?> virtualHost = createVirtualHost(virtualHostName);
 
-        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseVirtualHost(
-                virtualHostName,
-                Operation.UPDATE);
+        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseUpdate(virtualHost);
 
         assertNull(virtualHost.getDescription());
 
@@ -354,9 +354,7 @@ public class VirtualHostTest extends QpidTestCase
         String virtualHostName = getName();
         VirtualHost<?,?,?> virtualHost = createVirtualHost(virtualHostName);
 
-        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseVirtualHost(
-                virtualHostName,
-                Operation.UPDATE);
+        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseUpdate(virtualHost);
 
         try
         {
@@ -378,9 +376,7 @@ public class VirtualHostTest extends QpidTestCase
         String virtualHostName = getName();
         VirtualHost<?,?,?> virtualHost = createVirtualHost(virtualHostName);
 
-        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseVirtualHost(
-                virtualHostName,
-                Operation.DELETE);
+        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseDelete(virtualHost);
 
         try
         {
