@@ -822,8 +822,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 }
                 catch(RuntimeException e)
                 {
+                    exceptionHandler.handleException(e, AbstractConfiguredObject.this);
                     returnVal.set(null);
-                    throw e;
                 }
             }
         });
