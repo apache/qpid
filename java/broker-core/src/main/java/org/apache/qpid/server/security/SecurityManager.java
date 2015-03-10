@@ -532,6 +532,13 @@ public class SecurityManager
 
     public void authoriseUserUpdate(final String userName)
     {
+        AuthenticatedPrincipal principal = getCurrentUser();
+        if (principal != null && principal.getName().equals(userName))
+        {
+            // allow user to update its own data
+            return;
+        }
+
         final Operation operation = Operation.UPDATE;
         if(! checkAllPlugins(new AccessCheck()
         {
