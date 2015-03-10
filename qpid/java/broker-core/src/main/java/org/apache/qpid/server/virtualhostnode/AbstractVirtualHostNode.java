@@ -26,7 +26,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -60,7 +59,6 @@ import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.plugin.ConfiguredObjectRegistration;
 import org.apache.qpid.server.plugin.QpidServiceLoader;
-import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.ConfiguredObjectRecordConverter;
@@ -240,43 +238,6 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     protected void onClose()
     {
         closeConfigurationStore();
-    }
-
-    @Override
-    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
-    {
-        if(desiredState == State.DELETED)
-        {
-            _broker.getSecurityManager().authoriseVirtualHostNode(getName(), Operation.DELETE);
-        }
-        else
-        {
-            _broker.getSecurityManager().authoriseVirtualHostNode(getName(), Operation.UPDATE);
-        }
-    }
-
-    @Override
-    protected <C extends ConfiguredObject> void authoriseCreateChild(final Class<C> childClass,
-                                                                     final Map<String, Object> attributes,
-                                                                     final ConfiguredObject... otherParents)
-            throws AccessControlException
-    {
-        if (childClass == VirtualHost.class)
-        {
-            _broker.getSecurityManager().authoriseVirtualHost(String.valueOf(attributes.get(VirtualHost.NAME)),
-                                                              Operation.CREATE);
-
-        }
-        else
-        {
-            super.authoriseCreateChild(childClass, attributes, otherParents);
-        }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
-    {
-        _broker.getSecurityManager().authoriseVirtualHostNode(getName(), Operation.UPDATE);
     }
 
     private void closeConfigurationStore()

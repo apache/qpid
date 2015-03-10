@@ -53,7 +53,7 @@ import org.apache.qpid.util.FileUtils;
 
 public class FileTrustStoreTest extends QpidTestCase
 {
-    private final Broker<?> _broker = mock(Broker.class);
+    private final Broker _broker = mock(Broker.class);
     private final TaskExecutor _taskExecutor = CurrentThreadTaskExecutor.newStartedInstance();
     private final SecurityManager _securityManager = mock(SecurityManager.class);
     private final Model _model = BrokerModel.getInstance();
@@ -66,7 +66,7 @@ public class FileTrustStoreTest extends QpidTestCase
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
         when(_broker.getModel()).thenReturn(_model);
         when(_broker.getSecurityManager()).thenReturn(_securityManager);
-
+        when(_broker.getCategoryClass()).thenReturn(Broker.class);
     }
 
     public void testCreateTrustStoreFromFile_Success() throws Exception
@@ -186,9 +186,6 @@ public class FileTrustStoreTest extends QpidTestCase
 
     public void testUpdateTrustStore_Success() throws Exception
     {
-
-        when(_securityManager.authoriseConfiguringBroker(any(String.class), (Class<? extends ConfiguredObject>)any(), any(Operation.class))).thenReturn(true);
-
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileTrustStore.NAME, "myFileTrustStore");
         attributes.put(FileTrustStore.STORE_URL, TestSSLConstants.TRUSTSTORE);
@@ -228,9 +225,6 @@ public class FileTrustStoreTest extends QpidTestCase
 
     public void testDeleteTrustStore_Success() throws Exception
     {
-
-        when(_securityManager.authoriseConfiguringBroker(any(String.class), (Class<? extends ConfiguredObject>)any(), any(Operation.class))).thenReturn(true);
-
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileTrustStore.NAME, "myFileTrustStore");
         attributes.put(FileTrustStore.STORE_URL, TestSSLConstants.TRUSTSTORE);
@@ -244,10 +238,6 @@ public class FileTrustStoreTest extends QpidTestCase
 
     public void testDeleteTrustStore_TrustManagerInUseByAuthProvider() throws Exception
     {
-        when(_securityManager.authoriseConfiguringBroker(any(String.class),
-                                                         any(Class.class),
-                                                         any(Operation.class))).thenReturn(true);
-
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileTrustStore.NAME, "myFileTrustStore");
         attributes.put(FileTrustStore.STORE_URL, TestSSLConstants.TRUSTSTORE);
@@ -275,10 +265,6 @@ public class FileTrustStoreTest extends QpidTestCase
 
     public void testDeleteTrustStore_TrustManagerInUseByPort() throws Exception
     {
-        when(_securityManager.authoriseConfiguringBroker(any(String.class),
-                                                         any(Class.class),
-                                                         any(Operation.class))).thenReturn(true);
-
         Map<String,Object> attributes = new HashMap<>();
         attributes.put(FileTrustStore.NAME, "myFileTrustStore");
         attributes.put(FileTrustStore.STORE_URL, TestSSLConstants.TRUSTSTORE);

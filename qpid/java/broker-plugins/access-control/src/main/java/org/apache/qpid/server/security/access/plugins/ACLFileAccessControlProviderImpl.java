@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
-import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -30,7 +29,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
-import org.apache.qpid.server.model.AccessControlProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
@@ -38,7 +36,6 @@ import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.security.AccessControl;
-import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
 
 public class ACLFileAccessControlProviderImpl
@@ -206,27 +203,6 @@ public class ACLFileAccessControlProviderImpl
         deleted();
     }
 
-    @Override
-    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
-    {
-        if(desiredState == State.DELETED)
-        {
-            if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), AccessControlProvider.class, Operation.DELETE))
-            {
-                throw new AccessControlException("Deletion of AccessControlProvider is denied");
-            }
-        }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
-    {
-        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), AccessControlProvider.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting of AccessControlProvider attributes is denied");
-        }
-    }
-    
     public AccessControl getAccessControl()
     {
         return _accessControl;

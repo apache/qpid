@@ -70,27 +70,21 @@ public abstract class ConfigModelPasswordManagingAuthenticationProvider<X extend
             @Override
             public Boolean execute()
             {
-                getSecurityManager().authoriseUserOperation(Operation.CREATE, username);
-                if (_users.containsKey(username))
-                {
-                    throw new IllegalArgumentException("User '" + username + "' already exists");
-                }
 
                 Map<String, Object> userAttrs = new HashMap<>();
                 userAttrs.put(User.ID, UUID.randomUUID());
                 userAttrs.put(User.NAME, username);
-                userAttrs.put(User.PASSWORD, createStoredPassword(password));
+                userAttrs.put(User.PASSWORD, password);
                 userAttrs.put(User.TYPE, ManagedUser.MANAGED_USER_TYPE);
-                ManagedUser user = new ManagedUser(userAttrs, ConfigModelPasswordManagingAuthenticationProvider.this);
-                user.create();
-
-                return true;
+                User user = createChild(User.class, userAttrs);
+                return user != null;
 
             }
         });
     }
 
-    SecurityManager getSecurityManager()
+    @Override
+    protected SecurityManager getSecurityManager()
     {
         return getBroker().getSecurityManager();
     }
@@ -208,20 +202,15 @@ public abstract class ConfigModelPasswordManagingAuthenticationProvider<X extend
     {
         if(childClass == User.class)
         {
-            String username = (String) attributes.get("name");
-            String password = (String) attributes.get("password");
-
-            if(createUser(username, password,null))
+            String username = (String) attributes.get(User.NAME);
+            if (_users.containsKey(username))
             {
-                @SuppressWarnings("unchecked")
-                C user = (C) getUser(username);
-                return user;
+                throw new IllegalArgumentException("User '" + username + "' already exists");
             }
-            else
-            {
-                return null;
-
-            }
+            attributes.put(User.PASSWORD, createStoredPassword((String) attributes.get(User.PASSWORD)));
+            ManagedUser user = new ManagedUser(attributes, ConfigModelPasswordManagingAuthenticationProvider.this);
+            user.create();
+            return (C)getUser(username);
         }
         return super.addChild(childClass, attributes, otherParents);
     }

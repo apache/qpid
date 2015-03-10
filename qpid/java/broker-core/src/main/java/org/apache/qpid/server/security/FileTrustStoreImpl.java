@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessControlException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
@@ -50,7 +49,6 @@ import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.manager.SimpleLDAPAuthenticationManager;
 import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
 import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
@@ -145,27 +143,6 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     protected void doActivate()
     {
         setState(State.ACTIVE);
-    }
-
-    @Override
-    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
-    {
-        if(desiredState == State.DELETED)
-        {
-            if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), TrustStore.class, Operation.DELETE))
-            {
-                throw new AccessControlException("Deletion of key store is denied");
-            }
-        }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
-    {
-        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), TrustStore.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting key store attributes is denied");
-        }
     }
 
     @Override

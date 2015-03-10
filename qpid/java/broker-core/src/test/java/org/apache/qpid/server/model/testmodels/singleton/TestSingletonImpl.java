@@ -27,6 +27,7 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
+import org.apache.qpid.server.security.SecurityManager;
 
 @ManagedObject( category = false, type = TestSingletonImpl.TEST_SINGLETON_TYPE)
 public class TestSingletonImpl extends AbstractConfiguredObject<TestSingletonImpl>
@@ -35,6 +36,7 @@ public class TestSingletonImpl extends AbstractConfiguredObject<TestSingletonImp
     public static final String TEST_SINGLETON_TYPE = "testsingleton";
 
     public static final int DERIVED_VALUE = -100;
+    private final SecurityManager _securityManager;
 
     @ManagedAttributeField
     private String _automatedPersistedValue;
@@ -71,6 +73,7 @@ public class TestSingletonImpl extends AbstractConfiguredObject<TestSingletonImp
     public TestSingletonImpl(final Map<String, Object> attributes)
     {
         super(parentsMap(), attributes, newTaskExecutor(), TestModel.getInstance());
+        _securityManager = new SecurityManager(this, false);
     }
 
     private static CurrentThreadTaskExecutor newTaskExecutor()
@@ -84,6 +87,7 @@ public class TestSingletonImpl extends AbstractConfiguredObject<TestSingletonImp
                              final TaskExecutor taskExecutor)
     {
         super(parentsMap(), attributes, taskExecutor);
+        _securityManager = new SecurityManager(this, false);
     }
 
 
@@ -151,5 +155,11 @@ public class TestSingletonImpl extends AbstractConfiguredObject<TestSingletonImp
     public String getSecureValue()
     {
         return _secureValue;
+    }
+
+    @Override
+    protected SecurityManager getSecurityManager()
+    {
+        return _securityManager;
     }
 }

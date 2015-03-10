@@ -21,7 +21,6 @@
 package org.apache.qpid.server.virtualhost;
 
 import java.io.File;
-import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -74,7 +73,6 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueConsumer;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
@@ -421,25 +419,6 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return _connectionRegistry;
     }
 
-    @Override
-    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
-    {
-        if(desiredState == State.DELETED)
-        {
-            _broker.getSecurityManager().authoriseVirtualHost(getName(), Operation.DELETE);
-        }
-        else
-        {
-            _broker.getSecurityManager().authoriseVirtualHost(getName(), Operation.UPDATE);
-        }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
-    {
-        _broker.getSecurityManager().authoriseVirtualHost(getName(), Operation.UPDATE);
-    }
-
     public Collection<Connection> getConnections()
     {
         return getChildren(Connection.class);
@@ -665,11 +644,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
     public AMQQueue<?> createQueue(Map<String, Object> attributes) throws QueueExistsException
     {
-        checkVHostStateIsActive();
-
-        AMQQueue<?> queue = addQueue(attributes);
-        childAdded(queue);
-        return queue;
+        return (AMQQueue<?> )createChild(Queue.class, attributes);
     }
 
     private AMQQueue<?> addQueue(Map<String, Object> attributes) throws QueueExistsException
@@ -753,10 +728,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             throws ExchangeExistsException, ReservedExchangeNameException,
                    NoFactoryForTypeException
     {
-        checkVHostStateIsActive();
-        ExchangeImpl child = addExchange(attributes);
-        childAdded(child);
-        return child;
+        return (ExchangeImpl)createChild(Exchange.class, attributes);
     }
 
 

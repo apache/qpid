@@ -201,7 +201,7 @@ public class VirtualHostManagerMBeanTest extends TestCase
 
 
         _virtualHostManagerMBean.unregisterExchange(EXCHANGE_1_NAME);
-        verify(mockExchange).deleteWithChecks();
+        verify(mockExchange).delete();
     }
 
     public void testUnregisterExchangeWhenExchangeDoesNotExist() throws Exception

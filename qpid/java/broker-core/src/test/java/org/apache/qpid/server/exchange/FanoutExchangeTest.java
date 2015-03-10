@@ -32,6 +32,9 @@ import java.util.Set;
 import java.util.UUID;
 
 import junit.framework.TestCase;
+import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.VirtualHost;
+import org.apache.qpid.server.model.VirtualHostNode;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -63,14 +66,27 @@ public class FanoutExchangeTest extends TestCase
         attributes.put(Exchange.NAME, "test");
         attributes.put(Exchange.DURABLE, false);
 
+        Broker broker = mock(Broker.class);
+        SecurityManager securityManager = new SecurityManager(broker, false);
+        when(broker.getCategoryClass()).thenReturn(Broker.class);
+        when(broker.getModel()).thenReturn(BrokerModel.getInstance());
+        when(broker.getSecurityManager()).thenReturn(securityManager);
+
+        VirtualHostNode virtualHostNode = mock(VirtualHostNode.class);
+        when(virtualHostNode.getCategoryClass()).thenReturn(VirtualHostNode.class);
+        when(virtualHostNode.getParent(Broker.class)).thenReturn(broker);
+        when(virtualHostNode.getModel()).thenReturn(BrokerModel.getInstance());
+
         _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
         _virtualHost = mock(VirtualHostImpl.class);
-        SecurityManager securityManager = mock(SecurityManager.class);
+
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
         when(_virtualHost.getTaskExecutor()).thenReturn(_taskExecutor);
         when(_virtualHost.getModel()).thenReturn(BrokerModel.getInstance());
+        when(_virtualHost.getParent(VirtualHostNode.class)).thenReturn(virtualHostNode);
+        when(_virtualHost.getCategoryClass()).thenReturn(VirtualHost.class);
         _exchange = new FanoutExchange(attributes, _virtualHost);
         _exchange.open();
     }
@@ -134,6 +150,7 @@ public class FanoutExchangeTest extends TestCase
         when(queue.getCategoryClass()).thenReturn(Queue.class);
         when(queue.getModel()).thenReturn(BrokerModel.getInstance());
         when(queue.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
+        when(queue.getParent(VirtualHost.class)).thenReturn(_virtualHost);
         return queue;
     }
 

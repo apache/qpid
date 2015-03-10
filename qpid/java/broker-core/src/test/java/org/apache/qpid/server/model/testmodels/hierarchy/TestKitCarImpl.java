@@ -25,6 +25,7 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
+import org.apache.qpid.server.security.SecurityManager;
 
 @ManagedObject( category = false,
                 type = TestKitCarImpl.TEST_KITCAR_TYPE)
@@ -32,11 +33,13 @@ public class TestKitCarImpl extends AbstractConfiguredObject<TestKitCarImpl>
         implements TestKitCar<TestKitCarImpl>
 {
     public static final String TEST_KITCAR_TYPE = "testkitcar";
+    private final SecurityManager _securityManager;
 
     @ManagedObjectFactoryConstructor
     public TestKitCarImpl(final Map<String, Object> attributes)
     {
         super(parentsMap(), attributes, newTaskExecutor(), TestModel.getInstance());
+        _securityManager = new SecurityManager(this, false);
     }
 
     @Override
@@ -52,5 +55,11 @@ public class TestKitCarImpl extends AbstractConfiguredObject<TestKitCarImpl>
         CurrentThreadTaskExecutor currentThreadTaskExecutor = new CurrentThreadTaskExecutor();
         currentThreadTaskExecutor.start();
         return currentThreadTaskExecutor;
+    }
+
+    @Override
+    protected SecurityManager getSecurityManager()
+    {
+        return _securityManager;
     }
 }

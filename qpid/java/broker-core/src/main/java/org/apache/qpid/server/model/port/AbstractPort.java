@@ -21,7 +21,6 @@
 
 package org.apache.qpid.server.model.port;
 
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -43,7 +42,6 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.TrustStore;
-import org.apache.qpid.server.security.access.Operation;
 
 abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractConfiguredObject<X> implements Port<X>
 {
@@ -259,28 +257,6 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     {
         // no-op: expected to be overridden by subclass
         return State.ACTIVE;
-    }
-
-
-    @Override
-    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
-    {
-        if(desiredState == State.DELETED)
-        {
-            if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), Port.class, Operation.DELETE))
-            {
-                throw new AccessControlException("Deletion of port is denied");
-            }
-        }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
-    {
-        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), Port.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting of port attributes is denied");
-        }
     }
 
     @Override

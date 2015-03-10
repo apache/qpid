@@ -26,11 +26,6 @@ import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.qpid.server.binding.BindingImpl;
-import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.model.LifetimePolicy;
-import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.queue.AMQQueue;
 
 /**
  * An set of properties for an access control v2 rule {@link ObjectType}.
@@ -139,42 +134,6 @@ public class ObjectProperties
         setName(name);
     }
 
-    public ObjectProperties(AMQQueue queue)
-    {
-        setName(queue.getName());
-
-        put(Property.AUTO_DELETE, queue.getLifetimePolicy() != LifetimePolicy.PERMANENT);
-        put(Property.TEMPORARY, queue.getLifetimePolicy() != LifetimePolicy.PERMANENT);
-        put(Property.DURABLE, queue.isDurable());
-        put(Property.EXCLUSIVE, queue.isExclusive());
-        if (queue.getAlternateExchange() != null)
-        {
-	        put(Property.ALTERNATE, queue.getAlternateExchange().getName());
-        }
-        if (queue.getOwner() != null)
-        {
-            put(Property.OWNER, queue.getOwner());
-        }
-        put(Property.VIRTUALHOST_NAME, queue.getParent(VirtualHost.class).getName());
-    }
-
-    public ObjectProperties(BindingImpl binding)
-    {
-        ExchangeImpl<?> exch = binding.getExchange();
-        AMQQueue<?> queue = binding.getAMQQueue();
-        String routingKey = binding.getBindingKey();
-
-        setName(exch.getName());
-
-        put(Property.QUEUE_NAME, queue.getName());
-        put(Property.ROUTING_KEY, routingKey);
-        put(Property.VIRTUALHOST_NAME, queue.getParent(VirtualHost.class).getName());
-
-        // The temporary attribute (inherited from the binding's queue) seems to exist to allow the user to
-        // express rules about the binding of temporary queues (whose names cannot be predicted).
-        put(Property.TEMPORARY, queue.getLifetimePolicy() != LifetimePolicy.PERMANENT);
-        put(Property.DURABLE, queue.isDurable());
-    }
 
     public ObjectProperties(String virtualHostName, String exchangeName, String routingKey, Boolean immediate)
     {
@@ -185,29 +144,6 @@ public class ObjectProperties
         put(Property.ROUTING_KEY, routingKey);
         put(Property.IMMEDIATE, immediate);
         put(Property.VIRTUALHOST_NAME, virtualHostName);
-    }
-
-    public ObjectProperties(ExchangeImpl<?> exchange)
-    {
-        super();
-
-        setName(exchange.getName());
-
-        put(Property.AUTO_DELETE, exchange.isAutoDelete());
-        put(Property.TEMPORARY, exchange.getLifetimePolicy() != LifetimePolicy.PERMANENT);
-        put(Property.DURABLE, exchange.isDurable());
-        put(Property.TYPE, exchange.getType());
-        put(Property.VIRTUALHOST_NAME, exchange.getParent(VirtualHost.class).getName());
-    }
-
-    public ObjectProperties(Boolean exclusive, Boolean noAck, Boolean noLocal, Boolean nowait, AMQQueue queue)
-    {
-        this(queue);
-
-        put(Property.NO_LOCAL, noLocal);
-        put(Property.NO_ACK, noAck);
-        put(Property.EXCLUSIVE, exclusive);
-        put(Property.NO_WAIT, nowait);
     }
 
     public Boolean isSet(Property key)
