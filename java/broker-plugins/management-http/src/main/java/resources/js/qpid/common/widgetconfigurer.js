@@ -119,11 +119,16 @@ define(["dojo/_base/xhr",
 
          if (widget instanceof dijit.form.FilteringSelect || widget instanceof dojox.form.CheckedMultiSelect)
          {
-           var widgetValue = dataValue ? dataValue : defaultValue;
+           var widgetValue = dataValue == null ? defaultValue : dataValue;
            if (widgetValue)
            {
              widget.set("value", widgetValue);
            }
+         }
+         else if (widget instanceof dijit.form.CheckBox)
+         {
+           var widgetValue = dataValue == null ? (defaultValue == "true") : dataValue;
+           widget.set("checked", widgetValue ? true : false);
          }
          else
          {
