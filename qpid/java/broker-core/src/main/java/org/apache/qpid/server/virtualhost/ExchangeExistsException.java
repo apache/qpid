@@ -27,7 +27,12 @@ public class ExchangeExistsException extends RuntimeException
 
     public ExchangeExistsException(ExchangeImpl existing)
     {
-        super(existing.getName());
+        this(existing.getName(), existing);
+    }
+
+    public ExchangeExistsException(String message, ExchangeImpl existing)
+    {
+        super(message);
         _existing = existing;
     }
 

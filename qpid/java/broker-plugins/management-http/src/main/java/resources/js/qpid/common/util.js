@@ -791,5 +791,52 @@ define(["dojo/_base/xhr",
                 on(window, "resize", resize);
            }
 
+           util.submit = function(method, resourceUrl, data, successAction, failureAction)
+           {
+                var result = {success: true, failureReason: null};
+                var xhrArguments = {
+                    url: resourceUrl,
+                    sync: true,
+                    handleAs: "json",
+                    headers: { "Content-Type": "application/json"},
+                    load: function(x) {
+                            result.success = true;
+                            result.data = x;
+                            if (successAction)
+                            {
+                                successAction(x);
+                            }
+                          },
+                    error: function(error) {
+                             result.success = false;
+                             result.failureReason = error;
+                             if (failureAction)
+                             {
+                                 failureAction(error);
+                             }
+                             else
+                             {
+                                 util.xhrErrorHandler(error);
+                             }
+                           }
+                }
+                if (data && method != "del")
+                {
+                    xhrArguments[method + "Data"] = json.stringify(data);
+                }
+                xhr[method](xhrArguments);
+                return result;
+           }
+
+           util.post = function(resourceUrl, data, successAction, failureAction)
+           {
+                return util.submit("post", resourceUrl, data, successAction, failureAction)
+           }
+
+           util.put = function(resourceUrl, data, successAction, failureAction)
+           {
+                return util.submit("put", resourceUrl, data, successAction, failureAction)
+           }
+
            return util;
        });

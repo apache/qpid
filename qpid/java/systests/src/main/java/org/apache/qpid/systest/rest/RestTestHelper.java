@@ -305,7 +305,7 @@ public class RestTestHelper
     {
         HttpURLConnection connection = openManagementConnection(
                 "groupmember/" + encodeAsUTF(groupProviderName) + "/"+ encodeAsUTF(groupName) + "/" +  encodeAsUTF(memberName),
-                "PUT");
+                "POST");
 
         Map<String, Object> groupMemberData = new HashMap<String, Object>();
         // TODO add type
@@ -358,7 +358,7 @@ public class RestTestHelper
     {
         HttpURLConnection connection = openManagementConnection(
                 "group/" + encodeAsUTF(groupProviderName) + "/"+ encodeAsUTF(groupName),
-                "PUT");
+                "POST");
 
         Map<String, Object> groupData = new HashMap<String, Object>();
         writeJsonRequest(connection, groupData);

@@ -20,8 +20,10 @@
  */
 package org.apache.qpid.systest.rest;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -72,15 +74,31 @@ public class GroupRestTest extends QpidRestTestCase
         assertEquals(EXISTING_MEMBER, (String)member1.get(GroupMember.NAME));
     }
 
-    public void testCreateNewMemberOfGroup() throws Exception
+    public void testCreateNewMemberByPut() throws Exception
     {
         Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("group/" + FILE_GROUP_MANAGER + "/myGroup");
         getRestTestHelper().assertNumberOfGroupMembers(group, 1);
 
-        getRestTestHelper().createNewGroupMember(FILE_GROUP_MANAGER, GROUP_NAME, NEW_MEMBER);
+        String url = "groupmember/" + FILE_GROUP_MANAGER + "/"+ GROUP_NAME + "/" +  NEW_MEMBER;
+        getRestTestHelper().submitRequest(url, "PUT", Collections.<String, Object>emptyMap(), HttpServletResponse.SC_CREATED);
 
-        group = getRestTestHelper().getJsonAsSingletonList("group/" + FILE_GROUP_MANAGER + "/myGroup");
-        getRestTestHelper().assertNumberOfGroupMembers(group, 2);
+        Map<String, Object> member = getRestTestHelper().getJsonAsSingletonList(url);
+        assertEquals("Unexpected group name", NEW_MEMBER, member.get(GroupMember.NAME));
+    }
+
+    public void testCreateNewMemberByPost() throws Exception
+    {
+        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("group/" + FILE_GROUP_MANAGER + "/myGroup");
+        getRestTestHelper().assertNumberOfGroupMembers(group, 1);
+
+        String url = "groupmember/" + FILE_GROUP_MANAGER + "/"+ GROUP_NAME + "/" +  NEW_MEMBER;
+        getRestTestHelper().submitRequest(url, "POST", Collections.<String, Object>emptyMap(), HttpServletResponse.SC_CREATED);
+
+        Map<String, Object> member = getRestTestHelper().getJsonAsSingletonList(url);
+        assertEquals("Unexpected group name", NEW_MEMBER, member.get(GroupMember.NAME));
+
+        // verify that second creation request by POST fails
+        getRestTestHelper().submitRequest(url, "POST", Collections.<String, Object>emptyMap(), HttpServletResponse.SC_CONFLICT);
     }
 
     public void testRemoveMemberFromGroup() throws Exception

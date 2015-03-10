@@ -116,10 +116,10 @@ public class VirtualHostRestTest extends QpidRestTestCase
         Asserts.assertConnection(connections.get(0), _connection);
     }
 
-    public void testPutCreateProvidedVirtualHost() throws Exception
+    public void testCreateProvidedVirtualHost() throws Exception
     {
         String hostName = getTestName();
-        createVirtualHost(hostName, ProvidedStoreVirtualHostImpl.VIRTUAL_HOST_TYPE);
+        createVirtualHost(hostName, ProvidedStoreVirtualHostImpl.VIRTUAL_HOST_TYPE, "PUT");
 
         Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("virtualhost/" + EMPTY_VIRTUALHOSTNODE_NAME + "/" + hostName);
         Asserts.assertVirtualHost(hostName, hostDetails);
@@ -127,7 +127,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
         assertNewVirtualHost(hostDetails);
     }
 
-    public void testPutCreateVirtualHost() throws Exception
+    public void testCreateVirtualHostByPut() throws Exception
     {
         String hostName = getTestName();
         String vhnType = getTestProfileVirtualHostNodeType();
@@ -135,11 +135,34 @@ public class VirtualHostRestTest extends QpidRestTestCase
         {
             vhnType = DerbyVirtualHostImpl.VIRTUAL_HOST_TYPE;
         }
-        createVirtualHost(hostName, vhnType);
+        createVirtualHost(hostName, vhnType, "PUT");
         Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("virtualhost/" + EMPTY_VIRTUALHOSTNODE_NAME + "/" + hostName);
         Asserts.assertVirtualHost(hostName, hostDetails);
 
         assertNewVirtualHost(hostDetails);
+    }
+
+    public void testCreateVirtualHostByPost() throws Exception
+    {
+        String hostName = getTestName();
+        String type = getTestProfileVirtualHostNodeType();
+        if (JsonVirtualHostNodeImpl.VIRTUAL_HOST_NODE_TYPE.equals(type))
+        {
+            type = DerbyVirtualHostImpl.VIRTUAL_HOST_TYPE;
+        }
+        Map<String, Object> data = new HashMap<>();
+        data.put(VirtualHost.NAME, hostName);
+        data.put(VirtualHost.TYPE, type);
+
+        String url = "virtualhost/" + EMPTY_VIRTUALHOSTNODE_NAME + "/" + hostName;
+        getRestTestHelper().submitRequest(url, "POST", data, HttpServletResponse.SC_CREATED);
+
+        Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList(url);
+        Asserts.assertVirtualHost(hostName, hostDetails);
+        assertNewVirtualHost(hostDetails);
+
+        // verify second create request fails
+        getRestTestHelper().submitRequest(url, "POST", data, HttpServletResponse.SC_CONFLICT);
     }
 
     public void testDeleteHost() throws Exception
@@ -576,14 +599,14 @@ public class VirtualHostRestTest extends QpidRestTestCase
     }
 
     private void createVirtualHost(final String virtualHostName,
-                                   final String virtualHostType) throws IOException
+                                   final String virtualHostType, String method) throws IOException
     {
         Map<String, Object> virtualhostData = new HashMap<>();
         virtualhostData.put(VirtualHost.NAME, virtualHostName);
         virtualhostData.put(VirtualHost.TYPE, virtualHostType);
 
         getRestTestHelper().submitRequest("virtualhost/" + EMPTY_VIRTUALHOSTNODE_NAME + "/" + virtualHostName,
-                                          "PUT",
+                                          method,
                                           virtualhostData,
                                           HttpServletResponse.SC_CREATED);
     }

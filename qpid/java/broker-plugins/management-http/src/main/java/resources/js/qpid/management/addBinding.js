@@ -308,30 +308,13 @@ define(["dojo/_base/connect",
 
                                     var newBinding = convertToBinding(theForm.getValues());
                                     var that = this;
-
-                                    xhr.put({url: "api/latest/binding/"+encodeURIComponent(addBinding.vhostnode)
-                                                      +"/"+encodeURIComponent(addBinding.vhost)
-                                                      +"/"+encodeURIComponent(newBinding.exchange)
-                                                      +"/"+encodeURIComponent(newBinding.queue)
-                                                      +"/"+encodeURIComponent(newBinding.name),
-                                             sync: true, handleAs: "json",
-                                             headers: { "Content-Type": "application/json"},
-                                             putData: json.toJson(newBinding),
-                                             load: function(x) {that.success = true; },
-                                             error: function(error) {that.success = false; that.failureReason = error;}});
-
-                                    if(this.success === true)
-                                    {
-                                        registry.byId("addBinding").hide();
-                                    }
-                                    else
-                                    {
-                                        util.xhrErrorHandler(this.failureReason);
-                                    }
-
+                                    var url = "api/latest/binding/"+encodeURIComponent(addBinding.vhostnode)
+                                            + "/"+encodeURIComponent(addBinding.vhost)
+                                            + "/"+encodeURIComponent(newBinding.exchange)
+                                            + "/"+encodeURIComponent(newBinding.queue)
+                                            + "/"+encodeURIComponent(newBinding.name);
+                                    util.post(url, newBinding, function(x){registry.byId("addBinding").hide();});
                                     return false;
-
-
                                 }else{
                                     alert('Form contains invalid data.  Please correct first');
                                     return false;

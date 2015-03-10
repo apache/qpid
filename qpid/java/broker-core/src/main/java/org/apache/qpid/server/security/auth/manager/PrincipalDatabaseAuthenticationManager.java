@@ -309,6 +309,10 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
             String username = (String) attributes.get("name");
             String password = (String) attributes.get("password");
             Principal p = new UsernamePrincipal(username);
+            if (_userMap.containsKey(p))
+            {
+                throw new IllegalArgumentException("User '" + username + "' already exists");
+            }
 
             boolean created = getPrincipalDatabase().createPrincipal(p, password.toCharArray());
             if(created)

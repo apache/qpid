@@ -87,18 +87,26 @@ function (util, metadata, xhr, declare, array, domConstruct, win, query, json, _
         {
             var preferencesProviderData = util.getFormWidgetValues(this.preferencesProviderForm, this.data)
             var encodedPreferencesProviderName = encodeURIComponent(this.preferencesProviderNameWidget.get("value"));
-            var success = false;
-            var failureReason = null;
-            xhr.put({
-                url: "api/latest/preferencesprovider/" + encodedAuthenticationProviderName + "/" + encodedPreferencesProviderName,
-                sync: true,
-                handleAs: "json",
-                headers: { "Content-Type": "application/json"},
-                putData: json.stringify(preferencesProviderData),
-                load: function (x) { success = true; },
-                error: function (error) { success = false; failureReason = error; }
-            });
-            return { success: success, failureReason: failureReason };
+            var url = "api/latest/preferencesprovider/" + encodedAuthenticationProviderName + "/" + encodedPreferencesProviderName;
+            if (this.data)
+            {
+                var success = false;
+                            var failureReason = null;
+                            xhr.put({
+                                url: url,
+                                sync: true,
+                                handleAs: "json",
+                                headers: { "Content-Type": "application/json"},
+                                putData: json.stringify(preferencesProviderData),
+                                load: function (x) { success = true; },
+                                error: function (error) { success = false; failureReason = error; }
+                            });
+                return { success: success, failureReason: failureReason };
+            }
+            else
+            {
+                return util.post(url, preferencesProviderData);
+            }
         }
         return { success: true, failureReason: null };
     },

@@ -669,7 +669,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
         catch (DuplicateNameException e)
         {
-            throw new QueueExistsException(getQueue(e.getName()));
+            throw new QueueExistsException(String.format("Queue with name '%s' already exists", e.getName()), getQueue(e.getName()));
         }
 
     }
@@ -742,7 +742,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         }
         catch (DuplicateNameException e)
         {
-            throw new ExchangeExistsException(getExchange(e.getName()));
+            throw new ExchangeExistsException(String.format("Exchange with name '%s' already exists", e.getName()), getExchange(e.getName()));
         }
 
     }

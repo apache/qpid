@@ -110,23 +110,10 @@ define(["dojo/_base/xhr",
 
                                     var newExchange = convertToExchange(theForm.getValues());
                                     var that = this;
-                                    xhr.put({url: "api/latest/exchange/"+encodeURIComponent(addExchange.vhostnode) +
-                                                  "/"+encodeURIComponent(addExchange.vhost) +
-                                                  "/"+encodeURIComponent(newExchange.name), sync: true, handleAs: "json",
-                                             headers: { "Content-Type": "application/json"},
-                                             putData: json.toJson(newExchange),
-                                             load: function(x) {that.success = true; },
-                                             error: function(error) {that.success = false; that.failureReason = error;}});
-
-                                    if(this.success === true)
-                                    {
-                                        registry.byId("addExchange").hide();
-                                    }
-                                    else
-                                    {
-                                        util.xhrErrorHandler(this.failureReason);
-                                    }
-
+                                    util.post("api/latest/exchange/" + encodeURIComponent(addExchange.vhostnode)
+                                            + "/" + encodeURIComponent(addExchange.vhost)
+                                            + "/" + encodeURIComponent(newExchange.name),
+                                            newExchange, function(x){ registry.byId("addExchange").hide(); });
                                     return false;
 
 

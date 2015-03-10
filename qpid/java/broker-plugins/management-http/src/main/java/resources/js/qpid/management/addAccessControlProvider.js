@@ -99,30 +99,11 @@ define(["dojo/_base/lang",
             {
                 if (this.accessControlProviderForm.validate())
                 {
-                    var success = false,failureReason=null;
-
                     var accessControlProviderData = util.getFormWidgetValues(this.accessControlProviderForm, this.initialData);
                     var encodedAccessControlProviderName = encodeURIComponent(this.accessControlProviderName.value);
-
-                    xhr.put(
-                    {
-                        url: "api/latest/accesscontrolprovider/" + encodedAccessControlProviderName,
-                        sync: true,
-                        handleAs: "json",
-                        headers: { "Content-Type": "application/json"},
-                        putData: json.stringify(accessControlProviderData),
-                        load: function(x) {success = true; },
-                        error: function(error) {success = false; failureReason = error;}
-                    });
-
-                    if (success == true)
-                    {
-                        this.dialog.hide();
-                    }
-                    else
-                    {
-                        util.xhrErrorHandler(failureReason);
-                    }
+                    var that = this;
+                    util.post("api/latest/accesscontrolprovider/" + encodedAccessControlProviderName,
+                              accessControlProviderData, function(x){that.dialog.hide();});
                 }
                 else
                 {
