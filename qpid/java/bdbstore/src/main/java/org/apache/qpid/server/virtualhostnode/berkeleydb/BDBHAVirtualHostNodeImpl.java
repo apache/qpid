@@ -429,18 +429,14 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
     @StateTransition( currentState = { State.ACTIVE, State.STOPPED, State.ERRORED}, desiredState = State.DELETED )
     protected ListenableFuture<Void> doDelete()
     {
-        final SettableFuture<Void> returnVal = SettableFuture.create();
 
         // get helpers before close. on close all children are closed and not available anymore
         final Set<InetSocketAddress> helpers = getRemoteNodeAddresses();
-        final ListenableFuture<Void> superFuture = super.doDelete();
-        superFuture.addListener(new Runnable()
+        return doAfter(super.doDelete(),new Runnable()
         {
             @Override
             public void run()
             {
-                try
-                {
                     if (getConfigurationStore() != null)
                     {
                         getEventLogger().message(getVirtualHostNodeLogSubject(), HighAvailabilityMessages.DELETED());
@@ -458,15 +454,11 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
                                         + ". To finish deletion a removal of the node from any of remote nodes (" + helpers + ") is required.");
                         }
                     }
-                }
-                finally
-                {
-                    returnVal.set(null);
-                }
-            }
-        }, getTaskExecutor().getExecutor());
 
-        return returnVal;
+            }
+        });
+
+
     }
 
     @Override
@@ -706,23 +698,15 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
         final VirtualHost<?,?,?> virtualHost = getVirtualHost();
         if (virtualHost!= null)
         {
-            final SettableFuture<Void> returnVal = SettableFuture.create();
-            virtualHost.closeAsync().addListener(new Runnable()
+            return doAfter(virtualHost.closeAsync(), new Runnable()
             {
                 @Override
                 public void run()
                 {
-                    try
-                    {
                         childRemoved(virtualHost);
-                    }
-                    finally
-                    {
-                        returnVal.set(null);
-                    }
+
                 }
-            }, getTaskExecutor().getExecutor());
-            return returnVal;
+            });
         }
         else
         {

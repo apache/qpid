@@ -163,6 +163,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
          * with NO_SYN durability in case if such Node crushes.
          */
         put(ReplicationConfig.LOG_FLUSH_TASK_INTERVAL, "1 min");
+
+        put(ReplicationConfig.CONSISTENCY_POLICY, "TimeConsistencyPolicy(1 s,30 s)");
     }});
 
     public static final String PERMITTED_NODE_LIST = "permittedNodes";

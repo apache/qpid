@@ -41,15 +41,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 
+import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -454,48 +457,74 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public final ListenableFuture<Void> openAsync()
     {
-        final SettableFuture<Void> returnVal = SettableFuture.create();
+        return doOnConfigThread(new Callable<ListenableFuture<Void>>()
+                                {
+                                    @Override
+                                    public ListenableFuture<Void> call() throws Exception
+                                    {
+                                        if (_dynamicState.compareAndSet(DynamicState.UNINIT, DynamicState.OPENED))
+                                        {
+                                            _openFailed = false;
+                                            OpenExceptionHandler exceptionHandler = new OpenExceptionHandler();
+                                            try
+                                            {
+                                                doResolution(true, exceptionHandler);
+                                                doValidation(true, exceptionHandler);
+                                                doOpening(true, exceptionHandler);
+                                                return doAttainState(exceptionHandler);
+                                            }
+                                            catch (RuntimeException e)
+                                            {
+                                                exceptionHandler.handleException(e, AbstractConfiguredObject.this);
+                                                return Futures.immediateFuture(null);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            return Futures.immediateFuture(null);
+                                        }
 
-        _taskExecutor.run(new VoidTask()
+                                    }
+                                });
+
+    }
+
+    protected final <T> ListenableFuture<T> doOnConfigThread(final Callable<ListenableFuture<T>> action)
+    {
+        final SettableFuture<T> returnVal = SettableFuture.create();
+
+        _taskExecutor.submit(new Task<Void>()
         {
 
             @Override
-            public void execute()
+            public Void execute()
             {
-                if (_dynamicState.compareAndSet(DynamicState.UNINIT, DynamicState.OPENED))
+                try
                 {
-                    _openFailed = false;
-                    OpenExceptionHandler exceptionHandler = new OpenExceptionHandler();
-                    try
+                    Futures.addCallback(action.call(), new FutureCallback<T>()
                     {
-                        doResolution(true, exceptionHandler);
-                        doValidation(true, exceptionHandler);
-                        doOpening(true, exceptionHandler);
-                        doAttainState(exceptionHandler).addListener(
-                                new Runnable()
-                                {
-                                    @Override
-                                    public void run()
-                                    {
-                                        returnVal.set(null);
-                                    }
-                                }, MoreExecutors.sameThreadExecutor()
-                                                                   );
-                    }
-                    catch (RuntimeException e)
-                    {
-                        exceptionHandler.handleException(e, AbstractConfiguredObject.this);
-                        returnVal.set(null);
-                    }
+                        @Override
+                        public void onSuccess(final T result)
+                        {
+                            returnVal.set(result);
+                        }
+
+                        @Override
+                        public void onFailure(final Throwable t)
+                        {
+                            returnVal.setException(t);
+                        }
+                    });
                 }
-                else
+                catch (Exception e)
                 {
-                    returnVal.set(null);
+                    returnVal.setException(e);
                 }
+                return null;
             }
         });
-        return returnVal;
 
+        return returnVal;
     }
 
 
@@ -558,12 +587,24 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             {
                 counter.incrementCount();
                 ListenableFuture<Void> close = child.closeAsync();
-                close.addListener(new Runnable()
+                Futures.addCallback(close, new FutureCallback<Void>()
                 {
                     @Override
-                    public void run()
+                    public void onSuccess(final Void result)
                     {
                         counter.decrementCount();
+                    }
+
+                    @Override
+                    public void onFailure(final Throwable t)
+                    {
+                        LOGGER.error("Exception occurred while closing "
+                                     + child.getClass().getSimpleName()
+                                     + " : '"
+                                     + child.getName()
+                                     + "'", t);
+                        // No need to decrement counter as setting the exception will complete the future
+                        returnVal.setException(t);
                     }
                 }, MoreExecutors.sameThreadExecutor());
             }
@@ -598,70 +639,48 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     @Override
     public final ListenableFuture<Void> closeAsync()
     {
-        LOGGER.debug("Closing " + getClass().getSimpleName() + " : " + getName());
-        if(_dynamicState.compareAndSet(DynamicState.OPENED, DynamicState.CLOSED))
+        return doOnConfigThread(new Callable<ListenableFuture<Void>>()
         {
-            final SettableFuture<Void> returnVal = SettableFuture.create();
-
-            final ListenableFuture<Void> beforeClose = beforeClose();
-
-            if(beforeClose != null)
+            @Override
+            public ListenableFuture<Void> call() throws Exception
             {
-                beforeClose.addListener(new Runnable()
+                LOGGER.debug("Closing " + getClass().getSimpleName() + " : " + getName());
+
+                if(_dynamicState.compareAndSet(DynamicState.OPENED, DynamicState.CLOSED))
                 {
-                    @Override
-                    public void run()
+
+                    return doAfter(beforeClose(), new Callable<ListenableFuture<Void>>()
                     {
-                        final ListenableFuture<Void> childCloseFuture = closeChildren();
-                        childCloseFuture.addListener(new Runnable()
+                        @Override
+                        public ListenableFuture<Void> call() throws Exception
                         {
-                            @Override
-                            public void run()
+                            return closeChildren();
+                        }
+                    }).then(new Runnable()
                             {
-                                onClose();
-                                unregister(false);
-                                LOGGER.debug("Closed " + AbstractConfiguredObject.this.getClass().getSimpleName() + " : " + getName());
-                                returnVal.set(null);
-                            }
-                        }, getTaskExecutor().getExecutor());
-                    }
-                }, getTaskExecutor().getExecutor());
-            }
-            else
-            {
-                final ListenableFuture<Void> childCloseFuture = closeChildren();
-                childCloseFuture.addListener(new Runnable()
+                                @Override
+                                public void run()
+                                {
+                                    onClose();
+                                    unregister(false);
+                                    LOGGER.debug("Closed " + AbstractConfiguredObject.this.getClass().getSimpleName() + " : " + getName());
+                                }
+                            });
+                }
+                else
                 {
-                    @Override
-                    public void run()
-                    {
+                    LOGGER.debug("Closed " + getClass().getSimpleName() + " : " + getName());
 
-                        onClose();
-                        unregister(false);
-                        LOGGER.debug("Closed "
-                                     + AbstractConfiguredObject.this.getClass().getSimpleName()
-                                     + " : "
-                                     + getName());
-                        returnVal.set(null);
-                    }
-                }, getTaskExecutor().getExecutor());
+                    return Futures.immediateFuture(null);
+                }
             }
+        });
 
-            return returnVal;
-
-
-        }
-        else
-        {
-            LOGGER.debug("Closed " + getClass().getSimpleName() + " : " + getName());
-
-            return Futures.immediateFuture(null);
-        }
     }
 
     protected ListenableFuture<Void> beforeClose()
     {
-        return null;
+        return Futures.immediateFuture(null);
     }
 
     protected void onClose()
@@ -675,15 +694,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public final ListenableFuture<Void> createAsync()
     {
-        final SettableFuture<Void> returnVal = SettableFuture.create();
-
-        _taskExecutor.run(new VoidTask()
+        return doOnConfigThread(new Callable<ListenableFuture<Void>>()
         {
-
             @Override
-            public void execute()
+            public ListenableFuture<Void> call() throws Exception
             {
-
                 if (_dynamicState.compareAndSet(DynamicState.UNINIT, DynamicState.OPENED))
                 {
                     final AuthenticatedPrincipal currentUser = SecurityManager.getCurrentUser();
@@ -716,42 +731,23 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
                     final AbstractConfiguredObjectExceptionHandler unregisteringExceptionHandler =
                             new CreateExceptionHandler(true);
+
                     try
                     {
                         doCreation(true, unregisteringExceptionHandler);
                         doOpening(true, unregisteringExceptionHandler);
-                        Futures.addCallback(doAttainState(unregisteringExceptionHandler),
-                                            new FutureCallback<Void>()
-                                            {
-                                                @Override
-                                                public void onSuccess(final Void result)
-                                                {
-                                                    returnVal.set(null);
-                                                }
-
-                                                @Override
-                                                public void onFailure(final Throwable t)
-                                                {
-                                                    if (t instanceof RuntimeException)
-                                                    {
-                                                        unregisteringExceptionHandler.handleException((RuntimeException) t,
-                                                                                                      AbstractConfiguredObject.this);
-                                                    }
-                                                    returnVal.set(null);
-                                                }
-                                            },
-                                            getTaskExecutor().getExecutor());
+                        return doAttainState(unregisteringExceptionHandler);
                     }
                     catch (RuntimeException e)
                     {
                         unregisteringExceptionHandler.handleException(e, AbstractConfiguredObject.this);
-                        returnVal.set(null);
                     }
                 }
+                return Futures.immediateFuture(null);
+
             }
         });
 
-        return returnVal;
     }
 
     protected void validateOnCreate()
@@ -822,8 +818,15 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 }
                 catch(RuntimeException e)
                 {
-                    exceptionHandler.handleException(e, AbstractConfiguredObject.this);
-                    returnVal.set(null);
+                    try
+                    {
+                        exceptionHandler.handleException(e, AbstractConfiguredObject.this);
+                        returnVal.set(null);
+                    }
+                    catch(Throwable t)
+                    {
+                        returnVal.setException(t);
+                    }
                 }
             }
         });
@@ -851,11 +854,18 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                                                 @Override
                                                 public void onFailure(final Throwable t)
                                                 {
-                                                    if(t instanceof RuntimeException)
+                                                    try
                                                     {
-                                                        exceptionHandler.handleException((RuntimeException) t, configuredObject);
+                                                        if (t instanceof RuntimeException)
+                                                        {
+                                                            exceptionHandler.handleException((RuntimeException) t,
+                                                                                             configuredObject);
+                                                        }
                                                     }
-                                                    counter.decrementCount();
+                                                    finally
+                                                    {
+                                                        counter.decrementCount();
+                                                    }
                                                 }
                                             },getTaskExecutor().getExecutor());
 
@@ -1257,90 +1267,68 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     private ListenableFuture<Void> setDesiredState(final State desiredState)
             throws IllegalStateTransitionException, AccessControlException
     {
-
-        final SettableFuture<Void> returnVal = SettableFuture.create();
-        runTask(new Task<Void>()
+        return doOnConfigThread(new Callable<ListenableFuture<Void>>()
+        {
+            @Override
+            public ListenableFuture<Void> call() throws Exception
+            {
+                final State state = getState();
+                final State currentDesiredState = getDesiredState();
+                if(desiredState == currentDesiredState && desiredState != state)
+                {
+                    return doAfter(attainStateIfOpenedOrReopenFailed(), new Runnable()
+                    {
+                        @Override
+                        public void run()
                         {
-                            @Override
-                            public Void execute()
+                            final State currentState = getState();
+                            if (currentState != state)
                             {
-
-                                final State state = getState();
-                                final State currentDesiredState = getDesiredState();
-                                if(desiredState == currentDesiredState && desiredState != state)
-                                {
-                                    attainStateIfOpenedOrReopenFailed().addListener(new Runnable()
-                                    {
-                                        @Override
-                                        public void run()
-                                        {
-                                            try
-                                            {
-                                                final State currentState = getState();
-                                                if (currentState != state)
-                                                {
-                                                    notifyStateChanged(state, currentState);
-                                                }
-                                            }
-                                            finally
-                                            {
-                                                returnVal.set(null);
-                                            }
-                                        }
-                                    }
-                                    ,_taskExecutor.getExecutor());
-                                }
-                                else
-                                {
-                                    try
-                                    {
-                                        authoriseSetDesiredState(desiredState);
-                                        validateChange(createProxyForValidation(Collections.<String, Object>singletonMap(
-                                                ConfiguredObject.DESIRED_STATE,
-                                                desiredState)), Collections.singleton(ConfiguredObject.DESIRED_STATE));
-
-                                        if (changeAttribute(ConfiguredObject.DESIRED_STATE, currentDesiredState, desiredState))
-                                        {
-                                            attributeSet(ConfiguredObject.DESIRED_STATE,
-                                                         currentDesiredState,
-                                                         desiredState);
-
-                                            attainStateIfOpenedOrReopenFailed().addListener(new Runnable()
-                                            {
-                                                @Override
-                                                public void run()
-                                                {
-                                                    try
-                                                    {
-                                                        if (getState() == desiredState)
-                                                        {
-                                                            notifyStateChanged(state, desiredState);
-                                                        }
-                                                    }
-                                                    finally
-                                                    {
-                                                        returnVal.set(null);
-                                                    }
-
-                                                }
-                                            }, _taskExecutor.getExecutor());
-                                        }
-                                        else
-                                        {
-                                            returnVal.set(null);
-                                        }
-                                    }
-                                    catch (RuntimeException | Error e)
-                                    {
-                                        returnVal.set(null);
-                                        throw e;
-                                    }
-
-                                }
-                                return null;
+                                notifyStateChanged(state, currentState);
                             }
-                        });
-        return returnVal;
+
+                        }
+
+                    });
+
+
+                }
+                else
+                {
+                    authoriseSetDesiredState(desiredState);
+                    validateChange(createProxyForValidation(Collections.<String, Object>singletonMap(
+                            ConfiguredObject.DESIRED_STATE,
+                            desiredState)), Collections.singleton(ConfiguredObject.DESIRED_STATE));
+
+                    if (changeAttribute(ConfiguredObject.DESIRED_STATE, currentDesiredState, desiredState))
+                    {
+                        attributeSet(ConfiguredObject.DESIRED_STATE,
+                                     currentDesiredState,
+                                     desiredState);
+
+                        return doAfter(attainStateIfOpenedOrReopenFailed(),new Runnable()
+                                       {
+                                           @Override
+                                           public void run()
+                                           {
+                                               if (getState() == desiredState)
+                                               {
+                                                   notifyStateChanged(state, desiredState);
+                                               }
+
+                                           }
+                                       }
+                            );
+                    }
+                    else
+                    {
+                        return Futures.immediateFuture(null);
+                    }
+                }
+
+            }
+        });
+
     }
 
     @Override
@@ -1727,11 +1715,11 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         doSync(deleteAsync());
     }
 
-    private void doSync(ListenableFuture<Void> async)
+    protected final <R>  R doSync(ListenableFuture<R> async)
     {
         try
         {
-            async.get();
+            return async.get();
         }
         catch (InterruptedException e)
         {
@@ -1762,12 +1750,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
     public final ListenableFuture<Void> deleteAsync()
     {
-       /* if(getState() == State.UNINITIALIZED)
-        {
-            _desiredState = State.DELETED;
-        }
-       */ return setDesiredState(State.DELETED);
-
+        return setDesiredState(State.DELETED);
     }
 
     public final void start()
@@ -1868,6 +1851,128 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public void setAttributes(Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
         doSync(setAttributesAsync(attributes));
+    }
+
+    protected final ChainedListenableFuture doAfter(ListenableFuture<Void> first, final Runnable second)
+    {
+        return doAfter(getTaskExecutor().getExecutor(), first, second);
+    }
+
+    protected static final ChainedListenableFuture doAfter(Executor executor, ListenableFuture<Void> first, final Runnable second)
+    {
+        final ChainedSettableFuture returnVal = new ChainedSettableFuture(executor);
+        Futures.addCallback(first, new FutureCallback<Void>()
+        {
+            @Override
+            public void onSuccess(final Void result)
+            {
+                try
+                {
+                    second.run();
+                    returnVal.set(null);
+                }
+                catch(Throwable e)
+                {
+                    returnVal.setException(e);
+                }
+            }
+
+            @Override
+            public void onFailure(final Throwable t)
+            {
+                returnVal.setException(t);
+            }
+        }, executor);
+
+        return returnVal;
+    }
+
+    public static interface ChainedListenableFuture extends ListenableFuture<Void>
+    {
+        ChainedListenableFuture then(Runnable r);
+        ChainedListenableFuture then(Callable<ListenableFuture<Void>> r);
+    }
+
+    public static class ChainedSettableFuture extends AbstractFuture<Void> implements ChainedListenableFuture
+    {
+        private final Executor _exector;
+
+        public ChainedSettableFuture(final Executor executor)
+        {
+            _exector = executor;
+        }
+
+        @Override
+        public boolean set(Void value)
+        {
+            return super.set(value);
+        }
+
+        @Override
+        public boolean setException(Throwable throwable)
+        {
+            return super.setException(throwable);
+        }
+
+        @Override
+        public ChainedListenableFuture then(final Runnable r)
+        {
+            return doAfter(_exector, this, r);
+        }
+
+        @Override
+        public ChainedListenableFuture then(final Callable<ListenableFuture<Void>> r)
+        {
+            return doAfter(_exector, this,r);
+        }
+    }
+
+    protected final ChainedListenableFuture doAfter(ListenableFuture<Void> first, final Callable<ListenableFuture<Void>> second)
+    {
+        return doAfter(getTaskExecutor().getExecutor(), first, second);
+    }
+
+    protected static final ChainedListenableFuture doAfter(final Executor executor, ListenableFuture<Void> first, final Callable<ListenableFuture<Void>> second)
+    {
+        final ChainedSettableFuture returnVal = new ChainedSettableFuture(executor);
+        Futures.addCallback(first, new FutureCallback<Void>()
+        {
+            @Override
+            public void onSuccess(final Void result)
+            {
+                try
+                {
+                    final ListenableFuture<Void> future = second.call();
+                    Futures.addCallback(future, new FutureCallback<Void>()
+                    {
+                        @Override
+                        public void onSuccess(final Void result)
+                        {
+                            returnVal.set(null);
+                        }
+
+                        @Override
+                        public void onFailure(final Throwable t)
+                        {
+                            returnVal.setException(t);
+                        }
+                    }, executor);
+
+                }
+                catch(Throwable e)
+                {
+                    returnVal.setException(e);
+                }
+            }
+
+            @Override
+            public void onFailure(final Throwable t)
+            {
+                returnVal.setException(t);
+            }
+        }, executor);
+
+        return returnVal;
     }
 
     @Override

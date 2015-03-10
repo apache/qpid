@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -37,13 +38,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
-import org.apache.qpid.server.configuration.updater.Task;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.messages.ExchangeMessages;
@@ -607,15 +609,15 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     @Override
     public boolean addBinding(final String bindingKey, final AMQQueue queue, final Map<String, Object> arguments)
     {
-        return getTaskExecutor().run(new Task<Boolean>()
-                                    {
+        return doSync(doOnConfigThread(new Callable<ListenableFuture<Boolean>>()
+        {
+            @Override
+            public ListenableFuture<Boolean> call() throws Exception
+            {
+                return makeBindingAsync(null, bindingKey, queue, arguments, false);
+            }
+        }));
 
-                                        @Override
-                                        public Boolean execute()
-                                        {
-                                            return makeBinding(null, bindingKey, queue, arguments, false);
-                                        }
-                                    });
 
     }
 
@@ -624,12 +626,20 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                                   final AMQQueue queue,
                                   final Map<String, Object> arguments)
     {
-        final BindingImpl existingBinding = getBinding(bindingKey, queue);
-        return makeBinding(existingBinding == null ? null : existingBinding.getId(),
-                           bindingKey,
-                           queue,
-                           arguments,
-                           true);
+        return doSync(doOnConfigThread(new Callable<ListenableFuture<Boolean>>()
+        {
+            @Override
+            public ListenableFuture<Boolean> call() throws Exception
+            {
+
+                final BindingImpl existingBinding = getBinding(bindingKey, queue);
+                return makeBindingAsync(existingBinding == null ? null : existingBinding.getId(),
+                                   bindingKey,
+                                   queue,
+                                   arguments,
+                                   true);
+            }
+        }));
     }
 
 
@@ -680,7 +690,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         return _bindingsMap.get(new BindingIdentifier(bindingKey,queue));
     }
 
-    private boolean makeBinding(UUID id,
+    private ListenableFuture<Boolean> makeBindingAsync(UUID id,
                                 String bindingKey,
                                 AMQQueue queue,
                                 Map<String, Object> arguments,
@@ -714,23 +724,45 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                 attributes.put(Binding.ID, id);
                 attributes.put(Binding.ARGUMENTS, arguments);
 
-                BindingImpl b = new BindingImpl(attributes, queue, this);
-                // TODO - RG - Fix Bindings
-                b.createAsync(); // Must be called before addBinding as it resolves automated attributes.
+                final BindingImpl b = new BindingImpl(attributes, queue, this);
 
-                addBinding(b);
-                return true;
+                final SettableFuture<Boolean> returnVal = SettableFuture.create();
+
+                Futures.addCallback(b.createAsync(), new FutureCallback<Void>()
+                {
+                    @Override
+                    public void onSuccess(final Void result)
+                    {
+                        try
+                        {
+                            addBinding(b);
+                            returnVal.set(true);
+                        }
+                        catch(Throwable t)
+                        {
+                            returnVal.setException(t);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(final Throwable t)
+                    {
+                        returnVal.setException(t);
+                    }
+                }, getTaskExecutor().getExecutor()); // Must be called before addBinding as it resolves automated attributes.
+
+                return returnVal;
             }
             else if(force)
             {
                 Map<String,Object> oldArguments = existingMapping.getArguments();
                 existingMapping.setArguments(arguments);
                 onBindingUpdated(existingMapping, oldArguments);
-                return true;
+                return Futures.immediateFuture(true);
             }
             else
             {
-                return false;
+                return Futures.immediateFuture(false);
             }
         }
     }
