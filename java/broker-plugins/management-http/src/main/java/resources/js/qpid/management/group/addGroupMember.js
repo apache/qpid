@@ -71,22 +71,11 @@ define(["dojo/_base/xhr",
 
                                     var newGroupMember = convertToGroupMember(theForm.getValues());
                                     var that = this;
-                                    xhr.put({url: "api/latest/groupmember/"+encodeURIComponent(addGroupMember.groupProvider) +
-                                                  "/" + encodeURIComponent(addGroupMember.group) + "/" + encodeURIComponent(newGroupMember.name), sync: true, handleAs: "json",
-                                             headers: { "Content-Type": "application/json"},
-                                             putData: json.toJson(newGroupMember),
-                                             load: function(x) {that.success = true; },
-                                             error: function(error) {that.success = false; that.failureReason = error;}});
 
-                                    if(this.success === true)
-                                    {
-                                        registry.byId("addGroupMember").hide();
-                                    }
-                                    else
-                                    {
-                                        util.xhrErrorHandler(this.failureReason);
-                                    }
-
+                                    var url = "api/latest/groupmember/"+encodeURIComponent(addGroupMember.groupProvider) +
+                                              "/" + encodeURIComponent(addGroupMember.group) +
+                                              "/" + encodeURIComponent(newGroupMember.name);
+                                    util.post(url, newGroupMember, function(x){registry.byId("addGroupMember").hide();});
                                     return false;
 
 

@@ -68,8 +68,12 @@ define(["dojo/_base/xhr",
      },
      implementsManagedInterface: function (category, type, managedInterfaceName)
      {
-        var managedInterfaces = this.getMetaData(category, type).managedInterfaces;
-        return array.indexOf(managedInterfaces, managedInterfaceName) >= 0 ;
+        var md = this.getMetaData(category, type);
+        if (md && md.managedInterfaces)
+        {
+            return array.indexOf(md.managedInterfaces, managedInterfaceName) >= 0 ;
+        }
+        return false;
      },
      validChildTypes: function (category, type, childCategory)
      {

@@ -267,33 +267,9 @@ define(["dojo/_base/xhr",
                 alert("A trust store must be selected when requesting client certificates.");
                 return false;
               }
-              var that = this;
-
-              xhr.put({url: "api/latest/port/" + encodeURIComponent(newPort.name), sync: true, handleAs: "json",
-                headers: { "Content-Type": "application/json"},
-                putData: json.toJson(newPort),
-                load: function (x)
-                {
-                  that.success = true;
-                },
-                error: function (error)
-                {
-                  that.success = false;
-                  that.failureReason = error;
-                }});
-
-              if (this.success === true)
-              {
-                registry.byId("addPort").hide();
-              }
-              else
-              {
-                util.xhrErrorHandler(this.failureReason);
-              }
-
+              var method = registry.byId("formAddPort.name").get("disabled") ? "put" : "post";
+              util[method]("api/latest/port/" + encodeURIComponent(newPort.name), newPort, function(x){registry.byId("addPort").hide()});
               return false;
-
-
             } else
             {
               alert('Form contains invalid data.  Please correct first');

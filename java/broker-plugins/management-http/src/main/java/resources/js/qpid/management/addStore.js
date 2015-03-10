@@ -19,7 +19,6 @@
  *
  */
 define(["dojo/_base/lang",
-        "dojo/_base/xhr",
         "dojo/dom",
         "dojo/dom-construct",
         "dijit/registry",
@@ -45,7 +44,7 @@ define(["dojo/_base/lang",
         "dijit/layout/ContentPane",
         "dojox/layout/TableContainer",
         "dojo/domReady!"],
-    function (lang, xhr, dom, construct, registry, parser, memory, array, event, json, util, metadata, template)
+    function (lang, dom, construct, registry, parser, memory, array, event, json, util, metadata, template)
     {
         var addStore =
         {
@@ -132,33 +131,9 @@ define(["dojo/_base/lang",
                     var storeData = util.getFormWidgetValues(this.storeForm, this.initialData);
                     var encodedStoreName = encodeURIComponent(this.storeName.value);
                     var encodedCategory = encodeURIComponent(this.category.toLowerCase());
-                    var jsonString = json.stringify(storeData);
-
-                    try {
-                    xhr.put(
-                    {
-                        url: "api/latest/" + encodedCategory + "/" + encodedStoreName,
-                        sync: true,
-                        handleAs: "json",
-                        headers: { "Content-Type": "application/json"},
-                        putData: jsonString,
-                        load: function(x) {success = true; },
-                        error: function(error) {success = false; failureReason = error;}
-                    });
-                    }
-                    catch (e)
-                    {
-                    console.warn(e);
-                    }
-
-                    if (success == true)
-                    {
-                        this.dialog.hide();
-                    }
-                    else
-                    {
-                        util.xhrErrorHandler(failureReason);
-                    }
+                    var that = this;
+                    var method = this.effectiveData ? "put" : "post";
+                    util[method]("api/latest/" + encodedCategory + "/" + encodedStoreName, storeData, function(x){that.dialog.hide();});
                 }
                 else
                 {

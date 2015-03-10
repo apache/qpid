@@ -177,18 +177,7 @@ define(["dojo/_base/xhr",
                                     var url = "api/latest/group/"+encodeURIComponent(addGroup.groupProvider) +
                                         "/"+encodeURIComponent(newGroup.name);
 
-                                    xhr.put({url: url, sync: true, handleAs: "json",
-                                             headers: { "Content-Type": "application/json"},
-                                             putData: json.toJson(newGroup),
-                                             load: function(x) {that.success = true; },
-                                             error: function(error) {that.success = false; that.failureReason = error;}});
-
-                                    if(that.success === true) {
-                                        registry.byId("addGroup").hide();
-                                    } else {
-                                        util.xhrErrorHandler(this.failureReason);
-                                    }
-
+                                    util.post(url, newGroup, function(x){registry.byId("addGroup").hide();});
                                     return false;
 
 
