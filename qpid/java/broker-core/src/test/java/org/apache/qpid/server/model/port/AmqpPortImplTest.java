@@ -91,6 +91,10 @@ public class AmqpPortImplTest extends QpidTestCase
         {
             if (_port != null)
             {
+                while(_port.getConnectionCount() >0)
+                {
+                    _port.decrementConnectionCount();
+                }
                 _port.close();
             }
             super.tearDown();
