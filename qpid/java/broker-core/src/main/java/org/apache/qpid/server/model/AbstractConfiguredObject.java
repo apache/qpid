@@ -644,7 +644,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             @Override
             public ListenableFuture<Void> call() throws Exception
             {
-                LOGGER.debug("Closing " + getClass().getSimpleName() + " : " + getName());
+                LOGGER.debug("Closing " + AbstractConfiguredObject.this.getClass().getSimpleName() + " : " + getName());
 
                 if(_dynamicState.compareAndSet(DynamicState.OPENED, DynamicState.CLOSED))
                 {
@@ -669,7 +669,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
                 }
                 else
                 {
-                    LOGGER.debug("Closed " + getClass().getSimpleName() + " : " + getName());
+                    LOGGER.debug("Closed " + AbstractConfiguredObject.this.getClass().getSimpleName() + " : " + getName());
 
                     return Futures.immediateFuture(null);
                 }
