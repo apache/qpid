@@ -41,7 +41,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.plugin.ConfiguredObjectRegistration;
 import org.apache.qpid.server.util.Action;
@@ -50,7 +51,7 @@ import org.apache.qpid.util.Strings;
 
 public class ConfiguredObjectTypeRegistry
 {
-    private static final Logger LOGGER = Logger.getLogger(ConfiguredObjectTypeRegistry.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfiguredObjectTypeRegistry.class);
 
     private static Map<String,Integer> STANDARD_FIRST_FIELDS_ORDER = new HashMap<>();
     static

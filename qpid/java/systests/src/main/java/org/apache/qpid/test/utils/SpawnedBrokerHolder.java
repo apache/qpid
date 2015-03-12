@@ -33,7 +33,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
@@ -42,7 +44,7 @@ import org.apache.qpid.util.SystemUtils;
 
 public class SpawnedBrokerHolder implements BrokerHolder
 {
-    private static final Logger LOGGER = Logger.getLogger(SpawnedBrokerHolder.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SpawnedBrokerHolder.class);
     protected static final String BROKER_READY = System.getProperty("broker.ready", BrokerMessages.READY().toString());
     private static final String BROKER_STOPPED = System.getProperty("broker.stopped", BrokerMessages.STOPPED().toString());
 

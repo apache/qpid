@@ -38,10 +38,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
@@ -66,7 +67,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 abstract class AbstractQueueTestBase extends QpidTestCase
 {
-    private static final Logger _logger = Logger.getLogger(AbstractQueueTestBase.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AbstractQueueTestBase.class);
 
 
     private AMQQueue<?> _queue;

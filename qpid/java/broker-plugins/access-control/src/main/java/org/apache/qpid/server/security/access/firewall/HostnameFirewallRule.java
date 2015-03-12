@@ -30,11 +30,12 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HostnameFirewallRule implements FirewallRule
 {
-    private static final Logger _logger = Logger.getLogger(HostnameFirewallRule.class);
+    private static final Logger _logger = LoggerFactory.getLogger(HostnameFirewallRule.class);
 
     private static final long DNS_TIMEOUT = 30000;
     private static final ExecutorService DNS_LOOKUP = Executors.newCachedThreadPool();

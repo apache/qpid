@@ -31,7 +31,8 @@ import javax.security.auth.Subject;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
@@ -49,7 +50,7 @@ import org.apache.qpid.server.store.VirtualHostStoreUpgraderAndRecoverer;
 public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandardVirtualHostNode<X>> extends AbstractVirtualHostNode<X>
                 implements VirtualHostNode<X>
 {
-    private static final Logger LOGGER = Logger.getLogger(AbstractStandardVirtualHostNode.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractStandardVirtualHostNode.class);
 
     public AbstractStandardVirtualHostNode(Map<String, Object> attributes,
                                            Broker<?> parent)

@@ -22,7 +22,8 @@ package org.apache.qpid.server.logging.messages;
 
 import static org.apache.qpid.server.logging.AbstractMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.LogMessage;
 
@@ -56,16 +57,16 @@ public class MessageStoreMessages
 
     static
     {
-        Logger.getLogger(MESSAGESTORE_LOG_HIERARCHY);
-        Logger.getLogger(RECOVERY_COMPLETE_LOG_HIERARCHY);
-        Logger.getLogger(CLOSED_LOG_HIERARCHY);
-        Logger.getLogger(OVERFULL_LOG_HIERARCHY);
-        Logger.getLogger(RECOVERED_LOG_HIERARCHY);
-        Logger.getLogger(UNDERFULL_LOG_HIERARCHY);
-        Logger.getLogger(PASSIVATE_LOG_HIERARCHY);
-        Logger.getLogger(CREATED_LOG_HIERARCHY);
-        Logger.getLogger(STORE_LOCATION_LOG_HIERARCHY);
-        Logger.getLogger(RECOVERY_START_LOG_HIERARCHY);
+        LoggerFactory.getLogger(MESSAGESTORE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(RECOVERY_COMPLETE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CLOSED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(OVERFULL_LOG_HIERARCHY);
+        LoggerFactory.getLogger(RECOVERED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(UNDERFULL_LOG_HIERARCHY);
+        LoggerFactory.getLogger(PASSIVATE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CREATED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(STORE_LOCATION_LOG_HIERARCHY);
+        LoggerFactory.getLogger(RECOVERY_START_LOG_HIERARCHY);
 
         _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.MessageStore_logmessages", _currentLocale);
     }

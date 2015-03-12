@@ -28,7 +28,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.Transaction;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.util.FutureResult;
 
@@ -75,7 +76,7 @@ public class CoalescingCommiter implements Committer
 
     private static final class BDBCommitFutureResult implements FutureResult
     {
-        private static final Logger LOGGER = Logger.getLogger(BDBCommitFutureResult.class);
+        private static final Logger LOGGER = LoggerFactory.getLogger(BDBCommitFutureResult.class);
 
         private final CommitThread _commitThread;
         private final Transaction _tx;
@@ -209,7 +210,7 @@ public class CoalescingCommiter implements Committer
      */
     private static class CommitThread extends Thread
     {
-        private static final Logger LOGGER = Logger.getLogger(CommitThread.class);
+        private static final Logger LOGGER = LoggerFactory.getLogger(CommitThread.class);
 
         private final AtomicBoolean _stopped = new AtomicBoolean(false);
         private final Queue<BDBCommitFutureResult> _jobQueue = new ConcurrentLinkedQueue<BDBCommitFutureResult>();

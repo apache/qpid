@@ -33,7 +33,8 @@ import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5Initialiser;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
@@ -49,7 +50,7 @@ import org.apache.qpid.server.security.auth.sasl.plain.PlainSaslServer;
 public class PlainPasswordFilePrincipalDatabase extends AbstractPasswordFilePrincipalDatabase<PlainUser>
 {
 
-    private final Logger _logger = Logger.getLogger(PlainPasswordFilePrincipalDatabase.class);
+    private final Logger _logger = LoggerFactory.getLogger(PlainPasswordFilePrincipalDatabase.class);
     private final Map<String, CallbackHandler> _callbackHandlerMap = new HashMap<String, CallbackHandler>();
     private final List<String> _mechanisms = Collections.unmodifiableList(Arrays.asList(PlainSaslServer.MECHANISM,
                                                                                         CRAMMD5Initialiser.MECHANISM));

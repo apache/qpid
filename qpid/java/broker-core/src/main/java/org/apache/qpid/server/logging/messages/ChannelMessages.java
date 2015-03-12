@@ -22,7 +22,8 @@ package org.apache.qpid.server.logging.messages;
 
 import static org.apache.qpid.server.logging.AbstractMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.LogMessage;
 
@@ -61,21 +62,21 @@ public class ChannelMessages
 
     static
     {
-        Logger.getLogger(CHANNEL_LOG_HIERARCHY);
-        Logger.getLogger(FLOW_ENFORCED_LOG_HIERARCHY);
-        Logger.getLogger(CREATE_LOG_HIERARCHY);
-        Logger.getLogger(FLOW_LOG_HIERARCHY);
-        Logger.getLogger(CLOSE_LOG_HIERARCHY);
-        Logger.getLogger(PREFETCH_SIZE_LOG_HIERARCHY);
-        Logger.getLogger(CLOSE_FORCED_LOG_HIERARCHY);
-        Logger.getLogger(LARGE_TRANSACTION_WARN_LOG_HIERARCHY);
-        Logger.getLogger(DEADLETTERMSG_LOG_HIERARCHY);
-        Logger.getLogger(DISCARDMSG_NOALTEXCH_LOG_HIERARCHY);
-        Logger.getLogger(IDLE_TXN_LOG_HIERARCHY);
-        Logger.getLogger(FLOW_CONTROL_IGNORED_LOG_HIERARCHY);
-        Logger.getLogger(DISCARDMSG_NOROUTE_LOG_HIERARCHY);
-        Logger.getLogger(OPEN_TXN_LOG_HIERARCHY);
-        Logger.getLogger(FLOW_REMOVED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CHANNEL_LOG_HIERARCHY);
+        LoggerFactory.getLogger(FLOW_ENFORCED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CREATE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(FLOW_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CLOSE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(PREFETCH_SIZE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CLOSE_FORCED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(LARGE_TRANSACTION_WARN_LOG_HIERARCHY);
+        LoggerFactory.getLogger(DEADLETTERMSG_LOG_HIERARCHY);
+        LoggerFactory.getLogger(DISCARDMSG_NOALTEXCH_LOG_HIERARCHY);
+        LoggerFactory.getLogger(IDLE_TXN_LOG_HIERARCHY);
+        LoggerFactory.getLogger(FLOW_CONTROL_IGNORED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(DISCARDMSG_NOROUTE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(OPEN_TXN_LOG_HIERARCHY);
+        LoggerFactory.getLogger(FLOW_REMOVED_LOG_HIERARCHY);
 
         _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.Channel_logmessages", _currentLocale);
     }

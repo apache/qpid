@@ -22,7 +22,8 @@ package org.apache.qpid.server.logging.messages;
 
 import static org.apache.qpid.server.logging.AbstractMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.LogMessage;
 
@@ -51,11 +52,11 @@ public class ConnectionMessages
 
     static
     {
-        Logger.getLogger(CONNECTION_LOG_HIERARCHY);
-        Logger.getLogger(OPEN_LOG_HIERARCHY);
-        Logger.getLogger(DROPPED_CONNECTION_LOG_HIERARCHY);
-        Logger.getLogger(IDLE_CLOSE_LOG_HIERARCHY);
-        Logger.getLogger(CLOSE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CONNECTION_LOG_HIERARCHY);
+        LoggerFactory.getLogger(OPEN_LOG_HIERARCHY);
+        LoggerFactory.getLogger(DROPPED_CONNECTION_LOG_HIERARCHY);
+        LoggerFactory.getLogger(IDLE_CLOSE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CLOSE_LOG_HIERARCHY);
 
         _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.Connection_logmessages", _currentLocale);
     }

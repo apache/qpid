@@ -45,7 +45,8 @@ import javax.security.auth.Subject;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.binding.BindingImpl;
@@ -110,7 +111,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                    MessageGroupManager.ConsumerResetHelper
 {
 
-    private static final Logger _logger = Logger.getLogger(AbstractQueue.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AbstractQueue.class);
 
     public static final String SHARED_MSG_GROUP_ARG_VALUE = "1";
 

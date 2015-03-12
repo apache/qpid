@@ -38,7 +38,8 @@ import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.Transaction;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
@@ -62,7 +63,7 @@ import org.apache.qpid.util.FileUtils;
  */
 public class BDBConfigurationStore implements MessageStoreProvider, DurableConfigurationStore
 {
-    private static final Logger LOGGER = Logger.getLogger(BDBConfigurationStore.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BDBConfigurationStore.class);
 
     public static final int VERSION = 8;
     private static final String CONFIGURED_OBJECTS_DB_NAME = "CONFIGURED_OBJECTS";

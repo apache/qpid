@@ -25,7 +25,8 @@ import java.util.Set;
 
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.Broker;
 import org.apache.qpid.server.BrokerOptions;
@@ -34,7 +35,7 @@ import org.apache.qpid.server.util.Action;
 
 public class InternalBrokerHolder implements BrokerHolder
 {
-    private static final Logger LOGGER = Logger.getLogger(InternalBrokerHolder.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(InternalBrokerHolder.class);
 
     private Broker _broker;
 

@@ -27,7 +27,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
@@ -41,7 +42,7 @@ import org.apache.qpid.transport.TransportException;
  */
 public class QueueRunner implements Runnable
 {
-    private static final Logger _logger = Logger.getLogger(QueueRunner.class);
+    private static final Logger _logger = LoggerFactory.getLogger(QueueRunner.class);
 
     private final AbstractQueue _queue;
 

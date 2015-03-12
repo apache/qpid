@@ -30,7 +30,9 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.naming.NamingException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
@@ -48,7 +50,7 @@ import org.apache.qpid.url.URLSyntaxException;
  */
 public class CloseOnNoRouteForMandatoryMessageTest extends QpidBrokerTestCase
 {
-    private static final Logger _logger = Logger.getLogger(CloseOnNoRouteForMandatoryMessageTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(CloseOnNoRouteForMandatoryMessageTest.class);
 
     private Connection _connection;
     private UnroutableMessageTestExceptionListener _testExceptionListener = new UnroutableMessageTestExceptionListener();

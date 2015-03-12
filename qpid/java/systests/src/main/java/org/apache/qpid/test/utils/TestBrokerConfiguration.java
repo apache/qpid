@@ -38,8 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
@@ -60,7 +58,6 @@ import org.apache.qpid.util.Strings;
 
 public class TestBrokerConfiguration
 {
-    private static final Logger LOGGER = Logger.getLogger(TestBrokerConfiguration.class);
 
     public static final String ENTRY_NAME_HTTP_PORT = "http";
     public static final String ENTRY_NAME_AMQP_PORT = "amqp";

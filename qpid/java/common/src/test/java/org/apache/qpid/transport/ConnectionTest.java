@@ -31,7 +31,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.network.ConnectionBinding;
@@ -43,7 +44,7 @@ import org.apache.qpid.transport.util.Waiter;
  */
 public class ConnectionTest extends QpidTestCase implements SessionListener
 {
-    private static final Logger _logger = Logger.getLogger(ConnectionTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ConnectionTest.class);
     private int port;
     private volatile boolean queue = false;
     private List<MessageTransfer> messages = new ArrayList<MessageTransfer>();
@@ -358,7 +359,7 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
         ssn.sync();
         if (_logger.isDebugEnabled())
         {
-            _logger.debug(messages);
+            _logger.debug(String.valueOf(messages));
         }
         assertEquals(1, messages.size());
         assertEquals("SINK 3", messages.get(0).getBodyString());

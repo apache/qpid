@@ -22,14 +22,15 @@ package org.apache.qpid.server.protocol.v0_8;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
 
 public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
 {
-    private static final Logger _log = Logger.getLogger(ExtractResendAndRequeue.class);
+    private static final Logger _log = LoggerFactory.getLogger(ExtractResendAndRequeue.class);
 
     private final Map<Long, MessageInstance> _msgToRequeue;
     private final Map<Long, MessageInstance> _msgToResend;

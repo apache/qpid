@@ -37,7 +37,9 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
@@ -48,7 +50,7 @@ import org.apache.qpid.test.utils.JMXTestUtils;
 
 public class ProducerFlowControlTest extends AbstractTestLogging
 {
-    private static final Logger _logger = Logger.getLogger(ProducerFlowControlTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ProducerFlowControlTest.class);
 
     private static final int TIMEOUT = 10000;
 

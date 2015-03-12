@@ -20,17 +20,19 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import org.apache.log4j.Logger;
+import java.security.PrivilegedAction;
+
+import javax.security.auth.Subject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.security.SecurityManager;
 
-import javax.security.auth.Subject;
-import java.security.PrivilegedAction;
-
 public abstract class HouseKeepingTask implements Runnable
 {
-    private Logger _logger = Logger.getLogger(this.getClass());
+    private Logger _logger = LoggerFactory.getLogger(this.getClass());
 
     private String _name;
 

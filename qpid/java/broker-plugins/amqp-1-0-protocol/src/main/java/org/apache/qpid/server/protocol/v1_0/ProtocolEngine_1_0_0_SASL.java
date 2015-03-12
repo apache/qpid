@@ -36,7 +36,8 @@ import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.amqp_1_0.codec.FrameWriter;
 import org.apache.qpid.amqp_1_0.codec.ProtocolHandler;
@@ -71,8 +72,7 @@ import org.apache.qpid.transport.network.NetworkConnection;
 
 public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOutputHandler
 {
-    private static final org.apache.log4j.Logger
-            _logger = org.apache.log4j.Logger.getLogger(ProtocolEngine_1_0_0_SASL.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ProtocolEngine_1_0_0_SASL.class);
 
     private final AmqpPort<?> _port;
     private final Transport _transport;
@@ -316,7 +316,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         return false;
     }
 
-    private final Logger RAW_LOGGER = Logger.getLogger("RAW");
+    private final Logger RAW_LOGGER = LoggerFactory.getLogger("RAW");
 
 
     public synchronized void received(final ByteBuffer msg)
@@ -513,7 +513,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         send(amqFrame, null);
     }
 
-    private static final Logger FRAME_LOGGER = Logger.getLogger("FRM");
+    private static final Logger FRAME_LOGGER = LoggerFactory.getLogger("FRM");
 
 
     public void send(final AMQFrame amqFrame, ByteBuffer buf)

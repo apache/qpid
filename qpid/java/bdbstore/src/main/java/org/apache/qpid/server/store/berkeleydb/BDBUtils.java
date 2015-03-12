@@ -25,13 +25,14 @@ import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.Transaction;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.store.StoreException;
 
 public class BDBUtils
 {
-    private static final Logger LOGGER = Logger.getLogger(BDBUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BDBUtils.class);
 
     public static final DatabaseConfig DEFAULT_DATABASE_CONFIG = new DatabaseConfig().setTransactional(true).setAllowCreate(true);
 

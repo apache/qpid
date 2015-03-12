@@ -22,7 +22,8 @@ package org.apache.qpid.server.logging.messages;
 
 import static org.apache.qpid.server.logging.AbstractMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.LogMessage;
 
@@ -50,10 +51,10 @@ public class ExchangeMessages
 
     static
     {
-        Logger.getLogger(EXCHANGE_LOG_HIERARCHY);
-        Logger.getLogger(DISCARDMSG_LOG_HIERARCHY);
-        Logger.getLogger(CREATED_LOG_HIERARCHY);
-        Logger.getLogger(DELETED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(EXCHANGE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(DISCARDMSG_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CREATED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(DELETED_LOG_HIERARCHY);
 
         _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.Exchange_logmessages", _currentLocale);
     }

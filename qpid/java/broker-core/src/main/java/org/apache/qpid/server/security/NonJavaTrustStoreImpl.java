@@ -46,7 +46,8 @@ import javax.security.auth.x500.X500Principal;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
@@ -68,7 +69,7 @@ import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
 public class NonJavaTrustStoreImpl
         extends AbstractConfiguredObject<NonJavaTrustStoreImpl> implements NonJavaTrustStore<NonJavaTrustStoreImpl>
 {
-    private static final Logger LOGGER = Logger.getLogger(NonJavaTrustStoreImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NonJavaTrustStoreImpl.class);
 
     private final Broker<?> _broker;
 

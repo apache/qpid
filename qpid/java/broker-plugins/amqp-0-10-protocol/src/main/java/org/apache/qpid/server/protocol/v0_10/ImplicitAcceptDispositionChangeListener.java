@@ -20,14 +20,15 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
 
 class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDispositionChangeListener
 {
-    private static final Logger _logger = Logger.getLogger(ImplicitAcceptDispositionChangeListener.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ImplicitAcceptDispositionChangeListener.class);
 
 
     private final MessageInstance _entry;

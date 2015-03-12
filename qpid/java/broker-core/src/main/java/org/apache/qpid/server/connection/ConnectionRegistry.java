@@ -29,14 +29,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 
 public class ConnectionRegistry implements IConnectionRegistry
 {
-    private Logger _logger = Logger.getLogger(ConnectionRegistry.class);
+    private Logger _logger = LoggerFactory.getLogger(ConnectionRegistry.class);
 
     private final Set<AMQConnectionModel> _registry = newSetFromMap(new ConcurrentHashMap<AMQConnectionModel, Boolean>());
     private final Collection<RegistryChangeListener> _listeners = new ArrayList<>();

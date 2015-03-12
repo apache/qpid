@@ -30,7 +30,8 @@ import java.util.Set;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
@@ -48,7 +49,7 @@ import org.apache.qpid.server.model.TrustStore;
 
 abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractConfiguredObject<X> implements Port<X>
 {
-    private static final Logger LOGGER = Logger.getLogger(AbstractPort.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractPort.class);
 
     private final Broker<?> _broker;
 

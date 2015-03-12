@@ -51,14 +51,16 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import javax.servlet.http.HttpServletResponse;
 
-import org.junit.Assert;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+import org.junit.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Binding;
@@ -75,7 +77,7 @@ public class RestTestHelper
     };
     public static final String API_BASE = "/api/latest/";
 
-    private static final Logger LOGGER = Logger.getLogger(RestTestHelper.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RestTestHelper.class);
     private static final String CERT_ALIAS_APP1 = "app1";
 
     private int _httpPort;

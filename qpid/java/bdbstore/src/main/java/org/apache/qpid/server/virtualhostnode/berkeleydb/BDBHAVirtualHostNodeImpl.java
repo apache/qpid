@@ -56,7 +56,8 @@ import com.sleepycat.je.rep.StateChangeEvent;
 import com.sleepycat.je.rep.StateChangeListener;
 import com.sleepycat.je.rep.util.ReplicationGroupAdmin;
 import com.sleepycat.je.rep.utilint.HostPortPair;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.Task;
@@ -104,7 +105,7 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
      */
     private static final int MUTATE_JE_TIMEOUT_MS = 100;
 
-    private static final Logger LOGGER = Logger.getLogger(BDBHAVirtualHostNodeImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BDBHAVirtualHostNodeImpl.class);
 
     private final AtomicReference<ReplicatedEnvironmentFacade> _environmentFacade = new AtomicReference<>();
 

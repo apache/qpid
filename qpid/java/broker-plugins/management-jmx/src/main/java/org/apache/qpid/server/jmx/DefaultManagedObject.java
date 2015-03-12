@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.jmx;
 
-import org.apache.log4j.Logger;
-
 import javax.management.JMException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanNotificationInfo;
@@ -37,8 +35,6 @@ import javax.management.StandardMBean;
  */
 public abstract class DefaultManagedObject extends StandardMBean implements ManagedObject
 {
-    private static final Logger LOGGER = Logger.getLogger(DefaultManagedObject.class);
-    
     private final Class<?> _managementInterface;
 
     private final String _typeName;

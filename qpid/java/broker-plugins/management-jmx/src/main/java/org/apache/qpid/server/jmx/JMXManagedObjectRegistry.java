@@ -49,7 +49,8 @@ import javax.management.remote.rmi.RMIConnectorServer;
 import javax.net.ssl.SSLContext;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.EventLogger;
@@ -67,7 +68,7 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
  */
 public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 {
-    private static final Logger _log = Logger.getLogger(JMXManagedObjectRegistry.class);
+    private static final Logger _log = LoggerFactory.getLogger(JMXManagedObjectRegistry.class);
 
     private static final String OPERATIONAL_LOGGING_NAME = "JMX";
 

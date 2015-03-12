@@ -34,7 +34,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
@@ -53,7 +54,7 @@ public class GenericJDBCConfigurationStore extends AbstractJDBCConfigurationStor
 {
     private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
-    private static final Logger LOGGER = Logger.getLogger(GenericJDBCConfigurationStore.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GenericJDBCConfigurationStore.class);
 
     private final AtomicBoolean _configurationStoreOpen = new AtomicBoolean();
     private final MessageStore _providedMessageStore = new ProvidedMessageStore();

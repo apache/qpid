@@ -26,11 +26,12 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NetworkFirewallRule implements FirewallRule
 {
-    private static final Logger _logger = Logger.getLogger(NetworkFirewallRule.class);
+    private static final Logger _logger = LoggerFactory.getLogger(NetworkFirewallRule.class);
 
     private List<InetNetwork> _networks;
 

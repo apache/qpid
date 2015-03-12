@@ -20,13 +20,6 @@
  */
 package org.apache.qpid.server.security.auth.database;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.security.auth.UsernamePrincipal;
-import org.apache.qpid.server.util.BaseAction;
-import org.apache.qpid.server.util.FileHelper;
-
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.login.AccountNotFoundException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -40,6 +33,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
+
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.login.AccountNotFoundException;
+
+import org.slf4j.Logger;
+
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.util.BaseAction;
+import org.apache.qpid.server.util.FileHelper;
 
 public abstract class AbstractPasswordFilePrincipalDatabase<U extends PasswordPrincipal> implements PrincipalDatabase
 {

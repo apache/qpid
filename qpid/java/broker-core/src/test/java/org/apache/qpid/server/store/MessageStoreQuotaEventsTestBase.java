@@ -26,7 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -36,7 +37,7 @@ import org.apache.qpid.util.FileUtils;
 
 public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase implements EventListener, TransactionLogResource
 {
-    private static final Logger _logger = Logger.getLogger(MessageStoreQuotaEventsTestBase.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MessageStoreQuotaEventsTestBase.class);
 
     protected static final byte[] MESSAGE_DATA = new byte[32 * 1024];
 

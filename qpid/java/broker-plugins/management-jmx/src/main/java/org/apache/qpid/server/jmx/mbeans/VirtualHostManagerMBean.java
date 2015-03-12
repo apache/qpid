@@ -35,7 +35,8 @@ import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.OperationsException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
@@ -57,7 +58,7 @@ import org.apache.qpid.server.virtualhost.ReservedExchangeNameException;
 @MBeanDescription("This MBean exposes the broker level management features")
 public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<VirtualHost> implements ManagedBroker
 {
-    private static final Logger LOGGER = Logger.getLogger(VirtualHostManagerMBean.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(VirtualHostManagerMBean.class);
 
     private static final boolean _moveNonExclusiveQueueOwnerToDescription = Boolean.parseBoolean(System.getProperty("qpid.move_non_exclusive_queue_owner_to_description", Boolean.TRUE.toString()));
 

@@ -26,7 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
@@ -35,7 +36,7 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
  */
 public class QpidServiceLoader
 {
-    private static final Logger _logger = Logger.getLogger(QpidServiceLoader.class);
+    private static final Logger _logger = LoggerFactory.getLogger(QpidServiceLoader.class);
 
     public <C extends Pluggable> Iterable<C> instancesOf(Class<C> clazz)
     {

@@ -41,7 +41,9 @@ import com.sleepycat.je.Durability;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicationConfig;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.ConnectionURL;
@@ -58,7 +60,7 @@ import org.apache.qpid.test.utils.TestUtils;
  */
 public class MultiNodeTest extends QpidBrokerTestCase
 {
-    protected static final Logger LOGGER = Logger.getLogger(MultiNodeTest.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(MultiNodeTest.class);
 
     private static final String VIRTUAL_HOST = "test";
     private static final int NUMBER_OF_NODES = 3;

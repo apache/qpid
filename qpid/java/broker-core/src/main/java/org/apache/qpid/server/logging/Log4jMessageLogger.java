@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.server.logging;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Log4jMessageLogger extends AbstractMessageLogger
 {
@@ -39,7 +40,7 @@ public class Log4jMessageLogger extends AbstractMessageLogger
     {
         if(isEnabled())
         {
-            Logger logger = Logger.getLogger(logHierarchy);
+            Logger logger = LoggerFactory.getLogger(logHierarchy);
             return logger.isInfoEnabled();
         }
         else
@@ -57,7 +58,7 @@ public class Log4jMessageLogger extends AbstractMessageLogger
     @Override
     void rawMessage(String message, Throwable throwable, String logHierarchy)
     {
-        Logger logger = Logger.getLogger(logHierarchy);
+        Logger logger = LoggerFactory.getLogger(logHierarchy);
         logger.info(message, throwable);
     }
 }

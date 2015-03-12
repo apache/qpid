@@ -37,7 +37,10 @@ import javax.management.ObjectName;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularData;
 
-import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.server.model.State;
@@ -48,7 +51,6 @@ import org.apache.qpid.systest.rest.RestTestHelper;
 import org.apache.qpid.test.utils.BrokerHolder;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.junit.Assert;
 
 /**
  * System test verifying the ability to control a cluster via the Management API.
@@ -57,7 +59,7 @@ import org.junit.Assert;
  */
 public class JMXManagementTest extends QpidBrokerTestCase
 {
-    protected static final Logger LOGGER = Logger.getLogger(JMXManagementTest.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(JMXManagementTest.class);
 
     private static final Set<String> NON_MASTER_STATES = new HashSet<String>(Arrays.asList(REPLICA.toString(), DETACHED.toString(), UNKNOWN.toString()));;
     private static final String VIRTUAL_HOST = "test";

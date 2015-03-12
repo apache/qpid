@@ -39,7 +39,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ReceivingLinkEndpoint;
@@ -92,7 +93,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class Session_1_0 implements SessionEventListener, AMQSessionModel<Session_1_0, Connection_1_0>, LogSubject
 {
-    private static final Logger _logger = Logger.getLogger(Session_1_0.class);
+    private static final Logger _logger = LoggerFactory.getLogger(Session_1_0.class);
     private static final Symbol LIFETIME_POLICY = Symbol.valueOf("lifetime-policy");
     private final SessionEndpoint _endpoint;
     private AutoCommitTransaction _transaction;

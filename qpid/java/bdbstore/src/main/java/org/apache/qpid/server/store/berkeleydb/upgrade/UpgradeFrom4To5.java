@@ -40,7 +40,8 @@ import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.Transaction;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -73,7 +74,7 @@ public class UpgradeFrom4To5 extends AbstractStoreUpgrade
 
     private static final byte COLON = (byte) ':';
 
-    private static final Logger _logger = Logger.getLogger(UpgradeFrom4To5.class);
+    private static final Logger _logger = LoggerFactory.getLogger(UpgradeFrom4To5.class);
 
     public void performUpgrade(final Environment environment, final UpgradeInteractionHandler handler, ConfiguredObject<?> parent)
     {

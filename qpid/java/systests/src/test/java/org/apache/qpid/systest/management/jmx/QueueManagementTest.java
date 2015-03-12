@@ -48,7 +48,8 @@ import javax.management.openmbean.TabularData;
 import javax.naming.NamingException;
 
 import org.apache.commons.lang.time.FastDateFormat;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.configuration.ClientProperties;
@@ -69,7 +70,7 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 public class QueueManagementTest extends QpidBrokerTestCase
 {
 
-    private static final Logger LOGGER = Logger.getLogger(QueueManagementTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(QueueManagementTest.class);
 
     private static final String VIRTUAL_HOST = "test";
     private static final String TEST_QUEUE_DESCRIPTION = "my description";
@@ -328,8 +329,6 @@ public class QueueManagementTest extends QpidBrokerTestCase
      * Tests the ability to receive queue alerts as JMX notifications.
      *
      * @see NotificationCheckTest
-     * @see SimpleAMQQueueTest#testNotificationFiredAsync()
-     * @see SimpleAMQQueueTest#testNotificationFiredOnEnqueue()
      */
     public void testQueueNotification() throws Exception
     {

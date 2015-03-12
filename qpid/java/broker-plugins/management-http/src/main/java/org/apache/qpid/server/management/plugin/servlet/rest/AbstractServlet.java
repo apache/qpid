@@ -34,11 +34,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.management.plugin.HttpManagementConfiguration;
 import org.apache.qpid.server.management.plugin.HttpManagementUtil;
@@ -47,7 +48,7 @@ import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 
 public abstract class AbstractServlet extends HttpServlet
 {
-    private static final Logger LOGGER = Logger.getLogger(AbstractServlet.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractServlet.class);
 
     private Broker<?> _broker;
     private HttpManagementConfiguration _managementConfiguration;

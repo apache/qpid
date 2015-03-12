@@ -35,7 +35,8 @@ import java.util.Set;
 import javax.security.auth.Subject;
 
 import org.apache.commons.lang.ObjectUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.connection.ConnectionPrincipal;
@@ -51,7 +52,7 @@ import org.apache.qpid.server.security.access.config.RuleSet;
 
 public class DefaultAccessControl implements AccessControl
 {
-    private static final Logger _logger = Logger.getLogger(DefaultAccessControl.class);
+    private static final Logger _logger = LoggerFactory.getLogger(DefaultAccessControl.class);
     private final String _fileName;
 
     private RuleSet _ruleSet;

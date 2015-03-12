@@ -33,7 +33,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.util.BaseAction;
 import org.apache.qpid.server.util.FileHelper;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -46,7 +48,7 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
  */
 public class FileGroupDatabase implements GroupDatabase
 {
-    private static final Logger LOGGER = Logger.getLogger(FileGroupDatabase.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileGroupDatabase.class);
 
     private Map<String, Set<String>> _groupToUserMap = new ConcurrentHashMap<String, Set<String>>();
     private Map<String, Set<String>> _userToGroupMap = new ConcurrentHashMap<String, Set<String>>();

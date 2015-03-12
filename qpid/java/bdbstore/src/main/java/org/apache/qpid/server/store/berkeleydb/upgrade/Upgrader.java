@@ -20,28 +20,28 @@
  */
 package org.apache.qpid.server.store.berkeleydb.upgrade;
 
-import com.sleepycat.je.Cursor;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.server.store.berkeleydb.BDBConfigurationStore;
-
 import com.sleepycat.bind.tuple.IntegerBinding;
 import com.sleepycat.bind.tuple.LongBinding;
+import com.sleepycat.je.Cursor;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.OperationStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.server.model.ConfiguredObject;
+import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.store.berkeleydb.BDBConfigurationStore;
 
 public class Upgrader
 {
-    private static final Logger LOGGER = Logger.getLogger(Upgrader.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Upgrader.class);
 
     static final String VERSION_DB_NAME = "DB_VERSION";
 

@@ -38,7 +38,8 @@ import javax.security.auth.Subject;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.BrokerOptions;
@@ -62,7 +63,7 @@ import org.apache.qpid.util.SystemUtils;
 
 public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> implements Broker<BrokerAdapter>, ConfigurationChangeListener, StatisticsGatherer
 {
-    private static final Logger LOGGER = Logger.getLogger(BrokerAdapter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BrokerAdapter.class);
 
     private static final Pattern MODEL_VERSION_PATTERN = Pattern.compile("^\\d+\\.\\d+$");
 

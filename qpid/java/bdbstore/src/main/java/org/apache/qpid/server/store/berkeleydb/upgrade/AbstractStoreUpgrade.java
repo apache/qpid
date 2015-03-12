@@ -22,15 +22,15 @@ package org.apache.qpid.server.store.berkeleydb.upgrade;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import com.sleepycat.je.Database;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.Transaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractStoreUpgrade implements StoreUpgrade
 {
-    private static final Logger _logger = Logger.getLogger(AbstractStoreUpgrade.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AbstractStoreUpgrade.class);
 
     protected void reportFinished(Environment environment, int version)
     {

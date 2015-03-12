@@ -23,7 +23,8 @@ package org.apache.qpid.server.txn;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageInstance;
@@ -42,7 +43,7 @@ import org.apache.qpid.server.store.TransactionLogResource;
  */
 public class AutoCommitTransaction implements ServerTransaction
 {
-    protected static final Logger _logger = Logger.getLogger(AutoCommitTransaction.class);
+    protected static final Logger _logger = LoggerFactory.getLogger(AutoCommitTransaction.class);
 
     private final MessageStore _messageStore;
 

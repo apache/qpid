@@ -20,19 +20,17 @@
  */
 package org.apache.qpid.server.security.auth.database;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
-
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import org.apache.commons.codec.binary.Base64;
+
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
+
 
 public class HashedUser implements PasswordPrincipal
 {
-    private static final Logger _logger = Logger.getLogger(HashedUser.class);
-
     private String _name;
     private char[] _password;
     private byte[] _encodedPassword = null;

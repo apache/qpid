@@ -43,10 +43,11 @@ import java.util.concurrent.TimeUnit;
 import javax.jms.Connection;
 
 import com.sleepycat.je.rep.ReplicationConfig;
-import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.junit.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
@@ -68,7 +69,7 @@ import org.apache.qpid.url.URLSyntaxException;
 
 public class GroupCreator
 {
-    protected static final Logger LOGGER = Logger.getLogger(GroupCreator.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(GroupCreator.class);
 
     private static final String MANY_BROKER_URL_FORMAT = "amqp://guest:guest@/%s?brokerlist='%s'&failover='roundrobin?cyclecount='%d''";
     private static final String BROKER_PORTION_FORMAT = "tcp://localhost:%d?connectdelay='%d',retries='%d'";

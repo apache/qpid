@@ -18,7 +18,6 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageDestination;
@@ -35,7 +34,6 @@ public class DefaultDestination implements MessageDestination
 {
 
     private VirtualHostImpl _virtualHost;
-    private static final Logger _logger = Logger.getLogger(DefaultDestination.class);
 
     public DefaultDestination(VirtualHostImpl virtualHost)
     {

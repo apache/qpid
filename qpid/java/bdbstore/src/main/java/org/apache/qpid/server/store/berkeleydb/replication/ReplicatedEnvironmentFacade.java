@@ -68,8 +68,9 @@ import com.sleepycat.je.rep.utilint.ServiceDispatcher.ServiceConnectFailedExcept
 import com.sleepycat.je.rep.vlsn.VLSNRange;
 import com.sleepycat.je.utilint.PropUtil;
 import com.sleepycat.je.utilint.VLSN;
-import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.store.StoreException;
@@ -91,7 +92,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     public static final String ENVIRONMENT_RESTART_RETRY_LIMIT_PROPERTY_NAME = "qpid.bdb.ha.environment_restart_retry_limit";
     public static final String EXECUTOR_SHUTDOWN_TIMEOUT_PROPERTY_NAME = "qpid.bdb.ha.executor_shutdown_timeout";
 
-    private static final Logger LOGGER = Logger.getLogger(ReplicatedEnvironmentFacade.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReplicatedEnvironmentFacade.class);
 
     private static final int DEFAULT_MASTER_TRANSFER_TIMEOUT = 1000 * 60;
     private static final int DEFAULT_DB_PING_SOCKET_TIMEOUT = 1000;

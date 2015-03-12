@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.store.berkeleydb.replication;
 
-import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
-
 import com.sleepycat.bind.tuple.IntegerBinding;
 import com.sleepycat.bind.tuple.LongBinding;
 import com.sleepycat.je.Database;
@@ -30,11 +28,14 @@ import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.Durability;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.TransactionConfig;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.server.store.berkeleydb.EnvironmentFacade;
 
 public class DatabasePinger
 {
-    private static final Logger LOGGER = Logger.getLogger(DatabasePinger.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DatabasePinger.class);
 
     public static final String PING_DATABASE_NAME = "PINGDB";
     private static final DatabaseConfig DATABASE_CONFIG =

@@ -19,8 +19,6 @@
  */
 package org.apache.qpid.server.jmx;
 
-import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;

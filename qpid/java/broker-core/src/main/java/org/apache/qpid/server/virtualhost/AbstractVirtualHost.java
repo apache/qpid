@@ -46,7 +46,8 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.pool.SuppressingInheritedAccessControlContextThreadFactory;
@@ -110,7 +111,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     public static final String CREATE_DLQ_ON_CREATION = "x-qpid-dlq-enabled"; // TODO - this value should change
     private static final int MAX_LENGTH = 255;
 
-    private static final Logger _logger = Logger.getLogger(AbstractVirtualHost.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AbstractVirtualHost.class);
 
     private static final int HOUSEKEEPING_SHUTDOWN_TIMEOUT = 5;
 

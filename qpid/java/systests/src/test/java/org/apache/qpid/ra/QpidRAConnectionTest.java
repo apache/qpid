@@ -25,13 +25,14 @@ import javax.jms.ConnectionFactory;
 import javax.jms.Message;
 import javax.jms.Session;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class QpidRAConnectionTest extends QpidBrokerTestCase
 {
-    private static final Logger _logger = Logger.getLogger(QpidRAConnectionTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(QpidRAConnectionTest.class);
 
     private static final String BROKER_PORT = "15672";
 

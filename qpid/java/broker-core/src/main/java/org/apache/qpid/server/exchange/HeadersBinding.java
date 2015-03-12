@@ -26,7 +26,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
@@ -40,7 +41,7 @@ import org.apache.qpid.server.message.AMQMessageHeader;
  */
 class HeadersBinding
 {
-    private static final Logger _logger = Logger.getLogger(HeadersBinding.class);
+    private static final Logger _logger = LoggerFactory.getLogger(HeadersBinding.class);
 
     private final Map<String,Object> _mappings;
     private final BindingImpl _binding;

@@ -30,9 +30,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.AMQMessageHeader;
@@ -49,7 +50,7 @@ import org.apache.qpid.server.store.TransactionLogResource;
 
 public class MessageServlet extends AbstractServlet
 {
-    private static final Logger LOGGER = Logger.getLogger(MessageServlet.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MessageServlet.class);
 
     public MessageServlet()
     {

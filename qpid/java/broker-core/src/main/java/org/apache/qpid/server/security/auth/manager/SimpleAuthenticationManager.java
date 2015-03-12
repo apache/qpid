@@ -37,7 +37,8 @@ import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedObject;
@@ -50,7 +51,7 @@ import org.apache.qpid.server.security.auth.sasl.plain.PlainSaslServer;
 @ManagedObject( category = false, type = "Simple", register = false )
 public class SimpleAuthenticationManager extends AbstractAuthenticationManager<SimpleAuthenticationManager> implements PreferencesSupportingAuthenticationProvider
 {
-    private static final Logger _logger = Logger.getLogger(SimpleAuthenticationManager.class);
+    private static final Logger _logger = LoggerFactory.getLogger(SimpleAuthenticationManager.class);
 
     private static final String PLAIN_MECHANISM = "PLAIN";
     private static final String CRAM_MD5_MECHANISM = "CRAM-MD5";

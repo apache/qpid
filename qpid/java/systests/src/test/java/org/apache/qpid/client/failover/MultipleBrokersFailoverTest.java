@@ -33,7 +33,9 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.jms.ConnectionListener;
@@ -42,7 +44,7 @@ import org.apache.qpid.util.FileUtils;
 
 public class MultipleBrokersFailoverTest extends QpidBrokerTestCase implements ConnectionListener
 {
-    private static final Logger _logger = Logger.getLogger(MultipleBrokersFailoverTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MultipleBrokersFailoverTest.class);
 
     private static final String FAILOVER_VIRTUAL_HOST = "failover";
     private static final String NON_FAILOVER_VIRTUAL_HOST = "nonfailover";

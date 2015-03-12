@@ -24,7 +24,8 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.filter.BooleanExpression;
@@ -39,7 +40,7 @@ import org.apache.qpid.server.plugin.PluggableService;
 @PluggableService
 public class JMSSelectorFilter implements MessageFilter
 {
-    private final static Logger _logger = org.apache.log4j.Logger.getLogger(JMSSelectorFilter.class);
+    private final static Logger _logger = LoggerFactory.getLogger(JMSSelectorFilter.class);
 
     private String _selector;
     private BooleanExpression _matcher;

@@ -32,8 +32,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.JMSSelectorFilter;
@@ -59,8 +57,6 @@ class QueueConsumerImpl
         implements QueueConsumer<QueueConsumerImpl>, LogSubject
 {
 
-
-    private static final Logger _logger = Logger.getLogger(QueueConsumerImpl.class);
     private final AtomicBoolean _targetClosed = new AtomicBoolean(false);
     private final AtomicBoolean _closed = new AtomicBoolean(false);
     private final long _consumerNumber;

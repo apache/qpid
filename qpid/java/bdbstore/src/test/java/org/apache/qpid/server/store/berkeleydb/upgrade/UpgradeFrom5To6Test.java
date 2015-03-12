@@ -41,7 +41,15 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
+import com.sleepycat.bind.tuple.LongBinding;
+import com.sleepycat.je.Database;
+import com.sleepycat.je.DatabaseEntry;
+import com.sleepycat.je.Environment;
+import com.sleepycat.je.LockMode;
+import com.sleepycat.je.Transaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.LifetimePolicy;
@@ -66,16 +74,9 @@ import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.UpgradeCo
 import org.apache.qpid.server.store.berkeleydb.upgrade.UpgradeFrom5To6.UpgradeUUIDBinding;
 import org.apache.qpid.server.util.MapJsonSerializer;
 
-import com.sleepycat.bind.tuple.LongBinding;
-import com.sleepycat.je.Database;
-import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.Environment;
-import com.sleepycat.je.LockMode;
-import com.sleepycat.je.Transaction;
-
 public class UpgradeFrom5To6Test extends AbstractUpgradeTestCase
 {
-    private static final Logger _logger = Logger.getLogger(UpgradeFrom5To6Test.class);
+    private static final Logger _logger = LoggerFactory.getLogger(UpgradeFrom5To6Test.class);
     private static final String ARGUMENTS = "arguments";
 
     @Override

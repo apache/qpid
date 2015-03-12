@@ -32,7 +32,8 @@ import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedSaslServer;
@@ -50,7 +51,7 @@ import org.apache.qpid.server.security.auth.sasl.plain.PlainSaslServer;
  */
 public class Base64MD5PasswordFilePrincipalDatabase extends AbstractPasswordFilePrincipalDatabase<HashedUser>
 {
-    private final Logger _logger = Logger.getLogger(Base64MD5PasswordFilePrincipalDatabase.class);
+    private final Logger _logger = LoggerFactory.getLogger(Base64MD5PasswordFilePrincipalDatabase.class);
     private List<String> _mechanisms = Collections.unmodifiableList(Arrays.asList(CRAMMD5HashedSaslServer.MECHANISM,
                                                                                   CRAMMD5HexSaslServer.MECHANISM,
                                                                                   PlainSaslServer.MECHANISM));
