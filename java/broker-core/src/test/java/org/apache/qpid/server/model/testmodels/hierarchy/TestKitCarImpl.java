@@ -25,6 +25,7 @@ import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
+import org.apache.qpid.server.model.testmodels.TestSecurityManager;
 import org.apache.qpid.server.security.SecurityManager;
 
 @ManagedObject( category = false,
@@ -39,7 +40,7 @@ public class TestKitCarImpl extends AbstractConfiguredObject<TestKitCarImpl>
     public TestKitCarImpl(final Map<String, Object> attributes)
     {
         super(parentsMap(), attributes, newTaskExecutor(), TestModel.getInstance());
-        _securityManager = new SecurityManager(this, false);
+        _securityManager = new TestSecurityManager(this);
     }
 
     @Override
