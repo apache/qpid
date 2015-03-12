@@ -39,9 +39,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.server.model.AccessControlProvider;
-import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -51,17 +49,13 @@ import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.ExclusivityPolicy;
 import org.apache.qpid.server.model.Group;
 import org.apache.qpid.server.model.GroupMember;
-import org.apache.qpid.server.model.GroupProvider;
-import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Model;
-import org.apache.qpid.server.model.Plugin;
-import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.PreferencesProvider;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.RemoteReplicationNode;
 import org.apache.qpid.server.model.Session;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostAlias;
@@ -78,7 +72,6 @@ import org.apache.qpid.server.security.auth.TaskPrincipal;
 
 public class SecurityManager
 {
-    private static final Logger LOGGER = Logger.getLogger(SecurityManager.class);
 
     private static final Subject SYSTEM = new Subject(true,
                                                      Collections.singleton(new SystemPrincipal()),
@@ -274,38 +267,17 @@ public class SecurityManager
             return;
         }
 
-        if (Operation.CREATE == operation && configuredObject instanceof RemoteReplicationNode)
+        if (isAllowedOperation(operation, configuredObject))
         {
             // creation of remote replication node is out of control for user of this broker
             return;
         }
-
-        if ((Operation.CREATE == operation) && configuredObject instanceof RemoteReplicationNode)
-        {
-            // creation of remote replication node is out of control for user of this broker
-            return;
-        }
-
-        if ((EnumSet.of(Operation.CREATE, Operation.UPDATE, Operation.DELETE).contains(operation)) && configuredObject instanceof Session)
-        {
-            return;
-        }
-
-        if ((EnumSet.of(Operation.UPDATE, Operation.DELETE).contains(operation)) && (configuredObject instanceof Consumer || configuredObject instanceof Connection))
-        {
-            return;
-        }
-
 
         Class<? extends ConfiguredObject> categoryClass = configuredObject.getCategoryClass();
-        LOGGER.debug("getCategoryClass " + categoryClass);
         ObjectType objectType = getACLObjectTypeManagingConfiguredObjectOfCategory(categoryClass);
-        LOGGER.debug("objectType " + objectType);
         if (objectType == null)
         {
-            LOGGER.warn("Cannot determine object type for " + configuredObject.getName() + " of category "
-                    + categoryClass + ". Skipping ACL check...");
-            return;
+            throw new IllegalArgumentException("Cannot identify object type for category " + categoryClass );
         }
 
         ObjectProperties properties = getACLObjectProperties(configuredObject, operation);
@@ -334,6 +306,28 @@ public class SecurityManager
             }
             throw new AccessControlException(exceptionMessage.toString());
         }
+    }
+
+    private boolean isAllowedOperation(Operation operation, ConfiguredObject<?> configuredObject)
+    {
+        if (configuredObject instanceof Session && (operation == Operation.CREATE || operation == Operation.UPDATE
+                || operation ==  Operation.DELETE))
+        {
+            return true;
+
+        }
+
+        if (configuredObject instanceof Consumer && (operation == Operation.UPDATE || operation ==  Operation.DELETE))
+        {
+            return true;
+        }
+
+        if (configuredObject instanceof Connection && (operation == Operation.UPDATE || operation ==  Operation.DELETE))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private Model getModel()
@@ -371,7 +365,7 @@ public class SecurityManager
                 // CREATE GROUP MEMBER is transformed into UPDATE GROUP rule
                 return Operation.UPDATE;
             }
-            else if (isBrokerOrBrokerChild(category))
+            else if (isBrokerOrBrokerChildOrPreferencesProvider(category))
             {
                 // CREATE/UPDATE broker child is transformed into CONFIGURE BROKER rule
                 return Operation.CONFIGURE;
@@ -384,10 +378,11 @@ public class SecurityManager
                 // DELETE BINDING is transformed into UNBIND EXCHANGE rule
                 return Operation.UNBIND;
             }
-            else if (isBrokerOrBrokerChild(category))
+            else if (isBrokerOrBrokerChildOrPreferencesProvider(category))
             {
                 // DELETE broker child is transformed into CONFIGURE BROKER rule
                 return Operation.CONFIGURE;
+
             }
             else if (GroupMember.class.isAssignableFrom(category))
             {
@@ -398,16 +393,11 @@ public class SecurityManager
         return operation;
     }
 
-    private boolean isBrokerOrBrokerChild(Class<? extends ConfiguredObject> category)
+    private boolean isBrokerOrBrokerChildOrPreferencesProvider(Class<? extends ConfiguredObject> category)
     {
-        return Broker.class.isAssignableFrom(category)
-                || Port.class.isAssignableFrom(category)
-                || AuthenticationProvider.class.isAssignableFrom(category)
-                || AccessControlProvider.class.isAssignableFrom(category)
-                || GroupProvider.class.isAssignableFrom(category)
-                || KeyStore.class.isAssignableFrom(category)
-                || TrustStore.class.isAssignableFrom(category)
-                || Plugin.class.isAssignableFrom(category);
+        return Broker.class.isAssignableFrom(category) ||
+               PreferencesProvider.class.isAssignableFrom(category) ||
+               ( !VirtualHostNode.class.isAssignableFrom(category) && getModel().getChildTypes(Broker.class).contains(category));
     }
 
     private ObjectProperties getACLObjectProperties(ConfiguredObject<?> configuredObject, Operation configuredObjectOperation)
@@ -448,7 +438,7 @@ public class SecurityManager
             Queue<?> queue = (Queue<?>)configuredObject.getParent(Queue.class);
             setQueueProperties(queue, properties);
         }
-        else if (isBrokerOrBrokerChild(configuredObjectType))
+        else if (isBrokerOrBrokerChildOrPreferencesProvider(configuredObjectType))
         {
             String description = String.format("%s %s '%s'",
                     configuredObjectOperation == null? null : configuredObjectOperation.name().toLowerCase(),
@@ -494,7 +484,7 @@ public class SecurityManager
         {
             return ObjectType.VIRTUALHOSTNODE;
         }
-        else if (isBrokerOrBrokerChild(category))
+        else if (isBrokerOrBrokerChildOrPreferencesProvider(category))
         {
             return ObjectType.BROKER;
         }

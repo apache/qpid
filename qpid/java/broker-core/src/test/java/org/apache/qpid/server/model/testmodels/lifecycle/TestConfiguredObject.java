@@ -41,6 +41,7 @@ import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.Model;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
+import org.apache.qpid.server.model.testmodels.TestSecurityManager;
 import org.apache.qpid.server.plugin.ConfiguredObjectRegistration;
 import org.apache.qpid.server.security.SecurityManager;
 
@@ -81,7 +82,7 @@ public class TestConfiguredObject extends AbstractConfiguredObject
     {
         super(parents, attributes, taskExecutor, model);
         _opened = false;
-        _securityManager = new SecurityManager(this, false);
+        _securityManager = new TestSecurityManager(this);
     }
 
     @Override

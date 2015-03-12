@@ -48,6 +48,7 @@ import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.LinkRegistry;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
@@ -355,9 +356,9 @@ class RedirectingVirtualHostImpl
     }
 
     @Override
-    public org.apache.qpid.server.security.SecurityManager getSecurityManager()
+    public SecurityManager getSecurityManager()
     {
-        return null;
+        return super.getSecurityManager();
     }
 
     @Override
