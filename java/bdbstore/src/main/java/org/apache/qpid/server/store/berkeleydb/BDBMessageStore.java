@@ -24,7 +24,8 @@ import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.sleepycat.je.DatabaseException;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.FileBasedSettings;
@@ -37,7 +38,7 @@ import org.apache.qpid.util.FileUtils;
  */
 public class BDBMessageStore extends AbstractBDBMessageStore
 {
-    private static final Logger LOGGER = Logger.getLogger(BDBMessageStore.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BDBMessageStore.class);
 
     private final EnvironmentFacadeFactory _environmentFacadeFactory;
 

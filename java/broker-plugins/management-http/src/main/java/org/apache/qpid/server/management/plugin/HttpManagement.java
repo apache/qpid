@@ -41,7 +41,6 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.SessionManager;
@@ -53,6 +52,8 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
@@ -87,7 +88,7 @@ import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 @ManagedObject( category = false, type = "MANAGEMENT-HTTP" )
 public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implements HttpManagementConfiguration<HttpManagement>, PortManager
 {
-    private final Logger _logger = Logger.getLogger(HttpManagement.class);
+    private final Logger _logger = LoggerFactory.getLogger(HttpManagement.class);
 
     // 10 minutes by default
     public static final int DEFAULT_TIMEOUT_IN_SECONDS = 60 * 10;

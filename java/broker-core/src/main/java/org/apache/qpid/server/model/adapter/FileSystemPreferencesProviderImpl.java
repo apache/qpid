@@ -40,12 +40,14 @@ import java.util.TreeMap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.apache.log4j.Logger;
+
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.codehaus.jackson.type.TypeReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -63,7 +65,7 @@ import org.apache.qpid.server.util.FileHelper;
 public class FileSystemPreferencesProviderImpl
         extends AbstractConfiguredObject<FileSystemPreferencesProviderImpl> implements FileSystemPreferencesProvider<FileSystemPreferencesProviderImpl>
 {
-    private static final Logger LOGGER = Logger.getLogger(FileSystemPreferencesProviderImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileSystemPreferencesProviderImpl.class);
 
     private final AuthenticationProvider<? extends AuthenticationProvider> _authenticationProvider;
 

@@ -30,7 +30,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.model.Broker;
@@ -44,7 +45,7 @@ import org.apache.qpid.transport.network.NetworkConnection;
 
 public class MultiVersionProtocolEngine implements ServerProtocolEngine
 {
-    private static final Logger _logger = Logger.getLogger(MultiVersionProtocolEngine.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MultiVersionProtocolEngine.class);
 
     private final long _id;
     private final AmqpPort<?> _port;

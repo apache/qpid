@@ -20,14 +20,16 @@
  */
 package org.apache.qpid.server.protocol.v0_10;
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.flow.AbstractFlowCreditManager;
 
 public class WindowCreditManager extends AbstractFlowCreditManager implements FlowCreditManager_0_10
 {
-    private static final Logger LOGGER = Logger.getLogger(WindowCreditManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(WindowCreditManager.class);
     private final ServerProtocolEngine _serverProtocolEngine;
 
     private volatile long _bytesCreditLimit;

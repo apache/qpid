@@ -37,7 +37,8 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination;
@@ -64,7 +65,7 @@ import org.apache.qpid.test.utils.TestBrokerConfiguration;
  */
 public class MaxDeliveryCountTest extends QpidBrokerTestCase
 {
-    private static final Logger _logger = Logger.getLogger(MaxDeliveryCountTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MaxDeliveryCountTest.class);
     private boolean _failed;
     private String _failMsg;
     private static final int MSG_COUNT = 15;

@@ -44,7 +44,9 @@ import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
@@ -65,7 +67,7 @@ import org.apache.qpid.url.URLSyntaxException;
  */
 public class BDBStoreUpgradeTestPreparer
 {
-    private static final Logger _logger = Logger.getLogger(BDBStoreUpgradeTestPreparer.class);
+    private static final Logger _logger = LoggerFactory.getLogger(BDBStoreUpgradeTestPreparer.class);
 
     public static final String TOPIC_NAME="myUpgradeTopic";
     public static final String SUB_NAME="myDurSubName";

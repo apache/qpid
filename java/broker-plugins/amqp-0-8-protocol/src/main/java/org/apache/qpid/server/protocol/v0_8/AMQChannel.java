@@ -43,7 +43,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
@@ -120,7 +121,7 @@ public class AMQChannel
 {
     public static final int DEFAULT_PREFETCH = 4096;
 
-    private static final Logger _logger = Logger.getLogger(AMQChannel.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AMQChannel.class);
     private final DefaultQueueAssociationClearingTask
             _defaultQueueAssociationClearingTask = new DefaultQueueAssociationClearingTask();
 

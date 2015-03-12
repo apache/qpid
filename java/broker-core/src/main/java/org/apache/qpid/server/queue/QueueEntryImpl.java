@@ -27,7 +27,8 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.filter.Filterable;
@@ -44,7 +45,7 @@ import org.apache.qpid.server.util.StateChangeListener;
 
 public abstract class QueueEntryImpl implements QueueEntry
 {
-    private static final Logger _log = Logger.getLogger(QueueEntryImpl.class);
+    private static final Logger _log = LoggerFactory.getLogger(QueueEntryImpl.class);
 
     private final QueueEntryList _queueEntryList;
 

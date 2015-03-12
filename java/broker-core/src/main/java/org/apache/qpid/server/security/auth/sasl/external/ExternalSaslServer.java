@@ -24,13 +24,15 @@ import javax.security.auth.x500.X500Principal;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class ExternalSaslServer implements SaslServer
 {
-    private static final Logger LOGGER = Logger.getLogger(ExternalSaslServer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExternalSaslServer.class);
 
     public static final String MECHANISM = "EXTERNAL";
 

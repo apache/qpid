@@ -41,7 +41,8 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
@@ -79,7 +80,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         extends AbstractConfiguredObject<T>
         implements ExchangeImpl<T>
 {
-    private static final Logger _logger = Logger.getLogger(AbstractExchange.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AbstractExchange.class);
     private final AtomicBoolean _closed = new AtomicBoolean();
 
     @ManagedAttributeField(beforeSet = "preSetAlternateExchange", afterSet = "postSetAlternateExchange" )

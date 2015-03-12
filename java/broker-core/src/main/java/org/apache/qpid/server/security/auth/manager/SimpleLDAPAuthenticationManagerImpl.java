@@ -20,8 +20,8 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import static java.util.Collections.disjoint;
-import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.unmodifiableList;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -49,15 +49,14 @@ import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ManagedAttributeField;
-import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
-import org.apache.qpid.server.model.PreferencesSupportingAuthenticationProvider;
 import org.apache.qpid.server.model.TrustStore;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
@@ -72,7 +71,7 @@ import org.apache.qpid.ssl.SSLContextFactory;
 public class SimpleLDAPAuthenticationManagerImpl extends AbstractAuthenticationManager<SimpleLDAPAuthenticationManagerImpl>
         implements SimpleLDAPAuthenticationManager<SimpleLDAPAuthenticationManagerImpl>
 {
-    private static final Logger _logger = Logger.getLogger(SimpleLDAPAuthenticationManagerImpl.class);
+    private static final Logger _logger = LoggerFactory.getLogger(SimpleLDAPAuthenticationManagerImpl.class);
 
     private static final List<String> CONNECTIVITY_ATTRS = unmodifiableList(Arrays.asList(PROVIDER_URL,
                                                                              PROVIDER_AUTH_URL,

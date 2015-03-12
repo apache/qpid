@@ -28,7 +28,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
@@ -51,7 +52,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 @ManagedObject( category = false, type = ExchangeDefaults.TOPIC_EXCHANGE_CLASS )
 public class TopicExchange extends AbstractExchange<TopicExchange>
 {
-    private static final Logger _logger = Logger.getLogger(TopicExchange.class);
+    private static final Logger _logger = LoggerFactory.getLogger(TopicExchange.class);
 
     private final TopicParser _parser = new TopicParser();
 

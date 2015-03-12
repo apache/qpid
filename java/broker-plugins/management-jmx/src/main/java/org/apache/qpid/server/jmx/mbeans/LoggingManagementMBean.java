@@ -20,15 +20,10 @@
  */
 package org.apache.qpid.server.jmx.mbeans;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.management.common.mbeans.LoggingManagement;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.qpid.server.jmx.AMQManagedObject;
-import org.apache.qpid.server.jmx.ManagedObject;
-import org.apache.qpid.server.jmx.ManagedObjectRegistry;
-import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
-import org.apache.qpid.server.logging.log4j.LoggingFacadeException;
-import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import javax.management.JMException;
 import javax.management.openmbean.CompositeData;
@@ -41,10 +36,17 @@ import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.management.common.mbeans.LoggingManagement;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
+import org.apache.qpid.server.jmx.AMQManagedObject;
+import org.apache.qpid.server.jmx.ManagedObject;
+import org.apache.qpid.server.jmx.ManagedObjectRegistry;
+import org.apache.qpid.server.logging.log4j.LoggingFacadeException;
+import org.apache.qpid.server.logging.log4j.LoggingManagementFacade;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 
 
 /** MBean class for LoggingManagement. It implements all the management features exposed for managing logging. */
@@ -52,7 +54,7 @@ import java.util.Map;
 public class LoggingManagementMBean extends AMQManagedObject implements LoggingManagement
 {
     public static final String INHERITED_PSUEDO_LOG_LEVEL = "INHERITED";
-    private static final Logger LOGGER = Logger.getLogger(LoggingManagementMBean.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggingManagementMBean.class);
     private static final TabularType LOGGER_LEVEL_TABULAR_TYE;
     private static final CompositeType LOGGER_LEVEL_COMPOSITE_TYPE;
 

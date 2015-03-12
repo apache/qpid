@@ -32,7 +32,8 @@ import java.util.Map;
 import java.util.Stack;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.EventLoggerProvider;
@@ -42,7 +43,7 @@ import org.apache.qpid.server.security.access.Permission;
 
 public class PlainConfiguration implements ConfigurationFile
 {
-    private static final Logger _logger = Logger.getLogger(PlainConfiguration.class);
+    private static final Logger _logger = LoggerFactory.getLogger(PlainConfiguration.class);
 
     public static final Character COMMENT = '#';
     public static final Character CONTINUATION = '\\';

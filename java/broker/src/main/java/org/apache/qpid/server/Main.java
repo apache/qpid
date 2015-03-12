@@ -33,7 +33,8 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
@@ -417,7 +418,7 @@ public class Main
                             System.err.println("########################################################################");
                             e.printStackTrace(System.err);
 
-                            Logger logger = Logger.getLogger("org.apache.qpid.server.Main");
+                            Logger logger = LoggerFactory.getLogger("org.apache.qpid.server.Main");
                             logger.error("Uncaught exception, " + (continueOnError ? "continuing." : "shutting down."), e);
                         }
                         finally

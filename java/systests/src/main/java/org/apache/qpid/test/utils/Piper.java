@@ -24,15 +24,15 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class Piper extends Thread
 {
-    private static final Logger LOGGER = Logger.getLogger(Piper.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Piper.class);
 
     private final BufferedReader _in;
     private final Logger _out;
@@ -46,7 +46,7 @@ public final class Piper extends Thread
     {
         super(threadName);
         _in = new BufferedReader(new InputStreamReader(in));
-        _out = Logger.getLogger(loggerName);
+        _out = LoggerFactory.getLogger(loggerName);
         _ready = ready;
         _stopped = stopped;
         _seenReady = false;

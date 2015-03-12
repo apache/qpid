@@ -22,7 +22,8 @@ package org.apache.qpid.server.logging.messages;
 
 import static org.apache.qpid.server.logging.AbstractMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.LogMessage;
 
@@ -49,9 +50,9 @@ public class AccessControlMessages
 
     static
     {
-        Logger.getLogger(ACCESSCONTROL_LOG_HIERARCHY);
-        Logger.getLogger(DENIED_LOG_HIERARCHY);
-        Logger.getLogger(ALLOWED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(ACCESSCONTROL_LOG_HIERARCHY);
+        LoggerFactory.getLogger(DENIED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(ALLOWED_LOG_HIERARCHY);
 
         _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.AccessControl_logmessages", _currentLocale);
     }

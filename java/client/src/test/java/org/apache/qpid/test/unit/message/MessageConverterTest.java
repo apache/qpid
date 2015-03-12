@@ -20,9 +20,16 @@
  */
 package org.apache.qpid.test.unit.message;
 
-import junit.framework.TestCase;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MapMessage;
+import javax.jms.Message;
+import javax.jms.TextMessage;
 
-import org.apache.log4j.Logger;
+import junit.framework.TestCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
@@ -34,16 +41,10 @@ import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.MessageConverter;
 import org.apache.qpid.exchange.ExchangeDefaults;
 
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MapMessage;
-import javax.jms.Message;
-import javax.jms.TextMessage;
-
 
 public class MessageConverterTest extends TestCase
 {
-    private static final Logger _logger = Logger.getLogger(MessageConverterTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MessageConverterTest.class);
     public static final String JMS_CORR_ID = "QPIDID_01";
     public static final int JMS_DELIV_MODE = 1;
     public static final String JMS_TYPE = "test.jms.type";

@@ -30,7 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.updater.VoidTask;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -39,7 +40,7 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class GenericRecoverer
 {
-    private static final Logger LOGGER = Logger.getLogger(GenericRecoverer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GenericRecoverer.class);
 
     private final ConfiguredObject<?> _root;
 

@@ -39,9 +39,10 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.management.plugin.HttpManagementConfiguration;
 import org.apache.qpid.server.management.plugin.HttpManagementUtil;
@@ -54,7 +55,7 @@ import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 public class SaslServlet extends AbstractServlet
 {
 
-    private static final Logger LOGGER = Logger.getLogger(SaslServlet.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SaslServlet.class);
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final String ATTR_RANDOM = "SaslServlet.Random";

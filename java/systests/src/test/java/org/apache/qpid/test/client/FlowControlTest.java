@@ -20,12 +20,6 @@
 */
 package org.apache.qpid.test.client;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.client.AMQSession_0_8;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
 import javax.jms.Message;
@@ -34,9 +28,16 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.client.AMQSession_0_8;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
 public class FlowControlTest extends QpidBrokerTestCase
 {
-    private static final Logger _logger = Logger.getLogger(FlowControlTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(FlowControlTest.class);
 
     private Connection _clientConnection;
     private Session _clientSession;

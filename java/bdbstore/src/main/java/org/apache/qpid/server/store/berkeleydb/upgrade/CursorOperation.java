@@ -20,15 +20,16 @@
  */
 package org.apache.qpid.server.store.berkeleydb.upgrade;
 
-import org.apache.log4j.Logger;
 
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.Transaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class CursorOperation implements DatabaseRunnable
 {
-    private static final Logger _logger = Logger.getLogger(CursorOperation.class);
+    private static final Logger _logger = LoggerFactory.getLogger(CursorOperation.class);
 
     private CursorTemplate _template;
     private long _rowCount;

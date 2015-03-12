@@ -28,10 +28,17 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.model.ConfiguredObject;
-import org.apache.qpid.server.store.*;
+import org.apache.qpid.server.store.AbstractJDBCConfigurationStore;
+import org.apache.qpid.server.store.ConfiguredObjectRecord;
+import org.apache.qpid.server.store.DurableConfigurationStore;
+import org.apache.qpid.server.store.FileBasedSettings;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStoreProvider;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.util.FileUtils;
 
 /**
@@ -41,7 +48,7 @@ import org.apache.qpid.util.FileUtils;
 public class DerbyConfigurationStore extends AbstractJDBCConfigurationStore
         implements MessageStoreProvider, DurableConfigurationStore
 {
-    private static final Logger LOGGER = Logger.getLogger(DerbyConfigurationStore.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DerbyConfigurationStore.class);
 
     private final AtomicBoolean _configurationStoreOpen = new AtomicBoolean();
     private final ProvidedMessageStore _providedMessageStore = new ProvidedMessageStore();

@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -31,13 +31,14 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Session;
 
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class MultipleTransactedBatchProducerTest extends QpidBrokerTestCase
 {
-    private static final Logger _logger = Logger.getLogger(MultipleTransactedBatchProducerTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MultipleTransactedBatchProducerTest.class);
 
     private static final int MESSAGE_COUNT = 1000;
     private static final int BATCH_SIZE = 50;

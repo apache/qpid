@@ -29,7 +29,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
@@ -49,7 +50,7 @@ import org.apache.qpid.server.util.Action;
 public final class ConnectionAdapter extends AbstractConfiguredObject<ConnectionAdapter> implements Connection<ConnectionAdapter>,
                                                                                              SessionModelListener
 {
-    private static final Logger LOGGER = Logger.getLogger(ConnectionAdapter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionAdapter.class);
 
     private final Action _underlyingConnectionDeleteTask;
     private final AtomicBoolean _underlyingClosed = new AtomicBoolean(false);

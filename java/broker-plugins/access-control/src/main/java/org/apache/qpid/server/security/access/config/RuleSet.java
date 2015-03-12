@@ -37,7 +37,9 @@ import javax.security.auth.Subject;
 
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.logging.messages.AccessControlMessages;
@@ -52,7 +54,7 @@ import org.apache.qpid.server.security.access.Permission;
  */
 public class RuleSet implements EventLoggerProvider
 {
-    private static final Logger _logger = Logger.getLogger(RuleSet.class);
+    private static final Logger _logger = LoggerFactory.getLogger(RuleSet.class);
 
     private static final String AT = "@";
     private static final String SLASH = "/";

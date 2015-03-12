@@ -34,8 +34,9 @@ import javax.jms.Session;
 import javax.jms.TopicSubscriber;
 import javax.naming.NamingException;
 
-import org.apache.log4j.Logger;
 import org.junit.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
@@ -46,7 +47,7 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class TimeToLiveTest extends QpidBrokerTestCase
 {
-    private static final Logger _logger = Logger.getLogger(TimeToLiveTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(TimeToLiveTest.class);
 
     protected final String QUEUE = "TimeToLiveQueue";
 

@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.QueueNotificationListener;
 
@@ -123,7 +125,7 @@ public enum NotificationCheck
     }
     ;
 
-    private static final Logger LOGGER = Logger.getLogger(NotificationCheck.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NotificationCheck.class);
 
     private final boolean _messageSpecific;
 

@@ -37,14 +37,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class TaskExecutorImpl implements TaskExecutor
 {
     private static final String TASK_EXECUTION_THREAD_NAME = "Broker-Configuration-Thread";
-    private static final Logger LOGGER = Logger.getLogger(TaskExecutorImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TaskExecutorImpl.class);
 
     private volatile Thread _taskThread;
     private final AtomicBoolean _running = new AtomicBoolean();

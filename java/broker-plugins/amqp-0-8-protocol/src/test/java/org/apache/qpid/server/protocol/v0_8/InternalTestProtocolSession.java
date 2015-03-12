@@ -35,7 +35,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -55,7 +56,7 @@ import org.apache.qpid.transport.network.NetworkConnection;
 
 public class InternalTestProtocolSession extends AMQProtocolEngine implements ProtocolOutputConverter
 {
-    private static final Logger _logger = Logger.getLogger(InternalTestProtocolSession.class);
+    private static final Logger _logger = LoggerFactory.getLogger(InternalTestProtocolSession.class);
     // ChannelID(LIST)  -> LinkedList<Pair>
     private final Map<Integer, Map<String, LinkedList<DeliveryPair>>> _channelDelivers;
     private AtomicInteger _deliveryCount = new AtomicInteger(0);

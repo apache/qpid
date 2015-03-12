@@ -19,15 +19,12 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -38,16 +35,21 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.naming.NamingException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicInteger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class SortedQueueTest extends QpidBrokerTestCase
 {
-    private static final Logger LOGGER = Logger.getLogger(SortedQueueTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SortedQueueTest.class);
     public static final String TEST_SORT_KEY = "testSortKey";
     private static final String[] VALUES = SortedQueueEntryListTest.keys.clone();
     private static final String[] VALUES_SORTED = SortedQueueEntryListTest.keys.clone();

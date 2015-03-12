@@ -20,16 +20,16 @@
  */
 package org.apache.qpid.server.store.berkeleydb.upgrade;
 
-import org.apache.log4j.Logger;
-
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.Transaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DatabaseTemplate
 {
-    private static final Logger _logger = Logger.getLogger(DatabaseTemplate.class);
+    private static final Logger _logger = LoggerFactory.getLogger(DatabaseTemplate.class);
 
     private Environment _environment;
     private String _sourceDatabaseName;

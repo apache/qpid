@@ -20,11 +20,13 @@
  */
 package org.apache.qpid.server.util;
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConnectionScopedRuntimeException extends RuntimeException
 {
-    private static final Logger LOGGER = Logger.getLogger(ConnectionScopedRuntimeException.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionScopedRuntimeException.class);
 
 
     public ConnectionScopedRuntimeException(final String message)

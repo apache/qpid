@@ -22,7 +22,8 @@ package org.apache.qpid.server.logging.messages;
 
 import static org.apache.qpid.server.logging.AbstractMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.LogMessage;
 
@@ -63,23 +64,23 @@ public class BrokerMessages
 
     static
     {
-        Logger.getLogger(BROKER_LOG_HIERARCHY);
-        Logger.getLogger(LOG_CONFIG_LOG_HIERARCHY);
-        Logger.getLogger(CONFIG_LOG_HIERARCHY);
-        Logger.getLogger(STATS_DATA_LOG_HIERARCHY);
-        Logger.getLogger(STOPPED_LOG_HIERARCHY);
-        Logger.getLogger(STATS_MSGS_LOG_HIERARCHY);
-        Logger.getLogger(LISTENING_LOG_HIERARCHY);
-        Logger.getLogger(FLOW_TO_DISK_INACTIVE_LOG_HIERARCHY);
-        Logger.getLogger(FLOW_TO_DISK_ACTIVE_LOG_HIERARCHY);
-        Logger.getLogger(MAX_MEMORY_LOG_HIERARCHY);
-        Logger.getLogger(PLATFORM_LOG_HIERARCHY);
-        Logger.getLogger(PROCESS_LOG_HIERARCHY);
-        Logger.getLogger(SHUTTING_DOWN_LOG_HIERARCHY);
-        Logger.getLogger(MANAGEMENT_MODE_LOG_HIERARCHY);
-        Logger.getLogger(STARTUP_LOG_HIERARCHY);
-        Logger.getLogger(FATAL_ERROR_LOG_HIERARCHY);
-        Logger.getLogger(READY_LOG_HIERARCHY);
+        LoggerFactory.getLogger(BROKER_LOG_HIERARCHY);
+        LoggerFactory.getLogger(LOG_CONFIG_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CONFIG_LOG_HIERARCHY);
+        LoggerFactory.getLogger(STATS_DATA_LOG_HIERARCHY);
+        LoggerFactory.getLogger(STOPPED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(STATS_MSGS_LOG_HIERARCHY);
+        LoggerFactory.getLogger(LISTENING_LOG_HIERARCHY);
+        LoggerFactory.getLogger(FLOW_TO_DISK_INACTIVE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(FLOW_TO_DISK_ACTIVE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(MAX_MEMORY_LOG_HIERARCHY);
+        LoggerFactory.getLogger(PLATFORM_LOG_HIERARCHY);
+        LoggerFactory.getLogger(PROCESS_LOG_HIERARCHY);
+        LoggerFactory.getLogger(SHUTTING_DOWN_LOG_HIERARCHY);
+        LoggerFactory.getLogger(MANAGEMENT_MODE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(STARTUP_LOG_HIERARCHY);
+        LoggerFactory.getLogger(FATAL_ERROR_LOG_HIERARCHY);
+        LoggerFactory.getLogger(READY_LOG_HIERARCHY);
 
         _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.Broker_logmessages", _currentLocale);
     }

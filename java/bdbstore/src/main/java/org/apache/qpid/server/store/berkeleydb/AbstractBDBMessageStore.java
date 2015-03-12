@@ -41,7 +41,7 @@ import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.Sequence;
 import com.sleepycat.je.SequenceConfig;
 import com.sleepycat.je.Transaction;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;

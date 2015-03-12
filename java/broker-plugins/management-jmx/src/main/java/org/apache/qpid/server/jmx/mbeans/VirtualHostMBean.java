@@ -29,7 +29,8 @@ import java.util.Map;
 import javax.management.JMException;
 import javax.management.ObjectName;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
@@ -45,7 +46,7 @@ import org.apache.qpid.server.virtualhost.ManagedVirtualHost;
 
 public class VirtualHostMBean extends AMQManagedObject implements ManagedVirtualHost, ConfigurationChangeListener
 {
-    private static final Logger LOGGER = Logger.getLogger(VirtualHostMBean.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(VirtualHostMBean.class);
 
     private final VirtualHost<?,?,?> _virtualHost;
 

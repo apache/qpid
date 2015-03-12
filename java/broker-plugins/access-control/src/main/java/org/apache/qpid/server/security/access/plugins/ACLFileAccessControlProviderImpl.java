@@ -28,7 +28,8 @@ import java.util.Set;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
@@ -45,7 +46,7 @@ public class ACLFileAccessControlProviderImpl
         extends AbstractConfiguredObject<ACLFileAccessControlProviderImpl>
         implements ACLFileAccessControlProvider<ACLFileAccessControlProviderImpl>
 {
-    private static final Logger LOGGER = Logger.getLogger(ACLFileAccessControlProviderImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ACLFileAccessControlProviderImpl.class);
 
     static
     {

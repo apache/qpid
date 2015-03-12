@@ -30,7 +30,9 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBVirtualHostNode;
@@ -46,7 +48,7 @@ import org.apache.qpid.util.SystemUtils;
  */
 public class BDBBackupTest extends QpidBrokerTestCase
 {
-    protected static final Logger LOGGER = Logger.getLogger(BDBBackupTest.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(BDBBackupTest.class);
 
     private static final String BACKUP_SCRIPT = "/bin/backup.sh";
     private static final String BACKUP_COMPLETE_MESSAGE = "Hot Backup Completed";

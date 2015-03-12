@@ -25,8 +25,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
@@ -304,9 +302,6 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
 
 
     }
-
-
-    private static final Logger _logger = Logger.getLogger(ConsumerTarget_0_8.class);
 
     private final AMQChannel _channel;
 

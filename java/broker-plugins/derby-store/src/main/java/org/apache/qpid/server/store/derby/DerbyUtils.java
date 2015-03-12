@@ -33,8 +33,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.store.StoreException;
 
@@ -46,7 +46,7 @@ public class DerbyUtils
     private static final String TABLE_EXISTENCE_QUERY = "SELECT 1 FROM SYS.SYSTABLES WHERE TABLENAME = ?";
     private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
-    private static final Logger DERBY_LOG = Logger.getLogger("DERBY");
+    private static final Logger DERBY_LOG = LoggerFactory.getLogger("DERBY");
     public static final DerbyLogWriter DERBY_LOG_WRITER = new DerbyLogWriter();
     public static final String DERBY_STREAM_ERROR_METHOD = "derby.stream.error.method";
 
@@ -203,22 +203,23 @@ public class DerbyUtils
                 // we simply have to assume everything is a warning except known startup / shutdown messages
                 // which we match using known prefixes.
 
-                Level logLevel = Level.WARN;
-
                 if(logMessage.startsWith(DERBY_STARTUP_MESSAGE)
                    || logMessage.startsWith(DERBY_SHUTDOWN_MESSAGE))
                 {
-                    logLevel = Level.INFO;
+                    DERBY_LOG.info(logMessage);
                 }
                 else if(logMessage.startsWith(DERBY_SYSTEM_HOME)
                    || logMessage.startsWith(DERBY_STREAM_ERROR_METHOD)
                    || logMessage.startsWith("java.vendor")
                    || logMessage.startsWith(DERBY_CLASS_LOADER_STARTED_MESSAGE))
                 {
-                    logLevel = Level.DEBUG;
+                    DERBY_LOG.debug(logMessage);
+                }
+                else
+                {
+                    DERBY_LOG.warn(logMessage);
                 }
 
-                DERBY_LOG.log(logLevel, logMessage);
             }
             _threadLocalBuffer.set(new StringBuilder());
         }

@@ -31,7 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -83,7 +84,7 @@ import org.apache.qpid.transport.*;
 
 public class ServerSessionDelegate extends SessionDelegate
 {
-    private static final Logger LOGGER = Logger.getLogger(ServerSessionDelegate.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServerSessionDelegate.class);
 
     public ServerSessionDelegate()
     {

@@ -31,7 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
@@ -51,7 +52,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 public class DirectExchange extends AbstractExchange<DirectExchange>
 {
 
-    private static final Logger _logger = Logger.getLogger(DirectExchange.class);
+    private static final Logger _logger = LoggerFactory.getLogger(DirectExchange.class);
 
     private static final class BindingSet
     {

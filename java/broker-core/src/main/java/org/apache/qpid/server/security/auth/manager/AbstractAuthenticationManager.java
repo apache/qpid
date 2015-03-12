@@ -30,7 +30,8 @@ import java.util.Set;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
@@ -52,7 +53,7 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     extends AbstractConfiguredObject<T>
     implements AuthenticationProvider<T>
 {
-    private static final Logger LOGGER = Logger.getLogger(AbstractAuthenticationManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAuthenticationManager.class);
 
     private final Broker<?> _broker;
     private PreferencesProvider<?> _preferencesProvider;

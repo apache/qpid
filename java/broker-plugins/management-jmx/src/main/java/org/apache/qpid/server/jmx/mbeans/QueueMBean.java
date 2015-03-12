@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+
 import javax.management.JMException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.Notification;
@@ -43,8 +44,11 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
+
 import org.apache.commons.lang.time.FastDateFormat;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
@@ -64,7 +68,7 @@ import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
 public class QueueMBean extends AMQManagedObject implements ManagedQueue, QueueNotificationListener
 {
-    private static final Logger LOGGER = Logger.getLogger(QueueMBean.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(QueueMBean.class);
 
     private static final String[] VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC_ARRAY =
             VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.toArray(new String[VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.size()]);

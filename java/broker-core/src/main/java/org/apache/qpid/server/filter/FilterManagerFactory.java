@@ -22,7 +22,8 @@ package org.apache.qpid.server.filter;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.filter.SelectorParsingException;
@@ -33,7 +34,7 @@ import org.apache.qpid.filter.selector.TokenMgrError;
 public class FilterManagerFactory
 {
 
-    private final static Logger _logger = Logger.getLogger(FilterManagerFactory.class);
+    private final static Logger _logger = LoggerFactory.getLogger(FilterManagerFactory.class);
 
     private FilterManagerFactory()
     {

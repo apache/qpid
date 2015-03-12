@@ -28,7 +28,13 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.title.ShortTextTitle;
+import org.jfree.data.general.Dataset;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.disttest.charting.ChartType;
 import org.apache.qpid.disttest.charting.definition.ChartingDefinition;
 import org.apache.qpid.disttest.charting.definition.SeriesDefinition;
@@ -38,10 +44,6 @@ import org.apache.qpid.disttest.charting.seriesbuilder.SeriesRow;
 import org.apache.qpid.disttest.charting.writer.ChartWriter;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.test.utils.TestFileUtils;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.title.ShortTextTitle;
-import org.jfree.data.general.Dataset;
 
 /**
  * Tests the production of the different chart types.  To manually
@@ -50,7 +52,7 @@ import org.jfree.data.general.Dataset;
  */
 public class ChartProductionTest extends QpidTestCase
 {
-    private static final Logger _logger = Logger.getLogger(ChartProductionTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ChartProductionTest.class);
     private static final String TEST_CHARTTITLE = "TEST_CHARTTITLE";
     private static final String TEST_CHARTSUBTITLE = "TEST_CHARTSUBTITLE";
     private static final String TEST_XAXIS = "TEST_XAXIS";

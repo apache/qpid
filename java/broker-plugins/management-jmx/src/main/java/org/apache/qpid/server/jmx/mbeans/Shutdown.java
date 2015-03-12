@@ -19,12 +19,6 @@
  */
 package org.apache.qpid.server.jmx.mbeans;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.jmx.DefaultManagedObject;
-import org.apache.qpid.server.jmx.ManagedObject;
-import org.apache.qpid.server.jmx.ManagedObjectRegistry;
-
-import javax.management.JMException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -33,13 +27,22 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.management.JMException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.server.jmx.DefaultManagedObject;
+import org.apache.qpid.server.jmx.ManagedObject;
+import org.apache.qpid.server.jmx.ManagedObjectRegistry;
+
 /**
  * Implementation of the JMX broker shutdown plugin.
  */
 public class Shutdown extends DefaultManagedObject implements ShutdownMBean
 {
 
-    private static final Logger _logger = Logger.getLogger(Shutdown.class);
+    private static final Logger _logger = LoggerFactory.getLogger(Shutdown.class);
 
     private static final String FORMAT = "yyyy/MM/dd HH:mm:ss";
     private static final int THREAD_COUNT = 1;

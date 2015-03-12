@@ -20,16 +20,6 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import com.sleepycat.je.DatabaseException;
-import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.je.util.DbBackup;
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.util.CommandLineParser;
-import org.apache.qpid.util.FileUtils;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -38,6 +28,17 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
+
+import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.Environment;
+import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.util.DbBackup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.util.CommandLineParser;
+import org.apache.qpid.util.FileUtils;
 
 /**
  * BDBBackup is a utility for taking hot backups of the current state of a BDB transaction log database.
@@ -77,10 +78,10 @@ import java.util.Properties;
 public class BDBBackup
 {
     /** Used for debugging. */
-    private static final Logger log = Logger.getLogger(BDBBackup.class);
+    private static final Logger log = LoggerFactory.getLogger(BDBBackup.class);
 
     /** Used for communicating with the user. */
-    private static final Logger console = Logger.getLogger("Console");
+    private static final Logger console = LoggerFactory.getLogger("Console");
 
     /** Defines the suffix used to identify BDB log files. */
     private static final String LOG_FILE_SUFFIX = ".jdb";

@@ -23,26 +23,28 @@ import static javax.management.remote.JMXConnectionNotification.CLOSED;
 import static javax.management.remote.JMXConnectionNotification.FAILED;
 import static javax.management.remote.JMXConnectionNotification.OPENED;
 
+import java.rmi.server.RemoteServer;
+import java.rmi.server.ServerNotActiveException;
+import java.security.PrivilegedAction;
+
 import javax.management.Notification;
 import javax.management.NotificationFilter;
 import javax.management.NotificationListener;
 import javax.management.remote.JMXConnectionNotification;
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.jmx.JMXConnectionPrincipal;
 
-import java.rmi.server.RemoteServer;
-import java.rmi.server.ServerNotActiveException;
-import java.security.PrivilegedAction;
-
 public class ManagementLogonLogoffReporter implements  NotificationListener, NotificationFilter
 {
-    private static final Logger LOGGER = Logger.getLogger(ManagementLogonLogoffReporter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ManagementLogonLogoffReporter.class);
     private final EventLoggerProvider _eventLoggerProvider;
     private final UsernameAccessor _usernameAccessor;
 

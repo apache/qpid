@@ -21,20 +21,10 @@
 
 package org.apache.qpid.server.exchange;
 
-import org.apache.log4j.Logger;
 
-import org.apache.qpid.client.AMQHeadersExchange;
-import org.apache.qpid.client.AMQNoRouteException;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.BindingURL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;
@@ -44,13 +34,24 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.client.AMQHeadersExchange;
+import org.apache.qpid.client.AMQNoRouteException;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.BindingURL;
 
 public class ReturnUnroutableMandatoryMessageTest extends QpidBrokerTestCase implements ExceptionListener
 {
-    private static final Logger _logger = Logger.getLogger(ReturnUnroutableMandatoryMessageTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ReturnUnroutableMandatoryMessageTest.class);
 
     private final List<Message> _bouncedMessageList = Collections.synchronizedList(new ArrayList<Message>());
 

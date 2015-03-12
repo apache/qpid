@@ -20,7 +20,9 @@ package org.apache.qpid.server.security.access.config;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectProperties.Property;
 import org.apache.qpid.server.security.access.firewall.FirewallRule;
@@ -32,7 +34,7 @@ import org.apache.qpid.server.security.access.firewall.FirewallRuleFactory;
  */
 public class AclRulePredicates
 {
-    private static final Logger _logger = Logger.getLogger(AclRulePredicates.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AclRulePredicates.class);
 
     private static final String SEPARATOR = ",";
 

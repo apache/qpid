@@ -23,7 +23,8 @@ package org.apache.qpid.server.txn;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageInstance;
@@ -45,7 +46,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
 {
     static final String QPID_STRICT_ORDER_WITH_MIXED_DELIVERY_MODE = "qpid.strict_order_with_mixed_delivery_mode";
 
-    protected static final Logger _logger = Logger.getLogger(AsyncAutoCommitTransaction.class);
+    protected static final Logger _logger = LoggerFactory.getLogger(AsyncAutoCommitTransaction.class);
 
     private final MessageStore _messageStore;
     private final FutureRecorder _futureRecorder;

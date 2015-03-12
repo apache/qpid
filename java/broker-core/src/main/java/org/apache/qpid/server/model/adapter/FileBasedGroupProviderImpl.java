@@ -34,7 +34,8 @@ import java.util.UUID;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -58,7 +59,7 @@ public class FileBasedGroupProviderImpl
         extends AbstractConfiguredObject<FileBasedGroupProviderImpl> implements FileBasedGroupProvider<FileBasedGroupProviderImpl>
 {
     public static final String GROUP_FILE_PROVIDER_TYPE = "GroupFile";
-    private static Logger LOGGER = Logger.getLogger(FileBasedGroupProviderImpl.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(FileBasedGroupProviderImpl.class);
 
     private final Broker<?> _broker;
 

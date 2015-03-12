@@ -27,11 +27,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.store.StoreException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -39,7 +41,7 @@ import org.apache.qpid.transport.Xid;
 
 public class DtxBranch
 {
-    private static final Logger _logger = Logger.getLogger(DtxBranch.class);
+    private static final Logger _logger = LoggerFactory.getLogger(DtxBranch.class);
 
     private final Xid _xid;
     private final List<ServerTransaction.Action> _postTransactionActions = new ArrayList<ServerTransaction.Action>();

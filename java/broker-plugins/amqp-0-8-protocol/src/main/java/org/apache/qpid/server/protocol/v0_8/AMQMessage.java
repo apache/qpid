@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.MessagePublishInfo;
@@ -34,9 +32,6 @@ import org.apache.qpid.server.store.StoredMessage;
  */
 public class AMQMessage extends AbstractServerMessageImpl<AMQMessage, MessageMetaData>
 {
-    /** Used for debugging purposes. */
-    private static final Logger _log = Logger.getLogger(AMQMessage.class);
-
     private final long _size;
 
     public AMQMessage(StoredMessage<MessageMetaData> handle)

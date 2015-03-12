@@ -24,12 +24,13 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EventManager
 {
     private Map<Event, List<EventListener>> _listeners = new EnumMap<Event, List<EventListener>> (Event.class);
-    private static final Logger _LOGGER = Logger.getLogger(EventManager.class);
+    private static final Logger _LOGGER = LoggerFactory.getLogger(EventManager.class);
 
     public synchronized void addEventListener(EventListener listener, Event... events)
     {

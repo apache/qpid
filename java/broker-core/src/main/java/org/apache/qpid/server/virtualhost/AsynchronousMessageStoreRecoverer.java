@@ -32,7 +32,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
@@ -58,7 +59,7 @@ import org.apache.qpid.transport.util.Functions;
 
 public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
 {
-    private static final Logger _logger = Logger.getLogger(AsynchronousMessageStoreRecoverer.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AsynchronousMessageStoreRecoverer.class);
     private AsynchronousRecoverer _asynchronousRecoverer;
 
     @Override

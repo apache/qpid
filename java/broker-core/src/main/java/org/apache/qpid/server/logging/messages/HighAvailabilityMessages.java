@@ -22,7 +22,8 @@ package org.apache.qpid.server.logging.messages;
 
 import static org.apache.qpid.server.logging.AbstractMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.LogMessage;
 
@@ -61,21 +62,21 @@ public class HighAvailabilityMessages
 
     static
     {
-        Logger.getLogger(HIGHAVAILABILITY_LOG_HIERARCHY);
-        Logger.getLogger(INTRUDER_DETECTED_LOG_HIERARCHY);
-        Logger.getLogger(TRANSFER_MASTER_LOG_HIERARCHY);
-        Logger.getLogger(QUORUM_OVERRIDE_CHANGED_LOG_HIERARCHY);
-        Logger.getLogger(REMOVED_LOG_HIERARCHY);
-        Logger.getLogger(LEFT_LOG_HIERARCHY);
-        Logger.getLogger(JOINED_LOG_HIERARCHY);
-        Logger.getLogger(CREATED_LOG_HIERARCHY);
-        Logger.getLogger(QUORUM_LOST_LOG_HIERARCHY);
-        Logger.getLogger(PRIORITY_CHANGED_LOG_HIERARCHY);
-        Logger.getLogger(ADDED_LOG_HIERARCHY);
-        Logger.getLogger(DELETED_LOG_HIERARCHY);
-        Logger.getLogger(ROLE_CHANGED_LOG_HIERARCHY);
-        Logger.getLogger(DESIGNATED_PRIMARY_CHANGED_LOG_HIERARCHY);
-        Logger.getLogger(NODE_ROLLEDBACK_LOG_HIERARCHY);
+        LoggerFactory.getLogger(HIGHAVAILABILITY_LOG_HIERARCHY);
+        LoggerFactory.getLogger(INTRUDER_DETECTED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(TRANSFER_MASTER_LOG_HIERARCHY);
+        LoggerFactory.getLogger(QUORUM_OVERRIDE_CHANGED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(REMOVED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(LEFT_LOG_HIERARCHY);
+        LoggerFactory.getLogger(JOINED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CREATED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(QUORUM_LOST_LOG_HIERARCHY);
+        LoggerFactory.getLogger(PRIORITY_CHANGED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(ADDED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(DELETED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(ROLE_CHANGED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(DESIGNATED_PRIMARY_CHANGED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(NODE_ROLLEDBACK_LOG_HIERARCHY);
 
         _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.HighAvailability_logmessages", _currentLocale);
     }

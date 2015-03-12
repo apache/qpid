@@ -20,10 +20,8 @@
  */
 package org.apache.qpid.server.security.auth.sasl;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.server.security.auth.UsernamePrincipal;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import java.io.IOException;
+import java.security.Principal;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -32,12 +30,16 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.AuthorizeCallback;
-import java.io.IOException;
-import java.security.Principal;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
 public abstract class UsernamePasswordInitialiser implements AuthenticationProviderInitialiser
 {
-    protected static final Logger _logger = Logger.getLogger(UsernamePasswordInitialiser.class);
+    protected static final Logger _logger = LoggerFactory.getLogger(UsernamePasswordInitialiser.class);
 
     private ServerCallbackHandler _callbackHandler;
 

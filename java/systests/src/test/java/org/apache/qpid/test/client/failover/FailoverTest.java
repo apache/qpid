@@ -21,12 +21,9 @@
 
 package org.apache.qpid.test.client.failover;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.jms.ConnectionListener;
-import org.apache.qpid.test.utils.FailoverBaseCase;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -36,13 +33,18 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.jms.ConnectionListener;
+import org.apache.qpid.test.utils.FailoverBaseCase;
 
 public class FailoverTest extends FailoverBaseCase implements ConnectionListener
 {
-    private static final Logger _logger = Logger.getLogger(FailoverTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(FailoverTest.class);
 
     private static final int DEFAULT_NUM_MESSAGES = 10;
     private static final int DEFAULT_SEED = 20080921;

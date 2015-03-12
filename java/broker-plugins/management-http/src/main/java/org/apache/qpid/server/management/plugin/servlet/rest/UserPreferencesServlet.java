@@ -34,7 +34,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
@@ -44,7 +45,7 @@ import org.apache.qpid.server.security.access.Operation;
 
 public class UserPreferencesServlet extends AbstractServlet
 {
-    private static final Logger LOGGER = Logger.getLogger(UserPreferencesServlet.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserPreferencesServlet.class);
     private static final long serialVersionUID = 1L;
 
     @Override

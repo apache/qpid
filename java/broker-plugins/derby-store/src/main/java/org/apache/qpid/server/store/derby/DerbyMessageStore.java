@@ -26,7 +26,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.FileBasedSettings;
@@ -38,7 +39,7 @@ import org.apache.qpid.util.FileUtils;
  */
 public class DerbyMessageStore extends AbstractDerbyMessageStore
 {
-    private static final Logger LOGGER = Logger.getLogger(DerbyMessageStore.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DerbyMessageStore.class);
 
     private String _connectionURL;
     private ConfiguredObject<?> _parent;

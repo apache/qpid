@@ -26,7 +26,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
@@ -56,7 +57,7 @@ import org.apache.qpid.transport.util.Functions;
 
 public class SynchronousMessageStoreRecoverer implements MessageStoreRecoverer
 {
-    private static final Logger _logger = Logger.getLogger(SynchronousMessageStoreRecoverer.class);
+    private static final Logger _logger = LoggerFactory.getLogger(SynchronousMessageStoreRecoverer.class);
 
     @Override
     public void recover(VirtualHostImpl virtualHost)

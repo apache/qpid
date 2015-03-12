@@ -32,7 +32,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
@@ -81,7 +82,7 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryStateHandler
 {
-    private static final Logger _logger = Logger.getLogger(SendingLink_1_0.class);
+    private static final Logger _logger = LoggerFactory.getLogger(SendingLink_1_0.class);
 
     private VirtualHostImpl _vhost;
     private SendingDestination _destination;

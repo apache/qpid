@@ -29,6 +29,9 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class Log4jLoggingHandler extends Handler
 {
@@ -44,31 +47,118 @@ public class Log4jLoggingHandler extends Handler
         });
     }
 
-    private static final Map<Level, org.apache.log4j.Level> LEVEL_MAP;
+    private static interface MappedLevel
+    {
+        public boolean isEnabled(final Logger logger);
+
+        void log(Logger logger, String message);
+    }
+
+    private static final MappedLevel ERROR = new MappedLevel()
+    {
+        @Override
+        public boolean isEnabled(final Logger logger)
+        {
+            return logger.isErrorEnabled();
+        }
+
+        @Override
+        public void log(final Logger logger, final String message)
+        {
+            logger.error(message);
+        }
+    };
+
+    private static final MappedLevel WARN = new MappedLevel()
+    {
+        @Override
+        public boolean isEnabled(final Logger logger)
+        {
+            return logger.isWarnEnabled();
+        }
+
+        @Override
+        public void log(final Logger logger, final String message)
+        {
+            logger.warn(message);
+        }
+    };
+
+    private static final MappedLevel INFO = new MappedLevel()
+    {
+        @Override
+        public boolean isEnabled(final Logger logger)
+        {
+            return logger.isInfoEnabled();
+        }
+
+        @Override
+        public void log(final Logger logger, final String message)
+        {
+            logger.info(message);
+        }
+    };
+
+    private static final MappedLevel DEBUG = new MappedLevel()
+    {
+        @Override
+        public boolean isEnabled(final Logger logger)
+        {
+            return logger.isDebugEnabled();
+        }
+
+        @Override
+        public void log(final Logger logger, final String message)
+        {
+            logger.debug(message);
+        }
+    };
+
+    private static final MappedLevel TRACE = new MappedLevel()
+    {
+        @Override
+        public boolean isEnabled(final Logger logger)
+        {
+            return logger.isTraceEnabled();
+        }
+
+        @Override
+        public void log(final Logger logger, final String message)
+        {
+            logger.trace(message);
+        }
+    };
+
+    private static final Map<Level, MappedLevel> LEVEL_MAP;
     static
     {
-        Map<Level, org.apache.log4j.Level> map = new HashMap<>();
-        map.put(Level.SEVERE, org.apache.log4j.Level.ERROR);
-        map.put(Level.WARNING, org.apache.log4j.Level.WARN);
+        Map<Level, MappedLevel> map = new HashMap<>();
+        map.put(Level.SEVERE, ERROR);
+        map.put(Level.WARNING, WARN);
         //Note that INFO comes out at DEBUG level as the BDB logging at INFO seems to be more of a DEBUG nature
-        map.put(Level.INFO, org.apache.log4j.Level.DEBUG);
-        map.put(Level.CONFIG, org.apache.log4j.Level.DEBUG);
-        map.put(Level.FINE, org.apache.log4j.Level.TRACE);
-        map.put(Level.FINER, org.apache.log4j.Level.TRACE);
-        map.put(Level.FINEST, org.apache.log4j.Level.TRACE);
-        map.put(Level.ALL, org.apache.log4j.Level.TRACE);
+        map.put(Level.INFO, DEBUG);
+        map.put(Level.CONFIG, DEBUG);
+        map.put(Level.FINE, TRACE);
+        map.put(Level.FINER, TRACE);
+        map.put(Level.FINEST, TRACE);
+        map.put(Level.ALL, TRACE);
 
         LEVEL_MAP = Collections.unmodifiableMap(map);
     }
 
-    private static final org.apache.log4j.Logger BDB_LOGGER = org.apache.log4j.Logger.getLogger("BDB");
+    private static final Logger BDB_LOGGER = LoggerFactory.getLogger("BDB");
 
+    private boolean isEnabledFor(Level level)
+    {
+        final MappedLevel mappedLevel = LEVEL_MAP.get(level);
+        return mappedLevel == null ? false : mappedLevel.isEnabled(BDB_LOGGER);
+    }
 
     @Override
     public void publish(final LogRecord record)
     {
-        org.apache.log4j.Level level = convertLevel(record.getLevel());
-        if (BDB_LOGGER.isEnabledFor(level))
+        MappedLevel level = convertLevel(record.getLevel());
+        if (level.isEnabled(BDB_LOGGER))
         {
 
             Formatter formatter = getFormatter();
@@ -78,7 +168,7 @@ public class Log4jLoggingHandler extends Handler
                 String message = formatter.format(record);
                 try
                 {
-                    BDB_LOGGER.log(level, message);
+                    level.log(BDB_LOGGER, message);
                 }
                 catch (RuntimeException e)
                 {
@@ -95,30 +185,32 @@ public class Log4jLoggingHandler extends Handler
     @Override
     public boolean isLoggable(final LogRecord record)
     {
-        return BDB_LOGGER.isEnabledFor(convertLevel(record.getLevel()));
+        MappedLevel mappedLevel = convertLevel(record.getLevel());
+
+        return mappedLevel.isEnabled(BDB_LOGGER);
     }
 
-    private org.apache.log4j.Level convertLevel(final Level level)
+    private MappedLevel convertLevel(final Level level)
     {
         //Note that INFO comes out at DEBUG level as the BDB logging at INFO seems to be more of a DEBUG nature
-        org.apache.log4j.Level result = LEVEL_MAP.get(level);
+        MappedLevel result = LEVEL_MAP.get(level);
         if(result == null)
         {
             if (level.intValue() >= Level.SEVERE.intValue())
             {
-                result = org.apache.log4j.Level.ERROR;
+                result = ERROR;
             }
             else if (level.intValue() >= Level.WARNING.intValue())
             {
-                result = org.apache.log4j.Level.WARN;
+                result = WARN;
             }
             else if (level.intValue() >= Level.CONFIG.intValue())
             {
-                result = org.apache.log4j.Level.DEBUG;
+                result = DEBUG;
             }
             else
             {
-                result = org.apache.log4j.Level.TRACE;
+                result = TRACE;
             }
         }
 

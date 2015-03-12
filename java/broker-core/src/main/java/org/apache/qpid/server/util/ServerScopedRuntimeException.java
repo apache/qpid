@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.server.util;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServerScopedRuntimeException extends RuntimeException
 {
-    private static final Logger LOGGER = Logger.getLogger(ServerScopedRuntimeException.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServerScopedRuntimeException.class);
 
     public ServerScopedRuntimeException(final String message)
     {

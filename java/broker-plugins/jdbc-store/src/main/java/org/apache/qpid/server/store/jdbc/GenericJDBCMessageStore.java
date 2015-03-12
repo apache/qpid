@@ -34,7 +34,8 @@ import java.util.Set;
 
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.plugin.JDBCConnectionProviderFactory;
@@ -47,7 +48,7 @@ import org.apache.qpid.server.store.StoreException;
 public class GenericJDBCMessageStore extends GenericAbstractJDBCMessageStore
 {
 
-    private static final Logger _logger = Logger.getLogger(GenericJDBCMessageStore.class);
+    private static final Logger _logger = LoggerFactory.getLogger(GenericJDBCMessageStore.class);
 
     protected String _connectionURL;
     private ConnectionProvider _connectionProvider;

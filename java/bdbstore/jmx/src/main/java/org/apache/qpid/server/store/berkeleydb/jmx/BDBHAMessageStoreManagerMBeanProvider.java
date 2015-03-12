@@ -22,13 +22,14 @@ package org.apache.qpid.server.store.berkeleydb.jmx;
 
 import javax.management.JMException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.jmx.MBeanProvider;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.State;
-import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironmentFacade;
 import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
 
 /**
@@ -37,7 +38,7 @@ import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
  */
 public class BDBHAMessageStoreManagerMBeanProvider implements MBeanProvider
 {
-    private static final Logger LOGGER = Logger.getLogger(BDBHAMessageStoreManagerMBeanProvider.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BDBHAMessageStoreManagerMBeanProvider.class);
 
     public BDBHAMessageStoreManagerMBeanProvider()
     {

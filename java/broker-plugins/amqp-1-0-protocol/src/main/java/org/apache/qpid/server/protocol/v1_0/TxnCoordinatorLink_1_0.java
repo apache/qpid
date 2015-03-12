@@ -20,29 +20,40 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
-import org.apache.log4j.Logger;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.amqp_1_0.messaging.SectionDecoder;
 import org.apache.qpid.amqp_1_0.messaging.SectionDecoderImpl;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ReceivingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ReceivingLinkListener;
-import org.apache.qpid.amqp_1_0.type.*;
-import org.apache.qpid.amqp_1_0.type.messaging.*;
+import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
+import org.apache.qpid.amqp_1_0.type.DeliveryState;
+import org.apache.qpid.amqp_1_0.type.Section;
+import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
+import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
+import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
 import org.apache.qpid.amqp_1_0.type.transaction.Declare;
 import org.apache.qpid.amqp_1_0.type.transaction.Declared;
 import org.apache.qpid.amqp_1_0.type.transaction.Discharge;
-import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
+import org.apache.qpid.amqp_1_0.type.transport.Detach;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
+import org.apache.qpid.amqp_1_0.type.transport.Transfer;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
-import java.nio.ByteBuffer;
-import java.util.*;
-
 public class TxnCoordinatorLink_1_0 implements ReceivingLinkListener, Link_1_0
 {
-    private static final Logger _logger = Logger.getLogger(TxnCoordinatorLink_1_0.class);
+    private static final Logger _logger = LoggerFactory.getLogger(TxnCoordinatorLink_1_0.class);
     private VirtualHostImpl _vhost;
     private ReceivingLinkEndpoint _endpoint;
 

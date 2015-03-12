@@ -20,15 +20,12 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.amqp_1_0.type.Outcome;
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 import org.apache.qpid.server.message.MessageSource;
-import org.apache.qpid.server.txn.ServerTransaction;
 
 public class MessageSourceDestination implements SendingDestination
 {
-    private static final Logger _logger = Logger.getLogger(MessageSourceDestination.class);
     private static final Accepted ACCEPTED = new Accepted();
     private static final Outcome[] OUTCOMES = new Outcome[] { ACCEPTED };
 

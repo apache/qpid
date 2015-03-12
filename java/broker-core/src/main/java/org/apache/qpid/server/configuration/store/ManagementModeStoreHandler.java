@@ -28,7 +28,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.Broker;
@@ -50,7 +51,7 @@ import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
 
 public class ManagementModeStoreHandler implements DurableConfigurationStore
 {
-    private static final Logger LOGGER = Logger.getLogger(ManagementModeStoreHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ManagementModeStoreHandler.class);
 
     private static final String MANAGEMENT_MODE_PORT_PREFIX = "MANAGEMENT-MODE-PORT-";
     private static final String PORT_TYPE = Port.class.getSimpleName();

@@ -29,13 +29,15 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class HeartbeatTest extends QpidBrokerTestCase
 {
-    private static final Logger LOGGER = Logger.getLogger(HeartbeatTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HeartbeatTest.class);
 
     private static final String CONNECTION_URL_WITH_HEARTBEAT = "amqp://guest:guest@clientid/?brokerlist='localhost:%d?heartbeat='%d''";
     private TestListener _listener = new TestListener("listener");

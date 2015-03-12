@@ -41,7 +41,8 @@ import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -75,7 +76,7 @@ import org.apache.qpid.server.virtualhost.ProvidedStoreVirtualHostImpl;
 public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<X>> extends AbstractConfiguredObject<X> implements VirtualHostNode<X>
 {
 
-    private static final Logger LOGGER = Logger.getLogger(AbstractVirtualHostNode.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractVirtualHostNode.class);
 
 
     static

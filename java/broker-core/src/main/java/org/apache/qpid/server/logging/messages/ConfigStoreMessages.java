@@ -22,7 +22,8 @@ package org.apache.qpid.server.logging.messages;
 
 import static org.apache.qpid.server.logging.AbstractMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.LogMessage;
 
@@ -52,12 +53,12 @@ public class ConfigStoreMessages
 
     static
     {
-        Logger.getLogger(CONFIGSTORE_LOG_HIERARCHY);
-        Logger.getLogger(RECOVERY_COMPLETE_LOG_HIERARCHY);
-        Logger.getLogger(CLOSE_LOG_HIERARCHY);
-        Logger.getLogger(CREATED_LOG_HIERARCHY);
-        Logger.getLogger(STORE_LOCATION_LOG_HIERARCHY);
-        Logger.getLogger(RECOVERY_START_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CONFIGSTORE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(RECOVERY_COMPLETE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CLOSE_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CREATED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(STORE_LOCATION_LOG_HIERARCHY);
+        LoggerFactory.getLogger(RECOVERY_START_LOG_HIERARCHY);
 
         _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.ConfigStore_logmessages", _currentLocale);
     }

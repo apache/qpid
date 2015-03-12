@@ -37,7 +37,9 @@ import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.jmx.AMQManagedObject;
 import org.apache.qpid.server.jmx.ManagedObject;
 import org.apache.qpid.server.jmx.ManagedObjectRegistry;
@@ -52,7 +54,7 @@ import org.apache.qpid.server.virtualhostnode.berkeleydb.BDBHAVirtualHostNode;
  */
 public class BDBHAMessageStoreManagerMBean extends AMQManagedObject implements ManagedBDBHAMessageStore
 {
-    private static final Logger LOGGER = Logger.getLogger(BDBHAMessageStoreManagerMBean.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BDBHAMessageStoreManagerMBean.class);
 
     private static  final TabularType GROUP_MEMBERS_TABLE;
     private static final CompositeType GROUP_MEMBER_ROW;

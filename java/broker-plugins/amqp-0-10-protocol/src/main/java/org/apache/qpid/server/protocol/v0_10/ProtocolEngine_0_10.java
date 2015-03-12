@@ -29,7 +29,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.consumer.ConsumerImpl;
@@ -48,7 +49,7 @@ import org.apache.qpid.transport.network.NetworkConnection;
 public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocolEngine
 {
     public static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
-    private static final Logger _logger = Logger.getLogger(ProtocolEngine_0_10.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ProtocolEngine_0_10.class);
 
 
     private NetworkConnection _network;

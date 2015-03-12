@@ -35,7 +35,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.HostNameAlias;
@@ -49,7 +50,7 @@ public class HostNameAliasImpl
         implements HostNameAlias<HostNameAliasImpl>
 {
 
-    private static final Logger LOG = Logger.getLogger(HostNameAliasImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(HostNameAliasImpl.class);
 
     private final Set<InetAddress> _localAddresses = new CopyOnWriteArraySet<>();
     private final Set<String> _localAddressNames = new CopyOnWriteArraySet<>();

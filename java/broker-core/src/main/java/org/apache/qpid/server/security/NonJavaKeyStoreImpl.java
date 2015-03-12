@@ -58,7 +58,8 @@ import javax.xml.bind.DatatypeConverter;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
@@ -76,7 +77,7 @@ import org.apache.qpid.server.util.urlstreamhandler.data.Handler;
 @ManagedObject( category = false )
 public class NonJavaKeyStoreImpl extends AbstractConfiguredObject<NonJavaKeyStoreImpl> implements NonJavaKeyStore<NonJavaKeyStoreImpl>
 {
-    private static final Logger LOGGER = Logger.getLogger(NonJavaKeyStoreImpl.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(NonJavaKeyStoreImpl.class);
 
     private final Broker<?> _broker;
 

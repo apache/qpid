@@ -27,7 +27,9 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
@@ -40,7 +42,7 @@ import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
  */
 public class LoginLogoutReporter implements HttpSessionBindingListener
 {
-    private static final Logger LOGGER = Logger.getLogger(LoginLogoutReporter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoginLogoutReporter.class);
     private final Subject _subject;
     private final Principal _principal;
     private final EventLoggerProvider _eventLoggerProvider;

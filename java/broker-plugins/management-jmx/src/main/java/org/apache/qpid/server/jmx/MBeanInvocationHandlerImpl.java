@@ -40,7 +40,8 @@ import javax.management.RuntimeErrorException;
 import javax.management.remote.MBeanServerForwarder;
 import javax.security.auth.Subject;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.model.Broker;
@@ -55,7 +56,7 @@ import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
  */
 public class MBeanInvocationHandlerImpl implements InvocationHandler
 {
-    private static final Logger _logger = Logger.getLogger(MBeanInvocationHandlerImpl.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MBeanInvocationHandlerImpl.class);
 
     private final static String DELEGATE = "JMImplementation:type=MBeanServerDelegate";
     private MBeanServer _mbs;

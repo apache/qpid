@@ -25,11 +25,12 @@ import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PortHelper
 {
-    private static final Logger _logger = Logger.getLogger(PortHelper.class);
+    private static final Logger _logger = LoggerFactory.getLogger(PortHelper.class);
 
     public static final int START_PORT_NUMBER = 10000;
 

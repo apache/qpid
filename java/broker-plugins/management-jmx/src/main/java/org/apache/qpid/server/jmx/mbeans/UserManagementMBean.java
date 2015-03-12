@@ -20,15 +20,8 @@
  */
 package org.apache.qpid.server.jmx.mbeans;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.management.common.mbeans.UserManagement;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.qpid.server.jmx.AMQManagedObject;
-import org.apache.qpid.server.jmx.ManagedObject;
-import org.apache.qpid.server.jmx.ManagedObjectRegistry;
-import org.apache.qpid.server.model.AuthenticationProvider;
-import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
+import java.io.IOException;
+import java.util.Map;
 
 import javax.management.JMException;
 import javax.management.ObjectName;
@@ -43,13 +36,21 @@ import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 import javax.security.auth.login.AccountNotFoundException;
 
-import java.io.IOException;
-import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.management.common.mbeans.UserManagement;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
+import org.apache.qpid.server.jmx.AMQManagedObject;
+import org.apache.qpid.server.jmx.ManagedObject;
+import org.apache.qpid.server.jmx.ManagedObjectRegistry;
+import org.apache.qpid.server.model.AuthenticationProvider;
+import org.apache.qpid.server.model.PasswordCredentialManagingAuthenticationProvider;
 
 @MBeanDescription("User Management Interface")
 public class UserManagementMBean extends AMQManagedObject implements UserManagement
 {
-    private static final Logger _logger = Logger.getLogger(UserManagementMBean.class);
+    private static final Logger _logger = LoggerFactory.getLogger(UserManagementMBean.class);
 
     private PasswordCredentialManagingAuthenticationProvider _authProvider;
 

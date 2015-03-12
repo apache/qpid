@@ -27,7 +27,6 @@ import java.util.Set;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.sleepycat.je.rep.MasterStateException;
-import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.EventLogger;
@@ -47,7 +46,6 @@ import org.apache.qpid.server.store.berkeleydb.replication.ReplicatedEnvironment
 
 public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDBHARemoteReplicationNodeImpl> implements BDBHARemoteReplicationNode<BDBHARemoteReplicationNodeImpl>
 {
-    private static final Logger LOGGER = Logger.getLogger(BDBHARemoteReplicationNodeImpl.class);
 
     private final ReplicatedEnvironmentFacade _replicatedEnvironmentFacade;
     private final String _address;

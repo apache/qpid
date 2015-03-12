@@ -22,7 +22,8 @@ package org.apache.qpid.server.logging.messages;
 
 import static org.apache.qpid.server.logging.AbstractMessageLogger.DEFAULT_LOG_HIERARCHY_PREFIX;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.logging.LogMessage;
 
@@ -54,14 +55,14 @@ public class VirtualHostMessages
 
     static
     {
-        Logger.getLogger(VIRTUALHOST_LOG_HIERARCHY);
-        Logger.getLogger(CLOSED_LOG_HIERARCHY);
-        Logger.getLogger(STATS_DATA_LOG_HIERARCHY);
-        Logger.getLogger(STATS_MSGS_LOG_HIERARCHY);
-        Logger.getLogger(FILESYSTEM_FULL_LOG_HIERARCHY);
-        Logger.getLogger(FILESYSTEM_NOTFULL_LOG_HIERARCHY);
-        Logger.getLogger(CREATED_LOG_HIERARCHY);
-        Logger.getLogger(ERRORED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(VIRTUALHOST_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CLOSED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(STATS_DATA_LOG_HIERARCHY);
+        LoggerFactory.getLogger(STATS_MSGS_LOG_HIERARCHY);
+        LoggerFactory.getLogger(FILESYSTEM_FULL_LOG_HIERARCHY);
+        LoggerFactory.getLogger(FILESYSTEM_NOTFULL_LOG_HIERARCHY);
+        LoggerFactory.getLogger(CREATED_LOG_HIERARCHY);
+        LoggerFactory.getLogger(ERRORED_LOG_HIERARCHY);
 
         _messages = ResourceBundle.getBundle("org.apache.qpid.server.logging.messages.VirtualHost_logmessages", _currentLocale);
     }

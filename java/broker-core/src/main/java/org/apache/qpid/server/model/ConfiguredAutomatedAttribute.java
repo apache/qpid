@@ -30,11 +30,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConfiguredAutomatedAttribute<C extends ConfiguredObject, T>  extends ConfiguredObjectAttribute<C,T>
 {
-    private static final Logger LOGGER = Logger.getLogger(ConfiguredAutomatedAttribute.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfiguredAutomatedAttribute.class);
 
     private final ManagedAttribute _annotation;
     private final Method _validValuesMethod;

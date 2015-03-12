@@ -26,7 +26,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.transport.Binding;
 
@@ -38,7 +39,7 @@ import org.apache.qpid.transport.Binding;
 
 public class IoAcceptor<E> extends Thread
 {
-    private static final Logger _logger = Logger.getLogger(IoAcceptor.class);
+    private static final Logger _logger = LoggerFactory.getLogger(IoAcceptor.class);
 
     private volatile boolean _closed = false;
 

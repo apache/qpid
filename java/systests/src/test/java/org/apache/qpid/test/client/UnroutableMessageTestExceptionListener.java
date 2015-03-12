@@ -32,7 +32,9 @@ import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.Message;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQNoConsumersException;
 import org.apache.qpid.client.AMQNoRouteException;
@@ -49,7 +51,7 @@ import org.apache.qpid.protocol.AMQConstant;
  */
 public class UnroutableMessageTestExceptionListener implements ExceptionListener
 {
-    private static final Logger _logger = Logger.getLogger(UnroutableMessageTestExceptionListener.class);
+    private static final Logger _logger = LoggerFactory.getLogger(UnroutableMessageTestExceptionListener.class);
 
     /**
      * Number of seconds to check for an event that should should NOT happen

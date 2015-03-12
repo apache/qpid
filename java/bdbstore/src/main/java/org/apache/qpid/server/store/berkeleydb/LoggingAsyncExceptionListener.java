@@ -20,14 +20,15 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.log4j.Logger;
 
 import com.sleepycat.je.ExceptionEvent;
 import com.sleepycat.je.ExceptionListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LoggingAsyncExceptionListener implements ExceptionListener
 {
-    private static final Logger LOGGER  = Logger.getLogger(LoggingAsyncExceptionListener.class);
+    private static final Logger LOGGER  = LoggerFactory.getLogger(LoggingAsyncExceptionListener.class);
 
     @Override
     public void exceptionThrown(ExceptionEvent event)

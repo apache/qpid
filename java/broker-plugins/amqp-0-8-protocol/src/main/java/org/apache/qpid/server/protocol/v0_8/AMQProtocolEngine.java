@@ -49,7 +49,8 @@ import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
@@ -111,7 +112,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         OPEN
     }
 
-    private static final Logger _logger = Logger.getLogger(AMQProtocolEngine.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AMQProtocolEngine.class);
 
     // to save boxing the channelId and looking up in a map... cache in an array the low numbered
     // channels.  This value must be of the form 2^x - 1.
