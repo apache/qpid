@@ -155,31 +155,21 @@ define(["dojo/_base/xhr",
                     var authenticationProviderData = util.getFormWidgetValues(this.authenticationProviderForm, this.initialData);
 
                     var encodedAuthenticationProviderName = encodeURIComponent(this.authenticationProviderName.value);
-                    xhr.put({
-                        url: "api/latest/authenticationprovider/" + encodedAuthenticationProviderName,
-                        sync: true,
-                        handleAs: "json",
-                        headers: { "Content-Type": "application/json"},
-                        putData: json.stringify(authenticationProviderData),
-                        load: function(x) {success = true; },
-                        error: function(error) {success = false; failureReason = error;}
-                    });
+                    var that = this;
 
-                    if(success === true)
-                    {
-                        var preferencesProviderResult = this.preferencesProviderForm.submit(encodedAuthenticationProviderName);
-                        success = preferencesProviderResult.success;
-                        failureReason = preferencesProviderResult.failureReason;
-                    }
-
-                    if (success == true)
-                    {
-                        this.dialog.hide();
-                    }
-                    else
-                    {
-                        util.xhrErrorHandler(failureReason);
-                    }
+                    var methodName = this.initialData ? "put" : "post";
+                    util[methodName]("api/latest/authenticationprovider/" + encodedAuthenticationProviderName, authenticationProviderData,
+                     function(x){
+                        var preferencesProviderResult = that.preferencesProviderForm.submit(encodedAuthenticationProviderName);
+                        if (preferencesProviderResult.success == true)
+                        {
+                            that.dialog.hide();
+                        }
+                        else
+                        {
+                             util.xhrErrorHandler(preferencesProviderResult.failureReason);
+                        }
+                     });
                 }
                 else
                 {

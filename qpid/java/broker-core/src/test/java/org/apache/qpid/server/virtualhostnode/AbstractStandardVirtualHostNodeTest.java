@@ -52,7 +52,6 @@ import org.apache.qpid.server.model.SystemConfig;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.NullMessageStore;
@@ -278,9 +277,7 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         node.open();
         node.start();
 
-        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseVirtualHostNode(
-                TEST_VIRTUAL_HOST_NODE_NAME,
-                Operation.UPDATE);
+        doThrow(new AccessControlException("mocked ACL exception")).when(_mockSecurityManager).authoriseUpdate(node);
 
         assertNull(node.getDescription());
         try
@@ -310,9 +307,7 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         node.open();
         node.start();
 
-        doThrow(new AccessControlException("mocked ACL exception")).when(mockSecurityManager).authoriseVirtualHostNode(
-                TEST_VIRTUAL_HOST_NODE_NAME,
-                Operation.DELETE);
+        doThrow(new AccessControlException("mocked ACL exception")).when(mockSecurityManager).authoriseDelete(node);
 
         try
         {
@@ -342,9 +337,7 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         node.open();
         node.start();
 
-        doThrow(new AccessControlException("mocked ACL exception")).when(mockSecurityManager).authoriseVirtualHostNode(
-                TEST_VIRTUAL_HOST_NODE_NAME,
-                Operation.UPDATE);
+        doThrow(new AccessControlException("mocked ACL exception")).when(mockSecurityManager).authoriseUpdate(node);
 
         try
         {

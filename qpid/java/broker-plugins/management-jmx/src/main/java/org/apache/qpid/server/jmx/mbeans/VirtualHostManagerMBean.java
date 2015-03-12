@@ -216,7 +216,7 @@ public class VirtualHostManagerMBean extends AbstractStatisticsGatheringMBean<Vi
 
         try
         {
-            exchange.deleteWithChecks();
+            exchange.delete();
         }
         catch(RequiredExchangeException e)
         {

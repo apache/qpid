@@ -260,6 +260,11 @@ public class BrokerStoreUpgraderAndRecoverer
         private ConfiguredObjectRecord upgradeKeyStoreRecordIfTypeTheSame(ConfiguredObjectRecord record, String expectedType)
         {
             Map<String, Object> attributes = new HashMap<>(record.getAttributes());
+            // Type may not be present, in which case the default type - which is the type affected - will be being used
+            if(!attributes.containsKey("type"))
+            {
+                attributes.put("type", expectedType);
+            }
             if (expectedType.equals(attributes.get("type")))
             {
                 Object path = attributes.remove("path");

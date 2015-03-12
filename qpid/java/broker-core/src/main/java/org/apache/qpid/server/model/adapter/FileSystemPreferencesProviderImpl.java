@@ -235,6 +235,7 @@ public class FileSystemPreferencesProviderImpl
     @Override
     public Map<String, Object> getPreferences(String userId)
     {
+        getSecurityManager().authoriseUserUpdate(userId);
         return _store == null? Collections.<String, Object>emptyMap() : _store.getPreferences(userId);
     }
 
@@ -257,6 +258,10 @@ public class FileSystemPreferencesProviderImpl
             throw new IllegalStateException("Cannot delete preferences with preferences provider " + getName() + " in state " + getState() );
         }
 
+        for (String userId: userIDs)
+        {
+            getSecurityManager().authoriseUserUpdate(userId);
+        }
         return _store.deletePreferences(userIDs);
     }
 

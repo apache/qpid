@@ -920,15 +920,13 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             try
             {
                 markChannelAwaitingCloseOk(channelId);
-                closeSession(false);  // currently performs the delete actions.
+                closeSession(false);
             }
             finally
             {
                 try
                 {
                     writeFrame(frame);
-
-                    // add an async job and not
                 }
                 finally
                 {

@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.systest.rest;
 
+import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -65,7 +67,7 @@ public class UserRestTest extends QpidRestTestCase
         }
     }
 
-    public void testPut() throws Exception
+    public void testCreateUserByPut() throws Exception
     {
         String userName = getTestName();
         getRestTestHelper().createOrUpdateUser(userName, "newPassword");
@@ -74,6 +76,24 @@ public class UserRestTest extends QpidRestTestCase
                 + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + userName);
         assertUser(userDetails);
         assertEquals("Unexpected user name", userName, userDetails.get(User.NAME));
+    }
+
+    public void testCreateUserByPost() throws Exception
+    {
+        String userName = getTestName();
+
+        Map<String,Object> userAttributes = new HashMap<>();
+        userAttributes.put("password", "newPassword");
+
+        String url = "user/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + userName;
+        getRestTestHelper().submitRequest(url, "POST", userAttributes, HttpServletResponse.SC_CREATED);
+
+        Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList(url);
+        assertUser(userDetails);
+        assertEquals("Unexpected user name", userName, userDetails.get(User.NAME));
+
+        // verify that second create request fails
+        getRestTestHelper().submitRequest(url, "POST", userAttributes, HttpServletResponse.SC_CONFLICT);
     }
 
     public void testDelete() throws Exception

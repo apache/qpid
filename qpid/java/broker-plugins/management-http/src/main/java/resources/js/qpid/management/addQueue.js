@@ -149,25 +149,9 @@ define(["dojo/_base/xhr",
                                 if(theForm.validate()){
 
                                     var newQueue = convertToQueue(theForm.getValues());
-                                    var that = this;
-
-                                    xhr.put({url: "api/latest/queue/"+encodeURIComponent(addQueue.vhostnode)
-                                                  +"/"+encodeURIComponent(addQueue.vhost)
-                                                  +"/"+encodeURIComponent(newQueue.name), sync: true, handleAs: "json",
-                                             headers: { "Content-Type": "application/json"},
-                                             putData: json.toJson(newQueue),
-                                             load: function(x) {that.success = true; },
-                                             error: function(error) {that.success = false; that.failureReason = error;}});
-
-                                    if(this.success === true)
-                                    {
-                                        registry.byId("addQueue").hide();
-                                    }
-                                    else
-                                    {
-                                        util.xhrErrorHandler(this.failureReason);
-                                    }
-
+                                    util.post("api/latest/queue/" + encodeURIComponent(addQueue.vhostnode)
+                                            + "/"+encodeURIComponent(addQueue.vhost) + "/" + encodeURIComponent(newQueue.name),
+                                            newQueue, function(x){registry.byId("addQueue").hide();});
                                     return false;
 
 

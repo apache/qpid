@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.exchange;
 
-import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -141,12 +140,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     }
 
     @Override
-    public void validateOnCreate()
-    {
-        _virtualHost.getSecurityManager().authoriseCreateExchange(this);
-    }
-
-    @Override
     public void onValidate()
     {
         super.onValidate();
@@ -195,8 +188,6 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
     @Override
     public void deleteWithChecks()
     {
-        _virtualHost.getSecurityManager().authoriseDelete(this);
-
         if(hasReferrers())
         {
             throw new ExchangeIsAlternateException(getName());
@@ -656,7 +647,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         }
 
         // Check access
-        _virtualHost.getSecurityManager().authoriseUnbind(binding);
+        authoriseDelete(binding);
 
         BindingImpl b = _bindingsMap.remove(new BindingIdentifier(bindingKey,queue));
 
@@ -810,7 +801,7 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
             preSetAlternateExchange();
             setState(State.DELETED);
         }
-        catch (ExchangeIsAlternateException | RequiredExchangeException e)
+        catch (ExchangeIsAlternateException e)
         {
 
         }
@@ -925,16 +916,5 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
         return binding;
     }
 
-    @Override
-    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
-    {
-        _virtualHost.getSecurityManager().authoriseUpdate(this);
-    }
-
-    @Override
-    protected void changeAttributes(final Map<String, Object> attributes)
-    {
-        super.changeAttributes(attributes);
-    }
 
 }

@@ -70,7 +70,7 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     public ProtocolEngine_0_10(ServerConnection conn,
                                NetworkConnection network)
     {
-        super(new Assembler(conn));
+        super(new ServerAssembler(conn));
         _connection = conn;
 
         if(network != null)

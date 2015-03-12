@@ -21,7 +21,6 @@ package org.apache.qpid.server.model.adapter;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.AccessControlException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,7 +49,6 @@ import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.group.FileGroupDatabase;
 import org.apache.qpid.server.security.group.GroupPrincipal;
@@ -219,8 +217,6 @@ public class FileBasedGroupProviderImpl
         {
             String groupName = (String) attributes.get(Group.NAME);
 
-            getSecurityManager().authoriseGroupOperation(Operation.CREATE, groupName);
-
             if (getState() != State.ACTIVE)
             {
                 throw new IllegalConfigurationException(String.format("Group provider '%s' is not activated. Cannot create a group.", getName()));
@@ -262,8 +258,8 @@ public class FileBasedGroupProviderImpl
         }
     }
 
-
-    private SecurityManager getSecurityManager()
+    @Override
+    protected SecurityManager getSecurityManager()
     {
         return _broker.getSecurityManager();
     }
@@ -360,27 +356,6 @@ public class FileBasedGroupProviderImpl
         // no-op, as per above, groups are not in the store
     }
 
-    @Override
-    protected void authoriseSetDesiredState(State desiredState) throws AccessControlException
-    {
-        if(desiredState == State.DELETED)
-        {
-            if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), GroupProvider.class, Operation.DELETE))
-            {
-                throw new AccessControlException("Deletion of groups provider is denied");
-            }
-        }
-    }
-
-    @Override
-    protected void authoriseSetAttributes(ConfiguredObject<?> modified, Set<String> attributes) throws AccessControlException
-    {
-        if (!_broker.getSecurityManager().authoriseConfiguringBroker(getName(), GroupProvider.class, Operation.UPDATE))
-        {
-            throw new AccessControlException("Setting of group provider attributes is denied");
-        }
-    }
-
     private class GroupAdapter extends AbstractConfiguredObject<GroupAdapter> implements Group<GroupAdapter>
     {
         private GroupPrincipal _groupPrincipal;
@@ -465,8 +440,6 @@ public class FileBasedGroupProviderImpl
             {
                 String memberName = (String) attributes.get(GroupMember.NAME);
 
-                getSecurityManager().authoriseGroupOperation(Operation.UPDATE, getName());
-
                 _groupDatabase.addUserToGroup(memberName, getName());
                 UUID id = UUID.randomUUID();
                 Map<String,Object> attrMap = new HashMap<String, Object>();
@@ -486,7 +459,6 @@ public class FileBasedGroupProviderImpl
         @StateTransition( currentState = State.ACTIVE, desiredState = State.DELETED )
         private ListenableFuture<Void> doDelete()
         {
-            getSecurityManager().authoriseGroupOperation(Operation.DELETE, getName());
             _groupDatabase.removeGroup(getName());
             deleted();
             setState(State.DELETED);
@@ -557,8 +529,6 @@ public class FileBasedGroupProviderImpl
             @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
             private ListenableFuture<Void> doDelete()
             {
-                getSecurityManager().authoriseGroupOperation(Operation.UPDATE, GroupAdapter.this.getName());
-
                 _groupDatabase.removeUserFromGroup(getName(), GroupAdapter.this.getName());
                 deleted();
                 setState(State.DELETED);

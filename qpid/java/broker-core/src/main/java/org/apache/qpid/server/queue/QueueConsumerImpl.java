@@ -51,6 +51,7 @@ import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.StateChangeListener;
 
 class QueueConsumerImpl
@@ -126,7 +127,7 @@ class QueueConsumerImpl
         _queue = queue;
 
         // Access control
-        _queue.getVirtualHost().getSecurityManager().authoriseCreateConsumer(this);
+        authoriseCreate(this);
 
         open();
 
@@ -143,6 +144,12 @@ class QueueConsumerImpl
             }
         };
         _target.addStateListener(_listener);
+    }
+
+    @Override
+    protected SecurityManager getSecurityManager()
+    {
+        return _queue.getVirtualHost().getSecurityManager();
     }
 
     private static Map<String, Object> createAttributeMap(String name, FilterManager filters, EnumSet<Option> optionSet)

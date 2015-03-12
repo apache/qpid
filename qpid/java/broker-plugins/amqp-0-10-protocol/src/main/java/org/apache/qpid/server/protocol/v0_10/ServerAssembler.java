@@ -1,4 +1,4 @@
-package org.apache.qpid.server.virtualhost;/*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,26 +18,40 @@ package org.apache.qpid.server.virtualhost;/*
  * under the License.
  *
  */
+package org.apache.qpid.server.protocol.v0_10;
 
-import org.apache.qpid.server.exchange.ExchangeImpl;
 
-public class ExchangeExistsException extends RuntimeException
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.transport.network.Assembler;
+import org.apache.qpid.transport.network.NetworkEvent;
+
+public class ServerAssembler extends Assembler
 {
-    private final ExchangeImpl _existing;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ServerAssembler.class);
 
-    public ExchangeExistsException(ExchangeImpl existing)
+
+    private final ServerConnection _connection;
+
+    public ServerAssembler(final ServerConnection connection)
     {
-        this(existing.getName(), existing);
+        super(connection);
+        _connection = connection;
     }
 
-    public ExchangeExistsException(String message, ExchangeImpl existing)
+    @Override
+    public void received(final NetworkEvent event)
     {
-        super(message);
-        _existing = existing;
+        if (!_connection.isIgnoreFutureInput())
+        {
+            super.received(event);
+        }
+        else
+        {
+            LOGGER.debug("Ignored network event " + event + " as connection is ignoring further input ");
+        }
     }
 
-    public ExchangeImpl getExistingExchange()
-    {
-        return _existing;
-    }
+
 }

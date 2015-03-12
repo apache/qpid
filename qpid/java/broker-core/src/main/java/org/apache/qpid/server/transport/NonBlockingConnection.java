@@ -45,7 +45,6 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.server.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.util.Action;
 import org.apache.qpid.transport.ByteBufferSender;
-import org.apache.qpid.transport.SenderClosedException;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.Ticker;
@@ -627,10 +626,13 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
 
         if (_closed.get())
         {
-            throw new SenderClosedException("I/O for thread " + _remoteSocketAddress + " is already closed");
+            LOGGER.warn("Send ignored as the connection is already closed");
         }
-        _buffers.add(msg);
-        _protocolEngine.notifyWork();
+        else
+        {
+            _buffers.add(msg);
+            _protocolEngine.notifyWork();
+        }
     }
 
     @Override

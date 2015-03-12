@@ -68,7 +68,6 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
 
         EventLogger eventLogger = mock(EventLogger.class);
         SecurityManager securityManager = mock(SecurityManager.class);
-        when(securityManager.authoriseConfiguringBroker(anyString(),any(Class.class),any(Operation.class))).thenReturn(true);
         ConfiguredObjectFactory objectFactory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
 
         _taskExecutor = new CurrentThreadTaskExecutor();

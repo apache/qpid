@@ -97,6 +97,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     private final int _maxMessageSize;
 
     private ServerProtocolEngine _serverProtocolEngine;
+    private boolean _ignoreFutureInput;
 
     public ServerConnection(final long connectionId,
                             Broker<?> broker,
@@ -733,5 +734,16 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
             session.processPending();
         }
 
+    }
+
+    public void closeAndIgnoreFutureInput()
+    {
+        _ignoreFutureInput = true;
+        getSender().close();
+    }
+
+    public boolean isIgnoreFutureInput()
+    {
+        return _ignoreFutureInput;
     }
 }

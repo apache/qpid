@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-define(["dojo/_base/xhr",
+define([
         "dojo/_base/event",
         "dojo/_base/lang",
         "dojo/_base/array",
@@ -48,7 +48,7 @@ define(["dojo/_base/xhr",
         "dojox/validate/us",
         "dojox/validate/web",
         "dojo/domReady!"],
-  function (xhr, event, lang, array, dom, domConstruct, json, parser, Memory, win, on, fobject, registry, Dialog, Button, FilteringSelect, properties, util, metadata, template)
+  function (event, lang, array, dom, domConstruct, json, parser, Memory, win, on, fobject, registry, Dialog, Button, FilteringSelect, properties, util, metadata, template)
   {
 
     var addVirtualHostNodeAndVirtualHost =
@@ -339,27 +339,9 @@ define(["dojo/_base/xhr",
           return;
         }
 
-        var success = false,failureReason=null;
-
+        var that = this;
         var encodedVirtualHostNodeName = encodeURIComponent(virtualHostNodeData.name);
-        xhr.put({
-            url: "api/latest/virtualhostnode/" + encodedVirtualHostNodeName,
-            sync: true,
-            handleAs: "json",
-            headers: { "Content-Type": "application/json"},
-            putData: json.stringify(virtualHostNodeData),
-            load: function(x) {success = true; },
-            error: function(error) {success = false; failureReason = error;}
-        });
-
-        if (success == true)
-        {
-            this.dialog.hide();
-        }
-        else
-        {
-            util.xhrErrorHandler(failureReason);
-        }
+        util.post("api/latest/virtualhostnode/" + encodedVirtualHostNodeName, virtualHostNodeData, function(x){that.dialog.hide();});
       },
       _getValues: function (form)
       {

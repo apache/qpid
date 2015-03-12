@@ -456,30 +456,40 @@ public class SessionEndpoint
 
     public void receiveFlow(final Flow flow)
     {
-
-        synchronized(getLock())
+        synchronized (getLock())
         {
             UnsignedInteger handle = flow.getHandle();
-            LinkEndpoint endpoint = handle == null ? null : _remoteLinkEndpoints.get(handle);
+            final LinkEndpoint endpoint = handle == null ? null : _remoteLinkEndpoints.get(handle);
 
-            final UnsignedInteger nextOutgoingId = flow.getNextIncomingId() == null ? _initialOutgoingId : flow.getNextIncomingId();
+            final UnsignedInteger nextOutgoingId =
+                    flow.getNextIncomingId() == null ? _initialOutgoingId : flow.getNextIncomingId();
             int limit = (nextOutgoingId.intValue() + flow.getIncomingWindow().intValue());
             _outgoingSessionCredit = UnsignedInteger.valueOf(limit - _nextOutgoingTransferId.intValue());
 
-            if(endpoint != null)
+            if (endpoint != null)
             {
-                endpoint.receiveFlow( flow );
+                endpoint.receiveFlow(flow);
             }
             else
             {
-                for(LinkEndpoint le : _remoteLinkEndpoints.values())
+                final Collection<LinkEndpoint> allLinkEndpoints = _remoteLinkEndpoints.values();
+                getConnection().addPostLockAction(new Runnable()
                 {
-                    le.flowStateChanged();
-                }
+                    @Override
+                    public void run()
+                    {
+
+                        for(LinkEndpoint le : allLinkEndpoints)
+                        {
+                            le.flowStateChanged();
+                        }
+                    }
+                });
             }
 
             getLock().notifyAll();
         }
+
 
 
     }

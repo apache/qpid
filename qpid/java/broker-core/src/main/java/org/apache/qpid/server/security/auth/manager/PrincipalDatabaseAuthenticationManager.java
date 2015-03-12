@@ -57,11 +57,11 @@ import org.apache.qpid.server.model.PreferencesSupportingAuthenticationProvider;
 import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.model.User;
-import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.util.FileHelper;
 
 public abstract class PrincipalDatabaseAuthenticationManager<T extends PrincipalDatabaseAuthenticationManager<T>>
@@ -265,26 +265,18 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     @Override
     public boolean createUser(String username, String password, Map<String, String> attributes)
     {
-        getSecurityManager().authoriseUserOperation(Operation.CREATE, username);
-        Principal principal = new UsernamePrincipal(username);
-        boolean created =
-                getPrincipalDatabase().createPrincipal(principal, password.toCharArray());
-        if(created)
-        {
-            principal = getPrincipalDatabase().getUser(username);
+        Map<String, Object> userAttrs = new HashMap<>();
+        userAttrs.put(User.NAME, username);
+        userAttrs.put(User.PASSWORD, password);
 
-            PrincipalAdapter principalAdapter = new PrincipalAdapter(principal);
-            principalAdapter.create();
-            _userMap.put(principal, principalAdapter);
-        }
-        return created;
+        User user = createChild(User.class, userAttrs);
+        return user != null;
 
     }
 
 
     private void deleteUserFromDatabase(String username) throws AccountNotFoundException
     {
-        getSecurityManager().authoriseUserOperation(Operation.DELETE, username);
         UsernamePrincipal principal = new UsernamePrincipal(username);
         getPrincipalDatabase().deletePrincipal(principal);
         _userMap.remove(principal);
@@ -301,11 +293,12 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         }
         else
         {
-            deleteUserFromDatabase(username);
+            throw new AccountNotFoundException("No such user: '" + username + "'");
         }
     }
 
-    private org.apache.qpid.server.security.SecurityManager getSecurityManager()
+    @Override
+    protected SecurityManager getSecurityManager()
     {
         return getBroker().getSecurityManager();
     }
@@ -313,10 +306,12 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     @Override
     public void setPassword(String username, String password) throws AccountNotFoundException
     {
-        getSecurityManager().authoriseUserOperation(Operation.UPDATE, username);
-
-        getPrincipalDatabase().updatePassword(new UsernamePrincipal(username), password.toCharArray());
-
+        Principal principal = new UsernamePrincipal(username);
+        User user = _userMap.get(principal);
+        if (user != null)
+        {
+            user.setPassword(password);
+        }
     }
 
     @Override
@@ -346,8 +341,22 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
             String username = (String) attributes.get("name");
             String password = (String) attributes.get("password");
             Principal p = new UsernamePrincipal(username);
+            if (_userMap.containsKey(p))
+            {
+                throw new IllegalArgumentException("User '" + username + "' already exists");
+            }
 
-            if(createUser(username, password,null))
+            boolean created = getPrincipalDatabase().createPrincipal(p, password.toCharArray());
+            if(created)
+            {
+                p = getPrincipalDatabase().getUser(username);
+
+                PrincipalAdapter principalAdapter = new PrincipalAdapter(p);
+                principalAdapter.create();
+                _userMap.put(p, principalAdapter);
+            }
+
+            if(created)
             {
                 return (C) _userMap.get(p);
             }
@@ -474,14 +483,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         @Override
         public void setPassword(String password)
         {
-            try
-            {
-                PrincipalDatabaseAuthenticationManager.this.setPassword(_user.getName(), password);
-            }
-            catch (AccountNotFoundException e)
-            {
-                throw new IllegalStateException(e);
-            }
+            setAttributes(Collections.<String, Object>singletonMap(PASSWORD, password));
         }
 
         @Override
@@ -490,8 +492,20 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         {
             if(name.equals(PASSWORD))
             {
-                setPassword((String)desired);
-                return true;
+                try
+                {
+                    String desiredPassword = (String) desired;
+                    boolean changed = getPrincipalDatabase().updatePassword(_user, desiredPassword.toCharArray());
+                    if (changed)
+                    {
+                        return super.changeAttribute(name, expected, desired);
+                    }
+                    return false;
+                }
+                catch(AccountNotFoundException e)
+                {
+                    throw new IllegalStateException(e);
+                }
             }
             return super.changeAttribute(name, expected, desired);
         }

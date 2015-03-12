@@ -124,33 +124,9 @@ define([
 
                     var groupProviderData = util.getFormWidgetValues(this.groupProviderForm, this.initialData);
                     var encodedName = encodeURIComponent(this.groupProviderName.value);
-                    var jsonString = json.stringify(groupProviderData);
-
-                    try {
-                    xhr.put(
-                    {
-                        url: "api/latest/groupprovider/" + encodedName,
-                        sync: true,
-                        handleAs: "json",
-                        headers: { "Content-Type": "application/json"},
-                        putData: jsonString,
-                        load: function(x) {success = true; },
-                        error: function(error) {success = false; failureReason = error;}
-                    });
-                    }
-                    catch (e)
-                    {
-                    console.warn(e);
-                    }
-
-                    if (success == true)
-                    {
-                        this.dialog.hide();
-                    }
-                    else
-                    {
-                        util.xhrErrorHandler(failureReason);
-                    }
+                    var that = this;
+                    var method = this.initialData ? "put" : "post";
+                    util[method]("api/latest/groupprovider/" + encodedName, groupProviderData, function(x){that.dialog.hide();});
                 }
                 else
                 {

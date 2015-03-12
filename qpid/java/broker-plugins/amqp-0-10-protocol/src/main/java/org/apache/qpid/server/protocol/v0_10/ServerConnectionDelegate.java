@@ -250,7 +250,7 @@ public class ServerConnectionDelegate extends ServerDelegate
                     ") above the server's offered limit (" + getChannelMax() +")");
 
             //Due to the error we must forcefully close the connection without negotiation
-            sconn.getSender().close();
+            sconn.closeAndIgnoreFutureInput();
             return;
         }
 
@@ -261,7 +261,8 @@ public class ServerConnectionDelegate extends ServerDelegate
                          ") above the server's offered limit (" + getFrameMax() +")");
 
             //Due to the error we must forcefully close the connection without negotiation
-            sconn.getSender().close();
+            sconn.closeAndIgnoreFutureInput();
+
             return;
         }
         else if(okMaxFrameSize > 0 && okMaxFrameSize < Constant.MIN_MAX_FRAME_SIZE)
@@ -271,7 +272,7 @@ public class ServerConnectionDelegate extends ServerDelegate
                          ") below the minimum permitted size (" + Constant.MIN_MAX_FRAME_SIZE +")");
 
             //Due to the error we must forcefully close the connection without negotiation
-            sconn.getSender().close();
+            sconn.closeAndIgnoreFutureInput();
             return;
         }
         else if(okMaxFrameSize == 0)

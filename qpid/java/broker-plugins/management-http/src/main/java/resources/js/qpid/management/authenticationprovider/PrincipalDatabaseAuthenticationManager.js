@@ -202,19 +202,7 @@ define(["dojo/_base/xhr",
 
                                     var url = "api/latest/user/"+encodeURIComponent(addUser.authProvider) +
                                         "/"+encodeURIComponent(newUser.name);
-
-                                    xhr.put({url: url, sync: true, handleAs: "json",
-                                             headers: { "Content-Type": "application/json"},
-                                             putData: json.toJson(newUser),
-                                             load: function(x) {that.success = true; },
-                                             error: function(error) {that.success = false; that.failureReason = error;}});
-
-                                    if(that.success === true) {
-                                        registry.byId("addUser").hide();
-                                    } else {
-                                        util.xhrErrorHandler(this.failureReason);
-                                    }
-
+                                    util.post(url, newUser, function(x){registry.byId("addUser").hide();});
                                     return false;
 
 
@@ -260,18 +248,7 @@ define(["dojo/_base/xhr",
                             var url = "api/latest/user/"+encodeURIComponent(setPassword.authProvider) +
                                 "/"+encodeURIComponent(newUser.name);
 
-                            xhr.put({url: url, sync: true, handleAs: "json",
-                                     headers: { "Content-Type": "application/json"},
-                                     putData: json.toJson(newUser),
-                                     load: function(x) {that.success = true; },
-                                     error: function(error) {that.success = false; that.failureReason = error;}});
-
-                            if(that.success === true) {
-                                registry.byId("setPassword").hide();
-                            } else {
-                                util.xhrErrorHandler(this.failureReason);
-                            }
-
+                            util.put(url, newUser, function(x){registry.byId("setPassword").hide();});
                             return false;
 
 
