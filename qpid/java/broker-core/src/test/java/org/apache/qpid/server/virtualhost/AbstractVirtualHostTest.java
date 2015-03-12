@@ -66,6 +66,7 @@ public class AbstractVirtualHostTest extends QpidTestCase
         when(systemConfig.getEventLogger()).thenReturn(mock(EventLogger.class));
         Broker<?> broker = mock(Broker.class);
         when(broker.getParent(SystemConfig.class)).thenReturn(systemConfig);
+        when(broker.getModel()).thenReturn(BrokerModel.getInstance());
         when(broker.getSecurityManager()).thenReturn(new SecurityManager(broker, false));
 
         _taskExecutor = new TaskExecutorImpl();
