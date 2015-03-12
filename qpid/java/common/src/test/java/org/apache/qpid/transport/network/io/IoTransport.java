@@ -20,10 +20,9 @@
 package org.apache.qpid.transport.network.io;
 
 import java.net.Socket;
-import java.nio.ByteBuffer;
 
 import org.apache.qpid.transport.Binding;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -48,18 +47,18 @@ public final class IoTransport<E>
         ("amqj.sendBufferSize", DEFAULT_READ_WRITE_BUFFER_SIZE);
 
     private Socket socket;
-    private Sender<ByteBuffer> sender;
+    private ByteBufferSender sender;
     private E endpoint;
     private IoReceiver receiver;
     private long timeout = 60000;
 
-    IoTransport(Socket socket, Binding<E,ByteBuffer> binding)
+    IoTransport(Socket socket, Binding<E> binding)
     {
         this.socket = socket;
         setupTransport(socket, binding);
     }
 
-    private void setupTransport(Socket socket, Binding<E, ByteBuffer> binding)
+    private void setupTransport(Socket socket, Binding<E> binding)
     {
         IoSender ios = new IoSender(socket, 2*writeBufferSize, timeout);
         ios.initiate();
@@ -73,7 +72,7 @@ public final class IoTransport<E>
         ios.setReceiver(this.receiver);
     }
 
-    public Sender<ByteBuffer> getSender()
+    public ByteBufferSender getSender()
     {
         return sender;
     }

@@ -18,11 +18,13 @@
 * under the License.
 *
 */
-package org.apache.qpid.server.store;
+package org.apache.qpid.server.util;
 
-public interface StoreFuture
+import java.util.concurrent.TimeoutException;
+
+public interface FutureResult
 {
-    StoreFuture IMMEDIATE_FUTURE = new StoreFuture()
+    FutureResult IMMEDIATE_FUTURE = new FutureResult()
     {
         public boolean isComplete()
         {
@@ -32,9 +34,17 @@ public interface StoreFuture
         public void waitForCompletion()
         {
         }
+
+        @Override
+        public void waitForCompletion(final long timeout) throws TimeoutException
+        {
+
+        }
     };
 
     boolean isComplete();
 
     void waitForCompletion();
+
+    void waitForCompletion(long timeout) throws TimeoutException;
 }

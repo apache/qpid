@@ -29,6 +29,8 @@ import java.security.PrivilegedAction;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
@@ -52,14 +54,18 @@ import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
 import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.common.ServerPropertyNames;
-import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.Consumer;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.port.AmqpPort;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
 
@@ -79,6 +85,9 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     private long _createTime = System.currentTimeMillis();
     private ConnectionEndpoint _endpoint;
     private long _connectionId;
+    private final AtomicBoolean _stateChanged = new AtomicBoolean();
+    private final AtomicReference<Action<ServerProtocolEngine>> _workListener = new AtomicReference<>();
+
 
     private static final ByteBuffer HEADER =
            ByteBuffer.wrap(new byte[]
@@ -116,8 +125,9 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     private byte _revision;
     private PrintWriter _out;
     private NetworkConnection _network;
-    private Sender<ByteBuffer> _sender;
+    private ByteBufferSender _sender;
     private Connection_1_0 _connection;
+    private volatile boolean _transportBlockedForWriting;
 
 
     static enum State {
@@ -134,6 +144,10 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
     private State _state = State.A;
 
+    private final AtomicReference<Thread> _messageAssignmentSuspended = new AtomicReference<>();
+
+
+
 
     public ProtocolEngine_1_0_0_SASL(final NetworkConnection networkDriver, final Broker<?> broker,
                                      long id, AmqpPort<?> port, Transport transport)
@@ -145,6 +159,31 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         if(networkDriver != null)
         {
             setNetworkConnection(networkDriver, networkDriver.getSender());
+        }
+    }
+
+
+    @Override
+    public boolean isMessageAssignmentSuspended()
+    {
+        Thread lock = _messageAssignmentSuspended.get();
+        return lock != null && _messageAssignmentSuspended.get() != Thread.currentThread();
+    }
+
+    @Override
+    public void setMessageAssignmentSuspended(final boolean messageAssignmentSuspended)
+    {
+        _messageAssignmentSuspended.set(messageAssignmentSuspended ? Thread.currentThread() : null);
+
+        if(!messageAssignmentSuspended)
+        {
+            for(AMQSessionModel<?,?> session : _connection.getSessionModels())
+            {
+                for(Consumer<?> consumer : session.getConsumers())
+                {
+                    ((ConsumerImpl)consumer).getTarget().notifyCurrentState();
+                }
+            }
         }
     }
 
@@ -179,7 +218,12 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         //Todo
     }
 
-    public void setNetworkConnection(final NetworkConnection network, final Sender<ByteBuffer> sender)
+    @Override
+    public void encryptedTransport()
+    {
+    }
+
+    public void setNetworkConnection(final NetworkConnection network, final ByteBufferSender sender)
     {
         _network = network;
         _sender = sender;
@@ -211,7 +255,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
         _endpoint.setProperties(serverProperties);
 
         _endpoint.setRemoteAddress(getRemoteAddress());
-        _connection = new Connection_1_0(_broker, _endpoint, _connectionId, _port, _transport, subjectCreator);
+        _connection = new Connection_1_0(_broker, _endpoint, _connectionId, _port, _transport, subjectCreator, this);
 
         _endpoint.setConnectionEventListener(_connection);
         _endpoint.setFrameOutputHandler(this);
@@ -524,6 +568,8 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
     }
 
+
+
     public void close()
     {
         _sender.close();
@@ -554,4 +600,60 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     {
         return _lastWriteTime;
     }
+
+    @Override
+    public boolean isTransportBlockedForWriting()
+    {
+        return _transportBlockedForWriting;
+    }
+    @Override
+    public void setTransportBlockedForWriting(final boolean blocked)
+    {
+        _transportBlockedForWriting = blocked;
+        _connection.transportStateChanged();
+
+    }
+
+    public void flushBatched()
+    {
+        _sender.flush();
+    }
+
+    @Override
+    public void processPending()
+    {
+        _connection.processPending();
+
+    }
+
+    @Override
+    public boolean hasWork()
+    {
+        return _stateChanged.get();
+    }
+
+    @Override
+    public void notifyWork()
+    {
+        _stateChanged.set(true);
+
+        final Action<ServerProtocolEngine> listener = _workListener.get();
+        if(listener != null)
+        {
+            listener.performAction(this);
+        }
+    }
+
+    @Override
+    public void clearWork()
+    {
+        _stateChanged.set(false);
+    }
+
+    @Override
+    public void setWorkListener(final Action<ServerProtocolEngine> listener)
+    {
+        _workListener.set(listener);
+    }
+
 }

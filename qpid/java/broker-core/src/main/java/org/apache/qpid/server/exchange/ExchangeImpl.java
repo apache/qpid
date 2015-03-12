@@ -107,8 +107,4 @@ public interface ExchangeImpl<T extends ExchangeImpl<T>> extends Exchange<T>, Ex
         void bindingRemoved(ExchangeImpl exchange, BindingImpl binding);
     }
 
-    public void addBindingListener(BindingListener listener);
-
-    public void removeBindingListener(BindingListener listener);
-
 }

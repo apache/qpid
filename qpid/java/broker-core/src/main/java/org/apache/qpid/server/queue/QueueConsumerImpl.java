@@ -198,7 +198,7 @@ class QueueConsumerImpl
 
         if(newState == ConsumerTarget.State.CLOSED && oldState != newState && !_closed.get())
         {
-            close();
+            closeAsync();
         }
         final StateChangeListener<? super QueueConsumerImpl, State> stateListener = getStateListener();
         if(stateListener != null)
@@ -323,6 +323,7 @@ class QueueConsumerImpl
     public final void flush()
     {
         _queue.flushConsumer(this);
+        _target.processPending();
     }
 
     public boolean resend(final QueueEntry entry)
@@ -513,6 +514,7 @@ class QueueConsumerImpl
     {
         return _selector;
     }
+
 
     @Override
     public String toLogString()

@@ -27,6 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -151,13 +154,14 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
     }
 
     @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.QUIESCED )
-    protected void startQuiesced()
+    protected ListenableFuture<Void> startQuiesced()
     {
         setState(State.QUIESCED);
+        return Futures.immediateFuture(null);
     }
 
     @StateTransition( currentState = { State.UNINITIALIZED, State.QUIESCED, State.QUIESCED }, desiredState = State.ACTIVE )
-    protected void activate()
+    protected ListenableFuture<Void> activate()
     {
         try
         {
@@ -175,11 +179,11 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
                 throw e;
             }
         }
-
+        return Futures.immediateFuture(null);
     }
 
     @StateTransition( currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED}, desiredState = State.DELETED)
-    protected void doDelete()
+    protected ListenableFuture<Void> doDelete()
     {
 
         String providerName = getName();
@@ -195,15 +199,50 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
             }
         }
 
-        close();
-        if (_preferencesProvider != null)
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+
+        final ListenableFuture<Void> future = closeAsync();
+        future.addListener(new Runnable()
         {
-            _preferencesProvider.delete();
-        }
-        deleted();
+            @Override
+            public void run()
+            {
+                if (_preferencesProvider != null)
+                {
+                    _preferencesProvider.deleteAsync().addListener(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            try
+                            {
+                                deleted();
+                                setState(State.DELETED);
+                            }
+                            finally
+                            {
+                                returnVal.set(null);
+                            }
+                        }
+                    }, getTaskExecutor().getExecutor());
+                }
+                else
+                {
+                    try
+                    {
+                        deleted();
 
-        setState(State.DELETED);
+                        setState(State.DELETED);
+                    }
+                    finally
+                    {
+                        returnVal.set(null);
+                    }
+                }
+            }
+        }, getTaskExecutor().getExecutor());
 
+        return  returnVal;
     }
 
     @Override

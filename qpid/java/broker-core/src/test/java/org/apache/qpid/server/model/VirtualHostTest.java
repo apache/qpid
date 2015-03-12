@@ -22,6 +22,7 @@ package org.apache.qpid.server.model;
 
 import static java.util.Arrays.asList;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -33,12 +34,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.security.AccessControlException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -55,6 +59,7 @@ import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.handler.ConfiguredObjectRecordHandler;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.TestMemoryVirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -259,7 +264,7 @@ public class VirtualHostTest extends QpidTestCase
                      0,
                      virtualHost.getChildren(Connection.class).size());
 
-        verify(connection).close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
+        verify(connection).closeAsync(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
     }
 
     public void testDeleteVirtualHost_ClosesConnections()
@@ -284,7 +289,7 @@ public class VirtualHostTest extends QpidTestCase
                      0,
                      virtualHost.getChildren(Connection.class).size());
 
-        verify(connection).close(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
+        verify(connection).closeAsync(AMQConstant.CONNECTION_FORCED, "Connection closed by external action");
     }
 
     public void testCreateDurableQueue()
@@ -409,7 +414,30 @@ public class VirtualHostTest extends QpidTestCase
     private AMQConnectionModel createMockProtocolConnection(final VirtualHost<?, ?, ?> virtualHost)
     {
         final AMQConnectionModel connection = mock(AMQConnectionModel.class);
+        final List<Action<?>> tasks = new ArrayList<>();
+        final ArgumentCaptor<Action> deleteTaskCaptor = ArgumentCaptor.forClass(Action.class);
+        Answer answer = new Answer()
+        {
+            @Override
+            public Object answer(final InvocationOnMock invocation) throws Throwable
+            {
+                return tasks.add(deleteTaskCaptor.getValue());
+            }
+        };
+        doAnswer(answer).when(connection).addDeleteTask(deleteTaskCaptor.capture());
         when(connection.getVirtualHost()).thenReturn(virtualHost);
+        doAnswer(new Answer()
+        {
+            @Override
+            public Object answer(final InvocationOnMock invocation) throws Throwable
+            {
+                for(Action action : tasks)
+                {
+                    action.performAction(connection);
+                }
+                return null;
+            }
+        }).when(connection).closeAsync(any(AMQConstant.class),anyString());
         when(connection.getRemoteAddressString()).thenReturn("peer:1234");
         return connection;
     }

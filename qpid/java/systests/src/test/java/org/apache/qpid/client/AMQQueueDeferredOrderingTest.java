@@ -20,12 +20,6 @@
  */
 package org.apache.qpid.client;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
 import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -33,13 +27,19 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
 public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
 {
     private Connection con;
     private Session session;
     private AMQQueue queue;
     private MessageConsumer consumer;
-    private int numMessages;
+    private int _numMessages;
 
     private static final Logger _logger = LoggerFactory.getLogger(AMQQueueDeferredOrderingTest.class);
 
@@ -86,7 +86,7 @@ public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
     {
         super.setUp();
 
-        numMessages = isBrokerStorePersistent() ? 300 : 1000;
+        _numMessages = isBrokerStorePersistent() ? 300 : 1000;
 
         _logger.info("Create Connection");
         con = getConnection();
@@ -106,30 +106,31 @@ public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
 
         // Setup initial messages
         _logger.info("Creating first producer thread");
-        producerThread = new ASyncProducer(queue, 0, numMessages / 2);
+        producerThread = new ASyncProducer(queue, 0, _numMessages / 2);
         producerThread.start();
         // Wait for them to be done
         producerThread.join();
 
         // Setup second set of messages to produce while we consume
         _logger.info("Creating second producer thread");
-        producerThread = new ASyncProducer(queue, numMessages / 2, numMessages);
+        producerThread = new ASyncProducer(queue, _numMessages / 2, _numMessages);
         producerThread.start();
 
         // Start consuming and checking they're in order
         _logger.info("Consuming messages");
-        for (int i = 0; i < numMessages; i++)
+        for (int i = 0; i < _numMessages; i++)
         {
             Message msg = consumer.receive(3000);
+
             assertNotNull("Message " + i + " should not be null", msg);
             assertTrue("Message " + i + " should be a text message", msg instanceof TextMessage);
-            assertEquals("Message content " + i + "does not match expected", Integer.toString(i), ((TextMessage) msg).getText());
+            assertEquals("Message content " + i + " does not match expected", Integer.toString(i), ((TextMessage) msg).getText());
         }
     }
 
     protected void tearDown() throws Exception
     {
-        _logger.info("Interuptting producer thread");
+        _logger.info("Interrupting producer thread");
         producerThread.interrupt();
         _logger.info("Closing connection");
         con.close();

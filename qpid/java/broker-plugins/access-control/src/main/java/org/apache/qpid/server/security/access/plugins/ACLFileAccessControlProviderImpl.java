@@ -25,6 +25,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -149,7 +152,7 @@ public class ACLFileAccessControlProviderImpl
 
 
     @StateTransition(currentState = {State.UNINITIALIZED, State.QUIESCED, State.ERRORED}, desiredState = State.ACTIVE)
-    private void activate()
+    private ListenableFuture<Void> activate()
     {
 
         if(_broker.isManagementMode())
@@ -177,6 +180,7 @@ public class ACLFileAccessControlProviderImpl
                 }
             }
         }
+        return Futures.immediateFuture(null);
     }
 
     @Override
@@ -190,17 +194,36 @@ public class ACLFileAccessControlProviderImpl
     }
 
     @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.QUIESCED)
-    private void startQuiesced()
+    private ListenableFuture<Void> startQuiesced()
     {
         setState(State.QUIESCED);
+        return Futures.immediateFuture(null);
     }
 
     @StateTransition(currentState = {State.ACTIVE, State.QUIESCED, State.ERRORED}, desiredState = State.DELETED)
-    private void doDelete()
+    private ListenableFuture<Void> doDelete()
     {
-        close();
-        setState(State.DELETED);
-        deleted();
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+        closeAsync().addListener(
+                new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        try
+                        {
+
+                            setState(State.DELETED);
+                            deleted();
+                        }
+                        finally
+                        {
+                            returnVal.set(null);
+                        }
+                    }
+                }, getTaskExecutor().getExecutor()
+                           );
+        return returnVal;
     }
 
     public AccessControl getAccessControl()

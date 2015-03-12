@@ -19,24 +19,25 @@
  */
 package org.apache.qpid.transport.network.security.ssl;
 
-import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.SenderException;
-import org.apache.qpid.transport.network.security.SSLStatus;
-import org.apache.qpid.transport.util.Logger;
+import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
-import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-public class SSLSender implements Sender<ByteBuffer>
+import org.apache.qpid.transport.ByteBufferSender;
+import org.apache.qpid.transport.SenderException;
+import org.apache.qpid.transport.network.security.SSLStatus;
+import org.apache.qpid.transport.util.Logger;
+
+public class SSLSender implements ByteBufferSender
 {
     private static final Logger log = Logger.get(SSLSender.class);
 
-    private final Sender<ByteBuffer> delegate;
+    private final ByteBufferSender delegate;
     private final SSLEngine engine;
     private final int sslBufSize;
     private final ByteBuffer netData;
@@ -48,7 +49,7 @@ public class SSLSender implements Sender<ByteBuffer>
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
 
-    public SSLSender(SSLEngine engine, Sender<ByteBuffer> delegate, SSLStatus sslStatus)
+    public SSLSender(SSLEngine engine, ByteBufferSender delegate, SSLStatus sslStatus)
     {
         this.engine = engine;
         this.delegate = delegate;
@@ -264,8 +265,4 @@ public class SSLSender implements Sender<ByteBuffer>
         }
     }
 
-    public void setIdleTimeout(int i)
-    {
-        delegate.setIdleTimeout(i);
-    }
 }

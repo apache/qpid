@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-
 import java.io.DataOutput;
 import java.io.IOException;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.transport.ByteBufferSender;
 
 public interface AMQBody
 {
@@ -39,4 +40,6 @@ public interface AMQBody
     public void writePayload(DataOutput buffer) throws IOException;
     
     void handle(final int channelId, final AMQVersionAwareProtocolSession amqProtocolSession) throws AMQException;
+
+    long writePayload(ByteBufferSender sender) throws IOException;
 }

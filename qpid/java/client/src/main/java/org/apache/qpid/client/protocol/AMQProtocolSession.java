@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client.protocol;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -52,8 +51,8 @@ import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.ConnectionSettings;
-import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
 
 /**
@@ -382,7 +381,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         }
     }
 
-    public Sender<ByteBuffer> getSender()
+    public ByteBufferSender getSender()
     {
         return _protocolHandler.getSender();
     }
@@ -471,7 +470,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         _protocolHandler.propagateExceptionToAllWaiters(error);
     }
 
-    public void setSender(Sender<java.nio.ByteBuffer> sender)
+    public void setSender(ByteBufferSender sender)
     {
         // No-op, interface munging
     }

@@ -21,14 +21,12 @@
 
 package org.apache.qpid.transport.network.io;
 
-import junit.framework.TestCase;
-
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.security.Principal;
 
-import org.apache.qpid.test.utils.QpidTestCase;
-import org.apache.qpid.transport.Sender;
+import junit.framework.TestCase;
+
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.TransportActivity;
 
@@ -193,7 +191,7 @@ public class IdleTimeoutTickerTest extends TestCase implements TransportActivity
     //-------------------------------------------------------------------------
 
     @Override
-    public Sender<ByteBuffer> getSender()
+    public ByteBufferSender getSender()
     {
         return null;
     }

@@ -36,8 +36,10 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.virtualhost.VirtualHostUnavailableException;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.ArrivalTimeFilter;
 import org.apache.qpid.server.filter.FilterManager;
@@ -58,7 +60,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.txn.AlreadyKnownDtxException;
 import org.apache.qpid.server.txn.DtxNotSelectedException;
@@ -133,7 +135,7 @@ public class ServerSessionDelegate extends SessionDelegate
         serverSession.accept(method.getTransfers());
         if(!serverSession.isTransactional())
         {
-            serverSession.recordFuture(StoreFuture.IMMEDIATE_FUTURE,
+            serverSession.recordFuture(FutureResult.IMMEDIATE_FUTURE,
                                        new CommandProcessedAction(serverSession, method));
         }
     }
@@ -246,8 +248,8 @@ public class ServerSessionDelegate extends SessionDelegate
                 }
                 else
                 {
-
-                    FlowCreditManager_0_10 creditManager = new WindowCreditManager(0L,0L);
+                    ServerProtocolEngine serverProtocolEngine = getServerConnection(session).getProtocolEngine();
+                    FlowCreditManager_0_10 creditManager = new WindowCreditManager(0L,0L, serverProtocolEngine);
 
                     FilterManager filterManager = null;
                     try
@@ -421,58 +423,69 @@ public class ServerSessionDelegate extends SessionDelegate
                     new MessageTransferMessage(storeMessage, serverSession.getReference());
             MessageReference<MessageTransferMessage> reference = message.newReference();
 
-            final InstanceProperties instanceProperties = new InstanceProperties()
+            try
             {
-                @Override
-                public Object getProperty(final Property prop)
+                final InstanceProperties instanceProperties = new InstanceProperties()
                 {
-                    switch (prop)
+                    @Override
+                    public Object getProperty(final Property prop)
                     {
-                        case EXPIRATION:
-                            return message.getExpiration();
-                        case IMMEDIATE:
-                            return message.isImmediate();
-                        case MANDATORY:
-                            return (delvProps == null || !delvProps.getDiscardUnroutable())
-                                   && xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT;
-                        case PERSISTENT:
-                            return message.isPersistent();
-                        case REDELIVERED:
-                            return delvProps.getRedelivered();
+                        switch (prop)
+                        {
+                            case EXPIRATION:
+                                return message.getExpiration();
+                            case IMMEDIATE:
+                                return message.isImmediate();
+                            case MANDATORY:
+                                return (delvProps == null || !delvProps.getDiscardUnroutable())
+                                       && xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT;
+                            case PERSISTENT:
+                                return message.isPersistent();
+                            case REDELIVERED:
+                                return delvProps.getRedelivered();
+                        }
+                        return null;
                     }
-                    return null;
-                }
-            };
+                };
 
-            int enqueues = serverSession.enqueue(message, instanceProperties, destination);
+                int enqueues = serverSession.enqueue(message, instanceProperties, destination);
 
-            if (enqueues == 0)
-            {
-                if ((delvProps == null || !delvProps.getDiscardUnroutable())
-                    && xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT)
+                if (enqueues == 0)
                 {
-                    RangeSet rejects = RangeSetFactory.createRangeSet();
-                    rejects.add(xfr.getId());
-                    MessageReject reject = new MessageReject(rejects, MessageRejectCode.UNROUTABLE, "Unroutable");
-                    ssn.invoke(reject);
+                    if ((delvProps == null || !delvProps.getDiscardUnroutable())
+                        && xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT)
+                    {
+                        RangeSet rejects = RangeSetFactory.createRangeSet();
+                        rejects.add(xfr.getId());
+                        MessageReject reject = new MessageReject(rejects, MessageRejectCode.UNROUTABLE, "Unroutable");
+                        ssn.invoke(reject);
+                    }
+                    else
+                    {
+                        virtualHost.getEventLogger().message(ExchangeMessages.DISCARDMSG(destination.getName(),
+                                                                                         messageMetaData.getRoutingKey()));
+                    }
+                }
+
+                if (serverSession.isTransactional())
+                {
+                    serverSession.processed(xfr);
                 }
                 else
                 {
-                    virtualHost.getEventLogger().message(ExchangeMessages.DISCARDMSG(destination.getName(),
-                                                                                     messageMetaData.getRoutingKey()));
+                    serverSession.recordFuture(FutureResult.IMMEDIATE_FUTURE,
+                                               new CommandProcessedAction(serverSession, xfr));
                 }
             }
+            catch (VirtualHostUnavailableException e)
+            {
+                getServerConnection(serverSession).closeAsync(AMQConstant.CONNECTION_FORCED, e.getMessage());
+            }
+            finally
+            {
+                reference.release();
+            }
 
-            if (serverSession.isTransactional())
-            {
-                serverSession.processed(xfr);
-            }
-            else
-            {
-                serverSession.recordFuture(StoreFuture.IMMEDIATE_FUTURE,
-                                           new CommandProcessedAction(serverSession, xfr));
-            }
-            reference.release();
         }
     }
 
@@ -589,7 +602,7 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             try
             {
-                ((ServerSession)session).endDtx(method.getXid(), method.getFail(), method.getSuspend());
+                ((ServerSession) session).endDtx(method.getXid(), method.getFail(), method.getSuspend());
             }
             catch (TimeoutDtxException e)
             {

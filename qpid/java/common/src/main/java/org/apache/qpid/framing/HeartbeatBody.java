@@ -27,6 +27,7 @@ import java.io.IOException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.MarkableDataInput;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.transport.ByteBufferSender;
 
 public class HeartbeatBody implements AMQBody
 {
@@ -59,6 +60,12 @@ public class HeartbeatBody implements AMQBody
 
     public void writePayload(DataOutput buffer)
     {
+    }
+
+    @Override
+    public long writePayload(final ByteBufferSender sender) throws IOException
+    {
+        return 0l;
     }
 
     public void handle(final int channelId, final AMQVersionAwareProtocolSession session)

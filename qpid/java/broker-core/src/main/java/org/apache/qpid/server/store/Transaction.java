@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.util.FutureResult;
 
 public interface Transaction
 {
@@ -53,7 +54,7 @@ public interface Transaction
      * Commits all operations performed within a given transactional context.
      *
      */
-    StoreFuture commitTranAsync();
+    FutureResult commitTranAsync();
 
     /**
      * Abandons all operations performed within a given transactional context.

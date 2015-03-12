@@ -92,22 +92,15 @@ public abstract class ConfigModelPasswordManagingAuthenticationProvider<X extend
     @Override
     public void deleteUser(final String user) throws AccountNotFoundException
     {
-        runTask(new VoidTaskWithException<AccountNotFoundException>()
+        final ManagedUser authUser = getUser(user);
+        if(authUser != null)
         {
-            @Override
-            public void execute() throws AccountNotFoundException
-            {
-                final ManagedUser authUser = getUser(user);
-                if(authUser != null)
-                {
-                    authUser.delete();
-                }
-                else
-                {
-                    throw new AccountNotFoundException("No such user: '" + user + "'");
-                }
-            }
-        });
+            authUser.delete();
+        }
+        else
+        {
+            throw new AccountNotFoundException("No such user: '" + user + "'");
+        }
     }
 
     @Override

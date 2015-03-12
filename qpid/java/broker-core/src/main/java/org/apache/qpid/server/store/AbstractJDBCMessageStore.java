@@ -45,6 +45,7 @@ import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
 import org.apache.qpid.server.store.handler.MessageHandler;
 import org.apache.qpid.server.store.handler.MessageInstanceHandler;
+import org.apache.qpid.server.util.FutureResult;
 
 public abstract class AbstractJDBCMessageStore implements MessageStore
 {
@@ -834,10 +835,10 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         }
     }
 
-    private StoreFuture commitTranAsync(ConnectionWrapper connWrapper) throws StoreException
+    private FutureResult commitTranAsync(ConnectionWrapper connWrapper) throws StoreException
     {
         commitTran(connWrapper);
-        return StoreFuture.IMMEDIATE_FUTURE;
+        return FutureResult.IMMEDIATE_FUTURE;
     }
 
     private void abortTran(ConnectionWrapper connWrapper) throws StoreException
@@ -1231,14 +1232,14 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         }
 
         @Override
-        public StoreFuture commitTranAsync()
+        public FutureResult commitTranAsync()
         {
             checkMessageStoreOpen();
             doPreCommitActions();
-            StoreFuture storeFuture = AbstractJDBCMessageStore.this.commitTranAsync(_connWrapper);
+            FutureResult futureResult = AbstractJDBCMessageStore.this.commitTranAsync(_connWrapper);
             storedSizeChange(_storeSizeIncrease);
             doPostCommitActions();
-            return storeFuture;
+            return futureResult;
         }
 
         private void doPreCommitActions()

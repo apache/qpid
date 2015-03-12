@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.client.handler;
 
-import java.nio.ByteBuffer;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +33,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionCloseOkBody;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.TransportException;
 
 public class ConnectionCloseMethodHandler implements StateAwareMethodListener<ConnectionCloseBody>
@@ -95,7 +93,7 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
         }
         finally
         {
-            Sender<ByteBuffer> sender = session.getSender();
+            ByteBufferSender sender = session.getSender();
 
             if (error != null)
             {

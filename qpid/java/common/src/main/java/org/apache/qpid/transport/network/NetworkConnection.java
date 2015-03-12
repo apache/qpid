@@ -21,13 +21,13 @@
 package org.apache.qpid.transport.network;
 
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.security.Principal;
-import org.apache.qpid.transport.Sender;
+
+import org.apache.qpid.transport.ByteBufferSender;
 
 public interface NetworkConnection
 {
-    Sender<ByteBuffer> getSender();
+    ByteBufferSender getSender();
 
     void start();
 

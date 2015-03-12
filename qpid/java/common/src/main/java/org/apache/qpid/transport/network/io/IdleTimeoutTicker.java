@@ -25,7 +25,7 @@ import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.Ticker;
 import org.apache.qpid.transport.network.TransportActivity;
 
-class IdleTimeoutTicker implements Ticker
+public class IdleTimeoutTicker implements Ticker
 {
     private final TransportActivity _transport;
     private final int _defaultTimeout;

@@ -22,6 +22,8 @@ package org.apache.qpid.server.consumer;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.message.MessageSource;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 
@@ -30,6 +32,8 @@ public interface ConsumerImpl
     AtomicLong CONSUMER_NUMBER_GENERATOR = new AtomicLong(0);
 
     void externalStateChange();
+
+    ConsumerTarget getTarget();
 
     enum Option
     {

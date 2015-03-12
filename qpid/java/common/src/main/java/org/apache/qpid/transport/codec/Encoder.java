@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.transport.codec;
 
-import org.apache.qpid.transport.RangeSet;
-import org.apache.qpid.transport.Struct;
-
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import org.apache.qpid.transport.RangeSet;
+import org.apache.qpid.transport.Struct;
 
 
 /**
@@ -274,9 +275,10 @@ public interface Encoder
      * @param bytes the bytes array to be encoded.
      */
     void writeBin128(byte [] bytes);
-    
-    /**
-     * Encodes the AMQP magic number.
-     */
-    void writeMagicNumber();
+
+    int position();
+
+    ByteBuffer underlyingBuffer();
+
+    void init();
 }

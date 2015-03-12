@@ -29,11 +29,12 @@ import static org.apache.qpid.transport.util.Functions.str;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import org.apache.qpid.transport.ByteBufferReceiver;
 import org.apache.qpid.transport.Constant;
 import org.apache.qpid.transport.FrameSizeObserver;
+import org.apache.qpid.transport.NetworkEventReceiver;
 import org.apache.qpid.transport.ProtocolError;
 import org.apache.qpid.transport.ProtocolHeader;
-import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.SegmentType;
 
 
@@ -43,7 +44,7 @@ import org.apache.qpid.transport.SegmentType;
  * @author Rafael H. Schloming
  */
 
-public class InputHandler implements Receiver<ByteBuffer>, FrameSizeObserver
+public class InputHandler implements ByteBufferReceiver, FrameSizeObserver
 {
 
     private int _maxFrameSize = Constant.MIN_MAX_FRAME_SIZE;
@@ -56,7 +57,7 @@ public class InputHandler implements Receiver<ByteBuffer>, FrameSizeObserver
         ERROR
     }
 
-    private final Receiver<NetworkEvent> receiver;
+    private final NetworkEventReceiver receiver;
     private State state;
     private ByteBuffer input = null;
     private int needed;
@@ -66,7 +67,7 @@ public class InputHandler implements Receiver<ByteBuffer>, FrameSizeObserver
     private byte track;
     private int channel;
 
-    public InputHandler(Receiver<NetworkEvent> receiver, State state)
+    public InputHandler(NetworkEventReceiver receiver, State state)
     {
         this.receiver = receiver;
         this.state = state;
@@ -82,7 +83,7 @@ public class InputHandler implements Receiver<ByteBuffer>, FrameSizeObserver
         }
     }
 
-    public InputHandler(Receiver<NetworkEvent> receiver)
+    public InputHandler(NetworkEventReceiver receiver)
     {
         this(receiver, PROTO_HDR);
     }

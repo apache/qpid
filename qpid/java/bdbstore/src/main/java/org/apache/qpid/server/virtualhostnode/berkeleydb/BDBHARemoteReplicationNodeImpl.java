@@ -24,9 +24,11 @@ package org.apache.qpid.server.virtualhostnode.berkeleydb;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.sleepycat.je.rep.MasterStateException;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.HighAvailabilityMessages;
@@ -126,7 +128,7 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
     }
 
     @StateTransition(currentState = {State.ACTIVE, State.UNAVAILABLE}, desiredState = State.DELETED)
-    private void doDelete()
+    private ListenableFuture<Void> doDelete()
     {
         String nodeName = getName();
 
@@ -146,6 +148,8 @@ public class BDBHARemoteReplicationNodeImpl extends AbstractConfiguredObject<BDB
         {
             throw new IllegalStateTransitionException("Unexpected exception on node '" + nodeName + "' deletion", e);
         }
+
+        return Futures.immediateFuture(null);
     }
 
     protected void afterSetRole()

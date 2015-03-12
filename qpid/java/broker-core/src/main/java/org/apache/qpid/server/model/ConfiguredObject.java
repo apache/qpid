@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.store.ConfiguredObjectRecord;
 
@@ -236,6 +238,8 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
                                                ConfiguredObject... otherParents);
 
     void setAttributes(Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException;
+    ListenableFuture<Void> setAttributesAsync(Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException;
+
 
     Class<? extends ConfiguredObject> getCategoryClass();
     Class<? extends ConfiguredObject> getTypeClass();
@@ -248,8 +252,12 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     ConfiguredObjectRecord asObjectRecord();
 
     void open();
+    ListenableFuture<Void> openAsync();
 
     void close();
+    ListenableFuture<Void> closeAsync();
+
+    ListenableFuture<Void> deleteAsync();
 
     TaskExecutor getTaskExecutor();
 

@@ -22,10 +22,13 @@ package org.apache.qpid.server.configuration.updater;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+
+import com.google.common.util.concurrent.MoreExecutors;
 
 public class CurrentThreadTaskExecutor implements TaskExecutor
 {
@@ -144,4 +147,15 @@ public class CurrentThreadTaskExecutor implements TaskExecutor
         return executor;
     }
 
+    @Override
+    public boolean isTaskExecutorThread()
+    {
+        return true;
+    }
+
+    @Override
+    public Executor getExecutor()
+    {
+        return MoreExecutors.sameThreadExecutor();
+    }
 }

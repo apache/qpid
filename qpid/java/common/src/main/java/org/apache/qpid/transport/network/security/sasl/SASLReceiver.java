@@ -21,20 +21,21 @@
 package org.apache.qpid.transport.network.security.sasl;
 
 
-import org.apache.qpid.transport.Receiver;
+import java.nio.ByteBuffer;
+
+import javax.security.sasl.SaslException;
+
+import org.apache.qpid.transport.ByteBufferReceiver;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.util.Logger;
 
-import javax.security.sasl.SaslException;
-import java.nio.ByteBuffer;
+public class SASLReceiver extends SASLEncryptor implements ByteBufferReceiver {
 
-public class SASLReceiver extends SASLEncryptor implements Receiver<ByteBuffer> {
-
-    private Receiver<ByteBuffer> delegate;
+    private ByteBufferReceiver delegate;
     private byte[] netData;
     private static final Logger log = Logger.get(SASLReceiver.class);
     
-    public SASLReceiver(Receiver<ByteBuffer> delegate)
+    public SASLReceiver(ByteBufferReceiver delegate)
     {
         this.delegate = delegate;
     }

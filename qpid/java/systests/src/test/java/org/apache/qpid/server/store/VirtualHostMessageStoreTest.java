@@ -386,7 +386,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         assertEquals("Incorrect number of exchanges registered after second recovery",
                 origExchangeCount,  _virtualHost.getExchanges().size());
         assertNull("Durable exchange was not removed:" + directExchangeName,
-                _virtualHost.getExchange(directExchangeName));
+                   _virtualHost.getExchange(directExchangeName));
     }
 
     /**

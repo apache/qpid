@@ -26,6 +26,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -137,15 +140,17 @@ public class TestConfiguredObject extends AbstractConfiguredObject
     }
 
     @StateTransition( currentState = {State.ERRORED, State.UNINITIALIZED}, desiredState = State.ACTIVE )
-    protected void activate()
+    protected ListenableFuture<Void> activate()
     {
         setState(State.ACTIVE);
+        return Futures.immediateFuture(null);
     }
 
     @StateTransition( currentState = {State.ERRORED, State.UNINITIALIZED}, desiredState = State.DELETED )
-    protected void doDelete()
+    protected ListenableFuture<Void> doDelete()
     {
         setState(State.DELETED);
+        return Futures.immediateFuture(null);
     }
 
     public boolean isOpened()

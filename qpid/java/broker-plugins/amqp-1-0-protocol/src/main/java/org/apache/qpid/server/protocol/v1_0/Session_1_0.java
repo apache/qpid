@@ -109,6 +109,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     private final Subject _subject = new Subject();
 
     private final CopyOnWriteArrayList<Consumer<?>> _consumers = new CopyOnWriteArrayList<Consumer<?>>();
+    private final CopyOnWriteArrayList<SendingLink_1_0> _sendingLinks = new CopyOnWriteArrayList<>();
     private final ConfigurationChangeListener _consumerClosedListener = new ConsumerClosedListener();
     private final CopyOnWriteArrayList<ConsumerListener> _consumerListeners = new CopyOnWriteArrayList<ConsumerListener>();
     private Session<?> _modelObject;
@@ -211,7 +212,7 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
                         );
 
                         sendingLinkEndpoint.setLinkEventListener(new SubjectSpecificSendingLinkListener(sendingLink));
-                        registerConsumer(sendingLink.getConsumer());
+                        registerConsumer(sendingLink);
 
                         link = sendingLink;
                         if(TerminusDurability.UNSETTLED_STATE.equals(source.getDurable()) || TerminusDurability.CONFIGURATION.equals(source.getDurable()))
@@ -412,12 +413,14 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
         }
     }
 
-    private void registerConsumer(final ConsumerImpl consumer)
+    private void registerConsumer(final SendingLink_1_0 link)
     {
+        ConsumerImpl consumer = link.getConsumer();
         if(consumer instanceof Consumer<?>)
         {
             Consumer<?> modelConsumer = (Consumer<?>) consumer;
             _consumers.add(modelConsumer);
+            _sendingLinks.add(link);
             modelConsumer.addChangeListener(_consumerClosedListener);
             consumerAdded(modelConsumer);
         }
@@ -612,6 +615,20 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
         theError.setCondition(ConnectionError.CONNECTION_FORCED);
         end.setError(theError);
         _endpoint.end(end);
+    }
+
+    @Override
+    public void transportStateChanged()
+    {
+        for(SendingLink_1_0 link : _sendingLinks)
+        {
+            ConsumerTarget_1_0 target = link.getConsumerTarget();
+            target.flowStateChanged();
+
+
+        }
+
+
     }
 
     @Override
@@ -881,6 +898,16 @@ public class Session_1_0 implements SessionEventListener, AMQSessionModel<Sessio
     public long getTransactionUpdateTime()
     {
         return 0L;
+    }
+
+    @Override
+    public void processPending()
+    {
+        for(Consumer<?> consumer : getConsumers())
+        {
+
+            ((ConsumerImpl)consumer).getTarget().processPending();
+        }
     }
 
     private void consumerAdded(Consumer<?> consumer)

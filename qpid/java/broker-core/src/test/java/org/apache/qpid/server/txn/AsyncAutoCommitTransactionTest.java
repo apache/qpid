@@ -27,7 +27,7 @@ import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.store.MessageDurability;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.txn.AsyncAutoCommitTransaction.FutureRecorder;
 import org.apache.qpid.server.txn.ServerTransaction.Action;
@@ -43,7 +43,7 @@ public class AsyncAutoCommitTransactionTest extends QpidTestCase
     private MessageStore _messageStore = mock(MessageStore.class);
     private Transaction _storeTransaction = mock(Transaction.class);
     private Action _postTransactionAction = mock(Action.class);
-    private StoreFuture _future = mock(StoreFuture.class);
+    private FutureResult _future = mock(FutureResult.class);
 
 
     @Override
@@ -136,7 +136,7 @@ public class AsyncAutoCommitTransactionTest extends QpidTestCase
         asyncAutoCommitTransaction.enqueue(_queue, _message, _postTransactionAction);
 
         verifyZeroInteractions(_storeTransaction);
-        verify(_futureRecorder).recordFuture(StoreFuture.IMMEDIATE_FUTURE, _postTransactionAction);
+        verify(_futureRecorder).recordFuture(FutureResult.IMMEDIATE_FUTURE, _postTransactionAction);
         verifyZeroInteractions(_postTransactionAction);
     }
 }

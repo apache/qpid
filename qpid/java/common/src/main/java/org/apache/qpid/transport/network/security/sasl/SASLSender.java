@@ -21,22 +21,24 @@
 package org.apache.qpid.transport.network.security.sasl;
 
 
-import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.SenderException;
-import org.apache.qpid.transport.util.Logger;
-
-import javax.security.sasl.SaslException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class SASLSender extends SASLEncryptor implements Sender<ByteBuffer> {
+import javax.security.sasl.SaslException;
 
-    private Sender<ByteBuffer> delegate;
+import org.apache.qpid.transport.ByteBufferSender;
+import org.apache.qpid.transport.SenderException;
+import org.apache.qpid.transport.util.Logger;
+
+public class SASLSender extends SASLEncryptor implements ByteBufferSender
+{
+
+    private ByteBufferSender delegate;
     private byte[] appData;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private static final Logger log = Logger.get(SASLSender.class);
     
-    public SASLSender(Sender<ByteBuffer> delegate)
+    public SASLSender(ByteBufferSender delegate)
     {
         this.delegate = delegate;
         log.debug("SASL Sender enabled");
@@ -103,11 +105,6 @@ public class SASLSender extends SASLEncryptor implements Sender<ByteBuffer> {
         }        
     }
 
-    public void setIdleTimeout(int i) 
-    {
-        delegate.setIdleTimeout(i);
-    }
-    
     public void securityLayerEstablished()
     {
         appData = new byte[getSendBuffSize()];

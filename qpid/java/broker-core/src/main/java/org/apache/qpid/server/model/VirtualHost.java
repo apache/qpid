@@ -147,8 +147,6 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
 
     void stop();
 
-    void delete();
-
     String getRedirectHost(AmqpPort<?> port);
 
     public static interface Transaction

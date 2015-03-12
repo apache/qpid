@@ -37,6 +37,9 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -96,7 +99,7 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
     }
 
     @StateTransition(currentState = {State.ACTIVE, State.ERRORED}, desiredState = State.DELETED)
-    protected void doDelete()
+    protected ListenableFuture<Void> doDelete()
     {
         // verify that it is not in use
         String storeName = getName();
@@ -137,12 +140,14 @@ public class FileTrustStoreImpl extends AbstractConfiguredObject<FileTrustStoreI
         }
         deleted();
         setState(State.DELETED);
+        return Futures.immediateFuture(null);
     }
 
     @StateTransition(currentState = {State.UNINITIALIZED, State.ERRORED}, desiredState = State.ACTIVE)
-    protected void doActivate()
+    protected ListenableFuture<Void> doActivate()
     {
         setState(State.ACTIVE);
+        return Futures.immediateFuture(null);
     }
 
     @Override

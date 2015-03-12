@@ -45,5 +45,4 @@ public interface Binding<X extends Binding<X>> extends ConfiguredObject<X>
     @ManagedStatistic
     long getMatches();
 
-    void delete();
 }

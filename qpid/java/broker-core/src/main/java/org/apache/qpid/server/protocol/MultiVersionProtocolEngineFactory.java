@@ -27,10 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.net.ssl.SSLContext;
-
 import org.apache.qpid.protocol.ProtocolEngineFactory;
-import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.logging.messages.PortMessages;
 import org.apache.qpid.server.logging.subjects.PortLogSubject;
 import org.apache.qpid.server.model.Broker;
@@ -48,9 +45,6 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
     private final Broker<?> _broker;
     private final Set<Protocol> _supported;
     private final Protocol _defaultSupportedReply;
-    private final SSLContext _sslContext;
-    private final boolean _wantClientAuth;
-    private final boolean _needClientAuth;
     private final AmqpPort<?> _port;
     private final Transport _transport;
     private final ProtocolEngineCreator[] _creators;
@@ -58,9 +52,6 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
             _connectionCountDecrementingTask = new ConnectionCountDecrementingTask();
 
     public MultiVersionProtocolEngineFactory(Broker<?> broker,
-                                             SSLContext sslContext,
-                                             boolean wantClientAuth,
-                                             boolean needClientAuth,
                                              final Set<Protocol> supportedVersions,
                                              final Protocol defaultSupportedReply,
                                              AmqpPort<?> port,
@@ -73,7 +64,6 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
         }
 
         _broker = broker;
-        _sslContext = sslContext;
         _supported = supportedVersions;
         _defaultSupportedReply = defaultSupportedReply;
         final List<ProtocolEngineCreator> creators = new ArrayList<ProtocolEngineCreator>();
@@ -83,18 +73,16 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
         }
         Collections.sort(creators, new ProtocolEngineCreatorComparator());
         _creators = creators.toArray(new ProtocolEngineCreator[creators.size()]);
-        _wantClientAuth = wantClientAuth;
-        _needClientAuth = needClientAuth;
         _port = port;
         _transport = transport;
     }
 
-    public ServerProtocolEngine newProtocolEngine(final SocketAddress remoteSocketAddress)
+    public MultiVersionProtocolEngine newProtocolEngine(final SocketAddress remoteSocketAddress)
     {
         if(_port.canAcceptNewConnection(remoteSocketAddress))
         {
             _port.incrementConnectionCount();
-            return new MultiVersionProtocolEngine(_broker, _sslContext, _wantClientAuth, _needClientAuth,
+            return new MultiVersionProtocolEngine(_broker,
                                                   _supported, _defaultSupportedReply, _port, _transport,
                                                   ID_GENERATOR.getAndIncrement(),
                                                   _creators, _connectionCountDecrementingTask);

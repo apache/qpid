@@ -38,7 +38,7 @@ import com.sleepycat.je.Transaction;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.store.berkeleydb.logging.Log4jLoggingHandler;
 
 public class StandardEnvironmentFacade implements EnvironmentFacade
@@ -127,7 +127,7 @@ public class StandardEnvironmentFacade implements EnvironmentFacade
     }
 
     @Override
-    public StoreFuture commit(com.sleepycat.je.Transaction tx, boolean syncCommit)
+    public FutureResult commit(com.sleepycat.je.Transaction tx, boolean syncCommit)
     {
         try
         {

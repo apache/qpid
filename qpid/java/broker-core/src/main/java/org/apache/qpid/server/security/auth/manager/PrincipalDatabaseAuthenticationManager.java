@@ -40,6 +40,9 @@ import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
@@ -119,15 +122,8 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         super.onOpen();
         _principalDatabase = createDatabase();
         initialise();
-        List<Principal> users = _principalDatabase == null ? Collections.<Principal>emptyList() : _principalDatabase.getUsers();
-        for (Principal user : users)
-        {
-            PrincipalAdapter principalAdapter = new PrincipalAdapter(user);
-            principalAdapter.registerWithParents();
-            principalAdapter.open();
-            _userMap.put(user, principalAdapter);
-        }
     }
+
 
     protected abstract PrincipalDatabase createDatabase();
 
@@ -217,9 +213,44 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         return _principalDatabase;
     }
 
+    @StateTransition(currentState = {State.UNINITIALIZED,State.ERRORED}, desiredState = State.ACTIVE)
+    public ListenableFuture<Void> activate()
+    {
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+        final List<Principal> users = _principalDatabase == null ? Collections.<Principal>emptyList() : _principalDatabase.getUsers();
+        _userMap.clear();
+        if(!users.isEmpty())
+        {
+            for (final Principal user : users)
+            {
+                final PrincipalAdapter principalAdapter = new PrincipalAdapter(user);
+                principalAdapter.registerWithParents();
+                principalAdapter.openAsync().addListener(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        _userMap.put(user, principalAdapter);
+                        if (_userMap.size() == users.size())
+                        {
+                            setState(State.ACTIVE);
+                            returnVal.set(null);
+                        }
+                    }
+                }, getTaskExecutor().getExecutor());
 
-    @StateTransition( currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED}, desiredState = State.DELETED)
-    public void doDelete()
+            }
+
+            return returnVal;
+        }
+        else
+        {
+            return Futures.immediateFuture(null);
+        }
+    }
+
+    @StateTransition( currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED, State.UNINITIALIZED}, desiredState = State.DELETED)
+    public ListenableFuture<Void> doDelete()
     {
         File file = new File(_path);
         if (file.exists() && file.isFile())
@@ -228,6 +259,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         }
         deleted();
         setState(State.DELETED);
+        return Futures.immediateFuture(null);
     }
 
     @Override
@@ -479,13 +511,14 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         }
 
         @StateTransition(currentState = {State.UNINITIALIZED,State.ERRORED}, desiredState = State.ACTIVE)
-        private void activate()
+        private ListenableFuture<Void> activate()
         {
             setState(State.ACTIVE);
+            return Futures.immediateFuture(null);
         }
 
         @StateTransition(currentState = State.ACTIVE, desiredState = State.DELETED)
-        private void doDelete()
+        private ListenableFuture<Void> doDelete()
         {
             try
             {
@@ -503,7 +536,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
             {
                 LOGGER.warn("Failed to delete user " + _user, e);
             }
-
+            return Futures.immediateFuture(null);
         }
 
         @Override

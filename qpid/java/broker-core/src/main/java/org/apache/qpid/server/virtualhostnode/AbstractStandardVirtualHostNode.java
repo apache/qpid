@@ -29,6 +29,8 @@ import java.util.Map;
 
 import javax.security.auth.Subject;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -68,7 +70,7 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
     }
 
     @Override
-    protected void activate()
+    protected ListenableFuture<Void> activate()
     {
         if (LOGGER.isDebugEnabled())
         {
@@ -107,15 +109,21 @@ public abstract class AbstractStandardVirtualHostNode<X extends AbstractStandard
         if (host != null)
         {
             final VirtualHost<?,?,?> recoveredHost = host;
-            Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
-            {
-                @Override
-                public Object run()
-                {
-                    recoveredHost.open();
-                    return null;
-                }
-            });
+            final ListenableFuture<Void> openFuture = Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(),
+                                                                   new PrivilegedAction<ListenableFuture<Void>>()
+                                                                   {
+                                                                       @Override
+                                                                       public ListenableFuture<Void> run()
+                                                                       {
+                                                                           return recoveredHost.openAsync();
+
+                                                                       }
+                                                                   });
+            return openFuture;
+        }
+        else
+        {
+            return Futures.immediateFuture(null);
         }
     }
 

@@ -20,15 +20,13 @@
  */
 package org.apache.qpid.transport.network.security;
 
-import java.nio.ByteBuffer;
-
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
 import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.transport.ByteBufferReceiver;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.ConnectionSettings;
-import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.security.sasl.SASLReceiver;
 import org.apache.qpid.transport.network.security.sasl.SASLSender;
@@ -110,14 +108,14 @@ public class SecurityLayerFactory
 
         }
 
-        public Sender<ByteBuffer> sender(Sender<ByteBuffer> delegate)
+        public ByteBufferSender sender(ByteBufferSender delegate)
         {
             SSLSender sender = new SSLSender(_engine, _layer.sender(delegate), _sslStatus);
             sender.setHostname(_hostname);
             return sender;
         }
 
-        public Receiver<ByteBuffer> receiver(Receiver<ByteBuffer> delegate)
+        public ByteBufferReceiver receiver(ByteBufferReceiver delegate)
         {
             SSLReceiver receiver = new SSLReceiver(_engine, _layer.receiver(delegate), _sslStatus);
             receiver.setHostname(_hostname);
@@ -141,13 +139,13 @@ public class SecurityLayerFactory
             _layer = layer;
         }
 
-        public SASLSender sender(Sender<ByteBuffer> delegate)
+        public SASLSender sender(ByteBufferSender delegate)
         {
             SASLSender sender = new SASLSender(_layer.sender(delegate));
             return sender;
         }
 
-        public SASLReceiver receiver(Receiver<ByteBuffer> delegate)
+        public SASLReceiver receiver(ByteBufferReceiver delegate)
         {
             SASLReceiver receiver = new SASLReceiver(_layer.receiver(delegate));
             return receiver;
@@ -169,12 +167,12 @@ public class SecurityLayerFactory
         {
         }
 
-        public Sender<ByteBuffer> sender(Sender<ByteBuffer> delegate)
+        public ByteBufferSender sender(ByteBufferSender delegate)
         {
             return delegate;
         }
 
-        public Receiver<ByteBuffer> receiver(Receiver<ByteBuffer> delegate)
+        public ByteBufferReceiver receiver(ByteBufferReceiver delegate)
         {
             return delegate;
         }

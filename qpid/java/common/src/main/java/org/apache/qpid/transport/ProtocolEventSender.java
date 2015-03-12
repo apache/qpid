@@ -18,16 +18,13 @@
  * under the License.
  *
  */
-package org.apache.qpid.protocol;
+package org.apache.qpid.transport;
 
-import javax.security.auth.Subject;
-
-public interface ServerProtocolEngine extends ProtocolEngine
+public interface ProtocolEventSender
 {
-    /**
-     * Gets the connection ID associated with this ProtocolEngine
-     */
-    long getConnectionId();
+    void send(ProtocolEvent msg);
 
-    Subject getSubject();
+    void flush();
+
+    void close();
 }

@@ -30,27 +30,29 @@ import static org.apache.qpid.transport.network.Frame.LAST_SEG;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.FrameSizeObserver;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.ProtocolDelegate;
 import org.apache.qpid.transport.ProtocolError;
 import org.apache.qpid.transport.ProtocolEvent;
+import org.apache.qpid.transport.ProtocolEventSender;
 import org.apache.qpid.transport.ProtocolHeader;
 import org.apache.qpid.transport.SegmentType;
-import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.Struct;
 import org.apache.qpid.transport.codec.BBEncoder;
+import org.apache.qpid.transport.codec.Encoder;
 
 /**
  * Disassembler
  */
-public final class Disassembler implements Sender<ProtocolEvent>, ProtocolDelegate<Void>, FrameSizeObserver
+public final class Disassembler implements ProtocolEventSender, ProtocolDelegate<Void>, FrameSizeObserver
 {
-    private final Sender<ByteBuffer> sender;
+    private final ByteBufferSender sender;
     private int maxPayload;
     private final Object sendlock = new Object();
-    private final static ThreadLocal<BBEncoder> _encoder = new ThreadLocal<BBEncoder>()
+    private final static ThreadLocal<Encoder> _encoder = new ThreadLocal<Encoder>()
     {
         public BBEncoder initialValue()
         {
@@ -58,7 +60,7 @@ public final class Disassembler implements Sender<ProtocolEvent>, ProtocolDelega
         }
     };
 
-    public Disassembler(Sender<ByteBuffer> sender, int maxFrame)
+    public Disassembler(ByteBufferSender sender, int maxFrame)
     {
         this.sender = sender;
         if (maxFrame <= HEADER_SIZE || maxFrame >= 64*1024)
@@ -174,7 +176,7 @@ public final class Disassembler implements Sender<ProtocolEvent>, ProtocolDelega
 
     private void method(Method method, SegmentType type)
     {
-        BBEncoder enc = _encoder.get();
+        Encoder enc = _encoder.get();
         enc.init();
         enc.writeUint16(method.getEncodedType());
         if (type == SegmentType.COMMAND)
@@ -249,11 +251,6 @@ public final class Disassembler implements Sender<ProtocolEvent>, ProtocolDelega
     public void error(Void v, ProtocolError error)
     {
         throw new IllegalArgumentException(String.valueOf(error));
-    }
-
-    public void setIdleTimeout(int i)
-    {
-        sender.setIdleTimeout(i);
     }
 
     @Override

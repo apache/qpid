@@ -27,7 +27,6 @@ import static org.apache.qpid.transport.Connection.State.OPEN;
 import static org.apache.qpid.transport.Connection.State.OPENING;
 
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -68,7 +67,7 @@ import org.apache.qpid.util.Strings;
  */
 
 public class Connection extends ConnectionInvoker
-    implements Receiver<ProtocolEvent>, Sender<ProtocolEvent>
+    implements ProtocolEventReceiver, ProtocolEventSender
 {
 
     protected static final Logger log = Logger.get(Connection.class);
@@ -120,7 +119,7 @@ public class Connection extends ConnectionInvoker
     private SessionFactory _sessionFactory = DEFAULT_SESSION_FACTORY;
 
     private ConnectionDelegate delegate;
-    private Sender<ProtocolEvent> sender;
+    private ProtocolEventSender sender;
 
     final private Map<Binary,Session> sessions = new HashMap<Binary,Session>();
     final private Map<Integer,Session> channels = new ConcurrentHashMap<Integer,Session>();
@@ -163,15 +162,14 @@ public class Connection extends ConnectionInvoker
         return Collections.unmodifiableList(listeners);
     }
 
-    public Sender<ProtocolEvent> getSender()
+    public ProtocolEventSender getSender()
     {
         return sender;
     }
 
-    public void setSender(Sender<ProtocolEvent> sender)
+    public void setSender(ProtocolEventSender sender)
     {
         this.sender = sender;
-        sender.setIdleTimeout(idleTimeout);
     }
 
     protected void setState(State state)
@@ -248,7 +246,7 @@ public class Connection extends ConnectionInvoker
             OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(ProtocolVersion.v0_10);
             final InputHandler inputHandler = new InputHandler(new Assembler(this));
             addFrameSizeObserver(inputHandler);
-            Receiver<ByteBuffer> secureReceiver = securityLayer.receiver(inputHandler);
+            ByteBufferReceiver secureReceiver = securityLayer.receiver(inputHandler);
             if(secureReceiver instanceof ConnectionListener)
             {
                 addConnectionListener((ConnectionListener)secureReceiver);
@@ -260,7 +258,7 @@ public class Connection extends ConnectionInvoker
             setRemoteAddress(_networkConnection.getRemoteAddress());
             setLocalAddress(_networkConnection.getLocalAddress());
 
-            final Sender<ByteBuffer> secureSender = securityLayer.sender(_networkConnection.getSender());
+            final ByteBufferSender secureSender = securityLayer.sender(_networkConnection.getSender());
             if(secureSender instanceof ConnectionListener)
             {
                 addConnectionListener((ConnectionListener)secureSender);
@@ -425,7 +423,7 @@ public class Connection extends ConnectionInvoker
         {
             log.debug("SEND: [%s] %s", this, event);
         }
-        Sender<ProtocolEvent> s = sender;
+        ProtocolEventSender s = sender;
         if (s == null)
         {
             throw new ConnectionException("connection closed");
@@ -439,7 +437,7 @@ public class Connection extends ConnectionInvoker
         {
             log.debug("FLUSH: [%s]", this);
         }
-        final Sender<ProtocolEvent> theSender = sender;
+        final ProtocolEventSender theSender = sender;
         if(theSender != null)
         {
             theSender.flush();
@@ -631,6 +629,12 @@ public class Connection extends ConnectionInvoker
         close(ConnectionCloseCode.CONNECTION_FORCED, "The connection was closed using the broker's management interface.");
     }
 
+
+    protected void sendConnectionClose(ConnectionCloseCode replyCode, String replyText, Option ... _options)
+    {
+        connectionClose(replyCode, replyText, _options);
+    }
+
     public void close(ConnectionCloseCode replyCode, String replyText, Option ... _options)
     {
         synchronized (lock)
@@ -688,20 +692,6 @@ public class Connection extends ConnectionInvoker
                 break;
             }
         }
-    }
-
-    public void setIdleTimeout(int i)
-    {
-        idleTimeout = i;
-        if (sender != null)
-        {
-            sender.setIdleTimeout(i);
-        }
-    }
-
-    public int getIdleTimeout()
-    {
-        return idleTimeout;
     }
 
     public String getUserID()

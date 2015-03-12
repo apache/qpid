@@ -28,6 +28,7 @@ import java.nio.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.MarkableDataInput;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.transport.ByteBufferSender;
 
 public class ContentBody implements AMQBody
 {
@@ -70,6 +71,20 @@ public class ContentBody implements AMQBody
             throws AMQException
     {
         session.contentBodyReceived(channelId, this);
+    }
+
+    @Override
+    public long writePayload(final ByteBufferSender sender) throws IOException
+    {
+        if(_payload != null)
+        {
+            sender.send(ByteBuffer.wrap(_payload));
+            return _payload.length;
+        }
+        else
+        {
+            return 0l;
+        }
     }
 
     public byte[] getPayload()
@@ -133,6 +148,23 @@ public class ContentBody implements AMQBody
             }
         }
 
+        @Override
+        public long writePayload(final ByteBufferSender sender) throws IOException
+        {
+            if(_buf.hasArray())
+            {
+                sender.send(ByteBuffer.wrap(_buf.array(), _buf.arrayOffset() + _offset, _length));
+            }
+            else
+            {
+                ByteBuffer buf = _buf.duplicate();
+
+                buf.position(_offset);
+                buf.limit(_offset+_length);
+                sender.send(buf);
+            }
+            return _length;
+        }
 
         public void handle(int channelId, AMQVersionAwareProtocolSession amqProtocolSession) throws AMQException
         {

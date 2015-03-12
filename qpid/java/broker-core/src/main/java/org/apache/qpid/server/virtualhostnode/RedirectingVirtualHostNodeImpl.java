@@ -24,6 +24,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +65,7 @@ public class RedirectingVirtualHostNodeImpl
     }
 
     @StateTransition( currentState = {State.UNINITIALIZED, State.STOPPED, State.ERRORED }, desiredState = State.ACTIVE )
-    protected void doActivate()
+    protected ListenableFuture<Void> doActivate()
     {
         try
         {
@@ -83,6 +85,7 @@ public class RedirectingVirtualHostNodeImpl
                 throw e;
             }
         }
+        return Futures.immediateFuture(null);
     }
 
     @Override

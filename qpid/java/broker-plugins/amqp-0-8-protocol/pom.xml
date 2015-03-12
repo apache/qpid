@@ -29,6 +29,10 @@
   <name>Qpid AMQP 0-8 Protocol Broker Plug-in</name>
   <description>AMQP 0-8, 0-9 and 0-9-1 protocol broker plug-in</description>
 
+  <properties>
+    <qpid.home>${basedir}/../</qpid.home> <!-- override for broker tests -->
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.qpid</groupId>
