@@ -113,13 +113,14 @@ public class TransactionController implements DeliveryStateHandler
 
     private void waitForResponse() throws LinkDetachedException
     {
-        synchronized (this)
+        final Object lock = _endpoint.getLock();
+        synchronized (lock)
         {
             while(!_received && !_endpoint.isDetached())
             {
                 try
                 {
-                    wait();
+                    lock.wait();
                 }
                 catch (InterruptedException e)
                 {
@@ -133,12 +134,16 @@ public class TransactionController implements DeliveryStateHandler
         }
     }
 
-    private synchronized void remoteDetached(Detach detach)
+    private void remoteDetached(Detach detach)
     {
-        if(detach != null && detach.getError() != null)
+        final Object lock = _endpoint.getLock();
+        synchronized (lock)
         {
-            _error = detach.getError();
-            notifyAll();
+            if (detach != null && detach.getError() != null)
+            {
+                _error = detach.getError();
+                lock.notifyAll();
+            }
         }
     }
 
