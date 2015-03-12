@@ -138,13 +138,6 @@ uint64_t getFilterDescriptor(const std::string& key)
 {
     return hasWildcards(key) ? qpid::amqp::filters::LEGACY_TOPIC_FILTER_CODE : qpid::amqp::filters::LEGACY_DIRECT_FILTER_CODE;
 }
-bool contains(const Variant::List& list, const std::string& item)
-{
-    for (Variant::List::const_iterator i = list.begin(); i != list.end(); ++i) {
-        if (*i == item) return true;
-    }
-    return false;
-}
 
 bool test(const Variant::Map& options, const std::string& name)
 {
