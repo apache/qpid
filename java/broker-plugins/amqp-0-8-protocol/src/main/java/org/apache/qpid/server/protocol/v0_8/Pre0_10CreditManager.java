@@ -18,25 +18,34 @@
 * under the License.
 *
 */
-package org.apache.qpid.server.flow;
+package org.apache.qpid.server.protocol.v0_8;
 
+
+import org.apache.qpid.server.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.flow.AbstractFlowCreditManager;
+import org.apache.qpid.server.flow.FlowCreditManager;
 
 public class Pre0_10CreditManager extends AbstractFlowCreditManager implements FlowCreditManager
 {
 
+    private final ServerProtocolEngine _protocolEngine;
     private volatile long _bytesCreditLimit;
     private volatile long _messageCreditLimit;
 
     private volatile long _bytesCredit;
     private volatile long _messageCredit;
 
-    public Pre0_10CreditManager(long bytesCreditLimit, long messageCreditLimit)
+    public Pre0_10CreditManager(long bytesCreditLimit,
+                                long messageCreditLimit,
+                                ServerProtocolEngine protocolEngine)
     {
+        _protocolEngine = protocolEngine;
         _bytesCreditLimit = bytesCreditLimit;
         _messageCreditLimit = messageCreditLimit;
         _bytesCredit = bytesCreditLimit;
         _messageCredit = messageCreditLimit;
     }
+
 
 
     public synchronized void setCreditLimits(final long bytesCreditLimit, final long messageCreditLimit)
@@ -80,16 +89,6 @@ public class Pre0_10CreditManager extends AbstractFlowCreditManager implements F
     }
 
 
-    public long getMessageCredit()
-    {
-        return _messageCredit;
-    }
-
-    public long getBytesCredit()
-    {
-        return _bytesCredit;
-    }
-
     public synchronized void restoreCredit(final long messageCredit, final long bytesCredit)
     {
         final long messageCreditLimit = _messageCreditLimit;
@@ -119,22 +118,21 @@ public class Pre0_10CreditManager extends AbstractFlowCreditManager implements F
 
     }
 
-    public synchronized void removeAllCredit()
-    {
-        _bytesCredit = 0L;
-        _messageCredit = 0L;
-        setSuspended(!hasCredit());
-    }
-
     public synchronized boolean hasCredit()
     {
         return (_bytesCreditLimit == 0L || _bytesCredit > 0)
-                && (_messageCreditLimit == 0L || _messageCredit > 0);
+                && (_messageCreditLimit == 0L || _messageCredit > 0)
+                && !_protocolEngine.isTransportBlockedForWriting();
     }
 
     public synchronized boolean useCreditForMessage(final long msgSize)
     {
-        if(_messageCreditLimit != 0L)
+        if (_protocolEngine.isTransportBlockedForWriting())
+        {
+            setSuspended(true);
+            return false;
+        }
+        else if(_messageCreditLimit != 0L)
         {
             if(_messageCredit != 0L)
             {

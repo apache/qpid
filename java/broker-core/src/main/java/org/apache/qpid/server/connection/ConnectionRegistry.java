@@ -74,7 +74,7 @@ public class ConnectionRegistry implements IConnectionRegistry
                 AMQConnectionModel connection = itr.next();
                 try
                 {
-                    connection.close(AMQConstant.CONNECTION_FORCED, replyText);
+                    connection.closeAsync(AMQConstant.CONNECTION_FORCED, replyText);
                 }
                 catch (Exception e)
                 {

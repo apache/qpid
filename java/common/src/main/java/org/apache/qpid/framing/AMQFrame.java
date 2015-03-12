@@ -22,6 +22,10 @@ package org.apache.qpid.framing;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+
+import org.apache.qpid.transport.ByteBufferSender;
+import org.apache.qpid.util.BytesDataOutput;
 
 public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
 {
@@ -55,6 +59,25 @@ public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
         EncodingUtils.writeUnsignedInteger(buffer, _bodyFrame.getSize());
         _bodyFrame.writePayload(buffer);
         buffer.writeByte(FRAME_END_BYTE);
+    }
+
+    private static final byte[] FRAME_END_BYTE_ARRAY = new byte[] { FRAME_END_BYTE };
+
+    @Override
+    public long writePayload(final ByteBufferSender sender) throws IOException
+    {
+        byte[] frameHeader = new byte[7];
+        BytesDataOutput buffer = new BytesDataOutput(frameHeader);
+
+        buffer.writeByte(_bodyFrame.getFrameType());
+        EncodingUtils.writeUnsignedShort(buffer, _channel);
+        EncodingUtils.writeUnsignedInteger(buffer, _bodyFrame.getSize());
+        sender.send(ByteBuffer.wrap(frameHeader));
+
+        long size = 8 + _bodyFrame.writePayload(sender);
+
+        sender.send(ByteBuffer.wrap(FRAME_END_BYTE_ARRAY));
+        return size;
     }
 
     public final int getChannel()

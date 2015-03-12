@@ -29,9 +29,13 @@ import java.security.PrivilegedExceptionAction;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.security.auth.Subject;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -106,10 +110,15 @@ public class Broker implements BrokerShutdownProvider
             {
                 if(_systemConfig != null)
                 {
-                    _systemConfig.close();
+                    ListenableFuture<Void> closeResult = _systemConfig.closeAsync();
+                    closeResult.get(30000l, TimeUnit.MILLISECONDS);
                 }
                 _taskExecutor.stop();
 
+            }
+            catch (TimeoutException | InterruptedException | ExecutionException e)
+            {
+                LOGGER.warn("Attempting to cleanly shutdown took too long, exiting immediately");
             }
             finally
             {

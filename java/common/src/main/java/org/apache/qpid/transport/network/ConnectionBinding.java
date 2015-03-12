@@ -20,15 +20,13 @@
  */
 package org.apache.qpid.transport.network;
 
-import java.nio.ByteBuffer;
-
 import org.apache.qpid.transport.Binding;
+import org.apache.qpid.transport.ByteBufferReceiver;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionDelegate;
 import org.apache.qpid.transport.ConnectionListener;
 import org.apache.qpid.transport.Constant;
-import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.security.sasl.SASLReceiver;
 import org.apache.qpid.transport.network.security.sasl.SASLSender;
 
@@ -38,10 +36,10 @@ import org.apache.qpid.transport.network.security.sasl.SASLSender;
  */
 
 public abstract class ConnectionBinding
-    implements Binding<Connection,ByteBuffer>
+    implements Binding<Connection>
 {
 
-    public static Binding<Connection,ByteBuffer> get(final Connection connection)
+    public static Binding<Connection> get(final Connection connection)
     {
         return new ConnectionBinding()
         {
@@ -52,7 +50,7 @@ public abstract class ConnectionBinding
         };
     }
 
-    public static Binding<Connection,ByteBuffer> get(final ConnectionDelegate delegate)
+    public static Binding<Connection> get(final ConnectionDelegate delegate)
     {
         return new ConnectionBinding()
         {
@@ -69,7 +67,7 @@ public abstract class ConnectionBinding
 
     public abstract Connection connection();
 
-    public Connection endpoint(Sender<ByteBuffer> sender)
+    public Connection endpoint(ByteBufferSender sender)
     {
         Connection conn = connection();
 
@@ -87,7 +85,7 @@ public abstract class ConnectionBinding
         return conn;
     }
 
-    public Receiver<ByteBuffer> receiver(Connection conn)
+    public ByteBufferReceiver receiver(Connection conn)
     {
         final InputHandler inputHandler = new InputHandler(new Assembler(conn));
         conn.addFrameSizeObserver(inputHandler);

@@ -33,6 +33,8 @@ public interface ConsumerTarget
 
     void removeStateChangeListener(StateChangeListener<ConsumerTarget, State> listener);
 
+    void processPending();
+
     enum State
     {
         ACTIVE, SUSPENDED, CLOSED
@@ -44,6 +46,8 @@ public interface ConsumerTarget
 
     void consumerRemoved(ConsumerImpl sub);
 
+    void notifyCurrentState();
+
     void addStateListener(StateChangeListener<ConsumerTarget, State> listener);
 
     long getUnacknowledgedBytes();
@@ -53,6 +57,10 @@ public interface ConsumerTarget
     AMQSessionModel getSessionModel();
 
     long send(final ConsumerImpl consumer, MessageInstance entry, boolean batch);
+
+    boolean hasMessagesToSend();
+
+    void sendNextMessage();
 
     void flushBatched();
 

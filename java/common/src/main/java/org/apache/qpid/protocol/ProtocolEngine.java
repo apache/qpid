@@ -20,19 +20,18 @@
  */
 package org.apache.qpid.protocol;
 
-import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.Sender;
+import java.net.SocketAddress;
+
+import org.apache.qpid.transport.ByteBufferReceiver;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.TransportActivity;
-
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 
 /**
  * A ProtocolEngine is a Receiver for java.nio.ByteBuffers. It takes the data passed to it in the received
  * decodes it and then process the result.
  */
-public interface ProtocolEngine extends Receiver<java.nio.ByteBuffer>, TransportActivity
+public interface ProtocolEngine extends ByteBufferReceiver, TransportActivity
 {
    // Returns the remote address of the NetworkDriver
    SocketAddress getRemoteAddress();
@@ -56,7 +55,8 @@ public interface ProtocolEngine extends Receiver<java.nio.ByteBuffer>, Transport
    // Called when the NetworkEngine has not read data for the specified period of time (will close the connection)
    void readerIdle();
 
+   void encryptedTransport();
 
-   public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender);
+   public void setNetworkConnection(NetworkConnection network, ByteBufferSender sender);
 
 }

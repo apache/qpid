@@ -151,6 +151,7 @@ public class HeadersBindingTest extends TestCase
         _count++;
         _queue = mock(AMQQueue.class);
         TaskExecutor executor = new CurrentThreadTaskExecutor();
+        executor.start();
         VirtualHostImpl vhost = mock(VirtualHostImpl.class);
         when(_queue.getVirtualHost()).thenReturn(vhost);
         when(_queue.getModel()).thenReturn(BrokerModel.getInstance());
@@ -158,6 +159,7 @@ public class HeadersBindingTest extends TestCase
         when(vhost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
         final EventLogger eventLogger = new EventLogger();
         when(vhost.getEventLogger()).thenReturn(eventLogger);
+        when(vhost.getTaskExecutor()).thenReturn(executor);
         _exchange = mock(ExchangeImpl.class);
         when(_exchange.getType()).thenReturn(ExchangeDefaults.HEADERS_EXCHANGE_CLASS);
         when(_exchange.getEventLogger()).thenReturn(eventLogger);

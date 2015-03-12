@@ -23,11 +23,14 @@ package org.apache.qpid.framing;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.MarkableDataInput;
+import org.apache.qpid.transport.ByteBufferSender;
+import org.apache.qpid.util.BytesDataOutput;
 
 public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQDataBlock
 {
@@ -86,6 +89,16 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
         buffer.write(_protocolInstance);
         buffer.write(_protocolMajor);
         buffer.write(_protocolMinor);
+    }
+
+    @Override
+    public long writePayload(final ByteBufferSender sender) throws IOException
+    {
+        byte[] data = new byte[8];
+        BytesDataOutput out = new BytesDataOutput(data);
+        writePayload(out);
+        sender.send(ByteBuffer.wrap(data));
+        return 8l;
     }
 
     public boolean equals(Object o)

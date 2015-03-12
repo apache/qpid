@@ -184,6 +184,18 @@ public class MockConsumer implements ConsumerTarget
         return size;
     }
 
+    @Override
+    public boolean hasMessagesToSend()
+    {
+        return false;
+    }
+
+    @Override
+    public void sendNextMessage()
+    {
+
+    }
+
     public void flushBatched()
     {
 
@@ -211,6 +223,12 @@ public class MockConsumer implements ConsumerTarget
        close();
     }
 
+    @Override
+    public void notifyCurrentState()
+    {
+
+    }
+
     public void setState(State state)
     {
         State oldState = _state;
@@ -234,6 +252,12 @@ public class MockConsumer implements ConsumerTarget
         {
             _listener = null;
         }
+    }
+
+    @Override
+    public void processPending()
+    {
+
     }
 
     public ArrayList<MessageInstance> getMessages()
@@ -462,6 +486,18 @@ public class MockConsumer implements ConsumerTarget
         {
             return 0;
         }
+
+        @Override
+        public void transportStateChanged()
+        {
+
+        }
+
+        @Override
+        public void processPending()
+        {
+
+        }
     }
 
     private static class MockConnectionModel implements AMQConnectionModel
@@ -508,13 +544,13 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
-        public void close(AMQConstant cause, String message)
+        public void closeAsync(AMQConstant cause, String message)
         {
         }
 
         @Override
-        public void closeSession(AMQSessionModel session, AMQConstant cause,
-                String message)
+        public void closeSessionAsync(AMQSessionModel session, AMQConstant cause,
+                                      String message)
         {
         }
 
@@ -594,6 +630,18 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
+        public void notifyWork()
+        {
+
+        }
+
+        @Override
+        public boolean isMessageAssignmentSuspended()
+        {
+            return false;
+        }
+
+        @Override
         public String getClientVersion()
         {
             return null;
@@ -669,5 +717,7 @@ public class MockConsumer implements ConsumerTarget
         {
 
         }
+
+
     }
 }

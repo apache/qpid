@@ -22,15 +22,10 @@ package org.apache.qpid.client.transport;
 
 import java.nio.ByteBuffer;
 
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 
-public class MockSender implements Sender<ByteBuffer>
+public class MockSender implements ByteBufferSender
 {
-
-    public void setIdleTimeout(int i)
-    {
-
-    }
 
     public void send(ByteBuffer msg)
     {

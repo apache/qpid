@@ -35,6 +35,9 @@ import java.util.regex.Pattern;
 
 import javax.security.auth.Subject;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.common.QpidProperties;
@@ -234,13 +237,40 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     }
 
     @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.ACTIVE )
-    private void activate()
+    private ListenableFuture<Void> activate()
     {
         if(_parent.isManagementMode())
         {
-            _managementModeAuthenticationProvider.open();
-        }
+            final SettableFuture<Void> returnVal = SettableFuture.create();
 
+            _managementModeAuthenticationProvider.openAsync().addListener(
+                    new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            try
+                            {
+                                activateWithoutManagementMode();
+                            }
+                            finally
+                            {
+                                returnVal.set(null);
+                            }
+                        }
+                    }, getTaskExecutor().getExecutor()
+                                                                         );
+            return returnVal;
+        }
+        else
+        {
+            activateWithoutManagementMode();
+            return Futures.immediateFuture(null);
+        }
+    }
+
+    private void activateWithoutManagementMode()
+    {
         boolean hasBrokerAnyErroredChildren = false;
 
         for (final Class<? extends ConfiguredObject> childClass : getModel().getChildTypes(getCategoryClass()))

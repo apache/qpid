@@ -21,16 +21,16 @@
 package org.apache.qpid.test.utils;
 
 import java.security.PrivilegedAction;
-import java.util.Map;
 import java.util.Set;
+
+import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.Broker;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.security.SecurityManager;
-
-import javax.security.auth.Subject;
+import org.apache.qpid.server.util.Action;
 
 public class InternalBrokerHolder implements BrokerHolder
 {
@@ -50,7 +50,14 @@ public class InternalBrokerHolder implements BrokerHolder
     {
         LOGGER.info("Starting internal broker (same JVM)");
 
-        _broker = new Broker();
+        _broker = new Broker(new Action<Integer>()
+        {
+            @Override
+            public void performAction(final Integer object)
+            {
+                _broker = null;
+            }
+        });
         _broker.startup(options);
     }
 
@@ -63,7 +70,10 @@ public class InternalBrokerHolder implements BrokerHolder
             @Override
             public Object run()
             {
-                _broker.shutdown();
+                if(_broker != null)
+                {
+                    _broker.shutdown();
+                }
                 return null;
             }
 

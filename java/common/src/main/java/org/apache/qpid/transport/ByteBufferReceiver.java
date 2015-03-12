@@ -20,19 +20,13 @@
  */
 package org.apache.qpid.transport;
 
+import java.nio.ByteBuffer;
 
-/**
- * Receiver
- *
- */
-
-public interface Receiver<T>
+public interface ByteBufferReceiver
 {
-
-    void received(T msg);
+    void received(ByteBuffer msg);
 
     void exception(Throwable t);
 
     void closed();
-
 }

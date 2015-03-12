@@ -729,4 +729,9 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     {
         return _consumer;
     }
+
+    public ConsumerTarget_1_0 getConsumerTarget()
+    {
+        return _target;
+    }
 }

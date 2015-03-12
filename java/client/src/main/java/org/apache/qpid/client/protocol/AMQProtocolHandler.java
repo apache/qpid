@@ -66,8 +66,8 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.thread.Threading;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.ConnectionSettings;
-import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.util.BytesDataOutput;
@@ -179,7 +179,7 @@ public class AMQProtocolHandler implements ProtocolEngine
 
 
     private NetworkConnection _network;
-    private Sender<ByteBuffer> _sender;
+    private ByteBufferSender _sender;
     private long _lastReadTime = System.currentTimeMillis();
     private long _lastWriteTime = System.currentTimeMillis();
     private HeartbeatListener _heartbeatListener = HeartbeatListener.DEFAULT;
@@ -314,6 +314,11 @@ public class AMQProtocolHandler implements ProtocolEngine
             failoverThread.setDaemon(false);
             failoverThread.start();
         }
+    }
+
+    @Override
+    public void encryptedTransport()
+    {
     }
 
     public void readerIdle()
@@ -892,7 +897,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         setNetworkConnection(network, network.getSender());
     }
 
-    public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
+    public void setNetworkConnection(NetworkConnection network, ByteBufferSender sender)
     {
         _network = network;
         _sender = sender;
@@ -910,7 +915,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         return _lastWriteTime;
     }
 
-    protected Sender<ByteBuffer> getSender()
+    protected ByteBufferSender getSender()
     {
         return _sender;
     }

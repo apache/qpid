@@ -22,17 +22,13 @@ package org.apache.qpid.server.virtualhost;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-import java.io.File;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -91,7 +87,7 @@ public class AbstractVirtualHostTest extends QpidTestCase
         {
             if (_taskExecutor != null)
             {
-                _taskExecutor.stopImmediately();
+                _taskExecutor.stop();
             }
         }
         finally
@@ -180,7 +176,7 @@ public class AbstractVirtualHostTest extends QpidTestCase
         verify(store, times(0)).closeMessageStore();
     }
 
-    public void testDeleteInErrorStateAfterOpen()
+    public void testDeleteInErrorStateAfterOpen() throws Exception
     {
         Map<String,Object> attributes = Collections.<String, Object>singletonMap(AbstractVirtualHost.NAME, getTestName());
         AbstractVirtualHost host = new AbstractVirtualHost(attributes, _node)

@@ -24,6 +24,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.message.MessageSource;
@@ -124,7 +127,6 @@ class ManagementNodeConsumer implements ConsumerImpl
     @Override
     public void close()
     {
-
     }
 
     @Override
@@ -162,6 +164,12 @@ class ManagementNodeConsumer implements ConsumerImpl
     public void flush()
     {
 
+    }
+
+    @Override
+    public ConsumerTarget getTarget()
+    {
+        return _target;
     }
 
     ManagementNode getManagementNode()

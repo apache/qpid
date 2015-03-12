@@ -360,8 +360,4 @@ public final class BBEncoder extends AbstractEncoder
 		}
 	}
 
-	public void writeMagicNumber()
-	{
-		out.put("AM2".getBytes());
-	}	
 }

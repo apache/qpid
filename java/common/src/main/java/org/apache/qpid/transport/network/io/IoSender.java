@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLSocket;
 
 import org.apache.qpid.thread.Threading;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.SenderClosedException;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.TransportException;
@@ -37,7 +37,7 @@ import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.util.SystemUtils;
 
 
-public final class IoSender implements Runnable, Sender<ByteBuffer>
+public final class IoSender implements Runnable, ByteBufferSender
 {
 
     private static final Logger log = Logger.get(IoSender.class);
@@ -97,7 +97,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
         }
 
         senderThread.setDaemon(true);
-        senderThread.setName(String.format("IoSender - %s", _remoteSocketAddress));
+        senderThread.setName(String.format("IoSender-%s", _remoteSocketAddress));
     }
 
     public void initiate()
@@ -334,18 +334,6 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
             {
                 //pass
             }
-        }
-    }
-
-    public void setIdleTimeout(int i)
-    {
-        try
-        {
-            socket.setSoTimeout(i);
-        }
-        catch (Exception e)
-        {
-            throw new SenderException(e);
         }
     }
 

@@ -313,13 +313,9 @@ public class MaxFrameSizeTest extends QpidBrokerTestCase
                                   _maxFrameSize,
                                   actualHeartbeatInterval);
 
-            int idleTimeout = (int)(actualHeartbeatInterval * 1000 * heartbeatTimeoutFactor);
             conn.getNetworkConnection().setMaxReadIdle((int)(actualHeartbeatInterval*heartbeatTimeoutFactor));
             conn.getNetworkConnection().setMaxWriteIdle(actualHeartbeatInterval);
             conn.setMaxFrameSize(_maxFrameSize);
-
-
-            conn.setIdleTimeout(idleTimeout);
 
             int channelMax = tune.getChannelMax();
             conn.setChannelMax(channelMax == 0 ? Connection.MAX_CHANNEL_MAX : channelMax);

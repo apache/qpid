@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.qpid.server.store.StoreFuture;
-
 import com.sleepycat.je.Transaction;
+
+import org.apache.qpid.server.util.FutureResult;
 
 public interface Committer
 {
     void start();
 
-    StoreFuture commit(Transaction tx, boolean syncCommit);
+    FutureResult commit(Transaction tx, boolean syncCommit);
 
     void stop();
 }

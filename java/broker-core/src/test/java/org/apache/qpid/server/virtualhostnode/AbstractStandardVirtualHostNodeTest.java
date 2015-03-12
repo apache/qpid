@@ -35,6 +35,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
@@ -553,8 +556,9 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         }
 
         @Override
-        protected void activate()
+        protected ListenableFuture<Void> activate()
         {
+            return Futures.immediateFuture(null);
         }
 
         @Override

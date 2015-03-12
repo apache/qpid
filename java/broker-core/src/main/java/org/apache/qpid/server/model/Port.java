@@ -23,6 +23,8 @@ package org.apache.qpid.server.model;
 import java.util.Collection;
 import java.util.Set;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 @ManagedObject
 public interface Port<X extends Port<X>> extends ConfiguredObject<X>
 {
@@ -75,5 +77,7 @@ public interface Port<X extends Port<X>> extends ConfiguredObject<X>
     Collection<Connection> getConnections();
 
     void start();
+
+    ListenableFuture<Void> startAsync();
 
 }

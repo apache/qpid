@@ -40,7 +40,7 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
      * @param cause
      * @param message
      */
-    public void close(AMQConstant cause, String message);
+    public void closeAsync(AMQConstant cause, String message);
 
     public void block();
 
@@ -53,7 +53,7 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
      * @param cause
      * @param message
      */
-    public void closeSession(S session, AMQConstant cause, String message);
+    public void closeSessionAsync(S session, AMQConstant cause, String message);
 
     public long getConnectionId();
 
@@ -106,5 +106,9 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
     void addSessionListener(SessionModelListener listener);
 
     void removeSessionListener(SessionModelListener listener);
+
+    void notifyWork();
+
+    boolean isMessageAssignmentSuspended();
 
 }

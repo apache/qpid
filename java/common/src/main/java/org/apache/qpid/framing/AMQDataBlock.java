@@ -23,6 +23,8 @@ package org.apache.qpid.framing;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.qpid.transport.ByteBufferSender;
+
 
 /**
  * A data block represents something that has a size in bytes and the ability to write itself to a byte
@@ -43,5 +45,7 @@ public abstract class AMQDataBlock implements EncodableAMQDataBlock
      * @throws IOException if there is a problem writing the output
      */
     public abstract void writePayload(DataOutput buffer) throws IOException;
+
+    public abstract long writePayload(ByteBufferSender sender) throws IOException;
 
 }

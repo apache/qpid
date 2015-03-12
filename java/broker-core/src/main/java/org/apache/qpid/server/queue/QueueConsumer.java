@@ -52,5 +52,4 @@ public interface QueueConsumer<X extends QueueConsumer<X>> extends ConsumerImpl,
 
     QueueContext getQueueContext();
 
-    ConsumerTarget getTarget();
 }

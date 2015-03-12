@@ -20,16 +20,14 @@
  */
 package org.apache.qpid.transport.network.security;
 
-import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.Sender;
-
-import java.nio.ByteBuffer;
+import org.apache.qpid.transport.ByteBufferReceiver;
+import org.apache.qpid.transport.ByteBufferSender;
 
 public interface SecurityLayer
 {
 
-    public Sender<ByteBuffer> sender(Sender<ByteBuffer> delegate);
-    public Receiver<ByteBuffer> receiver(Receiver<ByteBuffer> delegate);
+    public ByteBufferSender sender(ByteBufferSender delegate);
+    public ByteBufferReceiver receiver(ByteBufferReceiver delegate);
     public String getUserID();
 
 }

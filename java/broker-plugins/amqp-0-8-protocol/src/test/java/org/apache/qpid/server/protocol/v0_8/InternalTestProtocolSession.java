@@ -36,11 +36,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.MessagePublishInfo;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageContentSource;
@@ -50,7 +50,7 @@ import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
 public class InternalTestProtocolSession extends AMQProtocolEngine implements ProtocolOutputConverter
@@ -224,17 +224,6 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         //  Then the AMQMinaProtocolSession can join on the returning future without a NPE.
     }
 
-    public void closeSession(AMQChannel session, AMQConstant cause, String message)
-    {
-        super.closeSession(session, cause, message);
-
-        //Simulate the Client responding with a CloseOK
-        // should really update the StateManger but we don't have access here
-        // changeState(AMQState.CONNECTION_CLOSED);
-        ((AMQChannel)session).getConnection().closeSession(false);
-
-    }
-
     private class InternalWriteDeliverMethod implements ClientDeliveryMethod
     {
         private int _channelId;
@@ -288,16 +277,12 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         private String _remoteHost = "127.0.0.1";
         private String _localHost = "127.0.0.1";
         private int _port = portNumber.incrementAndGet();
-        private final Sender<ByteBuffer> _sender;
+        private final ByteBufferSender _sender;
 
         public TestNetworkConnection()
         {
-            _sender = new Sender<ByteBuffer>()
+            _sender = new ByteBufferSender()
             {
-                public void setIdleTimeout(int i)
-                {
-                }
-
                 public void send(ByteBuffer msg)
                 {
                 }
@@ -358,7 +343,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         }
 
         @Override
-        public Sender<ByteBuffer> getSender()
+        public ByteBufferSender getSender()
         {
             return _sender;
         }

@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.configuration.updater.TaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutorImpl;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
@@ -58,7 +59,9 @@ public class HttpManagementTest extends QpidTestCase
         when(_broker.getModel()).thenReturn(objectFactory.getModel());
         when(_broker.getCategoryClass()).thenReturn(Broker.class);
         when(_broker.getEventLogger()).thenReturn(mock(EventLogger.class));
-        when(_broker.getTaskExecutor()).thenReturn(mock(TaskExecutor.class));
+        TaskExecutor taskExecutor = new TaskExecutorImpl();
+        taskExecutor.start();
+        when(_broker.getTaskExecutor()).thenReturn(taskExecutor);
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, false);

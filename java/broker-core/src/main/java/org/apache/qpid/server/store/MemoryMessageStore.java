@@ -35,6 +35,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
 import org.apache.qpid.server.store.handler.MessageHandler;
 import org.apache.qpid.server.store.handler.MessageInstanceHandler;
+import org.apache.qpid.server.util.FutureResult;
 
 /** A simple message store that stores the messages in a thread-safe structure in memory. */
 public class MemoryMessageStore implements MessageStore
@@ -58,9 +59,9 @@ public class MemoryMessageStore implements MessageStore
         private Set<Xid> _localDistributedTransactionsRemoves = new HashSet<Xid>();
 
         @Override
-        public StoreFuture commitTranAsync()
+        public FutureResult commitTranAsync()
         {
-            return StoreFuture.IMMEDIATE_FUTURE;
+            return FutureResult.IMMEDIATE_FUTURE;
         }
 
         @Override

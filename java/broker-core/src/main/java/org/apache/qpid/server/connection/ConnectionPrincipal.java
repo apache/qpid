@@ -20,10 +20,11 @@
  */
 package org.apache.qpid.server.connection;
 
+import java.net.SocketAddress;
+
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.security.auth.SocketConnectionPrincipal;
-
-import java.net.SocketAddress;
 
 public class ConnectionPrincipal implements SocketConnectionPrincipal
 {
@@ -49,6 +50,11 @@ public class ConnectionPrincipal implements SocketConnectionPrincipal
     public AMQConnectionModel getConnection()
     {
         return _connection;
+    }
+
+    public VirtualHost<?,?,?> getVirtualHost()
+    {
+        return _connection.getVirtualHost();
     }
 
     @Override

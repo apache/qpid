@@ -31,8 +31,6 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.server.consumer.ConsumerImpl;
-import org.apache.qpid.server.flow.LimitlessCreditManager;
-import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.StoredMessage;
@@ -328,7 +326,7 @@ public class AckTest extends QpidTestCase
     public void testMessageDequeueRestoresCreditTest() throws Exception
     {
         // Send 10 messages
-        Pre0_10CreditManager creditManager = new Pre0_10CreditManager(0l, 1);
+        Pre0_10CreditManager creditManager = new Pre0_10CreditManager(0l, 1, _protocolEngine);
 
 
         _subscriptionTarget = ConsumerTarget_0_8.createAckTarget(_channel, DEFAULT_CONSUMER_TAG, null, creditManager);

@@ -33,7 +33,6 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -41,7 +40,7 @@ import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
 public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
@@ -161,7 +160,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 
         when(port.getContextValue(eq(Long.class),eq(Port.CONNECTION_MAXIMUM_AUTHENTICATION_DELAY))).thenReturn(10000l);
         MultiVersionProtocolEngineFactory factory =
-            new MultiVersionProtocolEngineFactory(_broker, null, false, false, protocols, null, port,
+            new MultiVersionProtocolEngineFactory(_broker, protocols, null, port,
                     org.apache.qpid.server.model.Transport.TCP);
 
         //create a dummy to retrieve the 'current' ID number
@@ -215,7 +214,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 
         try
         {
-            new MultiVersionProtocolEngineFactory(_broker, null, false, false, versions, Protocol.AMQP_0_9, null,
+            new MultiVersionProtocolEngineFactory(_broker, versions, Protocol.AMQP_0_9, null,
                     org.apache.qpid.server.model.Transport.TCP);
             fail("should not have been allowed to create the factory");
         }
@@ -230,16 +229,12 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         private String _remoteHost = "127.0.0.1";
         private String _localHost = "127.0.0.1";
         private int _port = 1;
-        private final Sender<ByteBuffer> _sender;
+        private final ByteBufferSender _sender;
 
         public TestNetworkConnection()
         {
-            _sender = new Sender<ByteBuffer>()
+            _sender = new ByteBufferSender()
             {
-                public void setIdleTimeout(int i)
-                {
-                }
-
                 public void send(ByteBuffer msg)
                 {
                 }
@@ -300,7 +295,7 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
         }
 
         @Override
-        public Sender<ByteBuffer> getSender()
+        public ByteBufferSender getSender()
         {
             return _sender;
         }

@@ -27,6 +27,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -226,14 +229,24 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
     }
 
     @StateTransition(currentState = { State.ACTIVE, State.QUIESCED, State.ERRORED}, desiredState = State.DELETED )
-    private void doDelete()
+    private ListenableFuture<Void> doDelete()
     {
-        close();
-        setState(State.DELETED);
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+        closeAsync().addListener(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                setState(State.DELETED);
+                returnVal.set(null);
+
+            }
+        }, getTaskExecutor().getExecutor());
+        return returnVal;
     }
 
     @StateTransition( currentState = {State.UNINITIALIZED, State.QUIESCED, State.ERRORED}, desiredState = State.ACTIVE )
-    protected void activate()
+    protected ListenableFuture<Void> activate()
     {
         try
         {
@@ -244,12 +257,14 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
             setState(State.ERRORED);
             throw new IllegalConfigurationException("Unable to active port '" + getName() + "'of type " + getType() + " on " + getPort(), e);
         }
+        return Futures.immediateFuture(null);
     }
 
     @StateTransition( currentState = State.UNINITIALIZED, desiredState = State.QUIESCED)
-    private void startQuiesced()
+    private ListenableFuture<Void> startQuiesced()
     {
         setState(State.QUIESCED);
+        return Futures.immediateFuture(null);
     }
 
 

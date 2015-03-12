@@ -23,9 +23,13 @@ package org.apache.qpid.framing;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.transport.ByteBufferSender;
+import org.apache.qpid.util.BytesDataOutput;
 
 public class BasicContentHeaderProperties
 {
@@ -312,6 +316,26 @@ public class BasicContentHeaderProperties
                 EncodingUtils.writeShortStringBytes(buffer, _clusterId);
             }
         }
+    }
+
+
+    public long writePropertyListPayload(final ByteBufferSender sender) throws IOException
+    {
+        if(useEncodedForm())
+        {
+            sender.send(ByteBuffer.wrap(_encodedForm));
+            return _encodedForm.length;
+        }
+        else
+        {
+            int propertyListSize = getPropertyListSize();
+            byte[] data = new byte[propertyListSize];
+            BytesDataOutput out = new BytesDataOutput(data);
+            writePropertyListPayload(out);
+            sender.send(ByteBuffer.wrap(data));
+            return propertyListSize;
+        }
+
     }
 
     public void populatePropertiesFromBuffer(DataInput buffer, int propertyFlags, int size) throws AMQFrameDecodingException, IOException

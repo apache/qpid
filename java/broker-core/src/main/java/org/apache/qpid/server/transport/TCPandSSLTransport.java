@@ -23,6 +23,7 @@ package org.apache.qpid.server.transport;
 import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
 
 import java.net.InetSocketAddress;
+import java.util.EnumSet;
 import java.util.Collection;
 import java.util.Set;
 
@@ -34,11 +35,11 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
-import org.apache.qpid.transport.network.IncomingNetworkTransport;
+import org.apache.qpid.transport.network.TransportEncryption;
 
 class TCPandSSLTransport implements AcceptingTransport
 {
-    private IncomingNetworkTransport _networkTransport;
+    private NonBlockingNetworkTransport _networkTransport;
     private Set<Transport> _transports;
     private SSLContext _sslContext;
     private InetSocketAddress _bindingSocketAddress;
@@ -62,7 +63,7 @@ class TCPandSSLTransport implements AcceptingTransport
     @Override
     public void start()
     {
-        String bindingAddress = ((AmqpPort<?>)_port).getBindingAddress();
+        String bindingAddress = _port.getBindingAddress();
         if (WILDCARD_ADDRESS.equals(bindingAddress))
         {
             bindingAddress = null;
@@ -78,17 +79,25 @@ class TCPandSSLTransport implements AcceptingTransport
         }
 
         final NetworkTransportConfiguration settings = new ServerNetworkTransportConfiguration();
-        _networkTransport = org.apache.qpid.transport.network.Transport.getIncomingTransportInstance();
+        _networkTransport = new NonBlockingNetworkTransport();
         final MultiVersionProtocolEngineFactory protocolEngineFactory =
                 new MultiVersionProtocolEngineFactory(
-                _port.getParent(Broker.class), _transports.contains(Transport.TCP) ? _sslContext : null,
-                settings.wantClientAuth(), settings.needClientAuth(),
+                _port.getParent(Broker.class),
                 _supported,
                 _defaultSupportedProtocolReply,
                 _port,
                 _transports.contains(Transport.TCP) ? Transport.TCP : Transport.SSL);
 
-        _networkTransport.accept(settings, protocolEngineFactory, _transports.contains(Transport.TCP) ? null : _sslContext);
+        EnumSet<TransportEncryption> encryptionSet = EnumSet.noneOf(TransportEncryption.class);
+        if(_transports.contains(Transport.TCP))
+        {
+            encryptionSet.add(TransportEncryption.NONE);
+        }
+        if(_transports.contains(Transport.SSL))
+        {
+            encryptionSet.add(TransportEncryption.TLS);
+        }
+        _networkTransport.accept(settings, protocolEngineFactory, _sslContext, encryptionSet);
     }
 
     public int getAcceptingPort()

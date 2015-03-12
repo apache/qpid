@@ -73,7 +73,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.store.berkeleydb.BDBUtils;
 import org.apache.qpid.server.store.berkeleydb.CoalescingCommiter;
 import org.apache.qpid.server.store.berkeleydb.EnvHomeRegistry;
@@ -163,6 +163,8 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
          * with NO_SYN durability in case if such Node crushes.
          */
         put(ReplicationConfig.LOG_FLUSH_TASK_INTERVAL, "1 min");
+
+        put(ReplicationConfig.CONSISTENCY_POLICY, "TimeConsistencyPolicy(1 s,30 s)");
     }});
 
     public static final String PERMITTED_NODE_LIST = "permittedNodes";
@@ -265,7 +267,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
     }
 
     @Override
-    public StoreFuture commit(final Transaction tx, boolean syncCommit)
+    public FutureResult commit(final Transaction tx, boolean syncCommit)
     {
         try
         {
@@ -283,7 +285,7 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
         {
             return _coalescingCommiter.commit(tx, syncCommit);
         }
-        return StoreFuture.IMMEDIATE_FUTURE;
+        return FutureResult.IMMEDIATE_FUTURE;
     }
 
     @Override

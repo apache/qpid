@@ -23,13 +23,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.jms.Connection;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.Queue;
-import javax.jms.Session;
+import javax.jms.*;
 import javax.management.JMException;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
@@ -73,6 +67,38 @@ public class ConnectionManagementTest extends QpidBrokerTestCase
             super.tearDown();
         }
     }
+
+    public void testManagementClosesConnection() throws Exception
+    {
+        assertEquals("Expected no managed connections", 0, getManagedConnections().size());
+
+        _connection = getConnection();
+        assertEquals("Expected one managed connection", 1, getManagedConnections().size());
+
+
+        ManagedConnection managedConnection = getManagedConnections().get(0);
+
+        managedConnection.closeConnection();
+
+        assertEquals("Expected no managed connections", 0, getManagedConnections().size());
+
+        /*
+        try
+        {
+
+            _connection.start();
+            fail("Exception not thrown");
+        }
+        catch (javax.jms.IllegalStateException ise)
+        {
+            ise.printStackTrace();
+            // PASS
+        }*/
+
+    }
+
+
+
 
     public void testNumberOfManagedConnectionsMatchesNumberOfClientConnections() throws Exception
     {

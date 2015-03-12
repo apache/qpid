@@ -31,6 +31,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
+
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.store.ManagementModeStoreHandler;
@@ -194,11 +197,11 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
     }
 
     @StateTransition(currentState = State.UNINITIALIZED, desiredState = State.ACTIVE)
-    protected void activate()
+    protected ListenableFuture<Void> activate()
     {
         final EventLogger eventLogger = _eventLogger;
 
-        EventLogger startupLogger;
+        final EventLogger startupLogger;
         if (isStartupLoggedToSystemOut())
         {
             //Create the composite (logging+SystemOut MessageLogger to be used during startup
@@ -232,17 +235,34 @@ public abstract class AbstractSystemConfig<X extends SystemConfig<X>>
         BrokerStoreUpgraderAndRecoverer upgrader = new BrokerStoreUpgraderAndRecoverer(this);
         upgrader.perform();
 
-        Broker broker = getBroker();
+        final Broker broker = getBroker();
 
         broker.setEventLogger(startupLogger);
-        broker.open();
+        final SettableFuture<Void> returnVal = SettableFuture.create();
+        broker.openAsync().addListener(
+                new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        try
+                        {
 
-        if (broker.getState() == State.ACTIVE)
-        {
-            startupLogger.message(BrokerMessages.READY());
-            broker.setEventLogger(eventLogger);
-        }
+                            if (broker.getState() == State.ACTIVE)
+                            {
+                                startupLogger.message(BrokerMessages.READY());
+                                broker.setEventLogger(eventLogger);
+                            }
+                        }
+                        finally
+                        {
+                            returnVal.set(null);
+                        }
+                    }
+                }, getTaskExecutor().getExecutor()
+                                      );
 
+        return returnVal;
     }
 
     @Override

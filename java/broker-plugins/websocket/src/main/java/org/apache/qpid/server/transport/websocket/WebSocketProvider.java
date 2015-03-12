@@ -53,7 +53,7 @@ import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.server.transport.AcceptingTransport;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
@@ -81,9 +81,7 @@ class WebSocketProvider implements AcceptingTransport
         _supported = supported;
         _defaultSupportedProtocolReply = defaultSupportedProtocolReply;
         _factory = new MultiVersionProtocolEngineFactory(
-                        _port.getParent(Broker.class), null,
-                        _port.getWantClientAuth(),
-                        _port.getNeedClientAuth(),
+                        _port.getParent(Broker.class),
                         _supported,
                         _defaultSupportedProtocolReply,
                         _port,
@@ -242,7 +240,7 @@ class WebSocketProvider implements AcceptingTransport
         }
     }
 
-    private class ConnectionWrapper implements NetworkConnection, Sender<ByteBuffer>
+    private class ConnectionWrapper implements NetworkConnection, ByteBufferSender
     {
         private final WebSocket.Connection _connection;
         private final SocketAddress _localAddress;
@@ -261,19 +259,13 @@ class WebSocketProvider implements AcceptingTransport
         }
 
         @Override
-        public Sender<ByteBuffer> getSender()
+        public ByteBufferSender getSender()
         {
             return this;
         }
 
         @Override
         public void start()
-        {
-
-        }
-
-        @Override
-        public void setIdleTimeout(final int i)
         {
 
         }

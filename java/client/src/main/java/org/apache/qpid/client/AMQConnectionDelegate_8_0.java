@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import javax.jms.JMSException;
 import javax.jms.XASession;
 
-import org.apache.qpid.transport.Receiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +59,7 @@ import org.apache.qpid.jms.ChannelLimitReachedException;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.properties.ConnectionStartProperties;
+import org.apache.qpid.transport.ByteBufferReceiver;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.OutgoingNetworkTransport;
@@ -522,12 +522,12 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     }
 
 
-    private static class ReceiverClosedWaiter implements Receiver<ByteBuffer>
+    private static class ReceiverClosedWaiter implements ByteBufferReceiver
     {
         private final CountDownLatch _closedWatcher;
-        private final Receiver<ByteBuffer> _receiver;
+        private final ByteBufferReceiver _receiver;
 
-        public ReceiverClosedWaiter(Receiver<ByteBuffer> receiver)
+        public ReceiverClosedWaiter(ByteBufferReceiver receiver)
         {
             _receiver = receiver;
             _closedWatcher = new CountDownLatch(1);

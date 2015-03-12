@@ -24,7 +24,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.NullMessageStore;
-import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
@@ -96,7 +96,7 @@ class MockStoreTransaction implements Transaction
         _state = TransactionState.COMMITTED;
     }
 
-    public StoreFuture commitTranAsync()
+    public FutureResult commitTranAsync()
     {
         throw new NotImplementedException();
     }

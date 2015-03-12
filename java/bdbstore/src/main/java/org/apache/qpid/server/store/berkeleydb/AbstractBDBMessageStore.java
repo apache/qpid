@@ -51,7 +51,7 @@ import org.apache.qpid.server.store.EventManager;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoreException;
-import org.apache.qpid.server.store.StoreFuture;
+import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.store.Xid;
@@ -924,14 +924,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore
      *
      * @throws org.apache.qpid.server.store.StoreException If the operation fails for any reason.
      */
-    private StoreFuture commitTranImpl(final Transaction tx, boolean syncCommit) throws StoreException
+    private FutureResult commitTranImpl(final Transaction tx, boolean syncCommit) throws StoreException
     {
         if (tx == null)
         {
             throw new StoreException("Fatal internal error: transactional is null at commitTran");
         }
 
-        StoreFuture result = getEnvironmentFacade().commit(tx, syncCommit);
+        FutureResult result = getEnvironmentFacade().commit(tx, syncCommit);
 
         if (getLogger().isDebugEnabled())
         {
@@ -1386,7 +1386,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
             }
         }
 
-        synchronized StoreFuture flushToStore()
+        synchronized FutureResult flushToStore()
         {
             if(!stored())
             {
@@ -1407,7 +1407,7 @@ public abstract class AbstractBDBMessageStore implements MessageStore
 
                 storedSizeChangeOccurred(getMetaData().getContentSize());
             }
-            return StoreFuture.IMMEDIATE_FUTURE;
+            return FutureResult.IMMEDIATE_FUTURE;
         }
 
         @Override
@@ -1526,14 +1526,14 @@ public abstract class AbstractBDBMessageStore implements MessageStore
         }
 
         @Override
-        public StoreFuture commitTranAsync() throws StoreException
+        public FutureResult commitTranAsync() throws StoreException
         {
             checkMessageStoreOpen();
             doPreCommitActions();
             AbstractBDBMessageStore.this.storedSizeChangeOccurred(_storeSizeIncrease);
-            StoreFuture storeFuture = AbstractBDBMessageStore.this.commitTranImpl(_txn, false);
+            FutureResult futureResult = AbstractBDBMessageStore.this.commitTranImpl(_txn, false);
             doPostCommitActions();
-            return storeFuture;
+            return futureResult;
         }
 
         @Override

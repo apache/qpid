@@ -21,11 +21,14 @@
 package org.apache.qpid.server.protocol.v0_10;
 
 import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.flow.AbstractFlowCreditManager;
 
 public class WindowCreditManager extends AbstractFlowCreditManager implements FlowCreditManager_0_10
 {
     private static final Logger LOGGER = Logger.getLogger(WindowCreditManager.class);
+    private final ServerProtocolEngine _serverProtocolEngine;
 
     private volatile long _bytesCreditLimit;
     private volatile long _messageCreditLimit;
@@ -33,38 +36,21 @@ public class WindowCreditManager extends AbstractFlowCreditManager implements Fl
     private volatile long _bytesUsed;
     private volatile long _messageUsed;
 
-     public WindowCreditManager()
-     {
-         this(0L, 0L);
-     }
-
-    public WindowCreditManager(long bytesCreditLimit, long messageCreditLimit)
+    public WindowCreditManager(long bytesCreditLimit,
+                               long messageCreditLimit,
+                               ServerProtocolEngine serverProtocolEngine)
     {
+        _serverProtocolEngine = serverProtocolEngine;
         _bytesCreditLimit = bytesCreditLimit;
         _messageCreditLimit = messageCreditLimit;
         setSuspended(!hasCredit());
 
-    }
-
-    public long getBytesCreditLimit()
-    {
-        return _bytesCreditLimit;
     }
 
     public long getMessageCreditLimit()
     {
         return _messageCreditLimit;
     }
-
-    public synchronized void setCreditLimits(final long bytesCreditLimit, final long messageCreditLimit)
-    {
-        _bytesCreditLimit = bytesCreditLimit;
-        _messageCreditLimit = messageCreditLimit;
-
-        setSuspended(!hasCredit());
-
-    }
-
 
     public long getMessageCredit()
     {
@@ -121,12 +107,18 @@ public class WindowCreditManager extends AbstractFlowCreditManager implements Fl
     public synchronized boolean hasCredit()
     {
         return (_bytesCreditLimit < 0L || _bytesCreditLimit > _bytesUsed)
-                && (_messageCreditLimit < 0L || _messageCreditLimit > _messageUsed);
+                && (_messageCreditLimit < 0L || _messageCreditLimit > _messageUsed)
+                && !_serverProtocolEngine.isTransportBlockedForWriting();
     }
 
     public synchronized boolean useCreditForMessage(final long msgSize)
     {
-        if(_messageCreditLimit >= 0L)
+        if (_serverProtocolEngine.isTransportBlockedForWriting())
+        {
+            setSuspended(true);
+            return false;
+        }
+        else if(_messageCreditLimit >= 0L)
         {
             if(_messageUsed < _messageCreditLimit)
             {

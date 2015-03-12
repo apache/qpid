@@ -30,7 +30,7 @@ import org.apache.qpid.client.failover.ConnectionRedirectException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.ConnectionRedirectBody;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.TransportException;
 
 public class ConnectionRedirectMethodHandler implements StateAwareMethodListener<ConnectionRedirectBody>
@@ -72,7 +72,7 @@ public class ConnectionRedirectMethodHandler implements StateAwareMethodListener
 
         session.notifyError(new ConnectionRedirectException(host,port));
 
-        Sender<ByteBuffer> sender = session.getSender();
+        ByteBufferSender sender = session.getSender();
 
         // Close the open TCP connection
         try

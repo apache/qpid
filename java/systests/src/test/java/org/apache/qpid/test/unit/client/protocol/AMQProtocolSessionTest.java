@@ -32,7 +32,7 @@ import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.ByteBufferSender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
 public class AMQProtocolSessionTest extends QpidBrokerTestCase
@@ -107,17 +107,12 @@ public class AMQProtocolSessionTest extends QpidBrokerTestCase
         private String _localHost = "127.0.0.1";
         private int _port = 1;
         private SocketAddress _localAddress = null;
-        private final Sender<ByteBuffer> _sender;
+        private final ByteBufferSender _sender;
 
         public TestNetworkConnection()
         {
-            _sender = new Sender<ByteBuffer>()
+            _sender = new ByteBufferSender()
             {
-
-                public void setIdleTimeout(int i)
-                {
-
-                }
 
                 public void send(ByteBuffer msg)
                 {
@@ -186,7 +181,7 @@ public class AMQProtocolSessionTest extends QpidBrokerTestCase
             _localAddress = address;
         }
 
-        public Sender<ByteBuffer> getSender()
+        public ByteBufferSender getSender()
         {
             return _sender;
         }

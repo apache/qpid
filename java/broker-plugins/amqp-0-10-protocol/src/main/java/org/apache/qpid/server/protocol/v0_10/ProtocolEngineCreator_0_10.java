@@ -23,7 +23,7 @@ package org.apache.qpid.server.protocol.v0_10;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.server.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.Transport;
@@ -86,7 +86,10 @@ public class ProtocolEngineCreator_0_10 implements ProtocolEngineCreator
         conn.setRemoteAddress(network.getRemoteAddress());
         conn.setLocalAddress(network.getLocalAddress());
 
-        return new ProtocolEngine_0_10( conn, network);
+        ProtocolEngine_0_10 protocolEngine = new ProtocolEngine_0_10(conn, network);
+        conn.setProtocolEngine(protocolEngine);
+
+        return protocolEngine;
     }
 
 

@@ -20,12 +20,6 @@
  */
 package org.apache.qpid.transport.codec;
 
-import org.apache.qpid.transport.Range;
-import org.apache.qpid.transport.RangeSet;
-import org.apache.qpid.transport.Struct;
-import org.apache.qpid.transport.Type;
-
-import org.apache.qpid.transport.Xid;
 import static org.apache.qpid.transport.util.Functions.lsb;
 
 import java.io.UnsupportedEncodingException;
@@ -36,6 +30,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.qpid.transport.Range;
+import org.apache.qpid.transport.RangeSet;
+import org.apache.qpid.transport.Struct;
+import org.apache.qpid.transport.Type;
+import org.apache.qpid.transport.Xid;
+
 
 /**
  * AbstractEncoder
@@ -43,7 +43,7 @@ import java.util.UUID;
  * @author Rafael H. Schloming
  */
 
-abstract class AbstractEncoder implements Encoder
+public abstract class AbstractEncoder implements Encoder
 {
 
     private static Map<Class<?>,Type> ENCODINGS = new HashMap<Class<?>,Type>();
