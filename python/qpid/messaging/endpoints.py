@@ -220,10 +220,6 @@ class Connection(Endpoint):
           raised this time but won't block future calls
           """
           self.error = None
-          raise e
-
-      if not self._unlinked():
-          self.close()
       raise e
 
   def get_error(self):
