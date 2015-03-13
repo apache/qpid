@@ -53,6 +53,8 @@ public class BDBVirtualHostImplTest extends QpidTestCase
 
         TaskExecutor taskExecutor = CurrentThreadTaskExecutor.newStartedInstance();
         when(broker.getTaskExecutor()).thenReturn(taskExecutor);
+        when(broker.getChildExecutor()).thenReturn(taskExecutor);
+
 
         _storePath = TestFileUtils.createTestDirectory();
 
@@ -60,6 +62,7 @@ public class BDBVirtualHostImplTest extends QpidTestCase
         when(_node.getParent(Broker.class)).thenReturn(broker);
         when(_node.getModel()).thenReturn(BrokerModel.getInstance());
         when(_node.getTaskExecutor()).thenReturn(taskExecutor);
+        when(_node.getChildExecutor()).thenReturn(taskExecutor);
         when(_node.getConfigurationStore()).thenReturn(mock(DurableConfigurationStore.class));
         when(_node.getId()).thenReturn(UUID.randomUUID());
     }

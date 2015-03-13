@@ -35,6 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
@@ -310,7 +311,9 @@ public class MockConsumer implements ConsumerTarget
             ConfiguredObjectFactory factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
             when(_modelObject.getObjectFactory()).thenReturn(factory);
             when(_modelObject.getModel()).thenReturn(factory.getModel());
-            when(_modelObject.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
+            TaskExecutor taskExecutor = CurrentThreadTaskExecutor.newStartedInstance();
+            when(_modelObject.getTaskExecutor()).thenReturn(taskExecutor);
+            when(_modelObject.getChildExecutor()).thenReturn(taskExecutor);
         }
 
         @Override

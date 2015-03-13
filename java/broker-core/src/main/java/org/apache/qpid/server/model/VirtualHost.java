@@ -166,9 +166,6 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
 
     void executeTransaction(TransactionalOperation op);
 
-    // TODO - remove this
-    TaskExecutor getTaskExecutor();
-
     E getExchange(UUID id);
 
     MessageStore getMessageStore();

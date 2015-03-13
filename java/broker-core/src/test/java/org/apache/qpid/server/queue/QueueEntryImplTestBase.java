@@ -30,6 +30,7 @@ import java.util.UUID;
 import junit.framework.TestCase;
 
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageInstance.EntryState;
@@ -245,7 +246,9 @@ public abstract class QueueEntryImplTestBase extends TestCase
         ConfiguredObjectFactory factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         when(virtualHost.getObjectFactory()).thenReturn(factory);
         when(virtualHost.getModel()).thenReturn(factory.getModel());
-        when(virtualHost.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
+        TaskExecutor taskExecutor = CurrentThreadTaskExecutor.newStartedInstance();
+        when(virtualHost.getTaskExecutor()).thenReturn(taskExecutor);
+        when(virtualHost.getChildExecutor()).thenReturn(taskExecutor);
 
         StandardQueueImpl queue = new StandardQueueImpl(queueAttributes, virtualHost);
         queue.open();

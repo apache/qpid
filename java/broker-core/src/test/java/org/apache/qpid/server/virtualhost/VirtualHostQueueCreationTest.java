@@ -83,6 +83,7 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
         when(broker.getSecurityManager()).thenReturn(securityManager);
         when(broker.getModel()).thenReturn(objectFactory.getModel());
         when(broker.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(broker.getChildExecutor()).thenReturn(_taskExecutor);
 
         _virtualHostNode = mock(VirtualHostNode.class);
         when(_virtualHostNode.getParent(Broker.class)).thenReturn(broker);
@@ -90,6 +91,7 @@ public class VirtualHostQueueCreationTest extends QpidTestCase
         when(_virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
         when(_virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
         when(_virtualHostNode.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(_virtualHostNode.getChildExecutor()).thenReturn(_taskExecutor);
         when(((VirtualHostNode)_virtualHostNode).getCategoryClass()).thenReturn(VirtualHostNode.class);
         _virtualHost = createHost();
     }

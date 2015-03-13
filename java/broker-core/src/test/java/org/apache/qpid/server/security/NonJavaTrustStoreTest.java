@@ -51,6 +51,7 @@ public class NonJavaTrustStoreTest extends QpidTestCase
         super.setUp();
 
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(_broker.getChildExecutor()).thenReturn(_taskExecutor);
         when(_broker.getModel()).thenReturn(_model);
         when(_broker.getSecurityManager()).thenReturn(_securityManager);
     }

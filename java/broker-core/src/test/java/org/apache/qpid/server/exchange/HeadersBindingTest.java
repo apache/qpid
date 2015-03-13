@@ -156,15 +156,21 @@ public class HeadersBindingTest extends TestCase
         when(_queue.getVirtualHost()).thenReturn(vhost);
         when(_queue.getModel()).thenReturn(BrokerModel.getInstance());
         when(_queue.getTaskExecutor()).thenReturn(executor);
+        when(_queue.getChildExecutor()).thenReturn(executor);
+
         when(vhost.getSecurityManager()).thenReturn(mock(org.apache.qpid.server.security.SecurityManager.class));
         final EventLogger eventLogger = new EventLogger();
         when(vhost.getEventLogger()).thenReturn(eventLogger);
         when(vhost.getTaskExecutor()).thenReturn(executor);
+        when(vhost.getChildExecutor()).thenReturn(executor);
+
         _exchange = mock(ExchangeImpl.class);
         when(_exchange.getType()).thenReturn(ExchangeDefaults.HEADERS_EXCHANGE_CLASS);
         when(_exchange.getEventLogger()).thenReturn(eventLogger);
         when(_exchange.getModel()).thenReturn(BrokerModel.getInstance());
         when(_exchange.getTaskExecutor()).thenReturn(executor);
+        when(_exchange.getChildExecutor()).thenReturn(executor);
+
     }
 
     protected String getQueueName()

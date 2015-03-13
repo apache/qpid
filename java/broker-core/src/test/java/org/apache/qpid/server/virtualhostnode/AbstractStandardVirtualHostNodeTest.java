@@ -83,6 +83,8 @@ public class AbstractStandardVirtualHostNodeTest extends QpidTestCase
         _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(_broker.getChildExecutor()).thenReturn(_taskExecutor);
+
     }
 
     @Override

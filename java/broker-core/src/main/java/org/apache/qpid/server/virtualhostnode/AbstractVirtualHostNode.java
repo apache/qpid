@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
@@ -91,6 +92,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
 
     private MessageStoreLogSubject _configurationStoreLogSubject;
 
+    private TaskExecutor _virtualHostExecutor;
     @ManagedAttributeField
     private String _virtualHostInitialConfiguration;
 
@@ -98,6 +100,8 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     {
         super(Collections.<Class<? extends ConfiguredObject>,ConfiguredObject<?>>singletonMap(Broker.class, parent),
               attributes);
+        _virtualHostExecutor = getTaskExecutor().getFactory().newInstance("VirtualHostNode-"+getName()+"-Configuration-Thread");
+        _virtualHostExecutor.start();
         _broker = parent;
         SystemConfig<?> systemConfig = _broker.getParent(SystemConfig.class);
         _eventLogger = systemConfig.getEventLogger();
@@ -109,6 +113,12 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     {
         super.onOpen();
         _durableConfigurationStore = createConfigurationStore();
+    }
+
+    @Override
+    public TaskExecutor getChildExecutor()
+    {
+        return _virtualHostExecutor;
     }
 
     @Override
@@ -309,6 +319,7 @@ public abstract class AbstractVirtualHostNode<X extends AbstractVirtualHostNode<
     protected void onClose()
     {
         closeConfigurationStore();
+        _virtualHostExecutor.stop();
     }
 
     private void closeConfigurationStore()

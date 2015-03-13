@@ -88,6 +88,7 @@ public class VirtualHostStoreUpgraderAndRecovererTest extends QpidTestCase
         Broker<?> broker = mock(Broker.class);
         when(broker.getParent(SystemConfig.class)).thenReturn(systemConfig);
         when(broker.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(broker.getChildExecutor()).thenReturn(_taskExecutor);
         when(broker.getModel()).thenReturn(BrokerModel.getInstance());
 
         _durableConfigurationStore = mock(DurableConfigurationStore.class);

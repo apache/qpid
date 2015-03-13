@@ -132,6 +132,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
         _taskExecutor = new TaskExecutorImpl();
         _taskExecutor.start();
         when(broker.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(broker.getChildExecutor()).thenReturn(_taskExecutor);
 
         ConfiguredObjectFactory factory = broker.getObjectFactory();
         Map<String, Object> nodeAttributes = new HashMap<>();

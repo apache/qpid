@@ -196,7 +196,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     protected AbstractConfiguredObject(final Map<Class<? extends ConfiguredObject>, ConfiguredObject<?>> parents,
                                        Map<String, Object> attributes)
     {
-        this(parents, attributes, parents.values().iterator().next().getTaskExecutor());
+        this(parents, attributes, parents.values().iterator().next().getChildExecutor());
     }
 
 
@@ -1827,6 +1827,12 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public final TaskExecutor getTaskExecutor()
     {
         return _taskExecutor;
+    }
+
+    @Override
+    public TaskExecutor getChildExecutor()
+    {
+        return getTaskExecutor();
     }
 
     protected final <C> C runTask(Task<C> task)

@@ -89,6 +89,8 @@ public class HeadersExchangeTest extends TestCase
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
         when(_virtualHost.getCategoryClass()).thenReturn(VirtualHost.class);
         when(_virtualHost.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(_virtualHost.getChildExecutor()).thenReturn(_taskExecutor);
+
         _factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         when(_virtualHost.getObjectFactory()).thenReturn(_factory);
         when(_virtualHost.getModel()).thenReturn(_factory.getModel());
@@ -168,7 +170,9 @@ public class HeadersExchangeTest extends TestCase
         when(q.getCategoryClass()).thenReturn(Queue.class);
         when(q.getObjectFactory()).thenReturn(_factory);
         when(q.getModel()).thenReturn(_factory.getModel());
-        when(q.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
+        TaskExecutor taskExecutor = CurrentThreadTaskExecutor.newStartedInstance();
+        when(q.getTaskExecutor()).thenReturn(taskExecutor);
+        when(q.getChildExecutor()).thenReturn(taskExecutor);
         return q;
     }
 

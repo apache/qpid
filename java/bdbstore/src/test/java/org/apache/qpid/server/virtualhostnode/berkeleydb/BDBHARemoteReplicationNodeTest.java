@@ -63,6 +63,7 @@ public class BDBHARemoteReplicationNodeTest extends QpidTestCase
         _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(_broker.getChildExecutor()).thenReturn(_taskExecutor);
 
         _virtualHostNode = mock(BDBHAVirtualHostNode.class);
         _configStore = mock(DurableConfigurationStore.class);
@@ -74,6 +75,8 @@ public class BDBHARemoteReplicationNodeTest extends QpidTestCase
         ConfiguredObjectFactory objectFactory = _broker.getObjectFactory();
         when(_virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
         when(_virtualHostNode.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(_virtualHostNode.getChildExecutor()).thenReturn(_taskExecutor);
+
     }
 
     public void testUpdateRole()

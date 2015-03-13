@@ -58,6 +58,8 @@ public class ACLFileAccessControlProviderFactoryTest extends QpidTestCase
         TaskExecutor taskExecutor = new CurrentThreadTaskExecutor();
         taskExecutor.start();
         when(_broker.getTaskExecutor()).thenReturn(taskExecutor);
+        when(_broker.getChildExecutor()).thenReturn(taskExecutor);
+
     }
 
     public void testCreateInstanceWhenAclFileIsNotPresent()

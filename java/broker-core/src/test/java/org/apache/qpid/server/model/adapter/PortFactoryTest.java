@@ -96,6 +96,7 @@ public class PortFactoryTest extends QpidTestCase
         for(ConfiguredObject obj : new ConfiguredObject[]{_authProvider, _broker, _keyStore, _trustStore})
         {
             when(obj.getTaskExecutor()).thenReturn(executor);
+            when(obj.getChildExecutor()).thenReturn(executor);
         }
 
 

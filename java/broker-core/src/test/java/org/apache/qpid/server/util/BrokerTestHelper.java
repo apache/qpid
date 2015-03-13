@@ -101,6 +101,9 @@ public class BrokerTestHelper
 
         when(broker.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
         when(systemConfig.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
+        when(broker.getChildExecutor()).thenReturn(TASK_EXECUTOR);
+        when(systemConfig.getChildExecutor()).thenReturn(TASK_EXECUTOR);
+
         return broker;
     }
 
@@ -127,6 +130,7 @@ public class BrokerTestHelper
         VirtualHostNode virtualHostNode = mock(VirtualHostNode.class);
         when(virtualHostNode.getName()).thenReturn((String) attributes.get(VirtualHostNode.NAME));
         when(virtualHostNode.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
+        when(virtualHostNode.getChildExecutor()).thenReturn(TASK_EXECUTOR);
 
         when(virtualHostNode.getParent(eq(Broker.class))).thenReturn(broker);
 
@@ -142,6 +146,8 @@ public class BrokerTestHelper
         when(virtualHostNode.getObjectFactory()).thenReturn(objectFactory);
         when(virtualHostNode.getCategoryClass()).thenReturn(VirtualHostNode.class);
         when(virtualHostNode.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
+        when(virtualHostNode.getChildExecutor()).thenReturn(TASK_EXECUTOR);
+
         AbstractVirtualHost
                 host = (AbstractVirtualHost) objectFactory.create(VirtualHost.class, attributes, virtualHostNode );
         host.start();
@@ -209,6 +215,7 @@ public class BrokerTestHelper
         when(virtualHost.getObjectFactory()).thenReturn(objectFactory);
         when(virtualHost.getModel()).thenReturn(objectFactory.getModel());
         when(virtualHost.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
+        when(virtualHost.getChildExecutor()).thenReturn(TASK_EXECUTOR);
         final Map<String,Object> attributes = new HashMap<String, Object>();
         attributes.put(org.apache.qpid.server.model.Exchange.ID, UUIDGenerator.generateExchangeUUID("amp.direct", virtualHost.getName()));
         attributes.put(org.apache.qpid.server.model.Exchange.NAME, "amq.direct");
