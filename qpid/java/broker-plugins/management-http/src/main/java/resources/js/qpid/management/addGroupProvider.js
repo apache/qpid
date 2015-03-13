@@ -120,13 +120,17 @@ define([
             {
                 if (this.groupProviderForm.validate())
                 {
-                    var success = false,failureReason=null;
-
                     var groupProviderData = util.getFormWidgetValues(this.groupProviderForm, this.initialData);
-                    var encodedName = encodeURIComponent(this.groupProviderName.value);
+
                     var that = this;
-                    var method = this.initialData ? "put" : "post";
-                    util[method]("api/latest/groupprovider/" + encodedName, groupProviderData, function(x){that.dialog.hide();});
+                    var url = "api/latest/groupprovider";
+                    if (this.initialData)
+                    {
+                        // update request
+                        url += "/" +  encodeURIComponent(this.groupProviderName.value)
+                    }
+
+                    util.post( url,groupProviderData, function(x){that.dialog.hide();});
                 }
                 else
                 {

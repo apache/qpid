@@ -126,21 +126,38 @@ public class VirtualHostNodeRestTest  extends QpidRestTestCase
         assertEquals(newDescription, virtualhostNode.get(VirtualHostNode.DESCRIPTION));
     }
 
-    public void testCreateVirtualHostNodeByPost() throws Exception
+    public void testCreateVirtualHostNodeByPostUsingParentURI() throws Exception
     {
         String nodeName = getTestName();
         Map<String, Object> nodeData = new HashMap<>();
         nodeData.put(VirtualHostNode.NAME, nodeName);
         nodeData.put(VirtualHostNode.TYPE, getTestProfileVirtualHostNodeType());
 
-        String url = "virtualhostnode/" + nodeName;
+        String url = "virtualhostnode";
         getRestTestHelper().submitRequest(url, "POST", nodeData, HttpServletResponse.SC_CREATED);
 
-        Map<String, Object> virtualhostNode = getRestTestHelper().getJsonAsSingletonList(url);
+        Map<String, Object> virtualhostNode = getRestTestHelper().getJsonAsSingletonList(url + "/" + nodeName);
         Asserts.assertVirtualHostNode(nodeName, virtualhostNode);
 
         // verify that second create request fails
         getRestTestHelper().submitRequest(url, "POST", nodeData, HttpServletResponse.SC_CONFLICT);
+    }
+
+    public void testCreateVirtualHostNodeByPutUsingParentURI() throws Exception
+    {
+        String nodeName = getTestName();
+        Map<String, Object> nodeData = new HashMap<>();
+        nodeData.put(VirtualHostNode.NAME, nodeName);
+        nodeData.put(VirtualHostNode.TYPE, getTestProfileVirtualHostNodeType());
+
+        String url = "virtualhostnode";
+        getRestTestHelper().submitRequest(url, "PUT", nodeData, HttpServletResponse.SC_CREATED);
+
+        Map<String, Object> virtualhostNode = getRestTestHelper().getJsonAsSingletonList(url + "/" + nodeName);
+        Asserts.assertVirtualHostNode(nodeName, virtualhostNode);
+
+        // verify that second create request fails
+        getRestTestHelper().submitRequest(url, "PUT", nodeData, HttpServletResponse.SC_CONFLICT);
     }
 
     private void createAndDeleteVirtualHostNode(final String virtualhostNodeType,

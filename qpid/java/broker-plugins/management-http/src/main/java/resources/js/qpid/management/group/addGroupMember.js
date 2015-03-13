@@ -73,8 +73,7 @@ define(["dojo/_base/xhr",
                                     var that = this;
 
                                     var url = "api/latest/groupmember/"+encodeURIComponent(addGroupMember.groupProvider) +
-                                              "/" + encodeURIComponent(addGroupMember.group) +
-                                              "/" + encodeURIComponent(newGroupMember.name);
+                                              "/" + encodeURIComponent(addGroupMember.group);
                                     util.post(url, newGroupMember, function(x){registry.byId("addGroupMember").hide();});
                                     return false;
 

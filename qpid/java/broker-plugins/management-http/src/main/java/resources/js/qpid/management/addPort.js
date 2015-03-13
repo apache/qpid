@@ -267,8 +267,13 @@ define(["dojo/_base/xhr",
                 alert("A trust store must be selected when requesting client certificates.");
                 return false;
               }
-              var method = registry.byId("formAddPort.name").get("disabled") ? "put" : "post";
-              util[method]("api/latest/port/" + encodeURIComponent(newPort.name), newPort, function(x){registry.byId("addPort").hide()});
+              var url = "api/latest/port";
+              if (registry.byId("formAddPort.name").get("disabled"))
+              {
+                // update request
+                url += "/" + encodeURIComponent(newPort.name);
+              }
+              util.post(url, newPort, function(x){registry.byId("addPort").hide()});
               return false;
             } else
             {

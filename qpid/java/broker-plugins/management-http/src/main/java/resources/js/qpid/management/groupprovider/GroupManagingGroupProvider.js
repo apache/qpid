@@ -173,10 +173,7 @@ define(["dojo/_base/xhr",
 
                                     var newGroup = convertToGroup(theForm.getValues());
 
-
-                                    var url = "api/latest/group/"+encodeURIComponent(addGroup.groupProvider) +
-                                        "/"+encodeURIComponent(newGroup.name);
-
+                                    var url = "api/latest/group/"+encodeURIComponent(addGroup.groupProvider);
                                     util.post(url, newGroup, function(x){registry.byId("addGroup").hide();});
                                     return false;
 

@@ -340,8 +340,7 @@ define([
         }
 
         var that = this;
-        var encodedVirtualHostNodeName = encodeURIComponent(virtualHostNodeData.name);
-        util.post("api/latest/virtualhostnode/" + encodedVirtualHostNodeName, virtualHostNodeData, function(x){that.dialog.hide();});
+        util.post("api/latest/virtualhostnode", virtualHostNodeData, function(x){that.dialog.hide();});
       },
       _getValues: function (form)
       {

@@ -150,15 +150,17 @@ define(["dojo/_base/xhr",
             {
                 if(this.authenticationProviderForm.validate() && this.preferencesProviderForm.validate())
                 {
-                    var success = false,failureReason=null;
-
                     var authenticationProviderData = util.getFormWidgetValues(this.authenticationProviderForm, this.initialData);
 
-                    var encodedAuthenticationProviderName = encodeURIComponent(this.authenticationProviderName.value);
                     var that = this;
-
-                    var methodName = this.initialData ? "put" : "post";
-                    util[methodName]("api/latest/authenticationprovider/" + encodedAuthenticationProviderName, authenticationProviderData,
+                    var encodedAuthenticationProviderName = encodeURIComponent(this.authenticationProviderName.value);
+                    var url = "api/latest/authenticationprovider";
+                    if (this.initialData && this.initialData.id)
+                    {
+                        // update request
+                        url += "/" + encodedAuthenticationProviderName;
+                    }
+                    util.post(url, authenticationProviderData,
                      function(x){
                         var preferencesProviderResult = that.preferencesProviderForm.submit(encodedAuthenticationProviderName);
                         if (preferencesProviderResult.success == true)

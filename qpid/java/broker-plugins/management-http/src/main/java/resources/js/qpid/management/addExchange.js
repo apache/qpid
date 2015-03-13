@@ -111,8 +111,7 @@ define(["dojo/_base/xhr",
                                     var newExchange = convertToExchange(theForm.getValues());
                                     var that = this;
                                     util.post("api/latest/exchange/" + encodeURIComponent(addExchange.vhostnode)
-                                            + "/" + encodeURIComponent(addExchange.vhost)
-                                            + "/" + encodeURIComponent(newExchange.name),
+                                            + "/" + encodeURIComponent(addExchange.vhost),
                                             newExchange, function(x){ registry.byId("addExchange").hide(); });
                                     return false;
 

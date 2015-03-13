@@ -412,15 +412,16 @@ public class RestServlet extends AbstractServlet
 
     private void performCreateOrUpdate(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
     {
-        boolean createOrUpdate = "PUT".equalsIgnoreCase(request.getMethod());
-
         response.setContentType("application/json");
 
         List<String> names = new ArrayList<String>();
         String[] pathInfoElements = getPathInfoElements(request);
+
+        boolean parentRequest = false;
         if (pathInfoElements != null)
         {
-            if (pathInfoElements.length != _hierarchy.length)
+            parentRequest = _hierarchy.length > 0 && pathInfoElements.length == _hierarchy.length - 1;
+            if (pathInfoElements.length != _hierarchy.length && !parentRequest)
             {
                 throw new IllegalArgumentException("Path to object to create must be fully specified. "
                                                    + "Found "
@@ -431,6 +432,10 @@ public class RestServlet extends AbstractServlet
                                                    + _hierarchy.length);
             }
             names.addAll(Arrays.asList(pathInfoElements));
+        }
+        else
+        {
+            parentRequest = _hierarchy.length == 1;
         }
 
         Map<String, Object> providedObject;
@@ -469,16 +474,9 @@ public class RestServlet extends AbstractServlet
         {
             if (_hierarchy.length == 0)
             {
-                if (!createOrUpdate)
-                {
-                    sendErrorResponse(request, response,
-                            "Only object creation is allowed with POST requests. Use PUT method to update broker attributes");
-                    return;
-                }
-
                 try
                 {
-                    doUpdate(getBroker(), providedObject);
+                    getBroker().setAttributes(providedObject);
                     response.setStatus(HttpServletResponse.SC_OK);
                 }
                 catch (RuntimeException e)
@@ -487,19 +485,22 @@ public class RestServlet extends AbstractServlet
                 }
                 return;
             }
-            else
+            else if (!parentRequest)
             {
                 throw new ServletException("Cannot identify request target object");
             }
         }
 
-        providedObject.put("name", names.get(names.size() - 1));
+        if (!parentRequest)
+        {
+            providedObject.put("name", names.get(names.size() - 1));
+        }
 
         @SuppressWarnings("unchecked")
         Collection<ConfiguredObject>[] objects = new Collection[_hierarchy.length];
         if (_hierarchy.length == 1)
         {
-            createOrUpdate(providedObject, _hierarchy[0], getBroker(), null, request, response, createOrUpdate);
+            createOrUpdate(providedObject, _hierarchy[0], getBroker(), null, request, response, parentRequest);
         }
         else
         {
@@ -562,29 +563,37 @@ public class RestServlet extends AbstractServlet
             ConfiguredObject theParent = parents.remove(0);
             ConfiguredObject[] otherParents = parents.toArray(new ConfiguredObject[parents.size()]);
 
-            createOrUpdate(providedObject, objClass, theParent, otherParents, request, response, createOrUpdate);
+            createOrUpdate(providedObject, objClass, theParent, otherParents, request, response, parentRequest);
         }
     }
 
     private void createOrUpdate(Map<String, Object> providedObject, Class<? extends ConfiguredObject> objClass,
             ConfiguredObject theParent, ConfiguredObject[] otherParents, HttpServletRequest request,
-            HttpServletResponse response, boolean createOrUpdate) throws IOException
+            HttpServletResponse response, boolean parentRequest) throws IOException
     {
         try
         {
             Collection<? extends ConfiguredObject> existingChildren = theParent.getChildren(objClass);
 
-            if (createOrUpdate)
+            if (!parentRequest)
             {
                 for (ConfiguredObject obj : existingChildren)
                 {
                     if ((providedObject.containsKey("id") && String.valueOf(providedObject.get("id")).equals(obj.getId().toString()))
                             || (obj.getName().equals(providedObject.get("name")) && equalParents(obj, otherParents, objClass)))
                     {
-                        doUpdate(obj, providedObject);
+                        obj.setAttributes(providedObject);
                         response.setStatus(HttpServletResponse.SC_OK);
                         return;
                     }
+                }
+
+                if ("POST".equalsIgnoreCase(request.getMethod()))
+                {
+                    sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND, "Object with "
+                            +  (providedObject.containsKey("id") ? " id '" + providedObject.get("id") : " name '" + providedObject.get("name"))
+                            + "' does not exist!" );
+                    return;
                 }
             }
 
@@ -595,11 +604,6 @@ public class RestServlet extends AbstractServlet
         {
             setResponseStatus(request, response, e);
         }
-    }
-
-    private void doUpdate(ConfiguredObject obj, Map<String, Object> providedObject)
-    {
-        obj.setAttributes(providedObject);
     }
 
     private boolean equalParents(ConfiguredObject obj, ConfiguredObject[] otherParents, Class<? extends ConfiguredObject> objClass)
@@ -644,6 +648,7 @@ public class RestServlet extends AbstractServlet
         }
         else
         {
+            int responseCode = HttpServletResponse.SC_CONFLICT;
             String message = e.getMessage();
             if (e instanceof IllegalConfigurationException || e instanceof IllegalArgumentException)
             {
@@ -661,14 +666,15 @@ public class RestServlet extends AbstractServlet
                 LOGGER.warn("Unexpected exception processing request ", e);
             }
 
-            sendErrorResponse(request, response, message);
+
+            sendErrorResponse(request, response, responseCode, message);
 
         }
     }
 
-    private void sendErrorResponse(HttpServletRequest request, HttpServletResponse response, String message) throws IOException
+    private void sendErrorResponse(HttpServletRequest request, HttpServletResponse response, int responseCode, String message) throws IOException
     {
-        response.setStatus(HttpServletResponse.SC_CONFLICT);
+        response.setStatus(responseCode);
 
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");

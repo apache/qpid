@@ -129,11 +129,15 @@ define(["dojo/_base/lang",
                     var success = false,failureReason=null;
 
                     var storeData = util.getFormWidgetValues(this.storeForm, this.initialData);
-                    var encodedStoreName = encodeURIComponent(this.storeName.value);
-                    var encodedCategory = encodeURIComponent(this.category.toLowerCase());
                     var that = this;
-                    var method = this.effectiveData ? "put" : "post";
-                    util[method]("api/latest/" + encodedCategory + "/" + encodedStoreName, storeData, function(x){that.dialog.hide();});
+                    var url = "api/latest/" + encodeURIComponent(this.category.toLowerCase());
+
+                    if (this.effectiveData)
+                    {
+                        // update request
+                        url += "/" + encodeURIComponent(this.storeName.value);
+                    }
+                    util.post(url, storeData, function(x){that.dialog.hide();});
                 }
                 else
                 {
