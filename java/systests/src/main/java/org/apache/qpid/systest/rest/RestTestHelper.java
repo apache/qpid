@@ -502,8 +502,12 @@ public class RestTestHelper
         }
     }
 
-    public int submitRequest(String url, String method, Map<String, Object> attributes) throws IOException,
-            JsonGenerationException, JsonMappingException
+    public int submitRequest(String url, String method, Map<String, Object> attributes) throws IOException
+    {
+        return submitRequest(url, method, attributes, null);
+    }
+
+    public int submitRequest(String url, String method, Map<String, Object> attributes, Map<String, List<String>> responseHeadersToCapture) throws IOException
     {
         HttpURLConnection connection = openManagementConnection(url, method);
         if (attributes != null)
@@ -511,6 +515,10 @@ public class RestTestHelper
             writeJsonRequest(connection, attributes);
         }
         int responseCode = connection.getResponseCode();
+        if (responseHeadersToCapture!= null)
+        {
+            responseHeadersToCapture.putAll(connection.getHeaderFields());
+        }
         connection.disconnect();
         return responseCode;
     }
@@ -522,8 +530,14 @@ public class RestTestHelper
 
     public void submitRequest(String url, String method, Map<String, Object> attributes, int expectedResponseCode) throws IOException
     {
-        int responseCode = submitRequest(url, method, attributes);
+        Map<String, List<String>> headers = new HashMap<>();
+        int responseCode = submitRequest(url, method, attributes, headers);
         Assert.assertEquals("Unexpected response code from " + method + " " + url , expectedResponseCode, responseCode);
+        if (expectedResponseCode == 201)
+        {
+            List<String> location = headers.get("Location");
+            Assert.assertTrue("Location is not returned by REST create request", location != null && location.size() == 1);
+        }
     }
 
     public void submitRequest(String url, String method, int expectedResponseCode) throws IOException
