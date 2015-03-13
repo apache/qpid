@@ -29,6 +29,7 @@ import javax.jms.ConnectionFactory;
 import javax.jms.ConnectionMetaData;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
+import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -46,6 +47,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.qpid.disttest.DistributedTestConstants;
 import org.apache.qpid.disttest.DistributedTestException;
 import org.apache.qpid.disttest.client.Client;
+import org.apache.qpid.disttest.client.ConnectionLostListener;
 import org.apache.qpid.disttest.client.MessageProvider;
 import org.apache.qpid.disttest.message.Command;
 import org.apache.qpid.disttest.message.CreateConnectionCommand;
@@ -305,7 +307,7 @@ public class ClientJmsDelegate
                         jmsConsumer = session.createDurableSubscriber(topic, subscription);
 
                         _testSubscriptions.put(subscription, session);
-                        LOGGER.debug("created durable suscription " + subscription + " to topic " + topic);
+                        LOGGER.debug("created durable subscription " + subscription + " to topic " + topic);
                     }
                     else
                     {
@@ -675,5 +677,39 @@ public class ClientJmsDelegate
     public void createMessageProvider(CreateMessageProviderCommand command)
     {
         _testMessageProviders.put(command.getProviderName(), new MessageProvider(command.getMessageProperties()));
+    }
+
+    public void setConnectionLostListener(final ConnectionLostListener connectionLostListener)
+    {
+        try
+        {
+            _controllerConnection.setExceptionListener(new ExceptionListener()
+                {
+                @Override
+                public void onException(final JMSException exception)
+                {
+                    LOGGER.warn("Caught ", exception);
+
+                    if (connectionLostListener != null)
+                    {
+                        try
+                        {
+                            _controllerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE).close();
+                        }
+                        catch (JMSException e)
+                        {
+                            LOGGER.warn("Unable to create/close a new session, assuming the connection is lost ", exception);
+
+                            connectionLostListener.connectionLost();
+                        }
+                    }
+
+                }
+            });
+        }
+        catch (JMSException e)
+        {
+            // ignore
+        }
     }
 }

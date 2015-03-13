@@ -60,6 +60,15 @@ public class Client
      */
     public void start()
     {
+        _clientJmsDelegate.setConnectionLostListener(new ConnectionLostListener()
+        {
+            @Override
+            public void connectionLost()
+            {
+                LOGGER.warn("Client unexpectedly lost the JMS connection. Shutting down.");
+                transitToStopped();
+            }
+        });
         _clientJmsDelegate.setInstructionListener(this);
         _clientJmsDelegate.sendRegistrationMessage();
         _state.set(ClientState.READY);
@@ -67,7 +76,13 @@ public class Client
 
     public void stop()
     {
+        _clientJmsDelegate.setConnectionLostListener(null);
         _clientJmsDelegate.sendResponseMessage(new Response(_clientJmsDelegate.getClientName(), CommandType.STOP_CLIENT, null));
+        transitToStopped();
+    }
+
+    private void transitToStopped()
+    {
         _state.set(ClientState.STOPPED);
         _latch.countDown();
     }
