@@ -150,7 +150,7 @@ define(["dojo/_base/xhr",
 
                                     var newQueue = convertToQueue(theForm.getValues());
                                     util.post("api/latest/queue/" + encodeURIComponent(addQueue.vhostnode)
-                                            + "/"+encodeURIComponent(addQueue.vhost) + "/" + encodeURIComponent(newQueue.name),
+                                            + "/"+encodeURIComponent(addQueue.vhost),
                                             newQueue, function(x){registry.byId("addQueue").hide();});
                                     return false;
 

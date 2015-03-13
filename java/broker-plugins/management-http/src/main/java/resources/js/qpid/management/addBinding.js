@@ -311,8 +311,7 @@ define(["dojo/_base/connect",
                                     var url = "api/latest/binding/"+encodeURIComponent(addBinding.vhostnode)
                                             + "/"+encodeURIComponent(addBinding.vhost)
                                             + "/"+encodeURIComponent(newBinding.exchange)
-                                            + "/"+encodeURIComponent(newBinding.queue)
-                                            + "/"+encodeURIComponent(newBinding.name);
+                                            + "/"+encodeURIComponent(newBinding.queue);
                                     util.post(url, newBinding, function(x){registry.byId("addBinding").hide();});
                                     return false;
                                 }else{

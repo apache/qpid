@@ -100,10 +100,8 @@ define(["dojo/_base/lang",
                 if (this.accessControlProviderForm.validate())
                 {
                     var accessControlProviderData = util.getFormWidgetValues(this.accessControlProviderForm, this.initialData);
-                    var encodedAccessControlProviderName = encodeURIComponent(this.accessControlProviderName.value);
                     var that = this;
-                    util.post("api/latest/accesscontrolprovider/" + encodedAccessControlProviderName,
-                              accessControlProviderData, function(x){that.dialog.hide();});
+                    util.post("api/latest/accesscontrolprovider", accessControlProviderData, function(x){that.dialog.hide();});
                 }
                 else
                 {

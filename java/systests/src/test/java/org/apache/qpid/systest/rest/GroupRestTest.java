@@ -74,7 +74,7 @@ public class GroupRestTest extends QpidRestTestCase
         assertEquals(EXISTING_MEMBER, (String)member1.get(GroupMember.NAME));
     }
 
-    public void testCreateNewMemberByPut() throws Exception
+    public void testCreateNewMemberByPutUsingMemberURI() throws Exception
     {
         Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("group/" + FILE_GROUP_MANAGER + "/myGroup");
         getRestTestHelper().assertNumberOfGroupMembers(group, 1);
@@ -86,19 +86,36 @@ public class GroupRestTest extends QpidRestTestCase
         assertEquals("Unexpected group name", NEW_MEMBER, member.get(GroupMember.NAME));
     }
 
-    public void testCreateNewMemberByPost() throws Exception
+    public void testCreateNewMemberByPostUsingParentURI() throws Exception
     {
         Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("group/" + FILE_GROUP_MANAGER + "/myGroup");
         getRestTestHelper().assertNumberOfGroupMembers(group, 1);
 
-        String url = "groupmember/" + FILE_GROUP_MANAGER + "/"+ GROUP_NAME + "/" +  NEW_MEMBER;
-        getRestTestHelper().submitRequest(url, "POST", Collections.<String, Object>emptyMap(), HttpServletResponse.SC_CREATED);
+        String url = "groupmember/" + FILE_GROUP_MANAGER + "/"+ GROUP_NAME;
+        Map<String, Object> data = Collections.<String, Object>singletonMap("name", NEW_MEMBER);
+        getRestTestHelper().submitRequest(url, "POST", data, HttpServletResponse.SC_CREATED);
 
-        Map<String, Object> member = getRestTestHelper().getJsonAsSingletonList(url);
+        Map<String, Object> member = getRestTestHelper().getJsonAsSingletonList(url + "/" +  NEW_MEMBER);
         assertEquals("Unexpected group name", NEW_MEMBER, member.get(GroupMember.NAME));
 
-        // verify that second creation request by POST fails
-        getRestTestHelper().submitRequest(url, "POST", Collections.<String, Object>emptyMap(), HttpServletResponse.SC_CONFLICT);
+        // verify that second creation request fails
+        getRestTestHelper().submitRequest(url, "POST", data, HttpServletResponse.SC_CONFLICT);
+    }
+
+    public void testCreateNewMemberByPutUsingParentURI() throws Exception
+    {
+        Map<String, Object> group = getRestTestHelper().getJsonAsSingletonList("group/" + FILE_GROUP_MANAGER + "/myGroup");
+        getRestTestHelper().assertNumberOfGroupMembers(group, 1);
+
+        String url = "groupmember/" + FILE_GROUP_MANAGER + "/"+ GROUP_NAME;
+        Map<String, Object> data = Collections.<String, Object>singletonMap("name", NEW_MEMBER);
+        getRestTestHelper().submitRequest(url, "PUT", data, HttpServletResponse.SC_CREATED);
+
+        Map<String, Object> member = getRestTestHelper().getJsonAsSingletonList(url + "/" +  NEW_MEMBER);
+        assertEquals("Unexpected group name", NEW_MEMBER, member.get(GroupMember.NAME));
+
+        // verify that second creation request fails
+        getRestTestHelper().submitRequest(url, "PUT", data, HttpServletResponse.SC_CONFLICT);
     }
 
     public void testRemoveMemberFromGroup() throws Exception

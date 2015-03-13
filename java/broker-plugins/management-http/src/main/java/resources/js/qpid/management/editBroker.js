@@ -128,25 +128,8 @@ define(["dojo/_base/xhr",
                 data["context"] = context;
               }
 
-              var success = false,failureReason=null;
-              xhr.put({
-                  url: this.query,
-                  sync: true,
-                  handleAs: "json",
-                  headers: { "Content-Type": "application/json"},
-                  putData: json.stringify(data),
-                  load: function(x) {success = true; },
-                  error: function(error) {success = false; failureReason = error;}
-              });
-
-              if(success === true)
-              {
-                  this.dialog.hide();
-              }
-              else
-              {
-                  util.xhrErrorHandler(failureReason);
-              }
+              var that = this;
+              util.post(this.query, data, function(x){that.dialog.hide()})
           }
           else
           {

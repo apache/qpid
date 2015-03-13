@@ -200,8 +200,7 @@ define(["dojo/_base/xhr",
                                     var newUser = convertToUser(theForm.getValues());
 
 
-                                    var url = "api/latest/user/"+encodeURIComponent(addUser.authProvider) +
-                                        "/"+encodeURIComponent(newUser.name);
+                                    var url = "api/latest/user/"+encodeURIComponent(addUser.authProvider);
                                     util.post(url, newUser, function(x){registry.byId("addUser").hide();});
                                     return false;
 
@@ -248,7 +247,7 @@ define(["dojo/_base/xhr",
                             var url = "api/latest/user/"+encodeURIComponent(setPassword.authProvider) +
                                 "/"+encodeURIComponent(newUser.name);
 
-                            util.put(url, newUser, function(x){registry.byId("setPassword").hide();});
+                            util.post(url, newUser, function(x){registry.byId("setPassword").hide();});
                             return false;
 
 

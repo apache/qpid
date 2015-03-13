@@ -67,7 +67,7 @@ public class UserRestTest extends QpidRestTestCase
         }
     }
 
-    public void testCreateUserByPut() throws Exception
+    public void testCreateUserByPutUsingUserURI() throws Exception
     {
         String userName = getTestName();
         getRestTestHelper().createOrUpdateUser(userName, "newPassword");
@@ -78,22 +78,57 @@ public class UserRestTest extends QpidRestTestCase
         assertEquals("Unexpected user name", userName, userDetails.get(User.NAME));
     }
 
-    public void testCreateUserByPost() throws Exception
+    public void testCreateUserByPostUsingParentURI() throws Exception
     {
         String userName = getTestName();
 
         Map<String,Object> userAttributes = new HashMap<>();
         userAttributes.put("password", "newPassword");
+        userAttributes.put("name", userName);
 
-        String url = "user/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + userName;
+        String url = "user/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER;
         getRestTestHelper().submitRequest(url, "POST", userAttributes, HttpServletResponse.SC_CREATED);
 
-        Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList(url);
+        Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList(url+ "/" + userName);
         assertUser(userDetails);
         assertEquals("Unexpected user name", userName, userDetails.get(User.NAME));
 
         // verify that second create request fails
         getRestTestHelper().submitRequest(url, "POST", userAttributes, HttpServletResponse.SC_CONFLICT);
+    }
+
+    public void testCreateUserByPutUsingParentURI() throws Exception
+    {
+        String userName = getTestName();
+
+        Map<String,Object> userAttributes = new HashMap<>();
+        userAttributes.put("password", "newPassword");
+        userAttributes.put("name", userName);
+
+        String url = "user/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER;
+        getRestTestHelper().submitRequest(url, "PUT", userAttributes, HttpServletResponse.SC_CREATED);
+
+        Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList(url+ "/" + userName);
+        assertUser(userDetails);
+        assertEquals("Unexpected user name", userName, userDetails.get(User.NAME));
+
+        // verify that second create request fails
+        getRestTestHelper().submitRequest(url, "PUT", userAttributes, HttpServletResponse.SC_CONFLICT);
+    }
+
+    public void testSetPasswordForNonExistingUserByPostFails() throws Exception
+    {
+        String userName = getTestName();
+
+        Map<String,Object> userAttributes = new HashMap<>();
+        userAttributes.put("password", "newPassword");
+        userAttributes.put("name", userName);
+
+        String url = "user/" + TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER + "/" + userName;
+        getRestTestHelper().submitRequest(url, "POST", userAttributes, HttpServletResponse.SC_NOT_FOUND);
+
+        List<Map<String, Object>> userDetails = getRestTestHelper().getJsonAsList(url);
+        assertTrue("User should not be created", userDetails.isEmpty());
     }
 
     public void testDelete() throws Exception
