@@ -18,6 +18,7 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URL;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -597,7 +598,13 @@ public class RestServlet extends AbstractServlet
                 }
             }
 
-            theParent.createChild(objClass, providedObject, otherParents);
+            ConfiguredObject<?> co = theParent.createChild(objClass, providedObject, otherParents);
+            StringBuffer requestURL = request.getRequestURL();
+            if (parentRequest)
+            {
+                requestURL.append("/").append(co.getName());
+            }
+            response.setHeader("Location", requestURL.toString());
             response.setStatus(HttpServletResponse.SC_CREATED);
         }
         catch (RuntimeException e)

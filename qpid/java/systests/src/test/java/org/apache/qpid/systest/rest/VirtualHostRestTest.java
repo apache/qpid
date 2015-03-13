@@ -43,6 +43,7 @@ import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 import org.apache.qpid.server.virtualhost.derby.DerbyVirtualHostImpl;
 import org.apache.qpid.server.virtualhostnode.JsonVirtualHostNodeImpl;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import org.junit.Assert;
 
 public class VirtualHostRestTest extends QpidRestTestCase
 {
@@ -635,10 +636,21 @@ public class VirtualHostRestTest extends QpidRestTestCase
         {
             url += "/" + hostName;
         }
-        getRestTestHelper().submitRequest(url,
-                                          method,
-                                          virtualhostData,
-                                          statusCode);
+
+        Map<String,List<String>> headers = new HashMap<>();
+        int responseCode = getRestTestHelper().submitRequest(url, method, virtualhostData, headers );
+        Assert.assertEquals("Unexpected response code from " + method + " " + url, statusCode, responseCode);
+        if (statusCode == 201)
+        {
+            List<String> location = headers.get("Location");
+            assertTrue("Location is not returned by REST create request", location != null && location.size() == 1);
+            String expectedLocation = getRestTestHelper().getManagementURL() + RestTestHelper.API_BASE + url;
+            if (useParentURI)
+            {
+                expectedLocation += "/" + hostName;
+            }
+            assertEquals("Unexpected location", expectedLocation, location.get(0));
+        }
         return virtualhostData;
     }
 
