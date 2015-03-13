@@ -22,316 +22,481 @@
 
 <section id="Java-Broker-Management-Channel-REST-API">
   <title>REST API</title>
-  <para> This section provides a brief overview of the REST interface, which can be used directly to
+  <para> This section provides a brief overview of the REST interfaces, which can be used directly to
     monitor and manage the Broker instance.</para>
 
-  <para>The REST interface support traditional REST model which uses the GET method requests to
+  <section id="Java-Broker-Management-Channel-REST-API-Introduction">
+    <title>Introduction</title>
+    <para>The REST interface support traditional REST model which uses the GET method requests to
     retrieve the information about broker configured objects, DELETE method requests to delete the
     configured object, PUT to create or update the configured object and POST to perform the
-    configured objects updates not available with the PUT requests.</para>
-  <para>The REST API is versioned with the version number built into the URL. The general form of
-    the URL is <literal>/api/&lt;version&gt;</literal>. For convenience the alias
-      <literal>latest</literal> signifies the latest supported version. There are also some
-    ancillary services prefixed by <literal>/service</literal>.</para>
+    configured objects updates and creation.</para>
+    <para>The REST API is versioned with the version number built into the URL. The general form of
+    the URL is <literal>/api/&lt;version&gt;</literal> where &lt;version&gt; is a major model version prefixed with "v", for example, v3.
+    For convenience the alias <literal>latest</literal> (<literal>/api/latest</literal>) signifies the latest supported version.
+    There are also some ancillary services under URI <literal>/service</literal>.</para>
+  </section>
 
-  <para>The table below lists the available REST services with brief description how they can be
-    used.</para>
-
-  <table>
-    <title>Rest services</title>
-    <tgroup cols="6">
-      <thead>
-        <row>
-          <entry>REST Service URL</entry>
-          <entry>Description</entry>
-          <entry>GET</entry>
-          <entry>PUT</entry>
-          <entry>POST</entry>
-          <entry>DELETE</entry>
-        </row>
-      </thead>
-      <tbody>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/broker</para>
-          </entry>
-          <entry>
-            <para>Rest service to manage broker instance</para>
-          </entry>
-          <entry>
-            <para>Retrieves the details of broker configuration</para>
-          </entry>
-          <entry>
-            <para>Updates broker attributes</para>
-          </entry>
-          <entry>
-            <para>Not implemented yet</para>
-          </entry>
-          <entry>
-            <para>Not implemented yet</para>
-          </entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/authenticationprovider</para>
-            <para>/api/&lt;ver&gt;/authenticationprovider/&lt;authentication provider
-              name&gt;</para>
-          </entry>
-          <entry>Rest service to manage authentication providers on the broker</entry>
-          <entry>Retrieves the details about authentication providers</entry>
-          <entry>Creates or updates authentication providers</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Deletes authentication providers</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/accesscontrolprovider</para>
-          </entry>
-          <entry>Rest service to manage access control providers</entry>
-          <entry>Retrieves the details about access control providers</entry>
-          <entry>Creates access control provider</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Deletes access control provider(s)</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/user</para>
-            <para>/api/&lt;ver&gt;/user/&lt;authentication provider name&gt;/&lt;user
-              name&gt;</para>
-          </entry>
-          <entry>Rest service to manage user account</entry>
-          <entry>Retrieves the details about user account</entry>
-          <entry>Creates user account, updates user password</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Deletes user account</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/groupprovider</para>
-            <para>/api/&lt;ver&gt;/groupprovider/&lt;group provider name&gt;</para>
-          </entry>
-          <entry>Rest service to manage group providers</entry>
-          <entry>Retrieves the details about group provider(s)</entry>
-          <entry>Creates group provider</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Deletes groups providers</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/group</para>
-            <para>/api/&lt;ver&gt;/group/&lt;group provider name&gt;/&lt;group name&gt;</para>
-          </entry>
-          <entry>Rest service to manage user group</entry>
-          <entry>Retrieves the details about user group</entry>
-          <entry>Creates group</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Deletes group</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/groupmember</para>
-            <para>/api/&lt;ver&gt;/groupmember/&lt;group provider name &gt;/&lt;group
-              name&gt;/&lt;user name&gt;</para>
-          </entry>
-          <entry>Rest service to manage group member(s)</entry>
-          <entry>Retrieves the details about group member(s)</entry>
-          <entry>Add user to group</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Deletes user from group</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/port</para>
-            <para>/api/&lt;ver&gt;/port/&lt;port name&gt;</para>
-          </entry>
-          <entry>Rest service to manage broker ports(s)</entry>
-          <entry>Retrieves the details about the broker port(s)</entry>
-          <entry>Creates or updates port</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Deletes ports</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/keystore</para>
-          </entry>
-          <entry>Rest service to manage KeyStores</entry>
-          <entry>Retrieves the details about KeyStore</entry>
-          <entry>Creates or updates KeyStore</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Deletes KeyStore(s)</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/truststore</para>
-          </entry>
-          <entry>Rest service to manage TrustStore</entry>
-          <entry>Retrieves the details about TrustStore</entry>
-          <entry>Creates or updates TrustStore</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Deletes TrustStore(s)</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/plugin</para>
-          </entry>
-          <entry>Rest service to manage plugins</entry>
-          <entry>Retrieves the details about plugins</entry>
-          <entry>Updates plugin attributes</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Not implemented yet</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/virtualhostnode</para>
-            <para>/api/&lt;ver&gt;/virtualhostnode/&lt;virtualhostnode name&gt;</para>
-          </entry>
-          <entry>Rest service to manage virtualhost node(s)</entry>
-          <entry>Retrieves the details about the virtualhost node(s)</entry>
-          <entry>Creates/Updates virtualhost node</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Deletes virtualhost node</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/virtualhost</para>
-            <para>/api/&lt;ver&gt;/virtualhost/&lt;virtualhostnode name&gt;/&lt;virtualhost
-              name&gt;</para>
-          </entry>
-          <entry>Rest service to manage virtualhost(s)</entry>
-          <entry>Retrieves the details about the virtualhost(s)</entry>
-          <entry>Creates/Updates virtualhost</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Deletes virtualhost</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/queue</para>
-            <para>/api/&lt;ver&gt;/queue/&lt;virtualhostnode name&gt;/&lt;virtualhost
-              name&gt;/&lt;queue name&gt;</para>
-          </entry>
-          <entry>Rest service to manage queue(s)</entry>
-          <entry>Retrieves the details about the queue(s)</entry>
-          <entry>Creates queue</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Deletes queue</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/exchange</para>
-            <para>/api/&lt;ver&gt;/exchange/&lt;virtualhostnode name&gt;/&lt;virtualhost
-              name&gt;/&lt;exchange name&gt;</para>
-          </entry>
-          <entry>Rest service to manage exchange(s)</entry>
-          <entry>Retrieves the details about the exchange(s)</entry>
-          <entry>Creates exchange</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Deletes exchange</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/binding</para>
-            <para>/api/&lt;ver&gt;/binding/&lt;virtualhostnode name&gt;/&lt;virtualhost
-              name&gt;/&lt;exchange name&gt;/&lt;queue name&gt;/&lt;binding name&gt;</para>
-          </entry>
-          <entry>Rest service to manage binding(s)</entry>
-          <entry>Retrieves the details about the binding(s)</entry>
-          <entry>Binds a queue to an exchange</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Deletes binding</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/connection</para>
-            <para>/api/&lt;ver&gt;/connection/&lt;virtualhostnode name&gt;/&lt;virtualhost
-              name&gt;/&lt;connection name&gt;</para>
-          </entry>
-          <entry>Rest service to manage connection(s)</entry>
-          <entry>Retrieves the details about the connection(s)</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Not implemented yet</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/api/&lt;ver&gt;/session</para>
-            <para>/api/&lt;ver&gt;/session/&lt;virtualhostnode name&gt;/&lt;virtualhost
-              name&gt;/&lt;connection name&gt;/&lt;session name&gt;</para>
-          </entry>
-          <entry>Rest service to manage session(s)</entry>
-          <entry>Retrieves the details about the session(s)</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Not implemented yet</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/service/message/&lt;virtualhost name&gt;/&lt;queue name&gt;</para>
-          </entry>
-          <entry>Rest service to manage messages(s)</entry>
-          <entry>Retrieves the details about the messages(s)</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Copies, moves messages</entry>
-          <entry>Deletes messages</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/service/message-content/&lt;virtualhost name&gt;/&lt;queue name&gt;</para>
-          </entry>
-          <entry>Rest service to retrieve message content</entry>
-          <entry>Retrieves the message content</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Not implemented yet</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/service/logrecords</para>
-          </entry>
-          <entry>Rest service to retrieve broker logs</entry>
-          <entry>Retrieves the broker logs</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Not implemented yet</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/service/sasl</para>
-          </entry>
-          <entry>Sasl authentication</entry>
-          <entry>Retrieves user current authentication status and broker supported SASL
-            mechanisms</entry>
-          <entry>Authenticates user using supported SASL mechanisms</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Not implemented yet</entry>
-        </row>
-        <row>
-          <entry>
-            <para>/service/logout</para>
-          </entry>
-          <entry>Log outs</entry>
-          <entry>Log outs user</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Not implemented yet</entry>
-          <entry>Not implemented yet</entry>
-        </row>
-      </tbody>
-    </tgroup>
-  </table>
-  <para>The REST URLs are hierarchical. It is permitted to replace rest URL elements with an
-    "asterisks" in GET requests to denote all object of a particular type. Additionally, trailing
-    object type in the URL hierarchy can be omitted. In this case GET request will return all of the
-    object underneath of the current object.</para>
-  <para>For example, for binding URL <literal>http://localhost:8080/api/latest/binding/&lt;vhost
-      node&gt;/&lt;vhost&gt;/&lt;exchange&gt;/&lt;queue&gt;/&lt;binding&gt;</literal> replacing of
+  <section id="Java-Broker-Management-Channel-REST-API-URI">
+    <title>REST interfaces</title>
+    <para>The following REST interfaces are implemented on Qpid Broker</para>
+    <table>
+      <title>Rest services</title>
+      <tgroup cols="2">
+        <thead>
+          <row>
+            <entry>REST Service URI</entry>
+            <entry>Description</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/broker</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/broker</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages broker instance attributes and provides current values of Broker attributes and children</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/virtualhostnode</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/virtualhostnode</para></listitem>
+                <listitem><para>/api/latest/virtualhostnode/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/virtualhostnode/&lt;virtual host node name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+                <para>Manages(creates/deletes/updates) Virtual Host Node(s) on Broker and provides current values of Virtual Host Node attributes and its children</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/virtualhost</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/virtualhost</para></listitem>
+                <listitem><para>/api/latest/virtualhost/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/virtualhost/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/latest/virtualhost/&lt;virtual host node name&gt;/&lt;virtual host name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/virtualhost/&lt;virtual host node name&gt;/&lt;virtual host name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes/updates) Virtual Host on Virtual Host Node and provides current values of Virtual Host attributes and its children</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/queue</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/queue</para></listitem>
+                <listitem><para>/api/latest/queue/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/queue/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/latest/queue/&lt;virtual host node name&gt;/&lt;virtual host name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/queue/&lt;virtual host node name&gt;/&lt;virtual host name&gt;</para></listitem>
+                <listitem><para>/api/latest/queue/&lt;virtual host node name&gt;/&lt;virtual host name&gt;/&lt;queue name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/queue/&lt;virtual host node name&gt;/&lt;virtual host name&gt;/&lt;queue name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes/updates) Queue(s) on Virtual Host and provides current values of Queue attributes and its children</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/exchange</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/exchange</para></listitem>
+                <listitem><para>/api/latest/exchange/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/exchange/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/latest/exchange/&lt;virtual host node name&gt;/&lt;virtual host name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/exchange/&lt;virtual host node name&gt;/&lt;virtual host name&gt;</para></listitem>
+                <listitem><para>/api/latest/exchange/&lt;virtual host node name&gt;/&lt;virtual host name&gt;/&lt;exchange name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/exchange/&lt;virtual host node name&gt;/&lt;virtual host name&gt;/&lt;exchange name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes/updates) Exchanges(s) on Virtual Host and provides current values of Exchange attributes and its children</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/binding</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/binding</para></listitem>
+                <listitem><para>/api/latest/binding/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/binding/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/latest/binding/&lt;virtual host node name&gt;/&lt;virtual host name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/binding/&lt;virtual host node name&gt;/&lt;virtual host name&gt;</para></listitem>
+                <listitem><para>/api/latest/binding/&lt;virtual host node name&gt;/&lt;virtual host name&gt;/&lt;exchange name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/binding/&lt;virtual host node name&gt;/&lt;virtual host name&gt;/&lt;exchange name&gt;</para></listitem>
+                <listitem><para>/api/latest/binding/&lt;virtual host node name&gt;/&lt;virtual host name&gt;/&lt;exchange name&gt;/&lt;queue name&gt;/&lt;binding name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/binding/&lt;virtual host node name&gt;/&lt;virtual host name&gt;/&lt;exchange name&gt;/&lt;queue name&gt;/&lt;binding name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes) Binding(s) of Queue to Exchange and provides current values of Binding attributes</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/connection</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/connection</para></listitem>
+                <listitem><para>/api/latest/connection/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/connection/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/latest/connection/&lt;virtual host node name&gt;/&lt;virtual host name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/connection/&lt;virtual host node name&gt;/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/latest/connection/&lt;virtual host node name&gt;/&lt;virtual host name&gt;/&lt;connection name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/connection/&lt;virtual host node name&gt;/&lt;virtual host node name&gt;/&lt;connection name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages (deletes) Connection(s) on VirtualHost and provides current values of Connection attributes and its Sessions</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/session</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/session</para></listitem>
+                <listitem><para>/api/latest/session/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/session/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/latest/session/&lt;virtual host node name&gt;/&lt;virtual host name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/session/&lt;virtual host node name&gt;/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/latest/session/&lt;virtual host node name&gt;/&lt;virtual host name&gt;/&lt;connection name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/session/&lt;virtual host node name&gt;/&lt;virtual host node name&gt;/&lt;connection name</para></listitem>
+                <listitem><para>/api/latest/session/&lt;virtual host node name&gt;/&lt;virtual host name&gt;/&lt;connection name&gt;/&lt;session name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/session/&lt;virtual host node name&gt;/&lt;virtual host node name&gt;/&lt;connection name&gt;/&lt;session name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages (deletes) Session(s) on Connection and provides values of Session attributes and its Consumers</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/port</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/port</para></listitem>
+                <listitem><para>/api/latest/port/&lt;port name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/port/&lt;port name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes/updates) Port(s) on Broker and provides the information about current values of Port attributes and its children</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/authenticationprovider</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/authenticationprovider</para></listitem>
+                <listitem><para>/api/latest/authenticationprovider/&lt;authentication provider name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/authenticationprovider/&lt;authentication provider name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes/updates) AuthenticationProvider(s) on Broker and provides the information about current values of AuthenticationProvider attributes and its children</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/user</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/user</para></listitem>
+                <listitem><para>/api/latest/user/&lt;authentication provider name&gt;/&lt;user name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/user/&lt;authentication provider name&gt;/&lt;user name&gt;</para></listitem>
+                <listitem><para>/api/latest/user/&lt;authentication provider name&gt;/&lt;user name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/user/&lt;authentication provider name&gt;/&lt;user name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes/updates) User(s) on AuthenticationProvider and provides the information about current values of User attributes</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/accesscontrolprovider</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/accesscontrolprovider</para></listitem>
+                <listitem><para>/api/latest/accesscontrolprovider/&lt;access control provider name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/accesscontrolprovider/&lt;access control provider name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes/updates) AccessControlProvider on Broker and provides the information about current values of AccessControlProvider attributes</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/groupprovider</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/groupprovider</para></listitem>
+                <listitem><para>/api/latest/groupprovider/&lt;group provider name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/groupprovider/&lt;group provider name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes/updates) GroupProvider on Broker and provides the information about current values of GroupProvider attributes and its children</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/group</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/group</para></listitem>
+                <listitem><para>/api/latest/group/&lt;group provider name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/group/&lt;group provider name&gt;</para></listitem>
+                <listitem><para>/api/latest/group/&lt;group provider name&gt;/&lt;group name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/group/&lt;group provider name&gt;/&lt;group name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes/updates) Group on GroupProvider and provides the information about current values of Group attributes and its children</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/groupmember</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/groupmember</para></listitem>
+                <listitem><para>/api/latest/groupmember/&lt;group provider name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/groupmember/&lt;group provider name&gt;</para></listitem>
+                <listitem><para>/api/latest/groupmember/&lt;group provider name&gt;/&lt;group name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/groupmember/&lt;group provider name&gt;/&lt;group name&gt;</para></listitem>
+                <listitem><para>/api/latest/groupmember/&lt;group provider name&gt;/&lt;group name&gt;/&lt;user name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/groupmember/&lt;group provider name&gt;/&lt;group name&gt;/&lt;user name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes) GroupMember(s) on Group and provides the information about current values of GroupMember attributes</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/keystore</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/keystore</para></listitem>
+                <listitem><para>/api/latest/keystore/&lt;key store name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/keystore/&lt;key store name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes/updates) KeyStore(s) on Broker and provides the information about current values of KeyStore attributes</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/truststore</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/truststore</para></listitem>
+                <listitem><para>/api/latest/truststore/&lt;trust store name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/truststore/&lt;trust store name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes/updates) TrustStore(s) on Broker and provides the information about current values of TrustStore attributes</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/preferencesprovider</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/preferencesprovider</para></listitem>
+                <listitem><para>/api/latest/preferencesprovider/&lt;authentication provider name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/preferencesprovider/&lt;authentication provider name&gt;</para></listitem>
+                <listitem><para>/api/latest/preferencesprovider/&lt;authentication provider name&gt;/&lt;preferences provider name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/preferencesprovider/&lt;authentication provider name&gt;/&lt;preferences provider name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes/updates) PreferencesProvider on AuthenticationProvider and provides the information about current values of PreferencesProvider attributes</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/plugin</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/plugin</para></listitem>
+                <listitem><para>/api/latest/plugin/&lt;plugin name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/plugin/&lt;plugin name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes/updates) Plugin(s) on Broker and provides the information about current values of Plugin attributes</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <itemizedlist>
+                <listitem><para>/api/latest/replicationnode</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/replicationnode</para></listitem>
+                <listitem><para>/api/latest/replicationnode/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/replicationnode/&lt;virtual host node name&gt;</para></listitem>
+                <listitem><para>/api/latest/replicationnode/&lt;virtual host node name&gt;/&lt;replication node name&gt;</para></listitem>
+                <listitem><para>/api/&lt;version&gt;/replicationnode/&lt;virtual host node name&gt;/&lt;replication node name&gt;</para></listitem>
+              </itemizedlist>
+            </entry>
+            <entry>
+              <para>Manages(creates/deletes/updates) ReplicationNode(s) on VirtualHostNode and provides the information about current values of ReplicationNode attributes</para>
+            </entry>
+          </row>
+          <row>
+            <entry>
+              <para>/service/message/&lt;virtualhost name&gt;/&lt;queue name&gt;</para>
+            </entry>
+            <entry>Rest service to manage messages(s). Retrieves the details about the messages(s) with GET. Copies, moves messages with POST requests. Deletes messages with DELETE requests </entry>
+          </row>
+          <row>
+            <entry>
+              <para>/service/message-content/&lt;virtualhost name&gt;/&lt;queue name&gt;</para>
+            </entry>
+            <entry>Rest service to retrieve message content</entry>
+          </row>
+          <row>
+            <entry>
+              <para>/service/logrecords</para>
+            </entry>
+            <entry>Rest service to retrieve broker logs</entry>
+          </row>
+          <row>
+            <entry>
+              <para>/service/sasl</para>
+            </entry>
+            <entry>Sasl authentication. Retrieves user current authentication status and broker supported SASL mechanisms (GET). Authenticates user using supported SASL mechanisms (PUT requests)</entry>
+          </row>
+          <row>
+            <entry>
+              <para>/service/logout</para>
+            </entry>
+            <entry>Log outs user (GET only)</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+  </section>
+  <section id="Java-Broker-Management-Channel-REST-API-Create">
+    <title>Configured Object creation</title>
+    <para>Methods PUT or POST can be used to create ConfiguredObject.</para>
+    <para>
+      ConfiguredObject can be created by submitting PUT request against ConfiguredObject full URI (the one ending with configured object name)
+      or by submitting PUT/POST request against parent URI.
+      The request encoding should be json (application/json) and request body should contain attributes values in json format.
+      On successful completion of operation a response should be returned having response status code set to 201 and response header "Location" set to ConfiguredObject full URI.
+      If object with a such name/id already exist and POST/PUT requests is made against parent URI,
+      an error response should be returned having response code 409 (conflict) and body containing the json with the reason of operation failure.
+      If object with a such name/id already exist and and PUT request is made against ConfiguredObject full URI,
+      then ConfiguredObject update should be performed and http status code 200 should be returned.
+      If ConfiguredObject cannot be created because of validation failure(s) the response should have http status code set 422 (Unprocessible Entity)
+      and body should contain json with the reason of operation failure. On any other failure to create ConfiguredObject the response should have status code set to 400 (Bad Request)
+      and payload should contain a json with error explaining the exact reason of failure.
+    </para>
+    <example>
+      <title>Examples of REST calls for Queue creation</title>
+      <para>
+      To create Queue with name "my-queue" on a virtual host with name "vh" (which is contained within virtual host node with name "vhn") either of the following requests should be made:
+      </para>
+      <screen><![CDATA[PUT /api/latest/queue/vhn/vh HTTP/1.1]]></screen>
+      <screen><![CDATA[POST /api/latest/queue/vhn/vh HTTP/1.1]]></screen>
+      <screen><![CDATA[PUT /api/latest/queue/vhn/vh/my-queue HTTP/1.1]]></screen>
+      <para>
+      Response code 201 should be returned on successful queue creation. Response header "Location" should be set to "/api/latest/queue/test/my-queue".
+      If queue with name "my-queue" already exists and either of 2 first requests above were used, an error response with response code 409 (conflict) and body containing json with message
+      that queue exists should be returned. If queue with name "my-queue" exists and last request is used, then Queue update should occur.
+      </para>
+    </example>
+  </section>
+  <section id="Java-Broker-Management-Channel-REST-API-Update">
+    <title>Configured Object update</title>
+    <para>Methods PUT or POST can be used to update ConfiguredObject.</para>
+    <para>
+      ConfiguredObject can be updated by submitting PUT or POST request against ConfiguredObject full URI (the one ending with configured object name).
+      The request encoding should be json (application/json) and request body should contain a ConfiguredObject json (with all or only modified attributes).
+      On successful completion of operation a response code 200 should be returned.
+      If ConfiguredObject does not exists and PUT method is used, such object should be created (201 response will be returned in this case).
+      If ConfiguredObject does not exists and POST method is used, an error response should be returned having response status code 404 and payload with json explaining the problem.
+      If any error occur on update, a response with response code 400 or 422 or 404 should be sent back to the client containing json body with error details.
+    </para>
+    <example>
+      <title>Examples of REST calls for Queue update</title>
+      <para>To update Queue with name "my-queue"  on a virtual host with name "vh" (contained in virtual host node with name "vhn") either of the following requests can be made:</para>
+      <screen><![CDATA[POST /api/latest/queue/vhn/vh/my-queue HTTP/1.1]]></screen>
+      <screen><![CDATA[POST /api/latest/queue/vhn/vh/my-queue HTTP/1.1]]></screen>
+    </example>
+  </section>
+  <section id="Java-Broker-Management-Channel-REST-API-Delete">
+    <title>Configured Object deletion</title>
+    <para>Method DELETE can be used to delete ConfiguredObject. Alternatively, ConfiguredObject can be deleted with update request having desiredState attribute set to value "DELETED".
+      POST or PUT methods can be used in this case.</para>
+    <para>On successful completion of operation a response code 200 should be returned.</para>
+    <para>With DELETE method object ConfiguredObject in following ways:</para>
+    <itemizedlist>
+      <listitem>
+        <para>by submitting DELETE request using ConfiguredObject full URI (the one ending with configured object name)</para>
+      </listitem>
+      <listitem>
+        <para>by submitting DELETE request using parent URI and providing parameters having the same names as children attributes, for example, id, name, etc.
+          Multiple children can be deleted in a such way. Many "id" parameters can be specified in such requests. Only children with matching attribute values will be deleted.</para>
+      </listitem>
+    </itemizedlist>
+    <example>
+      <title>Examples of REST calls for Queue deletion</title>
+      <para>To delete Queue with name "my-queue"  on a virtual host with name "vh" (contained in virtual host node with name "vhn") either of the following requests can be made:</para>
+      <screen><![CDATA[DELETE /api/latest/queue/vhn/vh/my-queue HTTP/1.1]]></screen>
+      <screen><![CDATA[DELETE /api/latest/queue/vhn/vh?name=my-queue HTTP/1.1]]></screen>
+      <screen><![CDATA[DELETE /api/latest/queue/vhn/vh?id=real-queue-id HTTP/1.1]]></screen>
+    </example>
+  </section>
+  <section id="Java-Broker-Management-Channel-REST-API-Get">
+    <title>Retrieving Configured Object details</title>
+    <para>Method GET is used to retrieve ConfiguredObject attributes values and children hierarchy.</para>
+    <para>A particular ConfiguredObject  details can be retrieved using full ConfiguredObject URI (the one ending with configured object name)</para>
+    <para>A collection of ConfiguredObjects  can be retrieved using parent URI. Request parameters
+      (having the same name as attributes) can be used to filter the returned configured objects.</para>
+    <para>The REST URI (/api/latest/&gt;category&lt;/*) are hierarchical. It is permitted to replace REST URI elements with an
+      "asterisks" in GET requests to denote all object of a particular type. Additionally, trailing
+      object type in the URL hierarchy can be omitted. In this case GET request will return all of the
+      object underneath of the current object.</para>
+    <para>For example, for binding URL <literal>http://localhost:8080/api/latest/binding/&lt;vhost
+        node&gt;/&lt;vhost&gt;/&lt;exchange&gt;/&lt;queue&gt;/&lt;binding&gt;</literal> replacing of
       <literal>&lt;exchange&gt;</literal> with "asterisks"
       (<literal>http://localhost:8080/api/&lt;ver&gt;/binding/&lt;vhost
-      node&gt;/&lt;vhost&gt;/*/&lt;queue&gt;/&lt;binding&gt;</literal>) will result in the GET
-    response containing the list of bindings for all of the exchanges in the virtualhost having the
-    given name and given queue.</para>
-  <para>If <literal>&lt;binding&gt;</literal> and <literal>&lt;queue&gt;</literal> are omitted in
-    binding REST URL (<literal>http://localhost:8080/api/&lt;ver&gt;/binding/&lt;vhost
-      node&gt;/&lt;vhost&gt;/&lt;exchangename&gt;</literal>) the GET request will result in
-    returning all bindings for all queues for the given exchange in the virtual host. </para>
+        node&gt;/&lt;vhost&gt;/*/&lt;queue&gt;/&lt;binding&gt;</literal>) will result in the GET
+      response containing the list of bindings for all of the exchanges in the virtualhost having the
+      given name and given queue.</para>
+    <para>If <literal>&lt;binding&gt;</literal> and <literal>&lt;queue&gt;</literal> are omitted in
+      binding REST URL (<literal>http://localhost:8080/api/&lt;ver&gt;/binding/&lt;vhost
+        node&gt;/&lt;vhost&gt;/&lt;exchangename&gt;</literal>) the GET request will result in
+      returning all bindings for all queues for the given exchange in the virtual host. </para>
+    <para>Additional parameters supported in GET requests:</para>
+    <variablelist>
+      <varlistentry>
+        <term>depth</term><listitem><para>To restrict the depth of hierarchy of configured objects to return in response</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>actuals</term><listitem><para>If set to "true" attribute actual values are returned instead of effective</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>includeSysContext</term><listitem><para>If set to "true" all system context variables are returned</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>inheritedActuals</term><listitem><para>If set to "true" actual values for all inherited context is returned.</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>oversize</term><listitem><para>Sets the maximum length for values of over-sized attributes to trim</para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term>extractInitialConfig</term><listitem><para>If set to "true", the returned json can be used as initial configuration.</para></listitem>
+      </varlistentry>
+    </variablelist>
+  </section>
+  <section id="Java-Broker-Management-Channel-REST-API-Examples">
+    <title>Examples of REST requests with curl</title>
   <example>
     <title>Examples of queue creation using curl (authenticating as user admin):</title>
     <programlisting><![CDATA[
@@ -351,4 +516,5 @@ curl --user admin -X PUT  -d '{}' http://localhost:8080/api/latest/binding/<vhos
     necessary enable Basic authentication for HTTP within the HTTP Management Configuration (it is
     off by default). For details see <xref linkend="Java-Broker-Management-Managing-Plugin-HTTP"/>
   </para>
+  </section>
 </section>
