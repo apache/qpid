@@ -29,6 +29,7 @@ import java.util.UUID;
 
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -45,7 +46,9 @@ public class BDBVirtualHostNodeTest extends QpidTestCase
     {
         super.setUp();
         _broker = BrokerTestHelper.createBrokerMock();
-        when(_broker.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
+        TaskExecutor taskExecutor = CurrentThreadTaskExecutor.newStartedInstance();
+        when(_broker.getTaskExecutor()).thenReturn(taskExecutor);
+        when(_broker.getChildExecutor()).thenReturn(taskExecutor);
 
         _storePath = TestFileUtils.createTestDirectory();
     }

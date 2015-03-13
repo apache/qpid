@@ -61,6 +61,7 @@ abstract class ManagedAuthenticationManagerTestBase extends QpidTestCase
         _broker = BrokerTestHelper.createBrokerMock();
         _securityManager = mock(SecurityManager.class);
         when(_broker.getTaskExecutor()).thenReturn(_executor);
+        when(_broker.getChildExecutor()).thenReturn(_executor);
         when(_broker.getSecurityManager()).thenReturn(_securityManager);
         final Map<String, Object> attributesMap = new HashMap<String, Object>();
         attributesMap.put(AuthenticationProvider.NAME, getTestName());

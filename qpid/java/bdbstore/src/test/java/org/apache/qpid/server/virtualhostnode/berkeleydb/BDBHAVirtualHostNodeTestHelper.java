@@ -79,6 +79,8 @@ public class BDBHAVirtualHostNodeTestHelper
         _taskExecutor = new TaskExecutorImpl();
         _taskExecutor.start();
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(_broker.getChildExecutor()).thenReturn(_taskExecutor);
+
 
         _bdbStorePath = new File(QpidTestCase.TMP_FOLDER, _testName + "." + System.currentTimeMillis());
         _bdbStorePath.deleteOnExit();

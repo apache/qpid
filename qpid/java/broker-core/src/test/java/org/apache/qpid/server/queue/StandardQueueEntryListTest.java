@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.qpid.server.configuration.updater.CurrentThreadTaskExecutor;
+import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
@@ -65,7 +66,9 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
         _factory = new ConfiguredObjectFactoryImpl(BrokerModel.getInstance());
         when(virtualHost.getObjectFactory()).thenReturn(_factory);
         when(virtualHost.getModel()).thenReturn(_factory.getModel());
-        when(virtualHost.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
+        TaskExecutor taskExecutor = CurrentThreadTaskExecutor.newStartedInstance();
+        when(virtualHost.getTaskExecutor()).thenReturn(taskExecutor);
+        when(virtualHost.getChildExecutor()).thenReturn(taskExecutor);
         _testQueue = new StandardQueueImpl(queueAttributes, virtualHost);
         _testQueue.open();
         _sqel = _testQueue.getEntries();
@@ -115,7 +118,9 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
             when(virtualHost.getEventLogger()).thenReturn(new EventLogger());
             when(virtualHost.getObjectFactory()).thenReturn(_factory);
             when(virtualHost.getModel()).thenReturn(_factory.getModel());
-            when(virtualHost.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
+            TaskExecutor taskExecutor = CurrentThreadTaskExecutor.newStartedInstance();
+            when(virtualHost.getTaskExecutor()).thenReturn(taskExecutor);
+            when(virtualHost.getChildExecutor()).thenReturn(taskExecutor);
 
             StandardQueueImpl queue = new StandardQueueImpl(queueAttributes, virtualHost);
             queue.open();

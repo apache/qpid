@@ -62,6 +62,8 @@ public class HttpManagementTest extends QpidTestCase
         TaskExecutor taskExecutor = new TaskExecutorImpl();
         taskExecutor.start();
         when(_broker.getTaskExecutor()).thenReturn(taskExecutor);
+        when(_broker.getChildExecutor()).thenReturn(taskExecutor);
+
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(HttpManagement.HTTP_BASIC_AUTHENTICATION_ENABLED, false);

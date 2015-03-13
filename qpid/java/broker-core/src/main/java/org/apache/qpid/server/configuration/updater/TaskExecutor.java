@@ -26,6 +26,12 @@ import java.util.concurrent.Future;
 
 public interface TaskExecutor
 {
+    interface Factory
+    {
+        TaskExecutor newInstance();
+        TaskExecutor newInstance(String name);
+    }
+
     boolean isRunning();
 
     void start();
@@ -47,4 +53,6 @@ public interface TaskExecutor
     boolean isTaskExecutorThread();
 
     Executor getExecutor();
+
+    Factory getFactory();
 }

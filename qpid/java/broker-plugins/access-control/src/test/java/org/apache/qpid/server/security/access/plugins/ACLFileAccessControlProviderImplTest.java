@@ -52,6 +52,7 @@ public class ACLFileAccessControlProviderImplTest extends QpidTestCase
 
         _broker = mock(Broker.class);
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(_broker.getChildExecutor()).thenReturn(_taskExecutor);
         when(_broker.getModel()).thenReturn(_model);
         when(_broker.getId()).thenReturn(UUID.randomUUID());
     }

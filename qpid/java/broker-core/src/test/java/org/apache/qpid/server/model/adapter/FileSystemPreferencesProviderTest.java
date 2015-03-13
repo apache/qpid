@@ -67,6 +67,7 @@ public class FileSystemPreferencesProviderTest extends QpidTestCase
         _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
         when(_authenticationProvider.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(_authenticationProvider.getChildExecutor()).thenReturn(_taskExecutor);
 
         when(_authenticationProvider.getParent(Broker.class)).thenReturn(_broker);
         ConfiguredObjectFactory objectFactory = _broker.getObjectFactory();

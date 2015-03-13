@@ -68,11 +68,13 @@ public class AbstractVirtualHostTest extends QpidTestCase
         _taskExecutor = new TaskExecutorImpl();
         _taskExecutor.start();
         when(broker.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(broker.getChildExecutor()).thenReturn(_taskExecutor);
 
         _node = mock(VirtualHostNode.class);
         when(_node.getParent(Broker.class)).thenReturn(broker);
         when(_node.getModel()).thenReturn(BrokerModel.getInstance());
         when(_node.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(_node.getChildExecutor()).thenReturn(_taskExecutor);
         when(_node.getConfigurationStore()).thenReturn(mock(DurableConfigurationStore.class));
         when(_node.getCategoryClass()).thenReturn(VirtualHostNode.class);
 

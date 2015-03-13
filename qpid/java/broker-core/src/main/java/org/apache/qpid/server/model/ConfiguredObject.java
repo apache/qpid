@@ -261,6 +261,8 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
 
     TaskExecutor getTaskExecutor();
 
+    TaskExecutor getChildExecutor();
+
     ConfiguredObjectFactory getObjectFactory();
 
     Model getModel();

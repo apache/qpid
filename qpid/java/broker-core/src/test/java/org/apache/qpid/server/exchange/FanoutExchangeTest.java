@@ -84,6 +84,7 @@ public class FanoutExchangeTest extends TestCase
         when(_virtualHost.getSecurityManager()).thenReturn(securityManager);
         when(_virtualHost.getEventLogger()).thenReturn(new EventLogger());
         when(_virtualHost.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(_virtualHost.getChildExecutor()).thenReturn(_taskExecutor);
         when(_virtualHost.getModel()).thenReturn(BrokerModel.getInstance());
         when(_virtualHost.getParent(VirtualHostNode.class)).thenReturn(virtualHostNode);
         when(_virtualHost.getCategoryClass()).thenReturn(VirtualHost.class);
@@ -149,7 +150,9 @@ public class FanoutExchangeTest extends TestCase
         when(queue.getVirtualHost()).thenReturn(_virtualHost);
         when(queue.getCategoryClass()).thenReturn(Queue.class);
         when(queue.getModel()).thenReturn(BrokerModel.getInstance());
-        when(queue.getTaskExecutor()).thenReturn(CurrentThreadTaskExecutor.newStartedInstance());
+        TaskExecutor taskExecutor = CurrentThreadTaskExecutor.newStartedInstance();
+        when(queue.getTaskExecutor()).thenReturn(taskExecutor);
+        when(queue.getChildExecutor()).thenReturn(taskExecutor);
         when(queue.getParent(VirtualHost.class)).thenReturn(_virtualHost);
         return queue;
     }

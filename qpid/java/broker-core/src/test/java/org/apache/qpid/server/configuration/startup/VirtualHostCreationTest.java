@@ -64,6 +64,7 @@ public class VirtualHostCreationTest extends TestCase
         when(systemConfig.getModel()).thenReturn(objectFactory.getModel());
         when(systemConfig.getEventLogger()).thenReturn(eventLogger);
         when(systemConfig.getTaskExecutor()).thenReturn(executor);
+        when(systemConfig.getChildExecutor()).thenReturn(executor);
 
         Broker broker = mock(Broker.class);
         when(broker.getObjectFactory()).thenReturn(objectFactory);
@@ -72,6 +73,7 @@ public class VirtualHostCreationTest extends TestCase
         when(broker.getCategoryClass()).thenReturn(Broker.class);
         when(broker.getParent(eq(SystemConfig.class))).thenReturn(systemConfig);
         when(broker.getTaskExecutor()).thenReturn(executor);
+        when(broker.getChildExecutor()).thenReturn(executor);
 
         _virtualHostNode = mock(VirtualHostNode.class);
         when(_virtualHostNode.getParent(Broker.class)).thenReturn(broker);
@@ -80,6 +82,7 @@ public class VirtualHostCreationTest extends TestCase
         when(_virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
         when(_virtualHostNode.getCategoryClass()).thenReturn(VirtualHostNode.class);
         when(_virtualHostNode.getTaskExecutor()).thenReturn(executor);
+        when(_virtualHostNode.getChildExecutor()).thenReturn(executor);
     }
 
     public void testCreateVirtualHostFromStoreConfigAttributes()

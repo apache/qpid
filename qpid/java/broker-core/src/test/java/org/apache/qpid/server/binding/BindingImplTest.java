@@ -63,10 +63,12 @@ public class BindingImplTest extends QpidTestCase
         SecurityManager securityManager = mock(SecurityManager.class);
         when(vhost.getSecurityManager()).thenReturn(securityManager);
         when(queue.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(queue.getChildExecutor()).thenReturn(_taskExecutor);
         when(queue.getVirtualHost()).thenReturn(vhost);
         when(queue.getModel()).thenReturn(_model);
         ExchangeImpl exchange = mock(ExchangeImpl.class);
         when(exchange.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(exchange.getChildExecutor()).thenReturn(_taskExecutor);
         when(exchange.getModel()).thenReturn(_model);
         BindingImpl binding = new BindingImpl(attributes, queue, exchange);
         try

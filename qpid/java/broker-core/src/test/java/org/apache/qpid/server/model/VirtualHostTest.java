@@ -84,6 +84,7 @@ public class VirtualHostTest extends QpidTestCase
         _taskExecutor = new CurrentThreadTaskExecutor();
         _taskExecutor.start();
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(_broker.getChildExecutor()).thenReturn(_taskExecutor);
 
         _virtualHostNode = mock(VirtualHostNode.class);
         when(_virtualHostNode.getParent(Broker.class)).thenReturn(_broker);
@@ -101,6 +102,8 @@ public class VirtualHostTest extends QpidTestCase
         ConfiguredObjectFactory objectFactory = _broker.getObjectFactory();
         when(_virtualHostNode.getModel()).thenReturn(objectFactory.getModel());
         when(_virtualHostNode.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(_virtualHostNode.getChildExecutor()).thenReturn(_taskExecutor);
+
     }
 
     @Override

@@ -197,8 +197,6 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
 
     Collection<TrustStore<?>> getTrustStores();
 
-    TaskExecutor getTaskExecutor();
-
     boolean isManagementMode();
 
     AuthenticationProvider<?> getAuthenticationProvider(SocketAddress localAddress);

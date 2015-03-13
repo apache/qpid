@@ -51,7 +51,17 @@ public class TaskExecutorImpl implements TaskExecutor
     private final AtomicBoolean _running = new AtomicBoolean();
     private volatile ExecutorService _executor;
     private final ImmediateIfSameThreadExecutor _wrappedExecutor = new ImmediateIfSameThreadExecutor();
+    private final String _name;
 
+    public TaskExecutorImpl()
+    {
+        this(TASK_EXECUTION_THREAD_NAME);
+    }
+
+    public TaskExecutorImpl(final String name)
+    {
+        _name = name;
+    }
 
     @Override
     public boolean isRunning()
@@ -70,7 +80,7 @@ public class TaskExecutorImpl implements TaskExecutor
                 @Override
                 public Thread newThread(Runnable r)
                 {
-                    _taskThread = new TaskThread(r, TASK_EXECUTION_THREAD_NAME, TaskExecutorImpl.this);
+                    _taskThread = new TaskThread(r, _name, TaskExecutorImpl.this);
                     return _taskThread;
                 }
             });
@@ -418,5 +428,24 @@ public class TaskExecutorImpl implements TaskExecutor
         {
             return _taskExecutor;
         }
+    }
+
+    @Override
+    public Factory getFactory()
+    {
+        return new Factory()
+        {
+            @Override
+            public TaskExecutor newInstance()
+            {
+                return new TaskExecutorImpl();
+            }
+
+            @Override
+            public TaskExecutor newInstance(final String name)
+            {
+                return new TaskExecutorImpl(name);
+            }
+        };
     }
 }

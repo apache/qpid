@@ -51,6 +51,7 @@ public class FileBasedGroupProviderImplTest extends QpidTestCase
 
         _broker = mock(Broker.class);
         when(_broker.getTaskExecutor()).thenReturn(_taskExecutor);
+        when(_broker.getChildExecutor()).thenReturn(_taskExecutor);
         when(_broker.getModel()).thenReturn(BrokerModel.getInstance());
         when(_broker.getId()).thenReturn(UUID.randomUUID());
         when(_broker.getSecurityManager()).thenReturn(new SecurityManager(_broker, false));

@@ -158,4 +158,23 @@ public class CurrentThreadTaskExecutor implements TaskExecutor
     {
         return MoreExecutors.sameThreadExecutor();
     }
+
+    @Override
+    public Factory getFactory()
+    {
+        return new Factory()
+        {
+            @Override
+            public TaskExecutor newInstance()
+            {
+                return CurrentThreadTaskExecutor.this;
+            }
+
+            @Override
+            public TaskExecutor newInstance(final String name)
+            {
+                return CurrentThreadTaskExecutor.this;
+            }
+        };
+    }
 }
