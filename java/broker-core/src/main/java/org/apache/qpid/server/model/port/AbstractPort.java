@@ -30,6 +30,7 @@ import java.util.Set;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import org.apache.qpid.server.model.IntegrityViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -326,7 +327,7 @@ abstract public class AbstractPort<X extends AbstractPort<X>> extends AbstractCo
                     intersection.retainAll(getProtocols());
                     if(!intersection.isEmpty())
                     {
-                        throw new IllegalConfigurationException("Port for protocols " + intersection + " already exists. Only one management port per protocol can be created.");
+                        throw new IntegrityViolationException("Port for protocols " + intersection + " already exists. Only one management port per protocol can be created.");
                     }
                 }
             }

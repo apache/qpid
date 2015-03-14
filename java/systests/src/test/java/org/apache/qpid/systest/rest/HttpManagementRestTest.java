@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.server.management.plugin.HttpManagement;
+import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
 
 public class HttpManagementRestTest extends QpidRestTestCase
@@ -80,12 +81,13 @@ public class HttpManagementRestTest extends QpidRestTestCase
             Map<String, Object> attributes = new HashMap<String, Object>();
             attributes.put(invalidAttribute.getKey(), invalidAttribute.getValue());
             int response = getRestTestHelper().submitRequest("plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
-            assertEquals("Update should fail for attribute " + invalidAttribute.getKey() + " with value " + invalidAttribute.getValue() , 409, response);
+            assertEquals("Update should fail for attribute " + invalidAttribute.getKey() + " with value " + invalidAttribute.getValue(),
+                    RestServlet.SC_UNPROCESSABLE_ENTITY, response);
         }
 
         Map<String, Object> attributes = new HashMap<String, Object>();
         attributes.put(HttpManagement.TIME_OUT, -1l);
         int response  = getRestTestHelper().submitRequest("plugin/" + TestBrokerConfiguration.ENTRY_NAME_HTTP_MANAGEMENT, "PUT", attributes);
-        assertEquals("Update should fail for invalid session timeout", 409, response);
+        assertEquals("Update should fail for invalid session timeout", RestServlet.SC_UNPROCESSABLE_ENTITY, response);
     }
 }

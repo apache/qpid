@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.apache.qpid.server.management.plugin.HttpManagement;
@@ -663,7 +664,7 @@ public class BrokerACLTest extends QpidRestTestCase
         attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
         attributes.put(FileBasedGroupProvider.PATH, "/path/to/file");
         responseCode = getRestTestHelper().submitRequest("groupprovider/" + groupProviderName, "PUT", attributes);
-        assertEquals("Setting of group provider attributes should be allowed but not supported", 409, responseCode);
+        assertEquals("Setting of group provider attributes should be allowed but not supported", RestServlet.SC_UNPROCESSABLE_ENTITY, responseCode);
     }
 
     public void testSetGroupProviderAttributesDenied() throws Exception

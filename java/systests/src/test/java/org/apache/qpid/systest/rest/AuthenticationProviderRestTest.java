@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
@@ -103,7 +104,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         attributes.put(AuthenticationProvider.ID, UUID.randomUUID());
 
         responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
-        assertEquals("Update with new ID should fail", 409, responseCode);
+        assertEquals("Update with new ID should fail", RestServlet.SC_UNPROCESSABLE_ENTITY, responseCode);
     }
 
     public void testDeleteOfUsedAuthenticationProviderFails() throws Exception
@@ -128,7 +129,7 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
         assertEquals("Unexpected response code for port creation", 201, responseCode);
 
         responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName , "DELETE");
-        assertEquals("Unexpected response code for provider deletion", 409, responseCode);
+        assertEquals("Unexpected response code for deletion of provider in use", 409, responseCode);
 
         List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("authenticationprovider/" + providerName);
         assertNotNull("Providers details cannot be null", providerDetails);

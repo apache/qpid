@@ -41,6 +41,7 @@ import org.apache.qpid.server.model.BrokerModel;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
+import org.apache.qpid.server.model.IntegrityViolationException;
 import org.apache.qpid.server.model.KeyStore;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
@@ -374,7 +375,7 @@ public class PortFactoryTest extends QpidTestCase
             _port = _factory.create(Port.class, attributes, _broker);
             fail("RMI port creation should fail as another one already exist");
         }
-        catch(IllegalConfigurationException e)
+        catch(IntegrityViolationException e)
         {
             // pass
         }
