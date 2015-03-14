@@ -3008,40 +3008,31 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     @Override
     public boolean changeAttribute(String name, Object expected, Object desired) throws IllegalStateException, AccessControlException, IllegalArgumentException
     {
-        try
+        if(EXCLUSIVE.equals(name))
         {
-            if(EXCLUSIVE.equals(name))
+            ExclusivityPolicy existingPolicy = getExclusive();
+            if(super.changeAttribute(name, expected, desired))
             {
-                ExclusivityPolicy existingPolicy = getExclusive();
-                if(super.changeAttribute(name, expected, desired))
+                try
                 {
-                    try
+                    if(existingPolicy != _exclusive)
                     {
-                        if(existingPolicy != _exclusive)
-                        {
-                            ExclusivityPolicy newPolicy = _exclusive;
-                            _exclusive = existingPolicy;
-                            updateExclusivityPolicy(newPolicy);
-                        }
-                        return true;
+                        ExclusivityPolicy newPolicy = _exclusive;
+                        _exclusive = existingPolicy;
+                        updateExclusivityPolicy(newPolicy);
                     }
-                    catch (ExistingConsumerPreventsExclusive existingConsumerPreventsExclusive)
-                    {
-                        throw new IllegalArgumentException("Unable to set exclusivity policy to " + desired + " as an existing combinations of consumers prevents this");
-                    }
+                    return true;
                 }
-                return false;
+                catch (ExistingConsumerPreventsExclusive existingConsumerPreventsExclusive)
+                {
+                    throw new IllegalArgumentException("Unable to set exclusivity policy to " + desired + " as an existing combinations of consumers prevents this");
+                }
             }
+            return false;
+        }
 
-            return super.changeAttribute(name, expected, desired);
-        }
-        finally
-        {
-            if (isDurable() && getState() != State.DELETED)
-            {
-                this.getVirtualHost().getDurableConfigurationStore().update(false, asObjectRecord());
-            }
-        }
+        return super.changeAttribute(name, expected, desired);
+
     }
 
     int getMaxAsyncDeliveries()
