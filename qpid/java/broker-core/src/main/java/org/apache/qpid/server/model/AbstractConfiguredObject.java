@@ -2615,18 +2615,18 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
     }
 
-    protected final static class DuplicateIdException extends IllegalArgumentException
+    public final static class DuplicateIdException extends IllegalArgumentException
     {
-        public DuplicateIdException(final ConfiguredObject<?> child)
+        private DuplicateIdException(final ConfiguredObject<?> child)
         {
             super("Child of type " + child.getClass().getSimpleName() + " already exists with id of " + child.getId());
         }
     }
 
-    protected final static class DuplicateNameException extends IllegalArgumentException
+    public final static class DuplicateNameException extends IllegalArgumentException
     {
         private final String _name;
-        public DuplicateNameException(final ConfiguredObject<?> child)
+        private DuplicateNameException(final ConfiguredObject<?> child)
         {
             super("Child of type " + child.getClass().getSimpleName() + " already exists with name of " + child.getName());
             _name = child.getName();

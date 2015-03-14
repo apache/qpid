@@ -342,31 +342,15 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
             String username = (String) attributes.get("name");
             String password = (String) attributes.get("password");
             Principal p = new UsernamePrincipal(username);
-            if (_userMap.containsKey(p))
-            {
-                throw new IllegalArgumentException("User '" + username + "' already exists");
-            }
-
+            PrincipalAdapter principalAdapter = new PrincipalAdapter(p);
+            principalAdapter.create(); // for a duplicate user DuplicateNameException should be thrown
             boolean created = getPrincipalDatabase().createPrincipal(p, password.toCharArray());
-            if(created)
+            if (!created)
             {
-                p = getPrincipalDatabase().getUser(username);
-
-                PrincipalAdapter principalAdapter = new PrincipalAdapter(p);
-                principalAdapter.create();
-                _userMap.put(p, principalAdapter);
+                throw new IllegalArgumentException("User '" + username + "' was not added into principal database");
             }
-
-            if(created)
-            {
-                return (C) _userMap.get(p);
-            }
-            else
-            {
-                LOGGER.info("Failed to create user " + username + ". User already exists?");
-                return null;
-
-            }
+            _userMap.put(p, principalAdapter);
+            return (C)principalAdapter;
         }
 
         return super.addChild(childClass, attributes, otherParents);

@@ -18,7 +18,6 @@ package org.apache.qpid.server.management.plugin.servlet.rest;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.net.URL;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +37,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
 
+import org.apache.qpid.server.model.AbstractConfiguredObject;
+import org.apache.qpid.server.model.IllegalStateTransitionException;
+import org.apache.qpid.server.model.IntegrityViolationException;
+import org.apache.qpid.server.virtualhost.ExchangeExistsException;
+import org.apache.qpid.server.virtualhost.QueueExistsException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.slf4j.Logger;
@@ -64,6 +68,7 @@ public class RestServlet extends AbstractServlet
     public static final String INCLUDE_SYS_CONTEXT_PARAM = "includeSysContext";
     public static final String INHERITED_ACTUALS_PARAM = "inheritedActuals";
     public static final String EXTRACT_INITIAL_CONFIG_PARAM = "extractInitialConfig";
+    public static final int SC_UNPROCESSABLE_ENTITY = 422;
 
     /**
      * Signifies that the agent wishes the servlet to set the Content-Disposition on the
@@ -655,9 +660,17 @@ public class RestServlet extends AbstractServlet
         }
         else
         {
-            int responseCode = HttpServletResponse.SC_CONFLICT;
+            int responseCode = HttpServletResponse.SC_BAD_REQUEST;
             String message = e.getMessage();
-            if (e instanceof IllegalConfigurationException || e instanceof IllegalArgumentException)
+            if (e instanceof ExchangeExistsException || e instanceof QueueExistsException
+                    || e instanceof AbstractConfiguredObject.DuplicateIdException
+                    || e instanceof AbstractConfiguredObject.DuplicateNameException
+                    || e instanceof IntegrityViolationException
+                    || e instanceof IllegalStateTransitionException)
+            {
+                responseCode = HttpServletResponse.SC_CONFLICT;
+            }
+            else if (e instanceof IllegalConfigurationException || e instanceof IllegalArgumentException)
             {
                 if (LOGGER.isDebugEnabled())
                 {
@@ -667,6 +680,7 @@ public class RestServlet extends AbstractServlet
                 {
                     LOGGER.trace(e.getClass().getSimpleName() + " processing request", e);
                 }
+                responseCode = SC_UNPROCESSABLE_ENTITY;
             }
             else
             {

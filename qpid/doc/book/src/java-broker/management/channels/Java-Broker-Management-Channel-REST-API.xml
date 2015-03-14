@@ -495,6 +495,97 @@
       </varlistentry>
     </variablelist>
   </section>
+  <section id="Java-Broker-Management-Channel-REST-API-Status-Codes">
+    <title>HTTP status codes returned by REST interfaces</title>
+    <table>
+    <title>HTTP status codes returned by REST interfaces</title>
+    <tgroup cols="2">
+    <thead>
+      <row>
+        <entry>Status code</entry>
+        <entry>Description</entry>
+      </row>
+    </thead>
+    <tbody>
+      <row>
+        <entry>
+          <para>200</para>
+        </entry>
+        <entry>
+          <para>REST request is successfully completed. This status code can be returned by update, delete and get requests.</para>
+        </entry>
+      </row>
+      <row>
+        <entry>
+          <para>201</para>
+        </entry>
+        <entry>
+          <para>New configured object is created. It is returned by REST PUT and POST requests for creation of configured objects.</para>
+        </entry>
+      </row>
+      <row>
+        <entry>
+          <para>400</para>
+        </entry>
+        <entry>
+          <para>REST request cannot be performed due to errors in request.
+            It can be returned from create, update and delete requests.
+            The details of a problem are provided in the response payload in json format.</para>
+        </entry>
+      </row>
+      <row>
+        <entry>
+          <para>401</para>
+        </entry>
+        <entry>
+          <para>The request requires user authentication</para>
+        </entry>
+      </row>
+      <row>
+        <entry>
+          <para>403</para>
+        </entry>
+        <entry>
+          <para>Execution of request is not allowed due to failure to authorize user operation.</para>
+        </entry>
+      </row>
+      <row>
+        <entry>
+          <para>404</para>
+        </entry>
+        <entry>
+          <para>
+            The requested configured object cannot be found. This status code can be returned from POST update requests if configured object does not exist.
+            The reason for the status code is provided in the response payload in json format.
+          </para>
+        </entry>
+      </row>
+      <row>
+        <entry>
+          <para>409</para>
+        </entry>
+        <entry>
+          <para>The request can not be performed because its execution can create conflicts in the broker.
+            This status code can be returned from POST/PUT create requests against parent URI if configured object with requested name or id already exists.
+            The status code 409 can also be returned if removal or update of configured object can violate system integrity.
+            The reason for the status code is provided in the response payload in json format.
+          </para>
+        </entry>
+      </row>
+      <row>
+        <entry>
+          <para>422</para>
+        </entry>
+        <entry>
+          <para>The request can not be performed because provided information either incomplete or invalid.
+            This status code can be returned from create or update requests.
+            The reason for the status code is provided in the response payload in json format.</para>
+        </entry>
+      </row>
+    </tbody>
+    </tgroup>
+    </table>
+  </section>
   <section id="Java-Broker-Management-Channel-REST-API-Examples">
     <title>Examples of REST requests with curl</title>
   <example>

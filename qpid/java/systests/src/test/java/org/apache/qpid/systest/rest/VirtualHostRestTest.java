@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.systest.rest;
 
+import static  org.apache.qpid.server.management.plugin.servlet.rest.RestServlet.SC_UNPROCESSABLE_ENTITY;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -388,7 +390,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
     {
         String queueName = getTestQueueName() + "-sorted";
         int responseCode = tryCreateQueue(queueName, "sorted", null);
-        assertEquals("Unexpected response code", HttpServletResponse.SC_CONFLICT, responseCode);
+        assertEquals("Unexpected response code", SC_UNPROCESSABLE_ENTITY, responseCode);
 
         Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("virtualhost/test");
 
@@ -433,7 +435,7 @@ public class VirtualHostRestTest extends QpidRestTestCase
     {
         String queueName = getTestQueueName();
         int responseCode = tryCreateQueue(queueName, "unsupported", null);
-        assertEquals("Unexpected response code", HttpServletResponse.SC_CONFLICT, responseCode);
+        assertEquals("Unexpected response code", SC_UNPROCESSABLE_ENTITY, responseCode);
 
         Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("virtualhost/test");
 

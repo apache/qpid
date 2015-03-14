@@ -21,6 +21,7 @@
 package org.apache.qpid.systest.rest.acl;
 
 import org.apache.qpid.server.management.plugin.HttpManagement;
+import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.apache.qpid.server.model.Binding;
 import org.apache.qpid.server.model.Exchange;
 import org.apache.qpid.server.model.Plugin;
@@ -149,7 +150,7 @@ public class ExchangeRestACLTest extends QpidRestTestCase
         attributes.put(Exchange.ALTERNATE_EXCHANGE, "my-alternate-exchange");
 
         responseCode = getRestTestHelper().submitRequest(_exchangeUrl, "PUT", attributes);
-        assertEquals("Setting of exchange attribites should be allowed but it is currently unsupported", 409, responseCode);
+        assertEquals("Exchange 'my-alternate-exchange' does not exist", RestServlet.SC_UNPROCESSABLE_ENTITY, responseCode);
     }
 
     public void testSetExchangeAttributesDenied() throws Exception

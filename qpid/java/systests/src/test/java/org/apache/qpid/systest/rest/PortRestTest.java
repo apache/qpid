@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.systest.rest;
 
+import static org.apache.qpid.server.management.plugin.servlet.rest.RestServlet.SC_UNPROCESSABLE_ENTITY;
+
 import java.net.ServerSocket;
 import java.util.Arrays;
 import java.util.Collection;
@@ -233,7 +235,7 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.SSL));
 
         int responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
-        assertEquals("Creation of SSL port without keystore should fail", 409, responseCode);
+        assertEquals("Creation of SSL port without keystore should fail", SC_UNPROCESSABLE_ENTITY, responseCode);
     }
 
     public void testUpdateWantNeedClientAuth() throws Exception
@@ -270,7 +272,8 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.TRANSPORTS, Collections.singleton(Transport.TCP));
 
         responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
-        assertEquals("Should not be able to change transport to TCP without reseting of attributes for need/want client auth", 409, responseCode);
+        assertEquals("Should not be able to change transport to TCP without reseting of attributes for need/want client auth",
+                SC_UNPROCESSABLE_ENTITY, responseCode);
 
         attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
@@ -298,13 +301,13 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.NAME, portName);
         attributes.put(Port.NEED_CLIENT_AUTH, true);
         int responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
-        assertEquals("Unexpected response when trying to set 'needClientAuth' on non-SSL port", 409, responseCode);
+        assertEquals("Unexpected response when trying to set 'needClientAuth' on non-SSL port", SC_UNPROCESSABLE_ENTITY, responseCode);
 
         attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
         attributes.put(Port.WANT_CLIENT_AUTH, true);
         responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
-        assertEquals("Unexpected response when trying to set 'wantClientAuth' on non-SSL port", 409, responseCode);
+        assertEquals("Unexpected response when trying to set 'wantClientAuth' on non-SSL port", SC_UNPROCESSABLE_ENTITY, responseCode);
     }
 
     public void testUpdatePortAuthenticationProvider() throws Exception
@@ -314,7 +317,7 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.NAME, portName);
         attributes.put(Port.AUTHENTICATION_PROVIDER, "non-existing");
         int responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", attributes);
-        assertEquals("Unexpected response when trying to change auth provider to non-existing one", 409, responseCode);
+        assertEquals("Unexpected response when trying to change auth provider to non-existing one", SC_UNPROCESSABLE_ENTITY, responseCode);
 
         attributes = new HashMap<String, Object>();
         attributes.put(Port.NAME, portName);
@@ -357,7 +360,7 @@ public class PortRestTest extends QpidRestTestCase
         attributes.put(Port.AUTHENTICATION_PROVIDER, TestBrokerConfiguration.ENTRY_NAME_AUTHENTICATION_PROVIDER);
 
         int responseCode = getRestTestHelper().submitRequest("port/" + newPortName, "PUT", attributes);
-        assertEquals("Unexpected response code for port creation", 409, responseCode);
+        assertEquals("Unexpected response code for port creation", SC_UNPROCESSABLE_ENTITY, responseCode);
 
         List<Map<String,Object>> ports  = getRestTestHelper().getJsonAsList("port/" + getRestTestHelper().encodeAsUTF(newPortName));
         assertTrue("Port should not be created", ports.isEmpty());

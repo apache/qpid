@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.systest.rest;
 
+import static  org.apache.qpid.server.management.plugin.servlet.rest.RestServlet.SC_UNPROCESSABLE_ENTITY;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.HashMap;
@@ -177,7 +179,7 @@ public class GroupProviderRestTest extends QpidRestTestCase
         attributes.put(GroupProvider.TYPE, FileBasedGroupProviderImpl.GROUP_FILE_PROVIDER_TYPE);
 
         int responseCode = getRestTestHelper().submitRequest("groupprovider/" + providerName, "PUT", attributes);
-        assertEquals("Group provider was created", 409, responseCode);
+        assertEquals("Group provider was created", SC_UNPROCESSABLE_ENTITY, responseCode);
     }
 
     public void testCreateNewFileGroupProviderFromNonExistingGroupFile() throws Exception
@@ -228,7 +230,7 @@ public class GroupProviderRestTest extends QpidRestTestCase
 
             attributes.put(GroupProvider.NAME, providerName + 2);
             responseCode = getRestTestHelper().submitRequest("groupprovider/" + providerName + 2, "PUT", attributes);
-            assertEquals("Group provider for the same group file was created", 409, responseCode);
+            assertEquals("Group provider for the same group file was created", SC_UNPROCESSABLE_ENTITY, responseCode);
         }
         finally
         {
@@ -275,13 +277,20 @@ public class GroupProviderRestTest extends QpidRestTestCase
             attributes.put(FileBasedGroupProvider.PATH, groupFile.getAbsolutePath());
 
             int responseCode = getRestTestHelper().submitRequest("groupprovider/" + providerName, "PUT", attributes);
-            assertEquals("Expected to fail because we can have only one password provider", 201, responseCode);
+            assertEquals("Password provider should be created successfully", 201, responseCode);
 
-            File newGroupFile = new File(TMP_FOLDER + File.separator + getTestName() + File.separator + "groups");
-            attributes.put(FileBasedGroupProvider.PATH, newGroupFile.getAbsolutePath());
+            File newGroupFile = TestFileUtils.createTempFile(this, ".groups");
+            try
+            {
+                attributes.put(FileBasedGroupProvider.PATH, newGroupFile.getAbsolutePath());
 
-            responseCode = getRestTestHelper().submitRequest("groupprovider/" + providerName, "PUT", attributes);
-            assertEquals("Expected to fail because we can have only one password provider", 409, responseCode);
+                responseCode = getRestTestHelper().submitRequest("groupprovider/" + providerName, "PUT", attributes);
+                assertEquals("Changing of group file is unsupported at the moment", SC_UNPROCESSABLE_ENTITY, responseCode);
+            }
+            finally
+            {
+                newGroupFile.delete();
+            }
         }
         finally
         {
