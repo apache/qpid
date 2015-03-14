@@ -548,8 +548,6 @@ public class Connection extends ConnectionInvoker
         connectionLost.set(true);
         synchronized (lock)
         {
-            log.error(e, "exception: %s", e.getMessage());
-
             switch (state)
             {
             case OPENING:
