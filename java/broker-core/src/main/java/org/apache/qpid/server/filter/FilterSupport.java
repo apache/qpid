@@ -95,22 +95,25 @@ public class FilterSupport
                        && ((String)args.get(AMQPFilterTypes.JMS_SELECTOR.toString())).trim().length() != 0;
     }
 
-    public static MessageFilter createMessageFilter(final Map<String,Object> args, AMQQueue queue) throws AMQInvalidArgumentException
+    public static FilterManager createMessageFilter(final Map<String,Object> args, AMQQueue queue) throws AMQInvalidArgumentException
     {
+        FilterManager filterManager = null;
         if(argumentsContainNoLocal(args))
         {
-            MessageFilter filter = new NoLocalFilter(queue);
+            filterManager = new FilterManager();
+            filterManager.add(AMQPFilterTypes.NO_LOCAL.toString(), new NoLocalFilter(queue));
+        }
 
-            if(argumentsContainJMSSelector(args))
-            {
-                filter = new CompoundFilter(filter, createJMSSelectorFilter(args));
-            }
-            return filter;
-        }
-        else
+        if(argumentsContainJMSSelector(args))
         {
-            return createJMSSelectorFilter(args);
+            if(filterManager == null)
+            {
+                filterManager = new FilterManager();
+            }
+            filterManager.add(AMQPFilterTypes.JMS_SELECTOR.toString(),createJMSSelectorFilter(args));
         }
+        return filterManager;
+
     }
 
     @PluggableService
@@ -144,6 +147,12 @@ public class FilterSupport
         }
 
         @Override
+        public boolean startAtTail()
+        {
+            return false;
+        }
+
+        @Override
         public boolean equals(Object o)
         {
             if (this == o)
@@ -170,62 +179,4 @@ public class FilterSupport
 
     }
 
-    static final class CompoundFilter implements MessageFilter
-    {
-        private MessageFilter _noLocalFilter;
-        private MessageFilter _jmsSelectorFilter;
-
-        public CompoundFilter(MessageFilter filter, MessageFilter jmsSelectorFilter)
-        {
-            _noLocalFilter = filter;
-            _jmsSelectorFilter = jmsSelectorFilter;
-        }
-
-        @Override
-        public String getName()
-        {
-            return "";
-        }
-
-        public boolean matches(Filterable message)
-        {
-            return _noLocalFilter.matches(message) && _jmsSelectorFilter.matches(message);
-        }
-
-        @Override
-        public boolean equals(Object o)
-        {
-            if (this == o)
-            {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass())
-            {
-                return false;
-            }
-
-            CompoundFilter that = (CompoundFilter) o;
-
-            if (_jmsSelectorFilter != null ? !_jmsSelectorFilter.equals(that._jmsSelectorFilter) : that._jmsSelectorFilter != null)
-            {
-                return false;
-            }
-            if (_noLocalFilter != null ? !_noLocalFilter.equals(that._noLocalFilter) : that._noLocalFilter != null)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            int result = _noLocalFilter != null ? _noLocalFilter.hashCode() : 0;
-            result = 31 * result + (_jmsSelectorFilter != null ? _jmsSelectorFilter.hashCode() : 0);
-            return result;
-        }
-
-
-    }
 }

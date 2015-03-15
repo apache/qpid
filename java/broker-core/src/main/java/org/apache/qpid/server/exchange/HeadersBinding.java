@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
+import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
@@ -48,7 +49,7 @@ class HeadersBinding
     private final Set<String> required = new HashSet<String>();
     private final Map<String,Object> matches = new HashMap<String,Object>();
     private boolean matchAny;
-    private MessageFilter _filter;
+    private FilterManager _filter;
 
     /**
      * Creates a header binding for a set of mappings. Those mappings whose value is
@@ -86,7 +87,8 @@ class HeadersBinding
                 _logger.warn("Invalid filter in binding queue '"+_binding.getAMQQueue().getName()
                              +"' to exchange '"+_binding.getExchange().getName()
                              +"' with arguments: " + _binding.getArguments());
-                _filter = new MessageFilter()
+                _filter = new FilterManager();
+                _filter.add("x-exclude-all",new MessageFilter()
                     {
                     @Override
                         public String getName()
@@ -94,12 +96,18 @@ class HeadersBinding
                             return "";
                         }
 
-                        @Override
+                    @Override
+                    public boolean startAtTail()
+                    {
+                        return false;
+                    }
+
+                    @Override
                         public boolean matches(Filterable message)
                         {
                             return false;
                         }
-                    };
+                    });
             }
         }
         for(Map.Entry<String, Object> entry : _mappings.entrySet())
@@ -146,7 +154,7 @@ class HeadersBinding
 
     public boolean matches(Filterable message)
     {
-        return matches(message.getMessageHeader()) && (_filter == null || _filter.matches(message));
+        return matches(message.getMessageHeader()) && (_filter == null || _filter.allAllow(message));
     }
 
     private boolean and(AMQMessageHeader headers)

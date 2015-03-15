@@ -40,7 +40,7 @@ public final class ArrivalTimeFilterFactory implements MessageFilterFactory
         String arg = arguments.get(0);
         long startingFrom= Long.parseLong(arg);
 
-        return new ArrivalTimeFilter(startingFrom);
+        return new ArrivalTimeFilter(System.currentTimeMillis() + startingFrom, startingFrom==0l);
     }
 
     @Override

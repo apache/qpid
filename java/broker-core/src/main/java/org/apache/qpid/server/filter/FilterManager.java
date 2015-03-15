@@ -50,6 +50,18 @@ public class FilterManager
         return true;
     }
 
+    public boolean startAtTail()
+    {
+        for(MessageFilter filter : _filters.values())
+        {
+            if(filter.startAtTail())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Iterator<MessageFilter> filters()
     {
         return _filters.values().iterator();
@@ -65,11 +77,42 @@ public class FilterManager
         return _filters.containsKey(name);
     }
 
+    public boolean hasFilter(final MessageFilter filter)
+    {
+        return _filters.containsValue(filter);
+    }
+
     @Override
     public String toString()
     {
         return _filters.toString();
     }
 
+    @Override
+    public boolean equals(final Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
 
+        final FilterManager that = (FilterManager) o;
+
+        if (_filters != null ? !_filters.equals(that._filters) : that._filters != null)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _filters != null ? _filters.hashCode() : 0;
+    }
 }

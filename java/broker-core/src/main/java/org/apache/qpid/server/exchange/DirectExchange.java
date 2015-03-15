@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
+import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.filter.Filterable;
 import org.apache.qpid.server.filter.MessageFilter;
@@ -58,7 +59,7 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
     {
         private CopyOnWriteArraySet<BindingImpl> _bindings = new CopyOnWriteArraySet<BindingImpl>();
         private List<BaseQueue> _unfilteredQueues = new ArrayList<BaseQueue>();
-        private Map<BaseQueue, MessageFilter> _filteredQueues = new HashMap<BaseQueue, MessageFilter>();
+        private Map<BaseQueue, FilterManager> _filteredQueues = new HashMap<>();
 
         public synchronized void addBinding(BindingImpl binding)
         {
@@ -80,7 +81,7 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
         private void recalculateQueues()
         {
             List<BaseQueue> queues = new ArrayList<BaseQueue>(_bindings.size());
-            Map<BaseQueue, MessageFilter> filteredQueues = new HashMap<BaseQueue,MessageFilter>();
+            Map<BaseQueue, FilterManager> filteredQueues = new HashMap<>();
 
             for(BindingImpl b : _bindings)
             {
@@ -89,7 +90,7 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
                 {
                     try
                     {
-                        MessageFilter filter = FilterSupport.createMessageFilter(b.getArguments(), b.getAMQQueue());
+                        FilterManager filter = FilterSupport.createMessageFilter(b.getArguments(), b.getAMQQueue());
                         filteredQueues.put(b.getAMQQueue(),filter);
                     }
                     catch (AMQInvalidArgumentException e)
@@ -129,7 +130,7 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
             return !_filteredQueues.isEmpty();
         }
 
-        public Map<BaseQueue,MessageFilter> getFilteredQueues()
+        public Map<BaseQueue,FilterManager> getFilteredQueues()
         {
             return _filteredQueues;
         }
@@ -159,14 +160,15 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
             if(bindings.hasFilteredQueues())
             {
                 Set<BaseQueue> queuesSet = new HashSet<BaseQueue>(queues);
+                Filterable filterable = Filterable.Factory.newInstance(payload, instanceProperties);
 
-                Map<BaseQueue, MessageFilter> filteredQueues = bindings.getFilteredQueues();
-                for(Map.Entry<BaseQueue, MessageFilter> entry : filteredQueues.entrySet())
+                Map<BaseQueue, FilterManager> filteredQueues = bindings.getFilteredQueues();
+                for(Map.Entry<BaseQueue, FilterManager> entry : filteredQueues.entrySet())
                 {
                     if(!queuesSet.contains(entry.getKey()))
                     {
-                        MessageFilter filter = entry.getValue();
-                        if(filter.matches(Filterable.Factory.newInstance(payload, instanceProperties)))
+                        FilterManager filter = entry.getValue();
+                        if(filter.allAllow(filterable))
                         {
                             queuesSet.add(entry.getKey());
                         }
@@ -174,7 +176,7 @@ public class DirectExchange extends AbstractExchange<DirectExchange>
                 }
                 if(queues.size() != queuesSet.size())
                 {
-                    queues = new ArrayList<BaseQueue>(queuesSet);
+                    queues = new ArrayList<>(queuesSet);
                 }
             }
             return queues;
