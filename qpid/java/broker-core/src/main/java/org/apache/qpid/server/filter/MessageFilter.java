@@ -24,4 +24,6 @@ public interface MessageFilter
 {
     String getName();
     boolean matches(Filterable message);
+    boolean startAtTail();
+
 }

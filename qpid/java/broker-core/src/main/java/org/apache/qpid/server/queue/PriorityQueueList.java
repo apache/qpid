@@ -185,6 +185,14 @@ abstract public class PriorityQueueList extends OrderedQueueEntryList
         }
 
         @Override
+        public PriorityQueueEntry getTail()
+        {
+            return (PriorityQueueEntry) _priorityLists[0].getTail();
+        }
+
+
+
+        @Override
         public void entryDeleted(final QueueEntry queueEntry)
         {
 

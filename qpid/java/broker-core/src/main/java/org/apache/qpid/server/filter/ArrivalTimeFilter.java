@@ -25,10 +25,12 @@ import org.apache.qpid.common.AMQPFilterTypes;
 public final class ArrivalTimeFilter implements MessageFilter
 {
     private final long _startingFrom;
+    private final boolean _startAtTail;
 
-    public ArrivalTimeFilter(final long startingFrom)
+    public ArrivalTimeFilter(final long startingFrom, final boolean startAtTail)
     {
         _startingFrom = startingFrom;
+        _startAtTail = startAtTail;
     }
 
     @Override
@@ -38,9 +40,38 @@ public final class ArrivalTimeFilter implements MessageFilter
     }
 
     @Override
-    public boolean matches(final Filterable message)
+    public boolean startAtTail()
     {
-        return message.getArrivalTime() >= _startingFrom;
+        return _startAtTail;
     }
 
+    @Override
+    public boolean matches(final Filterable message)
+    {
+        return message.getArrivalTime() >=  _startingFrom;
+    }
+
+    @Override
+    public boolean equals(final Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
+
+        final ArrivalTimeFilter that = (ArrivalTimeFilter) o;
+
+        return _startingFrom == that._startingFrom;
+
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return (int) (_startingFrom ^ (_startingFrom >>> 32));
+    }
 }

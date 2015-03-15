@@ -60,7 +60,7 @@ public class JMSSelectorFilter implements MessageFilter
     public boolean matches(Filterable message)
     {
 
-        boolean match = _matcher.matches(wrap(message));
+        boolean match = _matcher.matches(message);
         if(_logger.isDebugEnabled())
         {
             _logger.debug(message + " match(" + match + ") selector(" + System.identityHashCode(_selector) + "):" + _selector);
@@ -68,60 +68,10 @@ public class JMSSelectorFilter implements MessageFilter
         return match;
     }
 
-    private FilterableMessage wrap(final Filterable message)
+    @Override
+    public boolean startAtTail()
     {
-        return new FilterableMessage()
-        {
-            public boolean isPersistent()
-            {
-                return message.isPersistent();
-            }
-
-            public boolean isRedelivered()
-            {
-                return message.isRedelivered();
-            }
-
-            public Object getHeader(String name)
-            {
-                return message.getMessageHeader().getHeader(name);
-            }
-
-            public String getReplyTo()
-            {
-                return message.getMessageHeader().getReplyTo();
-            }
-
-            public String getType()
-            {
-                return message.getMessageHeader().getType();
-            }
-
-            public byte getPriority()
-            {
-                return message.getMessageHeader().getPriority();
-            }
-
-            public String getMessageId()
-            {
-                return message.getMessageHeader().getMessageId();
-            }
-
-            public long getTimestamp()
-            {
-                return message.getMessageHeader().getTimestamp();
-            }
-
-            public String getCorrelationId()
-            {
-                return message.getMessageHeader().getCorrelationId();
-            }
-
-            public long getExpiration()
-            {
-                return message.getMessageHeader().getExpiration();
-            }
-        };
+        return false;
     }
 
     public String getSelector()

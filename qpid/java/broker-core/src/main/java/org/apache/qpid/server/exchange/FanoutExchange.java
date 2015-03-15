@@ -33,9 +33,9 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.binding.BindingImpl;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
+import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterSupport;
 import org.apache.qpid.server.filter.Filterable;
-import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.ManagedObject;
@@ -58,10 +58,10 @@ public class FanoutExchange extends AbstractExchange<FanoutExchange>
     private final CopyOnWriteArrayList<AMQQueue> _unfilteredQueues = new CopyOnWriteArrayList<AMQQueue>();
     private final CopyOnWriteArrayList<AMQQueue> _filteredQueues = new CopyOnWriteArrayList<AMQQueue>();
 
-    private final AtomicReference<Map<AMQQueue,Map<BindingImpl, MessageFilter>>>  _filteredBindings =
-            new AtomicReference<Map<AMQQueue,Map<BindingImpl, MessageFilter>>>();
+    private final AtomicReference<Map<AMQQueue,Map<BindingImpl, FilterManager>>>  _filteredBindings =
+            new AtomicReference<>();
     {
-        Map<AMQQueue,Map<BindingImpl, MessageFilter>> emptyMap = Collections.emptyMap();
+        Map<AMQQueue,Map<BindingImpl, FilterManager>> emptyMap = Collections.emptyMap();
         _filteredBindings.set(emptyMap);
     }
 
@@ -85,17 +85,17 @@ public class FanoutExchange extends AbstractExchange<FanoutExchange>
         final ArrayList<BaseQueue> result = new ArrayList<BaseQueue>(_unfilteredQueues);
 
 
-        final Map<AMQQueue, Map<BindingImpl, MessageFilter>> filteredBindings = _filteredBindings.get();
+        final Map<AMQQueue, Map<BindingImpl, FilterManager>> filteredBindings = _filteredBindings.get();
         if(!_filteredQueues.isEmpty())
         {
             for(AMQQueue q : _filteredQueues)
             {
-                final Map<BindingImpl, MessageFilter> bindingMessageFilterMap = filteredBindings.get(q);
+                final Map<BindingImpl, FilterManager> bindingMessageFilterMap = filteredBindings.get(q);
                 if(!(bindingMessageFilterMap == null || result.contains(q)))
                 {
-                    for(MessageFilter filter : bindingMessageFilterMap.values())
+                    for(FilterManager filter : bindingMessageFilterMap.values())
                     {
-                        if(filter.matches(Filterable.Factory.newInstance(payload,instanceProperties)))
+                        if(filter.allAllow(Filterable.Factory.newInstance(payload, instanceProperties)))
                         {
                             result.add(q);
                             break;
@@ -143,12 +143,12 @@ public class FanoutExchange extends AbstractExchange<FanoutExchange>
         }
         else
         {
-            HashMap<AMQQueue,Map<BindingImpl, MessageFilter>> filteredBindings =
-                    new HashMap<AMQQueue,Map<BindingImpl, MessageFilter>>(_filteredBindings.get());
+            HashMap<AMQQueue,Map<BindingImpl, FilterManager>> filteredBindings =
+                    new HashMap<>(_filteredBindings.get());
 
-            Map<BindingImpl,MessageFilter> bindingsForQueue;
+            Map<BindingImpl,FilterManager> bindingsForQueue;
 
-            final MessageFilter messageFilter;
+            final FilterManager messageFilter;
 
             try
             {
@@ -163,11 +163,11 @@ public class FanoutExchange extends AbstractExchange<FanoutExchange>
 
             if (oldArguments != null && !oldArguments.isEmpty() && FilterSupport.argumentsContainFilter(oldArguments))
             {
-                bindingsForQueue = new HashMap<BindingImpl,MessageFilter>(filteredBindings.remove(binding.getAMQQueue()));
+                bindingsForQueue = new HashMap<>(filteredBindings.remove(binding.getAMQQueue()));
             }
             else // previously unfiltered
             {
-                bindingsForQueue = new HashMap<BindingImpl,MessageFilter>();
+                bindingsForQueue = new HashMap<BindingImpl,FilterManager>();
 
                 Integer oldValue = _queues.remove(queue);
                 if (ONE.equals(oldValue))
@@ -217,16 +217,16 @@ public class FanoutExchange extends AbstractExchange<FanoutExchange>
             try
             {
 
-                HashMap<AMQQueue,Map<BindingImpl, MessageFilter>> filteredBindings =
-                        new HashMap<AMQQueue,Map<BindingImpl, MessageFilter>>(_filteredBindings.get());
+                HashMap<AMQQueue,Map<BindingImpl, FilterManager>> filteredBindings =
+                        new HashMap<>(_filteredBindings.get());
 
-                Map<BindingImpl, MessageFilter> bindingsForQueue = filteredBindings.remove(binding.getAMQQueue());
-                final MessageFilter messageFilter =
+                Map<BindingImpl, FilterManager> bindingsForQueue = filteredBindings.remove(binding.getAMQQueue());
+                final FilterManager messageFilter =
                         FilterSupport.createMessageFilter(binding.getArguments(), binding.getAMQQueue());
 
                 if(bindingsForQueue != null)
                 {
-                    bindingsForQueue = new HashMap<BindingImpl,MessageFilter>(bindingsForQueue);
+                    bindingsForQueue = new HashMap<>(bindingsForQueue);
                     bindingsForQueue.put(binding, messageFilter);
                 }
                 else
@@ -278,13 +278,13 @@ public class FanoutExchange extends AbstractExchange<FanoutExchange>
         }
         else // we are removing a binding with filters
         {
-            HashMap<AMQQueue,Map<BindingImpl, MessageFilter>> filteredBindings =
-                    new HashMap<AMQQueue,Map<BindingImpl, MessageFilter>>(_filteredBindings.get());
+            HashMap<AMQQueue,Map<BindingImpl, FilterManager>> filteredBindings =
+                    new HashMap<>(_filteredBindings.get());
 
-            Map<BindingImpl,MessageFilter> bindingsForQueue = filteredBindings.remove(binding.getAMQQueue());
+            Map<BindingImpl,FilterManager> bindingsForQueue = filteredBindings.remove(binding.getAMQQueue());
             if(bindingsForQueue.size()>1)
             {
-                bindingsForQueue = new HashMap<BindingImpl,MessageFilter>(bindingsForQueue);
+                bindingsForQueue = new HashMap<>(bindingsForQueue);
                 bindingsForQueue.remove(binding);
                 filteredBindings.put(binding.getAMQQueue(),bindingsForQueue);
             }

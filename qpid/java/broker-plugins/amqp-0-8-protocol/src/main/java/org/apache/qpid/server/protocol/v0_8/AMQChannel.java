@@ -755,6 +755,12 @@ public class AMQChannel
                     {
                         return message.getConnectionReference() != connectionReference;
                     }
+
+                    @Override
+                    public boolean startAtTail()
+                    {
+                        return false;
+                    }
                 };
                 filterManager.add(filter.getName(), filter);
             }
@@ -788,7 +794,7 @@ public class AMQChannel
                 {
                     filterManager = new FilterManager();
                 }
-                MessageFilter filter = new ArrivalTimeFilter(startingFrom);
+                MessageFilter filter = new ArrivalTimeFilter(startingFrom, period==0);
                 filterManager.add(filter.getName(), filter);
 
             }

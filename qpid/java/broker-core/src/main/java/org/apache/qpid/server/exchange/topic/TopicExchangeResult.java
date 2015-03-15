@@ -31,15 +31,15 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.qpid.server.binding.BindingImpl;
+import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.Filterable;
-import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.queue.AMQQueue;
 
 public final class TopicExchangeResult implements TopicMatcherResult
 {
     private final List<BindingImpl> _bindings = new CopyOnWriteArrayList<BindingImpl>();
     private final Map<AMQQueue, Integer> _unfilteredQueues = new ConcurrentHashMap<AMQQueue, Integer>();
-    private final ConcurrentMap<AMQQueue, Map<MessageFilter,Integer>> _filteredQueues = new ConcurrentHashMap<AMQQueue, Map<MessageFilter, Integer>>();
+    private final ConcurrentMap<AMQQueue, Map<FilterManager,Integer>> _filteredQueues = new ConcurrentHashMap<>();
     private volatile ArrayList<AMQQueue> _unfilteredQueueList = new ArrayList<AMQQueue>(0);
 
     public void addUnfilteredQueue(AMQQueue queue)
@@ -93,15 +93,15 @@ public final class TopicExchangeResult implements TopicMatcherResult
     
     public List<BindingImpl> getBindings()
     {
-        return new ArrayList<BindingImpl>(_bindings);
+        return new ArrayList<>(_bindings);
     }
 
-    public void addFilteredQueue(AMQQueue queue, MessageFilter filter)
+    public void addFilteredQueue(AMQQueue queue, FilterManager filter)
     {
-        Map<MessageFilter,Integer> filters = _filteredQueues.get(queue);
+        Map<FilterManager,Integer> filters = _filteredQueues.get(queue);
         if(filters == null)
         {
-            filters = new ConcurrentHashMap<MessageFilter,Integer>();
+            filters = new ConcurrentHashMap<>();
             _filteredQueues.put(queue, filters);
         }
         Integer instances = filters.get(filter);
@@ -116,9 +116,9 @@ public final class TopicExchangeResult implements TopicMatcherResult
 
     }
 
-    public void removeFilteredQueue(AMQQueue queue, MessageFilter filter)
+    public void removeFilteredQueue(AMQQueue queue, FilterManager filter)
     {
-        Map<MessageFilter,Integer> filters = _filteredQueues.get(queue);
+        Map<FilterManager,Integer> filters = _filteredQueues.get(queue);
         if(filters != null)
         {
             Integer instances = filters.get(filter);
@@ -143,11 +143,11 @@ public final class TopicExchangeResult implements TopicMatcherResult
     }
 
     public void replaceQueueFilter(AMQQueue queue,
-                                   MessageFilter oldFilter,
-                                   MessageFilter newFilter)
+                                   FilterManager oldFilter,
+                                   FilterManager newFilter)
     {
-        Map<MessageFilter,Integer> filters = _filteredQueues.get(queue);
-        Map<MessageFilter,Integer> newFilters = new ConcurrentHashMap<MessageFilter,Integer>(filters);
+        Map<FilterManager,Integer> filters = _filteredQueues.get(queue);
+        Map<FilterManager,Integer> newFilters = new ConcurrentHashMap<>(filters);
         Integer oldFilterInstances = filters.get(oldFilter);
         if(oldFilterInstances == 1)
         {
@@ -190,13 +190,13 @@ public final class TopicExchangeResult implements TopicMatcherResult
         queues.addAll(_unfilteredQueues.keySet());
         if(!_filteredQueues.isEmpty())
         {
-            for(Map.Entry<AMQQueue, Map<MessageFilter, Integer>> entry : _filteredQueues.entrySet())
+            for(Map.Entry<AMQQueue, Map<FilterManager, Integer>> entry : _filteredQueues.entrySet())
             {
                 if(!queues.contains(entry.getKey()))
                 {
-                    for(MessageFilter filter : entry.getValue().keySet())
+                    for(FilterManager filter : entry.getValue().keySet())
                     {
-                        if(filter.matches(msg))
+                        if(filter.allAllow(msg))
                         {
                             queues.add(entry.getKey());
                         }

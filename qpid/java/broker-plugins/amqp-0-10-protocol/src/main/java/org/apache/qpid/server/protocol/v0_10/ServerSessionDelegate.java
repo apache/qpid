@@ -294,7 +294,7 @@ public class ServerSessionDelegate extends SessionDelegate
                         {
                             filterManager = new FilterManager();
                         }
-                        MessageFilter filter = new ArrivalTimeFilter(startingFrom);
+                        MessageFilter filter = new ArrivalTimeFilter(startingFrom, period == 0);
                         filterManager.add(filter.getName(), filter);
 
                     }

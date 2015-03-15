@@ -57,6 +57,7 @@ import org.apache.qpid.server.connection.SessionPrincipal;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.filter.ArrivalTimeFilter;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.logging.EventLogger;
@@ -262,7 +263,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     private final QueueRunner _queueRunner = new QueueRunner(this);
     private boolean _closing;
-    private final ConcurrentMap<String,MessageFilter> _defaultFiltersMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String,Task<MessageFilter>> _defaultFiltersMap = new ConcurrentHashMap<>();
 
     protected AbstractQueue(Map<String, Object> attributes, VirtualHostImpl virtualHost)
     {
@@ -462,11 +463,20 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
                 if(filterValue.size() == 1)
                 {
                     String filterTypeName = String.valueOf(filterValue.keySet().iterator().next());
-                    MessageFilterFactory filterFactory = messageFilterFactories.get(filterTypeName);
+                    final MessageFilterFactory filterFactory = messageFilterFactories.get(filterTypeName);
                     if(filterFactory != null)
                     {
-                        List<String> filterArguments = filterValue.values().iterator().next();
-                        _defaultFiltersMap.put(name, filterFactory.newInstance(filterArguments));
+                        final List<String> filterArguments = filterValue.values().iterator().next();
+                        // check the arguments are valid
+                        filterFactory.newInstance(filterArguments);
+                        _defaultFiltersMap.put(name, new Task<MessageFilter>()
+                        {
+                            @Override
+                            public MessageFilter execute()
+                            {
+                                return filterFactory.newInstance(filterArguments);
+                            }
+                        });
                     }
                     else
                     {
@@ -786,11 +796,11 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             {
                 filters = new FilterManager();
             }
-            for (Map.Entry<String,MessageFilter> filter : _defaultFiltersMap.entrySet())
+            for (Map.Entry<String,Task<MessageFilter>> filter : _defaultFiltersMap.entrySet())
             {
                 if(!filters.hasFilter(filter.getKey()))
                 {
-                    filters.add(filter.getKey(), filter.getValue());
+                    filters.add(filter.getKey(), filter.getValue().execute());
                 }
             }
         }
@@ -823,7 +833,16 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         }
 
         consumer.setStateListener(this);
-        consumer.setQueueContext(new QueueContext(getEntries().getHead()));
+        QueueContext queueContext;
+        if(filters == null || !filters.startAtTail())
+        {
+            queueContext = new QueueContext(getEntries().getHead());
+        }
+        else
+        {
+            queueContext = new QueueContext(getEntries().getTail());
+        }
+        consumer.setQueueContext(queueContext);
 
         if (!isDeleted())
         {

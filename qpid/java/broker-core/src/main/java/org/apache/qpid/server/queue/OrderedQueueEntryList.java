@@ -160,6 +160,12 @@ public abstract class OrderedQueueEntryList implements QueueEntryList
         return _head;
     }
 
+    @Override
+    public QueueEntry getTail()
+    {
+        return _tail;
+    }
+
     public void entryDeleted(QueueEntry queueEntry)
     {
         QueueEntry next = _head.getNextNode();

@@ -113,6 +113,12 @@ public class MockConsumer implements ConsumerTarget
                 }
 
                 @Override
+                public boolean startAtTail()
+                {
+                    return false;
+                }
+
+                @Override
                 public boolean matches(final Filterable message)
                 {
                     final String messageId = message.getMessageHeader().getMessageId();

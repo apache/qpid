@@ -319,6 +319,19 @@ public class SortedQueueEntryList implements QueueEntryList
         return _head;
     }
 
+
+    public SortedQueueEntry getTail()
+    {
+        SortedQueueEntry current = _head;
+        SortedQueueEntry next;
+        while((next = next(current))!=null)
+        {
+            current = next;
+        }
+        return current;
+    }
+
+
     @Override
     public QueueEntry getOldestEntry()
     {

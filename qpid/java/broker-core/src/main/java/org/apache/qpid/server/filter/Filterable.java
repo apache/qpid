@@ -20,11 +20,12 @@
 */
 package org.apache.qpid.server.filter;
 
+import org.apache.qpid.filter.FilterableMessage;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.ServerMessage;
 
-public interface Filterable
+public interface Filterable extends FilterableMessage
 {
     AMQMessageHeader getMessageHeader();
 
@@ -81,6 +82,55 @@ public interface Filterable
                 {
                     return message.getArrivalTime();
                 }
+
+                @Override
+                public String getReplyTo()
+                {
+                    return message.getMessageHeader().getReplyTo();
+                }
+
+                @Override
+                public String getType()
+                {
+                    return message.getMessageHeader().getType();
+                }
+
+                @Override
+                public byte getPriority()
+                {
+                    return message.getMessageHeader().getPriority();
+                }
+
+                @Override
+                public String getMessageId()
+                {
+                    return message.getMessageHeader().getMessageId();
+                }
+
+                @Override
+                public long getTimestamp()
+                {
+                    return message.getMessageHeader().getTimestamp();
+                }
+
+                @Override
+                public String getCorrelationId()
+                {
+                    return message.getMessageHeader().getCorrelationId();
+                }
+
+                @Override
+                public long getExpiration()
+                {
+                    return message.getMessageHeader().getExpiration();
+                }
+
+                @Override
+                public Object getHeader(String name)
+                {
+                    return message.getMessageHeader().getHeader(name);
+                }
+
             };
         }
     }
