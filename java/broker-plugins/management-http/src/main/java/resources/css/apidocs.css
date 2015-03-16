@@ -46,10 +46,39 @@ table.attributes td.name {
     width: 20em;
 }
 
-
 table.attributes td.type {
     width: 7em;
 }
+
+table.api td,th {
+    vertical-align: top;
+}
+
+
+table.api td.type {
+    width: 12em;
+}
+
+
+table.api td.path {
+    width: 20em;
+}
+
+
+table.api td.description {
+    width: 25em;
+}
+
+table.api a:link {
+    color: #333;
+    text-decoration: none;
+}
+
+table.api a:visited {
+    color: #666;
+    text-decoration: none;
+}
+
 
 div.restriction {
     border-bottom: 1px dotted #666;

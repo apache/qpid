@@ -31,9 +31,15 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.store.MessageStore;
 
-@ManagedObject( defaultType = "ProvidedStore")
+@ManagedObject( defaultType = "ProvidedStore", description = VirtualHost.CLASS_DESCRIPTION)
 public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>, E extends Exchange<?> > extends ConfiguredObject<X>
 {
+    String CLASS_DESCRIPTION = "<p>A virtualhost is a namespace in which messaging is performed. Virtualhosts are "
+                               + "independent; the messaging goes on a within a virtualhost is independent of any "
+                               + "messaging that goes on in another virtualhost. For instance, a queue named <i>foo</i> "
+                               + "defined in one virtualhost is completely independent of a queue named <i>foo</i> in "
+                               + "another virtualhost.</p>"
+                               + "<p>A virtualhost is backed by storage which is used to store the messages.</p>";
 
     String QUEUE_DEAD_LETTER_QUEUE_ENABLED            = "queue.deadLetterQueueEnabled";
 

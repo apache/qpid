@@ -25,9 +25,14 @@ import java.util.Map;
 
 import org.apache.qpid.server.message.MessageDestination;
 
-@ManagedObject
+@ManagedObject( description = Exchange.CLASS_DESCRIPTION )
 public interface Exchange<X extends Exchange<X>> extends ConfiguredObject<X>, MessageDestination
 {
+    String CLASS_DESCRIPTION = "<p>An Exchange is a named entity within the Virtualhost which receives messages from "
+                               + "producers and routes them to matching Queues within the Virtualhost.</p>"
+                               + "<p>The server provides a set of exchange types with each exchange type implementing "
+                               + "a different routing algorithm.</p>";
+
     String ALTERNATE_EXCHANGE                   = "alternateExchange";
 
     // Attributes
