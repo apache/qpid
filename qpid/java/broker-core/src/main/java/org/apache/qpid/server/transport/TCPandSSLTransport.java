@@ -79,7 +79,8 @@ class TCPandSSLTransport implements AcceptingTransport
         }
 
         final NetworkTransportConfiguration settings = new ServerNetworkTransportConfiguration();
-        _networkTransport = new NonBlockingNetworkTransport();
+
+
         final MultiVersionProtocolEngineFactory protocolEngineFactory =
                 new MultiVersionProtocolEngineFactory(
                 _port.getParent(Broker.class),
@@ -97,7 +98,9 @@ class TCPandSSLTransport implements AcceptingTransport
         {
             encryptionSet.add(TransportEncryption.TLS);
         }
-        _networkTransport.accept(settings, protocolEngineFactory, _sslContext, encryptionSet);
+
+        _networkTransport = new NonBlockingNetworkTransport(settings, protocolEngineFactory, _sslContext, encryptionSet);
+        _networkTransport.start();
     }
 
     public int getAcceptingPort()

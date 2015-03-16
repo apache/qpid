@@ -371,12 +371,17 @@ public class ServerConnectionDelegate extends ServerDelegate
         while(connections.hasNext())
         {
             final AMQConnectionModel amqConnectionModel = connections.next();
-            final String userName = amqConnectionModel.getAuthorizedPrincipal() == null
-                    ? ""
-                    : amqConnectionModel.getAuthorizedPrincipal().getName();
-            if (userId.equals(userName) && !amqConnectionModel.isSessionNameUnique(name))
+            if (amqConnectionModel instanceof ServerConnection)
             {
-                return false;
+                ServerConnection otherConnection = (ServerConnection)amqConnectionModel;
+
+                final String userName = amqConnectionModel.getAuthorizedPrincipal() == null
+                        ? ""
+                        : amqConnectionModel.getAuthorizedPrincipal().getName();
+                if (userId.equals(userName) && otherConnection.hasSessionWithName(name))
+                {
+                    return false;
+                }
             }
         }
         return true;

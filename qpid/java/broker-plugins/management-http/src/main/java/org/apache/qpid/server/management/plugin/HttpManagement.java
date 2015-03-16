@@ -212,7 +212,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
                 if(port.getState() != State.ACTIVE)
                 {
 
-                    // TODO - RG
+                    // TODO - RG - probably does nothing
                     port.startAsync();
                 }
                 Connector connector = null;

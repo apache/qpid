@@ -92,7 +92,6 @@ public class KerberosAuthenticationManager extends AbstractAuthenticationManager
         }
         catch (SaslException e)
         {
-            e.printStackTrace(System.err);
             return new AuthenticationResult(AuthenticationResult.AuthenticationStatus.ERROR, e);
         }
     }

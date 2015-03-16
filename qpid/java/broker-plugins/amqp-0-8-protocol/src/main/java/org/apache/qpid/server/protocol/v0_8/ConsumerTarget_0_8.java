@@ -377,7 +377,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
     {
         String subscriber = "[channel=" + _channel +
                             ", consumerTag=" + _consumerTag +
-                            ", session=" + getProtocolSession().getKey()  ;
+                            ", session=" + getConnection().getRemoteAddressString();
 
         return subscriber + "]";
     }
@@ -450,7 +450,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
         return _consumerTag;
     }
 
-    public AMQProtocolEngine getProtocolSession()
+    private AMQProtocolEngine getConnection()
     {
         return _channel.getConnection();
     }

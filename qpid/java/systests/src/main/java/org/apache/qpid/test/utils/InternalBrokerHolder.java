@@ -49,6 +49,21 @@ public class InternalBrokerHolder implements BrokerHolder
     @Override
     public void start(BrokerOptions options) throws Exception
     {
+        if (Thread.getDefaultUncaughtExceptionHandler() != null)
+        {
+            Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler()
+            {
+                @Override
+                public void uncaughtException(final Thread t, final Throwable e)
+                {
+                    System.err.print("Thread terminated due to uncaught exception");
+                    e.printStackTrace();
+
+                    LOGGER.error("Uncaught exception from thread " + t.getName(), e);
+                }
+            });
+        }
+
         LOGGER.info("Starting internal broker (same JVM)");
 
         _broker = new Broker(new Action<Integer>()

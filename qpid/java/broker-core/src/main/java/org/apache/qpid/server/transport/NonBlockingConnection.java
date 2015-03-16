@@ -44,8 +44,8 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.util.Action;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 import org.apache.qpid.transport.ByteBufferSender;
-import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.Ticker;
 import org.apache.qpid.transport.network.TransportEncryption;
@@ -55,18 +55,12 @@ import org.apache.qpid.util.SystemUtils;
 public class NonBlockingConnection implements NetworkConnection, ByteBufferSender
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(NonBlockingConnection.class);
+    private static final int NUMBER_OF_BYTES_FOR_TLS_CHECK = 6;
+
     private final SocketChannel _socketChannel;
-    private final long _timeout;
     private final Ticker _ticker;
+    private final Object _peerPrincipalLock = new Object();
     private final SelectorThread _selector;
-    private int _maxReadIdle;
-    private int _maxWriteIdle;
-    private Principal _principal;
-    private boolean _principalChecked;
-    private final Object _lock = new Object();
-
-    public static final int NUMBER_OF_BYTES_FOR_TLS_CHECK = 6;
-
     private final ConcurrentLinkedQueue<ByteBuffer> _buffers = new ConcurrentLinkedQueue<>();
     private final List<ByteBuffer> _encryptedOutput = new ArrayList<>();
 
@@ -74,9 +68,14 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
     private final AtomicBoolean _closed = new AtomicBoolean(false);
     private final ServerProtocolEngine _protocolEngine;
     private final int _receiveBufSize;
-    private final Set<TransportEncryption> _encryptionSet;
-    private final SSLContext _sslContext;
     private final Runnable _onTransportEncryptionAction;
+
+
+    private int _maxReadIdle;
+    private int _maxWriteIdle;
+    private Principal _principal;
+    private boolean _principalChecked;
+
     private ByteBuffer _netInputBuffer;
     private SSLEngine _sslEngine;
 
@@ -90,9 +89,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
 
     public NonBlockingConnection(SocketChannel socketChannel,
                                  ServerProtocolEngine delegate,
-                                 int sendBufferSize,
                                  int receiveBufferSize,
-                                 long timeout,
                                  Ticker ticker,
                                  final Set<TransportEncryption> encryptionSet,
                                  final SSLContext sslContext,
@@ -104,14 +101,11 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
                                  final SelectorThread selectorThread)
     {
         _socketChannel = socketChannel;
-        _timeout = timeout;
         _ticker = ticker;
         _selector = selectorThread;
 
         _protocolEngine = delegate;
         _receiveBufSize = receiveBufferSize;
-        _encryptionSet = encryptionSet;
-        _sslContext = sslContext;
         _onTransportEncryptionAction = onTransportEncryptionAction;
 
         delegate.setWorkListener(new Action<ServerProtocolEngine>()
@@ -125,7 +119,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
 
         if(encryptionSet.size() == 1)
         {
-            _transportEncryption = _encryptionSet.iterator().next();
+            _transportEncryption = encryptionSet.iterator().next();
             if (_transportEncryption == TransportEncryption.TLS)
             {
                 onTransportEncryptionAction.run();
@@ -134,7 +128,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
 
         if(encryptionSet.contains(TransportEncryption.TLS))
         {
-            _sslEngine = _sslContext.createSSLEngine();
+            _sslEngine = sslContext.createSSLEngine();
             _sslEngine.setUseClientMode(false);
             SSLUtil.removeSSLv3Support(_sslEngine);
             SSLUtil.updateEnabledCipherSuites(_sslEngine, enabledCipherSuites, disabledCipherSuites);
@@ -150,26 +144,16 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
             _netInputBuffer = ByteBuffer.allocate(Math.max(_sslEngine.getSession().getPacketBufferSize(), _receiveBufSize * 2));
         }
 
-        try
-        {
-            _remoteSocketAddress = _socketChannel.getRemoteAddress().toString();
-            _socketChannel.configureBlocking(false);
-        }
-        catch (IOException e)
-        {
-            throw new SenderException("Unable to prepare the channel for non-blocking IO", e);
-        }
-
-
+        _remoteSocketAddress = _socketChannel.socket().getRemoteSocketAddress().toString();
     }
 
 
-    public Ticker getTicker()
+    Ticker getTicker()
     {
         return _ticker;
     }
 
-    public SocketChannel getSocketChannel()
+    SocketChannel getSocketChannel()
     {
         return _socketChannel;
     }
@@ -189,7 +173,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
         if(_closed.compareAndSet(false,true))
         {
             _protocolEngine.notifyWork();
-            getSelector().wakeup();
+            _selector.wakeup();
         }
     }
 
@@ -216,7 +200,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
     @Override
     public Principal getPeerPrincipal()
     {
-        synchronized (_lock)
+        synchronized (_peerPrincipalLock)
         {
             if(!_principalChecked)
             {
@@ -301,7 +285,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
                 // tell all consumer targets that it is okay to accept more
                 _protocolEngine.setMessageAssignmentSuspended(false);
             }
-            catch (IOException e)
+            catch (IOException | ConnectionScopedRuntimeException e)
             {
                 LOGGER.info("Exception performing I/O for thread '" + _remoteSocketAddress + "': " + e);
                 LOGGER.debug("Closing " + _remoteSocketAddress);
@@ -359,22 +343,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
 
     }
 
-    public SelectorThread getSelector()
-    {
-        return _selector;
-    }
-
-    public boolean looksLikeSSLv2ClientHello(final byte[] headerBytes)
-    {
-        return headerBytes[0] == -128 &&
-               headerBytes[3] == 3 && // SSL 3.0 / TLS 1.x
-               (headerBytes[4] == 0 || // SSL 3.0
-                headerBytes[4] == 1 || // TLS 1.0
-                headerBytes[4] == 2 || // TLS 1.1
-                headerBytes[4] == 3);
-    }
-
-    public boolean doRead() throws IOException
+    private boolean doRead() throws IOException
     {
         boolean readData = false;
         if(_transportEncryption == TransportEncryption.NONE)
@@ -496,7 +465,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
         return readData;
     }
 
-    public boolean doWrite() throws IOException
+    private boolean doWrite() throws IOException
     {
 
         ByteBuffer[] bufArray = new ByteBuffer[_buffers.size()];
@@ -589,18 +558,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
         }
     }
 
-    public boolean looksLikeSSLv3ClientHello(final byte[] headerBytes)
-    {
-        return headerBytes[0] == 22 && // SSL Handshake
-               (headerBytes[1] == 3 && // SSL 3.0 / TLS 1.x
-                (headerBytes[2] == 0 || // SSL 3.0
-                 headerBytes[2] == 1 || // TLS 1.0
-                 headerBytes[2] == 2 || // TLS 1.1
-                 headerBytes[2] == 3)) && // TLS1.2
-               (headerBytes[5] == 1); // client_hello
-    }
-
-    public boolean runSSLEngineTasks(final SSLEngineResult status)
+    private boolean runSSLEngineTasks(final SSLEngineResult status)
     {
         if(status.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_TASK)
         {
@@ -614,15 +572,11 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
         return false;
     }
 
-    public boolean looksLikeSSL(final byte[] headerBytes)
-    {
-        return looksLikeSSLv3ClientHello(headerBytes) || looksLikeSSLv2ClientHello(headerBytes);
-    }
-
     @Override
     public void send(final ByteBuffer msg)
     {
-        assert Thread.currentThread().getName().startsWith(SelectorThread.IO_THREAD_NAME_PREFIX) : "Send called by unexpected thread " + Thread.currentThread().getName();
+        assert _selector.isIOThread() : "Send called by unexpected thread " + Thread.currentThread().getName();
+
 
         if (_closed.get())
         {
@@ -631,12 +585,44 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
         else
         {
             _buffers.add(msg);
-            _protocolEngine.notifyWork();
+            _protocolEngine.notifyWork();  // TODO now redundant
         }
     }
 
     @Override
     public void flush()
     {
+    }
+
+    @Override
+    public String toString()
+    {
+        return "[NonBlockingConnection " + _remoteSocketAddress + "]";
+    }
+
+    private boolean looksLikeSSL(final byte[] headerBytes)
+    {
+        return looksLikeSSLv3ClientHello(headerBytes) || looksLikeSSLv2ClientHello(headerBytes);
+    }
+
+    private boolean looksLikeSSLv3ClientHello(final byte[] headerBytes)
+    {
+        return headerBytes[0] == 22 && // SSL Handshake
+               (headerBytes[1] == 3 && // SSL 3.0 / TLS 1.x
+                (headerBytes[2] == 0 || // SSL 3.0
+                 headerBytes[2] == 1 || // TLS 1.0
+                 headerBytes[2] == 2 || // TLS 1.1
+                 headerBytes[2] == 3)) && // TLS1.2
+               (headerBytes[5] == 1); // client_hello
+    }
+
+    private boolean looksLikeSSLv2ClientHello(final byte[] headerBytes)
+    {
+        return headerBytes[0] == -128 &&
+               headerBytes[3] == 3 && // SSL 3.0 / TLS 1.x
+               (headerBytes[4] == 0 || // SSL 3.0
+                headerBytes[4] == 1 || // TLS 1.0
+                headerBytes[4] == 2 || // TLS 1.1
+                headerBytes[4] == 3);
     }
 }

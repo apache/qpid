@@ -365,7 +365,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             return _underlyingBody.writePayload(sender);
         }
 
-        public void handle(final int channelId, final AMQVersionAwareProtocolSession amqMinaProtocolSession)
+        public void handle(final int channelId, final AMQVersionAwareProtocolSession amqProtocolSession)
             throws AMQException
         {
             throw new AMQException("This block should never be dispatched!");

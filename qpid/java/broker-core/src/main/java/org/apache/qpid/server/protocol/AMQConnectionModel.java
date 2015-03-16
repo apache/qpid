@@ -69,8 +69,6 @@ public interface AMQConnectionModel<T extends AMQConnectionModel<T,S>, S extends
      */
     public LogSubject getLogSubject();
 
-    public boolean isSessionNameUnique(byte[] name);
-
     String getRemoteAddressString();
 
     SocketAddress getRemoteAddress();
