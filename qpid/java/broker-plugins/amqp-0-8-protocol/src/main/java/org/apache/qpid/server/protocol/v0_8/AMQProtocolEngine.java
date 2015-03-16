@@ -219,13 +219,21 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     public void setMessageAssignmentSuspended(final boolean messageAssignmentSuspended)
     {
         _messageAssignmentSuspended.set(messageAssignmentSuspended ? Thread.currentThread() : null);
-        if(!messageAssignmentSuspended)
+        for(AMQSessionModel<?,?> session : getSessionModels())
         {
-            for(AMQSessionModel<?,?> session : getSessionModels())
+            for (Consumer<?> consumer : session.getConsumers())
             {
-                for(Consumer<?> consumer : session.getConsumers())
+                ConsumerImpl consumerImpl = (ConsumerImpl) consumer;
+                if (!messageAssignmentSuspended)
                 {
-                    ((ConsumerImpl)consumer).getTarget().notifyCurrentState();
+                    consumerImpl.getTarget().notifyCurrentState();
+                }
+                else
+                {
+                    // ensure that by the time the method returns, no consumer can be in the process of
+                    // delivering a message.
+                    consumerImpl.getSendLock();
+                    consumerImpl.releaseSendLock();
                 }
             }
         }
