@@ -64,6 +64,7 @@ import org.apache.qpid.server.management.plugin.filter.RedirectingAuthorisationF
 import org.apache.qpid.server.management.plugin.servlet.DefinedFileServlet;
 import org.apache.qpid.server.management.plugin.servlet.FileServlet;
 import org.apache.qpid.server.management.plugin.servlet.LogFileServlet;
+import org.apache.qpid.server.management.plugin.servlet.rest.ApiDocsServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.HelperServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogFileListingServlet;
 import org.apache.qpid.server.management.plugin.servlet.rest.LogRecordsServlet;
@@ -278,6 +279,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         FilterHolder restAuthorizationFilter = new FilterHolder(new ForbiddingAuthorisationFilter());
         restAuthorizationFilter.setInitParameter(ForbiddingAuthorisationFilter.INIT_PARAM_ALLOWED, "/service/sasl");
         root.addFilter(restAuthorizationFilter, "/api/*", EnumSet.of(DispatcherType.REQUEST));
+        root.addFilter(restAuthorizationFilter, "/apidocs/*", EnumSet.of(DispatcherType.REQUEST));
         root.addFilter(restAuthorizationFilter, "/service/*", EnumSet.of(DispatcherType.REQUEST));
         root.addFilter(new FilterHolder(new RedirectingAuthorisationFilter()), HttpManagementUtil.ENTRY_POINT_PATH, EnumSet.of(DispatcherType.REQUEST));
         root.addFilter(new FilterHolder(new RedirectingAuthorisationFilter()), "/index.html", EnumSet.of(DispatcherType.REQUEST));
@@ -316,7 +318,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
 
         root.addServlet(new ServletHolder(new LogRecordsServlet()), "/service/logrecords");
 
-        root.addServlet(new ServletHolder(new MetaDataServlet()), "/service/metadata");
+        root.addServlet(new ServletHolder(new MetaDataServlet(getModel())), "/service/metadata");
 
         root.addServlet(new ServletHolder(new SaslServlet()), "/service/sasl");
 
@@ -454,6 +456,13 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
                                            getContextValue(Integer.class, MAX_HTTP_FILE_UPLOAD_SIZE_CONTEXT_NAME)));
         root.addServlet(servletHolder, "/api/latest/" + name + "/*");
         root.addServlet(servletHolder, "/api/v" + BrokerModel.MODEL_MAJOR_VERSION + "/" + name + "/*");
+        ServletHolder docServletHolder = new ServletHolder(name+"docs", new ApiDocsServlet(getModel(),hierarchy));
+        root.addServlet(docServletHolder, "/apidocs/latest/" + name + "/");
+        root.addServlet(docServletHolder, "/apidocs/v" + BrokerModel.MODEL_MAJOR_VERSION + "/" + name +"/");
+        root.addServlet(docServletHolder, "/apidocs/latest/" + name );
+        root.addServlet(docServletHolder, "/apidocs/v" + BrokerModel.MODEL_MAJOR_VERSION + "/" + name);
+
+
     }
 
     private void logOperationalListenMessages(Collection<Port<?>> ports)

@@ -51,14 +51,15 @@ public class MetaDataServlet extends AbstractServlet
 
     private Model _instance;
 
+    public MetaDataServlet(final Model model)
+    {
+        _instance = model;
+    }
+
     @Override
     public void init() throws ServletException
     {
         super.init();
-
-        _instance = BrokerModel.getInstance();
-
-
     }
 
 
