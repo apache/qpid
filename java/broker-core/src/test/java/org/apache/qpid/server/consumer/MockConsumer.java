@@ -592,12 +592,6 @@ public class MockConsumer implements ConsumerTarget
         }
 
         @Override
-        public boolean isSessionNameUnique(byte[] name)
-        {
-            return false;
-        }
-
-        @Override
         public String getRemoteAddressString()
         {
             return "remoteAddress:1234";

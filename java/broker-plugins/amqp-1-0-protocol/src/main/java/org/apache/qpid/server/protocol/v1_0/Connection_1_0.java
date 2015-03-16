@@ -324,12 +324,6 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
     }
 
     @Override
-    public boolean isSessionNameUnique(byte[] name)
-    {
-        return true;  // TODO
-    }
-
-    @Override
     public String getRemoteAddressString()
     {
         return String.valueOf(_conn.getRemoteAddress());

@@ -857,9 +857,6 @@ public class AMQChannel
         return false;
     }
 
-    /**
-     * Called from the protocol session to close this channel and clean up. T
-     */
     @Override
     public void close()
     {

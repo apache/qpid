@@ -32,43 +32,40 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.thread.LoggingUncaughtExceptionHandler;
 
 
 public class SelectorThread extends Thread
 {
-    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(SelectorThread.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SelectorThread.class);
 
-    public static final String IO_THREAD_NAME_PREFIX  = "NCS-";
+    static final String IO_THREAD_NAME_PREFIX  = "IO-";
     private final Queue<Runnable> _tasks = new ConcurrentLinkedQueue<>();
+
+    /**
+     * Queue of connections that are not currently scheduled and not registered with the selector.
+     * These need to go back into the Selector.
+     */
     private final Queue<NonBlockingConnection> _unregisteredConnections = new ConcurrentLinkedQueue<>();
+
+    /** Set of connections that are currently being selected upon */
     private final Set<NonBlockingConnection> _unscheduledConnections = new HashSet<>();
+
     private final Selector _selector;
     private final AtomicBoolean _closed = new AtomicBoolean();
-    private final NetworkConnectionScheduler _scheduler = new NetworkConnectionScheduler();
+    private final NetworkConnectionScheduler _scheduler = new NetworkConnectionScheduler(this);
     private final NonBlockingNetworkTransport _transport;
+    private long _nextTimeout;
 
-    SelectorThread(final String name, final NonBlockingNetworkTransport nonBlockingNetworkTransport)
+    SelectorThread(final NonBlockingNetworkTransport nonBlockingNetworkTransport) throws IOException
     {
-        super("SelectorThread-"+name);
+        super("SelectorThread-" + nonBlockingNetworkTransport.getConfig().getAddress().toString());
+
         _transport = nonBlockingNetworkTransport;
-        try
-        {
-            _selector = Selector.open();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
+        _selector = Selector.open();
     }
 
     public void addAcceptingSocket(final ServerSocketChannel socketChannel)
@@ -83,10 +80,10 @@ public class SelectorThread extends Thread
                             {
                                 socketChannel.register(_selector, SelectionKey.OP_ACCEPT);
                             }
-                            catch (ClosedChannelException e)
+                            catch (IllegalStateException | ClosedChannelException e)
                             {
-                                // TODO
-                                e.printStackTrace();
+                                // TODO Communicate condition back to model object to make it go into the ERROR state
+                                LOGGER.error("Failed to register selector on accepting port", e);
                             }
                         }
                     });
@@ -114,90 +111,37 @@ public class SelectorThread extends Thread
     public void run()
     {
 
-        long nextTimeout = 0;
+        _nextTimeout = 0;
 
         try
         {
             while (!_closed.get())
             {
 
-                _selector.select(nextTimeout);
-
-                while(_tasks.peek() != null)
+                try
                 {
-                    Runnable task = _tasks.poll();
-                    task.run();
+                    _selector.select(_nextTimeout);
+                }
+                catch (IOException e)
+                {
+                    // TODO Inform the model object
+                    LOGGER.error("Failed to select for " + _transport.getConfig().getAddress().toString(),e );
+                    break;
                 }
 
-                List<NonBlockingConnection> toBeScheduled = new ArrayList<>();
+                runTasks();
 
+                List<NonBlockingConnection> toBeScheduled = processSelectionKeys();
 
-                Set<SelectionKey> selectionKeys = _selector.selectedKeys();
-                for (SelectionKey key : selectionKeys)
-                {
-                    if(key.isAcceptable())
-                    {
-                        // todo - should we schedule this rather than running in this thread?
-                        SocketChannel acceptedChannel = ((ServerSocketChannel)key.channel()).accept();
-                        _transport.acceptSocketChannel(acceptedChannel);
-                    }
-                    else
-                    {
-                        NonBlockingConnection connection = (NonBlockingConnection) key.attachment();
+                toBeScheduled.addAll(reregisterUnregisteredConnections());
 
-                        key.channel().register(_selector, 0);
-
-                        toBeScheduled.add(connection);
-                        _unscheduledConnections.remove(connection);
-                    }
-
-                }
-                selectionKeys.clear();
-
-                while (_unregisteredConnections.peek() != null)
-                {
-                    NonBlockingConnection unregisteredConnection = _unregisteredConnections.poll();
-                    _unscheduledConnections.add(unregisteredConnection);
-
-
-                    final int ops = (unregisteredConnection.canRead() ? SelectionKey.OP_READ : 0)
-                                    | (unregisteredConnection.waitingForWrite() ? SelectionKey.OP_WRITE : 0);
-                    unregisteredConnection.getSocketChannel().register(_selector, ops, unregisteredConnection);
-
-                }
-
-                long currentTime = System.currentTimeMillis();
-                Iterator<NonBlockingConnection> iterator = _unscheduledConnections.iterator();
-                nextTimeout = Integer.MAX_VALUE;
-                while (iterator.hasNext())
-                {
-                    NonBlockingConnection connection = iterator.next();
-
-                    int period = connection.getTicker().getTimeToNextTick(currentTime);
-
-                    if (period <= 0 || connection.isStateChanged())
-                    {
-                        toBeScheduled.add(connection);
-                        connection.getSocketChannel().register(_selector, 0).cancel();
-                        iterator.remove();
-                    }
-                    else
-                    {
-                        nextTimeout = Math.min(period, nextTimeout);
-                    }
-                }
+                toBeScheduled.addAll(processUnscheduledConnections());
 
                 for (NonBlockingConnection connection : toBeScheduled)
                 {
                     _scheduler.schedule(connection);
                 }
-
             }
-        }
-        catch (IOException e)
-        {
-            //TODO
-            e.printStackTrace();
         }
         finally
         {
@@ -207,13 +151,121 @@ public class SelectorThread extends Thread
             }
             catch (IOException e)
             {
-                e.printStackTrace();
+                LOGGER.debug("Failed to close selector", e);
             }
         }
 
+    }
+
+    private List<NonBlockingConnection> processUnscheduledConnections()
+    {
+        List<NonBlockingConnection> toBeScheduled = new ArrayList<>();
+
+        long currentTime = System.currentTimeMillis();
+        Iterator<NonBlockingConnection> iterator = _unscheduledConnections.iterator();
+        _nextTimeout = Integer.MAX_VALUE;
+        while (iterator.hasNext())
+        {
+            NonBlockingConnection connection = iterator.next();
+
+            int period = connection.getTicker().getTimeToNextTick(currentTime);
+
+            if (period <= 0 || connection.isStateChanged())
+            {
+                toBeScheduled.add(connection);
+                try
+                {
+                    LOGGER.debug("KWDEBUG# Setting interest to zero (PUC) " + connection);
+
+                    SelectionKey register = connection.getSocketChannel().register(_selector, 0);
+                    register.cancel();
+                }
+                catch (ClosedChannelException e)
+                {
+                    LOGGER.debug("Failed to register with selector for connection " + connection +
+                                 ". Connection is probably being closed by peer.", e);
+                }
+                iterator.remove();
+            }
+            else
+            {
+                _nextTimeout = Math.min(period, _nextTimeout);
+            }
+        }
+
+        return toBeScheduled;
+    }
+
+    private List<NonBlockingConnection> reregisterUnregisteredConnections()
+    {
+        List<NonBlockingConnection> unregisterableConnections = new ArrayList<>();
+
+        while (_unregisteredConnections.peek() != null)
+        {
+            NonBlockingConnection unregisteredConnection = _unregisteredConnections.poll();
+            _unscheduledConnections.add(unregisteredConnection);
 
 
+            final int ops = (unregisteredConnection.canRead() ? SelectionKey.OP_READ : 0)
+                            | (unregisteredConnection.waitingForWrite() ? SelectionKey.OP_WRITE : 0);
+            try
+            {
+                LOGGER.debug("KWDEBUG# Registering " + unregisteredConnection);
+                unregisteredConnection.getSocketChannel().register(_selector, ops, unregisteredConnection);
+            }
+            catch (ClosedChannelException e)
+            {
+                unregisterableConnections.add(unregisteredConnection);
+            }
+        }
 
+        return unregisterableConnections;
+    }
+
+    private List<NonBlockingConnection> processSelectionKeys()
+    {
+        List<NonBlockingConnection> toBeScheduled = new ArrayList<>();
+
+        Set<SelectionKey> selectionKeys = _selector.selectedKeys();
+        for (SelectionKey key : selectionKeys)
+        {
+            if(key.isAcceptable())
+            {
+                // todo - should we schedule this rather than running in this thread?
+                _transport.acceptSocketChannel((ServerSocketChannel)key.channel());
+            }
+            else
+            {
+                NonBlockingConnection connection = (NonBlockingConnection) key.attachment();
+
+                try
+                {
+                    LOGGER.debug("KWDEBUG# Setting interest to zero (PSK)" + connection);
+
+                    key.channel().register(_selector, 0);
+                }
+                catch (ClosedChannelException e)
+                {
+                    // Ignore - we will schedule the connection anyway
+                }
+
+                toBeScheduled.add(connection);
+                _unscheduledConnections.remove(connection);
+            }
+
+        }
+        selectionKeys.clear();
+
+        return toBeScheduled;
+    }
+
+    private void runTasks()
+    {
+        while(_tasks.peek() != null)
+        {
+            Runnable task = _tasks.poll();
+            task.run();
+        }
     }
 
     public void addConnection(final NonBlockingConnection connection)
@@ -235,86 +287,8 @@ public class SelectorThread extends Thread
         _scheduler.close();
     }
 
-    private class NetworkConnectionScheduler
+    boolean isIOThread()
     {
-        private final ScheduledThreadPoolExecutor _executor;
-        private final AtomicInteger _running = new AtomicInteger();
-        private final int _poolSize;
-
-        private NetworkConnectionScheduler()
-        {
-            _poolSize = Runtime.getRuntime().availableProcessors();
-            _executor = new ScheduledThreadPoolExecutor(_poolSize);
-            _executor.prestartAllCoreThreads();
-        }
-
-        public void processConnection(final NonBlockingConnection connection)
-        {
-            try
-            {
-                _running.incrementAndGet();
-                boolean rerun;
-                do
-                {
-                    rerun = false;
-                    boolean closed = connection.doWork();
-
-                    if (!closed)
-                    {
-
-                        if (connection.isStateChanged())
-                        {
-                            if (_running.get() == _poolSize)
-                            {
-                                schedule(connection);
-                            }
-                            else
-                            {
-                                rerun = true;
-                            }
-                        }
-                        else
-                        {
-                            SelectorThread.this.addConnection(connection);
-                        }
-                    }
-
-                } while (rerun);
-            }
-            finally
-            {
-                _running.decrementAndGet();
-            }
-        }
-
-        public void schedule(final NonBlockingConnection connection)
-        {
-            _executor.submit(new Runnable()
-                            {
-                                @Override
-                                public void run()
-                                {
-                                    String currentName = Thread.currentThread().getName();
-                                    try
-                                    {
-                                        Thread.currentThread().setName(
-                                                IO_THREAD_NAME_PREFIX + connection.getRemoteAddress().toString());
-                                        processConnection(connection);
-                                    }
-                                    finally
-                                    {
-                                        Thread.currentThread().setName(currentName);
-                                    }
-                                }
-                            });
-        }
-
-        public void close()
-        {
-            _executor.shutdown();
-        }
-
-
-
+        return Thread.currentThread().getName().startsWith(SelectorThread.IO_THREAD_NAME_PREFIX);
     }
 }

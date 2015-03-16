@@ -218,7 +218,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         }
     }
 
-    public void closeProtocolSession()
+    public void closeNetworkConnection()
     {
         // Override as we don't have a real IOSession to close.
         //  The alternative is to fully implement the TestIOSession to return a CloseFuture from close();

@@ -540,11 +540,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
         return _connectionId;
     }
 
-    public boolean isSessionNameUnique(byte[] name)
-    {
-        return !super.hasSessionWithName(name);
-    }
-
     public String getRemoteAddressString()
     {
         return String.valueOf(getRemoteAddress());

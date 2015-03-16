@@ -23,7 +23,6 @@ package org.apache.qpid.server.protocol.v0_8;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
 
-/** Test class to test MBean operations for AMQMinaProtocolSession. */
 public class MaxChannelsTest extends QpidTestCase
 {
     private AMQProtocolEngine _session;
@@ -62,7 +61,6 @@ public class MaxChannelsTest extends QpidTestCase
         try
         {
             _session.getVirtualHost().close();
-            _session.closeSession(false);
         }
         finally
         {
