@@ -138,9 +138,6 @@ public class VirtualHostRestTest extends QpidRestTestCase
         Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList(url);
         Asserts.assertVirtualHost(hostName, hostDetails);
         assertNewVirtualHost(hostDetails);
-
-        // verify second create request fails
-        submitVirtualHost(true, "PUT", HttpServletResponse.SC_CONFLICT);
     }
 
     public void testCreateVirtualHostByPostUsingParentURI() throws Exception
@@ -151,9 +148,6 @@ public class VirtualHostRestTest extends QpidRestTestCase
         Map<String, Object> hostDetails = getRestTestHelper().getJsonAsSingletonList("virtualhost/" + EMPTY_VIRTUALHOSTNODE_NAME + "/" + hostName);
         Asserts.assertVirtualHost(hostName, hostDetails);
         assertNewVirtualHost(hostDetails);
-
-        // verify second create request fails
-        submitVirtualHost(true, "POST", HttpServletResponse.SC_CONFLICT);
     }
 
     public void testCreateVirtualHostByPutUsingVirtualHostURI() throws Exception
@@ -165,8 +159,6 @@ public class VirtualHostRestTest extends QpidRestTestCase
 
         assertNewVirtualHost(hostDetails);
 
-        // verify VH is updated successfully
-        submitVirtualHost(false, "PUT", HttpServletResponse.SC_OK);
     }
 
     public void testCreateVirtualHostByPostUsingVirtualHostURI() throws Exception
