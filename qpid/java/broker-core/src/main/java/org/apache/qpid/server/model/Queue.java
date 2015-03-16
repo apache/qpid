@@ -27,9 +27,14 @@ import java.util.Map;
 import org.apache.qpid.server.queue.QueueEntryVisitor;
 import org.apache.qpid.server.store.MessageDurability;
 
-@ManagedObject( defaultType = "standard" )
+@ManagedObject( defaultType = "standard", description = Queue.CLASS_DESCRIPTION )
 public interface Queue<X extends Queue<X>> extends ConfiguredObject<X>
 {
+    String CLASS_DESCRIPTION = "<p>Queues are named entities within a VirtualHost that hold/buffer messages for later "
+                               + "delivery to consumer applications. Consumers subscribe to a queue in order to receive "
+                               + "messages for it.</p>"
+                               + "<p>The Broker supports different queue types, each with different delivery semantics. "
+                               + "It also allows for messages on a queue to be treated as a group.</p>";
 
     String ALERT_REPEAT_GAP = "alertRepeatGap";
     String ALERT_THRESHOLD_MESSAGE_AGE = "alertThresholdMessageAge";

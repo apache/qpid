@@ -20,19 +20,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.security.AccessControlException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -64,19 +52,47 @@ public class ApiDocsServlet extends AbstractServlet
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ApiDocsServlet.class);
     private final Model _model;
-    private final Collection<Class<? extends ConfiguredObject>> _types;
+    private final List<Class<? extends ConfiguredObject>> _types;
 
     private Class<? extends ConfiguredObject>[] _hierarchy;
 
     private static final Set<Character> VOWELS = new HashSet<>(Arrays.asList('a','e','i','o','u'));
 
+    public static final Comparator<Class<? extends ConfiguredObject>> CLASS_COMPARATOR =
+            new Comparator<Class<? extends ConfiguredObject>>()
+            {
+                @Override
+                public int compare(final Class<? extends ConfiguredObject> o1,
+                                   final Class<? extends ConfiguredObject> o2)
+                {
+                    return o1.getSimpleName().compareTo(o2.getSimpleName());
+                }
 
-    public ApiDocsServlet(final Model model, Class<? extends ConfiguredObject>... hierarchy)
+            };
+    private static final Map<Class<? extends ConfiguredObject>, List<String>> REGISTERED_CLASSES = new TreeMap<>(CLASS_COMPARATOR);
+
+
+    public ApiDocsServlet(final Model model, final List<String> registeredPaths, Class<? extends ConfiguredObject>... hierarchy)
     {
         super();
         _model = model;
         _hierarchy = hierarchy;
-        _types = _model.getTypeRegistry().getTypeSpecialisations(getConfiguredClass());
+        _types = hierarchy.length == 0 ? null : new ArrayList<>(_model.getTypeRegistry().getTypeSpecialisations(getConfiguredClass()));
+        if(_types != null)
+        {
+            Collections.sort(_types, CLASS_COMPARATOR);
+        }
+        if(_hierarchy.length != 0)
+        {
+            List<String> paths = REGISTERED_CLASSES.get(getConfiguredClass());
+            if(paths == null)
+            {
+                paths = new ArrayList<>();
+                REGISTERED_CLASSES.put(getConfiguredClass(), paths);
+            }
+            paths.addAll(registeredPaths);
+
+        }
 
     }
 
@@ -88,11 +104,51 @@ public class ApiDocsServlet extends AbstractServlet
 
 
         PrintWriter writer = response.getWriter();
+
         writePreamble(writer);
         writeHead(writer);
-        writeUsage(writer, request);
-        writeTypes(writer);
-        writeAttributes(writer);
+
+        if(_hierarchy.length == 0)
+        {
+            writer.println("<table class=\"api\">");
+            writer.println("<thead>");
+            writer.println("<tr>");
+            writer.println("<th class=\"type\">Type</th>");
+            writer.println("<th class=\"path\">Path</th>");
+            writer.println("<th class=\"description\">Description</th>");
+            writer.println("</tr>");
+            writer.println("</thead>");
+            writer.println("<tbody>");
+            for(Map.Entry<Class<? extends ConfiguredObject>, List<String>> entry : REGISTERED_CLASSES.entrySet())
+            {
+                List<String> paths = entry.getValue();
+                Class<? extends ConfiguredObject> objClass = entry.getKey();
+                writer.println("<tr>");
+                writer.println("<td class=\"type\" rowspan=\""+ paths.size()+"\"><a href=\"latest/"+ objClass.getSimpleName().toLowerCase()+"\">"+objClass.getSimpleName()+"</a></td>");
+                writer.println("<td class=\"path\">" + paths.get(0) + "</td>");
+                writer.println("<td class=\"description\" rowspan=\""+ paths.size()+"\">"+
+                               objClass.getAnnotation(ManagedObject.class).description()+"</td>");
+                writer.println("</tr>");
+                for(int i = 1; i < paths.size(); i++)
+                {
+                    writer.println("<tr>");
+                    writer.println("<td class=\"path\">" + paths.get(i) + "</td>");
+                    writer.println("</tr>");
+                }
+
+            }
+            writer.println("</tbody>");
+            writer.println("</table>");
+
+        }
+        else
+        {
+            writeCategoryDescription(writer);
+            writeUsage(writer, request);
+            writeTypes(writer);
+            writeAttributes(writer);
+        }
+
         writeFoot(writer);
     }
 
@@ -101,7 +157,7 @@ public class ApiDocsServlet extends AbstractServlet
         writer.println("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"");
         writer.println("\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">");
         writer.println("<html>");
-        writer.println("<body>");
+
 
     }
 
@@ -109,16 +165,35 @@ public class ApiDocsServlet extends AbstractServlet
     {
         writer.println("<head>");
         writer.println("<link rel=\"stylesheet\" type=\"text/css\" href=\"/css/apidocs.css\">");
-        writer.print("<title>");
-        writer.print("Qpid API : " + getConfiguredClass().getSimpleName());
-        writer.println("</title>");
+        writeTitle(writer);
 
         writer.println("</head>");
+        writer.println("<body>");
+    }
+
+    private void writeTitle(final PrintWriter writer)
+    {
+        writer.print("<title>");
+        if(_hierarchy.length == 0)
+        {
+            writer.print("Qpid API");
+        }
+        else
+        {
+            writer.print("Qpid API: " + getConfiguredClass().getSimpleName());
+        }
+        writer.println("</title>");
+    }
+
+    private void writeCategoryDescription(PrintWriter writer)
+    {
+        writer.println("<h1>"+getConfiguredClass().getSimpleName()+"</h1>");
+        writer.println(getConfiguredClass().getAnnotation(ManagedObject.class).description());
     }
 
     private void writeUsage(final PrintWriter writer, final HttpServletRequest request)
     {
-        writer.println("<a name=\"usage\"><h1>Usage</h1></a>");
+        writer.println("<a name=\"usage\"><h2>Usage</h2></a>");
         writer.println("<table class=\"usage\">");
         writer.println("<tbody>");
         writer.print("<tr><th class=\"operation\">Read</th><td class=\"method\">GET</td><td class=\"path\">" + request.getServletPath()
@@ -141,22 +216,19 @@ public class ApiDocsServlet extends AbstractServlet
             writer.print("/&lt;" + category.getSimpleName().toLowerCase() + " name or id&gt;");
         }
 
-        if(_hierarchy.length>1)
+        writer.print(
+                "<tr><th class=\"operation\">Create</th><td class=\"method\">PUT or POST</td><td class=\"path\">"
+                + request.getServletPath().replace("apidocs", "api"));
+        for (int i = 0; i < _hierarchy.length - 1; i++)
         {
-            writer.print(
-                    "<tr><th class=\"operation\">Create</th><td class=\"method\">PUT or POST</td><td class=\"path\">"
-                    + request.getServletPath().replace("apidocs", "api"));
-            for (int i = 0; i < _hierarchy.length - 1; i++)
-            {
-                writer.print("/&lt;" + _hierarchy[i].getSimpleName().toLowerCase() + " name or id&gt;");
-            }
+            writer.print("/&lt;" + _hierarchy[i].getSimpleName().toLowerCase() + " name or id&gt;");
+        }
 
-            writer.print("<tr><th class=\"operation\">Delete</th><td class=\"method\">DELETE</td><td class=\"path\">"
-                         + request.getServletPath().replace("apidocs", "api"));
-            for (final Class<? extends ConfiguredObject> category : _hierarchy)
-            {
-                writer.print("/&lt;" + category.getSimpleName().toLowerCase() + " name or id&gt;");
-            }
+        writer.print("<tr><th class=\"operation\">Delete</th><td class=\"method\">DELETE</td><td class=\"path\">"
+                     + request.getServletPath().replace("apidocs", "api"));
+        for (final Class<? extends ConfiguredObject> category : _hierarchy)
+        {
+            writer.print("/&lt;" + category.getSimpleName().toLowerCase() + " name or id&gt;");
         }
 
         writer.println("</tbody>");

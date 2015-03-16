@@ -25,9 +25,12 @@ import java.io.Writer;
 import java.net.SocketAddress;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -308,6 +311,11 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         addRestServlet(root, "binding", VirtualHostNode.class, VirtualHost.class, Exchange.class, Queue.class, Binding.class);
         addRestServlet(root, "session", VirtualHostNode.class, VirtualHost.class, Connection.class, Session.class);
 
+        ServletHolder apiDocsServlet = new ServletHolder(new ApiDocsServlet(getModel(), Collections.<String>emptyList()));
+        root.addServlet(apiDocsServlet, "/apidocs");
+        root.addServlet(apiDocsServlet, "/apidocs/");
+        root.addServlet(apiDocsServlet, "/apidocs/latest");
+        root.addServlet(apiDocsServlet, "/apidocs/latest/");
         root.addServlet(new ServletHolder(new UserPreferencesServlet()), "/service/userpreferences/*");
         root.addServlet(new ServletHolder(new LoggedOnUserPreferencesServlet()), "/service/preferences");
         root.addServlet(new ServletHolder(new StructureServlet()), "/service/structure");
@@ -454,9 +462,17 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
                                            getContextValue(Long.class, MAX_HTTP_FILE_UPLOAD_SIZE_CONTEXT_NAME),
                                            -1l,
                                            getContextValue(Integer.class, MAX_HTTP_FILE_UPLOAD_SIZE_CONTEXT_NAME)));
-        root.addServlet(servletHolder, "/api/latest/" + name + "/*");
-        root.addServlet(servletHolder, "/api/v" + BrokerModel.MODEL_MAJOR_VERSION + "/" + name + "/*");
-        ServletHolder docServletHolder = new ServletHolder(name+"docs", new ApiDocsServlet(getModel(),hierarchy));
+
+        List<String> paths = Arrays.asList("/api/latest/" + name ,
+                                           "/api/v" + BrokerModel.MODEL_MAJOR_VERSION + "/" + name  );
+
+        for(String path : paths)
+        {
+            root.addServlet(servletHolder, path + "/*");
+        }
+        ServletHolder docServletHolder = new ServletHolder(name+"docs", new ApiDocsServlet(getModel(),
+                                                                                           paths,
+                                                                                           hierarchy));
         root.addServlet(docServletHolder, "/apidocs/latest/" + name + "/");
         root.addServlet(docServletHolder, "/apidocs/v" + BrokerModel.MODEL_MAJOR_VERSION + "/" + name +"/");
         root.addServlet(docServletHolder, "/apidocs/latest/" + name );
