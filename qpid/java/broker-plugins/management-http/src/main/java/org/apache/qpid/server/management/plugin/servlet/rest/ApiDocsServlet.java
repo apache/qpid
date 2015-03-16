@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.AbstractConfiguredObject;
 import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.model.ConfiguredAutomatedAttribute;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectAttribute;
 import org.apache.qpid.server.model.IllegalStateTransitionException;
@@ -62,31 +63,6 @@ import org.apache.qpid.util.DataUrlUtils;
 public class ApiDocsServlet extends AbstractServlet
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(ApiDocsServlet.class);
-
-    public static final String DEPTH_PARAM = "depth";
-    public static final String OVERSIZE_PARAM = "oversize";
-    public static final String ACTUALS_PARAM = "actuals";
-    public static final String SORT_PARAM = "sort";
-    public static final String INCLUDE_SYS_CONTEXT_PARAM = "includeSysContext";
-    public static final String INHERITED_ACTUALS_PARAM = "inheritedActuals";
-    public static final String EXTRACT_INITIAL_CONFIG_PARAM = "extractInitialConfig";
-    public static final int SC_UNPROCESSABLE_ENTITY = 422;
-
-    /**
-     * Signifies that the agent wishes the servlet to set the Content-Disposition on the
-     * response with the value attachment.  This filename will be derived from the parameter value.
-     */
-    public static final String CONTENT_DISPOSITION_ATTACHMENT_FILENAME_PARAM = "contentDispositionAttachmentFilename";
-
-    public static final Set<String> RESERVED_PARAMS =
-            new HashSet<>(Arrays.asList(DEPTH_PARAM,
-                                        SORT_PARAM,
-                                        OVERSIZE_PARAM,
-                                        ACTUALS_PARAM,
-                                        INCLUDE_SYS_CONTEXT_PARAM,
-                                        EXTRACT_INITIAL_CONFIG_PARAM,
-                                        INHERITED_ACTUALS_PARAM,
-                                        CONTENT_DISPOSITION_ATTACHMENT_FILENAME_PARAM));
     private final Model _model;
     private final Collection<Class<? extends ConfiguredObject>> _types;
 
@@ -278,41 +254,61 @@ public class ApiDocsServlet extends AbstractServlet
     private String renderType(final ConfiguredObjectAttribute attribute)
     {
         final Class type = attribute.getType();
-        if(Number.class.isAssignableFrom(type))
+        if(Enum.class.isAssignableFrom(type))
         {
-            return "number";
-        }
-        else if(Enum.class.isAssignableFrom(type))
-        {
-            return "<span title=\"enum: " + EnumSet.allOf(type) + "\">string</span>";
-        }
-        else if(Boolean.class == type)
-        {
-            return "boolean";
-        }
-        else if(String.class == type)
-        {
-            return "string";
-        }
-        else if(UUID.class == type)
-        {
-            return "<span title=\"\">string</span>";
-        }
-        else if(List.class.isAssignableFrom(type))
-        {
-            // TODO - generate a description of the type in the array
-            return "array";
-        }
-        else if(Map.class.isAssignableFrom(type))
-        {
-            // TODO - generate a description of the type in the object
-            return "object";
+            return "<div class=\"restriction\" title=\"enum: " + EnumSet.allOf(type) + "\">string</div>";
         }
         else if(ConfiguredObject.class.isAssignableFrom(type))
         {
-            return "<span title=\"name or id of a" + (VOWELS.contains(type.getSimpleName().toLowerCase().charAt(0)) ? "n " : " ") + type.getSimpleName() + "\">string</span>";
+            return "<div class=\"restriction\" title=\"name or id of a" + (VOWELS.contains(type.getSimpleName().toLowerCase().charAt(0)) ? "n " : " ") + type.getSimpleName() + "\">string</div>";
         }
-        return type.getSimpleName();
+        else if(UUID.class == type)
+        {
+            return "<div class=\"restriction\" title=\"must be a UUID\">string</div>";
+        }
+        else
+        {
+            boolean hasValuesRestriction = attribute instanceof ConfiguredAutomatedAttribute
+                                           && ((ConfiguredAutomatedAttribute)attribute).hasValidValues();
+
+            StringBuilder returnVal = new StringBuilder();
+            if(hasValuesRestriction)
+            {
+                returnVal.append("<div class=\"restricted\" title=\"Valid values: " + ((ConfiguredAutomatedAttribute)attribute).validValues() + "\">");
+            }
+
+            if(Number.class.isAssignableFrom(type))
+            {
+                returnVal.append("number");
+            }
+            else if(Boolean.class == type)
+            {
+                returnVal.append("boolean");
+            }
+            else if(String.class == type)
+            {
+                returnVal.append("string");
+            }
+            else if(Collection.class.isAssignableFrom(type))
+            {
+                // TODO - generate a description of the type in the array
+                returnVal.append("array");
+            }
+            else if(Map.class.isAssignableFrom(type))
+            {
+                // TODO - generate a description of the type in the object
+                returnVal.append("object");
+            }
+            else
+            {
+                returnVal.append(type.getSimpleName());
+            }
+            if(hasValuesRestriction)
+            {
+                returnVal.append("</div>");
+            }
+            return returnVal.toString();
+        }
     }
 
     private void writeFoot(final PrintWriter writer)
