@@ -175,13 +175,21 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     {
         _messageAssignmentSuspended.set(messageAssignmentSuspended ? Thread.currentThread() : null);
 
-        if(!messageAssignmentSuspended)
+        for(AMQSessionModel<?,?> session : _connection.getSessionModels())
         {
-            for(AMQSessionModel<?,?> session : _connection.getSessionModels())
+            for(Consumer<?> consumer : session.getConsumers())
             {
-                for(Consumer<?> consumer : session.getConsumers())
+                ConsumerImpl consumerImpl = (ConsumerImpl) consumer;
+                if (!messageAssignmentSuspended)
                 {
-                    ((ConsumerImpl)consumer).getTarget().notifyCurrentState();
+                    consumerImpl.getTarget().notifyCurrentState();
+                }
+                else
+                {
+                    // ensure that by the time the method returns, no consumer can be in the process of
+                    // delivering a message.
+                    consumerImpl.getSendLock();
+                    consumerImpl.releaseSendLock();
                 }
             }
         }

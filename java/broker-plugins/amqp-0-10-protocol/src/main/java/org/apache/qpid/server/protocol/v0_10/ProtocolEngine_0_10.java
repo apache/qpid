@@ -92,15 +92,23 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     {
         _messageAssignmentSuspended.set(messageAssignmentSuspended ? Thread.currentThread() : null);
 
-        if(!messageAssignmentSuspended)
+        for(AMQSessionModel<?,?> session : _connection.getSessionModels())
         {
-           for(AMQSessionModel<?,?> session : _connection.getSessionModels())
-           {
-               for(Consumer<?> consumer : session.getConsumers())
-               {
-                   ((ConsumerImpl)consumer).getTarget().notifyCurrentState();
-               }
-           }
+            for (Consumer<?> consumer : session.getConsumers())
+            {
+                ConsumerImpl consumerImpl = (ConsumerImpl) consumer;
+                if (!messageAssignmentSuspended)
+                {
+                    consumerImpl.getTarget().notifyCurrentState();
+                }
+                else
+                {
+                    // ensure that by the time the method returns, no consumer can be in the process of
+                    // delivering a message.
+                    consumerImpl.getSendLock();
+                    consumerImpl.releaseSendLock();
+                }
+            }
         }
     }
 
