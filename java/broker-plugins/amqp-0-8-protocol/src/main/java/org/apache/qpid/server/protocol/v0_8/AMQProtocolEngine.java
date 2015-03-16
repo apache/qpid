@@ -2034,7 +2034,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     @Override
     public void processPending()
     {
-
+        for (AMQSessionModel session : getSessionModels())
+        {
+            session.processPending();
+        }
 
         while(_asyncTaskList.peek() != null)
         {
@@ -2042,10 +2045,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             asyncAction.performAction(this);
         }
 
-        for (AMQSessionModel session : getSessionModels())
-        {
-            session.processPending();
-        }
     }
 
     @Override

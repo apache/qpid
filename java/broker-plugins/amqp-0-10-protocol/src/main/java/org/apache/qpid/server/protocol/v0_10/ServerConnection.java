@@ -718,17 +718,17 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
 
     public void processPending()
     {
-        while(_asyncTaskList.peek() != null)
-        {
-            Action<? super ServerConnection> asyncAction = _asyncTaskList.poll();
-            asyncAction.performAction(this);
-        }
 
         for (AMQSessionModel session : getSessionModels())
         {
             session.processPending();
         }
 
+        while(_asyncTaskList.peek() != null)
+        {
+            Action<? super ServerConnection> asyncAction = _asyncTaskList.poll();
+            asyncAction.performAction(this);
+        }
     }
 
     public void closeAndIgnoreFutureInput()
