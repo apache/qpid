@@ -100,7 +100,7 @@ public class ArrivalTimeFilterTest extends QpidBrokerTestCase
         ((AMQSession<?,?>) _session).createQueue(new AMQShortString(_queueName), false, true, false, null);
         Queue queue = new org.apache.qpid.client.AMQQueue("amq.direct", _queueName);
         ((AMQSession<?,?>) _session).declareAndBind((AMQDestination)queue);
-        _queue = _session.createQueue("direct://amq.direct/"+_queueName+"/"+_queueName+"?x-qpid-replay-period='"+period+"0'");
+        _queue = _session.createQueue("direct://amq.direct/"+_queueName+"/"+_queueName+"?x-qpid-replay-period='"+period+"'");
     }
 
 
