@@ -538,15 +538,15 @@ public class Connection_1_0 implements ConnectionEventListener, AMQConnectionMod
 
     public void processPending()
     {
+        for (AMQSessionModel session : getSessionModels())
+        {
+            session.processPending();
+        }
+
         while(_asyncTaskList.peek() != null)
         {
             Action<? super Connection_1_0> asyncAction = _asyncTaskList.poll();
             asyncAction.performAction(this);
-        }
-
-        for (AMQSessionModel session : getSessionModels())
-        {
-            session.processPending();
         }
 
     }
