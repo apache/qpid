@@ -50,3 +50,8 @@ table.attributes td.name {
 table.attributes td.type {
     width: 7em;
 }
+
+div.restriction {
+    border-bottom: 1px dotted #666;
+    display: inline;
+}
