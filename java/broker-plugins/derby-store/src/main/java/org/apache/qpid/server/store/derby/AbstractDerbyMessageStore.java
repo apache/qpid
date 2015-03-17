@@ -50,6 +50,7 @@ public abstract class AbstractDerbyMessageStore extends AbstractJDBCMessageStore
         if (_messageStoreOpen.compareAndSet(false, true))
         {
             _parent = parent;
+            initMessageStore(parent);
 
             DerbyUtils.loadDerbyDriver();
 
@@ -85,7 +86,14 @@ public abstract class AbstractDerbyMessageStore extends AbstractJDBCMessageStore
     {
         if (_messageStoreOpen.compareAndSet(true,  false))
         {
-            doClose();
+            try
+            {
+                doClose();
+            }
+            finally
+            {
+                super.closeMessageStore();
+            }
         }
     }
 
