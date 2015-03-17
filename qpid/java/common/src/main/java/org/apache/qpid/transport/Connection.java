@@ -622,11 +622,6 @@ public class Connection extends ConnectionInvoker
         close(ConnectionCloseCode.NORMAL, null);
     }
 
-    public void mgmtClose()
-    {
-        close(ConnectionCloseCode.CONNECTION_FORCED, "The connection was closed using the broker's management interface.");
-    }
-
 
     protected void sendConnectionClose(ConnectionCloseCode replyCode, String replyText, Option ... _options)
     {
@@ -873,6 +868,14 @@ public class Connection extends ConnectionInvoker
     public void setRedirecting(final boolean redirecting)
     {
         _redirecting.set(redirecting);
+    }
+
+    public boolean isClosing()
+    {
+        synchronized (lock)
+        {
+            return state == CLOSING || state == CLOSED;
+        }
     }
 
 }
