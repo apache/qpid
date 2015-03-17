@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.server.transport;
 
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -39,7 +41,17 @@ class NetworkConnectionScheduler
     {
         _selectorThread = selectorThread;
         _poolSize = Runtime.getRuntime().availableProcessors();
-        _executor = new ScheduledThreadPoolExecutor(_poolSize);
+        _executor = new ScheduledThreadPoolExecutor(_poolSize, new ThreadFactory()
+        {
+            final AtomicInteger _count = new AtomicInteger();
+            @Override
+            public Thread newThread(final Runnable r)
+            {
+                Thread t = Executors.defaultThreadFactory().newThread(r);
+                t.setName("IO-pool-"+selectorThread.getName()+"-"+_count.incrementAndGet());
+                return t;
+            }
+        });
         _executor.prestartAllCoreThreads();
     }
 
