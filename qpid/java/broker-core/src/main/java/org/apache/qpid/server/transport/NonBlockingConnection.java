@@ -585,7 +585,6 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
         else
         {
             _buffers.add(msg);
-            _protocolEngine.notifyWork();  // TODO now redundant
         }
     }
 
