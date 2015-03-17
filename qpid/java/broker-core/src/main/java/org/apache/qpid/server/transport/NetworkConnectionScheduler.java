@@ -83,10 +83,12 @@ class NetworkConnectionScheduler
                     {
                         if (_running.get() == _poolSize)
                         {
+                            LOGGER.debug("RGDEBUG: scheduler rescheduling");
                             schedule(connection);
                         }
                         else
                         {
+                            LOGGER.debug("RGDEBUG: scheduler rerunning - ( " + _running.get() + "/" + _poolSize + ")");
                             rerun = true;
                         }
                     }
