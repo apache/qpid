@@ -18,14 +18,16 @@
 #
 
 # Environment variables substituted by configure/cmake.
-$srcdir="@abs_srcdir@"
-$builddir="@abs_builddir@"
+$abs_srcdir="@abs_srcdir@"
+$abs_builddir="@abs_builddir@"
 $top_srcdir="@abs_top_srcdir@"
 $top_builddir="@abs_top_builddir@"
 $moduledir="$top_builddir\src@builddir_lib_suffix@"
 $testmoduledir="$builddir@builddir_lib_suffix@"
+$BOOST_LIBRARYDIR="@BOOST_LIBRARYDIR@"
 
 # Python paths and directories
+$PYTHON_EXE="@PYTHON_EXECUTABLE@"
 $PYTHON_DIR="$builddir\python"
 $QPID_PYTHON_TEST="$PYTHON_DIR\commands\qpid-python-test"
 if ( !(Test-Path "$PYTHON_DIR") -and (Test-Path "$top_srcdir\..\python")) {
@@ -44,16 +46,16 @@ $QPID_ROUTE_EXEC="$PYTHON_COMMANDS\qpid-route"
 $QPID_HA_TOOL_EXEC="$PYTHON_COMMANDS\qpid-ha-tool"
 
 # Executables
-$env:QPIDD_EXEC="$top_builddir\src\qpidd"
+$env:QPIDD_EXEC="$top_builddir\src\@CMAKE_BUILD_TYPE@\qpidd.exe"
 $env:QPID_WATCHDOG_EXEC="$top_builddir\src\qpidd_watchdog"
 
 # Test executables
-$QPID_TEST_EXEC_DIR="$builddir"
+$QPID_TEST_EXEC_DIR="$builddir\@CMAKE_BUILD_TYPE@"
 $RECEIVER_EXEC="$QPID_TEST_EXEC_DIR\receiver"
 $SENDER_EXEC="$QPID_TEST_EXEC_DIR\sender"
 
 # Path
-$env:PATH="$top_builddir\src;$builddir;$srcdir;$PYTHON_COMMANDS;$QPID_TEST_EXEC_DIR;$env:PATH"
+$env:PATH="$top_builddir\src\@CMAKE_BUILD_TYPE@;$builddir\@CMAKE_BUILD_TYPE@;$srcdir;$PYTHON_COMMANDS;$QPID_TEST_EXEC_DIR;@BOOST_LIBRARYDIR@;$env:PATH"
 
 # Modules
 $env:TEST_STORE_LIB="$testmoduledir\test_store.so"
