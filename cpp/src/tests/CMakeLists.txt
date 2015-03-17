@@ -148,8 +148,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (shell "powershell")
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
-set(test_wrap ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_test${test_script_suffix} --build-dir=${CMAKE_BINARY_DIR})
-set(python_wrap ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_test${test_script_suffix} --build-dir=${CMAKE_BINARY_DIR} --python)
+set(test_wrap ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_test${test_script_suffix} -buildDir ${CMAKE_BINARY_DIR})
+set(python_wrap ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_test${test_script_suffix} -buildDir ${CMAKE_BINARY_DIR} -python)
 
 if (BUILD_TESTING_UNITTESTS)
 
@@ -242,7 +242,7 @@ target_link_libraries (unit_test
 set_target_properties (unit_test PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 remember_location(unit_test)
 
-add_test (unit_test ${test_wrap} --boost-test -- ${unit_test_LOCATION})
+add_test (unit_test ${test_wrap} -boostTest -- ${unit_test_LOCATION})
 
 endif (BUILD_TESTING_UNITTESTS)
 
@@ -348,14 +348,14 @@ if (BUILD_SASL)
         add_test(ssl_test ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/ssl_test${test_script_suffix})
     endif (BUILD_SSL)
 endif (BUILD_SASL)
-add_test (qpid-client-test ${test_wrap} --start-broker -- ${qpid-client-test_LOCATION})
-add_test (quick_perftest ${test_wrap} --start-broker -- ${qpid-perftest_LOCATION} --summary --count 100)
-add_test (quick_topictest ${test_wrap} --start-broker -- ${CMAKE_CURRENT_SOURCE_DIR}/quick_topictest${test_script_suffix})
-add_test (quick_txtest ${test_wrap} --start-broker -- ${qpid-txtest_LOCATION} --queues 4 --tx-count 10 --quiet)
-add_test (quick_txtest2 ${test_wrap} --start-broker -- ${qpid-txtest2_LOCATION} --queues 4 --tx-count 10 --quiet)
-add_test (msg_group_tests ${test_wrap} --start-broker -- ${CMAKE_CURRENT_SOURCE_DIR}/run_msg_group_tests${test_script_suffix})
-add_test (run_header_test ${test_wrap} --start-broker -- ${CMAKE_CURRENT_SOURCE_DIR}/run_header_test${test_script_suffix})
-add_test (python_tests ${test_wrap} --start-broker -- ${CMAKE_CURRENT_SOURCE_DIR}/python_tests${test_script_suffix})
+add_test (qpid-client-test ${test_wrap} -startBroker -- ${qpid-client-test_LOCATION})
+add_test (quick_perftest ${test_wrap} -startBroker -- ${qpid-perftest_LOCATION} --summary --count 100)
+add_test (quick_topictest ${test_wrap} -startBroker -- ${CMAKE_CURRENT_SOURCE_DIR}/quick_topictest${test_script_suffix})
+add_test (quick_txtest ${test_wrap} -startBroker -- ${qpid-txtest_LOCATION} --queues 4 --tx-count 10 --quiet)
+add_test (quick_txtest2 ${test_wrap} -startBroker -- ${qpid-txtest2_LOCATION} --queues 4 --tx-count 10 --quiet)
+add_test (msg_group_tests ${test_wrap} -startBroker -- ${CMAKE_CURRENT_SOURCE_DIR}/run_msg_group_tests${test_script_suffix})
+add_test (run_header_test ${test_wrap} -startBroker -- ${CMAKE_CURRENT_SOURCE_DIR}/run_header_test${test_script_suffix})
+add_test (python_tests ${test_wrap} -startBroker -- ${CMAKE_CURRENT_SOURCE_DIR}/python_tests${test_script_suffix})
 if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
   # paged queue not yet implemented for windows
   add_test (paged_queue_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_paged_queue_tests${test_script_suffix})
@@ -377,7 +377,7 @@ add_test (federation_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_t
 add_test (federation_sys_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_sys_tests${test_script_suffix})
 add_test (queue_flow_limit_tests
           ${test_wrap}
-          --start-broker "--broker-options=--default-flow-stop-threshold=80 --default-flow-resume-threshold=70"
+          -startBroker -brokerOptions "--default-flow-stop-threshold=80 --default-flow-resume-threshold=70"
           -- ${CMAKE_CURRENT_SOURCE_DIR}/run_queue_flow_limit_tests${test_script_suffix})
 if (BUILD_ACL)
   add_test (acl_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_acl_tests${test_script_suffix})
