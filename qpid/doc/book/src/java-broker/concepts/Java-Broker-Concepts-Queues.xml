@@ -355,13 +355,13 @@ amqp://guest:guest@client1/development?maxprefetch='1'&amp;brokerlist='tcp://loc
             To set the default behaviour for the queue to be that consumers only receive newly arrived
             messages, then you should set this attribute to the value:</para>
         <screen>
-            { "x-qpid-replay-period" : [ "x-qpid-replay-period", "0" ] }
+            { "x-qpid-replay-period" : { "x-qpid-replay-period" : [ "0" ] } }
         </screen>
         <para>
             If the desired default behaviour is that each consumer should see all messages arriving in
             the last minute, as well as all new messages then the value would need to be:</para>
         <screen>
-            { "x-qpid-replay-period" : [ "x-qpid-replay-period", "60" ] }
+            { "x-qpid-replay-period" : { "x-qpid-replay-period" : [ "60" ] } }
         </screen>
             
     </section>
