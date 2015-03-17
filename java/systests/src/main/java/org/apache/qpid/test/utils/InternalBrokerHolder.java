@@ -49,7 +49,7 @@ public class InternalBrokerHolder implements BrokerHolder
     @Override
     public void start(BrokerOptions options) throws Exception
     {
-        if (Thread.getDefaultUncaughtExceptionHandler() != null)
+        if (Thread.getDefaultUncaughtExceptionHandler() == null)
         {
             Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler()
             {

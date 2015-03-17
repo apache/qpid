@@ -50,7 +50,7 @@ public class NonBlockingNetworkTransport
     private static final int TIMEOUT = Integer.getInteger(CommonProperties.IO_NETWORK_TRANSPORT_TIMEOUT_PROP_NAME,
                                                           CommonProperties.IO_NETWORK_TRANSPORT_TIMEOUT_DEFAULT);
     private static final int HANDSHAKE_TIMEOUT = Integer.getInteger(CommonProperties.HANDSHAKE_TIMEOUT_PROP_NAME ,
-                                                                   CommonProperties.HANDSHAKE_TIMEOUT_DEFAULT);
+                                                                    CommonProperties.HANDSHAKE_TIMEOUT_DEFAULT);
     private final Set<TransportEncryption> _encryptionSet;
     private final NetworkTransportConfiguration _config;
     private final ProtocolEngineFactory _factory;

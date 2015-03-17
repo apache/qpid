@@ -260,21 +260,24 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
             @Override
             public void performAction(final ServerConnection conn)
             {
-                ExecutionException ex = new ExecutionException();
-                ExecutionErrorCode code = ExecutionErrorCode.INTERNAL_ERROR;
-                try
+                if(!session.isClosing())
                 {
-                    code = ExecutionErrorCode.get(cause.getCode());
-                }
-                catch (IllegalArgumentException iae)
-                {
-                    // Ignore, already set to INTERNAL_ERROR
-                }
-                ex.setErrorCode(code);
-                ex.setDescription(message);
-                session.invoke(ex);
+                    ExecutionException ex = new ExecutionException();
+                    ExecutionErrorCode code = ExecutionErrorCode.INTERNAL_ERROR;
+                    try
+                    {
+                        code = ExecutionErrorCode.get(cause.getCode());
+                    }
+                    catch (IllegalArgumentException iae)
+                    {
+                        // Ignore, already set to INTERNAL_ERROR
+                    }
+                    ex.setErrorCode(code);
+                    ex.setDescription(message);
+                    session.invoke(ex);
 
-                session.close(cause, message);
+                    session.close(cause, message);
+                }
             }
         });
 
@@ -382,20 +385,23 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
             @Override
             public void performAction(final ServerConnection object)
             {
-                closeSubscriptions();
-                performDeleteTasks();
+                if(!isClosing())
+                {
+                    closeSubscriptions();
+                    performDeleteTasks();
 
-                setState(CLOSING);
-                ConnectionCloseCode replyCode = ConnectionCloseCode.NORMAL;
-                try
-                {
-                    replyCode = ConnectionCloseCode.get(cause.getCode());
+                    setState(CLOSING);
+                    ConnectionCloseCode replyCode = ConnectionCloseCode.NORMAL;
+                    try
+                    {
+                        replyCode = ConnectionCloseCode.get(cause.getCode());
+                    }
+                    catch (IllegalArgumentException iae)
+                    {
+                        // Ignore
+                    }
+                    sendConnectionClose(replyCode, message);
                 }
-                catch (IllegalArgumentException iae)
-                {
-                    // Ignore
-                }
-                sendConnectionClose(replyCode, message);
             }
         });
     }

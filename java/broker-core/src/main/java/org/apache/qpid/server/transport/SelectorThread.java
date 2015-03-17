@@ -175,8 +175,6 @@ public class SelectorThread extends Thread
                 toBeScheduled.add(connection);
                 try
                 {
-                    LOGGER.debug("KWDEBUG# Setting interest to zero (PUC) " + connection);
-
                     SelectionKey register = connection.getSocketChannel().register(_selector, 0);
                     register.cancel();
                 }
@@ -210,7 +208,6 @@ public class SelectorThread extends Thread
                             | (unregisteredConnection.waitingForWrite() ? SelectionKey.OP_WRITE : 0);
             try
             {
-                LOGGER.debug("KWDEBUG# Registering " + unregisteredConnection);
                 unregisteredConnection.getSocketChannel().register(_selector, ops, unregisteredConnection);
             }
             catch (ClosedChannelException e)
@@ -240,8 +237,6 @@ public class SelectorThread extends Thread
 
                 try
                 {
-                    LOGGER.debug("KWDEBUG# Setting interest to zero (PSK)" + connection);
-
                     key.channel().register(_selector, 0);
                 }
                 catch (ClosedChannelException e)
