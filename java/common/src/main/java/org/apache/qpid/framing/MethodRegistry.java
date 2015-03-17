@@ -353,7 +353,7 @@ public final class MethodRegistry
 
     public final ConnectionCloseOkBody createConnectionCloseOkBody()
     {
-        return ProtocolVersion.v8_0 == _protocolVersion
+        return ProtocolVersion.v8_0.equals(_protocolVersion)
                 ? ConnectionCloseOkBody.CONNECTION_CLOSE_OK_0_8
                 : ConnectionCloseOkBody.CONNECTION_CLOSE_OK_0_9;
     }
