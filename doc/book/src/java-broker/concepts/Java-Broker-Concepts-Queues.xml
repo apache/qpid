@@ -268,7 +268,7 @@ amqp://guest:guest@client1/development?maxprefetch='1'&amp;brokerlist='tcp://loc
           a standard queue, if every consumer is non-destructive then we have something that
           behaves like a topic (every consumer receives every message) except that instead of
           only seeing messages that arrive after the point at which the consumer is created, all
-          messages which have not been reoved due to TTL expiry (or, in the case of LVQs, 
+          messages which have not been removed due to TTL expiry (or, in the case of LVQs, 
           overwirtten by newer values for the same key).</para>
       <para>A queue can be created to enforce all consumers are non-destructive. This can be
           be achieved using the following queue declare argument:</para>
@@ -301,10 +301,10 @@ amqp://guest:guest@client1/development?maxprefetch='1'&amp;brokerlist='tcp://loc
             prevent this you can use the ability to set the maximum TTL of the queue. To ensure
             all messages have the same TTL you could also set the minimum TTL to the same value.
         </para>
-        <para>Minimum/Maximum TTL for a queue can only be set using the REST API or by hand
-            editing the configuration file (for JSON configuration stores). The attribute names
-            are <varname>minimumMessageTtl</varname> and <varname>maximumMessageTtl</varname>
-            and the TTL value is given in milliseconds.</para>
+        <para>Minimum/Maximum TTL for a queue can be set though the HTTP Management UI, using the
+            REST API or by hand editing the configuration file (for JSON configuration stores). 
+            The attribute names are <varname>minimumMessageTtl</varname> and 
+            <varname>maximumMessageTtl</varname> and the TTL value is given in milliseconds.</para>
     </section>
     <section>
         <title>Choosing to receive messages based on arrival time</title>
@@ -355,13 +355,13 @@ amqp://guest:guest@client1/development?maxprefetch='1'&amp;brokerlist='tcp://loc
             To set the default behaviour for the queue to be that consumers only receive newly arrived
             messages, then you should set this attribute to the value:</para>
         <screen>
-            { "x-qpid-replay-period" : { [ "x-qpid-replay-period", "0" ] } }
+            { "x-qpid-replay-period" : [ "x-qpid-replay-period", "0" ] }
         </screen>
         <para>
             If the desired default behaviour is that each consumer should see all messages arriving in
             the last minute, as well as all new messages then the value would need to be:</para>
         <screen>
-            { "x-qpid-replay-period" : { [ "x-qpid-replay-period", "60" ] } }
+            { "x-qpid-replay-period" : [ "x-qpid-replay-period", "60" ] }
         </screen>
             
     </section>
