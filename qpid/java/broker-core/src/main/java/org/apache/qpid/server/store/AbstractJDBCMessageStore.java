@@ -35,6 +35,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
@@ -109,11 +120,16 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
             " WHERE format = ? and global_id = ? and branch_id = ?";
 
     protected final EventManager _eventManager = new EventManager();
+    private ConfiguredObject<?> _parent;
 
     protected abstract boolean isMessageStoreOpen();
 
     protected abstract void checkMessageStoreOpen();
+    private ScheduledThreadPoolExecutor _executor;
 
+    public AbstractJDBCMessageStore()
+    {
+    }
 
     protected void setMaximumMessageId()
     {
@@ -267,6 +283,34 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         {
             conn.close();
         }
+    }
+
+    protected void initMessageStore(final ConfiguredObject<?> parent)
+    {
+        _parent = parent;
+        _executor = new ScheduledThreadPoolExecutor(4, new ThreadFactory()
+        {
+            private final AtomicInteger _count = new AtomicInteger();
+            @Override
+            public Thread newThread(final Runnable r)
+            {
+                final Thread thread = Executors.defaultThreadFactory().newThread(r);
+                thread.setName(parent.getName() + "-store-"+_count.incrementAndGet());
+                return thread;
+            }
+        });
+        _executor.prestartAllCoreThreads();
+
+    }
+
+    @Override
+    public void closeMessageStore()
+    {
+        if(_executor != null)
+        {
+            _executor.shutdown();
+        }
+
     }
 
     protected abstract Logger getLogger();
@@ -835,10 +879,105 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         }
     }
 
-    private FutureResult commitTranAsync(ConnectionWrapper connWrapper) throws StoreException
+    private FutureResult commitTranAsync(final ConnectionWrapper connWrapper) throws StoreException
     {
-        commitTran(connWrapper);
-        return FutureResult.IMMEDIATE_FUTURE;
+        final Future<?> result = _executor.submit(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                commitTran(connWrapper);
+            }
+        });
+        return new FutureResult()
+        {
+            @Override
+            public boolean isComplete()
+            {
+                boolean done = result.isDone();
+                try
+                {
+                    result.get();
+                }
+                catch (InterruptedException e)
+                {
+                    // this won't happen as we're actually already done;
+                }
+                catch (ExecutionException e)
+                {
+                    if(e.getCause() instanceof RuntimeException)
+                    {
+                        throw (RuntimeException)e.getCause();
+                    }
+                    else if(e.getCause() instanceof Error)
+                    {
+                        throw (Error)e.getCause();
+                    }
+                    else
+                    {
+                        throw new StoreException(e);
+                    }
+                }
+                return done;
+            }
+
+            @Override
+            public void waitForCompletion()
+            {
+                try
+                {
+                    result.get();
+                }
+                catch (InterruptedException e)
+                {
+                    throw new StoreException(e);
+                }
+                catch (ExecutionException e)
+                {
+                    if(e.getCause() instanceof RuntimeException)
+                    {
+                        throw (RuntimeException)e.getCause();
+                    }
+                    else if(e.getCause() instanceof Error)
+                    {
+                        throw (Error)e.getCause();
+                    }
+                    else
+                    {
+                        throw new StoreException(e);
+                    }
+                }
+            }
+
+            @Override
+            public void waitForCompletion(final long timeout) throws TimeoutException
+            {
+
+                try
+                {
+                    result.get(timeout, TimeUnit.MILLISECONDS);
+                }
+                catch (InterruptedException e)
+                {
+                    throw new StoreException(e);
+                }
+                catch (ExecutionException e)
+                {
+                    if(e.getCause() instanceof RuntimeException)
+                    {
+                        throw (RuntimeException)e.getCause();
+                    }
+                    else if(e.getCause() instanceof Error)
+                    {
+                        throw (Error)e.getCause();
+                    }
+                    else
+                    {
+                        throw new StoreException(e);
+                    }
+                }
+            }
+        };
     }
 
     private void abortTran(ConnectionWrapper connWrapper) throws StoreException

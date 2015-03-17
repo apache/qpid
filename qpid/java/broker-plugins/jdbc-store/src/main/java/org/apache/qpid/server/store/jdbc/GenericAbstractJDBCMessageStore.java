@@ -76,6 +76,7 @@ public abstract class GenericAbstractJDBCMessageStore extends org.apache.qpid.se
             finally
             {
                 doClose();
+                super.closeMessageStore();
             }
 
         }
