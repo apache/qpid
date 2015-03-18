@@ -267,7 +267,7 @@ class TCPTransportProvider implements TransportProvider
         catch (IOException e)
         {
             conn.inputClosed();
-            e.printStackTrace();
+            RAW_LOGGER.log(Level.INFO, "IO Error reading from connection", e);
         }
     }
 }
