@@ -2425,7 +2425,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     void stop() throws AMQException
     {
         // Stop the server delivering messages to this session.
-        suspendChannel(true);
+        if (!(isClosed() || isClosing()))
+        {
+            suspendChannel(true);
+        }
 
         if (_dispatcher != null)
         {
