@@ -58,8 +58,8 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     private ServerConnection _connection;
 
     private long _createTime = System.currentTimeMillis();
-    private long _lastReadTime = _createTime;
-    private long _lastWriteTime = _createTime;
+    private volatile long _lastReadTime = _createTime;
+    private volatile long _lastWriteTime = _createTime;
     private volatile boolean _transportBlockedForWriting;
 
     private final AtomicReference<Thread> _messageAssignmentSuspended = new AtomicReference<>();

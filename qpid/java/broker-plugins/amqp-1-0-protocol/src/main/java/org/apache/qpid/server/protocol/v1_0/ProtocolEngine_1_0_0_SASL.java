@@ -79,8 +79,8 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     private long _readBytes;
     private long _writtenBytes;
 
-    private long _lastReadTime;
-    private long _lastWriteTime;
+    private volatile long _lastReadTime;
+    private volatile long _lastWriteTime;
     private final Broker<?> _broker;
     private long _createTime = System.currentTimeMillis();
     private ConnectionEndpoint _endpoint;

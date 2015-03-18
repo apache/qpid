@@ -173,7 +173,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
 
     private LogSubject _logSubject;
 
-    private long _lastIoTime;
+    private volatile long _lastIoTime;
 
     private long _writtenBytes;
 
@@ -186,10 +186,10 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     private ByteBufferSender _sender;
 
     private volatile boolean _deferFlush;
-    private long _lastReceivedTime = System.currentTimeMillis();
+    private volatile long _lastReceivedTime = System.currentTimeMillis();
+    private volatile long _lastWriteTime = System.currentTimeMillis();
     private boolean _blocking;
 
-    private AtomicLong _lastWriteTime = new AtomicLong(System.currentTimeMillis());
     private final Broker<?> _broker;
     private final Transport _transport;
 
@@ -557,7 +557,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
 
         final long time = System.currentTimeMillis();
         _lastIoTime = time;
-        _lastWriteTime.set(time);
+        _lastWriteTime = time;
 
         if(!_deferFlush)
         {
@@ -1922,7 +1922,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     @Override
     public long getLastWriteTime()
     {
-        return _lastWriteTime.get();
+        return _lastWriteTime;
     }
 
     public boolean isCloseWhenNoRoute()

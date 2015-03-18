@@ -71,8 +71,8 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
     private final Runnable _onTransportEncryptionAction;
 
 
-    private int _maxReadIdle;
-    private int _maxWriteIdle;
+    private volatile int _maxReadIdle;
+    private volatile int _maxWriteIdle;
     private Principal _principal;
     private boolean _principalChecked;
 
