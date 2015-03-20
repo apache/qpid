@@ -67,3 +67,12 @@ echo "Re-create existing broker truststore by importing RootCA certificate"
 keytool -import -v -keystore java_broker_truststore.jks -storepass password -alias RootCA -file CA_db/rootca.crt
 echo "List entries in broker truststore"
 keytool --list --keystore java_broker_truststore.jks  -storepass password
+
+read -p "Press [Enter] key to continue..."
+echo "Remove existing broker peerstore"
+rm java_broker_peerstore.jks 
+echo "Re-create existing broker peerstore by importing app1 certificate"
+keytool -import -v -keystore java_broker_peerstore.jks -storepass password -alias app1 -file app1.crt
+echo "List entries in broker peerstore"
+keytool --list --keystore java_broker_peerstore.jks  -storepass password
+
