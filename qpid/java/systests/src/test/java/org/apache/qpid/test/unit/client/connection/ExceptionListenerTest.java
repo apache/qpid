@@ -24,7 +24,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;
@@ -37,7 +39,6 @@ import javax.jms.Queue;
 import javax.jms.Session;
 
 import org.apache.qpid.AMQConnectionClosedException;
-import org.apache.qpid.client.AMQNoRouteException;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.transport.ConnectionException;
@@ -186,25 +187,35 @@ public class ExceptionListenerTest extends QpidBrokerTestCase
         // Install an exception listener that stops/closes the connection on receipt of 2nd AMQNoRouteException.
         // (Triggering on the 2nd (rather than 1st) seems to increase the probability that the test ends in deadlock,
         // at least on my machine).
-        final CountDownLatch exceptionReceivedLatch  = new CountDownLatch(2);
+        final CountDownLatch exceptionReceivedLatch = new CountDownLatch(2);
+        final AtomicBoolean doneClosed = new AtomicBoolean();
+        final CountDownLatch connectionClosedAttemptLatch = new CountDownLatch(1);
+        final AtomicReference<Exception> connectionCloseException = new AtomicReference<>();
         final ExceptionListener listener = new ExceptionListener()
         {
             public void onException(JMSException exception)
             {
-                try
+                exceptionReceivedLatch.countDown();
+                if (exceptionReceivedLatch.getCount() == 0)
                 {
-                    assertNotNull("JMS Exception must have cause", exception.getCause() );
-                    assertEquals("JMS Exception is of wrong type", AMQNoRouteException.class, exception.getCause().getClass());
-                    exceptionReceivedLatch.countDown();
-                    if (exceptionReceivedLatch.getCount() == 0)
+                    try
                     {
-                        connection.stop(); // ** Deadlock
-                        connection.close();
+                        if (doneClosed.compareAndSet(false, true))
+                        {
+                            connection.stop();
+                            connection.close();
+                        }
                     }
-                }
-                catch (Throwable t)
-                {
-                    _lastExceptionListenerException = t;
+                    catch (Exception e)
+                    {
+                        // We expect no exception to be caught
+                        connectionCloseException.set(e);
+                    }
+                    finally
+                    {
+                        connectionClosedAttemptLatch.countDown();
+                    }
+
                 }
             }
         };
@@ -212,7 +223,7 @@ public class ExceptionListenerTest extends QpidBrokerTestCase
 
         // Create a message listener that receives from testQueue and tries to forward them to unknown queue (thus
         // provoking AMQNoRouteException exceptions to be delivered to the ExceptionListener).
-        final Queue unknownQueue = session.createQueue(getTestQueueName() + "_unknown");;
+        final Queue unknownQueue = session.createQueue(getTestQueueName() + "_unknown");
         MessageListener redirectingMessageListener = new MessageListener()
         {
             @Override
@@ -221,7 +232,7 @@ public class ExceptionListenerTest extends QpidBrokerTestCase
                 try
                 {
                     Session mlSession = connection.createSession(true, Session.SESSION_TRANSACTED);  // ** Deadlock
-                    mlSession.createProducer(unknownQueue).send(msg);
+                    mlSession.createProducer(unknownQueue).send(msg);  // will cause async AMQNoRouteException;
                     mlSession.commit();
                 }
                 catch (JMSException je)
@@ -236,9 +247,15 @@ public class ExceptionListenerTest extends QpidBrokerTestCase
         consumer.setMessageListener(redirectingMessageListener);
         connection.start();
 
-        // Await the 2nd exception
+        // Await an exception
         boolean exceptionReceived = exceptionReceivedLatch.await(10, TimeUnit.SECONDS);
-        assertTrue("Exception listener did not hear exception within timeout", exceptionReceived);
-        assertNull("Exception listener should not have had experienced exception", _lastExceptionListenerException);
+        assertTrue("Exception listener did not hear at least one exception within timeout", exceptionReceived);
+
+        // Await the connection listener to close the connection
+        boolean closeAttemptedReceived = connectionClosedAttemptLatch.await(10, TimeUnit.SECONDS);
+        assertTrue("Exception listener did not try to close the exception within timeout", closeAttemptedReceived);
+        assertNull("Exception listener should not have had experienced an exception : " + connectionCloseException.get(), connectionCloseException.get());
     }
+
+
 }
