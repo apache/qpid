@@ -420,16 +420,145 @@ public class RestServlet extends AbstractServlet
     {
         response.setContentType("application/json");
 
-        List<String> names = new ArrayList<String>();
-        String[] pathInfoElements = getPathInfoElements(request);
+        List<String> names = getParentNamesFromServletPath(request);
+        Map<String, Object> providedObject = getRequestProvidedObject(request);
+        boolean isFullObjectURL = names.size() == _hierarchy.length;
+        boolean updateOnlyAllowed = isFullObjectURL && "POST".equalsIgnoreCase(request.getMethod());
+        try
+        {
+            if (names.isEmpty())
+            {
+                if (_hierarchy.length == 0)
+                {
+                    getBroker().setAttributes(providedObject);
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    return;
+                }
+                else if (isFullObjectURL)
+                {
+                    throw new ServletException("Cannot identify request target object");
+                }
+            }
 
-        boolean parentRequest = false;
+            ConfiguredObject theParent = getBroker();
+            ConfiguredObject[] otherParents = null;
+            Class<? extends ConfiguredObject> objClass = getConfiguredClass();
+            if (_hierarchy.length > 1)
+            {
+                List<ConfiguredObject> parents = findAllObjectParents(names);
+                theParent = parents.remove(0);
+                otherParents = parents.toArray(new ConfiguredObject[parents.size()]);
+            }
+
+            if (isFullObjectURL)
+            {
+                providedObject.put("name", names.get(names.size() - 1));
+                ConfiguredObject<?> configuredObject = findObjectToUpdateInParent(objClass, providedObject, theParent, otherParents);
+
+                if (configuredObject != null)
+                {
+                    configuredObject.setAttributes(providedObject);
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    return;
+                }
+                else if (updateOnlyAllowed)
+                {
+                    sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND, "Object with "
+                            +  (providedObject.containsKey("id") ? " id '" + providedObject.get("id") : " name '" + providedObject.get("name"))
+                            + "' does not exist!");
+                    return;
+                }
+            }
+
+            ConfiguredObject<?> configuredObject = theParent.createChild(objClass, providedObject, otherParents);
+            StringBuffer requestURL = request.getRequestURL();
+            if (!isFullObjectURL)
+            {
+                requestURL.append("/").append(configuredObject.getName());
+            }
+            response.setHeader("Location", requestURL.toString());
+            response.setStatus(HttpServletResponse.SC_CREATED);
+        }
+        catch (RuntimeException e)
+        {
+            setResponseStatus(request, response, e);
+        }
+
+    }
+
+    private List<ConfiguredObject> findAllObjectParents(List<String> names)
+    {
+        Collection<ConfiguredObject>[] objects = new Collection[_hierarchy.length];
+        for (int i = 0; i < _hierarchy.length - 1; i++)
+        {
+            objects[i] = new HashSet<>();
+            if (i == 0)
+            {
+                for (ConfiguredObject object : getBroker().getChildren(_hierarchy[0]))
+                {
+                    if (object.getName().equals(names.get(0)))
+                    {
+                        objects[0].add(object);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    if (getBroker().getModel().getChildTypes(_hierarchy[j]).contains(_hierarchy[i]))
+                    {
+                        for (ConfiguredObject<?> parent : objects[j])
+                        {
+                            for (ConfiguredObject<?> object : parent.getChildren(_hierarchy[i]))
+                            {
+                                if (object.getName().equals(names.get(i)))
+                                {
+                                    objects[i].add(object);
+                                }
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+
+        }
+        List<ConfiguredObject> parents = new ArrayList<>();
+        Class<? extends ConfiguredObject> objClass = getConfiguredClass();
+        Collection<Class<? extends ConfiguredObject>> parentClasses =
+                getBroker().getModel().getParentTypes(objClass);
+        for (int i = _hierarchy.length - 2; i >= 0; i--)
+        {
+            if (parentClasses.contains(_hierarchy[i]))
+            {
+                if (objects[i].size() == 1)
+                {
+                    parents.add(objects[i].iterator().next());
+                }
+                else
+                {
+                    throw new IllegalArgumentException("Cannot deduce parent of class "
+                                                       + _hierarchy[i].getSimpleName());
+                }
+            }
+
+        }
+        return parents;
+    }
+
+    private List<String> getParentNamesFromServletPath(HttpServletRequest request)
+    {
+        List<String> names = new ArrayList<>();
+        String[] pathInfoElements = getPathInfoElements(request);
         if (pathInfoElements != null)
         {
-            parentRequest = _hierarchy.length > 0 && pathInfoElements.length == _hierarchy.length - 1;
-            if (pathInfoElements.length != _hierarchy.length && !parentRequest)
+            if (!(pathInfoElements.length == _hierarchy.length ||
+                    (_hierarchy.length > 0 && pathInfoElements.length == _hierarchy.length - 1)))
             {
-                throw new IllegalArgumentException("Path to object to create must be fully specified. "
+                throw new IllegalArgumentException("Either parent path or full object path must be specified on object creation."
+                                                   + " Full object path must be specified on object update. "
                                                    + "Found "
                                                    + names
                                                    + " of size "
@@ -439,11 +568,11 @@ public class RestServlet extends AbstractServlet
             }
             names.addAll(Arrays.asList(pathInfoElements));
         }
-        else
-        {
-            parentRequest = _hierarchy.length == 1;
-        }
+        return names;
+    }
 
+    private Map<String, Object> getRequestProvidedObject(HttpServletRequest request) throws IOException, ServletException
+    {
         Map<String, Object> providedObject;
 
         ArrayList<String> headers = Collections.list(request.getHeaderNames());
@@ -475,157 +604,33 @@ public class RestServlet extends AbstractServlet
 
             providedObject = mapper.readValue(request.getInputStream(), LinkedHashMap.class);
         }
-
-        if (names.isEmpty())
-        {
-            if (_hierarchy.length == 0)
-            {
-                try
-                {
-                    getBroker().setAttributes(providedObject);
-                    response.setStatus(HttpServletResponse.SC_OK);
-                }
-                catch (RuntimeException e)
-                {
-                    setResponseStatus(request, response, e);
-                }
-                return;
-            }
-            else if (!parentRequest)
-            {
-                throw new ServletException("Cannot identify request target object");
-            }
-        }
-
-        if (!parentRequest)
-        {
-            providedObject.put("name", names.get(names.size() - 1));
-        }
-
-        @SuppressWarnings("unchecked")
-        Collection<ConfiguredObject>[] objects = new Collection[_hierarchy.length];
-        if (_hierarchy.length == 1)
-        {
-            createOrUpdate(providedObject, _hierarchy[0], getBroker(), null, request, response, parentRequest);
-        }
-        else
-        {
-            for (int i = 0; i < _hierarchy.length - 1; i++)
-            {
-                objects[i] = new HashSet<ConfiguredObject>();
-                if (i == 0)
-                {
-                    for (ConfiguredObject object : getBroker().getChildren(_hierarchy[0]))
-                    {
-                        if (object.getName().equals(names.get(0)))
-                        {
-                            objects[0].add(object);
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    for (int j = i - 1; j >= 0; j--)
-                    {
-                        if (getBroker().getModel().getChildTypes(_hierarchy[j]).contains(_hierarchy[i]))
-                        {
-                            for (ConfiguredObject<?> parent : objects[j])
-                            {
-                                for (ConfiguredObject<?> object : parent.getChildren(_hierarchy[i]))
-                                {
-                                    if (object.getName().equals(names.get(i)))
-                                    {
-                                        objects[i].add(object);
-                                    }
-                                }
-                            }
-                            break;
-                        }
-                    }
-                }
-
-            }
-            List<ConfiguredObject> parents = new ArrayList<ConfiguredObject>();
-            Class<? extends ConfiguredObject> objClass = getConfiguredClass();
-            Collection<Class<? extends ConfiguredObject>> parentClasses =
-                    getBroker().getModel().getParentTypes(objClass);
-            for (int i = _hierarchy.length - 2; i >= 0; i--)
-            {
-                if (parentClasses.contains(_hierarchy[i]))
-                {
-                    if (objects[i].size() == 1)
-                    {
-                        parents.add(objects[i].iterator().next());
-                    }
-                    else
-                    {
-                        throw new IllegalArgumentException("Cannot deduce parent of class "
-                                                           + _hierarchy[i].getSimpleName());
-                    }
-                }
-
-            }
-            ConfiguredObject theParent = parents.remove(0);
-            ConfiguredObject[] otherParents = parents.toArray(new ConfiguredObject[parents.size()]);
-
-            createOrUpdate(providedObject, objClass, theParent, otherParents, request, response, parentRequest);
-        }
+        return providedObject;
     }
 
-    private void createOrUpdate(Map<String, Object> providedObject, Class<? extends ConfiguredObject> objClass,
-            ConfiguredObject theParent, ConfiguredObject[] otherParents, HttpServletRequest request,
-            HttpServletResponse response, boolean parentRequest) throws IOException
+    private ConfiguredObject<?> findObjectToUpdateInParent(Class<? extends ConfiguredObject> objClass, Map<String, Object> providedObject, ConfiguredObject theParent, ConfiguredObject[] otherParents)
     {
-        try
+        Collection<? extends ConfiguredObject> existingChildren = theParent.getChildren(objClass);
+
+        for (ConfiguredObject obj : existingChildren)
         {
-            Collection<? extends ConfiguredObject> existingChildren = theParent.getChildren(objClass);
-
-            if (!parentRequest)
+            if ((providedObject.containsKey("id") && String.valueOf(providedObject.get("id")).equals(obj.getId().toString()))
+                    || (obj.getName().equals(providedObject.get("name")) && sameOtherParents(obj, otherParents, objClass)))
             {
-                for (ConfiguredObject obj : existingChildren)
-                {
-                    if ((providedObject.containsKey("id") && String.valueOf(providedObject.get("id")).equals(obj.getId().toString()))
-                            || (obj.getName().equals(providedObject.get("name")) && equalParents(obj, otherParents, objClass)))
-                    {
-                        obj.setAttributes(providedObject);
-                        response.setStatus(HttpServletResponse.SC_OK);
-                        return;
-                    }
-                }
-
-                if ("POST".equalsIgnoreCase(request.getMethod()))
-                {
-                    sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND, "Object with "
-                            +  (providedObject.containsKey("id") ? " id '" + providedObject.get("id") : " name '" + providedObject.get("name"))
-                            + "' does not exist!" );
-                    return;
-                }
+                return obj;
             }
-
-            ConfiguredObject<?> co = theParent.createChild(objClass, providedObject, otherParents);
-            StringBuffer requestURL = request.getRequestURL();
-            if (parentRequest)
-            {
-                requestURL.append("/").append(co.getName());
-            }
-            response.setHeader("Location", requestURL.toString());
-            response.setStatus(HttpServletResponse.SC_CREATED);
         }
-        catch (RuntimeException e)
-        {
-            setResponseStatus(request, response, e);
-        }
+        return null;
     }
 
-    private boolean equalParents(ConfiguredObject obj, ConfiguredObject[] otherParents, Class<? extends ConfiguredObject> objClass)
+    private boolean sameOtherParents(ConfiguredObject obj, ConfiguredObject[] otherParents, Class<? extends ConfiguredObject> objClass)
     {
+        Collection<Class<? extends ConfiguredObject>> parentClasses = obj.getModel().getParentTypes(objClass);
+
         if(otherParents == null || otherParents.length == 0)
         {
-            return true;
+            return parentClasses.size() == 1;
         }
 
-        Collection<Class<? extends ConfiguredObject>> parentClasses = obj.getModel().getParentTypes(objClass);
 
         for (ConfiguredObject parent : otherParents)
         {
