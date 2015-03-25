@@ -308,7 +308,10 @@ function BuildAPlatform
     }
     if ($sharedInstallDir -ne "") {
         foreach ($pattern in $removeProtonShared) {
-            Remove-Item -recurse "$install_dir/$pattern"
+            $target = Join-Path $install_dir $pattern
+            if (Test-Path -path $target) {
+                Remove-Item -recurse $target
+            }
         }
     }
 
