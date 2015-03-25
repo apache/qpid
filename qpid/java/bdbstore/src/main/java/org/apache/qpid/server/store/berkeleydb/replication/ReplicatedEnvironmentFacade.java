@@ -165,7 +165,14 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
          */
         put(ReplicationConfig.LOG_FLUSH_TASK_INTERVAL, "1 min");
 
-        put(ReplicationConfig.CONSISTENCY_POLICY, "TimeConsistencyPolicy(1 s,30 s)");
+         /**
+          * Allow Replica to proceed with transactions regardless of the state of a Replica
+          * At the moment we do not read or write databases on Replicas.
+          * Setting consistency policy to NoConsistencyRequiredPolicy
+          * would allow to create transaction on Replica immediately.
+          * Any followed write operation would fail with ReplicaWriteException.
+          */
+        put(ReplicationConfig.CONSISTENCY_POLICY, NoConsistencyRequiredPolicy.NAME);
     }});
 
     public static final String PERMITTED_NODE_LIST = "permittedNodes";
@@ -400,6 +407,14 @@ public class ReplicatedEnvironmentFacade implements EnvironmentFacade, StateChan
                 // when Master transits into Unknown state ( for example, due to mastership transfer)
                 // we need to abort any ongoing je operation without halting the Broker or VHN/VH
                 return new ConnectionScopedRuntimeException(String.format("Environment '%s' cannot finish JE operation because master is unknown", getNodeName()), dbe);
+            }
+
+            if (dbe instanceof ReplicaWriteException || dbe instanceof ReplicaConsistencyException)
+            {
+                // Master transited into Detached/Replica but underlying Configured Object has not been notified yet
+                // and attempted to perform JE operation.
+                // We need to abort any ongoing JE operation without halting the Broker or VHN/VH
+                return new ConnectionScopedRuntimeException(String.format("Environment '%s' cannot finish JE operation because node is not master", getNodeName()), dbe);
             }
 
             boolean restart = (noMajority || dbe instanceof RestartRequiredException);

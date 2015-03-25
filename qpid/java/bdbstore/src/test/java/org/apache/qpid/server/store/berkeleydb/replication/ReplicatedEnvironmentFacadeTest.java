@@ -32,7 +32,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,6 +51,7 @@ import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.rep.NodeState;
+import com.sleepycat.je.rep.ReplicaWriteException;
 import com.sleepycat.je.rep.ReplicatedEnvironment;
 import com.sleepycat.je.rep.ReplicatedEnvironment.State;
 import com.sleepycat.je.rep.ReplicationConfig;
@@ -820,6 +824,68 @@ public class ReplicatedEnvironmentFacadeTest extends QpidTestCase
 
         node1.close();
         node2.close();
+    }
+
+    public void testReplicaTransactionBeginsImmediately()  throws Exception
+    {
+        ReplicatedEnvironmentFacade master = createMaster();
+        String nodeName2 = TEST_NODE_NAME + "_2";
+        String host = "localhost";
+        int port = _portHelper.getNextAvailable();
+        String node2NodeHostPort = host + ":" + port;
+
+        final ReplicatedEnvironmentFacade replica = createReplica(nodeName2, node2NodeHostPort, new NoopReplicationGroupListener() );
+
+        // close the master
+        master.close();
+
+        // try to create a transaction in a separate thread
+        // and make sure that transaction is created immediately.
+        ExecutorService service =  Executors.newSingleThreadExecutor();
+        try
+        {
+
+            Future<Transaction> future = service.submit(new Callable<Transaction>(){
+
+                @Override
+                public Transaction call() throws Exception
+                {
+                    return  replica.getEnvironment().beginTransaction(null, null);
+                }
+            });
+            Transaction transaction = future.get(5, TimeUnit.SECONDS);
+            assertNotNull("Transaction was not created during expected time", transaction);
+            transaction.abort();
+        }
+        finally
+        {
+            service.shutdown();
+        }
+    }
+
+    public void testReplicaWriteExceptionIsConvertedIntoConnectionScopedRuntimeException()  throws Exception
+    {
+        ReplicatedEnvironmentFacade master = createMaster();
+        String nodeName2 = TEST_NODE_NAME + "_2";
+        String host = "localhost";
+        int port = _portHelper.getNextAvailable();
+        String node2NodeHostPort = host + ":" + port;
+
+        final ReplicatedEnvironmentFacade replica = createReplica(nodeName2, node2NodeHostPort, new NoopReplicationGroupListener() );
+
+        // close the master
+        master.close();
+
+        try
+        {
+            replica.openDatabase("test", DatabaseConfig.DEFAULT.setAllowCreate(true) );
+            fail("Replica write operation should fail");
+        }
+        catch(ReplicaWriteException e)
+        {
+            RuntimeException handledException = master.handleDatabaseException("test", e);
+            assertTrue("Unexpected exception", handledException instanceof ConnectionScopedRuntimeException);
+        }
     }
 
     private void putRecord(final ReplicatedEnvironmentFacade master, final Database db, final int keyValue,
