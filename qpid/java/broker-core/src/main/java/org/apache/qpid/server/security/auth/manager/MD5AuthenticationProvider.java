@@ -183,9 +183,9 @@ public class MD5AuthenticationProvider
                             char[] password;
                             if(_hexify)
                             {
-                                password = new char[passwordBytes.length];
+                                password = new char[passwordBytes.length * 2];
 
-                                for(int i = 0; i < passwordBytes.length; i--)
+                                for(int i = 0; i < passwordBytes.length; i++)
                                 {
                                     password[2*i] = HEX_CHARACTERS[(((int)passwordBytes[i]) & 0xf0)>>4];
                                     password[(2*i)+1] = HEX_CHARACTERS[(((int)passwordBytes[i]) & 0x0f)];
