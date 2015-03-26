@@ -890,16 +890,17 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         catch(TransportException e)
         {
-            throw toJMSException("Session exception occured while trying to commit: " + e.getMessage(), e);
+            throw toJMSException("Session exception occurred while trying to commit: " + e.getMessage(), e);
         }
     }
 
     protected abstract void commitImpl() throws AMQException, FailoverException, TransportException;
 
+
+
+
     public void confirmConsumerCancelled(int consumerTag)
     {
-
-        // Remove the consumer from the map
         C consumer = _consumers.get(consumerTag);
         if (consumer != null)
         {
@@ -917,7 +918,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     startDispatcherIfNecessary(true);
                 }
 
-                _dispatcher.rejectPending(consumer);
+                rejectPending(consumer);
             }
             else // Queue Browser
             {
@@ -945,6 +946,18 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 }
             }
         }
+    }
+
+    private void rejectPending(C consumer)
+    {
+        // Reject messages on pre-receive queue
+        consumer.rollbackPendingMessages();
+
+        // Reject messages on pre-dispatch queue
+        rejectMessagesForConsumerTag(consumer.getConsumerTag());
+
+        // closeConsumer
+        consumer.markClosed();
     }
 
     public QueueBrowser createBrowser(Queue queue) throws JMSException
@@ -3077,19 +3090,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         _producers.put(producerId, producer);
     }
 
-    /**
-     * @param consumerTag The consumerTag to prune from queue or all if null
-     * @param requeue     Should the removed messages be requeued (or discarded. Possibly to DLQ)
-     * @param rejectAllConsumers
-     */
-
-    private void rejectMessagesForConsumerTag(int consumerTag, boolean requeue, boolean rejectAllConsumers)
+    private void rejectMessagesForConsumerTag(int consumerTag)
     {
         Iterator<Dispatchable> messages = _queue.iterator();
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Rejecting messages from _queue for Consumer tag(" + consumerTag + ") (PDispatchQ) requeue:"
-                         + requeue);
+            _logger.debug("Rejecting messages from _queue for Consumer tag(" + consumerTag + ")");
 
             if (messages.hasNext())
             {
@@ -3104,21 +3110,23 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             UnprocessedMessage message = (UnprocessedMessage) messages.next();
 
-            if (rejectAllConsumers || (message.getConsumerTag() == consumerTag))
+            if (message.getConsumerTag() == consumerTag)
             {
-                if (_logger.isDebugEnabled())
+
+                if (_queue.remove(message))
                 {
-                    _logger.debug("Removing message(" + System.identityHashCode(message) + ") from _queue DT:"
-                                  + message.getDeliveryTag());
-                }
+                    if (_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Removing message(" + System.identityHashCode(message) + ") from _queue DT:"
+                                      + message.getDeliveryTag());
+                    }
 
-                messages.remove();
+                    rejectMessage(message, true);
 
-                rejectMessage(message, requeue);
-
-                if (_logger.isDebugEnabled())
-                {
-                    _logger.debug("Rejected the message(" + message.toString() + ") for consumer :" + consumerTag);
+                    if (_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Rejected the message(" + message.toString() + ") for consumer :" + consumerTag);
+                    }
                 }
             }
         }
@@ -3288,18 +3296,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             return _closed;
         }
 
-        public void rejectPending(C consumer)
-        {
-            // Reject messages on pre-receive queue
-            consumer.rollbackPendingMessages();
-
-            // Reject messages on pre-dispatch queue
-            rejectMessagesForConsumerTag(consumer.getConsumerTag(), true, false);
-
-            // closeConsumer
-            consumer.markClosed();
-
-        }
 
         public void rollback()
         {
