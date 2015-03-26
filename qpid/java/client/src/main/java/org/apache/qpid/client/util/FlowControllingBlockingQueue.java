@@ -59,6 +59,7 @@ public class FlowControllingBlockingQueue<T>
         return _queue.isEmpty();
     }
 
+
     public interface ThresholdListener
     {
         void aboveThreshold(int currentValue);
@@ -104,14 +105,7 @@ public class FlowControllingBlockingQueue<T>
 
         if (o != null && !disableFlowControl && _listener != null)
         {
-            synchronized (_listener)
-            {
-                if (_count-- == _flowControlLowThreshold)
-                {
-                    _listener.underThreshold(_count);
-                }
-            }
-
+            reportBelowIfNecessary();
         }
 
         return o;
@@ -132,14 +126,7 @@ public class FlowControllingBlockingQueue<T>
         }
         if (!disableFlowControl && _listener != null)
         {
-            synchronized (_listener)
-            {
-                if (_count-- == _flowControlLowThreshold)
-                {
-                    _listener.underThreshold(_count);
-                }
-            }
-            
+            reportBelowIfNecessary();
         }
 
         return o;
@@ -155,18 +142,44 @@ public class FlowControllingBlockingQueue<T>
         }
         if (!disableFlowControl && _listener != null)
         {
-            synchronized (_listener)
-            {
-                if (++_count == _flowControlHighThreshold)
-                {
-                    _listener.aboveThreshold(_count);
-                }
-            }
+            reportAboveIfNecessary();
         }
+    }
+
+    public boolean remove(final T o)
+    {
+        final boolean removed = _queue.remove(o);
+        if (removed && !disableFlowControl && _listener != null)
+        {
+            reportBelowIfNecessary();
+        }
+        return removed;
     }
 
     public Iterator<T> iterator()
     {
         return _queue.iterator();
+    }
+
+    private void reportAboveIfNecessary()
+    {
+        synchronized (_listener)
+        {
+            if (++_count == _flowControlHighThreshold)
+            {
+                _listener.aboveThreshold(_count);
+            }
+        }
+    }
+
+    private void reportBelowIfNecessary()
+    {
+        synchronized (_listener)
+        {
+            if (_count-- == _flowControlLowThreshold)
+            {
+                _listener.underThreshold(_count);
+            }
+        }
     }
 }
