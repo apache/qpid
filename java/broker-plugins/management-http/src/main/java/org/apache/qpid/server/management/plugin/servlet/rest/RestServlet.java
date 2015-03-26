@@ -426,18 +426,11 @@ public class RestServlet extends AbstractServlet
         boolean updateOnlyAllowed = isFullObjectURL && "POST".equalsIgnoreCase(request.getMethod());
         try
         {
-            if (names.isEmpty())
+            if (names.isEmpty() && _hierarchy.length == 0)
             {
-                if (_hierarchy.length == 0)
-                {
-                    getBroker().setAttributes(providedObject);
-                    response.setStatus(HttpServletResponse.SC_OK);
-                    return;
-                }
-                else if (isFullObjectURL)
-                {
-                    throw new ServletException("Cannot identify request target object");
-                }
+                getBroker().setAttributes(providedObject);
+                response.setStatus(HttpServletResponse.SC_OK);
+                return;
             }
 
             ConfiguredObject theParent = getBroker();
