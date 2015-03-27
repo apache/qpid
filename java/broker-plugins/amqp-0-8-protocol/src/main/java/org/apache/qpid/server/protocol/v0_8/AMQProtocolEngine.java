@@ -42,7 +42,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.security.auth.Subject;
@@ -1161,8 +1160,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
     {
         if (throwable instanceof AMQProtocolHeaderException)
         {
-            writeFrame(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
-            _sender.close();
+            sendResponseAndCloseSender(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
 
             _logger.error("Error in protocol initiation " + this + ":" + getRemoteAddress() + " :" + throwable.getMessage(), throwable);
         }
@@ -1181,30 +1179,57 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
                                                                                                      throwable.getMessage()),
                                                                                              _currentClassId,
                                                                                              _currentMethodId);
-
-                try
-                {
-                    writeFrame(closeBody.generateFrame(0));
-
-                    _sender.close();
-                }
-                catch(SenderException e)
-                {
-                    // ignore
-                }
-
+                sendResponseAndCloseSender(closeBody.generateFrame(0));
             }
             finally
             {
-                if(throwable instanceof Error)
+                if (!(throwable instanceof TransportException
+                        || throwable instanceof ConnectionScopedRuntimeException))
                 {
-                    throw (Error) throwable;
-                }
-                if(throwable instanceof ServerScopedRuntimeException)
-                {
-                    throw (ServerScopedRuntimeException) throwable;
-                }
+                    if (throwable instanceof Error)
+                    {
+                        throw (Error) throwable;
+                    }
 
+                    if (throwable instanceof RuntimeException)
+                    {
+                        throw (RuntimeException) throwable;
+                    }
+
+                    if (throwable instanceof Throwable)
+                    {
+                        throw new ServerScopedRuntimeException("Unexpected exception", throwable);
+                    }
+                }
+            }
+        }
+    }
+
+    private void sendResponseAndCloseSender(AMQDataBlock dataBlock)
+    {
+        try
+        {
+            writeFrame(dataBlock);
+        }
+        catch(SenderException e)
+        {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Exception occurred on sending response", e);
+            }
+        }
+        finally
+        {
+            try
+            {
+                _sender.close();
+            }
+            catch(SenderException e)
+            {
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Exception occurred on sender close", e);
+                }
             }
         }
     }

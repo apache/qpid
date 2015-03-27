@@ -20,20 +20,30 @@
  */
 package org.apache.qpid.server.protocol.v0_8;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.properties.ConnectionStartProperties;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.util.BrokerTestHelper;
+import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
+import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.transport.ByteBufferSender;
+import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.network.NetworkConnection;
 
 public class AMQProtocolEngineTest extends QpidTestCase
@@ -92,4 +102,103 @@ public class AMQProtocolEngineTest extends QpidTestCase
 
         assertFalse("Unexpected closeWhenNoRoute after client properties set", engine.isCloseWhenNoRoute());
     }
+
+    public void testThrownExceptionOnSendingResponseFromExceptionHandler()
+    {
+        ByteBufferSender sender = mock(ByteBufferSender.class);
+        when(_network.getSender()).thenReturn(sender);
+        doThrow(new SenderException("exception on close")).when(sender).close();
+        doThrow(new SenderException("exception on send")).when(sender).send(any(ByteBuffer.class));
+
+        AMQProtocolEngine engine = new AMQProtocolEngine(_broker, _network, 0, _port, _transport);
+
+        try
+        {
+            engine.exception(new ConnectionScopedRuntimeException("test"));
+        }
+        catch (Exception e)
+        {
+            fail("Unexpected exception is thrown " + e);
+        }
+
+        doThrow(new NullPointerException("unexpected exception")).when(sender).send(any(ByteBuffer.class));
+        try
+        {
+            engine.exception(new ConnectionScopedRuntimeException("test"));
+            fail("Unexpected exception should be reported");
+        }
+        catch (NullPointerException e)
+        {
+            // pass
+        }
+
+    }
+
+    public void testExceptionHandling()
+    {
+        ByteBufferSender sender = mock(ByteBufferSender.class);
+        when(_network.getSender()).thenReturn(sender);
+
+        AMQProtocolEngine engine = new AMQProtocolEngine(_broker, _network, 0, _port, _transport);
+
+        try
+        {
+            engine.exception(new ConnectionScopedRuntimeException("test"));
+        }
+        catch (Exception e)
+        {
+            fail("Unexpected exception is thrown " + e);
+        }
+
+
+        try
+        {
+            engine.exception(new SenderException("test"));
+        }
+        catch (NullPointerException e)
+        {
+            fail("Unexpected exception should be reported");
+        }
+
+        try
+        {
+            engine.exception(new NullPointerException("test"));
+            fail("NullPointerException should be re-thrown");
+        }
+        catch (NullPointerException e)
+        {
+            //pass
+        }
+
+        try
+        {
+            engine.exception(new ServerScopedRuntimeException("test"));
+            fail("ServerScopedRuntimeException should be re-thrown");
+        }
+        catch (ServerScopedRuntimeException e)
+        {
+            //pass
+        }
+
+        try
+        {
+            engine.exception(new AMQException(AMQConstant.INTERNAL_ERROR, "test"));
+            fail("AMQException should be re-thrown as ServerScopedRuntimeException");
+        }
+        catch (ServerScopedRuntimeException e)
+        {
+            //pass
+        }
+
+        try
+        {
+            engine.exception(new Error("test"));
+            fail("Error should be re-thrown");
+        }
+        catch (Error e)
+        {
+            //pass
+        }
+    }
+
 }
