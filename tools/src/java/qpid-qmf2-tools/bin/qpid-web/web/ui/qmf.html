@@ -857,9 +857,6 @@ these are used to enable a semi-transparent "smoked glass" background behind the
         		            <li id="add-queue-ordering-policy" class="arrow">
                                 <a href="#ordering-policy">Order Policy<p>Fifo (default)</p></a>
                             </li>
-        		            <li id="add-queue-generate-queue-events" class="arrow">
-                                <a href="#generate-queue-events">Event Policy<p>Off (default)</p></a>
-                            </li>
         		            <li class="arrow"><a href="#add-queue-additional">Additional Options</a></li>
         	            </ul>
                     </form>
@@ -927,33 +924,6 @@ these are used to enable a semi-transparent "smoked glass" background behind the
                 </div> <!-- End of page -->
             </div> <!-- End of ordering-policy-scroller -->
         </div> <!-- End of ordering-policy -->
-
-        <div id="generate-queue-events" class="popup">
-            <div class="header">
-		        <a class="back button" href="#">Add Queue</a>
-                <h1>Event Policy</h1>
-            </div>
-
-            <div id="generate-queue-events-scroller" class="scroll-area">
-                <div class="page">
-	                <ul class="list">
-                        <li>
-                            <label for="generate-no-events">Off (default)</label>
-                            <input type="radio" id="generate-no-events" name="generate-queue-events" value="" checked />
-                        </li>
-                        <li>
-                            <label for="generate-enqueue-events">Enqueue</label>
-                            <input type="radio" id="generate-enqueue-events" name="generate-queue-events" value="1" />
-                        </li>
-                        <li>
-                            <label for="generate-enqueue-dequeue-events">Enqueue & Dequeue</label>
-                            <input type="radio" id="generate-enqueue-dequeue-events" name="generate-queue-events" value="2" />
-                        </li>
-	                </ul>
-                    <p class="note">Generate an event that can be processed by registered listeners (e.g. for replication).</p>
-                </div> <!-- End of page -->
-            </div> <!-- End of generate-queue-events-scroller -->
-        </div> <!-- End of generate-queue-events -->
 
         <div id="add-queue-additional" class="popup">
             <div class="header">

@@ -225,7 +225,6 @@ def OptionsAndArguments(argv):
     group3.add_option("--max-queue-count", action="store", type="int", metavar="<n>", help="Maximum in-memory queue size as a number of messages")
     group3.add_option("--limit-policy", action="store", choices=["none", "reject", "ring", "ring-strict"], metavar="<policy>", help="Action to take when queue limit is reached")
     group3.add_option("--lvq-key", action="store", metavar="<key>", help="Last Value Queue key")
-    group3.add_option("--generate-queue-events", action="store", type="int", metavar="<n>", help="If set to 1, every enqueue will generate an event that can be processed by registered listeners (e.g. for replication). If set to 2, events will be generated for enqueues and dequeues.")
     group3.add_option("--flow-stop-size", action="store", type="int", metavar="<n>",
                       help="Turn on sender flow control when the number of queued bytes exceeds this value.")
     group3.add_option("--flow-resume-size", action="store", type="int", metavar="<n>",
@@ -316,8 +315,6 @@ def OptionsAndArguments(argv):
         config._lvq_key = opts.lvq_key
     if opts.ive:
         config._ive = True
-    if opts.generate_queue_events:
-        config._eventGeneration = opts.generate_queue_events
     if opts.force:
         config._if_empty = False
         config._if_unused = False

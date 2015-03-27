@@ -149,11 +149,6 @@ import org.apache.qpid.qmf2.util.GetOpt;
  *     --limit-policy=&lt;policy&gt;
  *                         Action to take when queue limit is reached
  *     --order=&lt;ordering&gt;  Queue ordering policy
- *     --generate-queue-events=&lt;n&gt;
- *                         If set to 1, every enqueue will generate an event that
- *                         can be processed by registered listeners (e.g. for
- *                         replication). If set to 2, events will be generated
- *                         for enqueues and dequeues.
  *     --flow-stop-size=&lt;n&gt;
  *                         Turn on sender flow control when the number of queued
  *                         bytes exceeds this value.
@@ -285,11 +280,6 @@ public final class QpidConfig
     "    --limit-policy=<policy>\n" +
     "                        Action to take when queue limit is reached\n" +
     "    --order=<ordering>  Queue ordering policy\n" +
-    "    --generate-queue-events=<n>\n" +
-    "                        If set to 1, every enqueue will generate an event that\n" +
-    "                        can be processed by registered listeners (e.g. for\n" +
-    "                        replication). If set to 2, events will be generated\n" +
-    "                        for enqueues and dequeues.\n" +
     "    --flow-stop-size=<n>\n" +
     "                        Turn on sender flow control when the number of queued\n" +
     "                        bytes exceeds this value.\n" +
@@ -1230,7 +1220,7 @@ for (Map.Entry<String, Object> entry  : args.entrySet()) {
     {
         String[] longOpts = {"help", "durable", "bindings", "broker-addr=", "file-count=",
                              "file-size=", "max-queue-size=", "max-queue-count=", "limit-policy=",
-                             "order=", "sequence", "ive", "generate-queue-events=", "force", "force-if-not-empty",
+                             "order=", "sequence", "ive", "force", "force-if-not-empty",
                              "force-if-used", "alternate-exchange=", "passive", "timeout=", "file=", "flow-stop-size=",
                              "flow-resume-size=", "flow-stop-count=", "flow-resume-count=", "argument="};
 

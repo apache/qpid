@@ -36,7 +36,7 @@ import java.util.ArrayList;
  * <pre>{@code
  * String[] longOpts = {"help", "durable", "bindings", "broker-addr=", "file-count=",
  *                      "file-size=", "max-queue-size=", "max-queue-count=", "limit-policy=",
- *                      "order=", "sequence", "ive", "generate-queue-events=", "force", "force-if-not-empty",
+ *                      "order=", "sequence", "ive", "force", "force-if-not-empty",
  *                      "force-if-used", "alternate-exchange=", "passive", "timeout=", "file=", "flow-stop-size=",
  *                      "flow-resume-size=", "flow-stop-count=", "flow-resume-count=", "argument="};
  *
