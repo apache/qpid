@@ -86,10 +86,6 @@ Add Queue Options:
                              fifo (default) - First in, first out
                              lvq            - Last Value Queue ordering, allows queue browsing
                              lvq-no-browse  - Last Value Queue ordering, browsing clients may lose data
-    --generate-queue-events N
-                         If set to 1, every enqueue will generate an event that can be processed by
-                         registered listeners (e.g. for replication). If set to 2, events will be
-                         generated for enqueues and dequeues
 
 Add Exchange Options:
     --durable    Exchange is durable
