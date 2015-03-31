@@ -1158,51 +1158,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
 
     public void exception(Throwable throwable)
     {
-        if (throwable instanceof AMQProtocolHeaderException)
-        {
-            sendResponseAndCloseSender(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
-
-            _logger.error("Error in protocol initiation " + this + ":" + getRemoteAddress() + " :" + throwable.getMessage(), throwable);
-        }
-        else if (throwable instanceof IOException)
-        {
-            _logger.info("IOException caught in " + this + ", connection closed implicitly: " + throwable);
-        }
-        else
-        {
-            try
-            {
-                _logger.error("Exception caught in " + this + ", closing connection explicitly: " + throwable, throwable);
-
-                ConnectionCloseBody closeBody = _methodRegistry.createConnectionCloseBody(AMQConstant.INTERNAL_ERROR.getCode(),
-                                                                                             AMQShortString.validValueOf(
-                                                                                                     throwable.getMessage()),
-                                                                                             _currentClassId,
-                                                                                             _currentMethodId);
-                sendResponseAndCloseSender(closeBody.generateFrame(0));
-            }
-            finally
-            {
-                if (!(throwable instanceof TransportException
-                        || throwable instanceof ConnectionScopedRuntimeException))
-                {
-                    if (throwable instanceof Error)
-                    {
-                        throw (Error) throwable;
-                    }
-
-                    if (throwable instanceof RuntimeException)
-                    {
-                        throw (RuntimeException) throwable;
-                    }
-
-                    if (throwable instanceof Throwable)
-                    {
-                        throw new ServerScopedRuntimeException("Unexpected exception", throwable);
-                    }
-                }
-            }
-        }
+        // noop - exception method is not used by new i/o layer
     }
 
     private void sendResponseAndCloseSender(AMQDataBlock dataBlock)
