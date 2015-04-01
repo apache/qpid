@@ -27,10 +27,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Set;
 
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.test.utils.TestFileUtils;
+import org.apache.qpid.util.FileUtils;
 
 public class FileHelperTest extends QpidTestCase
 {
@@ -121,6 +122,43 @@ public class FileHelperTest extends QpidTestCase
         }
     }
 
+    public void testIsWritableDirectoryForFilePath() throws Exception
+    {
+        File workDir = TestFileUtils.createTestDirectory("test", true);
+        try
+        {
+            File file = new File(workDir, getTestName());
+            file.createNewFile();
+            assertFalse("Should return false for a file", _fileHelper.isWritableDirectory(file.getAbsolutePath()));
+        }
+        finally
+        {
+            FileUtils.delete(workDir, true);
+        }
+    }
+
+
+    public void testIsWritableDirectoryForNonWritablePath() throws Exception
+    {
+        File workDir = TestFileUtils.createTestDirectory("test", true);
+        try
+        {
+            if (Files.getFileStore(workDir.toPath()).supportsFileAttributeView(PosixFileAttributeView.class))
+            {
+                File file = new File(workDir, getTestName());
+                file.mkdirs();
+                if (file.setWritable(false, false))
+                {
+                    assertFalse("Should return false for non writable folder",
+                            _fileHelper.isWritableDirectory(new File(file, "test").getAbsolutePath()));
+                }
+            }
+        }
+        finally
+        {
+            FileUtils.delete(workDir, true);
+        }
+    }
 
     private void assertPermissions(Path path) throws IOException
     {

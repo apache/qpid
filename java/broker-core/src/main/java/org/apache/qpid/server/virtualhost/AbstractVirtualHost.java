@@ -297,7 +297,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
 
 
 
-    private void validateMessageStoreCreation()
+    protected void validateMessageStoreCreation()
     {
         MessageStore store = createMessageStore();
         if (store != null)

@@ -20,12 +20,14 @@
  */
 package org.apache.qpid.server.virtualhost.derby;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.model.ManagedAttributeField;
 import org.apache.qpid.server.model.ManagedObject;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.derby.DerbyMessageStore;
+import org.apache.qpid.server.util.FileHelper;
 import org.apache.qpid.server.virtualhost.AbstractVirtualHost;
 
 import java.util.Map;
@@ -74,5 +76,14 @@ public class DerbyVirtualHostImpl extends AbstractVirtualHost<DerbyVirtualHostIm
     public Long getStoreOverfullSize()
     {
         return _storeOverfullSize;
+    }
+
+    @Override
+    protected void validateMessageStoreCreation()
+    {
+        if (!new FileHelper().isWritableDirectory(getStorePath()))
+        {
+            throw new IllegalConfigurationException("The store path is not writable directory");
+        }
     }
 }
