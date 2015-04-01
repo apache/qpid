@@ -130,4 +130,30 @@ public class FileHelper
             }
         }
     }
+
+    public boolean isWritableDirectory(String path)
+    {
+        File storePath = new File(path);
+        if (storePath.exists())
+        {
+            if (!storePath.isDirectory())
+            {
+                return false;
+            }
+        }
+        else
+        {
+            do
+            {
+                storePath = storePath.getParentFile();
+                if (storePath == null)
+                {
+                    return false;
+                }
+            }
+            while (!storePath.exists());
+        }
+        return storePath.canWrite();
+    }
+
 }

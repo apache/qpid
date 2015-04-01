@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import org.apache.qpid.server.configuration.IllegalConfigurationException;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.ManagedAttributeField;
@@ -33,6 +34,7 @@ import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.derby.DerbyConfigurationStore;
+import org.apache.qpid.server.util.FileHelper;
 import org.apache.qpid.server.virtualhostnode.AbstractStandardVirtualHostNode;
 
 @ManagedObject( category = false,
@@ -79,5 +81,14 @@ public class DerbyVirtualHostNodeImpl extends AbstractStandardVirtualHostNode<De
     public static Map<String, Collection<String>> getSupportedChildTypes()
     {
         return Collections.singletonMap(VirtualHost.class.getSimpleName(), getSupportedVirtualHostTypes(true));
+    }
+
+    @Override
+    public void validateOnCreate()
+    {
+        if (!new FileHelper().isWritableDirectory(getStorePath()))
+        {
+            throw new IllegalConfigurationException("The store path is not writable directory");
+        }
     }
 }

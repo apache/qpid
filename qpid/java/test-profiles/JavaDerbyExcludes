@@ -20,5 +20,3 @@
 org.apache.qpid.server.store.berkeleydb.*
 org.apache.qpid.server.store.berkeleydb.replication.*
 
-# QPID-6446: temporary disable the test until issue is resolved
-org.apache.qpid.systest.rest.VirtualHostNodeRestTest#testCreateVirtualHostNodeByPost
