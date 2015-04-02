@@ -1161,35 +1161,6 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
         // noop - exception method is not used by new i/o layer
     }
 
-    private void sendResponseAndCloseSender(AMQDataBlock dataBlock)
-    {
-        try
-        {
-            writeFrame(dataBlock);
-        }
-        catch(SenderException e)
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Exception occurred on sending response", e);
-            }
-        }
-        finally
-        {
-            try
-            {
-                _sender.close();
-            }
-            catch(SenderException e)
-            {
-                if (_logger.isDebugEnabled())
-                {
-                    _logger.debug("Exception occurred on sender close", e);
-                }
-            }
-        }
-    }
-
     public long getReadBytes()
     {
         return _readBytes;
