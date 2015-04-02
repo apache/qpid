@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -51,8 +50,6 @@ import org.apache.qpid.amqp_1_0.transport.SaslServerProvider;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.amqp_1_0.type.Symbol;
-import org.apache.qpid.amqp_1_0.type.transport.AmqpError;
-import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.server.protocol.ServerProtocolEngine;
@@ -65,14 +62,11 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.UsernamePrincipal;
 import org.apache.qpid.server.util.Action;
-import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.transport.ByteBufferSender;
-import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
 
 public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOutputHandler
 {
-    private static final Logger _logger = LoggerFactory.getLogger(ProtocolEngine_1_0_0_SASL.class);
 
     private final AmqpPort<?> _port;
     private final Transport _transport;
@@ -449,37 +443,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
     public void exception(Throwable throwable)
     {
-        if (throwable instanceof IOException)
-        {
-            _logger.info("IOException caught in " + this + ", connection closed implicitly: " + throwable);
-        }
-        else
-        {
-
-            try
-            {
-                final Error err = new Error();
-                err.setCondition(AmqpError.INTERNAL_ERROR);
-                err.setDescription(throwable.getMessage());
-                _endpoint.close(err);
-                close();
-            }
-            catch(TransportException e)
-            {
-                _logger.info("Error when handling exception",e);
-            }
-            finally
-            {
-                if(throwable instanceof java.lang.Error)
-                {
-                    throw (java.lang.Error) throwable;
-                }
-                if(throwable instanceof ServerScopedRuntimeException)
-                {
-                    throw (ServerScopedRuntimeException) throwable;
-                }
-            }
-        }
+        // noop - exception method is not used by new i/o layer
     }
 
     public void closed()
