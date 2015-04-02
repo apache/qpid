@@ -276,8 +276,8 @@ amqp://guest:guest@client1/development?maxprefetch='1'&amp;brokerlist='tcp://loc
         <tgroup cols="3">
           <thead>
             <row>
-              <entry>Argument name</entry>
-              <entry>Argument name</entry>
+              <entry>Argument Name</entry>
+              <entry>Argument Type</entry>
               <entry>Argument Description</entry>
             </row>
           </thead>
