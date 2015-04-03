@@ -494,6 +494,10 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
                     byteBuffersWritten++;
                     _buffers.poll();
                 }
+                else
+                {
+                    break;
+                }
             }
 
 
@@ -523,6 +527,10 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
                         {
                             byteBuffersWritten++;
                             _buffers.poll();
+                        }
+                        else
+                        {
+                            break;
                         }
                     }
                 }
@@ -582,7 +590,7 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
         {
             LOGGER.warn("Send ignored as the connection is already closed");
         }
-        else
+        else if (msg.remaining() > 0)
         {
             _buffers.add(msg);
         }
