@@ -682,17 +682,17 @@ acl deny all all
         # Altex is in use as an alternate exchange, we should get an exception
         self.assertRaises(Exception, a.delExchange, "altex")
         # Check backup that was connected during setup.
-        cluster[1].wait_status("ready")
-        cluster[1].wait_backup("ex")
-        cluster[1].wait_backup("q")
+        def wait(broker):
+            broker.wait_status("ready")
+            for a in ["q", "ex", "altq", "altex"]:
+                broker.wait_backup(a)
+        wait(cluster[1])
         cluster.bounce(0)
         verify(cluster[1])
 
         # Check a newly started backup.
         cluster.start()
-        cluster[2].wait_status("ready")
-        cluster[2].wait_backup("ex")
-        cluster[2].wait_backup("q")
+        wait(cluster[2])
         cluster.bounce(1)
         verify(cluster[2])
 
@@ -838,21 +838,6 @@ acl deny all all
         send_ttl_messages()
         cluster.start()
         send_ttl_messages()
-
-    def test_stale_response(self):
-        """Check for race condition where a stale response is processed after an
-        event for the same queue/exchange """
-        cluster = HaCluster(self, 2)
-        s = cluster[0].connect().session()
-        s.sender("keep;{create:always}") # Leave this queue in place.
-        for i in xrange(100):
-            q = "deleteme%s"%(i)
-            cluster[0].agent.addQueue(q)
-            cluster[0].agent.delQueue(q)
-        # It is possible for the backup to attempt to subscribe after the queue
-        # is deleted. This is not an error, but is logged as an error on the primary.
-        # The backup does not log this as an error so we only check the backup log for errors.
-        cluster[1].assert_log_clean()
 
     def test_missed_recreate(self):
         """If a queue or exchange is destroyed and one with the same name re-created
