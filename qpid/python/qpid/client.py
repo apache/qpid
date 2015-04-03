@@ -126,7 +126,8 @@ class Client:
       return self.channel(id)
 
   def close(self):
-    self.socket.close()
+    if self.peer:
+      self.peer.stop()
 
 class ClientDelegate(Delegate):
 

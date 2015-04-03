@@ -24,7 +24,7 @@ sorts incoming frames to their intended channels, and dispatches
 incoming method frames to a delegate.
 """
 
-import thread, threading, traceback, socket, sys, logging
+import threading, traceback, socket, sys
 from connection08 import EOF, Method, Header, Body, Request, Response, VersionError
 from message import Message
 from queue import Queue, Closed as QueueClosed
@@ -32,6 +32,9 @@ from content import Content
 from cStringIO import StringIO
 from time import time
 from exceptions import Closed
+from logging import getLogger
+
+log = getLogger("qpid.peer")
 
 class Sequence:
 
@@ -39,7 +42,7 @@ class Sequence:
     # we should keep start for wrap around
     self._next = start
     self.step = step
-    self.lock = thread.allocate_lock()
+    self.lock = threading.Lock()
 
   def next(self):
     self.lock.acquire()
@@ -58,7 +61,7 @@ class Peer:
     self.outgoing = Queue(0)
     self.work = Queue(0)
     self.channels = {}
-    self.lock = thread.allocate_lock()
+    self.lock = threading.Lock()
     if channel_factory:
       self.channel_factory = channel_factory
     else:
@@ -77,13 +80,20 @@ class Peer:
     return ch
 
   def start(self):
-    thread.start_new_thread(self.writer, ())
-    thread.start_new_thread(self.reader, ())
-    thread.start_new_thread(self.worker, ())
+    self.writer_thread = threading.Thread(target=self.writer)
+    self.writer_thread.daemon = True
+    self.writer_thread.start()
+
+    self.reader_thread = threading.Thread(target=self.reader)
+    self.reader_thread.daemon = True
+    self.reader_thread.start()
+
+    self.worker_thread = threading.Thread(target=self.worker)
+    self.worker_thread.daemon = True
+    self.worker_thread.start()
 
   def fatal(self, message=None):
     """Call when an unexpected exception occurs that will kill a thread."""
-    if message: print >> sys.stderr, message
     self.closed("Fatal error: %s\n%s" % (message or "", traceback.format_exc()))
 
   def reader(self):
@@ -119,6 +129,8 @@ class Peer:
           self.closed(e)
           break
         self.conn.flush()
+    except QueueClosed:
+      pass
     except:
       self.fatal()
 
@@ -138,6 +150,23 @@ class Peer:
       self.closed("worker closed")
     except:
       self.fatal()
+
+  def stop(self):
+    try:
+      self.work.close();
+      self.outgoing.close();
+      self.conn.close();
+    finally:
+      timeout = 1;
+      self.worker_thread.join(timeout);
+      if self.worker_thread.isAlive():
+        log.warn("Worker thread failed to shutdown within timeout")
+      self.reader_thread.join(timeout);
+      if self.reader_thread.isAlive():
+        log.warn("Reader thread failed to shutdown within timeout")
+      self.writer_thread.join(timeout);
+      if self.writer_thread.isAlive():
+        log.warn("Writer thread failed to shutdown within timeout")
 
 class Requester:
 
