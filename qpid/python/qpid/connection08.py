@@ -162,11 +162,11 @@ class Connection:
       frame.channel = channel
       end = c.decode_octet()
       if end != self.FRAME_END:
-	garbage = ""
-	while end != self.FRAME_END:
-	  garbage += chr(end)
-	  end = c.decode_octet()
-	raise "frame error: expected %r, got %r" % (self.FRAME_END, garbage)
+	      garbage = ""
+	      while end != self.FRAME_END:
+	        garbage += chr(end)
+	        end = c.decode_octet()
+	      raise FramingError("frame error: expected %r, got %r" % (self.FRAME_END, garbage))
       return frame
     except EOF:
       # An EOF caught here can indicate an error decoding the frame,
@@ -214,25 +214,25 @@ class Connection:
     flags = c.decode_octet() # TODO: currently ignoring flags
     framing_version = (flags & 0xc0) >> 6
     if framing_version != 0:
-      raise "frame error: unknown framing version"
+      raise FramingError("frame error: unknown framing version")
     type = self.spec.constants.byid[c.decode_octet()].name
     frame_size = c.decode_short()
     if frame_size < 12: # TODO: Magic number (frame header size)
-      raise "frame error: frame size too small"
+      raise FramingError("frame error: frame size too small")
     reserved1 = c.decode_octet()
     field = c.decode_octet()
     subchannel = field & 0x0f
     channel = c.decode_short()
     reserved2 = c.decode_long() # TODO: reserved maybe need to ensure 0
     if (flags & 0x30) != 0 or reserved1 != 0 or (field & 0xf0) != 0:
-      raise "frame error: reserved bits not all zero"
+      raise FramingError("frame error: reserved bits not all zero")
     body_size = frame_size - 12 # TODO: Magic number (frame header size)
     body = c.read(body_size)
     dec = codec.Codec(StringIO(body), self.spec)
     try:
       frame = Frame.DECODERS[type].decode(self.spec, dec, len(body))
     except EOF:
-      raise "truncated frame body: %r" % body
+      raise FramingError("truncated frame body: %r" % body)
     frame.channel = channel
     frame.subchannel = subchannel
     end = c.decode_octet()
@@ -241,7 +241,7 @@ class Connection:
       while end != self.FRAME_END:
         garbage += chr(end)
         end = c.decode_octet()
-      raise "frame error: expected %r, got %r" % (self.FRAME_END, garbage)
+      raise FramingError("frame error: expected %r, got %r" % (self.FRAME_END, garbage))
     return frame
 
   def write_99_0(self, frame):
