@@ -28,7 +28,7 @@ endif (QPID_LINK_BOOST_DYNAMIC)
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
-set(test_wrap ${shell} ${CMAKE_SOURCE_DIR}/src/tests/run_test${test_script_suffix} --build-dir=${CMAKE_BINARY_DIR})
+set(test_wrap ${shell} ${CMAKE_SOURCE_DIR}/src/tests/run_test${test_script_suffix} -buildDir=${CMAKE_BINARY_DIR})
 
 if (BUILD_TESTING_UNITTESTS)
 
@@ -54,7 +54,7 @@ if ("${ARGV1}" STREQUAL "LONG")
   set_target_properties(${testname} PROPERTIES COMPILE_DEFINITIONS LONG_TEST)
 endif ()
 remember_location(${testname})
-add_test (${testname} ${test_wrap} --boost-test -- ${${testname}_LOCATION})
+add_test (${testname} ${test_wrap} -boostTest -- ${${testname}_LOCATION})
 unset (testname)
 ENDMACRO (define_journal_test)
 
@@ -101,7 +101,7 @@ target_link_libraries (jtt__ut
                        ${Boost_PROGRAM_OPTIONS_LIBRARY}
                        ${clock_gettime_LIB} legacystore_shared)
 
-add_test(journal_jtt_ut ${test_wrap} --boost-test --working-dir=${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt -- ${CMAKE_CURRENT_BINARY_DIR}/jtt__ut)
+add_test(journal_jtt_ut ${test_wrap} -boostTest -workingDir=${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt -- ${CMAKE_CURRENT_BINARY_DIR}/jtt__ut)
 
 endif (BUILD_TESTING_UNITTESTS)
 

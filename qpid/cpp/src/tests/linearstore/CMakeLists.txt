@@ -21,7 +21,7 @@ if(BUILD_LINEARSTORE AND BUILD_TESTING)
 
 message(STATUS "Building linearstore tests")
 
-set(test_wrap ${shell} ${CMAKE_SOURCE_DIR}/src/tests/run_test${test_script_suffix} --build-dir=${CMAKE_BINARY_DIR})
+set(test_wrap ${shell} ${CMAKE_SOURCE_DIR}/src/tests/run_test${test_script_suffix} -buildDir=${CMAKE_BINARY_DIR})
 
 add_test (linearstore_python_tests ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/run_python_tests${test_script_suffix})
 
