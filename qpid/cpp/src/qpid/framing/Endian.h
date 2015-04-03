@@ -34,7 +34,7 @@ namespace framing {
 class Endian
 {
   public:
-    static uint8_t* convertIfRequired(uint8_t* const octets, int width);
+    static uint8_t* convertIfRequired(uint8_t* octets, int width);
   private:
     const bool littleEndian;
     Endian();
