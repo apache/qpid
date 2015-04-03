@@ -127,7 +127,17 @@ class Client:
 
   def close(self):
     if self.peer:
-      self.peer.stop()
+      try:
+        if not self.closed:
+          channel = self.channel(0);
+          if channel and not channel._closed:
+             try:
+               channel.connection_close(reply_code=200)
+             except:
+               pass
+          self.closed = True
+      finally:
+        self.peer.stop()
 
 class ClientDelegate(Delegate):
 
