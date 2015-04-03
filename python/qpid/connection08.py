@@ -118,6 +118,7 @@ class Connection:
     self.FRAME_END = self.spec.constants.byname["frame_end"].id
     self.write = getattr(self, "write_%s_%s" % (self.spec.major, self.spec.minor))
     self.read = getattr(self, "read_%s_%s" % (self.spec.major, self.spec.minor))
+    self.io = io
 
   def flush(self):
     self.codec.flush()
@@ -249,6 +250,9 @@ class Connection:
     
   def read_99_0(self):
     return self.read_0_10()
+
+  def close(self):
+    self.io.close();
 
 class Frame:
 
