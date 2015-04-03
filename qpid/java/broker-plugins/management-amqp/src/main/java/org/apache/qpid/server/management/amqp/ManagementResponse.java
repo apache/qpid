@@ -26,6 +26,7 @@ import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.internal.InternalMessage;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
@@ -87,6 +88,12 @@ class ManagementResponse implements MessageInstance
     public ConsumerImpl getAcquiringConsumer()
     {
         return _consumer;
+    }
+
+    @Override
+    public MessageEnqueueRecord getEnqueueRecord()
+    {
+        return null;
     }
 
     @Override

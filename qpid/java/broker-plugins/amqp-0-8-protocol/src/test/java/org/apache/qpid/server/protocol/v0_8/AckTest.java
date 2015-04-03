@@ -33,6 +33,7 @@ import org.apache.qpid.framing.MessagePublishInfo;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestMemoryMessageStore;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -105,22 +106,21 @@ public class AckTest extends QpidTestCase
 
             final MessageMetaData mmd = new MessageMetaData(publishBody,cb, System.currentTimeMillis());
 
-            final StoredMessage<MessageMetaData> result =_messageStore.addMessage(mmd);
+            final StoredMessage<MessageMetaData> result =_messageStore.addMessage(mmd).allContentAdded();
 
             final StoredMessage storedMessage = result;
             final AMQMessage message = new AMQMessage(storedMessage);
             ServerTransaction txn = new AutoCommitTransaction(_messageStore);
             txn.enqueue(_queue, message,
-                        new ServerTransaction.Action()
+                        new ServerTransaction.EnqueueAction()
                         {
-                            public void postCommit()
+                            public void postCommit(MessageEnqueueRecord... records)
                             {
-                                _queue.enqueue(message,null);
+                                _queue.enqueue(message,null, null);
                             }
 
                             public void onRollback()
                             {
-                                //To change body of implemented methods use File | Settings | File Templates.
                             }
                         });
 

@@ -86,7 +86,7 @@ public class LastValueQueueListTest extends TestCase
     {
         ServerMessage message = createTestServerMessage(null);
 
-        _list.add(message);
+        _list.add(message, null);
         int numberOfEntries = countEntries(_list);
         assertEquals(1, numberOfEntries);
     }
@@ -95,7 +95,7 @@ public class LastValueQueueListTest extends TestCase
     {
         ServerMessage message = createTestServerMessage(null);
 
-        QueueEntry addedEntry = _list.add(message);
+        QueueEntry addedEntry = _list.add(message, null);
         addedEntry.acquire();
         addedEntry.delete();
 
@@ -107,7 +107,7 @@ public class LastValueQueueListTest extends TestCase
     {
         ServerMessage message = createTestServerMessage(TEST_KEY_VALUE);
 
-        _list.add(message);
+        _list.add(message, null);
         int numberOfEntries = countEntries(_list);
         assertEquals(1, numberOfEntries);
     }
@@ -116,7 +116,7 @@ public class LastValueQueueListTest extends TestCase
     {
         ServerMessage message = createTestServerMessage(TEST_KEY_VALUE);
 
-        QueueEntry addedEntry = _list.add(message);
+        QueueEntry addedEntry = _list.add(message, null);
         addedEntry.acquire();
         addedEntry.delete();
 
@@ -129,8 +129,8 @@ public class LastValueQueueListTest extends TestCase
         ServerMessage message1 = createTestServerMessage(TEST_KEY_VALUE1);
         ServerMessage message2 = createTestServerMessage(TEST_KEY_VALUE2);
 
-        _list.add(message1);
-        _list.add(message2);
+        _list.add(message1, null);
+        _list.add(message2, null);
 
         int numberOfEntries = countEntries(_list);
         assertEquals(2, numberOfEntries);
@@ -141,8 +141,8 @@ public class LastValueQueueListTest extends TestCase
         ServerMessage message1 = createTestServerMessage(TEST_KEY_VALUE);
         ServerMessage message2 = createTestServerMessage(TEST_KEY_VALUE);
 
-        _list.add(message1);
-        _list.add(message2);
+        _list.add(message1, null);
+        _list.add(message2, null);
 
         int numberOfEntries = countEntries(_list);
         assertEquals(1, numberOfEntries);
@@ -153,10 +153,10 @@ public class LastValueQueueListTest extends TestCase
         ServerMessage message1 = createTestServerMessage(TEST_KEY_VALUE);
         ServerMessage message2 = createTestServerMessage(TEST_KEY_VALUE);
 
-        QueueEntry entry1 = _list.add(message1);
+        QueueEntry entry1 = _list.add(message1, null);
         entry1.acquire(); // simulate an in-progress delivery to consumer
 
-        _list.add(message2);
+        _list.add(message2, null);
         assertFalse(entry1.isDeleted());
 
         assertEquals(2, countEntries(_list));
@@ -173,7 +173,7 @@ public class LastValueQueueListTest extends TestCase
 
         ServerMessage message = createTestServerMessage(TEST_KEY_VALUE);
 
-        QueueEntry addedEntry = _list.add(message);
+        QueueEntry addedEntry = _list.add(message, null);
 
         assertEquals(1, countEntries(_list));
         assertEquals(1, _list.getLatestValuesMap().size());
@@ -193,8 +193,8 @@ public class LastValueQueueListTest extends TestCase
         ServerMessage message1 = createTestServerMessage(TEST_KEY_VALUE1);
         ServerMessage message2 = createTestServerMessage(TEST_KEY_VALUE2);
 
-        QueueEntry addedEntry1 = _list.add(message1);
-        QueueEntry addedEntry2 = _list.add(message2);
+        QueueEntry addedEntry1 = _list.add(message1, null);
+        QueueEntry addedEntry2 = _list.add(message2, null);
 
         assertEquals(2, countEntries(_list));
         assertEquals(2, _list.getLatestValuesMap().size());

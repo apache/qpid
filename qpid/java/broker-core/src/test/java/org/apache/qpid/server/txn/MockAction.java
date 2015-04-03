@@ -20,18 +20,24 @@
  */
 package org.apache.qpid.server.txn;
 
-import org.apache.qpid.server.txn.ServerTransaction.Action;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 
 /** 
  * Mock implementation of a ServerTransaction Action
  * allowing its state to be observed.
  * 
  */
-class MockAction implements Action
+class MockAction implements ServerTransaction.EnqueueAction, ServerTransaction.Action
 {
     private boolean _rollbackFired = false;
     private boolean _postCommitFired = false;
 
+    public void postCommit(MessageEnqueueRecord... records)
+    {
+        _postCommitFired = true;
+    }
+
+    @Override
     public void postCommit()
     {
         _postCommitFired = true;

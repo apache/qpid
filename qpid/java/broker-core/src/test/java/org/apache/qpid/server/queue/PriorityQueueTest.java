@@ -48,19 +48,19 @@ public class PriorityQueueTest extends AbstractQueueTestBase
 
         // Enqueue messages in order
         AbstractQueue queue = (AbstractQueue) getQueue();
-        queue.enqueue(createMessage(1L, (byte) 10), null);
-        queue.enqueue(createMessage(2L, (byte) 4), null);
-        queue.enqueue(createMessage(3L, (byte) 0), null);
+        queue.enqueue(createMessage(1L, (byte) 10), null, null);
+        queue.enqueue(createMessage(2L, (byte) 4), null, null);
+        queue.enqueue(createMessage(3L, (byte) 0), null, null);
 
         // Enqueue messages in reverse order
-        queue.enqueue(createMessage(4L, (byte) 0), null);
-        queue.enqueue(createMessage(5L, (byte) 4), null);
-        queue.enqueue(createMessage(6L, (byte) 10), null);
+        queue.enqueue(createMessage(4L, (byte) 0), null, null);
+        queue.enqueue(createMessage(5L, (byte) 4), null, null);
+        queue.enqueue(createMessage(6L, (byte) 10), null, null);
 
         // Enqueue messages out of order
-        queue.enqueue(createMessage(7L, (byte) 4), null);
-        queue.enqueue(createMessage(8L, (byte) 10), null);
-        queue.enqueue(createMessage(9L, (byte) 0), null);
+        queue.enqueue(createMessage(7L, (byte) 4), null, null);
+        queue.enqueue(createMessage(8L, (byte) 10), null, null);
+        queue.enqueue(createMessage(9L, (byte) 0), null, null);
 
         // Register subscriber
         queue.addConsumer(getConsumer(), null, null, "test", EnumSet.noneOf(ConsumerImpl.Option.class));

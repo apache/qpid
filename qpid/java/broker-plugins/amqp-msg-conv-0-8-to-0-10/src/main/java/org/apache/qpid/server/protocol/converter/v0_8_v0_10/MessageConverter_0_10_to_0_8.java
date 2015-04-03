@@ -192,12 +192,6 @@ public class MessageConverter_0_10_to_0_8 implements MessageConverter<MessageTra
             }
 
             @Override
-            public void addContent(int offsetInMessage, ByteBuffer src)
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
             public int getContent(int offsetInMessage, ByteBuffer dst)
             {
                 return message.getContent(dst, offsetInMessage);

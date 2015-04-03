@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -65,7 +66,7 @@ public class MemoryMessageStore implements MessageStore
         }
 
         @Override
-        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
+        public MessageEnqueueRecord enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
 
             if(message.getStoredMessage() instanceof StoredMemoryMessage)
@@ -80,18 +81,24 @@ public class MemoryMessageStore implements MessageStore
                 _localEnqueueMap.put(queue.getId(), messageIds);
             }
             messageIds.add(message.getMessageNumber());
+            return new MemoryEnqueueRecord(queue.getId(), message.getMessageNumber());
         }
 
         @Override
-        public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message)
+        public void dequeueMessage(final MessageEnqueueRecord enqueueRecord)
         {
-            Set<Long> messageIds = _localDequeueMap.get(queue.getId());
+            dequeueMessage(enqueueRecord.getQueueId(), enqueueRecord.getMessageNumber());
+        }
+
+        private void dequeueMessage(final UUID queueId, final long messageNumber)
+        {
+            Set<Long> messageIds = _localDequeueMap.get(queueId);
             if (messageIds == null)
             {
                 messageIds = new HashSet<Long>();
-                _localDequeueMap.put(queue.getId(), messageIds);
+                _localDequeueMap.put(queueId, messageIds);
             }
-            messageIds.add(message.getMessageNumber());
+            messageIds.add(messageNumber);
         }
 
         @Override
@@ -110,36 +117,106 @@ public class MemoryMessageStore implements MessageStore
         }
 
         @Override
-        public void removeXid(long format, byte[] globalId, byte[] branchId)
+        public void removeXid(final StoredXidRecord record)
         {
-            _localDistributedTransactionsRemoves.add(new Xid(format, globalId, branchId));
+            _localDistributedTransactionsRemoves.add(new Xid(record.getFormat(),
+                                                             record.getGlobalId(),
+                                                             record.getBranchId()));
         }
 
         @Override
-        public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
+        public StoredXidRecord recordXid(final long format,
+                                         final byte[] globalId,
+                                         final byte[] branchId,
+                                         EnqueueRecord[] enqueues,
+                                         DequeueRecord[] dequeues)
         {
             _localDistributedTransactionsRecords.put(new Xid(format, globalId, branchId), new DistributedTransactionRecords(enqueues, dequeues));
+            return new MemoryStoredXidRecord(format, globalId, branchId);
         }
+
+
     }
 
+    private static class MemoryStoredXidRecord implements Transaction.StoredXidRecord
+    {
+        private final long _format;
+        private final byte[] _globalId;
+        private final byte[] _branchId;
+
+        public MemoryStoredXidRecord(final long format, final byte[] globalId, final byte[] branchId)
+        {
+            _format = format;
+            _globalId = globalId;
+            _branchId = branchId;
+        }
+
+        @Override
+        public long getFormat()
+        {
+            return _format;
+        }
+
+        @Override
+        public byte[] getGlobalId()
+        {
+            return _globalId;
+        }
+
+        @Override
+        public byte[] getBranchId()
+        {
+            return _branchId;
+        }
+
+
+        @Override
+        public boolean equals(final Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+
+            final MemoryStoredXidRecord that = (MemoryStoredXidRecord) o;
+
+            return _format == that._format
+                   && Arrays.equals(_globalId, that._globalId)
+                   && Arrays.equals(_branchId, that._branchId);
+
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = (int) (_format ^ (_format >>> 32));
+            result = 31 * result + Arrays.hashCode(_globalId);
+            result = 31 * result + Arrays.hashCode(_branchId);
+            return result;
+        }
+    }
     private static final class DistributedTransactionRecords
     {
-        private Transaction.Record[] _enqueues;
-        private Transaction.Record[] _dequeues;
+        private Transaction.EnqueueRecord[] _enqueues;
+        private Transaction.DequeueRecord[] _dequeues;
 
-        public DistributedTransactionRecords(Transaction.Record[] enqueues, Transaction.Record[] dequeues)
+        public DistributedTransactionRecords(Transaction.EnqueueRecord[] enqueues, Transaction.DequeueRecord[] dequeues)
         {
             super();
             _enqueues = enqueues;
             _dequeues = dequeues;
         }
 
-        public Transaction.Record[] getEnqueues()
+        public Transaction.EnqueueRecord[] getEnqueues()
         {
             return _enqueues;
         }
 
-        public Transaction.Record[] getDequeues()
+        public Transaction.DequeueRecord[] getDequeues()
         {
             return _dequeues;
         }
@@ -201,7 +278,7 @@ public class MemoryMessageStore implements MessageStore
     }
 
     @Override
-    public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(final T metaData)
+    public <T extends StorableMessageMetaData> MessageHandle<T> addMessage(final T metaData)
     {
         long id = getNextMessageId();
 
@@ -273,81 +350,121 @@ public class MemoryMessageStore implements MessageStore
     }
 
     @Override
-    public void visitMessages(final MessageHandler handler) throws StoreException
+    public MessageStoreReader newMessageStoreReader()
     {
-        for (StoredMemoryMessage message : _messages.values())
+        return new MemoryMessageStoreReader();
+    }
+
+
+    private static class MemoryEnqueueRecord implements MessageEnqueueRecord
+    {
+        private final UUID _queueId;
+        private final long _messageNumber;
+
+        public MemoryEnqueueRecord(final UUID queueId,
+                                   final long messageNumber)
         {
-            if(!handler.handle(message))
-            {
-                break;
-            }
+            _queueId = queueId;
+            _messageNumber = messageNumber;
+        }
+
+        public UUID getQueueId()
+        {
+            return _queueId;
+        }
+
+        public long getMessageNumber()
+        {
+            return _messageNumber;
         }
     }
 
-    @Override
-    public StoredMessage<?> getMessage(final long messageId)
+    private class MemoryMessageStoreReader implements MessageStoreReader
     {
-        return _messages.get(messageId);
-    }
-
-    @Override
-    public void visitMessageInstances(final MessageInstanceHandler handler) throws StoreException
-    {
-        synchronized (_transactionLock)
+        @Override
+        public StoredMessage<?> getMessage(final long messageId)
         {
-            for (Map.Entry<UUID, Set<Long>> enqueuedEntry : _messageInstances.entrySet())
+            return _messages.get(messageId);
+        }
+
+        @Override
+        public void close()
+        {
+
+        }
+
+        @Override
+        public void visitMessageInstances(final MessageInstanceHandler handler) throws StoreException
+        {
+            synchronized (_transactionLock)
             {
-                UUID resourceId = enqueuedEntry.getKey();
-                for (Long messageId : enqueuedEntry.getValue())
+                for (Map.Entry<UUID, Set<Long>> enqueuedEntry : _messageInstances.entrySet())
                 {
-                    if (!handler.handle(resourceId, messageId))
+                    UUID resourceId = enqueuedEntry.getKey();
+                    for (Long messageId : enqueuedEntry.getValue())
                     {
-                        return;
+                        if (!handler.handle(new MemoryEnqueueRecord(resourceId, messageId)))
+                        {
+                            return;
+                        }
                     }
                 }
             }
         }
-    }
 
-    @Override
-    public void visitMessageInstances(TransactionLogResource queue, final MessageInstanceHandler handler) throws StoreException
-    {
-        synchronized (_transactionLock)
+        @Override
+        public void visitMessageInstances(TransactionLogResource queue, final MessageInstanceHandler handler) throws StoreException
         {
-            Set<Long> ids = _messageInstances.get(queue.getId());
-            if(ids != null)
+            synchronized (_transactionLock)
             {
-                for (long id : ids)
+                Set<Long> ids = _messageInstances.get(queue.getId());
+                if(ids != null)
                 {
-                    if (!handler.handle(queue.getId(), id))
+                    for (long id : ids)
                     {
-                        return;
-                    }
+                        if (!handler.handle(new MemoryEnqueueRecord(queue.getId(), id)))
+                        {
+                            return;
+                        }
 
+                    }
                 }
             }
         }
-    }
 
 
-    @Override
-    public void visitDistributedTransactions(final DistributedTransactionHandler handler) throws StoreException
-    {
-        synchronized (_transactionLock)
+        @Override
+        public void visitMessages(final MessageHandler handler) throws StoreException
         {
-            for (Map.Entry<Xid, DistributedTransactionRecords> entry : _distributedTransactions.entrySet())
+            for (StoredMemoryMessage message : _messages.values())
             {
-                Xid xid = entry.getKey();
-                DistributedTransactionRecords records = entry.getValue();
-                if (!handler.handle(xid.getFormat(),
-                                    xid.getGlobalId(),
-                                    xid.getBranchId(),
-                                    records.getEnqueues(),
-                                    records.getDequeues()))
+                if(!handler.handle(message))
                 {
                     break;
                 }
             }
         }
+
+        @Override
+        public void visitDistributedTransactions(final DistributedTransactionHandler handler) throws StoreException
+        {
+            synchronized (_transactionLock)
+            {
+                for (Map.Entry<Xid, DistributedTransactionRecords> entry : _distributedTransactions.entrySet())
+                {
+                    Xid xid = entry.getKey();
+                    DistributedTransactionRecords records = entry.getValue();
+                    if (!handler.handle(new MemoryStoredXidRecord(xid.getFormat(),
+                                                                  xid.getGlobalId(),
+                                                                  xid.getBranchId()),
+                                        records.getEnqueues(),
+                                        records.getDequeues()))
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
     }
 }

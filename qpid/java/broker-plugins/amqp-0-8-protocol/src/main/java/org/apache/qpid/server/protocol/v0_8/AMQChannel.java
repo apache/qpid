@@ -96,6 +96,7 @@ import org.apache.qpid.server.protocol.ConsumerListener;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueArgumentsConverter;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.store.MessageHandle;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
@@ -429,22 +430,24 @@ public class AMQChannel
                                             contentHeader,
                                             getConnection().getLastReceivedTime());
 
-                final StoredMessage<MessageMetaData> handle = _messageStore.addMessage(messageMetaData);
-                final AMQMessage amqMessage = createAMQMessage(handle);
+                final MessageHandle<MessageMetaData> handle = _messageStore.addMessage(messageMetaData);
+                int bodyCount = _currentMessage.getBodyCount();
+                if(bodyCount > 0)
+                {
+                    long bodyLengthReceived = 0;
+                    for(int i = 0 ; i < bodyCount ; i++)
+                    {
+                        ContentBody contentChunk = _currentMessage.getContentChunk(i);
+                        handle.addContent(ByteBuffer.wrap(contentChunk.getPayload()));
+                        bodyLengthReceived += contentChunk.getSize();
+                    }
+                }
+                final StoredMessage<MessageMetaData> storedMessage = handle.allContentAdded();
+
+                final AMQMessage amqMessage = createAMQMessage(storedMessage);
                 MessageReference reference = amqMessage.newReference();
                 try
                 {
-                    int bodyCount = _currentMessage.getBodyCount();
-                    if(bodyCount > 0)
-                    {
-                        long bodyLengthReceived = 0;
-                        for(int i = 0 ; i < bodyCount ; i++)
-                        {
-                            ContentBody contentChunk = _currentMessage.getContentChunk(i);
-                            handle.addContent((int)bodyLengthReceived, ByteBuffer.wrap(contentChunk.getPayload()));
-                            bodyLengthReceived += contentChunk.getSize();
-                        }
-                    }
 
                     _currentMessage = null;
 
@@ -500,7 +503,7 @@ public class AMQChannel
                                         .createBasicAckBody(_confirmedMessageCounter, false);
                                 _connection.writeFrame(responseBody.generateFrame(_channelId));
                             }
-                            incrementUncommittedMessageSize(handle);
+                            incrementUncommittedMessageSize(storedMessage);
                             incrementOutstandingTxnsIfNecessary();
                         }
                     }
@@ -1512,7 +1515,7 @@ public class AMQChannel
                 try
                 {
                     entry.delete();
-                    txn.dequeue(queue, message,
+                    txn.dequeue(entry.getEnqueueRecord(),
                                 new ServerTransaction.Action()
                                 {
                                     @Override

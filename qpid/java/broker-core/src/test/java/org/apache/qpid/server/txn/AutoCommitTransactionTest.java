@@ -32,6 +32,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.MockMessageInstance;
 import org.apache.qpid.server.store.MessageDurability;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.MockStoreTransaction.TransactionState;
@@ -225,7 +226,7 @@ public class AutoCommitTransactionTest extends QpidTestCase
         _message = createTestMessage(false);
         _queue = createTestAMQQueue(false);
         
-        _transaction.dequeue(_queue, _message, _action);
+        _transaction.dequeue((MessageEnqueueRecord)null, _action);
 
         assertEquals("Dequeue of non-persistent message must not cause message to be dequeued", 0, _storeTransaction.getNumberOfDequeuedMessages());
         assertEquals("Unexpected transaction state", TransactionState.NOT_STARTED, _storeTransaction.getState());
@@ -234,23 +235,6 @@ public class AutoCommitTransactionTest extends QpidTestCase
         
     }
 
-    /**
-     * Tests the dequeue of a persistent message from a single non durable queue.
-     * Asserts that a store transaction has not been started and post commit
-     * action fired.
-     */
-    public void testDequeueFromDurableQueueOfPersistentMessage() throws Exception
-    {
-        _message = createTestMessage(true);
-        _queue = createTestAMQQueue(true);
-        
-        _transaction.dequeue(_queue, _message, _action);
-
-        assertEquals("Dequeue of persistent message to durable queue must cause message to be dequeued",1, _storeTransaction.getNumberOfDequeuedMessages());
-        assertEquals("Unexpected transaction state", TransactionState.COMMITTED, _storeTransaction.getState());
-        assertFalse("Rollback action must not be fired", _action.isRollbackActionFired());
-        assertTrue("Post commit action must be fired", _action.isPostCommitActionFired());
-    }
 
     /**
      * Tests the case where the store operation throws an exception.
@@ -268,7 +252,7 @@ public class AutoCommitTransactionTest extends QpidTestCase
         
         try
         {
-            _transaction.dequeue(_queue, _message, _action);
+            _transaction.dequeue(mock(MessageEnqueueRecord.class), _action);
             fail("Exception not thrown");
         }
         catch (RuntimeException re)
@@ -387,7 +371,7 @@ public class AutoCommitTransactionTest extends QpidTestCase
         {
             final BaseQueue queue = createTestAMQQueue(queueDurableFlags[i]);
             final ServerMessage message = createTestMessage(messagePersistentFlags[i]);
-            
+            final boolean hasRecord = queueDurableFlags[i] && messagePersistentFlags[i];
             queueEntries.add(new MockMessageInstance()
             {
 
@@ -402,7 +386,19 @@ public class AutoCommitTransactionTest extends QpidTestCase
                 {
                     return queue;
                 }
-                
+
+                @Override
+                public MessageEnqueueRecord getEnqueueRecord()
+                {
+                    if(hasRecord)
+                    {
+                        return mock(MessageEnqueueRecord.class);
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
             });
         }
         

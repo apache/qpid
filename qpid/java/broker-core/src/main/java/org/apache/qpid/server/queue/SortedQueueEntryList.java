@@ -22,6 +22,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.SortedQueueEntry.Colour;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 
 /**
  * A sorted implementation of QueueEntryList.
@@ -51,7 +52,7 @@ public class SortedQueueEntryList implements QueueEntryList
         return _queue;
     }
 
-    public SortedQueueEntry add(final ServerMessage message)
+    public SortedQueueEntry add(final ServerMessage message, final MessageEnqueueRecord enqueueRecord)
     {
         synchronized(_lock)
         {
@@ -62,7 +63,7 @@ public class SortedQueueEntryList implements QueueEntryList
                 key = val.toString();
             }
 
-            final SortedQueueEntry entry = new SortedQueueEntry(this,message, ++_entryId);
+            final SortedQueueEntry entry = new SortedQueueEntry(this,message, ++_entryId, enqueueRecord);
             entry.setKey(key);
 
             insert(entry);

@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 
 public abstract class OrderedQueueEntryList implements QueueEntryList
 {
@@ -77,9 +78,9 @@ public abstract class OrderedQueueEntryList implements QueueEntryList
     }
 
 
-    public QueueEntry add(ServerMessage message)
+    public QueueEntry add(ServerMessage message, final MessageEnqueueRecord enqueueRecord)
     {
-        OrderedQueueEntry node = createQueueEntry(message);
+        OrderedQueueEntry node = createQueueEntry(message, enqueueRecord);
         for (;;)
         {
             OrderedQueueEntry tail = _tail;
@@ -104,7 +105,8 @@ public abstract class OrderedQueueEntryList implements QueueEntryList
         }
     }
 
-    abstract protected OrderedQueueEntry createQueueEntry(ServerMessage<?> message);
+    abstract protected OrderedQueueEntry createQueueEntry(ServerMessage<?> message,
+                                                          final MessageEnqueueRecord enqueueRecord);
 
     @Override
     public QueueEntry next(QueueEntry node)

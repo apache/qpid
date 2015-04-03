@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
 import org.slf4j.Logger;
@@ -32,10 +33,14 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.store.MessageDurability;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreException;
+import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.Xid;
 
@@ -48,14 +53,15 @@ public class DtxBranch
     private       State                          _state = State.ACTIVE;
     private long _timeout;
     private Map<AMQSessionModel, State> _associatedSessions = new HashMap<AMQSessionModel, State>();
-    private final List<Record> _enqueueRecords = new ArrayList<Record>();
-    private final List<Record> _dequeueRecords = new ArrayList<Record>();
+    private final List<EnqueueRecord> _enqueueRecords = new ArrayList<>();
+    private final List<DequeueRecord> _dequeueRecords = new ArrayList<>();
 
     private Transaction _transaction;
     private long _expiration;
     private VirtualHostImpl _vhost;
     private ScheduledFuture<?> _timeoutFuture;
     private MessageStore _store;
+    private Transaction.StoredXidRecord _storedXidRecord;
 
 
     public enum State
@@ -75,6 +81,12 @@ public class DtxBranch
         _xid = xid;
         _store = store;
         _vhost = vhost;
+    }
+
+    public DtxBranch(Transaction.StoredXidRecord storedXidRecord, MessageStore store, VirtualHostImpl vhost)
+    {
+        this(new Xid(storedXidRecord.getFormat(), storedXidRecord.getGlobalId(), storedXidRecord.getBranchId()), store, vhost);
+        _storedXidRecord = storedXidRecord;
     }
 
     public Xid getXid()
@@ -227,11 +239,11 @@ public class DtxBranch
         }
 
         Transaction txn = _store.newTransaction();
-        txn.recordXid(_xid.getFormat(),
+        _storedXidRecord = txn.recordXid(_xid.getFormat(),
                       _xid.getGlobalId(),
                       _xid.getBranchId(),
-                      _enqueueRecords.toArray(new Record[_enqueueRecords.size()]),
-                      _dequeueRecords.toArray(new Record[_dequeueRecords.size()]));
+                      _enqueueRecords.toArray(new EnqueueRecord[_enqueueRecords.size()]),
+                      _dequeueRecords.toArray(new DequeueRecord[_dequeueRecords.size()]));
         txn.commitTran();
 
         prePrepareTransaction();
@@ -266,7 +278,7 @@ public class DtxBranch
             // prepare has previously been called
 
             Transaction txn = _store.newTransaction();
-            txn.removeXid(_xid.getFormat(), _xid.getGlobalId(), _xid.getBranchId());
+            txn.removeXid(_storedXidRecord);
             txn.commitTran();
 
             _transaction.abortTran();
@@ -309,7 +321,7 @@ public class DtxBranch
         }
         else
         {
-            _transaction.removeXid(_xid.getFormat(), _xid.getGlobalId(), _xid.getBranchId());
+            _transaction.removeXid(_storedXidRecord);
         }
         _transaction.commitTran();
 
@@ -324,21 +336,25 @@ public class DtxBranch
     {
         _transaction = _store.newTransaction();
 
-        for(Record enqueue : _enqueueRecords)
+        for(final EnqueueRecord enqueue : _enqueueRecords)
         {
+            final MessageEnqueueRecord record;
             if(enqueue.isDurable())
             {
-                _transaction.enqueueMessage(enqueue.getResource(), enqueue.getMessage());
+                record = _transaction.enqueueMessage(enqueue.getResource(), enqueue.getMessage());
+
             }
+            else
+            {
+                record = null;
+            }
+            enqueue.getEnqueueAction().performAction(record);
         }
 
 
-        for(Record enqueue : _dequeueRecords)
+        for(DequeueRecord dequeue : _dequeueRecords)
         {
-            if(enqueue.isDurable())
-            {
-                _transaction.dequeueMessage(enqueue.getResource(), enqueue.getMessage());
-            }
+            _transaction.dequeueMessage(dequeue.getEnqueueRecord());
         }
     }
 
@@ -349,28 +365,58 @@ public class DtxBranch
     }
 
 
-    public void dequeue(TransactionLogResource resource, EnqueueableMessage message)
+    public void dequeue(MessageEnqueueRecord record)
     {
-        _dequeueRecords.add(new Record(resource, message));
+        if(record != null)
+        {
+            _dequeueRecords.add(new DequeueRecord(record));
+        }
     }
 
-
-    public void enqueue(TransactionLogResource queue, EnqueueableMessage message)
+    public void enqueue(TransactionLogResource queue,
+                        EnqueueableMessage message,
+                        final Action<MessageEnqueueRecord> enqueueAction)
     {
-        _enqueueRecords.add(new Record(queue, message));
+        _enqueueRecords.add(new EnqueueRecord(queue, message, enqueueAction));
     }
 
-    private static final class Record implements Transaction.Record
+    private static class DequeueRecord implements Transaction.DequeueRecord
+    {
+        private final MessageEnqueueRecord _enqueueRecord;
+
+        public DequeueRecord(MessageEnqueueRecord enqueueRecord)
+        {
+            _enqueueRecord = enqueueRecord;
+        }
+
+        public MessageEnqueueRecord getEnqueueRecord()
+        {
+            return _enqueueRecord;
+        }
+
+
+    }
+
+    private static class EnqueueRecord implements Transaction.EnqueueRecord
     {
         private final TransactionLogResource _resource;
         private final EnqueueableMessage _message;
 
-        public Record(TransactionLogResource resource, EnqueueableMessage message)
+        private final Action<MessageEnqueueRecord> _enqueueAction;
+
+        public EnqueueRecord(final TransactionLogResource resource,
+                             final EnqueueableMessage message,
+                             final Action<MessageEnqueueRecord> enqueueAction)
         {
             _resource = resource;
             _message = message;
+            _enqueueAction = enqueueAction;
         }
 
+        public Action<MessageEnqueueRecord> getEnqueueAction()
+        {
+            return _enqueueAction;
+        }
         public TransactionLogResource getResource()
         {
             return _resource;
@@ -385,6 +431,7 @@ public class DtxBranch
         {
             return _resource.getMessageDurability().persist(_message.isPersistent());
         }
+
     }
 
 

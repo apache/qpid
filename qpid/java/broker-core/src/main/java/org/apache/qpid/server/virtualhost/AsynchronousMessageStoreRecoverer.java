@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,12 +37,12 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
-import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.plugin.MessageMetaDataType;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
@@ -54,6 +53,7 @@ import org.apache.qpid.server.store.handler.MessageInstanceHandler;
 import org.apache.qpid.server.txn.DtxBranch;
 import org.apache.qpid.server.txn.DtxRegistry;
 import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.util.Action;
 import org.apache.qpid.transport.Xid;
 import org.apache.qpid.transport.util.Functions;
 
@@ -91,6 +91,7 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
         private final AtomicBoolean _recoveryComplete = new AtomicBoolean();
         private final Map<Long, MessageReference<? extends ServerMessage<?>>> _recoveredMessages = new HashMap<>();
         private final ExecutorService _queueRecoveryExecutor = Executors.newCachedThreadPool();
+        private final MessageStore.MessageStoreReader _storeReader;
         private AtomicBoolean _continueRecovery = new AtomicBoolean(true);
 
         private AsynchronousRecoverer(final VirtualHostImpl<?, ?, ?> virtualHost)
@@ -98,6 +99,7 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
             _virtualHost = virtualHost;
             _eventLogger = virtualHost.getEventLogger();
             _store = virtualHost.getMessageStore();
+            _storeReader = _store.newMessageStoreReader();
             _logSubject = new MessageStoreLogSubject(virtualHost.getName(), _store.getClass().getSimpleName());
 
             _maxMessageId = _store.getNextMessageId();
@@ -107,7 +109,7 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
 
         public void recover()
         {
-            getStore().visitDistributedTransactions(new DistributedTransactionVisitor());
+            getStoreReader().visitDistributedTransactions(new DistributedTransactionVisitor());
 
             for(AMQQueue<?> queue : _recoveringQueues)
             {
@@ -125,9 +127,9 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
             return _eventLogger;
         }
 
-        public MessageStore getStore()
+        public MessageStore.MessageStoreReader getStoreReader()
         {
-            return _store;
+            return _storeReader;
         }
 
         public MessageStoreLogSubject getLogSubject()
@@ -143,7 +145,7 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
         private void recoverQueue(AMQQueue<?> queue)
         {
             MessageInstanceVisitor handler = new MessageInstanceVisitor(queue);
-            _store.visitMessageInstances(queue, handler);
+            _storeReader.visitMessageInstances(queue, handler);
 
             getEventLogger().message(getLogSubject(), TransactionLogMessages.RECOVERED(handler.getRecoveredCount(), queue.getName()));
             getEventLogger().message(getLogSubject(), TransactionLogMessages.RECOVERY_COMPLETE(queue.getName(), true));
@@ -165,18 +167,18 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
                 entry.setValue(null); // free up any memory associated with the reference object
             }
             final List<StoredMessage<?>> messagesToDelete = new ArrayList<>();
-            getStore().visitMessages(new MessageHandler()
+            getStoreReader().visitMessages(new MessageHandler()
             {
                 @Override
                 public boolean handle(final StoredMessage<?> storedMessage)
                 {
 
                     long messageNumber = storedMessage.getMessageNumber();
-                    if(!_recoveredMessages.containsKey(messageNumber))
+                    if (!_recoveredMessages.containsKey(messageNumber))
                     {
                         messagesToDelete.add(storedMessage);
                     }
-                    return _continueRecovery.get() && messageNumber <_maxMessageId-1;
+                    return _continueRecovery.get() && messageNumber < _maxMessageId - 1;
                 }
             });
             for(StoredMessage<?> storedMessage : messagesToDelete)
@@ -192,6 +194,7 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
 
             messagesToDelete.clear();
             _recoveredMessages.clear();
+            _storeReader.close();
         }
 
         private synchronized ServerMessage<?> getRecoveredMessage(final long messageId)
@@ -199,7 +202,7 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
             MessageReference<? extends ServerMessage<?>> ref = _recoveredMessages.get(messageId);
             if (ref == null)
             {
-                StoredMessage<?> message = _store.getMessage(messageId);
+                StoredMessage<?> message = _storeReader.getMessage(messageId);
                 if(message != null)
                 {
                     StorableMessageMetaData metaData = message.getMetaData();
@@ -234,6 +237,7 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
             {
                 Thread.currentThread().interrupt();
             }
+            _storeReader.close();
         }
 
 
@@ -241,23 +245,20 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
         {
 
 
-
             @Override
-            public boolean handle(long format,
-                                  byte[] globalId,
-                                  byte[] branchId,
-                                  Transaction.Record[] enqueues,
-                                  Transaction.Record[] dequeues)
+            public boolean handle(final Transaction.StoredXidRecord storedXid,
+                                  final Transaction.EnqueueRecord[] enqueues,
+                                  final Transaction.DequeueRecord[] dequeues)
             {
-                Xid id = new Xid(format, globalId, branchId);
+                Xid id = new Xid(storedXid.getFormat(), storedXid.getGlobalId(), storedXid.getBranchId());
                 DtxRegistry dtxRegistry = getVirtualHost().getDtxRegistry();
                 DtxBranch branch = dtxRegistry.getBranch(id);
                 if (branch == null)
                 {
-                    branch = new DtxBranch(id, getStore(), getVirtualHost());
+                    branch = new DtxBranch(storedXid, _store, getVirtualHost());
                     dtxRegistry.registerBranch(branch);
                 }
-                for (Transaction.Record record : enqueues)
+                for (Transaction.EnqueueRecord record : enqueues)
                 {
                     final AMQQueue<?> queue = getVirtualHost().getQueue(record.getResource().getId());
                     if (queue != null)
@@ -269,22 +270,32 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
                         {
                             final MessageReference<?> ref = message.newReference();
 
-                            branch.enqueue(queue, message);
+                            final MessageEnqueueRecord[] records = new MessageEnqueueRecord[1];
 
+                            branch.enqueue(queue, message, new Action<MessageEnqueueRecord>()
+                            {
+                                @Override
+                                public void performAction(final MessageEnqueueRecord record)
+                                {
+                                    records[0] = record;
+                                }
+                            });
                             branch.addPostTransactionAction(new ServerTransaction.Action()
                             {
-
+                                @Override
                                 public void postCommit()
                                 {
-                                    queue.enqueue(message, null);
+                                    queue.enqueue(message, null, records[0]);
                                     ref.release();
                                 }
 
+                                @Override
                                 public void onRollback()
                                 {
                                     ref.release();
                                 }
                             });
+
                         }
                         else
                         {
@@ -306,10 +317,10 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
 
                     }
                 }
-                for (Transaction.Record record : dequeues)
+                for (Transaction.DequeueRecord record : dequeues)
                 {
 
-                    final AMQQueue<?> queue = getVirtualHost().getQueue(record.getResource().getId());
+                    final AMQQueue<?> queue = getVirtualHost().getQueue(record.getEnqueueRecord().getQueueId());
 
                     if (queue != null)
                     {
@@ -321,7 +332,7 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
                             recoverQueue(queue);
                         }
 
-                        final long messageId = record.getMessage().getMessageNumber();
+                        final long messageId = record.getEnqueueRecord().getMessageNumber();
                         final ServerMessage<?> message = getRecoveredMessage(messageId);
 
                         if (message != null)
@@ -330,7 +341,7 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
 
                             entry.acquire();
 
-                            branch.dequeue(queue, message);
+                            branch.dequeue(entry.getEnqueueRecord());
 
                             branch.addPostTransactionAction(new ServerTransaction.Action()
                             {
@@ -362,8 +373,8 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
                         StringBuilder xidString = xidAsString(id);
                         getEventLogger().message(getLogSubject(),
                                                         TransactionLogMessages.XA_INCOMPLETE_QUEUE(xidString.toString(),
-                                                                                                   record.getResource()
-                                                                                                           .getId()
+                                                                                                   record.getEnqueueRecord()
+                                                                                                           .getQueueId()
                                                                                                            .toString()));
                     }
 
@@ -427,8 +438,9 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
             }
 
             @Override
-            public boolean handle(final UUID queueId, long messageId)
+            public boolean handle(final MessageEnqueueRecord record)
             {
+                long messageId = record.getMessageNumber();
                 String queueName = _queue.getName();
 
                 if(messageId < _maxMessageId)
@@ -442,7 +454,7 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
                             _logger.debug("On recovery, delivering " + message.getMessageNumber() + " to " + queueName);
                         }
 
-                        _queue.recover(message);
+                        _queue.recover(message, record);
                         _recoveredCount++;
                     }
                     else
@@ -452,8 +464,8 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
                                      + " referenced in log as enqueued in queue "
                                      + queueName
                                      + " is unknown, entry will be discarded");
-                        Transaction txn = getStore().newTransaction();
-                        txn.dequeueMessage(_queue, new DummyMessage(messageId));
+                        Transaction txn = _store.newTransaction();
+                        txn.dequeueMessage(record);
                         txn.commitTranAsync();
                     }
                     return _continueRecovery.get();
@@ -469,32 +481,6 @@ public class AsynchronousMessageStoreRecoverer implements MessageStoreRecoverer
             {
                 return _recoveredCount;
             }
-        }
-    }
-
-    private static class DummyMessage implements EnqueueableMessage
-    {
-
-        private final long _messageId;
-
-        public DummyMessage(long messageId)
-        {
-            _messageId = messageId;
-        }
-
-        public long getMessageNumber()
-        {
-            return _messageId;
-        }
-
-        public boolean isPersistent()
-        {
-            return true;
-        }
-
-        public StoredMessage getStoredMessage()
-        {
-            return null;
         }
     }
 

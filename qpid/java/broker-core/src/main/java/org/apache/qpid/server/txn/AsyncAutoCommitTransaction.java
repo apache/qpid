@@ -28,8 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.store.Transaction;
@@ -88,21 +88,21 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
 
     }
 
-    public void dequeue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction)
+    public void dequeue(MessageEnqueueRecord record, Action postTransactionAction)
     {
         Transaction txn = null;
         try
         {
             FutureResult future;
-            if(queue.getMessageDurability().persist(message.isPersistent()))
+            if(record != null)
             {
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("Dequeue of message number " + message.getMessageNumber() + " from transaction log. Queue : " + queue.getName());
+                    _logger.debug("Dequeue of message number " + record.getMessageNumber() + " from transaction log. Queue : " + record.getQueueId());
                 }
 
                 txn = _messageStore.newTransaction();
-                txn.dequeueMessage(queue, message);
+                txn.dequeueMessage(record);
                 future = txn.commitTranAsync();
 
                 txn = null;
@@ -120,6 +120,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
         }
 
     }
+
 
     private void addFuture(final FutureResult future, final Action action)
     {
@@ -160,14 +161,13 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
         {
             for(MessageInstance entry : queueEntries)
             {
-                ServerMessage message = entry.getMessage();
-                TransactionLogResource queue = entry.getOwningResource();
+                MessageEnqueueRecord record = entry.getEnqueueRecord();
 
-                if(queue.getMessageDurability().persist(message.isPersistent()))
+                if(record != null)
                 {
                     if (_logger.isDebugEnabled())
                     {
-                        _logger.debug("Dequeue of message number " + message.getMessageNumber() + " from transaction log. Queue : " + queue.getName());
+                        _logger.debug("Dequeue of message number " + record.getMessageNumber() + " from transaction log. Queue : " + record.getQueueId());
                     }
 
                     if(txn == null)
@@ -175,7 +175,7 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
                         txn = _messageStore.newTransaction();
                     }
 
-                    txn.dequeueMessage(queue, message);
+                    txn.dequeueMessage(record);
                 }
 
             }
@@ -200,12 +200,13 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
     }
 
 
-    public void enqueue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction)
+    public void enqueue(TransactionLogResource queue, EnqueueableMessage message, EnqueueAction postTransactionAction)
     {
         Transaction txn = null;
         try
         {
             FutureResult future;
+            final MessageEnqueueRecord enqueueRecord;
             if(queue.getMessageDurability().persist(message.isPersistent()))
             {
                 if (_logger.isDebugEnabled())
@@ -214,30 +215,65 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
                 }
 
                 txn = _messageStore.newTransaction();
-                txn.enqueueMessage(queue, message);
+                enqueueRecord = txn.enqueueMessage(queue, message);
                 future = txn.commitTranAsync();
                 txn = null;
             }
             else
             {
                 future = FutureResult.IMMEDIATE_FUTURE;
+                enqueueRecord = null;
             }
-            addEnqueueFuture(future, postTransactionAction, message.isPersistent());
+            final EnqueueAction underlying = postTransactionAction;
+            addEnqueueFuture(future, new Action()
+            {
+                @Override
+                public void postCommit()
+                {
+                    underlying.postCommit(enqueueRecord);
+                }
+
+                @Override
+                public void onRollback()
+                {
+                    underlying.postCommit(enqueueRecord);
+                }
+            }, message.isPersistent());
             postTransactionAction = null;
-        }finally
+        }
+        finally
         {
-            rollbackIfNecessary(postTransactionAction, txn);
+            final EnqueueAction underlying = postTransactionAction;
+
+            rollbackIfNecessary(new Action()
+            {
+                @Override
+                public void postCommit()
+                {
+
+                }
+
+                @Override
+                public void onRollback()
+                {
+                    if(underlying != null)
+                    {
+                        underlying.onRollback();
+                    }
+                }
+            }, txn);
         }
 
 
     }
 
-    public void enqueue(List<? extends BaseQueue> queues, EnqueueableMessage message, Action postTransactionAction)
+    public void enqueue(List<? extends BaseQueue> queues, EnqueueableMessage message, EnqueueAction postTransactionAction)
     {
         Transaction txn = null;
         try
         {
-
+            final MessageEnqueueRecord[] records = new MessageEnqueueRecord[queues.size()];
+            int i = 0;
             for(BaseQueue queue : queues)
             {
                 if (queue.getMessageDurability().persist(message.isPersistent()))
@@ -250,10 +286,11 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
                     {
                         txn = _messageStore.newTransaction();
                     }
-                    txn.enqueueMessage(queue, message);
+                    records[i] = txn.enqueueMessage(queue, message);
 
 
                 }
+                i++;
             }
 
             FutureResult future;
@@ -266,13 +303,49 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
             {
                 future = FutureResult.IMMEDIATE_FUTURE;
             }
-            addEnqueueFuture(future, postTransactionAction, message.isPersistent());
+            final EnqueueAction underlying = postTransactionAction;
+            addEnqueueFuture(future, new Action()
+            {
+                @Override
+                public void postCommit()
+                {
+                    if(underlying != null)
+                    {
+                        underlying.postCommit(records);
+                    }
+                }
+
+                @Override
+                public void onRollback()
+                {
+                     underlying.onRollback();
+                }
+            }, message.isPersistent());
             postTransactionAction = null;
 
 
-        }finally
+        }
+        finally
         {
-            rollbackIfNecessary(postTransactionAction, txn);
+            final EnqueueAction underlying = postTransactionAction;
+
+            rollbackIfNecessary(new Action()
+            {
+                @Override
+                public void postCommit()
+                {
+
+                }
+
+                @Override
+                public void onRollback()
+                {
+                    if(underlying != null)
+                    {
+                        underlying.onRollback();
+                    }
+                }
+            }, txn);
         }
 
     }

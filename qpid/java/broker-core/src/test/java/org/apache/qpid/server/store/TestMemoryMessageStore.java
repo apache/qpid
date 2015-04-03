@@ -35,7 +35,7 @@ public class TestMemoryMessageStore extends MemoryMessageStore
     public int getMessageCount()
     {
         final AtomicInteger counter = new AtomicInteger();
-        visitMessages(new MessageHandler()
+        newMessageStoreReader().visitMessages(new MessageHandler()
                         {
                             @Override
                             public boolean handle(StoredMessage<?> storedMessage)

@@ -40,6 +40,7 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.exchange.ExchangeImpl;
+import org.apache.qpid.server.store.MessageHandle;
 import org.apache.qpid.server.virtualhost.VirtualHostUnavailableException;
 import org.apache.qpid.server.filter.AMQInvalidArgumentException;
 import org.apache.qpid.server.filter.ArrivalTimeFilter;
@@ -493,13 +494,14 @@ public class ServerSessionDelegate extends SessionDelegate
     private StoredMessage<MessageMetaData_0_10> createStoreMessage(final MessageTransfer xfr,
                                                                    final MessageMetaData_0_10 messageMetaData, final MessageStore store)
     {
-        final StoredMessage<MessageMetaData_0_10> storeMessage = store.addMessage(messageMetaData);
+        final MessageHandle<MessageMetaData_0_10> addedMessage = store.addMessage(messageMetaData);
         ByteBuffer body = xfr.getBody();
         if(body != null)
         {
-            storeMessage.addContent(0, body);
+            addedMessage.addContent(body);
         }
-        return storeMessage;
+        final StoredMessage<MessageMetaData_0_10> storedMessage = addedMessage.allContentAdded();
+        return storedMessage;
     }
 
     @Override

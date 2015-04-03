@@ -26,6 +26,7 @@ import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.InstanceProperties;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
@@ -61,6 +62,12 @@ public class MockMessageInstance implements MessageInstance
 
     @Override
     public ConsumerImpl getAcquiringConsumer()
+    {
+        return null;
+    }
+
+    @Override
+    public MessageEnqueueRecord getEnqueueRecord()
     {
         return null;
     }

@@ -81,7 +81,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
             when(message.newReference()).thenReturn(ref);
             when(message.newReference(any(TransactionLogResource.class))).thenReturn(ref);
 
-            final QueueEntry bleh = _sqel.add(message);
+            final QueueEntry bleh = _sqel.add(message, null);
             assertNotNull("QE should not have been null", bleh);
         }
     }
@@ -173,7 +173,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
             when(ref.getMessage()).thenReturn(message);
             when(message.newReference()).thenReturn(ref);
             when(message.newReference(any(TransactionLogResource.class))).thenReturn(ref);
-            QueueEntry bleh = sqel.add(message);
+            QueueEntry bleh = sqel.add(message, null);
             assertNotNull("QE should not have been null", bleh);
             entriesMap.put(i,bleh);
         }
@@ -276,7 +276,7 @@ public class StandardQueueEntryListTest extends QueueEntryListTestBase
             when(reference.getMessage()).thenReturn(message);
             when(message.newReference()).thenReturn(reference);
             when(message.newReference(any(TransactionLogResource.class))).thenReturn(reference);
-            entries[i] = (OrderedQueueEntry) queueEntryList.add(message);
+            entries[i] = (OrderedQueueEntry) queueEntryList.add(message, null);
         }
 
         // test getNext for not acquired entries

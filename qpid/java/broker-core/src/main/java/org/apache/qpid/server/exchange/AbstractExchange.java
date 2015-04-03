@@ -66,6 +66,7 @@ import org.apache.qpid.server.model.State;
 import org.apache.qpid.server.model.StateTransition;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
@@ -522,17 +523,17 @@ public abstract class AbstractExchange<T extends AbstractExchange<T>>
                 baseQueues = queues.toArray(new BaseQueue[queues.size()]);
             }
 
-            txn.enqueue(queues,message, new ServerTransaction.Action()
+            txn.enqueue(queues,message, new ServerTransaction.EnqueueAction()
             {
                 MessageReference _reference = message.newReference();
 
-                public void postCommit()
+                public void postCommit(MessageEnqueueRecord... records)
                 {
                     try
                     {
                         for(int i = 0; i < baseQueues.length; i++)
                         {
-                            baseQueues[i].enqueue(message, postEnqueueAction);
+                            baseQueues[i].enqueue(message, postEnqueueAction, records[i]);
                         }
                     }
                     finally

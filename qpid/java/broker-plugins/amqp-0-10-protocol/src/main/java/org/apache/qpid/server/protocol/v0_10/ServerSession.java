@@ -514,7 +514,7 @@ public class ServerSession extends Session
 
     public void acknowledge(final ConsumerTarget_0_10 sub, final MessageInstance entry)
     {
-        _transaction.dequeue(entry.getOwningResource(), entry.getMessage(),
+        _transaction.dequeue(entry.getEnqueueRecord(),
                              new ServerTransaction.Action()
                              {
 

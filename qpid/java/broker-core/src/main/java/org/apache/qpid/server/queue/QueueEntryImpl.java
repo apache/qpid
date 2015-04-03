@@ -37,6 +37,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Exchange;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -92,15 +93,20 @@ public abstract class QueueEntryImpl implements QueueEntry
     private static final AtomicIntegerFieldUpdater<QueueEntryImpl> _deliveryCountUpdater = AtomicIntegerFieldUpdater
                     .newUpdater(QueueEntryImpl.class, "_deliveryCount");
 
+    private final MessageEnqueueRecord _enqueueRecord;
+
 
     public QueueEntryImpl(QueueEntryList queueEntryList)
     {
-        this(queueEntryList,null,Long.MIN_VALUE);
+        this(queueEntryList,null,Long.MIN_VALUE, null);
         _state = DELETED_STATE;
     }
 
 
-    public QueueEntryImpl(QueueEntryList queueEntryList, ServerMessage message, final long entryId)
+    public QueueEntryImpl(QueueEntryList queueEntryList,
+                          ServerMessage message,
+                          final long entryId,
+                          final MessageEnqueueRecord enqueueRecord)
     {
         _queueEntryList = queueEntryList;
 
@@ -108,13 +114,17 @@ public abstract class QueueEntryImpl implements QueueEntry
 
         _entryIdUpdater.set(this, entryId);
         populateInstanceProperties();
+        _enqueueRecord = enqueueRecord;
     }
 
-    public QueueEntryImpl(QueueEntryList queueEntryList, ServerMessage message)
+    public QueueEntryImpl(QueueEntryList queueEntryList,
+                          ServerMessage message,
+                          final MessageEnqueueRecord enqueueRecord)
     {
         _queueEntryList = queueEntryList;
         _message = message == null ? null :  message.newReference(queueEntryList.getQueue());
         populateInstanceProperties();
+        _enqueueRecord = enqueueRecord;
     }
 
     private void populateInstanceProperties()
@@ -461,7 +471,7 @@ public abstract class QueueEntryImpl implements QueueEntry
             enqueues = 0;
         }
 
-        txn.dequeue(currentQueue, getMessage(), new ServerTransaction.Action()
+        txn.dequeue(getEnqueueRecord(), new ServerTransaction.Action()
         {
             public void postCommit()
             {
@@ -625,4 +635,9 @@ public abstract class QueueEntryImpl implements QueueEntry
 
     }
 
+    @Override
+    public MessageEnqueueRecord getEnqueueRecord()
+    {
+        return _enqueueRecord;
+    }
 }

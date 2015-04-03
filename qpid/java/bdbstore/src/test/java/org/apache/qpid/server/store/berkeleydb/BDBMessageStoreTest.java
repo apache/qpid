@@ -36,6 +36,7 @@ import org.apache.qpid.server.protocol.v0_10.MessageMetaDataType_0_10;
 import org.apache.qpid.server.protocol.v0_10.MessageMetaData_0_10;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaData;
 import org.apache.qpid.server.protocol.v0_8.MessageMetaDataType_0_8;
+import org.apache.qpid.server.store.MessageHandle;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreTestCase;
 import org.apache.qpid.server.store.StorableMessageMetaData;
@@ -104,14 +105,15 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
         ContentHeaderBody chb_0_8 = createContentHeaderBody_0_8(props_0_8, bodySize);
 
         MessageMetaData messageMetaData_0_8 = new MessageMetaData(pubInfoBody_0_8, chb_0_8);
-        StoredMessage<MessageMetaData> storedMessage_0_8 = bdbStore.addMessage(messageMetaData_0_8);
+        MessageHandle<MessageMetaData> messageHandle_0_8 = bdbStore.addMessage(messageMetaData_0_8);
 
         long origArrivalTime_0_8 = messageMetaData_0_8.getArrivalTime();
-        long messageid_0_8 = storedMessage_0_8.getMessageNumber();
 
-        storedMessage_0_8.addContent(0, firstContentBytes_0_8);
-        storedMessage_0_8.addContent(firstContentBytes_0_8.limit(), secondContentBytes_0_8);
-        ((AbstractBDBMessageStore.StoredBDBMessage)storedMessage_0_8).flushToStore();
+        messageHandle_0_8.addContent(firstContentBytes_0_8);
+        messageHandle_0_8.addContent(secondContentBytes_0_8);
+        final StoredMessage<MessageMetaData> storedMessage_0_8 = messageHandle_0_8.allContentAdded();
+        long messageid_0_8 = storedMessage_0_8.getMessageNumber();
+        ((AbstractBDBMessageStore.StoredBDBMessage)messageHandle_0_8).flushToStore();
 
         /*
          * Create and insert a 0-10 message (metadata and content)
@@ -124,13 +126,14 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
                 MessageAcquireMode.PRE_ACQUIRED, header_0_10, completeContentBody_0_10);
 
         MessageMetaData_0_10 messageMetaData_0_10 = new MessageMetaData_0_10(xfr_0_10);
-        StoredMessage<MessageMetaData_0_10> storedMessage_0_10 = bdbStore.addMessage(messageMetaData_0_10);
+        MessageHandle<MessageMetaData_0_10> messageHandle_0_10 = bdbStore.addMessage(messageMetaData_0_10);
 
         long origArrivalTime_0_10 = messageMetaData_0_10.getArrivalTime();
-        long messageid_0_10 = storedMessage_0_10.getMessageNumber();
 
-        storedMessage_0_10.addContent(0, completeContentBody_0_10);
-        ((AbstractBDBMessageStore.StoredBDBMessage)storedMessage_0_10).flushToStore();
+        messageHandle_0_10.addContent(completeContentBody_0_10);
+        final StoredMessage<MessageMetaData_0_10> storedMessage_0_10 = messageHandle_0_10.allContentAdded();
+        long messageid_0_10 = storedMessage_0_10.getMessageNumber();
+        ((AbstractBDBMessageStore.StoredBDBMessage)messageHandle_0_10).flushToStore();
 
         /*
          * reload the store only (read-only)
@@ -352,12 +355,12 @@ public class BDBMessageStoreTest extends MessageStoreTestCase
         ContentHeaderBody chb_0_8 = createContentHeaderBody_0_8(props_0_8, bodySize);
 
         MessageMetaData messageMetaData_0_8 = new MessageMetaData(pubInfoBody_0_8, chb_0_8);
-        StoredMessage<MessageMetaData> storedMessage_0_8 = store.addMessage(messageMetaData_0_8);
+        MessageHandle<MessageMetaData> storedMessage_0_8 = store.addMessage(messageMetaData_0_8);
 
-        storedMessage_0_8.addContent(0, chunk1);
+        storedMessage_0_8.addContent(chunk1);
         ((AbstractBDBMessageStore.StoredBDBMessage)storedMessage_0_8).flushToStore();
 
-        return storedMessage_0_8;
+        return storedMessage_0_8.allContentAdded();
     }
 
     public void testOnDelete() throws Exception

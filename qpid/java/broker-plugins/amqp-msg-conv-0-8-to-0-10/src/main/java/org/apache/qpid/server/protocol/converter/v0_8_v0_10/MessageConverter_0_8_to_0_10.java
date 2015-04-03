@@ -81,12 +81,6 @@ public class MessageConverter_0_8_to_0_10  implements MessageConverter<AMQMessag
             }
 
             @Override
-            public void addContent(int offsetInMessage, ByteBuffer src)
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
             public int getContent(int offsetInMessage, ByteBuffer dst)
             {
                 return message_0_8.getContent(dst, offsetInMessage);

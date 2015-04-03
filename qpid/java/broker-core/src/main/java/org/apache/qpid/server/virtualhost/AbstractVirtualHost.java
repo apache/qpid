@@ -86,6 +86,7 @@ import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.Event;
 import org.apache.qpid.server.store.EventListener;
 import org.apache.qpid.server.store.GenericRecoverer;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreProvider;
 import org.apache.qpid.server.store.StoreException;
@@ -1182,7 +1183,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                 }
                 if(acquired)
                 {
-                    txn.dequeue(messageInstance.getOwningResource(), messageInstance.getMessage(), new ServerTransaction.Action()
+                    txn.dequeue(messageInstance.getEnqueueRecord(), new ServerTransaction.Action()
                     {
                         public void postCommit()
                         {
@@ -1201,11 +1202,11 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                 final ServerMessage message = entry.getMessage();
                 final AMQQueue toQueue = (AMQQueue)queue;
 
-                txn.enqueue(toQueue, message, new ServerTransaction.Action()
+                txn.enqueue(toQueue, message, new ServerTransaction.EnqueueAction()
                 {
-                    public void postCommit()
+                    public void postCommit(MessageEnqueueRecord... records)
                     {
-                        toQueue.enqueue(message, null);
+                        toQueue.enqueue(message, null, records[0]);
                     }
 
                     public void onRollback()
@@ -1222,12 +1223,12 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                 if(entry.acquire())
                 {
                     txn.enqueue(toQueue, message,
-                                new ServerTransaction.Action()
+                                new ServerTransaction.EnqueueAction()
                                 {
 
-                                    public void postCommit()
+                                    public void postCommit(MessageEnqueueRecord... records)
                                     {
-                                        toQueue.enqueue(message, null);
+                                        toQueue.enqueue(message, null, records[0]);
                                     }
 
                                     public void onRollback()
@@ -1235,20 +1236,23 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
                                         entry.release();
                                     }
                                 });
-                    txn.dequeue(entry.getOwningResource(), message,
-                                new ServerTransaction.Action()
-                                {
-
-                                    public void postCommit()
-                                    {
-                                        entry.delete();
-                                    }
-
-                                    public void onRollback()
+                    if(entry instanceof QueueEntry)
+                    {
+                        txn.dequeue(entry.getEnqueueRecord(),
+                                    new ServerTransaction.Action()
                                     {
 
-                                    }
-                                });
+                                        public void postCommit()
+                                        {
+                                            entry.delete();
+                                        }
+
+                                        public void onRollback()
+                                        {
+
+                                        }
+                                    });
+                    }
                 }
             }
 

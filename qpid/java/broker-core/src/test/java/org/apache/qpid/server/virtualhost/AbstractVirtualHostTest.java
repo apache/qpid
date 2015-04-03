@@ -161,6 +161,8 @@ public class AbstractVirtualHostTest extends QpidTestCase
     {
         Map<String,Object> attributes = Collections.<String, Object>singletonMap(AbstractVirtualHost.NAME, getTestName());
         final MessageStore store = mock(MessageStore.class);
+        when(store.newMessageStoreReader()).thenReturn(mock(MessageStore.MessageStoreReader.class));
+
         AbstractVirtualHost host = new AbstractVirtualHost(attributes, _node)
         {
             @Override
@@ -200,7 +202,8 @@ public class AbstractVirtualHostTest extends QpidTestCase
 
     public void testActivateInErrorStateAfterOpen() throws Exception
     {
-        Map<String,Object> attributes = Collections.<String, Object>singletonMap(AbstractVirtualHost.NAME, getTestName());
+        Map<String,Object> attributes = Collections.<String, Object>singletonMap(AbstractVirtualHost.NAME,
+                                                                                 getTestName());
         final MessageStore store = mock(MessageStore.class);
         doThrow(new RuntimeException("Cannot open store")).when(store).openMessageStore(any(ConfiguredObject.class));
         AbstractVirtualHost host = new AbstractVirtualHost(attributes, _node)
@@ -216,6 +219,7 @@ public class AbstractVirtualHostTest extends QpidTestCase
         assertEquals("Unexpected state", State.ERRORED, host.getState());
 
         doNothing().when(store).openMessageStore(any(ConfiguredObject.class));
+        when(store.newMessageStoreReader()).thenReturn(mock(MessageStore.MessageStoreReader.class));
 
         host.setAttributes(Collections.<String, Object>singletonMap(VirtualHost.DESIRED_STATE, State.ACTIVE));
         assertEquals("Unexpected state", State.ACTIVE, host.getState());
@@ -239,6 +243,7 @@ public class AbstractVirtualHostTest extends QpidTestCase
         assertEquals("Unexpected state", State.ERRORED, host.getState());
 
         doNothing().when(store).openMessageStore(any(ConfiguredObject.class));
+        when(store.newMessageStoreReader()).thenReturn(mock(MessageStore.MessageStoreReader.class));
 
         host.start();
         assertEquals("Unexpected state", State.ACTIVE, host.getState());

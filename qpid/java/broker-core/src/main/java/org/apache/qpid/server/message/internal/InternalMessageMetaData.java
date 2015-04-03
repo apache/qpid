@@ -24,6 +24,7 @@ import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
@@ -33,14 +34,27 @@ public class InternalMessageMetaData implements StorableMessageMetaData
 
 
     private boolean _isPersistent;
-    private byte[] _headerBytes;
+    private InternalMessageHeader _header;
     private int _contentSize;
+    private byte[] _headerBytes;
 
-    public InternalMessageMetaData(final boolean isPersistent, final byte[] headerBytes, final int contentSize)
+    public InternalMessageMetaData(final boolean isPersistent, final InternalMessageHeader header, final int contentSize)
     {
         _isPersistent = isPersistent;
-        _headerBytes = headerBytes;
+        _header = header;
         _contentSize = contentSize;
+
+        try(ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
+            ObjectOutputStream os = new ObjectOutputStream(bytesOut))
+        {
+            os.writeInt(contentSize);
+            os.writeObject(header);
+            _headerBytes = bytesOut.toByteArray();
+        }
+        catch (IOException e)
+        {
+            throw new ConnectionScopedRuntimeException("Unexpected IO Exception on in memory operation", e);
+        }
     }
 
     @Override
@@ -76,20 +90,7 @@ public class InternalMessageMetaData implements StorableMessageMetaData
 
     static InternalMessageMetaData create(boolean persistent, final InternalMessageHeader header, int contentSize)
     {
-        ByteArrayOutputStream bytesOut = new ByteArrayOutputStream();
-        try
-        {
-            ObjectOutputStream os = new ObjectOutputStream(bytesOut);
-            os.writeObject(header);
-            byte[] bytes = bytesOut.toByteArray();
-
-            return new InternalMessageMetaData(persistent, bytes, contentSize);
-
-        }
-        catch (IOException e)
-        {
-            throw new ConnectionScopedRuntimeException("Unexpected IO Exception on in memory operation", e);
-        }
+        return new InternalMessageMetaData(persistent, header, contentSize);
     }
 
 

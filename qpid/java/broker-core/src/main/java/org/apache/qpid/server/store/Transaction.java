@@ -25,24 +25,17 @@ import org.apache.qpid.server.util.FutureResult;
 
 public interface Transaction
 {
+
     /**
      * Places a message onto a specified queue, in a given transactional context.
      *
      *
-     *
-     * @param queue     The queue to place the message on.
+     *  @param queue     The queue to place the message on.
      * @param message
      */
-    void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message);
+    MessageEnqueueRecord enqueueMessage(TransactionLogResource queue, EnqueueableMessage message);
 
-    /**
-     * Extracts a message from a specified queue, in a given transactional context.
-     *
-     * @param queue     The queue to place the message on.
-     * @param message The message to dequeue.
-     */
-    void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message);
-
+    void dequeueMessage(MessageEnqueueRecord enqueueRecord);
 
     /**
      * Commits all operations performed within a given transactional context.
@@ -63,14 +56,28 @@ public interface Transaction
     void abortTran();
 
 
-    public static interface Record
+    interface EnqueueRecord
     {
         TransactionLogResource getResource();
         EnqueueableMessage getMessage();
     }
 
-    void removeXid(long format, byte[] globalId, byte[] branchId);
+    interface DequeueRecord
+    {
+        MessageEnqueueRecord getEnqueueRecord();
+    }
 
-    void recordXid(long format, byte[] globalId, byte[] branchId, Transaction.Record[] enqueues,
-                   Transaction.Record[] dequeues);
+    void removeXid(StoredXidRecord record);
+
+
+    StoredXidRecord recordXid(long format, byte[] globalId, byte[] branchId, EnqueueRecord[] enqueues,
+                   DequeueRecord[] dequeues);
+
+    interface StoredXidRecord
+    {
+        long getFormat();
+        byte[] getGlobalId();
+        byte[] getBranchId();
+
+    }
 }

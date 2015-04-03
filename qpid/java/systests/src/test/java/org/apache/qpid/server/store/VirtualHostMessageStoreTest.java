@@ -603,7 +603,7 @@ public class VirtualHostMessageStoreTest extends QpidTestCase
 
         MessageMetaData mmd = new MessageMetaData(messageInfo, headerBody, System.currentTimeMillis());
 
-        final StoredMessage<MessageMetaData> storedMessage = _virtualHost.getMessageStore().addMessage(mmd);
+        final StoredMessage<MessageMetaData> storedMessage = _virtualHost.getMessageStore().addMessage(mmd).allContentAdded();
         final AMQMessage currentMessage = new AMQMessage(storedMessage);
 
 

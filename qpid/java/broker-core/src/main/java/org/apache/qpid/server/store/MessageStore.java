@@ -22,6 +22,7 @@ package org.apache.qpid.server.store;
 
 
 import java.io.File;
+import java.util.UUID;
 
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
@@ -59,15 +60,7 @@ public interface MessageStore
      */
     void upgradeStoreStructure() throws StoreException;
 
-    void visitMessages(MessageHandler handler) throws StoreException;
-
-    void visitMessageInstances(MessageInstanceHandler handler) throws StoreException;
-    void visitMessageInstances(TransactionLogResource queue, MessageInstanceHandler handler) throws StoreException;
-
-    void visitDistributedTransactions(DistributedTransactionHandler handler) throws StoreException;
-
-    <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData);
-    StoredMessage<?> getMessage(long messageId);
+    <T extends StorableMessageMetaData> MessageHandle<T> addMessage(T metaData);
 
     /**
      * Is this store capable of persisting the data
@@ -84,4 +77,20 @@ public interface MessageStore
     void closeMessageStore();
 
     void onDelete(ConfiguredObject<?> parent);
+
+    MessageStoreReader newMessageStoreReader();
+
+    interface MessageStoreReader
+    {
+        void visitMessages(MessageHandler handler) throws StoreException;
+
+        void visitMessageInstances(MessageInstanceHandler handler) throws StoreException;
+        void visitMessageInstances(TransactionLogResource queue, MessageInstanceHandler handler) throws StoreException;
+
+        void visitDistributedTransactions(DistributedTransactionHandler handler) throws StoreException;
+
+        StoredMessage<?> getMessage(long messageId);
+        void close();
+    }
+
 }

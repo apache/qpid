@@ -24,7 +24,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isNull;
-import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -43,6 +42,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageDurability;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.NullMessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
@@ -50,7 +50,7 @@ import org.apache.qpid.server.store.StoreException;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestMessageMetaData;
 import org.apache.qpid.server.store.Transaction;
-import org.apache.qpid.server.store.Transaction.Record;
+import org.apache.qpid.server.store.Transaction.EnqueueRecord;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
 import org.apache.qpid.server.store.handler.MessageHandler;
@@ -93,7 +93,7 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
             @Override
             public void visitMessageInstances(MessageInstanceHandler handler) throws StoreException
             {
-                handler.handle(queue.getId(), messageId);
+                handler.handle(new TestMessageEnqueueRecord(queue.getId(), messageId));
             }
         };
 
@@ -104,7 +104,7 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
         recoverer.recover(_virtualHost);
 
         ServerMessage<?> message = storedMessage.getMetaData().getType().createMessage(storedMessage);
-        verify(queue, times(1)).recover(eq(message));
+        verify(queue, times(1)).recover(eq(message), any(MessageEnqueueRecord.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -126,7 +126,7 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
             @Override
             public void visitMessageInstances(MessageInstanceHandler handler) throws StoreException
             {
-                handler.handle(queue.getId(), messageId);
+                handler.handle(new TestMessageEnqueueRecord(queue.getId(), messageId));
             }
 
             @Override
@@ -142,8 +142,8 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
                 recoverer = new SynchronousMessageStoreRecoverer();
         recoverer.recover(_virtualHost);
 
-        verify(queue, never()).enqueue(any(ServerMessage.class), any(Action.class));
-        verify(transaction).dequeueMessage(same(queue), argThat(new MessageNumberMatcher(messageId)));
+        verify(queue, never()).enqueue(any(ServerMessage.class), any(Action.class), any(MessageEnqueueRecord.class));
+        verify(transaction).dequeueMessage(argThat(new MessageEnqueueRecordMatcher(queue.getId(), messageId)));
         verify(transaction, times(1)).commitTranAsync();
     }
 
@@ -165,7 +165,7 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
             @Override
             public void visitMessageInstances(MessageInstanceHandler handler) throws StoreException
             {
-                handler.handle(queueId, messageId);
+                handler.handle(new TestMessageEnqueueRecord(queueId, messageId));
             }
 
             @Override
@@ -181,7 +181,7 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
                 recoverer = new SynchronousMessageStoreRecoverer();
         recoverer.recover(_virtualHost);
 
-        verify(transaction).dequeueMessage(argThat(new QueueIdMatcher(queueId)), argThat(new MessageNumberMatcher(messageId)));
+        verify(transaction).dequeueMessage(argThat(new MessageEnqueueRecordMatcher(queueId,messageId)));
         verify(transaction, times(1)).commitTranAsync();
     }
 
@@ -226,13 +226,13 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
         long messageId = storedMessage.getMessageNumber();
 
         EnqueueableMessage enqueueableMessage = createMockEnqueueableMessage(messageId, storedMessage);
-        Record enqueueRecord = createMockRecord(queue, enqueueableMessage);
+        EnqueueRecord enqueueRecord = createMockRecord(queue, enqueueableMessage);
 
         final long format = 1;
         final byte[] globalId = new byte[] {0};
         final byte[] branchId = new byte[] {0};
-        final Record[] enqueues = { enqueueRecord };
-        final Record[] dequeues = {};
+        final EnqueueRecord[] enqueues = { enqueueRecord };
+        final Transaction.DequeueRecord[] dequeues = {};
 
         MessageStore store = new NullMessageStore()
         {
@@ -251,7 +251,26 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
             @Override
             public void visitDistributedTransactions(DistributedTransactionHandler handler) throws StoreException
             {
-                handler.handle(format, globalId, branchId, enqueues, dequeues);
+                handler.handle(new Transaction.StoredXidRecord()
+                {
+                    @Override
+                    public long getFormat()
+                    {
+                        return format;
+                    }
+
+                    @Override
+                    public byte[] getGlobalId()
+                    {
+                        return globalId;
+                    }
+
+                    @Override
+                    public byte[] getBranchId()
+                    {
+                        return branchId;
+                    }
+                }, enqueues, dequeues);
             }
 
             @Override
@@ -275,22 +294,21 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
         branch.commit();
 
         ServerMessage<?> message = storedMessage.getMetaData().getType().createMessage(storedMessage);
-        verify(queue, times(1)).enqueue(eq(message), (Action<? super MessageInstance>)isNull());
+        verify(queue, times(1)).enqueue(eq(message), (Action<? super MessageInstance>)isNull(), any(MessageEnqueueRecord.class));
         verify(transaction).commitTran();
     }
 
     public void testRecoveryOfSingleDequeueWithDistributedTransaction()
     {
-        final AMQQueue<?> queue = createRegisteredMockQueue();
+        final UUID queueId = UUID.randomUUID();
+        final AMQQueue<?> queue = createRegisteredMockQueue(queueId);
 
 
         final Transaction transaction = mock(Transaction.class);
-
         final StoredMessage<StorableMessageMetaData> storedMessage = createMockStoredMessage(1);
         final long messageId = storedMessage.getMessageNumber();
 
-        EnqueueableMessage enqueueableMessage = createMockEnqueueableMessage(messageId, storedMessage);
-        Record dequeueRecord = createMockRecord(queue, enqueueableMessage);
+        Transaction.DequeueRecord dequeueRecord = createMockDequeueRecord(queueId, messageId);
 
         QueueEntry queueEntry = mock(QueueEntry.class);
         when(queue.getMessageOnTheQueue(messageId)).thenReturn(queueEntry);
@@ -298,8 +316,8 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
         final long format = 1;
         final byte[] globalId = new byte[] {0};
         final byte[] branchId = new byte[] {0};
-        final Record[] enqueues = {};
-        final Record[] dequeues = { dequeueRecord };
+        final EnqueueRecord[] enqueues = {};
+        final Transaction.DequeueRecord[] dequeues = { dequeueRecord };
 
         MessageStore store = new NullMessageStore()
         {
@@ -314,13 +332,32 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
             {
                 // We need the message to be enqueued onto the queue so that later the distributed transaction
                 // can dequeue it.
-                handler.handle(queue.getId(), messageId);
+                handler.handle(new TestMessageEnqueueRecord(queue.getId(), messageId));
             }
 
             @Override
             public void visitDistributedTransactions(DistributedTransactionHandler handler) throws StoreException
             {
-                handler.handle(format, globalId, branchId, enqueues, dequeues);
+                handler.handle(new Transaction.StoredXidRecord()
+                {
+                    @Override
+                    public long getFormat()
+                    {
+                        return format;
+                    }
+
+                    @Override
+                    public byte[] getGlobalId()
+                    {
+                        return globalId;
+                    }
+
+                    @Override
+                    public byte[] getBranchId()
+                    {
+                        return branchId;
+                    }
+                }, enqueues, dequeues);
             }
 
             @Override
@@ -348,12 +385,23 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
     }
 
 
-    protected Record createMockRecord(AMQQueue<?> queue, EnqueueableMessage enqueueableMessage)
+    protected EnqueueRecord createMockRecord(AMQQueue<?> queue, EnqueueableMessage enqueueableMessage)
     {
-        Record enqueueRecord = mock(Record.class);
+        EnqueueRecord enqueueRecord = mock(EnqueueRecord.class);
         when(enqueueRecord.getMessage()).thenReturn(enqueueableMessage);
         when(enqueueRecord.getResource()).thenReturn(queue);
         return enqueueRecord;
+    }
+
+
+    protected Transaction.DequeueRecord createMockDequeueRecord(UUID queueId, long messageNumber)
+    {
+        Transaction.DequeueRecord dequeueRecord = mock(Transaction.DequeueRecord.class);
+        MessageEnqueueRecord enqueueRecord = mock(MessageEnqueueRecord.class);
+        when(enqueueRecord.getMessageNumber()).thenReturn(messageNumber);
+        when(enqueueRecord.getQueueId()).thenReturn(queueId);
+        when(dequeueRecord.getEnqueueRecord()).thenReturn(enqueueRecord);
+        return dequeueRecord;
     }
 
     protected EnqueueableMessage createMockEnqueueableMessage(long messageId,
@@ -378,8 +426,12 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
 
     private AMQQueue<?> createRegisteredMockQueue()
     {
+        return createRegisteredMockQueue(UUID.randomUUID());
+    }
+
+    private AMQQueue<?> createRegisteredMockQueue(UUID queueId)
+    {
         AMQQueue<?> queue = mock(AMQQueue.class);
-        final UUID queueId = UUID.randomUUID();
         when(queue.getMessageDurability()).thenReturn(MessageDurability.DEFAULT);
         when(queue.getId()).thenReturn(queueId);
         when(queue.getName()).thenReturn("test-queue");
@@ -404,19 +456,47 @@ public class SynchronousMessageStoreRecovererTest extends TestCase
         }
     }
 
-    private final class MessageNumberMatcher extends ArgumentMatcher<EnqueueableMessage>
+    private final class MessageEnqueueRecordMatcher extends ArgumentMatcher<MessageEnqueueRecord>
     {
         private final long _messageId;
+        private final UUID _queueId;
 
-        private MessageNumberMatcher(long messageId)
+        private MessageEnqueueRecordMatcher(UUID queueId, long messageId)
         {
             _messageId = messageId;
+            _queueId = queueId;
         }
 
         @Override
         public boolean matches(Object argument)
         {
-            return argument instanceof EnqueueableMessage && ((EnqueueableMessage)argument).getMessageNumber() == _messageId;
+            return argument instanceof MessageEnqueueRecord
+                    && ((MessageEnqueueRecord)argument).getMessageNumber() == _messageId
+                    && ((MessageEnqueueRecord)argument).getQueueId().equals(_queueId);
+        }
+    }
+
+    private class TestMessageEnqueueRecord implements MessageEnqueueRecord
+    {
+        private final UUID _queueId;
+        private final long _messageId;
+
+        public TestMessageEnqueueRecord(final UUID queueId, final long messageId)
+        {
+            _queueId = queueId;
+            _messageId = messageId;
+        }
+
+        @Override
+        public UUID getQueueId()
+        {
+            return _queueId;
+        }
+
+        @Override
+        public long getMessageNumber()
+        {
+            return _messageId;
         }
     }
 }

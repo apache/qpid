@@ -263,7 +263,7 @@ public abstract class QueueEntryImplTestBase extends TestCase
             when(reference.getMessage()).thenReturn(message);
             when(message.newReference()).thenReturn(reference);
             when(message.newReference(any(TransactionLogResource.class))).thenReturn(reference);
-            QueueEntryImpl entry = (QueueEntryImpl) queueEntryList.add(message);
+            QueueEntryImpl entry = (QueueEntryImpl) queueEntryList.add(message, null);
             entries[i] = entry;
         }
 

@@ -18,15 +18,12 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.handler;
+package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.store.Transaction;
-import org.apache.qpid.server.store.Transaction.DequeueRecord;
-import org.apache.qpid.server.store.Transaction.EnqueueRecord;
+import java.util.UUID;
 
-public interface DistributedTransactionHandler
+public interface MessageEnqueueRecord
 {
-
-    boolean handle(Transaction.StoredXidRecord storedXid, EnqueueRecord[] enqueues, DequeueRecord[] dequeues);
-
+    UUID getQueueId();
+    long getMessageNumber();
 }

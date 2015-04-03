@@ -59,6 +59,7 @@ import org.apache.qpid.server.plugin.SystemNodeCreator;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.protocol.MessageConverterRegistry;
 import org.apache.qpid.server.store.MessageDurability;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -1066,6 +1067,12 @@ class ManagementNode implements MessageSource, MessageDestination
 
         @Override
         public ConsumerImpl getAcquiringConsumer()
+        {
+            return null;
+        }
+
+        @Override
+        public MessageEnqueueRecord getEnqueueRecord()
         {
             return null;
         }

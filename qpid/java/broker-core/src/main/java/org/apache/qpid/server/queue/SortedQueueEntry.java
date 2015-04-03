@@ -20,6 +20,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 
 /**
  * An implementation of QueueEntryImpl to be used in SortedQueueEntryList.
@@ -46,9 +47,11 @@ public class SortedQueueEntry extends QueueEntryImpl
     }
 
     public SortedQueueEntry(final SortedQueueEntryList queueEntryList,
-                            final ServerMessage message, final long entryId)
+                            final ServerMessage message,
+                            final long entryId,
+                            final MessageEnqueueRecord messageEnqueueRecord)
     {
-        super(queueEntryList, message, entryId);
+        super(queueEntryList, message, entryId, messageEnqueueRecord);
     }
 
     @Override

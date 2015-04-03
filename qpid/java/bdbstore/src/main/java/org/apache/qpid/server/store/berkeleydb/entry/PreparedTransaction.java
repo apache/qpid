@@ -25,21 +25,21 @@ import org.apache.qpid.server.store.Transaction;
 
 public class PreparedTransaction
 {
-    private final Transaction.Record[] _enqueues;
-    private final Transaction.Record[] _dequeues;
+    private final Transaction.EnqueueRecord[] _enqueues;
+    private final Transaction.DequeueRecord[] _dequeues;
 
-    public PreparedTransaction(Transaction.Record[] enqueues, Transaction.Record[] dequeues)
+    public PreparedTransaction(Transaction.EnqueueRecord[] enqueues, Transaction.DequeueRecord[] dequeues)
     {
         _enqueues = enqueues;
         _dequeues = dequeues;
     }
 
-    public Transaction.Record[] getEnqueues()
+    public Transaction.EnqueueRecord[] getEnqueues()
     {
         return _enqueues;
     }
 
-    public Transaction.Record[] getDequeues()
+    public Transaction.DequeueRecord[] getDequeues()
     {
         return _dequeues;
     }

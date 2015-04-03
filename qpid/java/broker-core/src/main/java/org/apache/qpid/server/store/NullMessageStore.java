@@ -28,7 +28,7 @@ import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
 import org.apache.qpid.server.store.handler.MessageHandler;
 import org.apache.qpid.server.store.handler.MessageInstanceHandler;
 
-public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore, MessageStoreProvider
+public abstract class NullMessageStore implements MessageStore, DurableConfigurationStore, MessageStoreProvider, MessageStore.MessageStoreReader
 {
     private ConfiguredObjectRecord[] _initialRecords;
 
@@ -89,7 +89,7 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     }
 
     @Override
-    public <T extends StorableMessageMetaData> StoredMessage<T> addMessage(T metaData)
+    public <T extends StorableMessageMetaData> MessageHandle<T> addMessage(T metaData)
     {
         return null;
     }
@@ -145,6 +145,7 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
         handler.end();
     }
 
+
     @Override
     public void visitMessages(MessageHandler handler) throws StoreException
     {
@@ -175,5 +176,17 @@ public abstract class NullMessageStore implements MessageStore, DurableConfigura
     public StoredMessage<?> getMessage(final long messageId)
     {
         return null;
+    }
+
+    @Override
+    public MessageStoreReader newMessageStoreReader()
+    {
+        return this;
+    }
+
+    @Override
+    public void close()
+    {
+
     }
 }

@@ -20,10 +20,12 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.message.EnqueueableMessage;
-import org.apache.qpid.server.store.Transaction.Record;
+import java.util.UUID;
 
-public class TestRecord implements Record
+import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.store.Transaction.EnqueueRecord;
+
+public class TestRecord implements EnqueueRecord, Transaction.DequeueRecord, MessageEnqueueRecord
 {
     private TransactionLogResource _queue;
     private EnqueueableMessage _message;
@@ -68,11 +70,11 @@ public class TestRecord implements Record
         {
             return false;
         }
-        if (!(obj instanceof Record))
+        if (!(obj instanceof EnqueueRecord))
         {
             return false;
         }
-        Record other = (Record) obj;
+        EnqueueRecord other = (EnqueueRecord) obj;
         if (_message == null && other.getMessage() != null)
         {
             return false;
@@ -88,4 +90,21 @@ public class TestRecord implements Record
         return _queue.getId().equals(other.getResource().getId());
     }
 
+    @Override
+    public MessageEnqueueRecord getEnqueueRecord()
+    {
+        return this;
+    }
+
+    @Override
+    public UUID getQueueId()
+    {
+        return _queue.getId();
+    }
+
+    @Override
+    public long getMessageNumber()
+    {
+        return _message.getMessageNumber();
+    }
 }

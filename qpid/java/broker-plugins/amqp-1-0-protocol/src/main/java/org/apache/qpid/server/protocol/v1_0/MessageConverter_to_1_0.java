@@ -235,12 +235,6 @@ public abstract class MessageConverter_to_1_0<M extends ServerMessage> implement
                         }
 
                         @Override
-                        public void addContent(int offsetInMessage, ByteBuffer src)
-                        {
-                            throw new UnsupportedOperationException();
-                        }
-
-                        @Override
                         public int getContent(int offsetInMessage, ByteBuffer dst)
                         {
                             ByteBuffer buf = allData.duplicate();

@@ -28,8 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.Transaction;
 import org.apache.qpid.server.store.TransactionLogResource;
@@ -73,20 +73,20 @@ public class AutoCommitTransaction implements ServerTransaction
         immediateAction.postCommit();
     }
 
-    public void dequeue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction)
+    public void dequeue(MessageEnqueueRecord record, Action postTransactionAction)
     {
         Transaction txn = null;
         try
         {
-            if(queue.getMessageDurability().persist(message.isPersistent()))
+            if(record != null)
             {
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("Dequeue of message number " + message.getMessageNumber() + " from transaction log. Queue : " + queue.getName());
+                    _logger.debug("Dequeue of message number " + record.getMessageNumber() + " from transaction log. Queue : " + record.getQueueId());
                 }
 
                 txn = _messageStore.newTransaction();
-                txn.dequeueMessage(queue, message);
+                txn.dequeueMessage(record);
                 txn.commitTran();
                 txn = null;
             }
@@ -100,6 +100,7 @@ public class AutoCommitTransaction implements ServerTransaction
 
     }
 
+
     public void dequeue(Collection<MessageInstance> queueEntries, Action postTransactionAction)
     {
         Transaction txn = null;
@@ -107,14 +108,12 @@ public class AutoCommitTransaction implements ServerTransaction
         {
             for(MessageInstance entry : queueEntries)
             {
-                ServerMessage message = entry.getMessage();
-                TransactionLogResource queue = entry.getOwningResource();
-
-                if(queue.getMessageDurability().persist(message.isPersistent()))
+                MessageEnqueueRecord enqueueRecord = entry.getEnqueueRecord();
+                if(enqueueRecord != null)
                 {
                     if (_logger.isDebugEnabled())
                     {
-                        _logger.debug("Dequeue of message number " + message.getMessageNumber() + " from transaction log. Queue : " + queue.getName());
+                        _logger.debug("Dequeue of message number " + enqueueRecord.getMessageNumber() + " from transaction log. Queue : " + enqueueRecord.getQueueId());
                     }
 
                     if(txn == null)
@@ -122,7 +121,7 @@ public class AutoCommitTransaction implements ServerTransaction
                         txn = _messageStore.newTransaction();
                     }
 
-                    txn.dequeueMessage(queue, message);
+                    txn.dequeueMessage(enqueueRecord);
                 }
 
             }
@@ -142,11 +141,12 @@ public class AutoCommitTransaction implements ServerTransaction
     }
 
 
-    public void enqueue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction)
+    public void enqueue(TransactionLogResource queue, EnqueueableMessage message, EnqueueAction postTransactionAction)
     {
         Transaction txn = null;
         try
         {
+            final MessageEnqueueRecord record;
             if(queue.getMessageDurability().persist(message.isPersistent()))
             {
                 if (_logger.isDebugEnabled())
@@ -155,27 +155,52 @@ public class AutoCommitTransaction implements ServerTransaction
                 }
 
                 txn = _messageStore.newTransaction();
-                txn.enqueueMessage(queue, message);
+                record = txn.enqueueMessage(queue, message);
                 txn.commitTran();
                 txn = null;
             }
-            postTransactionAction.postCommit();
+            else
+            {
+                record = null;
+            }
+            if(postTransactionAction != null)
+            {
+                postTransactionAction.postCommit(record);
+            }
             postTransactionAction = null;
         }
         finally
         {
-            rollbackIfNecessary(postTransactionAction, txn);
+            final EnqueueAction underlying = postTransactionAction;
+            rollbackIfNecessary(new Action()
+            {
+                @Override
+                public void postCommit()
+                {
+
+                }
+
+                @Override
+                public void onRollback()
+                {
+                    if(underlying != null)
+                    {
+                        underlying.onRollback();
+                    }
+                }
+            }, txn);
         }
 
 
     }
 
-    public void enqueue(List<? extends BaseQueue> queues, EnqueueableMessage message, Action postTransactionAction)
+    public void enqueue(List<? extends BaseQueue> queues, EnqueueableMessage message, EnqueueAction postTransactionAction)
     {
         Transaction txn = null;
         try
         {
-
+            MessageEnqueueRecord[] enqueueRecords = new MessageEnqueueRecord[queues.size()];
+            int i = 0;
             for(BaseQueue queue : queues)
             {
                 if (queue.getMessageDurability().persist(message.isPersistent()))
@@ -188,11 +213,11 @@ public class AutoCommitTransaction implements ServerTransaction
                     {
                         txn = _messageStore.newTransaction();
                     }
-                    txn.enqueueMessage(queue, message);
+                    enqueueRecords[i] = txn.enqueueMessage(queue, message);
 
 
                 }
-
+                i++;
             }
             if (txn != null)
             {
@@ -200,13 +225,34 @@ public class AutoCommitTransaction implements ServerTransaction
                 txn = null;
             }
 
-            postTransactionAction.postCommit();
+            if(postTransactionAction != null)
+            {
+                postTransactionAction.postCommit(enqueueRecords);
+            }
             postTransactionAction = null;
 
 
-        }finally
+        }
+        finally
         {
-            rollbackIfNecessary(postTransactionAction, txn);
+            final EnqueueAction underlying = postTransactionAction;
+            rollbackIfNecessary(new Action()
+            {
+                @Override
+                public void postCommit()
+                {
+
+                }
+
+                @Override
+                public void onRollback()
+                {
+                    if(underlying != null)
+                    {
+                        underlying.onRollback();
+                    }
+                }
+            }, txn);
         }
 
     }

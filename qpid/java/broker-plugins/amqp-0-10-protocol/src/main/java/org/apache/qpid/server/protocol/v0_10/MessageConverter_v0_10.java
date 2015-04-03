@@ -83,12 +83,6 @@ public class MessageConverter_v0_10 implements MessageConverter<ServerMessage, M
                     }
 
                     @Override
-                    public void addContent(int offsetInMessage, ByteBuffer src)
-                    {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
                     public int getContent(int offsetInMessage, ByteBuffer dst)
                     {
                         return serverMsg.getContent(dst, offsetInMessage);

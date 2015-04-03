@@ -28,8 +28,6 @@ public interface StoredMessage<M extends StorableMessageMetaData>
 
     public long getMessageNumber();
 
-    void addContent(int offsetInMessage, ByteBuffer src);
-
     int getContent(int offsetInMessage, ByteBuffer dst);
 
     ByteBuffer getContent(int offsetInMessage, int size);

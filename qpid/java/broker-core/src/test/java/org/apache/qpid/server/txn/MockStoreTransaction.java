@@ -20,8 +20,11 @@
  */
 package org.apache.qpid.server.txn;
 
+import java.util.UUID;
+
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.qpid.server.message.EnqueueableMessage;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.NullMessageStore;
 import org.apache.qpid.server.util.FutureResult;
@@ -60,7 +63,7 @@ class MockStoreTransaction implements Transaction
         return _state;
     }
 
-    public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
+    public MessageEnqueueRecord enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
     {
         if (_throwExceptionOnQueueOp)
         {
@@ -69,6 +72,7 @@ class MockStoreTransaction implements Transaction
         }
 
         _numberOfEnqueuedMessages++;
+        return new MockEnqueueRecord(queue.getId(), message.getMessageNumber());
     }
 
     public int getNumberOfDequeuedMessages()
@@ -81,7 +85,8 @@ class MockStoreTransaction implements Transaction
         return _numberOfEnqueuedMessages;
     }
 
-    public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message)
+    @Override
+    public void dequeueMessage(final MessageEnqueueRecord enqueueRecord)
     {
         if (_throwExceptionOnQueueOp)
         {
@@ -110,8 +115,19 @@ class MockStoreTransaction implements Transaction
     {
     }
 
-    public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
+    @Override
+    public void removeXid(final StoredXidRecord record)
     {
+
+    }
+
+    public StoredXidRecord recordXid(long format,
+                                     byte[] globalId,
+                                     byte[] branchId,
+                                     EnqueueRecord[] enqueues,
+                                     DequeueRecord[] dequeues)
+    {
+        return null;
     }
 
     public static MessageStore createTestTransactionLog(final MockStoreTransaction storeTransaction)
@@ -125,5 +141,28 @@ class MockStoreTransaction implements Transaction
                 return storeTransaction;
             }
        };
+    }
+
+    private static class MockEnqueueRecord implements MessageEnqueueRecord
+    {
+        private final UUID _queueId;
+        private final long _messageNumber;
+
+        public MockEnqueueRecord(final UUID queueId,
+                                 final long messageNumber)
+        {
+            _queueId = queueId;
+            _messageNumber = messageNumber;
+        }
+
+        public UUID getQueueId()
+        {
+            return _queueId;
+        }
+
+        public long getMessageNumber()
+        {
+            return _messageNumber;
+        }
     }
 }
