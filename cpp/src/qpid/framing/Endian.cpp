@@ -35,7 +35,7 @@ bool Endian::testBigEndian()
     return a == b;
 }
 
-uint8_t* Endian::convertIfRequired(uint8_t* const octets, int width)
+uint8_t* Endian::convertIfRequired(uint8_t* octets, int width)
 {
     if (instance.littleEndian) {
         for (int i = 0; i < (width/2); i++) {

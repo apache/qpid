@@ -106,12 +106,11 @@ class QPID_COMMON_CLASS_EXTERN FieldValue {
   protected:
     FieldValue(uint8_t t, Data* d): typeOctet(t), data(d) {}
 
-    QPID_COMMON_EXTERN static uint8_t* convertIfRequired(uint8_t* const octets, int width);
+    QPID_COMMON_EXTERN static uint8_t* convertIfRequired(uint8_t* octets, int width);
 
   private:
     uint8_t typeOctet;
     std::auto_ptr<Data> data;
-
 };
 
 template <>
@@ -219,12 +218,13 @@ inline T FieldValue::getIntegerValue() const
 
 template <class T, int W>
 inline T FieldValue::getFloatingPointValue() const {
-    FixedWidthValue<W>* const fwv = dynamic_cast< FixedWidthValue<W>* const>(data.get());
+    const FixedWidthValue<W>* fwv = dynamic_cast<FixedWidthValue<W>*>(data.get());
     if (fwv) {
         T value;
-        uint8_t* const octets = convertIfRequired(fwv->rawOctets(), W);
-        uint8_t* const target = reinterpret_cast<uint8_t*>(&value);
-        for (size_t i = 0; i < W; ++i) target[i] = octets[i];
+        uint8_t* target = reinterpret_cast<uint8_t*>(&value);
+        const uint8_t* octets = fwv->rawOctets();
+        std::copy(octets, octets + W, target);
+        convertIfRequired(target, W);
         return value;
     } else {
         throw InvalidConversionException();

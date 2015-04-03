@@ -232,7 +232,7 @@ void FieldValue::print(std::ostream& out) const {
     out << ')';
 }
 
-uint8_t* FieldValue::convertIfRequired(uint8_t* const octets, int width)
+uint8_t* FieldValue::convertIfRequired(uint8_t* octets, int width)
 {
     return Endian::convertIfRequired(octets, width);
 }
