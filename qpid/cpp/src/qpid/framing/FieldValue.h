@@ -222,9 +222,12 @@ inline T FieldValue::getFloatingPointValue() const {
     FixedWidthValue<W>* const fwv = dynamic_cast< FixedWidthValue<W>* const>(data.get());
     if (fwv) {
         T value;
-        uint8_t* const octets = convertIfRequired(fwv->rawOctets(), W);
         uint8_t* const target = reinterpret_cast<uint8_t*>(&value);
+        uint8_t* octets = fwv->rawOctets();
         for (size_t i = 0; i < W; ++i) target[i] = octets[i];
+
+        convertIfRequired(reinterpret_cast<uint8_t* const>(&value), W);
+
         return value;
     } else {
         throw InvalidConversionException();
