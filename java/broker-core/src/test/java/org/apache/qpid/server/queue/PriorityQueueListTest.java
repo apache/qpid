@@ -88,7 +88,7 @@ public class PriorityQueueListTest extends QpidTestCase
             when(ref.getMessage()).thenReturn(message);
             when(header.getPriority()).thenReturn(PRIORITIES[i]);
 
-            entries[i] = _list.add(message);
+            entries[i] = _list.add(message, null);
         }
 
         _priority4message1 = entries[0];

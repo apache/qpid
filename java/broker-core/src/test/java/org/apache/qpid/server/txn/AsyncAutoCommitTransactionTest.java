@@ -26,6 +26,7 @@ import java.util.Collections;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.store.MessageDurability;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.store.Transaction;
@@ -42,7 +43,7 @@ public class AsyncAutoCommitTransactionTest extends QpidTestCase
     private BaseQueue _queue = mock(BaseQueue.class);
     private MessageStore _messageStore = mock(MessageStore.class);
     private Transaction _storeTransaction = mock(Transaction.class);
-    private Action _postTransactionAction = mock(Action.class);
+    private ServerTransaction.EnqueueAction _postTransactionAction = mock(ServerTransaction.EnqueueAction.class);
     private FutureResult _future = mock(FutureResult.class);
 
 
@@ -70,7 +71,7 @@ public class AsyncAutoCommitTransactionTest extends QpidTestCase
         asyncAutoCommitTransaction.enqueue(_queue, _message, _postTransactionAction);
 
         verify(_storeTransaction).enqueueMessage(_queue, _message);
-        verify(_futureRecorder).recordFuture(_future, _postTransactionAction);
+        verify(_futureRecorder).recordFuture(eq(_future), any(Action.class));
         verifyZeroInteractions(_postTransactionAction);
     }
 
@@ -87,7 +88,7 @@ public class AsyncAutoCommitTransactionTest extends QpidTestCase
         asyncAutoCommitTransaction.enqueue(Collections.singletonList(_queue), _message, _postTransactionAction);
 
         verify(_storeTransaction).enqueueMessage(_queue, _message);
-        verify(_futureRecorder).recordFuture(_future, _postTransactionAction);
+        verify(_futureRecorder).recordFuture(eq(_future), any(Action.class));
         verifyZeroInteractions(_postTransactionAction);
     }
 
@@ -104,7 +105,7 @@ public class AsyncAutoCommitTransactionTest extends QpidTestCase
         asyncAutoCommitTransaction.enqueue(_queue, _message, _postTransactionAction);
 
         verify(_storeTransaction).enqueueMessage(_queue, _message);
-        verify(_futureRecorder).recordFuture(_future, _postTransactionAction);
+        verify(_futureRecorder).recordFuture(eq(_future), any(Action.class));
         verifyZeroInteractions(_postTransactionAction);
     }
 
@@ -120,7 +121,7 @@ public class AsyncAutoCommitTransactionTest extends QpidTestCase
         asyncAutoCommitTransaction.enqueue(_queue, _message, _postTransactionAction);
 
         verifyZeroInteractions(_storeTransaction);
-        verify(_postTransactionAction).postCommit();
+        verify(_postTransactionAction).postCommit((MessageEnqueueRecord)null);
         verifyZeroInteractions(_futureRecorder);
     }
 
@@ -136,7 +137,7 @@ public class AsyncAutoCommitTransactionTest extends QpidTestCase
         asyncAutoCommitTransaction.enqueue(_queue, _message, _postTransactionAction);
 
         verifyZeroInteractions(_storeTransaction);
-        verify(_futureRecorder).recordFuture(FutureResult.IMMEDIATE_FUTURE, _postTransactionAction);
+        verify(_futureRecorder).recordFuture(eq(FutureResult.IMMEDIATE_FUTURE), any(Action.class));
         verifyZeroInteractions(_postTransactionAction);
     }
 }

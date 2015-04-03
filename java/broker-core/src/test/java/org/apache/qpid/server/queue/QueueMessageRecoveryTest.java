@@ -28,11 +28,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.util.Action;
@@ -60,13 +62,13 @@ public class QueueMessageRecoveryTest extends QpidTestCase
 
         queue.open();
 
-        queue.recover(createMockMessage(0));
-        queue.enqueue(createMockMessage(4), null);
-        queue.enqueue(createMockMessage(5), null);
-        queue.recover(createMockMessage(1));
-        queue.recover(createMockMessage(2));
-        queue.enqueue(createMockMessage(6), null);
-        queue.recover(createMockMessage(3));
+        queue.recover(createMockMessage(0), createEnqueueRecord(0, queue));
+        queue.enqueue(createMockMessage(4), null, null);
+        queue.enqueue(createMockMessage(5), null, null);
+        queue.recover(createMockMessage(1), createEnqueueRecord(1, queue));
+        queue.recover(createMockMessage(2), createEnqueueRecord(2, queue));
+        queue.enqueue(createMockMessage(6), null, null);
+        queue.recover(createMockMessage(3), createEnqueueRecord(3, queue));
 
         assertEquals(4, messageList.size());
         for(int i = 0; i < 4; i++)
@@ -76,7 +78,7 @@ public class QueueMessageRecoveryTest extends QpidTestCase
 
         queue.completeRecovery();
 
-        queue.enqueue(createMockMessage(7), null);
+        queue.enqueue(createMockMessage(7), null, null);
 
         assertEquals(8, messageList.size());
 
@@ -123,7 +125,7 @@ public class QueueMessageRecoveryTest extends QpidTestCase
                 {
                     for(int i = 0; i < size; i++)
                     {
-                        queue.recover(createMockMessage(i));
+                        queue.recover(createMockMessage(i), createEnqueueRecord(i, queue));
                     }
                     queue.completeRecovery();
                 }
@@ -137,7 +139,7 @@ public class QueueMessageRecoveryTest extends QpidTestCase
             {
                 for(int i = 0; i < size; i++)
                 {
-                    queue.enqueue(createMockMessage(size + i), null);
+                    queue.enqueue(createMockMessage(size + i), null, null);
                 }
             }
         }, "publishing thread");
@@ -154,6 +156,24 @@ public class QueueMessageRecoveryTest extends QpidTestCase
         {
             assertEquals((long)i, messageList.get(i).getMessageNumber());
         }
+    }
+
+    private MessageEnqueueRecord createEnqueueRecord(final int messageNumber, final TestQueue queue)
+    {
+        return new MessageEnqueueRecord()
+        {
+            @Override
+            public UUID getQueueId()
+            {
+                return queue.getId();
+            }
+
+            @Override
+            public long getMessageNumber()
+            {
+                return messageNumber;
+            }
+        };
     }
 
 
@@ -189,7 +209,7 @@ public class QueueMessageRecoveryTest extends QpidTestCase
         }
 
         @Override
-        protected void doEnqueue(final ServerMessage message, final Action<? super MessageInstance> action)
+        protected void doEnqueue(final ServerMessage message, final Action<? super MessageInstance> action, MessageEnqueueRecord record)
         {
             synchronized(_messageList)
             {

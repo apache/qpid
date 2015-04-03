@@ -23,6 +23,7 @@ package org.apache.qpid.server.message;
 
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.filter.Filterable;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
@@ -80,6 +81,8 @@ public interface MessageInstance
     Filterable asFilterable();
 
     ConsumerImpl getAcquiringConsumer();
+
+    MessageEnqueueRecord getEnqueueRecord();
 
     public static enum State
     {

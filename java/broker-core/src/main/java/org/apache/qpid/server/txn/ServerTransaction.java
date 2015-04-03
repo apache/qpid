@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.TransactionLogResource;
 
 
@@ -55,6 +56,15 @@ public interface ServerTransaction
         public void onRollback();
     }
 
+    public static interface EnqueueAction
+    {
+        public void postCommit(MessageEnqueueRecord... records);
+
+        public void onRollback();
+    }
+
+
+
     /**
      * Return the time the current transaction started.
      *
@@ -75,12 +85,12 @@ public interface ServerTransaction
      */
     void addPostTransactionAction(Action postTransactionAction);
 
-    /** 
+    /**
      * Dequeue a message from a queue registering a post transaction action.
-     * 
-     * A store operation will result only for a persistent message on a durable queue.
+     *
+     * A store operation will result only for a if the record is not null.
      */
-    void dequeue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction);
+    void dequeue(MessageEnqueueRecord record, Action postTransactionAction);
 
     /** 
      * Dequeue a message(s) from queue(s) registering a post transaction action.
@@ -94,14 +104,14 @@ public interface ServerTransaction
      * 
      * A store operation will result only for a persistent message on a durable queue.
      */
-    void enqueue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction);
+    void enqueue(TransactionLogResource queue, EnqueueableMessage message, EnqueueAction postTransactionAction);
 
     /** 
      * Enqueue a message(s) to queue(s) registering a post transaction action.
      * 
      * Store operations will result only for a persistent messages on durable queues.
      */
-    void enqueue(List<? extends BaseQueue> queues, EnqueueableMessage message, Action postTransactionAction);
+    void enqueue(List<? extends BaseQueue> queues, EnqueueableMessage message, EnqueueAction postTransactionAction);
 
     /** 
      * Commit the transaction represented by this object.

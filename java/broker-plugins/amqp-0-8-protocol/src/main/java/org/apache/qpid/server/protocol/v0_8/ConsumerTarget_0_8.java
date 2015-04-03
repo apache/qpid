@@ -189,7 +189,7 @@ public abstract class ConsumerTarget_0_8 extends AbstractConsumerTarget implemen
 
             // The send may of course still fail, in which case, as
             // the message is unacked, it will be lost.
-            _txn.dequeue(entry.getOwningResource(), entry.getMessage(), NOOP);
+            _txn.dequeue(entry.getEnqueueRecord(), NOOP);
 
             ServerMessage message = entry.getMessage();
             MessageReference ref = message.newReference();

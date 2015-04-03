@@ -18,15 +18,15 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store.handler;
+package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.store.Transaction;
-import org.apache.qpid.server.store.Transaction.DequeueRecord;
-import org.apache.qpid.server.store.Transaction.EnqueueRecord;
+import java.nio.ByteBuffer;
 
-public interface DistributedTransactionHandler
+public interface MessageHandle<M extends StorableMessageMetaData>
 {
 
-    boolean handle(Transaction.StoredXidRecord storedXid, EnqueueRecord[] enqueues, DequeueRecord[] dequeues);
+    void addContent(ByteBuffer src);
+
+    StoredMessage<M> allContentAdded();
 
 }

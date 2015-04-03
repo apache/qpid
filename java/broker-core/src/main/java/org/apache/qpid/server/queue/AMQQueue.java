@@ -33,6 +33,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.Queue;
 import org.apache.qpid.server.model.QueueNotificationListener;
 import org.apache.qpid.server.protocol.CapacityChecker;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.util.Deletable;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
@@ -112,7 +113,7 @@ public interface AMQQueue<X extends AMQQueue<X>>
 
     void completeRecovery();
 
-    void recover(ServerMessage<?> message);
+    void recover(ServerMessage<?> message, final MessageEnqueueRecord enqueueRecord);
 
     void setTargetSize(long targetSize);
 

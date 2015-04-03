@@ -25,6 +25,7 @@ import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
@@ -74,18 +75,19 @@ public class DistributedTransaction implements ServerTransaction
         }
     }
 
-    public void dequeue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction)
+    public void dequeue(MessageEnqueueRecord record, Action postTransactionAction)
     {
         if(_branch != null)
         {
-            _branch.dequeue(queue, message);
+            _branch.dequeue(record);
             _branch.addPostTransactionAction(postTransactionAction);
         }
         else
         {
-            _autoCommitTransaction.dequeue(queue, message, postTransactionAction);
+            _autoCommitTransaction.dequeue(record, postTransactionAction);
         }
     }
+
 
     public void dequeue(Collection<MessageInstance> messages, Action postTransactionAction)
     {
@@ -93,7 +95,7 @@ public class DistributedTransaction implements ServerTransaction
         {
             for(MessageInstance entry : messages)
             {
-                _branch.dequeue(entry.getOwningResource(), entry.getMessage());
+                _branch.dequeue(entry.getEnqueueRecord());
             }
             _branch.addPostTransactionAction(postTransactionAction);
         }
@@ -103,12 +105,33 @@ public class DistributedTransaction implements ServerTransaction
         }
     }
 
-    public void enqueue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction)
+    public void enqueue(TransactionLogResource queue, EnqueueableMessage message, final EnqueueAction postTransactionAction)
     {
         if(_branch != null)
         {
-            _branch.enqueue(queue, message);
-            _branch.addPostTransactionAction(postTransactionAction);
+            final MessageEnqueueRecord[] enqueueRecords = new MessageEnqueueRecord[1];
+                _branch.enqueue(queue, message, new org.apache.qpid.server.util.Action<MessageEnqueueRecord>()
+                {
+                    @Override
+                    public void performAction(final MessageEnqueueRecord record)
+                    {
+                        enqueueRecords[0] = record;
+                    }
+                });
+            addPostTransactionAction(new Action()
+            {
+                @Override
+                public void postCommit()
+                {
+                    postTransactionAction.postCommit(enqueueRecords);
+                }
+
+                @Override
+                public void onRollback()
+                {
+                    postTransactionAction.onRollback();
+                }
+            });
         }
         else
         {
@@ -117,15 +140,39 @@ public class DistributedTransaction implements ServerTransaction
     }
 
     public void enqueue(List<? extends BaseQueue> queues, EnqueueableMessage message,
-                        Action postTransactionAction)
+                        final EnqueueAction postTransactionAction)
     {
         if(_branch != null)
         {
+            final MessageEnqueueRecord[] enqueueRecords = new MessageEnqueueRecord[queues.size()];
+            int i = 0;
             for(BaseQueue queue : queues)
             {
-                _branch.enqueue(queue, message);
+                final int pos = i;
+                _branch.enqueue(queue, message, new org.apache.qpid.server.util.Action<MessageEnqueueRecord>()
+                {
+                    @Override
+                    public void performAction(final MessageEnqueueRecord record)
+                    {
+                        enqueueRecords[pos] = record;
+                    }
+                });
+                i++;
             }
-            _branch.addPostTransactionAction(postTransactionAction);
+            addPostTransactionAction(new Action()
+            {
+                @Override
+                public void postCommit()
+                {
+                    postTransactionAction.postCommit(enqueueRecords);
+                }
+
+                @Override
+                public void onRollback()
+                {
+                    postTransactionAction.onRollback();
+                }
+            });
         }
         else
         {

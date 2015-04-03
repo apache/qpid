@@ -20,10 +20,11 @@
  */
 package org.apache.qpid.server.store.handler;
 
-import java.util.UUID;
+
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 
 public interface MessageInstanceHandler
 {
-    boolean handle(UUID queueId, long messageId);
+    boolean handle(MessageEnqueueRecord record);
 
 }

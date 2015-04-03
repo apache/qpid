@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.util.StateChangeListener;
+import org.apache.qpid.thread.ThreadFactory;
 
 public abstract class AbstractConsumerTarget implements ConsumerTarget
 {

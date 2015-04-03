@@ -24,6 +24,7 @@ import org.apache.qpid.amqp_1_0.type.Outcome;
 import org.apache.qpid.amqp_1_0.type.messaging.Accepted;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.txn.ServerTransaction;
 
 public class QueueDestination extends MessageSourceDestination implements SendingDestination, ReceivingDestination
@@ -45,16 +46,16 @@ public class QueueDestination extends MessageSourceDestination implements Sendin
     public Outcome send(final Message_1_0 message, ServerTransaction txn)
     {
 
-        txn.enqueue(getQueue(),message, new ServerTransaction.Action()
+        txn.enqueue(getQueue(),message, new ServerTransaction.EnqueueAction()
         {
             MessageReference _reference = message.newReference();
 
 
-            public void postCommit()
+            public void postCommit(MessageEnqueueRecord... records)
             {
                 try
                 {
-                    getQueue().enqueue(message, null);
+                    getQueue().enqueue(message, null, records[0]);
                 }
                 finally
                 {

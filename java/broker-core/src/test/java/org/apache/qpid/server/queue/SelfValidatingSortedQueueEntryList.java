@@ -23,6 +23,7 @@ import org.junit.Assert;
 
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.SortedQueueEntry.Colour;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 
 /**
  * Test extension of SortedQueueEntryList that provides data structure validation tests.
@@ -42,10 +43,10 @@ public class SelfValidatingSortedQueueEntryList extends SortedQueueEntryList
     }
 
     @Override /** Overridden to automatically check queue properties before and after. */
-    public SortedQueueEntry add(final ServerMessage message)
+    public SortedQueueEntry add(final ServerMessage message, final MessageEnqueueRecord enqueueRecord)
     {
         assertQueueProperties(); //before add
-        final SortedQueueEntry result = super.add(message);
+        final SortedQueueEntry result = super.add(message, enqueueRecord);
         assertQueueProperties(); //after add
         return result;
     }

@@ -503,7 +503,7 @@ public class TopicExchangeTest extends QpidTestCase
         when(message.getMessageNumber()).thenReturn(messageNumber);
         for(BaseQueue q : queues)
         {
-            q.enqueue(message, null);
+            q.enqueue(message, null, null);
         }
 
         return queues.size();

@@ -87,12 +87,6 @@ public class MessageConverter_1_0_to_v0_10 implements MessageConverter<Message_1
             }
 
             @Override
-            public void addContent(int offsetInMessage, ByteBuffer src)
-            {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
             public int getContent(int offsetInMessage, ByteBuffer dst)
             {
                 int size = messageContent.length - offsetInMessage;

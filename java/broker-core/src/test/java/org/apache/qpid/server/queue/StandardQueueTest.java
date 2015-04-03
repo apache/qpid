@@ -36,6 +36,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.model.LifetimePolicy;
 import org.apache.qpid.server.model.Queue;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 
 public class StandardQueueTest extends AbstractQueueTestBase
@@ -59,7 +60,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
                                        EnumSet.of(ConsumerImpl.Option.ACQUIRES,
                                                   ConsumerImpl.Option.SEES_REQUEUES));
 
-        getQueue().enqueue(message, null);
+        getQueue().enqueue(message, null, null);
         consumer.close();
         assertTrue("Queue was not deleted when consumer was removed",
                    getQueue().isDeleted());
@@ -290,7 +291,8 @@ public class StandardQueueTest extends AbstractQueueTestBase
          * Entries with even message id are considered
          * dequeued!
          */
-        protected DequeuedQueueEntry createQueueEntry(final ServerMessage message)
+        protected DequeuedQueueEntry createQueueEntry(final ServerMessage message,
+                                                      final MessageEnqueueRecord enqueueRecord)
         {
             return new DequeuedQueueEntry(this, message);
         }
@@ -311,7 +313,7 @@ public class StandardQueueTest extends AbstractQueueTestBase
 
         public DequeuedQueueEntry(DequeuedQueueEntryList list, final ServerMessage message)
         {
-            super(list, message);
+            super(list, message, null);
             _message = message;
         }
 

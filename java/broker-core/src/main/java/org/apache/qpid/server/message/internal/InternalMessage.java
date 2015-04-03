@@ -33,6 +33,7 @@ import java.util.Map;
 
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.AbstractServerMessageImpl;
+import org.apache.qpid.server.store.MessageHandle;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.util.ConnectionScopedRuntimeException;
@@ -134,11 +135,10 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
 
 
             final InternalMessageMetaData metaData = InternalMessageMetaData.create(persistent, internalHeader, bytes.length);
-            StoredMessage<InternalMessageMetaData> handle =
-                    store.addMessage(metaData);
-            handle.addContent(0, ByteBuffer.wrap(bytes));
-
-            return new InternalMessage(handle, internalHeader, bodyObject);
+            MessageHandle<InternalMessageMetaData> handle = store.addMessage(metaData);
+            handle.addContent(ByteBuffer.wrap(bytes));
+            StoredMessage<InternalMessageMetaData> storedMessage = handle.allContentAdded();
+            return new InternalMessage(storedMessage, internalHeader, bodyObject);
         }
         catch (IOException e)
         {
@@ -148,7 +148,13 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
 
     public static InternalMessage createStringMessage(MessageStore store, AMQMessageHeader header, String messageBody)
     {
-        return createMessage(store, header, messageBody, false);
+        return createStringMessage(store, header, messageBody, false);
+    }
+
+
+    public static InternalMessage createStringMessage(MessageStore store, AMQMessageHeader header, String messageBody, boolean persistent)
+    {
+        return createMessage(store, header, messageBody, persistent);
     }
 
     public static InternalMessage createMapMessage(MessageStore store, AMQMessageHeader header, Map<? extends Object,? extends Object> messageBody)
@@ -163,7 +169,13 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
 
     public static InternalMessage createBytesMessage(MessageStore store, AMQMessageHeader header, byte[] messageBody)
     {
-        return createMessage(store, header, messageBody, false);
+        return createBytesMessage(store, header, messageBody, false);
+    }
+
+
+    public static InternalMessage createBytesMessage(MessageStore store, AMQMessageHeader header, byte[] messageBody, boolean persist)
+    {
+        return createMessage(store, header, messageBody, persist);
     }
 
     public static InternalMessage convert(long messageNumber, boolean persistent, AMQMessageHeader header, Object messageBody)
@@ -204,12 +216,6 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
                     public long getMessageNumber()
                     {
                         return messageNumber;
-                    }
-
-                    @Override
-                    public void addContent(final int offsetInMessage, final ByteBuffer src)
-                    {
-                        throw new UnsupportedOperationException();
                     }
 
                     @Override

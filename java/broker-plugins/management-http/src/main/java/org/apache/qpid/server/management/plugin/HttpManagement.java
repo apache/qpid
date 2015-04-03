@@ -256,6 +256,7 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
 
         ServletContextHandler root = new ServletContextHandler(ServletContextHandler.SESSIONS);
         root.setContextPath("/");
+        root.setCompactPath(true);
         server.setHandler(root);
         server.setSendServerVersion(false);
         final ErrorHandler errorHandler = new ErrorHandler()

@@ -32,6 +32,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.MockMessageInstance;
 import org.apache.qpid.server.store.MessageDurability;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.txn.MockStoreTransaction.TransactionState;
@@ -222,7 +223,7 @@ public class LocalTransactionTest extends QpidTestCase
         _message = createTestMessage(false);
         _queue = createQueue(false);
 
-        _transaction.dequeue(_queue, _message, _action1);
+        _transaction.dequeue((MessageEnqueueRecord)null, _action1);
 
         assertEquals("Dequeue of non-persistent message must not cause message to be enqueued", 0, _storeTransaction.getNumberOfEnqueuedMessages());
         assertEquals("Unexpected transaction state", TransactionState.NOT_STARTED, _storeTransaction.getState());
@@ -239,7 +240,7 @@ public class LocalTransactionTest extends QpidTestCase
         _message = createTestMessage(true);
         _queue = createQueue(true);
         
-        _transaction.dequeue(_queue, _message, _action1);
+        _transaction.dequeue(mock(MessageEnqueueRecord.class), _action1);
 
         assertEquals("Dequeue of non-persistent message must cause message to be dequeued", 1, _storeTransaction.getNumberOfDequeuedMessages());
         assertEquals("Unexpected transaction state", TransactionState.STARTED, _storeTransaction.getState());
@@ -261,7 +262,7 @@ public class LocalTransactionTest extends QpidTestCase
         
         try
         {
-            _transaction.dequeue(_queue, _message, _action1);
+            _transaction.dequeue(mock(MessageEnqueueRecord.class), _action1);
             fail("Exception not thrown");
         }
         catch (RuntimeException re)
@@ -404,7 +405,7 @@ public class LocalTransactionTest extends QpidTestCase
         assertEquals("Unexpected transaction state", TransactionState.NOT_STARTED, _storeTransaction.getState());
         assertFalse("Post commit action must not be fired yet", _action1.isPostCommitActionFired());
         
-        _transaction.dequeue(_queue, _message, _action1);
+        _transaction.dequeue(mock(MessageEnqueueRecord.class), _action1);
         assertEquals("Unexpected transaction state", TransactionState.STARTED, _storeTransaction.getState());
         assertFalse("Post commit action must not be fired yet", _action1.isPostCommitActionFired());
         
@@ -428,7 +429,7 @@ public class LocalTransactionTest extends QpidTestCase
         assertEquals("Unexpected transaction state", TransactionState.NOT_STARTED, _storeTransaction.getState());
         assertFalse("Rollback action must not be fired yet", _action1.isRollbackActionFired());
 
-        _transaction.dequeue(_queue, _message, _action1);
+        _transaction.dequeue(mock(MessageEnqueueRecord.class), _action1);
         
         assertEquals("Unexpected transaction state", TransactionState.STARTED, _storeTransaction.getState());
         assertFalse("Rollback action must not be fired yet", _action1.isRollbackActionFired());
@@ -451,7 +452,7 @@ public class LocalTransactionTest extends QpidTestCase
         _queue = createQueue(true);
         
         _transaction.addPostTransactionAction(_action1);
-        _transaction.dequeue(_queue, _message, _action2);
+        _transaction.dequeue(mock(MessageEnqueueRecord.class), _action2);
         _transaction.commit();
         
         assertEquals("Unexpected transaction state", TransactionState.COMMITTED, _storeTransaction.getState());
@@ -473,7 +474,7 @@ public class LocalTransactionTest extends QpidTestCase
         _queue = createQueue(true);
         
         _transaction.addPostTransactionAction(_action1);
-        _transaction.dequeue(_queue, _message, _action2);
+        _transaction.dequeue(mock(MessageEnqueueRecord.class), _action2);
         _transaction.rollback();
         
         assertEquals("Unexpected transaction state", TransactionState.ABORTED, _storeTransaction.getState());
@@ -532,7 +533,7 @@ public class LocalTransactionTest extends QpidTestCase
         _queue = createQueue(true);
 
         long startTime = System.currentTimeMillis();
-        _transaction.dequeue(_queue, _message, _action1);
+        _transaction.dequeue(mock(MessageEnqueueRecord.class), _action1);
 
         assertTrue("Transaction start time should have been recorded", _transaction.getTransactionStartTime() >= startTime);
         assertEquals("Transaction update time should be the same as transaction start time", _transaction.getTransactionStartTime(), _transaction.getTransactionUpdateTime());
@@ -552,7 +553,7 @@ public class LocalTransactionTest extends QpidTestCase
         final long transactionUpdateTimeAfterFirstEnqueue = _transaction.getTransactionUpdateTime();
 
         Thread.sleep(1);
-        _transaction.dequeue(_queue, _message, _action2);
+        _transaction.dequeue(mock(MessageEnqueueRecord.class), _action2);
 
         final long transactionStartTimeAfterFirstDequeue = _transaction.getTransactionStartTime();
         final long transactionUpdateTimeAfterFirstDequeue = _transaction.getTransactionUpdateTime();
@@ -611,7 +612,7 @@ public class LocalTransactionTest extends QpidTestCase
         {
             final TransactionLogResource queue = createQueue(queueDurableFlags[i]);
             final ServerMessage message = createTestMessage(messagePersistentFlags[i]);
-            
+            final boolean hasRecord = queueDurableFlags[i] && messagePersistentFlags[i];
             queueEntries.add(new MockMessageInstance()
             {
 
@@ -626,7 +627,12 @@ public class LocalTransactionTest extends QpidTestCase
                 {
                     return queue;
                 }
-                
+
+                @Override
+                public MessageEnqueueRecord getEnqueueRecord()
+                {
+                    return hasRecord ? mock(MessageEnqueueRecord.class) : null;
+                }
             });
         }
         

@@ -60,7 +60,7 @@ public class ReferenceCountingTest extends QpidTestCase
 
         final MessageMetaData mmd = new MessageMetaData(info, chb);
 
-        StoredMessage storedMessage = _store.addMessage(mmd);
+        StoredMessage storedMessage = _store.addMessage(mmd).allContentAdded();
         Transaction txn = _store.newTransaction();
         txn.enqueueMessage(createTransactionLogResource("dummyQ"), createEnqueueableMessage(storedMessage));
         txn.commitTran();
@@ -78,7 +78,7 @@ public class ReferenceCountingTest extends QpidTestCase
     private int getStoreMessageCount()
     {
         MessageCounter counter = new MessageCounter();
-        _store.visitMessages(counter);
+        _store.newMessageStoreReader().visitMessages(counter);
         return counter.getCount();
     }
 
@@ -99,7 +99,7 @@ public class ReferenceCountingTest extends QpidTestCase
 
         final MessageMetaData mmd = new MessageMetaData(info, chb);
 
-        StoredMessage storedMessage = _store.addMessage(mmd);
+        StoredMessage storedMessage = _store.addMessage(mmd).allContentAdded();
         Transaction txn = _store.newTransaction();
         txn.enqueueMessage(createTransactionLogResource("dummyQ"), createEnqueueableMessage(storedMessage));
         txn.commitTran();

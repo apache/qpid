@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 
 public class StandardQueueEntryList extends OrderedQueueEntryList
 {
@@ -40,9 +41,10 @@ public class StandardQueueEntryList extends OrderedQueueEntryList
     }
 
 
-    protected StandardQueueEntry createQueueEntry(ServerMessage<?> message)
+    protected StandardQueueEntry createQueueEntry(ServerMessage<?> message,
+                                                  final MessageEnqueueRecord enqueueRecord)
     {
-        return new StandardQueueEntry(this, message);
+        return new StandardQueueEntry(this, message, enqueueRecord);
     }
 
 }

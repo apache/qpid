@@ -25,6 +25,7 @@ import org.apache.qpid.server.message.MessageInstance;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.Action;
@@ -82,15 +83,15 @@ public class DefaultDestination implements MessageDestination
         }
         else
         {
-            txn.enqueue(q,message, new ServerTransaction.Action()
+            txn.enqueue(q,message, new ServerTransaction.EnqueueAction()
             {
                 MessageReference _reference = message.newReference();
 
-                public void postCommit()
+                public void postCommit(MessageEnqueueRecord... records)
                 {
                     try
                     {
-                        q.enqueue(message, postEnqueueAction);
+                        q.enqueue(message, postEnqueueAction, records[0]);
                     }
                     finally
                     {

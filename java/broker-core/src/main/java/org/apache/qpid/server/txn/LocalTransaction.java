@@ -30,8 +30,8 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.message.MessageInstance;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.util.FutureResult;
 import org.apache.qpid.server.store.Transaction;
@@ -92,23 +92,23 @@ public class LocalTransaction implements ServerTransaction
         _postTransactionActions.add(postTransactionAction);
     }
 
-    public void dequeue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction)
+    public void dequeue(MessageEnqueueRecord record, Action postTransactionAction)
     {
         sync();
         _postTransactionActions.add(postTransactionAction);
         initTransactionStartTimeIfNecessaryAndAdvanceUpdateTime();
 
-        if(queue.getMessageDurability().persist(message.isPersistent()))
+        if(record != null)
         {
             try
             {
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("Dequeue of message number " + message.getMessageNumber() + " from transaction log. Queue : " + queue.getName());
+                    _logger.debug("Dequeue of message number " + record.getMessageNumber() + " from transaction log. Queue : " + record.getQueueId());
                 }
 
                 beginTranIfNecessary();
-                _transaction.dequeueMessage(queue, message);
+                _transaction.dequeueMessage(record);
             }
             catch(RuntimeException e)
             {
@@ -127,18 +127,16 @@ public class LocalTransaction implements ServerTransaction
         {
             for(MessageInstance entry : queueEntries)
             {
-                ServerMessage message = entry.getMessage();
-                TransactionLogResource queue = entry.getOwningResource();
-
-                if(queue.getMessageDurability().persist(message.isPersistent()))
+                final MessageEnqueueRecord record = entry.getEnqueueRecord();
+                if(record != null)
                 {
                     if (_logger.isDebugEnabled())
                     {
-                        _logger.debug("Dequeue of message number " + message.getMessageNumber() + " from transaction log. Queue : " + queue.getName());
+                        _logger.debug("Dequeue of message number " + record.getMessageNumber() + " from transaction log. Queue : " + record.getQueueId());
                     }
 
                     beginTranIfNecessary();
-                    _transaction.dequeueMessage(queue, message);
+                    _transaction.dequeueMessage(record);
                 }
             }
 
@@ -181,10 +179,9 @@ public class LocalTransaction implements ServerTransaction
         }
     }
 
-    public void enqueue(TransactionLogResource queue, EnqueueableMessage message, Action postTransactionAction)
+    public void enqueue(TransactionLogResource queue, EnqueueableMessage message, EnqueueAction postTransactionAction)
     {
         sync();
-        _postTransactionActions.add(postTransactionAction);
         initTransactionStartTimeIfNecessaryAndAdvanceUpdateTime();
 
         if(queue.getMessageDurability().persist(message.isPersistent()))
@@ -197,23 +194,83 @@ public class LocalTransaction implements ServerTransaction
                 }
 
                 beginTranIfNecessary();
-                _transaction.enqueueMessage(queue, message);
+                final MessageEnqueueRecord record = _transaction.enqueueMessage(queue, message);
+                if(postTransactionAction != null)
+                {
+                    final EnqueueAction underlying = postTransactionAction;
+
+                    _postTransactionActions.add(new Action()
+                    {
+                        @Override
+                        public void postCommit()
+                        {
+                            underlying.postCommit(record);
+                        }
+
+                        @Override
+                        public void onRollback()
+                        {
+                            underlying.onRollback();
+                        }
+                    });
+                }
             }
             catch(RuntimeException e)
             {
+                if(postTransactionAction != null)
+                {
+                    final EnqueueAction underlying = postTransactionAction;
+
+                    _postTransactionActions.add(new Action()
+                    {
+                        @Override
+                        public void postCommit()
+                        {
+
+                        }
+
+                        @Override
+                        public void onRollback()
+                        {
+                            underlying.onRollback();
+                        }
+                    });
+                }
                 tidyUpOnError(e);
+            }
+        }
+        else
+        {
+            if(postTransactionAction != null)
+            {
+                final EnqueueAction underlying = postTransactionAction;
+                _postTransactionActions.add(new Action()
+                {
+                    @Override
+                    public void postCommit()
+                    {
+                        underlying.postCommit((MessageEnqueueRecord)null);
+                    }
+
+                    @Override
+                    public void onRollback()
+                    {
+                        underlying.onRollback();
+                    }
+                });
             }
         }
     }
 
-    public void enqueue(List<? extends BaseQueue> queues, EnqueueableMessage message, Action postTransactionAction)
+    public void enqueue(List<? extends BaseQueue> queues, EnqueueableMessage message, EnqueueAction postTransactionAction)
     {
         sync();
-        _postTransactionActions.add(postTransactionAction);
         initTransactionStartTimeIfNecessaryAndAdvanceUpdateTime();
 
         try
         {
+            final MessageEnqueueRecord[] records = new MessageEnqueueRecord[queues.size()];
+            int i = 0;
             for(BaseQueue queue : queues)
             {
                 if(queue.getMessageDurability().persist(message.isPersistent()))
@@ -224,13 +281,53 @@ public class LocalTransaction implements ServerTransaction
                     }
 
                     beginTranIfNecessary();
-                    _transaction.enqueueMessage(queue, message);
+                    records[i] = _transaction.enqueueMessage(queue, message);
 
                 }
+                i++;
+            }
+            if(postTransactionAction != null)
+            {
+                final EnqueueAction underlying = postTransactionAction;
+
+                _postTransactionActions.add(new Action()
+                {
+                    @Override
+                    public void postCommit()
+                    {
+                        underlying.postCommit(records);
+                    }
+
+                    @Override
+                    public void onRollback()
+                    {
+                        underlying.onRollback();
+                    }
+                });
+                postTransactionAction = null;
             }
         }
         catch(RuntimeException e)
         {
+            if(postTransactionAction != null)
+            {
+                final EnqueueAction underlying = postTransactionAction;
+
+                _postTransactionActions.add(new Action()
+                {
+                    @Override
+                    public void postCommit()
+                    {
+
+                    }
+
+                    @Override
+                    public void onRollback()
+                    {
+                        underlying.onRollback();
+                    }
+                });
+            }
             tidyUpOnError(e);
         }
     }

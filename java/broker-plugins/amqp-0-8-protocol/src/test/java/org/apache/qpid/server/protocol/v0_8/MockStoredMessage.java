@@ -26,9 +26,10 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.MessagePublishInfo;
+import org.apache.qpid.server.store.MessageHandle;
 import org.apache.qpid.server.store.StoredMessage;
 
-public class MockStoredMessage implements StoredMessage<MessageMetaData>
+public class MockStoredMessage implements StoredMessage<MessageMetaData>, MessageHandle<MessageMetaData>
 {
     private long _messageId;
     private MessageMetaData _metaData;
@@ -72,12 +73,17 @@ public class MockStoredMessage implements StoredMessage<MessageMetaData>
         return _messageId;
     }
 
-    public void addContent(int offsetInMessage, ByteBuffer src)
+    public void addContent(ByteBuffer src)
     {
         src = src.duplicate();
-        ByteBuffer dst = _content.duplicate();
-        dst.position(offsetInMessage);
-        dst.put(src);
+        _content.put(src);
+    }
+
+    @Override
+    public StoredMessage<MessageMetaData> allContentAdded()
+    {
+        _content.flip();
+        return this;
     }
 
     public int getContent(int offset, ByteBuffer dst)

@@ -114,9 +114,10 @@ public abstract class MessageStoreQuotaEventsTestBase extends QpidTestCase imple
     protected EnqueueableMessage addMessage(long id)
     {
         StorableMessageMetaData metaData = createMetaData(id, MESSAGE_DATA.length);
-        StoredMessage<?> handle = _store.addMessage(metaData);
-        handle.addContent(0, ByteBuffer.wrap(MESSAGE_DATA));
-        TestMessage message = new TestMessage(id, handle);
+        MessageHandle<?> handle = _store.addMessage(metaData);
+        handle.addContent(ByteBuffer.wrap(MESSAGE_DATA));
+        StoredMessage<? extends StorableMessageMetaData> storedMessage = handle.allContentAdded();
+        TestMessage message = new TestMessage(id, storedMessage);
         return message;
     }
 

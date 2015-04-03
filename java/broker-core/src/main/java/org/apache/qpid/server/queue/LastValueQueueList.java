@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 
@@ -67,9 +68,10 @@ public class LastValueQueueList extends OrderedQueueEntryList
     }
 
     @Override
-    protected ConflationQueueEntry createQueueEntry(ServerMessage message)
+    protected ConflationQueueEntry createQueueEntry(ServerMessage message,
+                                                    final MessageEnqueueRecord enqueueRecord)
     {
-        return new ConflationQueueEntry(this, message);
+        return new ConflationQueueEntry(this, message, enqueueRecord);
     }
 
 
@@ -78,9 +80,9 @@ public class LastValueQueueList extends OrderedQueueEntryList
      * Updates the list using super.add and also updates {@link #_latestValuesMap} and discards entries as necessary.
      */
     @Override
-    public ConflationQueueEntry add(final ServerMessage message)
+    public ConflationQueueEntry add(final ServerMessage message, final MessageEnqueueRecord enqueueRecord)
     {
-        final ConflationQueueEntry addedEntry = (ConflationQueueEntry) super.add(message);
+        final ConflationQueueEntry addedEntry = (ConflationQueueEntry) super.add(message, enqueueRecord);
 
         final Object keyValue = message.getMessageHeader().getHeader(_conflationKey);
         if (keyValue != null)
@@ -173,7 +175,7 @@ public class LastValueQueueList extends OrderedQueueEntryList
         if(entry.acquire())
         {
             ServerTransaction txn = new AutoCommitTransaction(getQueue().getVirtualHost().getMessageStore());
-            txn.dequeue(entry.getQueue(),entry.getMessage(),
+            txn.dequeue(entry.getEnqueueRecord(),
                                     new ServerTransaction.Action()
                                 {
                                     @Override
@@ -201,9 +203,11 @@ public class LastValueQueueList extends OrderedQueueEntryList
             super(queueEntryList);
         }
 
-        public ConflationQueueEntry(LastValueQueueList queueEntryList, ServerMessage message)
+        public ConflationQueueEntry(LastValueQueueList queueEntryList,
+                                    ServerMessage message,
+                                    final MessageEnqueueRecord messageEnqueueRecord)
         {
-            super(queueEntryList, message);
+            super(queueEntryList, message, messageEnqueueRecord);
         }
 
         @Override

@@ -57,7 +57,6 @@ import org.apache.qpid.server.connection.SessionPrincipal;
 import org.apache.qpid.server.consumer.ConsumerImpl;
 import org.apache.qpid.server.consumer.ConsumerTarget;
 import org.apache.qpid.server.exchange.ExchangeImpl;
-import org.apache.qpid.server.filter.ArrivalTimeFilter;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.logging.EventLogger;
@@ -90,6 +89,7 @@ import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticatedPrincipal;
 import org.apache.qpid.server.store.MessageDurability;
+import org.apache.qpid.server.store.MessageEnqueueRecord;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -1046,7 +1046,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     // ------ Enqueue / Dequeue
 
-    public final void enqueue(ServerMessage message, Action<? super MessageInstance> action)
+    public final void enqueue(ServerMessage message, Action<? super MessageInstance> action, MessageEnqueueRecord enqueueRecord)
     {
         incrementQueueCount();
         incrementQueueSize(message);
@@ -1060,30 +1060,30 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
         if(_recovering.get())
         {
-            EnqueueRequest request = new EnqueueRequest(message, action);
+            EnqueueRequest request = new EnqueueRequest(message, action, enqueueRecord);
             _postRecoveryQueue.add(request);
 
             // deal with the case the recovering status changed just as we added to the post recovery queue
             if(!_recovering.get() && _postRecoveryQueue.remove(request))
             {
-                doEnqueue(message, action);
+                doEnqueue(message, action, enqueueRecord);
             }
         }
         else
         {
-            doEnqueue(message, action);
+            doEnqueue(message, action, enqueueRecord);
         }
 
     }
 
-    public final void recover(ServerMessage message)
+    public final void recover(ServerMessage message, final MessageEnqueueRecord enqueueRecord)
     {
         incrementQueueCount();
         incrementQueueSize(message);
 
         _totalMessagesReceived.incrementAndGet();
 
-        doEnqueue(message, null);
+        doEnqueue(message, null, enqueueRecord);
     }
 
 
@@ -1107,15 +1107,15 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         {
             EnqueueRequest request = _postRecoveryQueue.poll();
             MessageReference<?> messageReference = request.getMessage();
-            doEnqueue(messageReference.getMessage(), request.getAction());
+            doEnqueue(messageReference.getMessage(), request.getAction(), request.getEnqueueRecord());
             messageReference.release();
         }
     }
 
-    protected void doEnqueue(final ServerMessage message, final Action<? super MessageInstance> action)
+    protected void doEnqueue(final ServerMessage message, final Action<? super MessageInstance> action, MessageEnqueueRecord enqueueRecord)
     {
         final QueueConsumer<?> exclusiveSub = _exclusiveSubscriber;
-        final QueueEntry entry = getEntries().add(message);
+        final QueueEntry entry = getEntries().add(message, enqueueRecord);
         updateExpiration(entry);
 
         try
@@ -1812,7 +1812,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
     private void dequeueEntry(final QueueEntry node, ServerTransaction txn)
     {
-        txn.dequeue(this, node.getMessage(),
+        txn.dequeue(node.getEnqueueRecord(),
                     new ServerTransaction.Action()
                     {
 
@@ -2660,15 +2660,15 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
 
         if(!message.isReferenced(this))
         {
-            txn.enqueue(this, message, new ServerTransaction.Action()
+            txn.enqueue(this, message, new ServerTransaction.EnqueueAction()
             {
                 MessageReference _reference = message.newReference();
 
-                public void postCommit()
+                public void postCommit(MessageEnqueueRecord... records)
                 {
                     try
                     {
-                        AbstractQueue.this.enqueue(message, postEnqueueAction);
+                        AbstractQueue.this.enqueue(message, postEnqueueAction, records[0]);
                     }
                     finally
                     {
@@ -3140,10 +3140,13 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     {
         private final MessageReference<?> _message;
         private final Action<? super MessageInstance> _action;
+        private final MessageEnqueueRecord _enqueueRecord;
 
         public EnqueueRequest(final ServerMessage message,
-                              final Action<? super MessageInstance> action)
+                              final Action<? super MessageInstance> action,
+                              final MessageEnqueueRecord enqueueRecord)
         {
+            _enqueueRecord = enqueueRecord;
             _message = message.newReference();
             _action = action;
         }
@@ -3156,6 +3159,11 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
         public Action<? super MessageInstance> getAction()
         {
             return _action;
+        }
+
+        public MessageEnqueueRecord getEnqueueRecord()
+        {
+            return _enqueueRecord;
         }
     }
 }

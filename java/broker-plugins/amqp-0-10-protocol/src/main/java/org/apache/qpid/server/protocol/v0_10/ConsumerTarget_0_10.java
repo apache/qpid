@@ -377,7 +377,7 @@ public class ConsumerTarget_0_10 extends AbstractConsumerTarget implements FlowC
     private void forceDequeue(final MessageInstance entry, final boolean restoreCredit)
     {
         AutoCommitTransaction dequeueTxn = new AutoCommitTransaction(_session.getVirtualHost().getMessageStore());
-        dequeueTxn.dequeue(entry.getOwningResource(), entry.getMessage(),
+        dequeueTxn.dequeue(entry.getEnqueueRecord(),
                            new ServerTransaction.Action()
                            {
                                public void postCommit()

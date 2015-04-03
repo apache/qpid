@@ -23,7 +23,9 @@ package org.apache.qpid.server.store;
 
 import java.nio.ByteBuffer;
 
-public class StoredMemoryMessage<T extends StorableMessageMetaData> implements StoredMessage<T>
+import org.apache.qpid.transport.util.Functions;
+
+public class StoredMemoryMessage<T extends StorableMessageMetaData> implements StoredMessage<T>, MessageHandle<T>
 {
     private final long _messageNumber;
     private ByteBuffer _content;
@@ -40,46 +42,43 @@ public class StoredMemoryMessage<T extends StorableMessageMetaData> implements S
         return _messageNumber;
     }
 
-    public void addContent(int offsetInMessage, ByteBuffer src)
+    public void addContent(ByteBuffer src)
     {
         if(_content == null)
         {
-            if(offsetInMessage == 0)
-            {
-                _content = src.slice();
-            }
-            else
-            {
-                final int contentSize = _metaData.getContentSize();
-                int size = (contentSize < offsetInMessage + src.remaining())
-                        ? offsetInMessage + src.remaining()
-                        : contentSize;
-                _content = ByteBuffer.allocate(size);
-                addContent(offsetInMessage, src);
-            }
+            _content = src.slice();
+            _content.position(_content.limit());
         }
         else
         {
-            if(_content.limit() >= offsetInMessage + src.remaining())
+            if(_content.remaining() >= src.remaining())
             {
-                _content.position(offsetInMessage);
-                _content.put(src);
-                _content.position(0);
+                _content.put(src.duplicate());
             }
             else
             {
                 final int contentSize = _metaData.getContentSize();
-                int size = (contentSize < offsetInMessage + src.remaining())
-                        ? offsetInMessage + src.remaining()
+                int size = (contentSize < _content.position() + src.remaining())
+                        ? _content.position() + src.remaining()
                         : contentSize;
                 ByteBuffer oldContent = _content;
+                oldContent.flip();
                 _content = ByteBuffer.allocate(size);
                 _content.put(oldContent);
-                _content.position(0);
-                addContent(offsetInMessage, src);
+                _content.put(src.duplicate());
             }
 
         }
+    }
+
+    @Override
+    public StoredMessage<T> allContentAdded()
+    {
+        if(_content != null)
+        {
+            _content.flip();
+        }
+        return this;
     }
 
     public int getContent(int offset, ByteBuffer dst)
@@ -142,4 +141,5 @@ public class StoredMemoryMessage<T extends StorableMessageMetaData> implements S
     {
         return false;
     }
+
 }

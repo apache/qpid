@@ -135,7 +135,7 @@ public class QueueBrowserUsesNoAckTest extends QpidTestCase
     private void checkStoreContents(int messageCount)
     {
         MessageCounter counter = new MessageCounter();
-        _messageStore.visitMessages(counter);
+        _messageStore.newMessageStoreReader().visitMessages(counter);
 
         assertEquals("Message header count incorrect in the MetaDataMap", messageCount, counter.getCount());
     }

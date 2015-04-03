@@ -179,7 +179,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
                      _queue.getConsumerCountWithCredit());
 
         // Check sending a message ends up with the subscriber
-        _queue.enqueue(messageA, null);
+        _queue.enqueue(messageA, null, null);
         try
         {
             Thread.sleep(2000L);
@@ -198,7 +198,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
                     1 == _queue.getConsumerCountWithCredit());
 
         ServerMessage messageB = createMessage(new Long (25));
-        _queue.enqueue(messageB, null);
+        _queue.enqueue(messageB, null, null);
          assertNull(_consumer.getQueueContext());
 
     }
@@ -206,7 +206,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
     public void testEnqueueMessageThenRegisterConsumer() throws Exception, InterruptedException
     {
         ServerMessage messageA = createMessage(new Long(24));
-        _queue.enqueue(messageA, null);
+        _queue.enqueue(messageA, null, null);
         _consumer = (QueueConsumer<?>) _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
                                        EnumSet.of(ConsumerImpl.Option.ACQUIRES,
                                                   ConsumerImpl.Option.SEES_REQUEUES));
@@ -223,8 +223,8 @@ abstract class AbstractQueueTestBase extends QpidTestCase
     {
         ServerMessage messageA = createMessage(new Long(24));
         ServerMessage messageB = createMessage(new Long(25));
-        _queue.enqueue(messageA, null);
-        _queue.enqueue(messageB, null);
+        _queue.enqueue(messageA, null, null);
+        _queue.enqueue(messageB, null, null);
         _consumer = (QueueConsumer<?>) _queue.addConsumer(_consumerTarget, null, messageA.getClass(), "test",
                                        EnumSet.of(ConsumerImpl.Option.ACQUIRES,
                                                   ConsumerImpl.Option.SEES_REQUEUES));
@@ -255,9 +255,9 @@ abstract class AbstractQueueTestBase extends QpidTestCase
 
         /* Enqueue three messages */
 
-        _queue.enqueue(messageA, postEnqueueAction);
-        _queue.enqueue(messageB, postEnqueueAction);
-        _queue.enqueue(messageC, postEnqueueAction);
+        _queue.enqueue(messageA, postEnqueueAction, null);
+        _queue.enqueue(messageB, postEnqueueAction, null);
+        _queue.enqueue(messageC, postEnqueueAction, null);
 
         Thread.sleep(150);  // Work done by QueueRunner Thread
 
@@ -306,7 +306,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         final long expiration = System.currentTimeMillis() + messageExpirationOffset;
         when(messageA.getExpiration()).thenReturn(expiration);
 
-        _queue.enqueue(messageA, postEnqueueAction);
+        _queue.enqueue(messageA, postEnqueueAction, null);
 
         int subFlushWaitTime = 150;
         Thread.sleep(subFlushWaitTime); // Work done by QueueRunner Thread
@@ -354,9 +354,9 @@ abstract class AbstractQueueTestBase extends QpidTestCase
 
         /* Enqueue three messages */
 
-        _queue.enqueue(messageA, postEnqueueAction);
-        _queue.enqueue(messageB, postEnqueueAction);
-        _queue.enqueue(messageC, postEnqueueAction);
+        _queue.enqueue(messageA, postEnqueueAction, null);
+        _queue.enqueue(messageB, postEnqueueAction, null);
+        _queue.enqueue(messageC, postEnqueueAction, null);
 
         Thread.sleep(150);  // Work done by QueueRunner Thread
 
@@ -412,8 +412,8 @@ abstract class AbstractQueueTestBase extends QpidTestCase
 
         /* Enqueue two messages */
 
-        _queue.enqueue(messageA, postEnqueueAction);
-        _queue.enqueue(messageB, postEnqueueAction);
+        _queue.enqueue(messageA, postEnqueueAction, null);
+        _queue.enqueue(messageB, postEnqueueAction, null);
 
         Thread.sleep(150);  // Work done by QueueRunner Thread
 
@@ -450,7 +450,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
                      _queue.getConsumerCountWithCredit());
 
         // Check sending a message ends up with the subscriber
-        _queue.enqueue(messageA, null);
+        _queue.enqueue(messageA, null, null);
         try
         {
             Thread.sleep(2000L);
@@ -517,7 +517,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
                 _consumer.resend(entry);
 
             }
-        });
+        }, null);
 
 
 
@@ -530,7 +530,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         ServerMessage message = createMessage(messageId);
 
         // Put message on queue
-        _queue.enqueue(message, null);
+        _queue.enqueue(message, null, null);
         // Get message id
         Long testmsgid = _queue.getMessagesOnTheQueue(1).get(0);
 
@@ -546,7 +546,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
             Long messageId = new Long(i);
             ServerMessage message = createMessage(messageId);
             // Put message on queue
-            _queue.enqueue(message, null);
+            _queue.enqueue(message, null, null);
         }
         // Get message ids
         List<Long> msgids = _queue.getMessagesOnTheQueue(5);
@@ -567,7 +567,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
             Long messageId = new Long(i);
             ServerMessage message = createMessage(messageId);
             // Put message on queue
-            _queue.enqueue(message, null);
+            _queue.enqueue(message, null, null);
         }
         // Get message ids
         List<Long> msgids = _queue.getMessagesOnTheQueue(5, 5);
@@ -588,7 +588,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
             Long messageId = new Long(i);
             ServerMessage message = createMessage(messageId);
             // Put message on queue
-            _queue.enqueue(message, null);
+            _queue.enqueue(message, null, null);
         }
 
         // Get non-existent 0th QueueEntry & check returned list was empty
@@ -763,10 +763,10 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         _queue.setAttributes(Collections.<String, Object>singletonMap(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
                                                                       Integer.valueOf(2)));
 
-        _queue.enqueue(createMessage(new Long(24)), null);
+        _queue.enqueue(createMessage(new Long(24)), null, null);
         verifyZeroInteractions(listener);
 
-        _queue.enqueue(createMessage(new Long(25)), null);
+        _queue.enqueue(createMessage(new Long(25)), null, null);
 
         verify(listener, atLeastOnce()).notifyClients(eq(NotificationCheck.MESSAGE_COUNT_ALERT), eq(_queue), contains("Maximum count on queue threshold"));
     }
@@ -775,9 +775,9 @@ abstract class AbstractQueueTestBase extends QpidTestCase
     {
         QueueNotificationListener  listener = mock(QueueNotificationListener .class);
 
-        _queue.enqueue(createMessage(new Long(24)), null);
-        _queue.enqueue(createMessage(new Long(25)), null);
-        _queue.enqueue(createMessage(new Long(26)), null);
+        _queue.enqueue(createMessage(new Long(24)), null, null);
+        _queue.enqueue(createMessage(new Long(25)), null, null);
+        _queue.enqueue(createMessage(new Long(26)), null, null);
 
         _queue.setNotificationListener(listener);
         _queue.setAttributes(Collections.<String, Object>singletonMap(Queue.ALERT_THRESHOLD_QUEUE_DEPTH_MESSAGES,
@@ -861,9 +861,9 @@ abstract class AbstractQueueTestBase extends QpidTestCase
     public void testOldestMessage()
     {
         AMQQueue<?> queue = getQueue();
-        queue.enqueue(createMessage(1l, (byte)1, Collections.singletonMap("sortKey", (Object) "Z"), 10l), null);
-        queue.enqueue(createMessage(2l, (byte)4, Collections.singletonMap("sortKey", (Object) "M"), 100l), null);
-        queue.enqueue(createMessage(3l, (byte)9, Collections.singletonMap("sortKey", (Object) "A"), 1000l), null);
+        queue.enqueue(createMessage(1l, (byte)1, Collections.singletonMap("sortKey", (Object) "Z"), 10l), null, null);
+        queue.enqueue(createMessage(2l, (byte)4, Collections.singletonMap("sortKey", (Object) "M"), 100l), null, null);
+        queue.enqueue(createMessage(3l, (byte)9, Collections.singletonMap("sortKey", (Object) "A"), 1000l), null, null);
 
         assertEquals(10l,queue.getOldestMessageArrivalTime());
     }
@@ -875,7 +875,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
         ServerMessage message = createMessage(1l);
         when(message.getArrivalTime()).thenReturn(arrivalTime);
         when(message.getExpiration()).thenReturn(expiration);
-        queue.enqueue(message,null);
+        queue.enqueue(message,null, null);
         queue.visit(new QueueEntryVisitor()
         {
             @Override
@@ -940,7 +940,7 @@ abstract class AbstractQueueTestBase extends QpidTestCase
             message = createMessage((long)i);
 
             // Put message on queue
-            queue.enqueue(message,null);
+            queue.enqueue(message,null, null);
 
         }
         try

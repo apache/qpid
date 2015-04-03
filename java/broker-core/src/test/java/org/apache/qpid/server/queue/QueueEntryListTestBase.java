@@ -56,7 +56,7 @@ public abstract class QueueEntryListTestBase extends TestCase
     public void testAddSpecificMessage()
     {
         final QueueEntryList list = getTestList();
-        list.add(getTestMessageToAdd());
+        list.add(getTestMessageToAdd(), null);
 
         final QueueEntryIterator iter = list.iterator();
         int count = 0;
@@ -77,7 +77,7 @@ public abstract class QueueEntryListTestBase extends TestCase
     {
         final QueueEntryList list = getTestList();
         final ServerMessage message = createServerMessage(666l);
-        list.add(message);
+        list.add(message, null);
 
         final QueueEntryIterator iter = list.iterator();
         int count = 0;
@@ -220,8 +220,8 @@ public abstract class QueueEntryListTestBase extends TestCase
         QueueEntryList list = getTestList(true);
         int i = 0;
 
-        QueueEntry queueEntry1 = list.add(createServerMessage(i++));
-        QueueEntry queueEntry2 = list.add(createServerMessage(i++));
+        QueueEntry queueEntry1 = list.add(createServerMessage(i++), null);
+        QueueEntry queueEntry2 = list.add(createServerMessage(i++), null);
 
         assertSame(queueEntry2, list.next(queueEntry1));
         assertNull(list.next(queueEntry2));

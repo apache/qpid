@@ -35,14 +35,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -488,11 +485,11 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
     }
 
     @Override
-    public StoredMessage addMessage(StorableMessageMetaData metaData)
+    public <T extends StorableMessageMetaData> MessageHandle<T> addMessage(T metaData)
     {
         checkMessageStoreOpen();
 
-        return new StoredJDBCMessage(getNextMessageId(), metaData);
+        return new StoredJDBCMessage<T>(getNextMessageId(), metaData);
 
     }
 
@@ -670,18 +667,18 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
 
     }
 
-    private void dequeueMessage(ConnectionWrapper connWrapper, final TransactionLogResource  queue, Long messageId) throws StoreException
+    private void dequeueMessage(ConnectionWrapper connWrapper, final UUID queueId,
+                                Long messageId) throws StoreException
     {
 
         Connection conn = connWrapper.getConnection();
-
 
         try
         {
             PreparedStatement stmt = conn.prepareStatement(DELETE_FROM_QUEUE_ENTRY);
             try
             {
-                stmt.setString(1, queue.getId().toString());
+                stmt.setString(1, queueId.toString());
                 stmt.setLong(2, messageId);
                 int results = stmt.executeUpdate();
 
@@ -689,14 +686,13 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
 
                 if(results != 1)
                 {
-                    throw new StoreException("Unable to find message with id " + messageId + " on queue " + queue.getName()
-                                             + " with id " + queue.getId());
+                    throw new StoreException("Unable to find message with id " + messageId
+                                             + " on queue with id " + queueId);
                 }
 
                 if (getLogger().isDebugEnabled())
                 {
-                    getLogger().debug("Dequeuing message " + messageId + " on queue " + queue.getName()
-                                      + " with id " + queue.getId());
+                    getLogger().debug("Dequeuing message " + messageId + " on queue with id " + queueId);
                 }
             }
             finally
@@ -708,8 +704,8 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         catch (SQLException e)
         {
             getLogger().error("Failed to dequeue: " + e.getMessage(), e);
-            throw new StoreException("Error deleting enqueued message with id " + messageId + " for queue " + queue.getName()
-                                     + " with id " + queue.getId() + " from database", e);
+            throw new StoreException("Error deleting enqueued message with id " + messageId + " for queue with id "
+                                     + queueId + " from database", e);
         }
 
     }
@@ -766,7 +762,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
     }
 
     private List<Runnable> recordXid(ConnectionWrapper connWrapper, long format, byte[] globalId, byte[] branchId,
-                                     Transaction.Record[] enqueues, Transaction.Record[] dequeues) throws StoreException
+                                     Transaction.EnqueueRecord[] enqueues, Transaction.DequeueRecord[] dequeues) throws StoreException
     {
         Connection conn = connWrapper.getConnection();
 
@@ -788,7 +784,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
             }
 
             List<Runnable> postActions = new ArrayList<>();
-            for(org.apache.qpid.server.store.Transaction.Record enqueue : enqueues)
+            for(Transaction.EnqueueRecord enqueue : enqueues)
             {
                 StoredMessage storedMessage = enqueue.getMessage().getStoredMessage();
                 if(storedMessage instanceof StoredJDBCMessage)
@@ -809,7 +805,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
                 if(enqueues != null)
                 {
                     stmt.setString(4, "E");
-                    for(Transaction.Record record : enqueues)
+                    for(Transaction.EnqueueRecord record : enqueues)
                     {
                         stmt.setString(5, record.getResource().getId().toString());
                         stmt.setLong(6, record.getMessage().getMessageNumber());
@@ -820,10 +816,10 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
                 if(dequeues != null)
                 {
                     stmt.setString(4, "D");
-                    for(Transaction.Record record : dequeues)
+                    for(Transaction.DequeueRecord record : dequeues)
                     {
-                        stmt.setString(5, record.getResource().getId().toString());
-                        stmt.setLong(6, record.getMessage().getMessageNumber());
+                        stmt.setString(5, record.getEnqueueRecord().getQueueId().toString());
+                        stmt.setLong(6, record.getEnqueueRecord().getMessageNumber());
                         stmt.executeUpdate();
                     }
                 }
@@ -1059,9 +1055,10 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
     }
 
 
-    private static class RecordImpl implements Transaction.Record, TransactionLogResource, EnqueueableMessage
+    private static class RecordImpl implements Transaction.EnqueueRecord, Transaction.DequeueRecord, TransactionLogResource, EnqueueableMessage
     {
 
+        private final JDBCEnqueueRecord _record;
         private long _messageNumber;
         private UUID _queueId;
 
@@ -1069,6 +1066,13 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         {
             _messageNumber = messageNumber;
             _queueId = queueId;
+            _record = new JDBCEnqueueRecord(queueId, messageNumber);
+        }
+
+        @Override
+        public MessageEnqueueRecord getEnqueueRecord()
+        {
+            return _record;
         }
 
         @Override
@@ -1323,7 +1327,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         }
 
         @Override
-        public void enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
+        public MessageEnqueueRecord enqueueMessage(TransactionLogResource queue, EnqueueableMessage message)
         {
             checkMessageStoreOpen();
 
@@ -1349,15 +1353,17 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
                 });
             }
             AbstractJDBCMessageStore.this.enqueueMessage(_connWrapper, queue, message.getMessageNumber());
-
+            return new JDBCEnqueueRecord(queue.getId(), message.getMessageNumber());
         }
 
         @Override
-        public void dequeueMessage(TransactionLogResource queue, EnqueueableMessage message)
+        public void dequeueMessage(final MessageEnqueueRecord enqueueRecord)
         {
             checkMessageStoreOpen();
 
-            AbstractJDBCMessageStore.this.dequeueMessage(_connWrapper, queue, message.getMessageNumber());
+            AbstractJDBCMessageStore.this.dequeueMessage(_connWrapper,
+                                                         enqueueRecord.getQueueId(),
+                                                         enqueueRecord.getMessageNumber());
         }
 
         @Override
@@ -1408,22 +1414,93 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         }
 
         @Override
-        public void removeXid(long format, byte[] globalId, byte[] branchId)
+        public void removeXid(final StoredXidRecord record)
         {
             checkMessageStoreOpen();
 
-            AbstractJDBCMessageStore.this.removeXid(_connWrapper, format, globalId, branchId);
+            AbstractJDBCMessageStore.this.removeXid(_connWrapper,
+                                                    record.getFormat(),
+                                                    record.getGlobalId(),
+                                                    record.getBranchId());
         }
 
         @Override
-        public void recordXid(long format, byte[] globalId, byte[] branchId, Record[] enqueues, Record[] dequeues)
+        public StoredXidRecord recordXid(final long format,
+                                         final byte[] globalId,
+                                         final byte[] branchId,
+                                         EnqueueRecord[] enqueues,
+                                         DequeueRecord[] dequeues)
         {
             checkMessageStoreOpen();
 
             _postCommitActions.addAll(AbstractJDBCMessageStore.this.recordXid(_connWrapper, format, globalId, branchId, enqueues, dequeues));
+            return new JDBCStoredXidRecord(format, globalId, branchId);
         }
+
+
     }
 
+    private static class JDBCStoredXidRecord implements Transaction.StoredXidRecord
+    {
+        private final long _format;
+        private final byte[] _globalId;
+        private final byte[] _branchId;
+
+        public JDBCStoredXidRecord(final long format, final byte[] globalId, final byte[] branchId)
+        {
+            _format = format;
+            _globalId = globalId;
+            _branchId = branchId;
+        }
+
+        @Override
+        public long getFormat()
+        {
+            return _format;
+        }
+
+        @Override
+        public byte[] getGlobalId()
+        {
+            return _globalId;
+        }
+
+        @Override
+        public byte[] getBranchId()
+        {
+            return _branchId;
+        }
+
+
+        @Override
+        public boolean equals(final Object o)
+        {
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
+
+            final JDBCStoredXidRecord that = (JDBCStoredXidRecord) o;
+
+            return _format == that._format
+                   && Arrays.equals(_globalId, that._globalId)
+                   && Arrays.equals(_branchId, that._branchId);
+
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = (int) (_format ^ (_format >>> 32));
+            result = 31 * result + Arrays.hashCode(_globalId);
+            result = 31 * result + Arrays.hashCode(_branchId);
+            return result;
+        }
+    }
 
     static interface MessageDataRef<T extends StorableMessageMetaData>
     {
@@ -1540,7 +1617,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         }
     }
 
-    private class StoredJDBCMessage<T extends StorableMessageMetaData> implements StoredMessage<T>
+    private class StoredJDBCMessage<T extends StorableMessageMetaData> implements StoredMessage<T>, MessageHandle<T>
     {
 
         private final long _messageId;
@@ -1597,7 +1674,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
         }
 
         @Override
-        public void addContent(int offsetInMessage, ByteBuffer src)
+        public void addContent(ByteBuffer src)
         {
             src = src.slice();
             byte[] data = _messageDataRef.getData();
@@ -1619,6 +1696,12 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
                 _messageDataRef.setData(data);
             }
 
+        }
+
+        @Override
+        public StoredMessage<T> allContentAdded()
+        {
+            return this;
         }
 
         @Override
@@ -1809,257 +1892,94 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
     }
 
     @Override
-    public StoredMessage<?> getMessage(long messageId) throws StoreException
+    public MessageStoreReader newMessageStoreReader()
     {
-        checkMessageStoreOpen();
-
-        Connection conn = null;
-        StoredJDBCMessage message;
-        try
-        {
-            conn = newAutoCommitConnection();
-            try (PreparedStatement stmt = conn.prepareStatement(SELECT_ONE_FROM_META_DATA))
-            {
-                stmt.setLong(1, messageId);
-                try (ResultSet rs = stmt.executeQuery())
-                {
-                    if (rs.next())
-                    {
-                        byte[] dataAsBytes = getBlobAsBytes(rs, 2);
-                        ByteBuffer buf = ByteBuffer.wrap(dataAsBytes);
-                        buf.position(1);
-                        buf = buf.slice();
-                        MessageMetaDataType<?> type = MessageMetaDataTypeRegistry.fromOrdinal(dataAsBytes[0]);
-                        StorableMessageMetaData metaData = type.createMetaData(buf);
-                        message = new StoredJDBCMessage(messageId, metaData, true);
-
-                    }
-                    else
-                    {
-                        message = null;
-                    }
-                }
-            }
-            return message;
-        }
-        catch (SQLException e)
-        {
-            throw new StoreException("Error encountered when visiting messages", e);
-        }
-        finally
-        {
-            JdbcUtils.closeConnection(conn, getLogger());
-        }
+        return new JDBCMessageStoreReader();
     }
 
-
-    @Override
-    public void visitMessages(MessageHandler handler) throws StoreException
+    private class JDBCMessageStoreReader implements MessageStoreReader
     {
-        checkMessageStoreOpen();
 
-        Connection conn = null;
-        try
+        @Override
+        public StoredMessage<?> getMessage(long messageId) throws StoreException
         {
-            conn = newAutoCommitConnection();
-            Statement stmt = conn.createStatement();
+            checkMessageStoreOpen();
+
+            Connection conn = null;
+            StoredJDBCMessage message;
             try
             {
-                ResultSet rs = stmt.executeQuery(SELECT_ALL_FROM_META_DATA);
-                try
+                conn = newAutoCommitConnection();
+                try (PreparedStatement stmt = conn.prepareStatement(SELECT_ONE_FROM_META_DATA))
                 {
-                    while (rs.next())
+                    stmt.setLong(1, messageId);
+                    try (ResultSet rs = stmt.executeQuery())
                     {
-                        long messageId = rs.getLong(1);
-                        byte[] dataAsBytes = getBlobAsBytes(rs, 2);
-                        ByteBuffer buf = ByteBuffer.wrap(dataAsBytes);
-                        buf.position(1);
-                        buf = buf.slice();
-                        MessageMetaDataType<?> type = MessageMetaDataTypeRegistry.fromOrdinal(dataAsBytes[0]);
-                        StorableMessageMetaData metaData = type.createMetaData(buf);
-                        StoredJDBCMessage message = new StoredJDBCMessage(messageId, metaData, true);
-                        if (!handler.handle(message))
+                        if (rs.next())
                         {
-                            break;
+                            byte[] dataAsBytes = getBlobAsBytes(rs, 2);
+                            ByteBuffer buf = ByteBuffer.wrap(dataAsBytes);
+                            buf.position(1);
+                            buf = buf.slice();
+                            MessageMetaDataType<?> type = MessageMetaDataTypeRegistry.fromOrdinal(dataAsBytes[0]);
+                            StorableMessageMetaData metaData = type.createMetaData(buf);
+                            message = new StoredJDBCMessage(messageId, metaData, true);
+
+                        }
+                        else
+                        {
+                            message = null;
                         }
                     }
                 }
-                finally
-                {
-                    rs.close();
-                }
+                return message;
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException("Error encountered when visiting messages", e);
             }
             finally
             {
-                stmt.close();
+                JdbcUtils.closeConnection(conn, getLogger());
             }
         }
-        catch (SQLException e)
-        {
-            throw new StoreException("Error encountered when visiting messages", e);
-        }
-        finally
-        {
-            JdbcUtils.closeConnection(conn, getLogger());
-        }
-    }
 
-    @Override
-    public void visitMessageInstances(TransactionLogResource queue, MessageInstanceHandler handler) throws StoreException
-    {
-        checkMessageStoreOpen();
-
-        Connection conn = null;
-        try
+        @Override
+        public void close()
         {
-            conn = newAutoCommitConnection();
-            PreparedStatement stmt = conn.prepareStatement(SELECT_FROM_QUEUE_ENTRY_FOR_QUEUE);
+
+        }
+
+
+        @Override
+        public void visitMessages(MessageHandler handler) throws StoreException
+        {
+            checkMessageStoreOpen();
+
+            Connection conn = null;
             try
             {
-                stmt.setString(1, queue.getId().toString());
-                ResultSet rs = stmt.executeQuery();
+                conn = newAutoCommitConnection();
+                Statement stmt = conn.createStatement();
                 try
                 {
-                    while(rs.next())
-                    {
-                        String id = rs.getString(1);
-                        long messageId = rs.getLong(2);
-                        if (!handler.handle(UUID.fromString(id), messageId))
-                        {
-                            break;
-                        }
-                    }
-                }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                stmt.close();
-            }
-        }
-        catch(SQLException e)
-        {
-            throw new StoreException("Error encountered when visiting message instances", e);
-        }
-        finally
-        {
-            JdbcUtils.closeConnection(conn, getLogger());
-        }
-
-    }
-
-    @Override
-    public void visitMessageInstances(MessageInstanceHandler handler) throws StoreException
-    {
-        checkMessageStoreOpen();
-
-        Connection conn = null;
-        try
-        {
-            conn = newAutoCommitConnection();
-            Statement stmt = conn.createStatement();
-            try
-            {
-                ResultSet rs = stmt.executeQuery(SELECT_FROM_QUEUE_ENTRY);
-                try
-                {
-                    while(rs.next())
-                    {
-                        String id = rs.getString(1);
-                        long messageId = rs.getLong(2);
-                        if (!handler.handle(UUID.fromString(id), messageId))
-                        {
-                            break;
-                        }
-                    }
-                }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                stmt.close();
-            }
-        }
-        catch(SQLException e)
-        {
-            throw new StoreException("Error encountered when visiting message instances", e);
-        }
-        finally
-        {
-            JdbcUtils.closeConnection(conn, getLogger());
-        }
-    }
-
-    @Override
-    public void visitDistributedTransactions(DistributedTransactionHandler handler) throws StoreException
-    {
-        checkMessageStoreOpen();
-
-        Connection conn = null;
-        try
-        {
-            conn = newAutoCommitConnection();
-            List<Xid> xids = new ArrayList<Xid>();
-
-            Statement stmt = conn.createStatement();
-            try
-            {
-                ResultSet rs = stmt.executeQuery(SELECT_ALL_FROM_XIDS);
-                try
-                {
-                    while(rs.next())
-                    {
-
-                        long format = rs.getLong(1);
-                        byte[] globalId = rs.getBytes(2);
-                        byte[] branchId = rs.getBytes(3);
-                        xids.add(new Xid(format, globalId, branchId));
-                    }
-                }
-                finally
-                {
-                    rs.close();
-                }
-            }
-            finally
-            {
-                stmt.close();
-            }
-
-
-
-            for(Xid xid : xids)
-            {
-                List<RecordImpl> enqueues = new ArrayList<RecordImpl>();
-                List<RecordImpl> dequeues = new ArrayList<RecordImpl>();
-
-                PreparedStatement pstmt = conn.prepareStatement(SELECT_ALL_FROM_XID_ACTIONS);
-
-                try
-                {
-                    pstmt.setLong(1, xid.getFormat());
-                    pstmt.setBytes(2, xid.getGlobalId());
-                    pstmt.setBytes(3, xid.getBranchId());
-
-                    ResultSet rs = pstmt.executeQuery();
+                    ResultSet rs = stmt.executeQuery(SELECT_ALL_FROM_META_DATA);
                     try
                     {
-                        while(rs.next())
+                        while (rs.next())
                         {
-
-                            String actionType = rs.getString(1);
-                            UUID queueId = UUID.fromString(rs.getString(2));
-                            long messageId = rs.getLong(3);
-
-                            RecordImpl record = new RecordImpl(queueId, messageId);
-                            List<RecordImpl> records = "E".equals(actionType) ? enqueues : dequeues;
-                            records.add(record);
+                            long messageId = rs.getLong(1);
+                            byte[] dataAsBytes = getBlobAsBytes(rs, 2);
+                            ByteBuffer buf = ByteBuffer.wrap(dataAsBytes);
+                            buf.position(1);
+                            buf = buf.slice();
+                            MessageMetaDataType<?> type = MessageMetaDataTypeRegistry.fromOrdinal(dataAsBytes[0]);
+                            StorableMessageMetaData metaData = type.createMetaData(buf);
+                            StoredJDBCMessage message = new StoredJDBCMessage(messageId, metaData, true);
+                            if (!handler.handle(message))
+                            {
+                                break;
+                            }
                         }
                     }
                     finally
@@ -2069,26 +1989,205 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
                 }
                 finally
                 {
-                    pstmt.close();
+                    stmt.close();
                 }
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException("Error encountered when visiting messages", e);
+            }
+            finally
+            {
+                JdbcUtils.closeConnection(conn, getLogger());
+            }
+        }
 
-                if (!handler.handle(xid.getFormat(), xid.getGlobalId(), xid.getBranchId(),
-                                    enqueues.toArray(new RecordImpl[enqueues.size()]),
-                                    dequeues.toArray(new RecordImpl[dequeues.size()])))
+        @Override
+        public void visitMessageInstances(TransactionLogResource queue, MessageInstanceHandler handler)
+                throws StoreException
+        {
+            checkMessageStoreOpen();
+
+            Connection conn = null;
+            try
+            {
+                conn = newAutoCommitConnection();
+                PreparedStatement stmt = conn.prepareStatement(SELECT_FROM_QUEUE_ENTRY_FOR_QUEUE);
+                try
                 {
-                    break;
+                    stmt.setString(1, queue.getId().toString());
+                    ResultSet rs = stmt.executeQuery();
+                    try
+                    {
+                        while (rs.next())
+                        {
+                            String id = rs.getString(1);
+                            long messageId = rs.getLong(2);
+                            if (!handler.handle(new JDBCEnqueueRecord(UUID.fromString(id), messageId)))
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        rs.close();
+                    }
                 }
+                finally
+                {
+                    stmt.close();
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException("Error encountered when visiting message instances", e);
+            }
+            finally
+            {
+                JdbcUtils.closeConnection(conn, getLogger());
             }
 
         }
-        catch (SQLException e)
-        {
-            throw new StoreException("Error encountered when visiting distributed transactions", e);
 
-        }
-        finally
+        @Override
+        public void visitMessageInstances(MessageInstanceHandler handler) throws StoreException
         {
-            JdbcUtils.closeConnection(conn, getLogger());
+            checkMessageStoreOpen();
+
+            Connection conn = null;
+            try
+            {
+                conn = newAutoCommitConnection();
+                Statement stmt = conn.createStatement();
+                try
+                {
+                    ResultSet rs = stmt.executeQuery(SELECT_FROM_QUEUE_ENTRY);
+                    try
+                    {
+                        while (rs.next())
+                        {
+                            String id = rs.getString(1);
+                            long messageId = rs.getLong(2);
+                            if (!handler.handle(new JDBCEnqueueRecord(UUID.fromString(id), messageId)))
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        rs.close();
+                    }
+                }
+                finally
+                {
+                    stmt.close();
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException("Error encountered when visiting message instances", e);
+            }
+            finally
+            {
+                JdbcUtils.closeConnection(conn, getLogger());
+            }
+        }
+
+        @Override
+        public void visitDistributedTransactions(DistributedTransactionHandler handler) throws StoreException
+        {
+            checkMessageStoreOpen();
+
+            Connection conn = null;
+            try
+            {
+                conn = newAutoCommitConnection();
+                List<Xid> xids = new ArrayList<Xid>();
+
+                Statement stmt = conn.createStatement();
+                try
+                {
+                    ResultSet rs = stmt.executeQuery(SELECT_ALL_FROM_XIDS);
+                    try
+                    {
+                        while (rs.next())
+                        {
+
+                            long format = rs.getLong(1);
+                            byte[] globalId = rs.getBytes(2);
+                            byte[] branchId = rs.getBytes(3);
+                            xids.add(new Xid(format, globalId, branchId));
+                        }
+                    }
+                    finally
+                    {
+                        rs.close();
+                    }
+                }
+                finally
+                {
+                    stmt.close();
+                }
+
+
+                for (Xid xid : xids)
+                {
+                    List<RecordImpl> enqueues = new ArrayList<RecordImpl>();
+                    List<RecordImpl> dequeues = new ArrayList<RecordImpl>();
+
+                    PreparedStatement pstmt = conn.prepareStatement(SELECT_ALL_FROM_XID_ACTIONS);
+
+                    try
+                    {
+                        pstmt.setLong(1, xid.getFormat());
+                        pstmt.setBytes(2, xid.getGlobalId());
+                        pstmt.setBytes(3, xid.getBranchId());
+
+                        ResultSet rs = pstmt.executeQuery();
+                        try
+                        {
+                            while (rs.next())
+                            {
+
+                                String actionType = rs.getString(1);
+                                UUID queueId = UUID.fromString(rs.getString(2));
+                                long messageId = rs.getLong(3);
+
+                                RecordImpl record = new RecordImpl(queueId, messageId);
+                                List<RecordImpl> records = "E".equals(actionType) ? enqueues : dequeues;
+                                records.add(record);
+                            }
+                        }
+                        finally
+                        {
+                            rs.close();
+                        }
+                    }
+                    finally
+                    {
+                        pstmt.close();
+                    }
+
+                    if (!handler.handle(new JDBCStoredXidRecord(xid.getFormat(), xid.getGlobalId(), xid.getBranchId()),
+                                        enqueues.toArray(new RecordImpl[enqueues.size()]),
+                                        dequeues.toArray(new RecordImpl[dequeues.size()])))
+                    {
+                        break;
+                    }
+                }
+
+            }
+            catch (SQLException e)
+            {
+                throw new StoreException("Error encountered when visiting distributed transactions", e);
+
+            }
+            finally
+            {
+                JdbcUtils.closeConnection(conn, getLogger());
+            }
         }
     }
 
@@ -2135,4 +2234,26 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
     }
 
 
+    private static class JDBCEnqueueRecord implements MessageEnqueueRecord
+    {
+        private final UUID _queueId;
+        private final long _messageNumber;
+
+        public JDBCEnqueueRecord(final UUID queueId,
+                                 final long messageNumber)
+        {
+            _queueId = queueId;
+            _messageNumber = messageNumber;
+        }
+
+        public UUID getQueueId()
+        {
+            return _queueId;
+        }
+
+        public long getMessageNumber()
+        {
+            return _messageNumber;
+        }
+    }
 }

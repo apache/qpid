@@ -22,6 +22,7 @@ package org.apache.qpid.server.store;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -40,7 +41,7 @@ import org.apache.qpid.server.message.EnqueueableMessage;
 import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.UUIDGenerator;
 import org.apache.qpid.server.model.VirtualHost;
-import org.apache.qpid.server.store.Transaction.Record;
+import org.apache.qpid.server.store.Transaction.EnqueueRecord;
 import org.apache.qpid.server.store.handler.DistributedTransactionHandler;
 import org.apache.qpid.server.store.handler.MessageHandler;
 import org.apache.qpid.server.store.handler.MessageInstanceHandler;
@@ -50,6 +51,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
 {
     private MessageStore _store;
     private ConfiguredObject<?> _parent;
+    private MessageStore.MessageStoreReader _storeReader;
 
     public void setUp() throws Exception
     {
@@ -60,6 +62,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         _store = createMessageStore();
 
         _store.openMessageStore(_parent);
+        _storeReader = _store.newMessageStoreReader();
     }
 
     protected abstract VirtualHost createVirtualHost();
@@ -73,52 +76,56 @@ public abstract class MessageStoreTestCase extends QpidTestCase
 
     protected void reopenStore() throws Exception
     {
+        _storeReader.close();
         _store.closeMessageStore();
 
         _store = createMessageStore();
         _store.openMessageStore(_parent);
+        _storeReader = _store.newMessageStoreReader();
+
     }
 
     public void testAddAndRemoveRecordXid() throws Exception
     {
         long format = 1l;
-        Record enqueueRecord = getTestRecord(1);
-        Record dequeueRecord = getTestRecord(2);
-        Record[] enqueues = { enqueueRecord };
-        Record[] dequeues = { dequeueRecord };
+        EnqueueRecord enqueueRecord = getTestRecord(1);
+        TestRecord dequeueRecord = getTestRecord(2);
+        EnqueueRecord[] enqueues = { enqueueRecord };
+        TestRecord[] dequeues = { dequeueRecord };
         byte[] globalId = new byte[] { 1 };
         byte[] branchId = new byte[] { 2 };
 
         Transaction transaction = _store.newTransaction();
-        transaction.recordXid(format, globalId, branchId, enqueues, dequeues);
+        final Transaction.StoredXidRecord record =
+                transaction.recordXid(format, globalId, branchId, enqueues, dequeues);
         transaction.commitTran();
 
         reopenStore();
 
         DistributedTransactionHandler handler = mock(DistributedTransactionHandler.class);
-        _store.visitDistributedTransactions(handler);
-        verify(handler, times(1)).handle(format,globalId, branchId, enqueues, dequeues);
+        _storeReader.visitDistributedTransactions(handler);
+        verify(handler, times(1)).handle(eq(record), argThat(new RecordMatcher(enqueues)), argThat(new DequeueRecordMatcher(dequeues)));
 
         transaction = _store.newTransaction();
-        transaction.removeXid(1l, globalId, branchId);
+        transaction.removeXid(record);
         transaction.commitTran();
 
         reopenStore();
 
         handler = mock(DistributedTransactionHandler.class);
-        _store.visitDistributedTransactions(handler);
-        verify(handler, never()).handle(format,globalId, branchId, enqueues, dequeues);
+        _storeReader.visitDistributedTransactions(handler);
+        verify(handler, never()).handle(eq(record), argThat(new RecordMatcher(enqueues)), argThat(new DequeueRecordMatcher(dequeues)));
     }
 
     public void testVisitMessages() throws Exception
     {
         long messageId = 1;
         int contentSize = 0;
-        final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(messageId, contentSize));
-        enqueueMessage(message, "dummyQ");
+        final MessageHandle<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(messageId, contentSize));
+        enqueueMessage(message.allContentAdded(), "dummyQ");
 
         MessageHandler handler = mock(MessageHandler.class);
-        _store.visitMessages(handler);
+        _storeReader.visitMessages(handler);
 
         verify(handler, times(1)).handle(argThat(new MessageMetaDataMatcher(messageId)));
 
@@ -176,14 +183,14 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         int contentSize = 0;
         for (int i = 0; i < 3; i++)
         {
-            final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(i + 1, contentSize));
-            enqueueMessage(message, "dummyQ");
+            final MessageHandle<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(i + 1, contentSize));
+            enqueueMessage(message.allContentAdded(), "dummyQ");
         }
 
         MessageHandler handler = mock(MessageHandler.class);
         when(handler.handle(any(StoredMessage.class))).thenReturn(true, false);
 
-        _store.visitMessages(handler);
+        _storeReader.visitMessages(handler);
 
         verify(handler, times(2)).handle(any(StoredMessage.class));
     }
@@ -193,14 +200,14 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         int contentSize = 0;
         for (int i = 0; i < 3; i++)
         {
-            final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(i + 1, contentSize));
+            final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(i + 1, contentSize)).allContentAdded();
             enqueueMessage(message, "dummyQ");
 
         }
 
         reopenStore();
 
-        final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(4, contentSize));
+        final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(4, contentSize)).allContentAdded();
 
         enqueueMessage(message, "dummyQ");
 
@@ -212,7 +219,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
     {
         long messageId = 1;
         int contentSize = 0;
-        final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(messageId, contentSize));
+        final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(messageId, contentSize)).allContentAdded();
 
         EnqueueableMessage enqueueableMessage = createMockEnqueueableMessage(messageId, message);
 
@@ -224,9 +231,8 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         transaction.commitTran();
 
         MessageInstanceHandler handler = mock(MessageInstanceHandler.class);
-        _store.visitMessageInstances(handler);
-
-        verify(handler, times(1)).handle(queueId, messageId);
+        _storeReader.visitMessageInstances(handler);
+        verify(handler, times(1)).handle(argThat(new EnqueueRecordMatcher(queueId, messageId)));
     }
 
     public void testVisitDistributedTransactions() throws Exception
@@ -234,19 +240,22 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         long format = 1l;
         byte[] branchId = new byte[] { 2 };
         byte[] globalId = new byte[] { 1 };
-        Record enqueueRecord = getTestRecord(1);
-        Record dequeueRecord = getTestRecord(2);
-        Record[] enqueues = { enqueueRecord };
-        Record[] dequeues = { dequeueRecord };
+        EnqueueRecord enqueueRecord = getTestRecord(1);
+        TestRecord dequeueRecord = getTestRecord(2);
+        EnqueueRecord[] enqueues = { enqueueRecord };
+        TestRecord[] dequeues = { dequeueRecord };
 
         Transaction transaction = _store.newTransaction();
-        transaction.recordXid(format, globalId, branchId, enqueues, dequeues);
+        final Transaction.StoredXidRecord record =
+                transaction.recordXid(format, globalId, branchId, enqueues, dequeues);
         transaction.commitTran();
 
         DistributedTransactionHandler handler = mock(DistributedTransactionHandler.class);
-        _store.visitDistributedTransactions(handler);
+        _storeReader.visitDistributedTransactions(handler);
 
-        verify(handler, times(1)).handle(format,globalId, branchId, enqueues, dequeues);
+        verify(handler, times(1)).handle(eq(record),
+                                         argThat(new RecordMatcher(enqueues)),
+                                         argThat(new DequeueRecordMatcher(dequeues)));
 
     }
 
@@ -267,7 +276,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         txn.commitTran();
 
         QueueFilteringMessageInstanceHandler filter = new QueueFilteringMessageInstanceHandler(mockQueueId);
-        getStore().visitMessageInstances(filter);
+        _storeReader.visitMessageInstances(filter);
         Set<Long> enqueuedIds = filter.getEnqueuedIds();
 
         assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
@@ -298,7 +307,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         txn.commitTran();
 
         QueueFilteringMessageInstanceHandler filter = new QueueFilteringMessageInstanceHandler(mockQueueId);
-        getStore().visitMessageInstances(filter);
+        _storeReader.visitMessageInstances(filter);
         Set<Long> enqueuedIds = filter.getEnqueuedIds();
 
         assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
@@ -333,7 +342,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         txn.commitTran();
 
         QueueFilteringMessageInstanceHandler filter = new QueueFilteringMessageInstanceHandler(mockQueueId);
-        getStore().visitMessageInstances(filter);
+        _storeReader.visitMessageInstances(filter);
         Set<Long> enqueuedIds = filter.getEnqueuedIds();
 
         assertEquals("Number of enqueued messages is incorrect", 2, enqueuedIds.size());
@@ -345,10 +354,10 @@ public abstract class MessageStoreTestCase extends QpidTestCase
     {
         long messageId = 1;
         int contentSize = 0;
-        final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(messageId, contentSize, false));
+        final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(messageId, contentSize, false)).allContentAdded();
 
         MessageHandler handler = mock(MessageHandler.class);
-        _store.visitMessages(handler);
+        _storeReader.visitMessages(handler);
 
         verify(handler, times(0)).handle(argThat(new MessageMetaDataMatcher(messageId)));
     }
@@ -357,11 +366,11 @@ public abstract class MessageStoreTestCase extends QpidTestCase
     {
         long messageId = 1;
         int contentSize = 0;
-        final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(messageId, contentSize));
+        final StoredMessage<TestMessageMetaData> message = _store.addMessage(new TestMessageMetaData(messageId, contentSize)).allContentAdded();
         enqueueMessage(message, "dummyQ");
 
         final AtomicReference<StoredMessage<?>> retrievedMessageRef = new AtomicReference<StoredMessage<?>>();
-        _store.visitMessages(new MessageHandler()
+        _storeReader.visitMessages(new MessageHandler()
         {
 
             @Override
@@ -379,7 +388,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         retrievedMessage.remove();
 
         retrievedMessageRef.set(null);
-        _store.visitMessages(new MessageHandler()
+        _storeReader.visitMessages(new MessageHandler()
         {
 
             @Override
@@ -411,7 +420,7 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         return enqueueableMessage;
     }
 
-    private Record getTestRecord(long messageNumber)
+    private TestRecord getTestRecord(long messageNumber)
     {
         UUID queueId1 = UUIDGenerator.generateRandomUUID();
         TransactionLogResource queue1 = mock(TransactionLogResource.class);
@@ -422,13 +431,13 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         final StoredMessage<?> storedMessage = mock(StoredMessage.class);
         when(storedMessage.getMessageNumber()).thenReturn(messageNumber);
         when(message1.getStoredMessage()).thenReturn(storedMessage);
-        Record enqueueRecord = new TestRecord(queue1, message1);
+        TestRecord enqueueRecord = new TestRecord(queue1, message1);
         return enqueueRecord;
     }
 
     private EnqueueableMessage createEnqueueableMessage(long messageId1)
     {
-        final StoredMessage<TestMessageMetaData> message1 = _store.addMessage(new TestMessageMetaData(messageId1, 0));
+        final StoredMessage<TestMessageMetaData> message1 = _store.addMessage(new TestMessageMetaData(messageId1, 0)).allContentAdded();
         EnqueueableMessage enqueueableMessage1 = createMockEnqueueableMessage(messageId1, message1);
         return enqueueableMessage1;
     }
@@ -468,9 +477,10 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         }
 
         @Override
-        public boolean handle(UUID queueId, long messageId)
+        public boolean handle(final MessageEnqueueRecord record)
         {
-            if (queueId.equals(_queueId))
+            long messageId = record.getMessageNumber();
+            if (record.getQueueId().equals(_queueId))
             {
                 if (_enqueuedIds.contains(messageId))
                 {
@@ -487,4 +497,103 @@ public abstract class MessageStoreTestCase extends QpidTestCase
         }
     }
 
+    private class EnqueueRecordMatcher extends ArgumentMatcher<MessageEnqueueRecord>
+    {
+        private final UUID _queueId;
+        private final long _messageId;
+
+        public EnqueueRecordMatcher(final UUID queueId, final long messageId)
+        {
+            _queueId = queueId;
+            _messageId = messageId;
+        }
+
+        @Override
+        public boolean matches(final Object argument)
+        {
+            if(argument instanceof MessageEnqueueRecord)
+            {
+                MessageEnqueueRecord record = (MessageEnqueueRecord)argument;
+                return record.getQueueId().equals(_queueId) && record.getMessageNumber() == _messageId;
+            }
+            return false;
+        }
+    }
+
+
+    private class RecordMatcher extends ArgumentMatcher<Transaction.EnqueueRecord[]>
+    {
+
+        private final EnqueueRecord[] _expect;
+
+        public RecordMatcher(Transaction.EnqueueRecord[] expect)
+        {
+            _expect = expect;
+        }
+
+        @Override
+        public boolean matches(final Object argument)
+        {
+            if(argument.getClass().isArray() && Transaction.EnqueueRecord.class.isAssignableFrom(argument.getClass().getComponentType()))
+            {
+                Transaction.EnqueueRecord[] actual = (Transaction.EnqueueRecord[]) argument;
+                if(actual.length == _expect.length)
+                {
+                    for(int i = 0; i < actual.length; i++)
+                    {
+                        if(!actual[i].getResource().getId().equals(_expect[i].getResource().getId())
+                                || actual[i].getMessage().getMessageNumber() != _expect[i].getMessage().getMessageNumber())
+                        {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+
+            }
+            return false;
+        }
+    }
+
+    private class DequeueRecordMatcher extends ArgumentMatcher<Transaction.DequeueRecord[]>
+    {
+
+        private final Transaction.DequeueRecord[] _expect;
+
+        public DequeueRecordMatcher(Transaction.DequeueRecord[] expect)
+        {
+            _expect = expect;
+        }
+
+        @Override
+        public boolean matches(final Object argument)
+        {
+            if(argument.getClass().isArray() && Transaction.DequeueRecord.class.isAssignableFrom(argument.getClass().getComponentType()))
+            {
+                Transaction.DequeueRecord[] actual = (Transaction.DequeueRecord[]) argument;
+                if(actual.length == _expect.length)
+                {
+                    for(int i = 0; i < actual.length; i++)
+                    {
+                        if(!actual[i].getEnqueueRecord().getQueueId().equals(_expect[i].getEnqueueRecord().getQueueId())
+                           || actual[i].getEnqueueRecord().getMessageNumber() != _expect[i].getEnqueueRecord().getMessageNumber())
+                        {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+
+            }
+            return false;
+        }
+    }
 }

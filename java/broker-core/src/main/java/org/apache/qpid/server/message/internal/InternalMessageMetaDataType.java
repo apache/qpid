@@ -34,7 +34,7 @@ import org.apache.qpid.util.ByteBufferInputStream;
 @PluggableService
 public class InternalMessageMetaDataType implements MessageMetaDataType<InternalMessageMetaData>
 {
-    public static final int INTERNAL_ORDINAL = 999;
+    public static final int INTERNAL_ORDINAL = 255;
     public static final String TYPE = "INTERNAL";
 
     @Override
@@ -46,10 +46,13 @@ public class InternalMessageMetaDataType implements MessageMetaDataType<Internal
     @Override
     public InternalMessageMetaData createMetaData(final ByteBuffer buf)
     {
+
+
         try(ObjectInputStream is = new ObjectInputStream(new ByteBufferInputStream(buf)))
         {
-            InternalMessageMetaData metaData = (InternalMessageMetaData) is.readObject();
-            return metaData;
+            int contentSize = is.readInt();
+            InternalMessageHeader header = (InternalMessageHeader) is.readObject();
+            return new InternalMessageMetaData(true, header, contentSize);
         }
         catch (IOException e)
         {

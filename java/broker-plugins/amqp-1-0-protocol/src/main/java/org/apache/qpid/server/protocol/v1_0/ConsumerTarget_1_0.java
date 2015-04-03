@@ -390,7 +390,7 @@ class ConsumerTarget_1_0 extends AbstractConsumerTarget
             if(outcome instanceof Accepted)
             {
                 _queueEntry.lockAcquisition();
-                txn.dequeue(_queueEntry.getOwningResource(), _queueEntry.getMessage(),
+                txn.dequeue(_queueEntry.getEnqueueRecord(),
                         new ServerTransaction.Action()
                         {
 
