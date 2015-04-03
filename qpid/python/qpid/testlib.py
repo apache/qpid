@@ -71,10 +71,7 @@ class TestBase(unittest.TestCase):
             print "Error on tearDown:"
             print traceback.print_exc()
 
-        if not self.client.closed:
-            self.client.channel(0).connection_close(reply_code=200)
-        else:
-            self.client.close()
+        self.client.close()
 
     def connect(self, host=None, port=None, user=None, password=None, tune_params=None, client_properties=None):
         """Create a new connction, return the Client object"""
