@@ -70,7 +70,7 @@
     <para>Firstly change to the installation directory used during the <link linkend="Java-Broker-Installation-InstallationUnix">installation</link>
       and ensure that the <link linkend="Java-Broker-Installation-InstallationUnix-SettingQPIDWORK">QPID_WORK environment variable is set</link>.</para>
     <para>Now use the <command>qpid-server</command> script to start the server:</para>
-    <programlisting><![CDATA[bin\qpid-server]]></programlisting>
+    <programlisting><![CDATA[bin/qpid-server]]></programlisting>
     <para>Output similar to the following will be seen:</para>
     <screen>[Broker] BRK-1006 : Using configuration : /var/qpidwork/config.json
 [Broker] BRK-1007 : Using logging configuration : /usr/local/qpid/&unixExtractedBrokerDirName;/etc/log4j.xml
