@@ -122,6 +122,8 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
     public void closed()
     {
+        _logger.debug("Closed");
+
         try
         {
             _delegate.closed();

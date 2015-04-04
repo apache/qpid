@@ -43,6 +43,8 @@ import javax.net.ssl.X509TrustManager;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.server.configuration.BrokerProperties;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
@@ -74,6 +76,8 @@ import org.apache.qpid.transport.network.security.ssl.QpidMultipleTrustManager;
 
 public class AmqpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<AmqpPortImpl> implements AmqpPort<AmqpPortImpl>
 {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AmqpPortImpl.class);
 
     public static final String DEFAULT_BINDING_ADDRESS = "*";
 
@@ -260,10 +264,16 @@ public class AmqpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<
     @Override
     protected ListenableFuture<Void> beforeClose()
     {
+        LOGGER.debug("beforeClose ");
+
         _closing.set(true);
+
+        //
 
         if (_connectionCount.get() == 0)
         {
+            LOGGER.debug("beforeClose - no connections remain");
+
             _noConnectionsRemain.set(null);
         }
 
@@ -509,8 +519,9 @@ public class AmqpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<
     @Override
     public int decrementConnectionCount()
     {
-
         int openConnections = _connectionCount.decrementAndGet();
+        LOGGER.debug("decrementConnectionCount {}", openConnections);
+
         int maxOpenConnections = getMaxOpenConnections();
 
         if(maxOpenConnections > 0
@@ -521,6 +532,8 @@ public class AmqpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<
 
         if (_closing.get() && _connectionCount.get() == 0)
         {
+            LOGGER.debug("decrementConnectionCount - No connections remain");
+
             _noConnectionsRemain.set(null);
         }
 
