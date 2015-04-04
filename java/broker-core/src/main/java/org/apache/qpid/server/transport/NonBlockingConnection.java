@@ -405,6 +405,12 @@ public class NonBlockingConnection implements NetworkConnection, ByteBufferSende
                             ByteBuffer.allocate(_sslEngine.getSession().getApplicationBufferSize() + 50);
 
                     _status = _sslEngine.unwrap(_netInputBuffer, appInputBuffer);
+                    if (_status.getStatus() == SSLEngineResult.Status.CLOSED)
+                    {
+                        // KW If SSLEngine changes state to CLOSED, what will ever set _closed to true?
+                        LOGGER.debug("SSLEngine closed");
+                    }
+
                     tasksRun = runSSLEngineTasks(_status);
 
                     appInputBuffer.flip();
