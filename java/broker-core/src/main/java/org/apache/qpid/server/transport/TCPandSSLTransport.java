@@ -111,7 +111,10 @@ class TCPandSSLTransport implements AcceptingTransport
     @Override
     public void close()
     {
-        _networkTransport.close();
+        if (_networkTransport != null)
+        {
+            _networkTransport.close();
+        }
     }
 
     class ServerNetworkTransportConfiguration implements NetworkTransportConfiguration
