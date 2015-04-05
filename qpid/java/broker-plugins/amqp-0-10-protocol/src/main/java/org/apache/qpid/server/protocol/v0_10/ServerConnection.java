@@ -58,7 +58,9 @@ import org.apache.qpid.server.util.Action;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.transport.Connection;
+import org.apache.qpid.transport.ConnectionClose;
 import org.apache.qpid.transport.ConnectionCloseCode;
+import org.apache.qpid.transport.ConnectionCloseOk;
 import org.apache.qpid.transport.ExecutionErrorCode;
 import org.apache.qpid.transport.ExecutionException;
 import org.apache.qpid.transport.Method;
@@ -98,6 +100,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
 
     private ServerProtocolEngine _serverProtocolEngine;
     private boolean _ignoreFutureInput;
+    private boolean _ignoreAllButConnectionCloseOk;
 
     public ServerConnection(final long connectionId,
                             Broker<?> broker,
@@ -135,6 +138,10 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
     protected void invoke(Method method)
     {
         super.invoke(method);
+        if (method instanceof ConnectionClose)
+        {
+            _ignoreAllButConnectionCloseOk = true;
+        }
     }
 
     EventLogger getEventLogger()
@@ -330,16 +337,18 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
             }
         }
 
-        Subject.doAs(subject, new PrivilegedAction<Void>()
+        if(!_ignoreAllButConnectionCloseOk || (event instanceof ConnectionCloseOk))
         {
-            @Override
-            public Void run()
+            Subject.doAs(subject, new PrivilegedAction<Void>()
             {
-                ServerConnection.super.received(event);
-                return null;
-            }
-        });
-
+                @Override
+                public Void run()
+                {
+                    ServerConnection.super.received(event);
+                    return null;
+                }
+            });
+        }
     }
 
     public String toLogString()

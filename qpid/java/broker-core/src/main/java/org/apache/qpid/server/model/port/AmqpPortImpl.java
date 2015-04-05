@@ -264,16 +264,10 @@ public class AmqpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<
     @Override
     protected ListenableFuture<Void> beforeClose()
     {
-        LOGGER.debug("beforeClose ");
-
         _closing.set(true);
-
-        //
 
         if (_connectionCount.get() == 0)
         {
-            LOGGER.debug("beforeClose - no connections remain");
-
             _noConnectionsRemain.set(null);
         }
 
@@ -520,8 +514,6 @@ public class AmqpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<
     public int decrementConnectionCount()
     {
         int openConnections = _connectionCount.decrementAndGet();
-        LOGGER.debug("decrementConnectionCount {}", openConnections);
-
         int maxOpenConnections = getMaxOpenConnections();
 
         if(maxOpenConnections > 0
@@ -532,8 +524,6 @@ public class AmqpPortImpl extends AbstractClientAuthCapablePortWithAuthProvider<
 
         if (_closing.get() && _connectionCount.get() == 0)
         {
-            LOGGER.debug("decrementConnectionCount - No connections remain");
-
             _noConnectionsRemain.set(null);
         }
 
