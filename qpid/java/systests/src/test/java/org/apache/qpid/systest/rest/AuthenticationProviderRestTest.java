@@ -26,6 +26,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.jms.Connection;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.management.plugin.servlet.rest.RestServlet;
 import org.apache.qpid.server.model.AuthenticationProvider;
@@ -39,6 +45,7 @@ import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.security.auth.manager.AnonymousAuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PlainPasswordDatabaseAuthenticationManager;
 import org.apache.qpid.test.utils.TestBrokerConfiguration;
+import org.apache.qpid.test.utils.TestFileUtils;
 
 public class AuthenticationProviderRestTest extends QpidRestTestCase
 {
@@ -63,15 +70,105 @@ public class AuthenticationProviderRestTest extends QpidRestTestCase
     public void testPutCreateSecondPlainPrincipalDatabaseProviderSucceeds() throws Exception
     {
         File principalDatabase = getRestTestHelper().createTemporaryPasswdFile(new String[]{"admin2", "guest2", "test2"});
+        try
+        {
 
-        String providerName = "test-provider";
-        Map<String, Object> attributes = new HashMap<String, Object>();
-        attributes.put(AuthenticationProvider.NAME, providerName);
-        attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
-        attributes.put(ExternalFileBasedAuthenticationManager.PATH, principalDatabase.getAbsolutePath());
+            String providerName = "test-provider";
+            Map<String, Object> attributes = new HashMap<String, Object>();
+            attributes.put(AuthenticationProvider.NAME, providerName);
+            attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
+            attributes.put(ExternalFileBasedAuthenticationManager.PATH, principalDatabase.getAbsolutePath());
 
-        int responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
-        assertEquals("failed to create authentication provider", 201, responseCode);
+            int responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
+            assertEquals("failed to create authentication provider", 201, responseCode);
+        }
+        finally
+        {
+            principalDatabase.delete();
+        }
+    }
+
+    public void testCreatePlainPrincipalDatabaseProviderFormEmptyFile() throws Exception
+    {
+        File principalDatabase = TestFileUtils.createTempFile(this, ".user.password");
+        try
+        {
+
+            String providerName = "test-provider";
+            Map<String, Object> attributes = new HashMap<>();
+            attributes.put(AuthenticationProvider.NAME, providerName);
+            attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
+            attributes.put(ExternalFileBasedAuthenticationManager.PATH, principalDatabase.getAbsolutePath());
+
+            int responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
+            assertEquals("failed to create authentication provider", 201, responseCode);
+
+            List<Map<String, Object>> providerDetails = getRestTestHelper().getJsonAsList("authenticationprovider/" + providerName);
+            assertNotNull("Providers details cannot be null", providerDetails);
+            assertEquals("Unexpected number of providers", 1, providerDetails.size());
+            Map<String, Object> provider = providerDetails.get(0);
+            assertEquals("Unexpected state", State.ACTIVE.toString(), provider.get(AuthenticationProvider.STATE));
+        }
+        finally
+        {
+            principalDatabase.delete();
+        }
+    }
+
+    public void testCreatePlainPrincipalDatabaseProviderAddUserAndAuthenticateWithNewUser() throws Exception
+    {
+        File principalDatabase = TestFileUtils.createTempFile(this, ".user.passwords");
+        try
+        {
+            String providerName = "test-provider";
+            Map<String, Object> attributes = new HashMap<>();
+            attributes.put(AuthenticationProvider.NAME, providerName);
+            attributes.put(AuthenticationProvider.TYPE, PlainPasswordDatabaseAuthenticationManager.PROVIDER_TYPE);
+            attributes.put(ExternalFileBasedAuthenticationManager.PATH, principalDatabase.getAbsolutePath());
+
+            int responseCode = getRestTestHelper().submitRequest("authenticationprovider/" + providerName, "PUT", attributes);
+            assertEquals("failed to create authentication provider", 201, responseCode);
+
+            String userName = getName();
+            String userPassword = "password";
+
+            Map<String,Object> userAttributes = new HashMap<>();
+            userAttributes.put("password", userPassword);
+            userAttributes.put("name", userName);
+
+            String url = "user/" + providerName;
+            getRestTestHelper().submitRequest(url, "POST", userAttributes, HttpServletResponse.SC_CREATED);
+
+            Map<String, Object> userDetails = getRestTestHelper().getJsonAsSingletonList(url + "/" + userName);
+            assertEquals("Unexpected user name", userName, userDetails.get(User.NAME));
+
+            String portName = "test-port";
+            Map<String, Object> portAttributes = new HashMap<String, Object>();
+            portAttributes.put(Port.NAME, portName);
+            portAttributes.put(Port.PORT, getFailingPort());
+            portAttributes.put(Port.AUTHENTICATION_PROVIDER, providerName);
+
+            responseCode = getRestTestHelper().submitRequest("port/" + portName, "PUT", portAttributes);
+            assertEquals("Unexpected response code", 201, responseCode);
+
+            getRestTestHelper().setUsernameAndPassword(userName, userPassword);
+
+            ConnectionURL connectionURL = new AMQConnectionURL("amqp://"+ userName + ":" + userPassword +
+                    "@/?brokerlist='tcp://localhost:"+getFailingPort()+"'");
+            Connection connection = getConnection(connectionURL);
+            try
+            {
+                assertTrue("Connection should be successfully established", ((AMQConnection) connection).isConnected());
+            }
+            finally
+            {
+                connection.close();
+            }
+        }
+        finally
+        {
+            principalDatabase.delete();
+        }
     }
 
     public void testPutCreateNewAnonymousProvider() throws Exception
