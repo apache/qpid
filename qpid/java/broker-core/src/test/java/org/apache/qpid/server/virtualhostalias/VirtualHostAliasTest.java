@@ -61,7 +61,10 @@ public class VirtualHostAliasTest extends QpidTestCase
         _vhosts = new HashMap<>();
         for(String name : new String[] { "red", "blue", "purple", "black" })
         {
-            _vhosts.put(name, BrokerTestHelper.createVirtualHost(name, _broker));
+            VirtualHostImpl<?, ?, ?> virtualHost = BrokerTestHelper.createVirtualHost(name, _broker);
+            VirtualHostNode vhn = virtualHost.getParent(VirtualHostNode.class);
+            assertNotSame(vhn.getName(), virtualHost.getName());
+            _vhosts.put(name, virtualHost);
         }
         ConfiguredObjectFactory objectFactory = _broker.getObjectFactory();
         when(_broker.getDefaultVirtualHost()).thenReturn("black");
@@ -75,7 +78,7 @@ public class VirtualHostAliasTest extends QpidTestCase
 
     }
 
-    public void testDefaultAliases()
+    public void testDefaultAliases_VirtualHostNameAlias()
     {
         VirtualHostImpl vhost = _port.getVirtualHost("red");
 
@@ -90,20 +93,25 @@ public class VirtualHostAliasTest extends QpidTestCase
         vhost = _port.getVirtualHost("orange!");
 
         assertNull(vhost);
+    }
+
+    public void testDefaultAliases_DefaultVirtualHostAlias()
+    {
 
         // test the default vhost resolution
-        vhost = _port.getVirtualHost("");
+        VirtualHostImpl vhost = _port.getVirtualHost("");
 
         assertNotNull(vhost);
         assertEquals(_vhosts.get("black"), vhost);
+    }
 
-
+    public void testDefaultAliases_HostNameAlias()
+    {
         // 127.0.0.1 should always resolve and thus return the default vhost
-        vhost = _port.getVirtualHost("127.0.0.1");
+        VirtualHostImpl vhost = _port.getVirtualHost("127.0.0.1");
 
         assertNotNull(vhost);
         assertEquals(_vhosts.get("black"), vhost);
-
     }
 
     public void testPatternMatching()

@@ -42,6 +42,7 @@ import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.HostNameAlias;
 import org.apache.qpid.server.model.ManagedObjectFactoryConstructor;
 import org.apache.qpid.server.model.Port;
+import org.apache.qpid.server.model.VirtualHost;
 import org.apache.qpid.server.model.VirtualHostNode;
 import org.apache.qpid.server.model.port.AmqpPort;
 
@@ -90,7 +91,8 @@ public class HostNameAliasImpl
                 String defaultHostName = broker.getDefaultVirtualHost();
                 for (VirtualHostNode<?> vhn : broker.getVirtualHostNodes())
                 {
-                    if (vhn.getName().equals(defaultHostName))
+                    VirtualHost vh = vhn.getVirtualHost();
+                    if (vh != null && vh.getName().equals(defaultHostName))
                     {
                         return vhn;
                     }
