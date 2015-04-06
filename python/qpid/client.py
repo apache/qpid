@@ -62,6 +62,7 @@ class Client:
     self.closed = False
     self.reason = None
     self.started = threading.Event()
+    self.peer = None
 
   def wait(self):
     self.started.wait()
