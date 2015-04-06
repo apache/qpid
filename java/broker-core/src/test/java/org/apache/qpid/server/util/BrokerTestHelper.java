@@ -122,13 +122,14 @@ public class BrokerTestHelper
         return createVirtualHost(attributes, broker);
     }
 
-    public static VirtualHostImpl<?, ?, ?> createVirtualHost(final Map<String, Object> attributes,
+    private static VirtualHostImpl<?, ?, ?> createVirtualHost(final Map<String, Object> attributes,
                                                                 final Broker<?> broker)
     {
         ConfiguredObjectFactory objectFactory = broker.getObjectFactory();
 
         VirtualHostNode virtualHostNode = mock(VirtualHostNode.class);
-        when(virtualHostNode.getName()).thenReturn((String) attributes.get(VirtualHostNode.NAME));
+        String virtualHostNodeName = String.format("%s_%s", attributes.get(VirtualHostNode.NAME), "_node");
+        when(virtualHostNode.getName()).thenReturn( virtualHostNodeName);
         when(virtualHostNode.getTaskExecutor()).thenReturn(TASK_EXECUTOR);
         when(virtualHostNode.getChildExecutor()).thenReturn(TASK_EXECUTOR);
 
