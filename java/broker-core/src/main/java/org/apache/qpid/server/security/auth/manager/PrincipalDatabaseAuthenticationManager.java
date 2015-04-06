@@ -246,6 +246,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
         }
         else
         {
+            setState(State.ACTIVE);
             return Futures.immediateFuture(null);
         }
     }
