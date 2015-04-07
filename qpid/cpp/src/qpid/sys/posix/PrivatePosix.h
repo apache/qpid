@@ -38,10 +38,6 @@ namespace sys {
 // Private Time related implementation details
 struct timespec& toTimespec(struct timespec& ts, const AbsTime& t);
 struct timeval& toTimeval(struct timeval& tv, const Duration& t);
-//Duration toTime(const struct timespec& ts);
-//#ifdef __MACH__
-//Duration toTime(const mach_timespec_t& ts);
-//#endif
 
 // Private SocketAddress details
 class SocketAddress;
