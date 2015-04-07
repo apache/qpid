@@ -54,8 +54,12 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 set_target_properties (store PROPERTIES
-                       COMPILE_DEFINITIONS _IN_QPID_BROKER
-                       VERSION ${qpidc_version})
+                       COMPILE_DEFINITIONS _IN_QPID_BROKER)
+if (NOT CMAKE_SYSTEM_NAME STREQUAL Darwin)
+  set_target_properties (store PROPERTIES
+                         VERSION ${qpidc_version})
+endif (NOT CMAKE_SYSTEM_NAME STREQUAL Darwin)
+
 install (TARGETS store # RUNTIME
          DESTINATION ${QPIDD_MODULE_DIR}
          COMPONENT ${QPID_COMPONENT_BROKER})

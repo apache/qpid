@@ -29,6 +29,8 @@ project(qpid-cpp)
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 if(COMMAND cmake_policy)
   cmake_policy(VERSION 2.6)
+  # Use @rpath on OSX
+  cmake_policy(SET CMP0042 NEW)
 endif(COMMAND cmake_policy)
 
 if (${CMAKE_VERSION} VERSION_LESS "2.8.0")

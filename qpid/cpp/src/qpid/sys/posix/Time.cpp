@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,12 +32,27 @@
 #include <iomanip>
 #include <cctype>
 
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
+
 namespace {
 int64_t max_abstime() { return std::numeric_limits<int64_t>::max(); }
 }
 
 namespace qpid {
 namespace sys {
+
+#ifdef __MACH__
+    inline Duration toTime(const mach_timespec_t& ts) {
+        return ts.tv_sec*TIME_SEC + ts.tv_nsec;
+    }
+#else
+    inline Duration toTime(const struct timespec& ts) {
+        return ts.tv_sec*TIME_SEC + ts.tv_nsec;
+    }
+#endif
 
 AbsTime::AbsTime(const AbsTime& t, const Duration& d) :
     timepoint(d == Duration::max() ? max_abstime() : t.timepoint+d.nanosecs)
@@ -53,9 +68,18 @@ AbsTime AbsTime::FarFuture() {
 }
 
 AbsTime AbsTime::now() {
+    AbsTime time_now;
+#ifdef __MACH__
+    // SYSTEM_CLOCK is like CLOCK_MONOTONIC
+    clock_serv_t cs;
+    mach_timespec_t ts;
+    host_get_clock_service(mach_host_self(), SYSTEM_CLOCK, &cs);
+    clock_get_time(cs, &ts);
+    mach_port_deallocate(mach_task_self(), cs);
+#else
     struct timespec ts;
     ::clock_gettime(CLOCK_MONOTONIC, &ts);
-    AbsTime time_now;
+#endif
     time_now.timepoint = toTime(ts).nanosecs;
     return time_now;
 }
@@ -65,8 +89,17 @@ AbsTime AbsTime::epoch() {
 }
 
 Duration Duration::FromEpoch() {
+#ifdef __MACH__
+    // CALENDAR_CLOCK is like CLOCK_REALTIME
+    clock_serv_t cs;
+    mach_timespec_t ts;
+    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cs);
+    clock_get_time(cs, &ts);
+    mach_port_deallocate(mach_task_self(), cs);
+#else
     struct timespec ts;
     ::clock_gettime(CLOCK_REALTIME, &ts);
+#endif
     return toTime(ts).nanosecs;
 }
 
@@ -84,11 +117,7 @@ struct timespec& toTimespec(struct timespec& ts, const AbsTime& a) {
     Duration secs = t / TIME_SEC;
     ts.tv_sec = (secs > TIME_T_MAX) ? TIME_T_MAX : static_cast<time_t>(secs);
     ts.tv_nsec = static_cast<long>(t % TIME_SEC);
-    return ts; 
-}
-
-Duration toTime(const struct timespec& ts) {
-    return ts.tv_sec*TIME_SEC + ts.tv_nsec;
+    return ts;
 }
 
 std::ostream& operator<<(std::ostream& o, const Duration& d) {
@@ -144,8 +173,16 @@ void outputFormattedNow(std::ostream& o) {
 }
 
 void outputHiresNow(std::ostream& o) {
+#ifdef __MACH__
+    clock_serv_t cs;
+    mach_timespec_t time;
+    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cs);
+    clock_get_time(cs, &time);
+    mach_port_deallocate(mach_task_self(), cs);
+#else
     ::timespec time;
     ::clock_gettime(CLOCK_REALTIME, &time);
+#endif
     ::time_t seconds = time.tv_sec;
     outputFormattedTime(o, &seconds);
     o << "." << std::setw(9) << std::setfill('0') << time.tv_nsec << " ";

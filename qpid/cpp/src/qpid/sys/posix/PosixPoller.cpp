@@ -681,9 +681,9 @@ void Poller::run() {
     // Ensure that we exit thread responsibly under all circumstances
     try {
         // Make sure we can't be interrupted by signals at a bad time
-        ::sigset_t ss;
-        ::sigfillset(&ss);
-        ::pthread_sigmask(SIG_SETMASK, &ss, 0);
+        sigset_t ss;
+        sigfillset(&ss);
+        pthread_sigmask(SIG_SETMASK, &ss, 0);
 
         ++(impl->threadCount);
         do {
