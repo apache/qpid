@@ -73,7 +73,7 @@ final class SessionAdapter extends AbstractConfiguredObject<SessionAdapter> impl
             public void performAction(final Object object)
             {
                 session.removeDeleteTask(this);
-                deleted();
+                deleteAsync();
             }
         });
         setState(State.ACTIVE);
