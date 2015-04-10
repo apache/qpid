@@ -232,7 +232,7 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
         Container container = new Container(_broker.getId().toString());
 
-        SubjectCreator subjectCreator = _broker.getSubjectCreator(getLocalAddress(), _transport.isSecure());
+        SubjectCreator subjectCreator = _port.getAuthenticationProvider().getSubjectCreator(_transport.isSecure());
         _endpoint = new ConnectionEndpoint(container, asSaslServerProvider(subjectCreator));
         _endpoint.setLogger(new ConnectionEndpoint.FrameReceiptLogger()
         {

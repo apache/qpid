@@ -392,8 +392,6 @@ public class PortFactoryTest extends QpidTestCase
         attributes.put(Port.PROTOCOLS, Collections.singleton(Protocol.RMI));
         _attributes.put(Port.KEY_STORE, keyStoreName);
 
-        when(_broker.findKeyStoreByName(keyStoreName)).thenReturn(_keyStore);
-
         try
         {
             _port = _factory.create(Port.class, attributes, _broker);

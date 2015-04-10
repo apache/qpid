@@ -33,10 +33,12 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Protocol;
 import org.apache.qpid.server.model.port.AmqpPort;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.util.BrokerTestHelper;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -45,7 +47,6 @@ import org.apache.qpid.transport.network.NetworkConnection;
 
 public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
 {
-    private VirtualHostImpl _virtualHost;
     private Broker _broker;
 
     @Override
@@ -154,11 +155,19 @@ public class MultiVersionProtocolEngineFactoryTest extends QpidTestCase
     {
         Set<Protocol> protocols = getAllAMQPProtocols();
 
+        SubjectCreator subjectCreator = mock(SubjectCreator.class);
+
+        AuthenticationProvider<?> authProvider = mock(AuthenticationProvider.class);
+        when(authProvider.getSubjectCreator(false)).thenReturn(subjectCreator);
+
         AmqpPort<?> port = mock(AmqpPort.class);
         when(port.canAcceptNewConnection(any(SocketAddress.class))).thenReturn(true);
         when(port.getContextValue(eq(Integer.class), eq(AmqpPort.PORT_MAX_MESSAGE_SIZE))).thenReturn(AmqpPort.DEFAULT_MAX_MESSAGE_SIZE);
+        when(port.getAuthenticationProvider()).thenReturn(authProvider);
 
-        when(port.getContextValue(eq(Long.class),eq(Port.CONNECTION_MAXIMUM_AUTHENTICATION_DELAY))).thenReturn(10000l);
+
+
+        when(port.getContextValue(eq(Long.class), eq(Port.CONNECTION_MAXIMUM_AUTHENTICATION_DELAY))).thenReturn(10000l);
         MultiVersionProtocolEngineFactory factory =
             new MultiVersionProtocolEngineFactory(_broker, protocols, null, port,
                     org.apache.qpid.server.model.Transport.TCP);

@@ -30,6 +30,7 @@ import org.apache.qpid.server.model.Transport;
 import org.apache.qpid.server.model.port.AmqpPort;
 import org.apache.qpid.server.plugin.PluggableService;
 import org.apache.qpid.server.plugin.ProtocolEngineCreator;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.transport.ConnectionDelegate;
 import org.apache.qpid.transport.network.NetworkConnection;
 
@@ -76,11 +77,10 @@ public class ProtocolEngineCreator_0_10 implements ProtocolEngineCreator
         {
             fqdn = ((InetSocketAddress) address).getHostName();
         }
-        final ConnectionDelegate connDelegate = new ServerConnectionDelegate(broker,
-                fqdn, broker.getSubjectCreator(address, transport.isSecure())
-        );
+        SubjectCreator subjectCreator = port.getAuthenticationProvider().getSubjectCreator(transport.isSecure());
+        ConnectionDelegate connDelegate = new ServerConnectionDelegate(broker, fqdn, subjectCreator);
 
-        ServerConnection conn = new ServerConnection(id,broker, port, transport);
+        ServerConnection conn = new ServerConnection(id, broker, port, transport);
 
         conn.setConnectionDelegate(connDelegate);
         conn.setRemoteAddress(network.getRemoteAddress());

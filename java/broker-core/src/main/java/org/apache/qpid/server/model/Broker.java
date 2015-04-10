@@ -20,15 +20,12 @@
  */
 package org.apache.qpid.server.model;
 
-import java.net.SocketAddress;
 import java.util.Collection;
 
-import org.apache.qpid.server.configuration.updater.TaskExecutor;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.EventLoggerProvider;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 
 @ManagedObject( defaultType = "broker" )
@@ -176,30 +173,13 @@ public interface Broker<X extends Broker<X>> extends ConfiguredObject<X>, EventL
      */
     LogRecorder getLogRecorder();
 
-    AuthenticationProvider<?> findAuthenticationProviderByName(String authenticationProviderName);
-
     VirtualHost<?,?,?> findVirtualHostByName(String name);
-
-    KeyStore<?> findKeyStoreByName(String name);
-
-    TrustStore<?> findTrustStoreByName(String name);
-
-    /**
-     * Get the SubjectCreator for the given socket address.
-     * TODO: move the authentication related functionality into host aliases and AuthenticationProviders
-     *
-     * @param localAddress The (listening) socket address for which the AuthenticationManager is required
-     * @param secure
-     */
-    SubjectCreator getSubjectCreator(SocketAddress localAddress, final boolean secure);
 
     Collection<KeyStore<?>> getKeyStores();
 
     Collection<TrustStore<?>> getTrustStores();
 
     boolean isManagementMode();
-
-    AuthenticationProvider<?> getAuthenticationProvider(SocketAddress localAddress);
 
     EventLogger getEventLogger();
 

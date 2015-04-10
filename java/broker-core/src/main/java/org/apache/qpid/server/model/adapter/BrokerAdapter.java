@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.model.adapter;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
 import java.util.Collection;
@@ -50,11 +48,9 @@ import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.model.*;
-import org.apache.qpid.server.model.port.AbstractPortWithAuthProvider;
 import org.apache.qpid.server.plugin.ConfigurationSecretEncrypterFactory;
 import org.apache.qpid.server.plugin.PluggableFactoryLoader;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.manager.SimpleAuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.stats.StatisticsGatherer;
@@ -432,7 +428,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @Override
     public synchronized void assignTargetSizes()
     {
-        long totalTarget  = getContextValue(Long.class,BROKER_FLOW_TO_DISK_THRESHOLD);
+        long totalTarget  = getContextValue(Long.class, BROKER_FLOW_TO_DISK_THRESHOLD);
         long totalSize = 0l;
         Collection<VirtualHostNode<?>> vhns = getVirtualHostNodes();
         Map<VirtualHost<?,?,?>,Long> vhs = new HashMap<>();
@@ -549,7 +545,7 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
     @Override
     public <C extends ConfiguredObject> C addChild(final Class<C> childClass, final Map<String, Object> attributes, final ConfiguredObject... otherParents)
     {
-        return runTask( new Task<C>()
+        return runTask(new Task<C>()
         {
             @Override
             public C execute()
@@ -861,36 +857,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             }
         }
         return null;
-    }
-
-    @Override
-    public SubjectCreator getSubjectCreator(SocketAddress localAddress, final boolean secure)
-    {
-        AuthenticationProvider provider = getAuthenticationProvider(localAddress);
-
-        if(provider == null)
-        {
-            throw new IllegalConfigurationException("Unable to determine authentication provider for address: " + localAddress);
-        }
-
-        return provider.getSubjectCreator(secure);
-    }
-
-    @Override
-    public AuthenticationProvider<?> getAuthenticationProvider(SocketAddress localAddress)
-    {
-        InetSocketAddress inetSocketAddress = (InetSocketAddress)localAddress;
-        AuthenticationProvider provider = null;
-        Collection<Port<?>> ports = getPorts();
-        for (Port<?> p : ports)
-        {
-            if (p instanceof AbstractPortWithAuthProvider && inetSocketAddress.getPort() == p.getPort())
-            {
-                provider = ((AbstractPortWithAuthProvider<?>) p).getAuthenticationProvider();
-                break;
-            }
-        }
-        return provider;
     }
 
     @Override

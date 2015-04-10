@@ -22,6 +22,7 @@ package org.apache.qpid.server.management.plugin;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -556,7 +557,18 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     @Override
     public AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress)
     {
-        return getBroker().getAuthenticationProvider(localAddress);
+        InetSocketAddress inetSocketAddress = (InetSocketAddress)localAddress;
+        AuthenticationProvider provider = null;
+        Collection<Port<?>> ports = getBroker().getPorts();
+        for (Port<?> p : ports)
+        {
+            if (p instanceof HttpPort && inetSocketAddress.getPort() == p.getPort())
+            {
+                provider = ((HttpPort<?>) p).getAuthenticationProvider();
+                break;
+            }
+        }
+        return provider;
     }
 
     @Override

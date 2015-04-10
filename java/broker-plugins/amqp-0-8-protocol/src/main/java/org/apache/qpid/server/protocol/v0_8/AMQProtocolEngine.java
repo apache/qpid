@@ -485,7 +485,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
             setProtocolVersion(pv);
 
             StringBuilder mechanismBuilder = new StringBuilder();
-            for(String mechanismName : _broker.getSubjectCreator(getLocalAddress(), _transport.isSecure()).getMechanisms())
+            SubjectCreator subjectCreator = _port.getAuthenticationProvider().getSubjectCreator(_transport.isSecure());
+            for(String mechanismName : subjectCreator.getMechanisms())
             {
                 if(mechanismBuilder.length() != 0)
                 {
@@ -1899,7 +1900,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine,
 
     public SubjectCreator getSubjectCreator()
     {
-        return _broker.getSubjectCreator(getLocalAddress(), getTransport().isSecure());
+        return _port.getAuthenticationProvider().getSubjectCreator(getTransport().isSecure());
     }
 
     public EventLogger getEventLogger()
