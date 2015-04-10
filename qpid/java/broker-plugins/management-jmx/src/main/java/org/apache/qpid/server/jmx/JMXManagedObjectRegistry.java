@@ -23,7 +23,6 @@ package org.apache.qpid.server.jmx;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.NoSuchObjectException;
@@ -57,8 +56,10 @@ import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.model.KeyStore;
-import org.apache.qpid.server.model.Port;
 import org.apache.qpid.server.model.Transport;
+import org.apache.qpid.server.model.port.JmxPort;
+import org.apache.qpid.server.model.port.RmiPort;
+import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.jmx.JMXPasswordAuthenticator;
 import org.apache.qpid.server.util.ServerScopedRuntimeException;
 
@@ -78,12 +79,12 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     private Registry _rmiRegistry;
 
     private final Broker _broker;
-    private final Port _registryPort;
-    private final Port _connectorPort;
+    private final RmiPort _registryPort;
+    private final JmxPort _connectorPort;
 
      public JMXManagedObjectRegistry(
             Broker broker,
-            Port connectorPort, Port registryPort,
+            JmxPort connectorPort, RmiPort registryPort,
             JMXManagementPlugin jmxManagement)
     {
         _broker = broker;
@@ -158,8 +159,14 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         int jmxPortConnectorServer = _connectorPort.getPort();
 
         //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server
-        JMXPasswordAuthenticator rmipa = new JMXPasswordAuthenticator(_broker, new InetSocketAddress(jmxPortConnectorServer), connectorSslEnabled);
-        HashMap<String,Object> connectorEnv = new HashMap<String,Object>();
+        SubjectCreator subjectCreator =_connectorPort.getAuthenticationProvider().getSubjectCreator(connectorSslEnabled);
+        if (subjectCreator == null)
+        {
+            throw new SecurityException("Can't get subject creator for " + _connectorPort);
+        }
+
+        JMXPasswordAuthenticator rmipa = new JMXPasswordAuthenticator(subjectCreator, _broker.getSecurityManager());
+        HashMap<String,Object> connectorEnv = new HashMap<>();
         connectorEnv.put(JMXConnectorServer.AUTHENTICATOR, rmipa);
 
         System.setProperty("java.rmi.server.randomIDs", "true");

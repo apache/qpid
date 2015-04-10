@@ -20,24 +20,18 @@
  */
 package org.apache.qpid.server.security.auth.jmx;
 
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.security.AccessControlException;
 import java.security.Principal;
-import java.util.regex.Pattern;
 
 import javax.security.auth.Subject;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.server.model.Broker;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
@@ -54,7 +48,6 @@ public class JMXPasswordAuthenticatorTest extends TestCase
     private static final String USERNAME = "guest";
     private static final String PASSWORD = "password";
 
-    private final Broker _broker = mock(Broker.class);
     private final SecurityManager _securityManager = mock(SecurityManager.class);
     private final Subject _loginSubject = new Subject();
     private final String[] _credentials = new String[] {USERNAME, PASSWORD};
@@ -64,18 +57,12 @@ public class JMXPasswordAuthenticatorTest extends TestCase
     private SubjectCreator _usernamePasswordOkaySubjectCreator = createMockSubjectCreator(true, null);
     private SubjectCreator _badPasswordSubjectCreator = createMockSubjectCreator(false, null);
 
-    protected void setUp() throws Exception
-    {
-        when(_broker.getSecurityManager()).thenReturn(_securityManager);
-        _rmipa = new JMXPasswordAuthenticator(_broker, new InetSocketAddress(8999), false);
-    }
-
     /**
      * Tests a successful authentication.  Ensures that the expected subject is returned.
      */
     public void testAuthenticationSuccess()
     {
-        when(_broker.getSubjectCreator(any(SocketAddress.class), anyBoolean())).thenReturn(_usernamePasswordOkaySubjectCreator);
+        _rmipa = new JMXPasswordAuthenticator(_usernamePasswordOkaySubjectCreator, _securityManager);
 
         Subject newSubject = _rmipa.authenticate(_credentials);
         assertSame("Subject must be unchanged", _loginSubject, newSubject);
@@ -86,7 +73,7 @@ public class JMXPasswordAuthenticatorTest extends TestCase
      */
     public void testUsernameOrPasswordInvalid()
     {
-        when(_broker.getSubjectCreator(any(SocketAddress.class), anyBoolean())).thenReturn(_badPasswordSubjectCreator);
+        _rmipa = new JMXPasswordAuthenticator(_badPasswordSubjectCreator, _securityManager);
 
         try
         {
@@ -102,7 +89,7 @@ public class JMXPasswordAuthenticatorTest extends TestCase
 
     public void testAuthorisationFailure()
     {
-        when(_broker.getSubjectCreator(any(SocketAddress.class), anyBoolean())).thenReturn(_usernamePasswordOkaySubjectCreator);
+        _rmipa = new JMXPasswordAuthenticator(_usernamePasswordOkaySubjectCreator, _securityManager);
         doThrow(new AccessControlException(USER_NOT_AUTHORISED_FOR_MANAGEMENT)).when(_securityManager).accessManagement();
 
         try
@@ -121,7 +108,7 @@ public class JMXPasswordAuthenticatorTest extends TestCase
     {
         final Exception mockAuthException = new Exception("Mock Auth system failure");
         SubjectCreator subjectCreator = createMockSubjectCreator(false, mockAuthException);
-        when(_broker.getSubjectCreator(any(SocketAddress.class), anyBoolean())).thenReturn(subjectCreator);
+        _rmipa = new JMXPasswordAuthenticator(subjectCreator, _securityManager);
 
         try
         {
@@ -131,104 +118,6 @@ public class JMXPasswordAuthenticatorTest extends TestCase
         catch (SecurityException se)
         {
             assertEquals("Initial cause not found", mockAuthException, se.getCause());
-        }
-    }
-
-    /**
-     * Tests case where authentication manager is not set.
-     */
-    public void testNullSubjectCreator() throws Exception
-    {
-        when(_broker.getSubjectCreator(any(SocketAddress.class), anyBoolean())).thenReturn(null);
-
-        try
-        {
-            _rmipa.authenticate(_credentials);
-            fail("SecurityException expected due to lack of authentication manager");
-        }
-        catch (SecurityException se)
-        {
-            assertTrue("Unexpected exception message", Pattern.matches("Can't get subject creator for .*:8999", se.getMessage()));
-        }
-    }
-
-    /**
-     * Tests case where arguments are non-Strings..
-     */
-    public void testWithNonStringArrayArgument()
-    {
-        // Test handling of non-string credential's
-        final Object[] objCredentials = new Object[]{USERNAME, PASSWORD};
-        try
-        {
-             _rmipa.authenticate(objCredentials);
-            fail("SecurityException expected due to non string[] credentials");
-        }
-        catch (SecurityException se)
-        {
-            assertEquals("Unexpected exception message",
-                    JMXPasswordAuthenticator.SHOULD_BE_STRING_ARRAY, se.getMessage());
-        }
-    }
-
-    /**
-     * Tests case where there are too many, too few or null arguments.
-     */
-    public void testWithIllegalNumberOfArguments()
-    {
-        String[] credentials;
-
-        // Test handling of incorrect number of credentials
-        try
-        {
-            credentials = new String[]{USERNAME, PASSWORD, PASSWORD};
-            _rmipa.authenticate(credentials);
-            fail("SecurityException expected due to supplying wrong number of credentials");
-        }
-        catch (SecurityException se)
-        {
-            assertEquals("Unexpected exception message",
-                    JMXPasswordAuthenticator.SHOULD_HAVE_2_ELEMENTS, se.getMessage());
-        }
-
-        // Test handling of null credentials
-        try
-        {
-            //send a null array
-            credentials = null;
-            _rmipa.authenticate(credentials);
-            fail("SecurityException expected due to not supplying an array of credentials");
-        }
-        catch (SecurityException se)
-        {
-            assertEquals("Unexpected exception message",
-                    JMXPasswordAuthenticator.CREDENTIALS_REQUIRED, se.getMessage());
-        }
-
-        try
-        {
-            //send a null password
-            credentials = new String[]{USERNAME, null};
-            _rmipa.authenticate(credentials);
-            fail("SecurityException expected due to sending a null password");
-        }
-        catch (SecurityException se)
-        {
-            assertEquals("Unexpected exception message",
-                    JMXPasswordAuthenticator.SHOULD_BE_NON_NULL, se.getMessage());
-        }
-
-        try
-        {
-            //send a null username
-            credentials = new String[]{null, PASSWORD};
-            _rmipa.authenticate(credentials);
-            fail("SecurityException expected due to sending a null username");
-        }
-        catch (SecurityException se)
-        {
-            assertEquals("Unexpected exception message",
-                    JMXPasswordAuthenticator.SHOULD_BE_NON_NULL, se.getMessage());
         }
     }
 

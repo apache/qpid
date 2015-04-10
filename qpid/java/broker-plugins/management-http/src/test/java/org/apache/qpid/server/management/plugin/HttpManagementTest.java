@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -39,6 +40,7 @@ import org.apache.qpid.server.model.ConfiguredObject;
 import org.apache.qpid.server.model.ConfiguredObjectFactory;
 import org.apache.qpid.server.model.ConfiguredObjectFactoryImpl;
 import org.apache.qpid.server.model.State;
+import org.apache.qpid.server.model.port.HttpPort;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class HttpManagementTest extends QpidTestCase
@@ -115,7 +117,10 @@ public class HttpManagementTest extends QpidTestCase
     {
         SocketAddress localAddress = InetSocketAddress.createUnresolved("localhost", 8080);
         AuthenticationProvider brokerAuthenticationProvider = mock(AuthenticationProvider.class);
-        when(_broker.getAuthenticationProvider(localAddress)).thenReturn(brokerAuthenticationProvider);
+        HttpPort port = mock(HttpPort.class);
+        when(port.getPort()).thenReturn(8080);
+        when(port.getAuthenticationProvider()).thenReturn(brokerAuthenticationProvider);
+        when(_broker.getPorts()).thenReturn(Collections.singletonList(port));
         AuthenticationProvider authenticationProvider = _management.getAuthenticationProvider(localAddress);
         assertEquals("Unexpected subject creator", brokerAuthenticationProvider, authenticationProvider);
     }

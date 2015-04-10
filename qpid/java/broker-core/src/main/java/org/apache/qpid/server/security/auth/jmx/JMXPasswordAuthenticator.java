@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.security.auth.jmx;
 
-import java.net.SocketAddress;
 import java.rmi.server.RemoteServer;
 import java.rmi.server.ServerNotActiveException;
 import java.security.PrivilegedAction;
@@ -28,14 +27,13 @@ import java.security.PrivilegedAction;
 import javax.management.remote.JMXAuthenticator;
 import javax.security.auth.Subject;
 
-import org.apache.qpid.server.model.Broker;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SubjectCreator;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.SubjectAuthenticationResult;
 
 public class JMXPasswordAuthenticator implements JMXAuthenticator
 {
-    static final String UNABLE_TO_LOOKUP = "The broker was unable to lookup the user details";
     static final String SHOULD_BE_STRING_ARRAY = "User details should be String[]";
     static final String SHOULD_HAVE_2_ELEMENTS = "User details should have 2 elements, username, password";
     static final String SHOULD_BE_NON_NULL = "Supplied username and password should be non-null";
@@ -43,15 +41,14 @@ public class JMXPasswordAuthenticator implements JMXAuthenticator
     static final String CREDENTIALS_REQUIRED = "User details are required. " +
                         "Please ensure you are using an up to date management console to connect.";
 
-    private final Broker _broker;
-    private final SocketAddress _address;
-    private final boolean _secure;
+    private final SubjectCreator _subjectCreator;
+    private final SecurityManager _securityManager;
 
-    public JMXPasswordAuthenticator(Broker broker, SocketAddress address, final boolean secure)
+
+    public JMXPasswordAuthenticator(SubjectCreator subjectCreator, SecurityManager securityManager)
     {
-        _broker = broker;
-        _address = address;
-        _secure = secure;
+        _subjectCreator = subjectCreator;
+        _securityManager = securityManager;
     }
 
     public Subject authenticate(Object credentials) throws SecurityException
@@ -59,8 +56,8 @@ public class JMXPasswordAuthenticator implements JMXAuthenticator
         validateCredentials(credentials);
 
         final String[] userCredentials = (String[]) credentials;
-        final String username = (String) userCredentials[0];
-        final String password = (String) userCredentials[1];
+        final String username = userCredentials[0];
+        final String password = userCredentials[1];
 
         final Subject authenticatedSubject = doAuthentication(username, password);
         doManagementAuthorisation(authenticatedSubject);
@@ -97,13 +94,7 @@ public class JMXPasswordAuthenticator implements JMXAuthenticator
             throw new SecurityException(SHOULD_BE_NON_NULL);
         }
 
-        SubjectCreator subjectCreator = _broker.getSubjectCreator(_address, _secure);
-        if (subjectCreator == null)
-        {
-            throw new SecurityException("Can't get subject creator for " + _address);
-        }
-
-        final SubjectAuthenticationResult result = subjectCreator.authenticate(username, password);
+        final SubjectAuthenticationResult result = _subjectCreator.authenticate(username, password);
 
         if (AuthenticationStatus.ERROR.equals(result.getStatus()))
         {
@@ -143,7 +134,7 @@ public class JMXPasswordAuthenticator implements JMXAuthenticator
             @Override
             public Object run()
             {
-                _broker.getSecurityManager().accessManagement();
+                _securityManager.accessManagement();
                 return null;
             }
         });
