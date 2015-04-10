@@ -156,8 +156,7 @@ public class HttpManagementUtil
     public static Subject tryToAuthenticate(HttpServletRequest request, HttpManagementConfiguration managementConfig)
     {
         Subject subject = null;
-        SocketAddress localAddress = getSocketAddress(request);
-        final AuthenticationProvider authenticationProvider = managementConfig.getAuthenticationProvider(localAddress);
+        final AuthenticationProvider authenticationProvider = managementConfig.getAuthenticationProvider(request);
         SubjectCreator subjectCreator = authenticationProvider.getSubjectCreator(request.isSecure());
         String remoteUser = request.getRemoteUser();
 
