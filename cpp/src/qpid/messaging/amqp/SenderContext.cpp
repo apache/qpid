@@ -22,6 +22,7 @@
 #include "Transaction.h"
 #include "EncodedMessage.h"
 #include "PnData.h"
+#include "util.h"
 #include "qpid/messaging/AddressImpl.h"
 #include "qpid/messaging/exceptions.h"
 #include "qpid/Exception.h"
@@ -128,15 +129,9 @@ bool SenderContext::send(const qpid::messaging::Message& message, SenderContext:
 void SenderContext::check()
 {
     if (pn_link_state(sender) & PN_REMOTE_CLOSED && !(pn_link_state(sender) & PN_LOCAL_CLOSED)) {
-        pn_condition_t* error = pn_link_remote_condition(sender);
-        std::stringstream text;
-        if (pn_condition_is_set(error)) {
-            text << "Link detached by peer with " << pn_condition_get_name(error) << ": " << pn_condition_get_description(error);
-        } else {
-            text << "Link detached by peer";
-        }
+        std::string text = get_error_string(pn_link_remote_condition(sender), "Link detached by peer");
         pn_link_close(sender);
-        throw qpid::messaging::LinkError(text.str());
+        throw qpid::messaging::LinkError(text);
     }
 }
 
@@ -574,7 +569,7 @@ std::string SenderContext::Delivery::error()
 {
     pn_condition_t *condition = pn_disposition_condition(pn_delivery_remote(token));
     return (condition && pn_condition_is_set(condition)) ?
-        Msg() << pn_condition_get_name(condition) << ": " << pn_condition_get_description(condition) :
+        Msg() << get_error_string(condition, std::string(), std::string()) :
         std::string();
 }
 
