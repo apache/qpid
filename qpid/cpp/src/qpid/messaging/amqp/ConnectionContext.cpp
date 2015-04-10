@@ -27,6 +27,7 @@
 #include "SessionContext.h"
 #include "Transaction.h"
 #include "Transport.h"
+#include "util.h"
 #include "qpid/amqp/descriptors.h"
 #include "qpid/amqp/Encoder.h"
 #include "qpid/amqp/Descriptor.h"
@@ -58,7 +59,6 @@ namespace amqp {
 using types::Variant;
 
 namespace {
-
 //remove conditional when 0.5 is no longer supported
 #ifdef HAVE_PROTON_TRACER
 void do_trace(pn_transport_t* transport, const char* message)
@@ -85,7 +85,7 @@ std::string get_error(pn_connection_t* connection, pn_transport_t* transport)
     pn_error_t* cerror = pn_connection_error(connection);
     if (cerror) text << "connection error " << pn_error_text(cerror) << " [" << cerror << "]";
     pn_condition_t* tcondition = pn_transport_condition(transport);
-    if (pn_condition_is_set(tcondition)) text << "transport error: " << pn_condition_get_name(tcondition) << ", " << pn_condition_get_description(tcondition);
+    if (pn_condition_is_set(tcondition)) text << get_error_string(tcondition, "transport error", ": ");
     return text.str();
 }
 #else
@@ -592,15 +592,9 @@ bool ConnectionContext::checkDisconnected() {
         reset();
     } else {
         if ((pn_connection_state(connection) & REQUIRES_CLOSE) == REQUIRES_CLOSE) {
-            pn_condition_t* error = pn_connection_remote_condition(connection);
-            std::stringstream text;
-            if (pn_condition_is_set(error)) {
-                text << "Connection closed by peer with " << pn_condition_get_name(error) << ": " << pn_condition_get_description(error);
-            } else {
-                text << "Connection closed by peer";
-            }
+            std::string text = get_error_string(pn_connection_remote_condition(connection), "Connection closed by peer");
             pn_connection_close(connection);
-            throw qpid::messaging::ConnectionError(text.str());
+            throw qpid::messaging::ConnectionError(text);
         }
     }
     return state == DISCONNECTED;
@@ -652,15 +646,9 @@ void ConnectionContext::checkClosed(boost::shared_ptr<SessionContext> ssn)
     check();
     ssn->error.raise();
     if ((pn_session_state(ssn->session) & REQUIRES_CLOSE) == REQUIRES_CLOSE) {
-        pn_condition_t* error = pn_session_remote_condition(ssn->session);
-        std::stringstream text;
-        if (pn_condition_is_set(error)) {
-            text << "Session ended by peer with " << pn_condition_get_name(error) << ": " << pn_condition_get_description(error);
-        } else {
-            text << "Session ended by peer";
-        }
+        std::string text = get_error_string(pn_session_remote_condition(ssn->session), "Session ended by peer");
         pn_session_close(ssn->session);
-        throw qpid::messaging::SessionError(text.str());
+        throw qpid::messaging::SessionError(text);
     } else if ((pn_session_state(ssn->session) & IS_CLOSED) == IS_CLOSED) {
         throw qpid::messaging::SessionClosed();
     }
@@ -688,21 +676,15 @@ void ConnectionContext::checkClosed(boost::shared_ptr<SessionContext> ssn, pn_li
     checkClosed(ssn);
     if ((pn_link_state(lnk) & REQUIRES_CLOSE) == REQUIRES_CLOSE) {
         pn_condition_t* error = pn_link_remote_condition(lnk);
-        std::string name;
-        std::stringstream text;
-        if (pn_condition_is_set(error)) {
-            name = pn_condition_get_name(error);
-            text << "Link detached by peer with " << name << ": " << pn_condition_get_description(error);
-        } else {
-            text << "Link detached by peer";
-        }
+        std::string text = get_error_string(error, "Link detached by peer");
         pn_link_close(lnk);
+        std::string name = pn_condition_get_name(error);
         if (name == qpid::amqp::error_conditions::NOT_FOUND) {
-            throw qpid::messaging::NotFound(text.str());
+            throw qpid::messaging::NotFound(text);
         } else if (name == qpid::amqp::error_conditions::UNAUTHORIZED_ACCESS) {
-            throw qpid::messaging::UnauthorizedAccess(text.str());
+            throw qpid::messaging::UnauthorizedAccess(text);
         } else {
-            throw qpid::messaging::LinkError(text.str());
+            throw qpid::messaging::LinkError(text);
         }
     } else if ((pn_link_state(lnk) & IS_CLOSED) == IS_CLOSED) {
         throw qpid::messaging::LinkError("Link is not attached");
@@ -1297,7 +1279,7 @@ bool ConnectionContext::checkTransportError(std::string& text)
 #ifdef USE_PROTON_TRANSPORT_CONDITION
     pn_condition_t* tcondition = pn_transport_condition(engine);
     if (pn_condition_is_set(tcondition))
-        info << "transport error: " << pn_condition_get_name(tcondition) << ", " << pn_condition_get_description(tcondition);
+        info << get_error_string(tcondition, "transport error", ": ");
 #else
     pn_error_t* terror = pn_transport_error(engine);
     if (terror) info << "transport error " << pn_error_text(terror) << " [" << terror << "]";
