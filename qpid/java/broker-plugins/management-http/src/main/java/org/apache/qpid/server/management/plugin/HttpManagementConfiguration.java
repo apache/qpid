@@ -22,6 +22,8 @@ package org.apache.qpid.server.management.plugin;
 
 import java.net.SocketAddress;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.qpid.server.model.AuthenticationProvider;
 import org.apache.qpid.server.model.ManagedAttribute;
 import org.apache.qpid.server.model.ManagedContextDefault;
@@ -76,5 +78,5 @@ public interface HttpManagementConfiguration<X extends HttpManagementConfigurati
 
 
 
-    AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress);
+    AuthenticationProvider getAuthenticationProvider(HttpServletRequest request);
 }

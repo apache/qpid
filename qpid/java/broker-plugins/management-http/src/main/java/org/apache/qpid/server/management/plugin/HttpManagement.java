@@ -22,8 +22,6 @@ package org.apache.qpid.server.management.plugin;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,7 +43,9 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.SessionManager;
 import org.eclipse.jetty.server.handler.ErrorHandler;
@@ -93,6 +93,7 @@ import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 @ManagedObject( category = false, type = "MANAGEMENT-HTTP" )
 public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implements HttpManagementConfiguration<HttpManagement>, PortManager
 {
+    private static final String PORT_SERVLET_ATTRIBUTE = "org.apache.qpid.server.model.Port";
     private final Logger _logger = LoggerFactory.getLogger(HttpManagement.class);
 
     // 10 minutes by default
@@ -224,7 +225,16 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
                 Collection<Transport> transports = port.getTransports();
                 if (!transports.contains(Transport.SSL))
                 {
-                    connector = new SelectChannelConnector();
+                    final Port thePort = port;
+                    connector = new SelectChannelConnector()
+                                {
+                                    @Override
+                                    public void customize(final EndPoint endpoint, final Request request) throws IOException
+                                    {
+                                        super.customize(endpoint, request);
+                                        request.setAttribute(PORT_SERVLET_ATTRIBUTE, thePort);
+                                    }
+                                };
                 }
                 else if (transports.contains(Transport.SSL))
                 {
@@ -452,7 +462,23 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
         }
         connector = port.getTransports().contains(Transport.TCP)
                 ? new TcpAndSslSelectChannelConnector(factory)
-                : new SslSelectChannelConnector(factory);
+                    {
+                        @Override
+                        public void customize(final EndPoint endpoint, final Request request) throws IOException
+                        {
+                            super.customize(endpoint, request);
+                            request.setAttribute(PORT_SERVLET_ATTRIBUTE, port);
+                        }
+                    }
+                : new SslSelectChannelConnector(factory)
+                    {
+                        @Override
+                        public void customize(final EndPoint endpoint, final Request request) throws IOException
+                        {
+                            super.customize(endpoint, request);
+                            request.setAttribute(PORT_SERVLET_ATTRIBUTE, port);
+                        }
+                    };
         return connector;
     }
 
@@ -555,20 +581,10 @@ public class HttpManagement extends AbstractPluginAdapter<HttpManagement> implem
     }
 
     @Override
-    public AuthenticationProvider getAuthenticationProvider(SocketAddress localAddress)
+    public AuthenticationProvider getAuthenticationProvider(HttpServletRequest request)
     {
-        InetSocketAddress inetSocketAddress = (InetSocketAddress)localAddress;
-        AuthenticationProvider provider = null;
-        Collection<Port<?>> ports = getBroker().getPorts();
-        for (Port<?> p : ports)
-        {
-            if (p instanceof HttpPort && inetSocketAddress.getPort() == p.getPort())
-            {
-                provider = ((HttpPort<?>) p).getAuthenticationProvider();
-                break;
-            }
-        }
-        return provider;
+        HttpPort<?> port = (HttpPort<?>)request.getAttribute(PORT_SERVLET_ATTRIBUTE);
+        return port == null ? null : port.getAuthenticationProvider();
     }
 
     @Override

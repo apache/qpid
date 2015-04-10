@@ -128,8 +128,7 @@ public class LoggedOnUserPreferencesServlet extends AbstractServlet
 
     private PreferencesProvider getPreferencesProvider(HttpServletRequest request)
     {
-        SocketAddress localAddress = HttpManagementUtil.getSocketAddress(request);
-        AuthenticationProvider authenticationProvider = getManagementConfiguration().getAuthenticationProvider(localAddress);
+        AuthenticationProvider authenticationProvider = getManagementConfiguration().getAuthenticationProvider(request);
         if (authenticationProvider == null)
         {
             throw new IllegalStateException("Authentication provider is not found");

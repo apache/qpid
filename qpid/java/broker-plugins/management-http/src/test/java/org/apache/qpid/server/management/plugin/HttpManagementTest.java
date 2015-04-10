@@ -113,16 +113,5 @@ public class HttpManagementTest extends QpidTestCase
                 _management.isHttpBasicAuthenticationEnabled());
     }
 
-    public void testGetAuthenticationProvider()
-    {
-        SocketAddress localAddress = InetSocketAddress.createUnresolved("localhost", 8080);
-        AuthenticationProvider brokerAuthenticationProvider = mock(AuthenticationProvider.class);
-        HttpPort port = mock(HttpPort.class);
-        when(port.getPort()).thenReturn(8080);
-        when(port.getAuthenticationProvider()).thenReturn(brokerAuthenticationProvider);
-        when(_broker.getPorts()).thenReturn(Collections.singletonList(port));
-        AuthenticationProvider authenticationProvider = _management.getAuthenticationProvider(localAddress);
-        assertEquals("Unexpected subject creator", brokerAuthenticationProvider, authenticationProvider);
-    }
 
 }
