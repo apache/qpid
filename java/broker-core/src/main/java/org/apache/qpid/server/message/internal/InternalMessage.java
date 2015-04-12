@@ -131,6 +131,7 @@ public class InternalMessage extends AbstractServerMessageImpl<InternalMessage, 
         try (ObjectOutputStream os = new ObjectOutputStream(bytesOut))
         {
             os.writeObject(bodyObject);
+            os.close();
             byte[] bytes = bytesOut.toByteArray();
 
 

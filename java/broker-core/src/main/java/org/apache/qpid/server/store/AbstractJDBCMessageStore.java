@@ -1973,7 +1973,7 @@ public abstract class AbstractJDBCMessageStore implements MessageStore
                             ByteBuffer buf = ByteBuffer.wrap(dataAsBytes);
                             buf.position(1);
                             buf = buf.slice();
-                            MessageMetaDataType<?> type = MessageMetaDataTypeRegistry.fromOrdinal(dataAsBytes[0]);
+                            MessageMetaDataType<?> type = MessageMetaDataTypeRegistry.fromOrdinal(((int)dataAsBytes[0]) &0xff);
                             StorableMessageMetaData metaData = type.createMetaData(buf);
                             StoredJDBCMessage message = new StoredJDBCMessage(messageId, metaData, true);
                             if (!handler.handle(message))
