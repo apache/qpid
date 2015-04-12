@@ -28,6 +28,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.connection.IConnectionRegistry;
 import org.apache.qpid.server.exchange.ExchangeImpl;
 import org.apache.qpid.server.logging.EventLogger;
@@ -121,9 +123,9 @@ class RedirectingVirtualHostImpl
     }
 
     @Override
-    protected <C extends ConfiguredObject> C addChild(final Class<C> childClass,
-                                                      final Map<String, Object> attributes,
-                                                      final ConfiguredObject... otherParents)
+    protected <C extends ConfiguredObject> ListenableFuture<C> addChildAsync(final Class<C> childClass,
+                                                                             final Map<String, Object> attributes,
+                                                                             final ConfiguredObject... otherParents)
     {
         throwUnsupportedForRedirector();
         return null;

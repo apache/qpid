@@ -276,14 +276,14 @@ public class BDBHAVirtualHostNodeImpl extends AbstractVirtualHostNode<BDBHAVirtu
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
-    protected <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes,
+    protected <C extends ConfiguredObject> ListenableFuture<C> addChildAsync(Class<C> childClass, Map<String, Object> attributes,
             ConfiguredObject... otherParents)
     {
         if(childClass == VirtualHost.class)
         {
-            return (C) getObjectFactory().create(VirtualHost.class, attributes, this);
+            return getObjectFactory().createAsync(childClass, attributes, this);
         }
-        return super.addChild(childClass, attributes, otherParents);
+        return super.addChildAsync(childClass, attributes, otherParents);
     }
 
     @Override
