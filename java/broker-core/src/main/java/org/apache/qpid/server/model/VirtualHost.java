@@ -179,6 +179,7 @@ public interface VirtualHost<X extends VirtualHost<X, Q, E>, Q extends Queue<?>,
     String getType();
 
     void setTargetSize(long targetSize);
+    long getTargetSize();
 
     long getTotalQueueDepthBytes();
 

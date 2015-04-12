@@ -1569,6 +1569,11 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         allocateTargetSizeToQueues();
     }
 
+    public long getTargetSize()
+    {
+        return _targetSize.get();
+    }
+
     private void allocateTargetSizeToQueues()
     {
         long targetSize = _targetSize.get();
