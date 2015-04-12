@@ -3003,7 +3003,7 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
     }
 
     @Override
-    protected <C extends ConfiguredObject> C addChild(final Class<C> childClass,
+    protected <C extends ConfiguredObject> ListenableFuture<C> addChildAsync(final Class<C> childClass,
                                                       final Map<String, Object> attributes,
                                                       final ConfiguredObject... otherParents)
     {
@@ -3016,12 +3016,12 @@ public abstract class AbstractQueue<X extends AbstractQueue<X>>
             {
                 if(binding.getExchange() == otherParents[0] && binding.getName().equals(bindingKey))
                 {
-                    return (C) binding;
+                    return Futures.immediateFuture((C) binding);
                 }
             }
             return null;
         }
-        return super.addChild(childClass, attributes, otherParents);
+        return super.addChildAsync(childClass, attributes, otherParents);
     }
 
     @Override

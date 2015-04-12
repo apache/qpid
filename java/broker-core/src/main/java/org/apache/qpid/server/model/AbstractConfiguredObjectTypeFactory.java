@@ -23,6 +23,8 @@ package org.apache.qpid.server.model;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
@@ -72,14 +74,21 @@ abstract public class AbstractConfiguredObjectTypeFactory<X extends AbstractConf
         final SettableFuture<X> returnVal = SettableFuture.create();
         final X instance = createInstance(attributes, parents);
         final ListenableFuture<Void> createFuture = instance.createAsync();
-        createFuture.addListener(new Runnable()
+        Futures.addCallback(createFuture, new FutureCallback<Void>()
         {
             @Override
-            public void run()
+            public void onSuccess(final Void result)
             {
                 returnVal.set(instance);
             }
-        }, MoreExecutors.sameThreadExecutor());
+
+            @Override
+            public void onFailure(final Throwable t)
+            {
+                returnVal.setException(t);
+            }
+        },MoreExecutors.sameThreadExecutor());
+
         return returnVal;
     }
 

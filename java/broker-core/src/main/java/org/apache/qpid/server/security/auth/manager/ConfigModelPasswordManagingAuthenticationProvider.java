@@ -32,6 +32,9 @@ import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+
 import org.apache.qpid.server.configuration.updater.Task;
 import org.apache.qpid.server.configuration.updater.VoidTaskWithException;
 import org.apache.qpid.server.model.Broker;
@@ -189,7 +192,7 @@ public abstract class ConfigModelPasswordManagingAuthenticationProvider<X extend
     }
 
     @Override
-    public <C extends ConfiguredObject> C addChild(final Class<C> childClass,
+    public <C extends ConfiguredObject> ListenableFuture<C> addChildAsync(final Class<C> childClass,
                                                    final Map<String, Object> attributes,
                                                    final ConfiguredObject... otherParents)
     {
@@ -203,9 +206,9 @@ public abstract class ConfigModelPasswordManagingAuthenticationProvider<X extend
             attributes.put(User.PASSWORD, createStoredPassword((String) attributes.get(User.PASSWORD)));
             ManagedUser user = new ManagedUser(attributes, ConfigModelPasswordManagingAuthenticationProvider.this);
             user.create();
-            return (C)getUser(username);
+            return Futures.immediateFuture((C)getUser(username));
         }
-        return super.addChild(childClass, attributes, otherParents);
+        return super.addChildAsync(childClass, attributes, otherParents);
     }
 
     abstract void validateUser(final ManagedUser managedUser);

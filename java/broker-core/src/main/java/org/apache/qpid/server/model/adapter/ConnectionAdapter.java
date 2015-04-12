@@ -231,7 +231,7 @@ public final class ConnectionAdapter extends AbstractConfiguredObject<Connection
     }
 
     @Override
-    public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    public <C extends ConfiguredObject> ListenableFuture<C> addChildAsync(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         if(childClass == Session.class)
         {

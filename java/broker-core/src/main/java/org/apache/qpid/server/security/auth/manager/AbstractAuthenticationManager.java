@@ -141,15 +141,21 @@ public abstract class AbstractAuthenticationManager<T extends AbstractAuthentica
 
     @SuppressWarnings("unchecked")
     @Override
-    public <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    public <C extends ConfiguredObject> ListenableFuture<C> addChildAsync(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         if(childClass == PreferencesProvider.class)
         {
             attributes = new HashMap<>(attributes);
-            PreferencesProvider<?> pp = getObjectFactory().create(PreferencesProvider.class, attributes, this);
-
-            _preferencesProvider = pp;
-            return (C)pp;
+            return doAfter(getObjectFactory().createAsync(PreferencesProvider.class, attributes, this),
+                           new CallableWithArgument<ListenableFuture<C>, PreferencesProvider>()
+                           {
+                               @Override
+                               public ListenableFuture<C> call(final PreferencesProvider preferencesProvider) throws Exception
+                               {
+                                   _preferencesProvider = preferencesProvider;
+                                   return Futures.immediateFuture((C)preferencesProvider);
+                               }
+                           });
         }
         throw new IllegalArgumentException("Cannot create child of class " + childClass.getSimpleName());
     }

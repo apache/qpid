@@ -75,19 +75,18 @@ public class GroupProviderImpl extends AbstractConfiguredObject<GroupProviderImp
     }
 
     @Override
-    protected <C extends ConfiguredObject> C addChild(final Class<C> childClass,
+    protected <C extends ConfiguredObject> ListenableFuture<C> addChildAsync(final Class<C> childClass,
                                                       final Map<String, Object> attributes,
                                                       final ConfiguredObject... otherParents)
     {
         if(childClass == Group.class)
         {
-            C child = (C) getObjectFactory().create(childClass, attributes, this);
+            return getObjectFactory().createAsync(childClass, attributes, this);
 
-            return child;
         }
         else
         {
-            return super.addChild(childClass, attributes, otherParents);
+            return super.addChildAsync(childClass, attributes, otherParents);
         }
     }
 

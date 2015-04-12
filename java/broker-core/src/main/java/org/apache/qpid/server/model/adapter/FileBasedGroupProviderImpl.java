@@ -211,7 +211,7 @@ public class FileBasedGroupProviderImpl
     }
 
     @Override
-    public <C extends ConfiguredObject> C addChild(Class<C> childClass,
+    public <C extends ConfiguredObject> ListenableFuture<C> addChildAsync(Class<C> childClass,
             Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         if (childClass == Group.class)
@@ -231,7 +231,7 @@ public class FileBasedGroupProviderImpl
             attrMap.put(Group.NAME, groupName);
             GroupAdapter groupAdapter = new GroupAdapter(attrMap);
             groupAdapter.create();
-            return (C) groupAdapter;
+            return Futures.immediateFuture((C) groupAdapter);
 
         }
 
@@ -433,7 +433,7 @@ public class FileBasedGroupProviderImpl
 
 
         @Override
-        public <C extends ConfiguredObject> C addChild(Class<C> childClass,
+        public <C extends ConfiguredObject> ListenableFuture<C> addChildAsync(Class<C> childClass,
                 Map<String, Object> attributes,
                 ConfiguredObject... otherParents)
         {
@@ -448,7 +448,7 @@ public class FileBasedGroupProviderImpl
                 attrMap.put(GroupMember.NAME, memberName);
                 GroupMemberAdapter groupMemberAdapter = new GroupMemberAdapter(attrMap);
                 groupMemberAdapter.create();
-                return (C) groupMemberAdapter;
+                return Futures.immediateFuture((C) groupMemberAdapter);
 
             }
 

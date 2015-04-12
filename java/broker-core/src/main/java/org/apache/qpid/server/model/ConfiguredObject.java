@@ -236,6 +236,9 @@ public interface ConfiguredObject<X extends ConfiguredObject<X>>
     <C extends ConfiguredObject> C createChild(Class<C> childClass,
                                                Map<String, Object> attributes,
                                                ConfiguredObject... otherParents);
+    <C extends ConfiguredObject> ListenableFuture<C> createChildAsync(Class<C> childClass,
+                                                                      Map<String, Object> attributes,
+                                                                      ConfiguredObject... otherParents);
 
     void setAttributes(Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException;
     ListenableFuture<Void> setAttributesAsync(Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException;

@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.SaslException;
@@ -120,7 +121,7 @@ abstract class ManagedAuthenticationManagerTestBase extends QpidTestCase
 
     }
 
-    public void testAddChildAndThenDelete()
+    public void testAddChildAndThenDelete() throws ExecutionException, InterruptedException
     {
         // No children should be present before the test starts
         assertEquals("No users should be present before the test starts", 0, _authManager.getChildren(User.class).size());
@@ -130,7 +131,7 @@ abstract class ManagedAuthenticationManagerTestBase extends QpidTestCase
 
         childAttrs.put(User.NAME, getTestName());
         childAttrs.put(User.PASSWORD, "password");
-        User user = _authManager.addChild(User.class, childAttrs);
+        User user = _authManager.addChildAsync(User.class, childAttrs).get();
         assertNotNull("User should be created but addChild returned null", user);
         assertEquals(getTestName(), user.getName());
         if(!isPlain())
@@ -159,7 +160,7 @@ abstract class ManagedAuthenticationManagerTestBase extends QpidTestCase
 
     }
 
-    public void testCreateUser()
+    public void testCreateUser() throws ExecutionException, InterruptedException
     {
         assertEquals("No users should be present before the test starts", 0, _authManager.getChildren(User.class).size());
         assertTrue(_authManager.createUser(getTestName(), "password", Collections.<String, String>emptyMap()));
@@ -178,7 +179,7 @@ abstract class ManagedAuthenticationManagerTestBase extends QpidTestCase
         childAttrs.put(User.PASSWORD, "password");
         try
         {
-            user = _authManager.addChild(User.class, childAttrs);
+            user = _authManager.addChildAsync(User.class, childAttrs).get();
             fail("Should not be able to create a second user with the same name");
         }
         catch(IllegalArgumentException e)

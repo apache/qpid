@@ -46,6 +46,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -1651,8 +1652,8 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
             @Override
             public String toString()
             {
-                return getClass().getSimpleName() + "[name=" + getName() + ", categoryClass=" + getCategoryClass() + ", type="
-                        + getType() + ", id=" + getId() + "]";
+                return AbstractConfiguredObject.this.getClass().getSimpleName() + "[name=" + getName() + ", categoryClass=" + getCategoryClass() + ", type="
+                        + getType() + ", id=" + getId() +  ", attributes=" + getAttributes() + "]";
             }
         };
     }
@@ -1662,23 +1663,45 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
     public <C extends ConfiguredObject> C createChild(final Class<C> childClass, final Map<String, Object> attributes,
                                                       final ConfiguredObject... otherParents)
     {
-        return _taskExecutor.run(new Task<C>() {
+        return doSync(createChildAsync(childClass, attributes, otherParents));
+    }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <C extends ConfiguredObject> ListenableFuture<C> createChildAsync(final Class<C> childClass, final Map<String, Object> attributes,
+                                                      final ConfiguredObject... otherParents)
+    {
+        return doOnConfigThread(new Callable<ListenableFuture<C>>()
+        {
             @Override
-            public C execute()
+            public ListenableFuture<C> call() throws Exception
             {
                 authoriseCreateChild(childClass, attributes, otherParents);
-                C child = addChild(childClass, attributes, otherParents);
-                if (child != null)
-                {
-                    childAdded(child);
-                }
-                return child;
+                return doAfter(addChildAsync(childClass, attributes, otherParents),
+                                new CallableWithArgument<ListenableFuture<C>, C>()
+                                {
+
+                                    @Override
+                                    public ListenableFuture<C> call(final C child) throws Exception
+                                    {
+                                        if (child != null)
+                                        {
+                                            childAdded(child);
+                                        }
+                                        return Futures.immediateFuture(child);
+                                    }
+                                });
             }
         });
     }
 
+
     protected <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    protected <C extends ConfiguredObject> ListenableFuture<C> addChildAsync(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         throw new UnsupportedOperationException();
     }
@@ -1861,18 +1884,18 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         doSync(setAttributesAsync(attributes));
     }
 
-    protected final ChainedListenableFuture doAfter(ListenableFuture<Void> first, final Runnable second)
+    protected final ChainedListenableFuture<Void> doAfter(ListenableFuture<?> first, final Runnable second)
     {
         return doAfter(getTaskExecutor().getExecutor(), first, second);
     }
 
-    protected static final ChainedListenableFuture doAfter(Executor executor, ListenableFuture<Void> first, final Runnable second)
+    protected static <V> ChainedListenableFuture<Void>  doAfter(Executor executor, ListenableFuture<V> first, final Runnable second)
     {
-        final ChainedSettableFuture returnVal = new ChainedSettableFuture(executor);
-        Futures.addCallback(first, new FutureCallback<Void>()
+        final ChainedSettableFuture<Void> returnVal = new ChainedSettableFuture<Void>(executor);
+        Futures.addCallback(first, new FutureCallback<V>()
         {
             @Override
-            public void onSuccess(final Void result)
+            public void onSuccess(final V result)
             {
                 try
                 {
@@ -1895,13 +1918,19 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         return returnVal;
     }
 
-    public static interface ChainedListenableFuture extends ListenableFuture<Void>
+    public interface CallableWithArgument<V,A>
     {
-        ChainedListenableFuture then(Runnable r);
-        ChainedListenableFuture then(Callable<ListenableFuture<Void>> r);
+        V call(A argument) throws Exception;
     }
 
-    public static class ChainedSettableFuture extends AbstractFuture<Void> implements ChainedListenableFuture
+    public static interface ChainedListenableFuture<V> extends ListenableFuture<V>
+    {
+        ChainedListenableFuture<Void> then(Runnable r);
+        ChainedListenableFuture<V> then(Callable<ListenableFuture<V>> r);
+        <A> ChainedListenableFuture<A> then(CallableWithArgument<ListenableFuture<A>,V> r);
+    }
+
+    public static class ChainedSettableFuture<V> extends AbstractFuture<V> implements ChainedListenableFuture<V>
     {
         private final Executor _exector;
 
@@ -1911,7 +1940,7 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
 
         @Override
-        public boolean set(Void value)
+        public boolean set(V value)
         {
             return super.set(value);
         }
@@ -1923,40 +1952,52 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
         }
 
         @Override
-        public ChainedListenableFuture then(final Runnable r)
+        public ChainedListenableFuture<Void> then(final Runnable r)
         {
             return doAfter(_exector, this, r);
         }
 
         @Override
-        public ChainedListenableFuture then(final Callable<ListenableFuture<Void>> r)
+        public ChainedListenableFuture<V> then(final Callable<ListenableFuture<V>> r)
         {
             return doAfter(_exector, this,r);
         }
+
+        @Override
+        public <A> ChainedListenableFuture<A> then(final CallableWithArgument<ListenableFuture<A>,V> r)
+        {
+            return doAfter(_exector, this, r);
+        }
     }
 
-    protected final ChainedListenableFuture doAfter(ListenableFuture<Void> first, final Callable<ListenableFuture<Void>> second)
+    protected final <V> ChainedListenableFuture<V> doAfter(ListenableFuture<V> first, final Callable<ListenableFuture<V>> second)
     {
         return doAfter(getTaskExecutor().getExecutor(), first, second);
     }
 
-    protected static final ChainedListenableFuture doAfter(final Executor executor, ListenableFuture<Void> first, final Callable<ListenableFuture<Void>> second)
+    protected final <V,A> ChainedListenableFuture<V> doAfter(ListenableFuture<A> first, final CallableWithArgument<ListenableFuture<V>,A> second)
     {
-        final ChainedSettableFuture returnVal = new ChainedSettableFuture(executor);
-        Futures.addCallback(first, new FutureCallback<Void>()
+        return doAfter(getTaskExecutor().getExecutor(), first, second);
+    }
+
+
+    protected static <V> ChainedListenableFuture<V> doAfter(final Executor executor, ListenableFuture<V> first, final Callable<ListenableFuture<V>> second)
+    {
+        final ChainedSettableFuture<V> returnVal = new ChainedSettableFuture<V>(executor);
+        Futures.addCallback(first, new FutureCallback<V>()
         {
             @Override
-            public void onSuccess(final Void result)
+            public void onSuccess(final V result)
             {
                 try
                 {
-                    final ListenableFuture<Void> future = second.call();
-                    Futures.addCallback(future, new FutureCallback<Void>()
+                    final ListenableFuture<V> future = second.call();
+                    Futures.addCallback(future, new FutureCallback<V>()
                     {
                         @Override
-                        public void onSuccess(final Void result)
+                        public void onSuccess(final V result)
                         {
-                            returnVal.set(null);
+                            returnVal.set(result);
                         }
 
                         @Override
@@ -1982,6 +2023,51 @@ public abstract class AbstractConfiguredObject<X extends ConfiguredObject<X>> im
 
         return returnVal;
     }
+
+
+    protected static <V,A> ChainedListenableFuture<V> doAfter(final Executor executor, ListenableFuture<A> first, final CallableWithArgument<ListenableFuture<V>,A> second)
+    {
+        final ChainedSettableFuture<V> returnVal = new ChainedSettableFuture<>(executor);
+        Futures.addCallback(first, new FutureCallback<A>()
+        {
+            @Override
+            public void onSuccess(final A result)
+            {
+                try
+                {
+                    final ListenableFuture<V> future = second.call(result);
+                    Futures.addCallback(future, new FutureCallback<V>()
+                    {
+                        @Override
+                        public void onSuccess(final V result)
+                        {
+                            returnVal.set(result);
+                        }
+
+                        @Override
+                        public void onFailure(final Throwable t)
+                        {
+                            returnVal.setException(t);
+                        }
+                    }, executor);
+
+                }
+                catch(Throwable e)
+                {
+                    returnVal.setException(e);
+                }
+            }
+
+            @Override
+            public void onFailure(final Throwable t)
+            {
+                returnVal.setException(t);
+            }
+        }, executor);
+
+        return returnVal;
+    }
+
 
     @Override
     public ListenableFuture<Void> setAttributesAsync(final Map<String, Object> attributes) throws IllegalStateException, AccessControlException, IllegalArgumentException

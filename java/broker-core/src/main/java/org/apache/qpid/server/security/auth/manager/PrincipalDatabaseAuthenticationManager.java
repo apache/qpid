@@ -334,7 +334,7 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
     }
 
     @Override
-    public <C extends ConfiguredObject> C addChild(Class<C> childClass,
+    public <C extends ConfiguredObject> ListenableFuture<C> addChildAsync(Class<C> childClass,
                                                    Map<String, Object> attributes,
                                                    ConfiguredObject... otherParents)
     {
@@ -351,10 +351,10 @@ public abstract class PrincipalDatabaseAuthenticationManager<T extends Principal
                 throw new IllegalArgumentException("User '" + username + "' was not added into principal database");
             }
             _userMap.put(p, principalAdapter);
-            return (C)principalAdapter;
+            return Futures.immediateFuture((C)principalAdapter);
         }
 
-        return super.addChild(childClass, attributes, otherParents);
+        return super.addChildAsync(childClass, attributes, otherParents);
     }
 
     @Override

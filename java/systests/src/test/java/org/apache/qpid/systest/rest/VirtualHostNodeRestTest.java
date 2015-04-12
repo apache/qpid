@@ -63,6 +63,29 @@ public class VirtualHostNodeRestTest  extends QpidRestTestCase
         assertFalse("Store should not exist after deletion", storePathAsFile.exists());
     }
 
+    public void testCreateVirtualHostNodeWithVirtualHost() throws Exception
+    {
+        String nodeName = "virtualhostnode-" + getTestName();
+
+        Map<String, Object> nodeData = new HashMap<String, Object>();
+        nodeData.put(VirtualHostNode.NAME, nodeName);
+        nodeData.put(VirtualHostNode.TYPE, getTestProfileVirtualHostNodeType());
+
+        nodeData.put("virtualHostInitialConfiguration", "{ \"type\" : \"DERBY\" }");
+
+        getRestTestHelper().submitRequest("virtualhostnode/" + nodeName,
+                                          "PUT",
+                                          nodeData,
+                                          HttpServletResponse.SC_CREATED);
+
+
+        Map<String, Object> virtualhostNode = getRestTestHelper().getJsonAsSingletonList("virtualhostnode/" + nodeName);
+        Asserts.assertVirtualHostNode(nodeName, virtualhostNode);
+
+        Map<String, Object> virtualhost = getRestTestHelper().getJsonAsSingletonList("virtualhost/" + nodeName + "/" + nodeName);
+        Asserts.assertVirtualHost(nodeName, virtualhost);
+    }
+
     public void testCreateVirtualHostNodeWithDefaultStorePath() throws Exception
     {
         String virtualhostNodeType = getTestProfileVirtualHostNodeType();
