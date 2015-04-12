@@ -26,7 +26,7 @@ public interface StoredMessage<M extends StorableMessageMetaData>
 {
     M getMetaData();
 
-    public long getMessageNumber();
+    long getMessageNumber();
 
     int getContent(int offsetInMessage, ByteBuffer dst);
 
