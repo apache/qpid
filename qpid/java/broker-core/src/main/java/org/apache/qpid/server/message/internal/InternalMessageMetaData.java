@@ -49,6 +49,7 @@ public class InternalMessageMetaData implements StorableMessageMetaData
         {
             os.writeInt(contentSize);
             os.writeObject(header);
+            os.close();
             _headerBytes = bytesOut.toByteArray();
         }
         catch (IOException e)
