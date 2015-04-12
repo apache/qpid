@@ -484,17 +484,17 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
     @Override
-    protected <C extends ConfiguredObject> C addChild(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
+    protected <C extends ConfiguredObject> ListenableFuture<C> addChildAsync(Class<C> childClass, Map<String, Object> attributes, ConfiguredObject... otherParents)
     {
         checkVHostStateIsActive();
         if(childClass == Exchange.class)
         {
-            return (C) addExchange(attributes);
+            return (ListenableFuture<C>) addExchangeAsync(attributes);
 
         }
         else if(childClass == Queue.class)
         {
-            return (C) addQueue(attributes);
+            return (ListenableFuture<C>) addQueueAsync(attributes);
 
         }
         else if(childClass == VirtualHostAlias.class)
@@ -693,7 +693,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
         return (AMQQueue<?> )createChild(Queue.class, attributes);
     }
 
-    private AMQQueue<?> addQueue(Map<String, Object> attributes) throws QueueExistsException
+    private ListenableFuture<? extends AMQQueue<?>> addQueueAsync(Map<String, Object> attributes) throws QueueExistsException
     {
         if (shouldCreateDLQ(attributes))
         {
@@ -704,7 +704,7 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
             attributes = new LinkedHashMap<String, Object>(attributes);
             attributes.put(Queue.ALTERNATE_EXCHANGE, altExchangeName);
         }
-        return addQueueWithoutDLQ(attributes);
+        return Futures.immediateFuture(addQueueWithoutDLQ(attributes));
     }
 
     private AMQQueue<?> addQueueWithoutDLQ(Map<String, Object> attributes) throws QueueExistsException
@@ -778,34 +778,34 @@ public abstract class AbstractVirtualHost<X extends AbstractVirtualHost<X>> exte
     }
 
 
-    private ExchangeImpl addExchange(Map<String,Object> attributes)
-            throws ExchangeExistsException, ReservedExchangeNameException,
-                   NoFactoryForTypeException
-    {
-        try
-        {
-            return (ExchangeImpl) getObjectFactory().create(Exchange.class, attributes, this);
-        }
-        catch (DuplicateNameException e)
-        {
-            throw new ExchangeExistsException(String.format("Exchange with name '%s' already exists", e.getName()), getExchange(e.getName()));
-        }
-
-    }
-
     private ListenableFuture<ExchangeImpl> addExchangeAsync(Map<String,Object> attributes)
             throws ExchangeExistsException, ReservedExchangeNameException,
                    NoFactoryForTypeException
     {
-        try
-        {
-            ListenableFuture result = getObjectFactory().createAsync(Exchange.class, attributes, this);
-            return result;
-        }
-        catch (DuplicateNameException e)
-        {
-            throw new ExchangeExistsException(getExchange(e.getName()));
-        }
+        final SettableFuture<ExchangeImpl> returnVal = SettableFuture.create();
+        Futures.addCallback(getObjectFactory().createAsync(Exchange.class, attributes, this),
+                            new FutureCallback<Exchange>()
+                            {
+                                @Override
+                                public void onSuccess(final Exchange result)
+                                {
+                                    returnVal.set((ExchangeImpl) result);
+                                }
+
+                                @Override
+                                public void onFailure(final Throwable t)
+                                {
+                                    if(t instanceof DuplicateNameException)
+                                    {
+                                        returnVal.setException(new ExchangeExistsException(getExchange(((DuplicateNameException)t).getName())));
+                                    }
+                                    else
+                                    {
+                                        returnVal.setException(t);
+                                    }
+                                }
+                            });
+        return returnVal;
 
     }
 

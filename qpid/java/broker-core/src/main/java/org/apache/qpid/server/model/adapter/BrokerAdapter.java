@@ -22,6 +22,7 @@ package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +43,6 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.configuration.IllegalConfigurationException;
-import org.apache.qpid.server.configuration.updater.Task;
 import org.apache.qpid.server.logging.EventLogger;
 import org.apache.qpid.server.logging.LogRecorder;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
@@ -288,7 +288,8 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             }
         }
 
-        final boolean brokerShutdownOnErroredChild = getContextValue(Boolean.class, BROKER_FAIL_STARTUP_WITH_ERRORED_CHILD);
+        final boolean brokerShutdownOnErroredChild = getContextValue(Boolean.class,
+                                                                     BROKER_FAIL_STARTUP_WITH_ERRORED_CHILD);
         if (!_parent.isManagementMode() && brokerShutdownOnErroredChild && hasBrokerAnyErroredChildren)
         {
             throw new IllegalStateException(String.format("Broker context variable %s is set and the broker has %s children",
@@ -497,24 +498,32 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         return children;
     }
 
-    private VirtualHostNode<?> createVirtualHostNode(Map<String, Object> attributes)
+    private ListenableFuture<VirtualHostNode> createVirtualHostNodeAsync(Map<String, Object> attributes)
             throws AccessControlException, IllegalArgumentException
     {
 
-        final VirtualHostNode virtualHostNode = getObjectFactory().create(VirtualHostNode.class,attributes, this);
-
-        // permission has already been granted to create the virtual host
-        // disable further access check on other operations, e.g. create exchange
-        Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(), new PrivilegedAction<Object>()
-                            {
-                                @Override
-                                public Object run()
-                                {
-                                    virtualHostNode.start();
-                                    return null;
-                                }
-                            });
-        return virtualHostNode;
+        return doAfter(getObjectFactory().createAsync(VirtualHostNode.class, attributes, this),
+                       new CallableWithArgument<ListenableFuture<VirtualHostNode>, VirtualHostNode>()
+                       {
+                           @Override
+                           public ListenableFuture<VirtualHostNode> call(final VirtualHostNode virtualHostNode)
+                                   throws Exception
+                           {
+                               // permission has already been granted to create the virtual host
+                               // disable further access check on other operations, e.g. create exchange
+                               Subject.doAs(SecurityManager.getSubjectWithAddedSystemRights(),
+                                            new PrivilegedAction<Object>()
+                                            {
+                                                @Override
+                                                public Object run()
+                                                {
+                                                    virtualHostNode.start();
+                                                    return null;
+                                                }
+                                            });
+                               return Futures.immediateFuture(virtualHostNode);
+                           }
+                       });
     }
 
     @Override
@@ -543,74 +552,52 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
 
     @SuppressWarnings("unchecked")
     @Override
-    public <C extends ConfiguredObject> C addChild(final Class<C> childClass, final Map<String, Object> attributes, final ConfiguredObject... otherParents)
+    public <C extends ConfiguredObject> ListenableFuture<C> addChildAsync(final Class<C> childClass, final Map<String, Object> attributes, final ConfiguredObject... otherParents)
     {
-        return runTask(new Task<C>()
+        if (childClass == VirtualHostNode.class)
+        {
+            return (ListenableFuture<C>) createVirtualHostNodeAsync(attributes);
+        }
+        else if (Arrays.asList(Port.class,
+                               AccessControlProvider.class,
+                               AuthenticationProvider.class,
+                               KeyStore.class,
+                               TrustStore.class,
+                               GroupProvider.class).contains(childClass))
+        {
+            return createAndAddChangeListener(childClass, attributes);
+        }
+        else
+        {
+            return getObjectFactory().createAsync(childClass, attributes, this);
+        }
+
+
+    }
+
+    private <V extends ConfiguredObject>  ListenableFuture<V> createAndAddChangeListener(Class<V> clazz, Map<String,Object> attributes)
+    {
+        return addChangeListener(getObjectFactory().createAsync(clazz, attributes, this));
+    }
+
+    private <V extends ConfiguredObject>  ListenableFuture<V> addChangeListener(ListenableFuture<V> child)
+    {
+        return doAfter(child, new CallableWithArgument<ListenableFuture<V>, V>()
         {
             @Override
-            public C execute()
+            public ListenableFuture<V> call(final V child) throws Exception
             {
-                if (childClass == VirtualHostNode.class)
-                {
-                    return (C) createVirtualHostNode(attributes);
-                }
-                else if (childClass == Port.class)
-                {
-                    return (C) createPort(attributes);
-                }
-                else if (childClass == AccessControlProvider.class)
-                {
-                    return (C) createAccessControlProvider(attributes);
-                }
-                else if (childClass == AuthenticationProvider.class)
-                {
-                    return (C) createAuthenticationProvider(attributes);
-                }
-                else if (childClass == KeyStore.class)
-                {
-                    return (C) createKeyStore(attributes);
-                }
-                else if (childClass == TrustStore.class)
-                {
-                    return (C) createTrustStore(attributes);
-                }
-                else if (childClass == GroupProvider.class)
-                {
-                    return (C) createGroupProvider(attributes);
-                }
-                else
-                {
-                    return createChild(childClass, attributes);
-                }
+                child.addChangeListener(BrokerAdapter.this);
+                return Futures.immediateFuture(child);
             }
         });
-
-    }
-
-    /**
-     * Called when adding a new port via the management interface
-     */
-    private Port<?> createPort(Map<String, Object> attributes)
-    {
-        Port<?> port = createChild(Port.class, attributes);
-        addPort(port);
-        return port;
-    }
-
-    private void addPort(final Port<?> port)
-    {
-        port.addChangeListener(this);
-
     }
 
     private AccessControlProvider<?> createAccessControlProvider(final Map<String, Object> attributes)
     {
-        final Collection<AccessControlProvider<?>> currentProviders = getAccessControlProviders();
-        if(currentProviders != null && !currentProviders.isEmpty())
-        {
-            throw new IllegalConfigurationException("Cannot add a second AccessControlProvider");
-        }
-        AccessControlProvider<?> accessControlProvider = (AccessControlProvider<?>) createChild(AccessControlProvider.class, attributes);
+
+        AccessControlProvider<?> accessControlProvider = (AccessControlProvider<?>) (AccessControlProvider) getObjectFactory()
+                .create(AccessControlProvider.class, attributes, this);
         accessControlProvider.addChangeListener(this);
 
         return accessControlProvider;
@@ -624,97 +611,16 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         return true;
     }
 
-    private AuthenticationProvider createAuthenticationProvider(final Map<String, Object> attributes)
-    {
-        return runTask(new Task<AuthenticationProvider>()
-        {
-            @Override
-            public AuthenticationProvider execute()
-            {
-                AuthenticationProvider<?> authenticationProvider = createChild(AuthenticationProvider.class, attributes);
-                addAuthenticationProvider(authenticationProvider);
-
-                return authenticationProvider;
-            }
-        });
-    }
-
-    private <X extends ConfiguredObject> X createChild(Class<X> clazz, Map<String, Object> attributes)
-    {
-        if(!attributes.containsKey(ConfiguredObject.ID))
-        {
-            attributes = new HashMap<String, Object>(attributes);
-            attributes.put(ConfiguredObject.ID, UUID.randomUUID());
-        }
-        final X instance = (X) getObjectFactory().create(clazz,attributes, this);
-
-        return instance;
-    }
-
-    /**
-     * @throws IllegalConfigurationException if an AuthenticationProvider with the same name already exists
-     */
-    private void addAuthenticationProvider(AuthenticationProvider<?> authenticationProvider)
-    {
-        authenticationProvider.addChangeListener(this);
-    }
-
-    private GroupProvider<?> createGroupProvider(final Map<String, Object> attributes)
-    {
-        return runTask(new Task<GroupProvider<?>>()
-        {
-            @Override
-            public GroupProvider<?> execute()
-            {
-                GroupProvider<?> groupProvider = createChild(GroupProvider.class, attributes);
-                addGroupProvider(groupProvider);
-
-                return groupProvider;
-            }
-        });
-    }
-
-    private void addGroupProvider(GroupProvider<?> groupProvider)
-    {
-        groupProvider.addChangeListener(this);
-    }
-
     private boolean deleteGroupProvider(GroupProvider groupProvider)
     {
         groupProvider.removeChangeListener(this);
         return true;
     }
 
-    private KeyStore createKeyStore(Map<String, Object> attributes)
-    {
-
-        KeyStore<?> keyStore = createChild(KeyStore.class, attributes);
-
-        addKeyStore(keyStore);
-        return keyStore;
-    }
-
-    private TrustStore createTrustStore(Map<String, Object> attributes)
-    {
-        TrustStore trustStore = createChild(TrustStore.class, attributes);
-        addTrustStore(trustStore);
-        return trustStore;
-    }
-
-    private void addKeyStore(KeyStore keyStore)
-    {
-        keyStore.addChangeListener(this);
-    }
-
     private boolean deleteKeyStore(KeyStore keyStore)
     {
         keyStore.removeChangeListener(this);
         return true;
-    }
-
-    private void addTrustStore(TrustStore trustStore)
-    {
-        trustStore.addChangeListener(this);
     }
 
     private boolean deleteTrustStore(TrustStore trustStore)
@@ -738,11 +644,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             authenticationProvider.removeChangeListener(this);
         }
         return true;
-    }
-
-    private void addVirtualHostNode(VirtualHostNode<?> virtualHostNode)
-    {
-        virtualHostNode.addChangeListener(this);
     }
 
 

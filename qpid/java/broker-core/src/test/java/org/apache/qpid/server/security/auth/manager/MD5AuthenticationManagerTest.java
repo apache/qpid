@@ -23,6 +23,7 @@ package org.apache.qpid.server.security.auth.manager;
 import javax.security.sasl.SaslServer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.qpid.server.model.User;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
@@ -89,13 +90,13 @@ public class MD5AuthenticationManagerTest extends ManagedAuthenticationManagerTe
         return  getAuthManager().authenticate(ss, response);
     }
 
-    private User createUser(String userName, String userPassword)
+    private User createUser(String userName, String userPassword) throws ExecutionException, InterruptedException
     {
         final Map<String, Object> childAttrs = new HashMap<String, Object>();
 
         childAttrs.put(User.NAME, userName);
         childAttrs.put(User.PASSWORD, userPassword);
-        User user = getAuthManager().addChild(User.class, childAttrs);
+        User user = getAuthManager().addChildAsync(User.class, childAttrs).get();
         assertNotNull("User should be created but addChild returned null", user);
         assertEquals(userName, user.getName());
         return user;
