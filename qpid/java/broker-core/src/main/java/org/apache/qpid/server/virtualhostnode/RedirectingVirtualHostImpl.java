@@ -350,6 +350,12 @@ class RedirectingVirtualHostImpl
     }
 
     @Override
+    public long getTargetSize()
+    {
+        return 0l;
+    }
+
+    @Override
     public long getTotalQueueDepthBytes()
     {
         return 0l;
