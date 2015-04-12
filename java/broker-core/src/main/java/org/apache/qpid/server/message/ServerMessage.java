@@ -54,7 +54,7 @@ public interface ServerMessage<T extends StorableMessageMetaData> extends Enqueu
 
     public int getContent(ByteBuffer buf, int offset);
 
-    public ByteBuffer getContent(int offset, int size);
+    ByteBuffer getContent(int offset, int size);
 
     Object getConnectionReference();
 }

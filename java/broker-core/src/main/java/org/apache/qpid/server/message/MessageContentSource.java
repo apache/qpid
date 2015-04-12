@@ -25,8 +25,8 @@ import java.nio.ByteBuffer;
 
 public interface MessageContentSource
 {
-    public int getContent(ByteBuffer buf, int offset);
-    public ByteBuffer getContent(int offset, int size);
+    int getContent(ByteBuffer buf, int offset);
+    ByteBuffer getContent(int offset, int size);
 
     long getSize();
 }
