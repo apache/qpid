@@ -22,7 +22,6 @@ package org.apache.qpid.server.model.adapter;
 
 import java.security.AccessControlException;
 import java.security.PrivilegedAction;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -57,7 +56,7 @@ import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.util.SystemUtils;
 
-public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> implements Broker<BrokerAdapter>, ConfigurationChangeListener, StatisticsGatherer
+public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> implements Broker<BrokerAdapter>, StatisticsGatherer
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(BrokerAdapter.class);
 
@@ -274,10 +273,8 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         {
             final Collection<? extends ConfiguredObject> children = getChildren(childClass);
             if (children != null) {
-                for (final ConfiguredObject<?> child : children) {
-
-                    child.addChangeListener(this);
-
+                for (final ConfiguredObject<?> child : children)
+                {
                     if (child.getState() == State.ERRORED )
                     {
                         hasBrokerAnyErroredChildren = true;
@@ -558,99 +555,12 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
         {
             return (ListenableFuture<C>) createVirtualHostNodeAsync(attributes);
         }
-        else if (Arrays.asList(Port.class,
-                               AccessControlProvider.class,
-                               AuthenticationProvider.class,
-                               KeyStore.class,
-                               TrustStore.class,
-                               GroupProvider.class).contains(childClass))
-        {
-            return createAndAddChangeListener(childClass, attributes);
-        }
         else
         {
             return getObjectFactory().createAsync(childClass, attributes, this);
         }
 
 
-    }
-
-    private <V extends ConfiguredObject>  ListenableFuture<V> createAndAddChangeListener(Class<V> clazz, Map<String,Object> attributes)
-    {
-        return addChangeListener(getObjectFactory().createAsync(clazz, attributes, this));
-    }
-
-    private <V extends ConfiguredObject>  ListenableFuture<V> addChangeListener(ListenableFuture<V> child)
-    {
-        return doAfter(child, new CallableWithArgument<ListenableFuture<V>, V>()
-        {
-            @Override
-            public ListenableFuture<V> call(final V child) throws Exception
-            {
-                child.addChangeListener(BrokerAdapter.this);
-                return Futures.immediateFuture(child);
-            }
-        });
-    }
-
-    private AccessControlProvider<?> createAccessControlProvider(final Map<String, Object> attributes)
-    {
-
-        AccessControlProvider<?> accessControlProvider = (AccessControlProvider<?>) (AccessControlProvider) getObjectFactory()
-                .create(AccessControlProvider.class, attributes, this);
-        accessControlProvider.addChangeListener(this);
-
-        return accessControlProvider;
-
-    }
-
-    private boolean deleteAccessControlProvider(AccessControlProvider<?> accessControlProvider)
-    {
-        accessControlProvider.removeChangeListener(this);
-
-        return true;
-    }
-
-    private boolean deleteGroupProvider(GroupProvider groupProvider)
-    {
-        groupProvider.removeChangeListener(this);
-        return true;
-    }
-
-    private boolean deleteKeyStore(KeyStore keyStore)
-    {
-        keyStore.removeChangeListener(this);
-        return true;
-    }
-
-    private boolean deleteTrustStore(TrustStore trustStore)
-    {
-        trustStore.removeChangeListener(this);
-        return true;
-
-    }
-
-    private boolean deletePort(State oldState, Port port)
-    {
-        port.removeChangeListener(this);
-
-        return port != null;
-    }
-
-    private boolean deleteAuthenticationProvider(AuthenticationProvider<?> authenticationProvider)
-    {
-        if(authenticationProvider != null)
-        {
-            authenticationProvider.removeChangeListener(this);
-        }
-        return true;
-    }
-
-
-    private boolean deleteVirtualHostNode(final VirtualHostNode virtualHostNode) throws AccessControlException, IllegalStateException
-    {
-        virtualHostNode.removeChangeListener(this);
-        return true;
     }
 
     @Override
@@ -662,78 +572,6 @@ public class BrokerAdapter extends AbstractConfiguredObject<BrokerAdapter> imple
             _reportingTimer.cancel();
         }
     }
-
-    @Override
-    public void stateChanged(ConfiguredObject object, State oldState, State newState)
-    {
-        if(newState == State.DELETED)
-        {
-            boolean childDeleted = false;
-            if(object instanceof AuthenticationProvider)
-            {
-                childDeleted = deleteAuthenticationProvider((AuthenticationProvider)object);
-            }
-            else if(object instanceof AccessControlProvider)
-            {
-                childDeleted = deleteAccessControlProvider((AccessControlProvider)object);
-            }
-            else if(object instanceof Port)
-            {
-                childDeleted = deletePort(oldState, (Port)object);
-            }
-            else if(object instanceof VirtualHostNode)
-            {
-                childDeleted = deleteVirtualHostNode((VirtualHostNode)object);
-            }
-            else if(object instanceof GroupProvider)
-            {
-                childDeleted = deleteGroupProvider((GroupProvider)object);
-            }
-            else if(object instanceof KeyStore)
-            {
-                childDeleted = deleteKeyStore((KeyStore)object);
-            }
-            else if(object instanceof TrustStore)
-            {
-                childDeleted = deleteTrustStore((TrustStore)object);
-            }
-
-            if(childDeleted)
-            {
-                childRemoved(object);
-            }
-        }
-    }
-
-    @Override
-    public void childAdded(ConfiguredObject object, ConfiguredObject child)
-    {
-        // no-op
-    }
-
-    @Override
-    public void childRemoved(ConfiguredObject object, ConfiguredObject child)
-    {
-        // no-op
-    }
-
-    @Override
-    public void attributeSet(ConfiguredObject object, String attributeName, Object oldAttributeValue, Object newAttributeValue)
-    {
-    }
-
-    private void addPlugin(ConfiguredObject<?> plugin)
-    {
-        plugin.addChangeListener(this);
-    }
-
-
-    private Collection<ConfiguredObject<?>> getPlugins()
-    {
-        Collection children = getChildren(Plugin.class);
-        return children;
-    }
-
     @Override
     public SecurityManager getSecurityManager()
     {
