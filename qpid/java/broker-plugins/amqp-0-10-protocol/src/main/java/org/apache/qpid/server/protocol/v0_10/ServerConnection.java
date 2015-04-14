@@ -396,7 +396,8 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
             {
                 if(!isClosing())
                 {
-                    closeSubscriptions();
+                    markAllSessionsClosed();
+
                     performDeleteTasks();
 
                     setState(CLOSING);
@@ -579,6 +580,16 @@ public class ServerConnection extends Connection implements AMQConnectionModel<S
         for (Session ssn : getChannels())
         {
             ((ServerSession)ssn).unregisterSubscriptions();
+        }
+    }
+
+    private void markAllSessionsClosed()
+    {
+        for (Session ssn :  getChannels())
+        {
+            final ServerSession session = (ServerSession) ssn;
+            ((ServerSession) ssn).setClose(true);
+            session.closed();
         }
     }
 
