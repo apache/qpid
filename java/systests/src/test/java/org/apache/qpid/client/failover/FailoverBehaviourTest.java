@@ -26,6 +26,7 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionListener;
+import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.FailoverPolicy;
 import org.apache.qpid.test.utils.FailoverBaseCase;
 import org.apache.qpid.url.URLSyntaxException;
@@ -50,6 +51,7 @@ import javax.naming.NamingException;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -962,7 +964,7 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
         AMQConnection connection = null;
         try
         {
-            connection = createConnectionWithFailover();
+            connection = createConnectionWithFailover(Collections.singletonMap(ConnectionURL.OPTIONS_SYNC_PUBLISH, "all"));
 
             final Session producerSession = connection.createSession(true, Session.SESSION_TRANSACTED);
             final Queue queue = createAndBindQueueWithFlowControlEnabled(producerSession, getTestQueueName(), DEFAULT_MESSAGE_SIZE * 3, DEFAULT_MESSAGE_SIZE * 2);
@@ -1037,7 +1039,12 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
 
     private AMQConnection createConnectionWithFailover() throws NamingException, JMSException, URLSyntaxException
     {
-        BrokerDetails origBrokerDetails = ((AMQConnectionFactory) getConnectionFactory("default")).getConnectionURL().getBrokerDetails(0);
+        return createConnectionWithFailover(null);
+    }
+
+    private AMQConnection createConnectionWithFailover(Map<String,String> connectionOptions) throws NamingException, JMSException, URLSyntaxException
+    {
+        BrokerDetails origBrokerDetails =  getConnectionFactory("default").getConnectionURL().getBrokerDetails(0);
 
         String retries = "200";
         String connectdelay = "1000";
@@ -1049,6 +1056,13 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
         String newUrl = String.format(newUrlFormat, origBrokerDetails.getHost(), origBrokerDetails.getPort(),
                                                     retries, connectdelay, cycleCount);
 
+        if (connectionOptions != null)
+        {
+            for (Map.Entry<String,String> option: connectionOptions.entrySet())
+            {
+                newUrl+= "&" + option.getKey() + "='" + option.getValue() + "'";
+            }
+        }
         ConnectionFactory connectionFactory = new AMQConnectionFactory(newUrl);
         AMQConnection connection = (AMQConnection) connectionFactory.createConnection("admin", "admin");
         connection.setConnectionListener(this);
