@@ -400,7 +400,12 @@ void Session::attach(pn_link_t* link)
             pn_terminus_set_address(pn_link_source(link), name.c_str());
         }
 
-        setupOutgoing(link, source, name);
+        try {
+            setupOutgoing(link, source, name);
+        } catch (const std::exception&) {
+            pn_terminus_set_type(pn_link_source(link), PN_UNSPECIFIED);
+            throw;
+        }
     } else {
         pn_terminus_t* target = pn_link_remote_target(link);
         std::string name;
@@ -422,7 +427,12 @@ void Session::attach(pn_link_t* link)
             pn_terminus_set_address(pn_link_target(link), name.c_str());
         }
 
-        setupIncoming(link, target, name);
+        try {
+            setupIncoming(link, target, name);
+        } catch (const std::exception&) {
+            pn_terminus_set_type(pn_link_target(link), PN_UNSPECIFIED);
+            throw;
+        }
     }
 }
 
