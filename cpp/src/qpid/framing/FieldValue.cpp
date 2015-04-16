@@ -21,14 +21,44 @@
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/Array.h"
 #include "qpid/framing/Buffer.h"
-#include "qpid/framing/Endian.h"
 #include "qpid/framing/List.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/framing/Endian.h"
 #include "qpid/Msg.h"
 
 namespace qpid {
 namespace framing {
+
+// Some template magic for computing types from sizes.
+template<int W> struct IntType{};
+template<> struct IntType<1> { typedef int8_t Type; };
+template<> struct IntType<2> { typedef int16_t Type; };
+template<> struct IntType<4> { typedef int32_t Type; };
+template<> struct IntType<8> { typedef int64_t Type; };
+
+template<int W> struct UintType{};
+template<> struct UintType<1> { typedef uint8_t Type; };
+template<> struct UintType<2> { typedef uint16_t Type; };
+template<> struct UintType<4> { typedef uint32_t Type; };
+template<> struct UintType<8> { typedef uint64_t Type; };
+
+template<int W> struct FloatType{};
+template<> struct FloatType<1> { typedef int8_t Type; }; // Dummy, never used.
+template<> struct FloatType<2> { typedef int16_t Type; }; // Dummy, never used.
+template<> struct FloatType<4> { typedef float Type; };
+template<> struct FloatType<8> { typedef double Type; };
+
+// Construct the right subclass of FixedWidthValue for numeric types using width and kind.
+// Kind 1=int, 2=unsigned int, 3=float
+template<int W> FixedWidthValue<W>* numericFixedWidthValue(uint8_t kind) {
+    switch (kind) {
+      case 1: return new FixedWidthIntValue<typename IntType<W>::Type>();
+      case 2: return new FixedWidthIntValue<typename UintType<W>::Type>();
+      case 3: return new FixedWidthFloatValue<typename FloatType<W>::Type>();
+      default: return new FixedWidthValue<W>();
+    }
+}
 
 uint8_t FieldValue::getType() const
 {
@@ -47,20 +77,22 @@ void FieldValue::setType(uint8_t type)
     } else if (typeOctet == 0x48) {
         data.reset(new UuidData());
     } else {
+        uint8_t kind = typeOctet & 0xF;
         uint8_t lenType = typeOctet >> 4;
         switch(lenType){
           case 0:
-            data.reset(new FixedWidthValue<1>());
+            data.reset(numericFixedWidthValue<1>(kind));
             break;
           case 1:
-            data.reset(new FixedWidthValue<2>());
+            data.reset(numericFixedWidthValue<2>(kind));
             break;
           case 2:
-            data.reset(new FixedWidthValue<4>());
+            data.reset(numericFixedWidthValue<4>(kind));
             break;
           case 3:
-            data.reset(new FixedWidthValue<8>());
+            data.reset(numericFixedWidthValue<8>(kind));
             break;
+            // None of the remaining widths can be numeric types so just use new FixedWidthValue
           case 4:
             data.reset(new FixedWidthValue<16>());
             break;
@@ -157,28 +189,28 @@ Struct32Value::Struct32Value(const std::string& v) :
 {}
 
 IntegerValue::IntegerValue(int v) :
-    FieldValue(0x21, new FixedWidthValue<4>(v))
+    FieldValue(0x21, new FixedWidthIntValue<int32_t>(v))
 {}
 
 FloatValue::FloatValue(float v) :
-    FieldValue(0x23, new FixedWidthValue<4>(Endian::convertIfRequired(reinterpret_cast<uint8_t*>(&v), 4)))
+    FieldValue(0x23, new FixedWidthFloatValue<float>(v))
 {}
 
 DoubleValue::DoubleValue(double v) :
-    FieldValue(0x33, new FixedWidthValue<8>(Endian::convertIfRequired(reinterpret_cast<uint8_t*>(&v), 8)))
+    FieldValue(0x33, new FixedWidthFloatValue<double>(v))
 {}
 
 Integer64Value::Integer64Value(int64_t v) :
-    FieldValue(0x31, new FixedWidthValue<8>(v))
+    FieldValue(0x31, new FixedWidthIntValue<int64_t>(v))
 {}
 
 Unsigned64Value::Unsigned64Value(uint64_t v) :
-    FieldValue(0x32, new FixedWidthValue<8>(v))
+    FieldValue(0x32, new FixedWidthIntValue<uint64_t>(v))
 {}
 
 
 TimeValue::TimeValue(uint64_t v) :
-    FieldValue(0x38, new FixedWidthValue<8>(v))
+    FieldValue(0x38, new FixedWidthIntValue<uint64_t>(v))
 {
 }
 
@@ -197,24 +229,24 @@ ArrayValue::ArrayValue(const Array& a) : FieldValue(0xaa, new EncodedValue<Array
 VoidValue::VoidValue() : FieldValue(0xf0, new FixedWidthValue<0>()) {}
 
 BoolValue::BoolValue(bool b) :
-    FieldValue(0x08, new FixedWidthValue<1>(b))
+    FieldValue(0x08, new FixedWidthIntValue<bool>(b))
 {}
 
 Unsigned8Value::Unsigned8Value(uint8_t v) :
-    FieldValue(0x02, new FixedWidthValue<1>(v))
+    FieldValue(0x02, new FixedWidthIntValue<uint8_t>(v))
 {}
 Unsigned16Value::Unsigned16Value(uint16_t v) :
-    FieldValue(0x12, new FixedWidthValue<2>(v))
+    FieldValue(0x12, new FixedWidthIntValue<uint16_t>(v))
 {}
 Unsigned32Value::Unsigned32Value(uint32_t v) :
-    FieldValue(0x22, new FixedWidthValue<4>(v))
+    FieldValue(0x22, new FixedWidthIntValue<uint32_t>(v))
 {}
 
 Integer8Value::Integer8Value(int8_t v) :
-    FieldValue(0x01, new FixedWidthValue<1>(v))
+    FieldValue(0x01, new FixedWidthIntValue<int8_t>(v))
 {}
 Integer16Value::Integer16Value(int16_t v) :
-    FieldValue(0x11, new FixedWidthValue<2>(v))
+    FieldValue(0x11, new FixedWidthIntValue<int16_t>(v))
 {}
 
 UuidData::UuidData() {}
@@ -230,11 +262,6 @@ void FieldValue::print(std::ostream& out) const {
     else if (data->convertsToInt()) out << data->getInt();
     else data->print(out);
     out << ')';
-}
-
-uint8_t* FieldValue::convertIfRequired(uint8_t* octets, int width)
-{
-    return Endian::convertIfRequired(octets, width);
 }
 
 }}
