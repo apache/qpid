@@ -176,19 +176,19 @@ QPID_AUTO_TEST_CASE(testFloatAndDouble)
         Buffer rbuffer(buff, 100);
         FieldTable a;
         rbuffer.get(a);
-        BOOST_CHECK(string("abc") == a.getAsString("string"));
-        BOOST_CHECK(5672 == a.getAsInt("int"));
+        BOOST_CHECK_EQUAL(string("abc"), a.getAsString("string"));
+        BOOST_CHECK_EQUAL(5672, a.getAsInt("int"));
         float f2;
         BOOST_CHECK(!a.getFloat("string", f2));
         BOOST_CHECK(!a.getFloat("int", f2));
         BOOST_CHECK(a.getFloat("float", f2));
-        BOOST_CHECK(f2 == f);
+        BOOST_CHECK_EQUAL(f2, f);
 
         double d2;
         BOOST_CHECK(!a.getDouble("string", d2));
         BOOST_CHECK(!a.getDouble("int", d2));
         BOOST_CHECK(a.getDouble("double", d2));
-        BOOST_CHECK(d2 == d);
+        BOOST_CHECK_EQUAL(d2, d);
     }
 }
 

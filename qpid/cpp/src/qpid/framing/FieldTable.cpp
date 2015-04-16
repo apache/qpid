@@ -21,7 +21,6 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/Array.h"
 #include "qpid/framing/Buffer.h"
-#include "qpid/framing/Endian.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/reply_exceptions.h"

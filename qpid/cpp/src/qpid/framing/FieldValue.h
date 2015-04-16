@@ -25,6 +25,7 @@
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/framing/Endian.h"
 #include "qpid/CommonImportExport.h"
 
 #include <iostream>
@@ -66,15 +67,17 @@ class QPID_COMMON_CLASS_EXTERN FieldValue {
      */
     class Data {
       public:
-        virtual ~Data() {};
+        virtual ~Data() {}
         virtual uint32_t encodedSize() const = 0;
         virtual void encode(Buffer& buffer) = 0;
         virtual void decode(Buffer& buffer) = 0;
         virtual bool operator==(const Data&) const = 0;
 
         virtual bool convertsToInt() const { return false; }
+        virtual bool convertsToFloat() const { return false; }
         virtual bool convertsToString() const { return false; }
         virtual int64_t getInt() const { throw InvalidConversionException();}
+        virtual double getFloat() const { throw InvalidConversionException();}
         virtual std::string getString() const { throw InvalidConversionException(); }
 
         virtual void print(std::ostream& out) const = 0;
@@ -106,8 +109,6 @@ class QPID_COMMON_CLASS_EXTERN FieldValue {
   protected:
     FieldValue(uint8_t t, Data* d): typeOctet(t), data(d) {}
 
-    QPID_COMMON_EXTERN static uint8_t* convertIfRequired(uint8_t* octets, int width);
-
   private:
     uint8_t typeOctet;
     std::auto_ptr<Data> data;
@@ -123,10 +124,22 @@ template <>
 inline bool FieldValue::convertsTo<std::string>() const { return data->convertsToString(); }
 
 template <>
+inline bool FieldValue::convertsTo<float>() const { return data->convertsToFloat(); }
+
+template <>
+inline bool FieldValue::convertsTo<double>() const { return data->convertsToFloat(); }
+
+template <>
 inline int FieldValue::get<int>() const { return static_cast<int>(data->getInt()); }
 
 template <>
 inline int64_t FieldValue::get<int64_t>() const { return data->getInt(); }
+
+template <>
+inline float FieldValue::get<float>() const { return data->getFloat(); }
+
+template <>
+inline double FieldValue::get<double>() const { return data->getFloat(); }
 
 template <>
 inline std::string FieldValue::get<std::string>() const { return data->getString(); }
@@ -138,22 +151,14 @@ inline std::ostream& operator<<(std::ostream& out, const FieldValue& v) {
 
 template <int width>
 class FixedWidthValue : public FieldValue::Data {
+  protected:
     uint8_t octets[width];
 
   public:
     FixedWidthValue() {}
     FixedWidthValue(const uint8_t (&data)[width]) : octets(data) {}
-    FixedWidthValue(const uint8_t* const data)
-    {
-        for (int i = 0; i < width; i++) octets[i] = data[i];
-    }
-    FixedWidthValue(uint64_t v)
-    {
-        for (int i = width; i > 1; --i) {
-            octets[i-1] = (uint8_t) (0xFF & v); v >>= 8;
-        }
-        octets[0] = (uint8_t) (0xFF & v);
-    }
+    FixedWidthValue(const uint8_t* const data) { std::copy(data, data + width, octets); }
+
     uint32_t encodedSize() const { return width; }
     void encode(Buffer& buffer) { buffer.putRawData(octets, width); }
     void decode(Buffer& buffer) { buffer.getRawData(octets, width); }
@@ -162,22 +167,36 @@ class FixedWidthValue : public FieldValue::Data {
         if (rhs == 0) return false;
         else return std::equal(&octets[0], &octets[width], &rhs->octets[0]);
     }
-
-    bool convertsToInt() const { return true; }
-    int64_t getInt() const
-    {
-        int64_t v = 0;
-        for (int i = 0; i < width-1; ++i) {
-            v |= octets[i]; v <<= 8;
-        }
-        v |= octets[width-1];
-        return v;
-    }
     uint8_t* rawOctets() { return octets; }
     const uint8_t* rawOctets() const { return octets; }
 
     void print(std::ostream& o) const { o << "F" << width << ":"; };
 };
+
+template <class T> class FixedWidthIntValue : public FixedWidthValue<sizeof(T)> {
+  public:
+    FixedWidthIntValue(T v = 0) { endian::encodeInt(this->octets, v); }
+    bool convertsToInt() const { return true; }
+    int64_t getInt() const { return endian::decodeInt<T>(this->octets); }
+    bool convertsToFloat() const { return true; }
+    double getFloat() const { return getInt(); }
+};
+
+template <class T> class FixedWidthFloatValue : public FixedWidthValue<sizeof(T)> {
+  public:
+    FixedWidthFloatValue(T v = 0) { endian::encodeFloat(this->octets, v); }
+    bool convertsToFloat() const { return true; }
+    double getFloat() const { return endian::decodeFloat<T>(this->octets); }
+};
+
+// Dummy implementations that are never used but needed to avoid compile errors.
+template <> class FixedWidthFloatValue<uint8_t> : public FixedWidthValue<1> {
+    FixedWidthFloatValue() { assert(0); }
+};
+template <> class FixedWidthFloatValue<uint16_t> : public FixedWidthValue<2> {
+    FixedWidthFloatValue() { assert(0); }
+};
+
 
 class UuidData : public FixedWidthValue<16> {
   public:
@@ -192,13 +211,7 @@ inline T FieldValue::getIntegerValue() const
 {
     FixedWidthValue<W>* const fwv = dynamic_cast< FixedWidthValue<W>* const>(data.get());
     if (fwv) {
-        uint8_t* octets = fwv->rawOctets();
-        T v = 0;
-        for (int i = 0; i < W-1; ++i) {
-            v |= octets[i]; v <<= 8;
-        }
-        v |= octets[W-1];
-        return v;
+        return endian::decodeInt<T>(fwv->rawOctets());
     } else {
         throw InvalidConversionException();
     }
@@ -218,14 +231,9 @@ inline T FieldValue::getIntegerValue() const
 
 template <class T, int W>
 inline T FieldValue::getFloatingPointValue() const {
-    const FixedWidthValue<W>* fwv = dynamic_cast<FixedWidthValue<W>*>(data.get());
-    if (fwv) {
-        T value;
-        uint8_t* target = reinterpret_cast<uint8_t*>(&value);
-        const uint8_t* octets = fwv->rawOctets();
-        std::copy(octets, octets + W, target);
-        convertIfRequired(target, W);
-        return value;
+    const FixedWidthFloatValue<T>* fv = dynamic_cast<FixedWidthFloatValue<T>*>(data.get());
+    if (fv) {
+        return endian::decodeFloat<T>(fv->rawOctets());
     } else {
         throw InvalidConversionException();
     }
@@ -235,20 +243,10 @@ template <int W> void FieldValue::getFixedWidthValue(unsigned char* value) const
 {
     FixedWidthValue<W>* const fwv = dynamic_cast< FixedWidthValue<W>* const>(data.get());
     if (fwv) {
-        for (size_t i = 0; i < W; ++i) value[i] = fwv->rawOctets()[i];
+        std::copy(fwv->rawOctets(), fwv->rawOctets() + W, value);
     } else {
         throw InvalidConversionException();
     }
-}
-
-template <>
-inline float FieldValue::get<float>() const {
-    return getFloatingPointValue<float, 4>();
-}
-
-template <>
-inline double FieldValue::get<double>() const {
-    return getFloatingPointValue<double, 8>();
 }
 
 template <>

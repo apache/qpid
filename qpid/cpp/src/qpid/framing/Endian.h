@@ -26,21 +26,53 @@
 
 namespace qpid {
 namespace framing {
+namespace endian {
 
-/**
- * Conversion utility for little-endian platforms that need to convert
- * to and from network ordered octet sequences
- */
-class Endian
-{
-  public:
-    static uint8_t* convertIfRequired(uint8_t* octets, int width);
-  private:
-    const bool littleEndian;
-    Endian();
-    static const Endian instance;
-    static bool testBigEndian();
-};
-}} // namespace qpid::framing
+/** Decode integer from network byte order buffer to type T, buffer must be at least sizeof(T). */
+template <class T> T decodeInt(const uint8_t* buffer) {
+    T v = buffer[0];
+    for (size_t i = 1; i < sizeof(T); ++i) {
+        v <<= 8;
+        v |= buffer[i];
+    }
+    return v;
+}
+
+/** Encode integer value to network byte order in buffer, buffer must be at least sizeof(T). */
+template <class T> void encodeInt(uint8_t* buffer, T value) {
+    for (size_t i = sizeof(T); i > 0; --i) {
+        buffer[i-1] = value & 0XFF;
+        value >>= 8;
+    }
+}
+
+// Compute the int type that can hold a float type.
+template <class T> struct IntBox { typedef T Type; };
+template <> struct IntBox<float> { typedef uint32_t  Type; };
+template <> struct IntBox<double> { typedef  uint64_t Type; };
+
+/** Decode floating from network byte order buffer to type T, buffer must be at least sizeof(T). */
+template <class T> T decodeFloat(const uint8_t* buffer) {
+    typedef typename IntBox<T>::Type Box;
+    union { T f; Box i; } u;
+    u.i = decodeInt<Box>(buffer);
+    return u.f;
+}
+
+/** Encode floating value to network byte order in buffer, buffer must be at least sizeof(T). */
+template <class T> void encodeFloat(uint8_t* buffer, T value) {
+    typedef typename IntBox<T>::Type Box;
+    union { T f; Box i; } u;
+    u.f = value;
+    encodeInt(buffer, u.i);
+}
+
+}}} // namespace qpid::framing::endian
 
 #endif  /*!QPID_FRAMING_ENDIAN_H*/
+
+
+
+
+
+
