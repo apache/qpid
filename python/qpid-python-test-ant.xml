@@ -46,7 +46,7 @@
 
     <!-- Time to wait for socket to be bound -->
     <property name="ensurefree.maxwait" value="1000"/>
-    <property name="start.maxwait" value="10000"/>
+    <property name="start.maxwait" value="20000"/>
     <property name="stop.maxwait" value="10000"/>
     <property name="socket.checkevery" value="1000"/>
 
@@ -79,6 +79,11 @@
         </exec>
 
         <await-port-bound port="${qpid.port}" maxwait="${start.maxwait}" checkevery="${socket.checkevery}" timeoutproperty="start.timeout"/>
+        <antcall target="wait-for-broker-ready"/>
+    </target>
+
+    <target name="wait-for-broker-ready" if="java.broker">
+        <await-broker-log path="${test.work.dir}/log/qpid.log" entry="BRK-1004" maxwait="${start.maxwait}" checkevery="${socket.checkevery}" timeoutproperty="start.timeout"/>
     </target>
 
     <target name="stop-broker" depends="init">
@@ -150,7 +155,7 @@
         <attribute name="timeoutproperty"/>
         <attribute name="port"/>
         <sequential>
-            <waitfor maxwait="@{maxwait}" maxwaitunit="millisecond" checkevery="@{checkevery}" checkeveryunit="millisecond" timeoutproperty="@timeoutproperty">
+            <waitfor maxwait="@{maxwait}" maxwaitunit="millisecond" checkevery="@{checkevery}" checkeveryunit="millisecond" timeoutproperty="@{timeoutproperty}">
                 <not>
                     <socket server="localhost" port="@{port}"/>
                 </not>
@@ -164,9 +169,24 @@
         <attribute name="timeoutproperty"/>
         <attribute name="port"/>
         <sequential>
-            <waitfor maxwait="@{maxwait}" maxwaitunit="millisecond" checkevery="@{checkevery}" checkeveryunit="millisecond" timeoutproperty="@timeoutproperty">
+            <waitfor maxwait="@{maxwait}" maxwaitunit="millisecond" checkevery="@{checkevery}" checkeveryunit="millisecond" timeoutproperty="@{timeoutproperty}">
                 <socket server="localhost" port="@{port}"/>
             </waitfor>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="await-broker-log">
+        <attribute name="maxwait"/>
+        <attribute name="checkevery"/>
+        <attribute name="timeoutproperty"/>
+        <attribute name="entry"/>
+        <attribute name="path"/>
+        <sequential>
+            <echo message="Waiting for entry '@{entry}' in '@{path}' "/>
+            <waitfor maxwait="@{maxwait}" maxwaitunit="millisecond" checkevery="@{checkevery}" checkeveryunit="millisecond" timeoutproperty="@{timeoutproperty}">
+                <resourcecontains resource="@{path}" substring="@{entry}"/>
+            </waitfor>
+            <echo message="Timeout @{timeoutproperty}"/>
         </sequential>
     </macrodef>
 </project>
