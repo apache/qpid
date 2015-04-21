@@ -249,7 +249,7 @@ class RouteManager:
             added = False
             links = self.qmf.getObjects(_class="link")
             for link in links:
-                url = BrokerURL(host=link.host, port=link.port)
+                url = BrokerURL(host=link.host, port=link.port, user=self.broker.saslUser, password=self.broker.authUser)
                 if url.name() not in self.brokerList:
                     print "    %s..." % url.name(),
                     try:
