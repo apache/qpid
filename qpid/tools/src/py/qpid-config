@@ -48,6 +48,7 @@ Usage:  qpid-config [OPTIONS]
         qpid-config [OPTIONS] add <type> <name> [--argument <property-name>=<property-value>]
         qpid-config [OPTIONS] del <type> <name>
         qpid-config [OPTIONS] list <type> [--show-property <property-name>]
+        qpid-config [OPTIONS] log [<logstring>]
         qpid-config [OPTIONS] shutdown"""
 
 description = """
@@ -78,6 +79,10 @@ Replication levels:
     none           - no replication
     configuration  - replicate queue and exchange existence and bindings, but not messages.
     all            - replicate configuration and messages
+
+Log <logstring> value:
+
+    Comma separated <module>:<level> pairs, e.g. 'info+,debug+:Broker,trace+:Queue'
 """
 
 REPLICATE_LEVELS= ["none", "configuration", "all"]
@@ -824,6 +829,10 @@ def main(argv=None):
                 headers = [Header(a) for a in desired]
                 rows = [tuple([_clean_ref(o.get(a, "n/a")) for a in desired]) for o in objects]
                 display.formattedTable("Objects of type '%s'" % modifier, headers, rows)
+            elif cmd == "log" and len (args) == 1:
+                print "Log level:", bm.broker.getLogLevel()["level"]
+            elif cmd == "log" and len (args) == 2:
+                bm.broker.setLogLevel(args[1])
             elif cmd == "shutdown":
                 try:
                     bm.broker._method("shutdown", {})

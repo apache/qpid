@@ -160,21 +160,23 @@ void Logger::add(Statement& s) {
 }
 
 void Logger::configure(const Options& opts) {
-    options = opts;
     clear();
     Options o(opts);
     if (o.trace)
         o.selectors.push_back("trace+");
     format(o);
     select(Selector(o));
+    options = opts;
     setPrefix(opts.prefix);
     options.sinkOptions->setup(this);
 }
 
 void Logger::reconfigure(const std::vector<std::string>& selectors) {
-    options.selectors = selectors;
-    options.deselectors.clear();
-    select(Selector(options));
+    Options o(options);
+    o.selectors = selectors;
+    o.deselectors.clear();
+    select(Selector(o));
+    options = o;                // Don't update options till selectors has been validated.
 }
 
 void Logger::setPrefix(const std::string& p) { prefix = p; }
