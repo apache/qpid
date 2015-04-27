@@ -47,7 +47,7 @@ class BrokerAgent(object):
     """
     self.sess.close()
 
-  def _method(self, method, arguments, addr="org.apache.qpid.broker:broker:amqp-broker", timeout=10):
+  def _method(self, method, arguments=None, addr="org.apache.qpid.broker:broker:amqp-broker", timeout=10):
     props = {'method'             : 'request',
              'qmf.opcode'         : '_method_request',
              'x-amqp-0-10.app-id' : 'qmf2'}
@@ -56,7 +56,7 @@ class BrokerAgent(object):
 
     content = {'_object_id'   : {'_object_name' : addr},
                '_method_name' : method,
-               '_arguments'   : arguments}
+               '_arguments'   : arguments or {}}
 
     message = self.message_class(
       content, reply_to=self.reply_to, correlation_id=correlator,
