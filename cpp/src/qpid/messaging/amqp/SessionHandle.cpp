@@ -84,26 +84,14 @@ void SessionHandle::sync(bool block)
 
 qpid::messaging::Sender SessionHandle::createSender(const qpid::messaging::Address& address)
 {
-    boost::shared_ptr<SenderContext> sender = session->createSender(address, connection->setToOnSend);
-    try {
-        connection->attach(session, sender);
-        return qpid::messaging::Sender(new SenderHandle(connection, session, sender));
-    } catch (...) {
-        session->removeSender(sender->getName());
-        throw;
-    }
+    boost::shared_ptr<SenderContext> sender = connection->createSender(session, address);
+    return qpid::messaging::Sender(new SenderHandle(connection, session, sender));
 }
 
 qpid::messaging::Receiver SessionHandle::createReceiver(const qpid::messaging::Address& address)
 {
-    boost::shared_ptr<ReceiverContext> receiver = session->createReceiver(address);
-    try {
-        connection->attach(session, receiver);
-        return qpid::messaging::Receiver(new ReceiverHandle(connection, session, receiver));
-    } catch (...) {
-        session->removeReceiver(receiver->getName());
-        throw;
-    }
+    boost::shared_ptr<ReceiverContext> receiver = connection->createReceiver(session, address);
+    return qpid::messaging::Receiver(new ReceiverHandle(connection, session, receiver));
 }
 
 bool SessionHandle::nextReceiver(Receiver& receiver, Duration timeout)
@@ -137,12 +125,12 @@ uint32_t SessionHandle::getUnsettledAcks()
 
 Sender SessionHandle::getSender(const std::string& name) const
 {
-    return qpid::messaging::Sender(new SenderHandle(connection, session, session->getSender(name)));
+    return qpid::messaging::Sender(new SenderHandle(connection, session, connection->getSender(session, name)));
 }
 
 Receiver SessionHandle::getReceiver(const std::string& name) const
 {
-    return qpid::messaging::Receiver(new ReceiverHandle(connection, session, session->getReceiver(name)));
+    return qpid::messaging::Receiver(new ReceiverHandle(connection, session, connection->getReceiver(session, name)));
 }
 
 Connection SessionHandle::getConnection() const
