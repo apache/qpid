@@ -134,9 +134,13 @@ qpid::framing::SequenceNumber SessionContext::record(pn_delivery_t* delivery)
 {
     error.raise();
     qpid::framing::SequenceNumber id = next++;
-    if (!pn_delivery_settled(delivery))
+    if (!pn_delivery_settled(delivery)) {
         unacked[id] = delivery;
-    QPID_LOG(debug, "Recorded delivery " << id << " -> " << delivery);
+        QPID_LOG(debug, "Recorded delivery " << id << " -> " << delivery);
+        pn_link_advance(pn_delivery_link(delivery));
+    } else {
+        pn_delivery_settle(delivery); // Automatically advances the link.
+    }
     return id;
 }
 

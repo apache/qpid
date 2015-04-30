@@ -307,7 +307,6 @@ bool ConnectionContext::get(boost::shared_ptr<SessionContext> ssn, boost::shared
             encoded->init(impl);
             impl.setEncoded(encoded);
             impl.setInternalId(ssn->record(current));
-            pn_link_advance(lnk->receiver);
             if (lnk->capacity) {
                 pn_link_flow(lnk->receiver, 1);
                 if (lnk->wakeupToIssueCredit()) {
