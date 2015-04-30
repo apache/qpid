@@ -417,7 +417,6 @@ void ConnectionContext::detach(boost::shared_ptr<SessionContext> ssn, boost::sha
 
 void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<SenderContext> lnk)
 {
-    sys::Monitor::ScopedLock l(lock);
     lnk->configure();
     attach(ssn, lnk->sender);
     checkClosed(ssn, lnk);
@@ -427,7 +426,6 @@ void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::sha
 
 void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, boost::shared_ptr<ReceiverContext> lnk)
 {
-    sys::Monitor::ScopedLock l(lock);
     lnk->configure();
     attach(ssn, lnk->receiver, lnk->capacity);
     checkClosed(ssn, lnk);
@@ -445,6 +443,43 @@ void ConnectionContext::attach(boost::shared_ptr<SessionContext> ssn, pn_link_t*
         QPID_LOG(debug, "Waiting for confirmation of link attach for " << link << ", state=" << pn_link_state(link) << "...");
         wait(ssn);
     }
+}
+
+boost::shared_ptr<SenderContext> ConnectionContext::createSender(boost::shared_ptr<SessionContext> session, const qpid::messaging::Address& address)
+{
+    sys::Monitor::ScopedLock l(lock);
+    boost::shared_ptr<SenderContext> sender = session->createSender(address, setToOnSend);
+    try {
+        attach(session, sender);
+        return sender;
+    } catch (...) {
+        session->removeSender(sender->getName());
+        throw;
+    }
+
+}
+boost::shared_ptr<ReceiverContext> ConnectionContext::createReceiver(boost::shared_ptr<SessionContext> session, const qpid::messaging::Address& address)
+{
+    sys::Monitor::ScopedLock l(lock);
+    boost::shared_ptr<ReceiverContext> receiver = session->createReceiver(address);
+    try {
+        attach(session, receiver);
+        return receiver;
+    } catch (...) {
+        session->removeReceiver(receiver->getName());
+        throw;
+    }
+}
+boost::shared_ptr<SenderContext> ConnectionContext::getSender(boost::shared_ptr<SessionContext> session, const std::string& name) const
+{
+    sys::Monitor::ScopedLock l(lock);
+    return session->getSender(name);
+}
+
+boost::shared_ptr<ReceiverContext> ConnectionContext::getReceiver(boost::shared_ptr<SessionContext> session, const std::string& name) const
+{
+    sys::Monitor::ScopedLock l(lock);
+    return session->getReceiver(name);
 }
 
 void ConnectionContext::send(

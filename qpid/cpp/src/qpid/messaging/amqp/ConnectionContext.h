@@ -76,8 +76,11 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
     boost::shared_ptr<SessionContext> newSession(bool transactional, const std::string& name);
     boost::shared_ptr<SessionContext> getSession(const std::string& name) const;
     void endSession(boost::shared_ptr<SessionContext>);
-    void attach(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>);
-    void attach(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
+    boost::shared_ptr<SenderContext> createSender(boost::shared_ptr<SessionContext>, const qpid::messaging::Address& address);
+    boost::shared_ptr<ReceiverContext> createReceiver(boost::shared_ptr<SessionContext>, const qpid::messaging::Address& address);
+    boost::shared_ptr<SenderContext> getSender(boost::shared_ptr<SessionContext>, const std::string& name) const;
+    boost::shared_ptr<ReceiverContext> getReceiver(boost::shared_ptr<SessionContext>, const std::string& name) const;
+
     void detach(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>);
     void detach(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
     void drain_and_release_messages(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
@@ -191,6 +194,8 @@ class ConnectionContext : public qpid::sys::ConnectionCodec, public qpid::messag
 
     void wakeupDriver();
     void attach(boost::shared_ptr<SessionContext>, pn_link_t*, int credit=0);
+    void attach(boost::shared_ptr<SessionContext>, boost::shared_ptr<SenderContext>);
+    void attach(boost::shared_ptr<SessionContext>, boost::shared_ptr<ReceiverContext>);
     void autoconnect();
     bool tryConnectUrl(const qpid::Url& url);
     bool tryOpenAddr(const qpid::Address& address);
