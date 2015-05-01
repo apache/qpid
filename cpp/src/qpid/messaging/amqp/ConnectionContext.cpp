@@ -1252,7 +1252,10 @@ void ConnectionContext::startTxSession(boost::shared_ptr<SessionContext> session
         QPID_LOG(debug, id << " attaching transaction for " << session->getName());
         boost::shared_ptr<Transaction> tx(new Transaction(session->session));
         session->transaction = tx;
-        attach(session, boost::shared_ptr<SenderContext>(tx));
+        {
+            sys::Monitor::ScopedLock l(lock);
+            attach(session, boost::shared_ptr<SenderContext>(tx));
+        }
         tx->declare(boost::bind(&ConnectionContext::send, this, _1, _2, _3, _4, _5), session);
     } catch (const Exception& e) {
         throw TransactionError(Msg() << "Cannot start transaction: " << e.what());
