@@ -27,6 +27,7 @@
 #include "qpid/sys/SecuritySettings.h"
 #include "qpid/log/Statement.h"
 #include "qpid/NullSaslServer.h"
+#include "qpid/sys/SystemInfo.h"
 
 #include "boost/tokenizer.hpp"
 
@@ -153,17 +154,26 @@ bool WindowsSasl::start(const std::string& mechanisms, std::string& response,
     if (!haveAnon && !havePlain && !haveExt)
         throw InternalErrorException(QPID_MSG("Sasl error: no common mechanism"));
 
-    if (haveExt) {
+    if (haveExt && settings.username.size() > 0) {
         mechanism = EXTERNAL;
         response = ((char)0) + settings.username.c_str();
     }
-    else if (havePlain) {
+    else if (havePlain && settings.username.size() > 0) {
         mechanism = PLAIN;
         response = ((char)0) + settings.username + ((char)0) + settings.password;
     }
-    else {
+    else if (haveAnon) {
+        std::string osName;
+        std::string nodeName;
+        std::string release;
+        std::string version;
+        std::string machine;
+        qpid::sys::SystemInfo::getSystemId(osName, nodeName, release, version, machine);
+
         mechanism = ANONYMOUS;
-        response = "";
+        response = "anonymous@" + nodeName;
+    } else {
+        throw InternalErrorException(QPID_MSG("Sasl error: no user name specified"));
     }
     return true;
 }
