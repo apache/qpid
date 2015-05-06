@@ -20,7 +20,7 @@
 from distutils.core import setup
 
 setup(name="qpid-qmf",
-      version="0.32",
+      version="0.32.x",
       author="Apache Qpid",
       author_email="dev@qpid.apache.org",
       packages=["qmf"],
