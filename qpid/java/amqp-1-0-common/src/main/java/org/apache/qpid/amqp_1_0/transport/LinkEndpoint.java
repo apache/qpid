@@ -176,7 +176,7 @@ public abstract class LinkEndpoint<T extends LinkEventListener>
         return _linkCredit;
     }
 
-    public void remoteDetached(Detach detach)
+    public void remoteDetached(final Detach detach)
     {
         synchronized (getLock())
         {
@@ -187,7 +187,14 @@ public abstract class LinkEndpoint<T extends LinkEventListener>
                     break;
                 case ATTACHED:
                     _state = State.DETACH_RECVD;
-                    _linkEventListener.remoteDetached(this, detach);
+                    getSession().getConnection().addPostLockAction(new Runnable()
+                    {
+                        @Override
+                        public void run()
+                        {
+                            _linkEventListener.remoteDetached(LinkEndpoint.this, detach);
+                        }
+                    });
                     break;
             }
             getLock().notifyAll();
