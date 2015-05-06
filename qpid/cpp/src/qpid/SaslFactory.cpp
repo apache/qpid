@@ -53,7 +53,7 @@ std::auto_ptr<Sasl> SaslFactory::create( const std::string &, const std::string 
     return client;
 }
 
-std::auto_ptr<SaslServer> SaslFactory::createServer(const std::string& realm, bool /*encryptionRequired*/, const qpid::sys::SecuritySettings&)
+std::auto_ptr<SaslServer> SaslFactory::createServer(const std::string& realm, const std::string& /*service*/, bool /*encryptionRequired*/, const qpid::sys::SecuritySettings&)
 {
     std::auto_ptr<SaslServer> server(new NullSaslServer(realm));
     return server;
@@ -152,7 +152,7 @@ std::auto_ptr<SaslFactory> SaslFactory::instance;
 class CyrusSaslServer : public SaslServer
 {
   public:
-    CyrusSaslServer(const std::string& realm, bool encryptionRequired, const qpid::sys::SecuritySettings& external);
+    CyrusSaslServer(const std::string& realm, const std::string& service, bool encryptionRequired, const qpid::sys::SecuritySettings& external);
     ~CyrusSaslServer();
     Status start(const std::string& mechanism, const std::string* response, std::string& challenge);
     Status step(const std::string* response, std::string& challenge);
@@ -161,6 +161,7 @@ class CyrusSaslServer : public SaslServer
     std::auto_ptr<qpid::sys::SecurityLayer> getSecurityLayer(size_t);
   private:
     std::string realm;
+    std::string service;
     std::string userid;
     sasl_conn_t *sasl_conn;
 };
@@ -194,9 +195,9 @@ std::auto_ptr<Sasl> SaslFactory::create(const std::string & username, const std:
     return sasl;
 }
 
-std::auto_ptr<SaslServer> SaslFactory::createServer(const std::string& realm, bool encryptionRequired, const qpid::sys::SecuritySettings& external)
+std::auto_ptr<SaslServer> SaslFactory::createServer(const std::string& realm, const std::string& service, bool encryptionRequired, const qpid::sys::SecuritySettings& external)
 {
-    std::auto_ptr<SaslServer> server(new CyrusSaslServer(realm, encryptionRequired, external));
+    std::auto_ptr<SaslServer> server(new CyrusSaslServer(realm, service, encryptionRequired, external));
     return server;
 }
 
@@ -419,9 +420,9 @@ std::auto_ptr<SecurityLayer> CyrusSasl::getSecurityLayer(uint16_t maxFrameSize)
     return securityLayer;
 }
 
-CyrusSaslServer::CyrusSaslServer(const std::string& r, bool encryptionRequired, const qpid::sys::SecuritySettings& external) : realm(r), sasl_conn(0)
+CyrusSaslServer::CyrusSaslServer(const std::string& r, const std::string& s, bool encryptionRequired, const qpid::sys::SecuritySettings& external) : realm(r), service(s), sasl_conn(0)
 {
-    int code = sasl_server_new(BROKER_SASL_NAME, /* Service name */
+    int code = sasl_server_new(service.c_str(), /* Service name */
                                NULL, /* Server FQDN, gethostname() */
                                realm.c_str(), /* Authentication realm */
                                NULL, /* Local IP, needed for some mechanism */

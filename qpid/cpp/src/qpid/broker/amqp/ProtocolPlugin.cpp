@@ -119,7 +119,7 @@ qpid::sys::ConnectionCodec* ProtocolImpl::create(const qpid::framing::ProtocolVe
             if (getBroker().isAuthenticating()) {
                 QPID_LOG(info, "Using AMQP 1.0 (with SASL layer)");
                 return new qpid::broker::amqp::Sasl(out, id, *this,
-                                                    qpid::SaslFactory::getInstance().createServer(getBroker().getRealm(),getBroker().requireEncrypted(), external));
+                                                    qpid::SaslFactory::getInstance().createServer(getBroker().getRealm(),getBroker().getSaslServiceName(),getBroker().requireEncrypted(), external));
             } else {
                 std::auto_ptr<SaslServer> authenticator(new qpid::NullSaslServer(getBroker().getRealm()));
                 QPID_LOG(info, "Using AMQP 1.0 (with dummy SASL layer)");

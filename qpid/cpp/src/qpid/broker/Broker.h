@@ -329,6 +329,7 @@ class Broker : public sys::Runnable, public Plugin::Target,
     QPID_BROKER_EXTERN bool isAuthenticating() const;
     QPID_BROKER_EXTERN bool requireEncrypted() const;
     QPID_BROKER_EXTERN std::string getRealm() const;
+    QPID_BROKER_EXTERN std::string getSaslServiceName() const;
     QPID_BROKER_EXTERN bool getTcpNoDelay() const;
     QPID_BROKER_EXTERN uint16_t getPortOption() const;
     QPID_BROKER_EXTERN const std::vector<std::string>& getListenInterfaces() const;

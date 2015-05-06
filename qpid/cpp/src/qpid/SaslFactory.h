@@ -36,7 +36,7 @@ class SaslFactory
 {
   public:
     QPID_COMMON_EXTERN std::auto_ptr<Sasl> create(const std::string & userName, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf, bool allowInteraction=true );
-    QPID_COMMON_EXTERN std::auto_ptr<SaslServer> createServer(const std::string& realm, bool encryptionRequired, const qpid::sys::SecuritySettings&);
+    QPID_COMMON_EXTERN std::auto_ptr<SaslServer> createServer(const std::string& realm, const std::string& service, bool encryptionRequired, const qpid::sys::SecuritySettings&);
     QPID_COMMON_EXTERN static SaslFactory& getInstance();
     QPID_COMMON_EXTERN ~SaslFactory();
   private:
