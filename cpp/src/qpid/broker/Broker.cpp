@@ -83,6 +83,7 @@
 #include "qpid/StringUtils.h"
 #include "qpid/Url.h"
 #include "qpid/Version.h"
+#include "config.h"
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
@@ -132,6 +133,7 @@ BrokerOptions::BrokerOptions(const std::string& name) :
     queueCleanInterval(60*sys::TIME_SEC*10),//10 minutes
     auth(SaslAuthenticator::available()),
     realm("QPID"),
+    saslServiceName(BROKER_SASL_NAME),
     replayFlushLimit(0),
     replayHardLimit(0),
     queueLimit(100*1048576/*100M default limit*/),
@@ -180,6 +182,7 @@ BrokerOptions::BrokerOptions(const std::string& name) :
          "Interval between attempts to purge any expired messages from queues")
         ("auth", optValue(auth, "yes|no"), "Enable authentication, if disabled all incoming connections will be trusted")
         ("realm", optValue(realm, "REALM"), "Use the given realm when performing authentication")
+        ("sasl-service-name", optValue(saslServiceName, "NAME"), "The service name to specify for SASL")
         ("default-queue-limit", optValue(queueLimit, "BYTES"), "Default maximum size for queues (in bytes)")
         ("tcp-nodelay", optValue(tcpNoDelay), "Set TCP_NODELAY on TCP connections")
         ("require-encryption", optValue(requireEncrypted), "Only accept connections that are encrypted")
@@ -425,6 +428,11 @@ bool Broker::requireEncrypted() const
 std::string Broker::getRealm() const
 {
     return config.realm;
+}
+
+std::string Broker::getSaslServiceName() const
+{
+    return config.saslServiceName;
 }
 
 bool Broker::getTcpNoDelay() const

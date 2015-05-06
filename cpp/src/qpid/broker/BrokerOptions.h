@@ -57,6 +57,7 @@ struct BrokerOptions : public qpid::Options
     sys::Duration queueCleanInterval;
     bool auth;
     std::string realm;
+    std::string saslServiceName;
     size_t replayFlushLimit;
     size_t replayHardLimit;
     uint queueLimit;

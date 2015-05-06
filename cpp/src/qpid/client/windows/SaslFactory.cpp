@@ -109,7 +109,7 @@ std::auto_ptr<Sasl> SaslFactory::create( const std::string & username, const std
     return sasl;
 }
 
-std::auto_ptr<SaslServer> SaslFactory::createServer( const std::string& realm, bool /*encryptionRequired*/, const qpid::sys::SecuritySettings& )
+std::auto_ptr<SaslServer> SaslFactory::createServer( const std::string& realm, const std::string& /*service*/, bool /*encryptionRequired*/, const qpid::sys::SecuritySettings& )
 {
     std::auto_ptr<SaslServer> server(new NullSaslServer(realm));
     return server;
