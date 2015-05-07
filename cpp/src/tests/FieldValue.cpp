@@ -62,11 +62,11 @@ QPID_AUTO_TEST_CASE(testIntegerValueEquals)
 QPID_AUTO_TEST_CASE(testFloatValueEquals)
 {
     BOOST_CHECK(f.convertsTo<float>() == true);
-    BOOST_CHECK_EQUAL(FloatValue(42.42), f);
-    BOOST_CHECK_CLOSE(f.get<float>(), 42.42, 0.001);
+    BOOST_CHECK(FloatValue(42.42) == f);
+    BOOST_CHECK_CLOSE(double(f.get<float>()), 42.42, 0.001);
     // Check twice, regression test for QPID-6470 where the value was corrupted during get.
-    BOOST_CHECK_EQUAL(FloatValue(42.42), f);
-    BOOST_CHECK_CLOSE(f.get<float>(), 42.42, 0.001);
+    BOOST_CHECK(FloatValue(42.42) == f);
+    BOOST_CHECK_CLOSE(f.get<double>(), 42.42, 0.001);
 
     // Float to double conversion
     BOOST_CHECK(f.convertsTo<double>() == true);
@@ -75,7 +75,7 @@ QPID_AUTO_TEST_CASE(testFloatValueEquals)
     // Double value
     BOOST_CHECK(f.convertsTo<float>() == true);
     BOOST_CHECK(f.convertsTo<double>() == true);
-    BOOST_CHECK_CLOSE(df.get<float>(), 123.123, 0.001);
+    BOOST_CHECK_CLOSE(double(df.get<float>()), 123.123, 0.001);
     BOOST_CHECK_CLOSE(df.get<double>(), 123.123, 0.001);
 
     // Invalid conversions should fail.
@@ -85,12 +85,12 @@ QPID_AUTO_TEST_CASE(testFloatValueEquals)
     BOOST_CHECK_THROW(f.get<int>(), InvalidConversionException);
 
     // getFloatingPointValue: check twice, regression test for QPID-6470
-    BOOST_CHECK_CLOSE((f.getFloatingPointValue<float,sizeof(float)>()), 42.42, 0.001);
-    BOOST_CHECK_CLOSE((f.getFloatingPointValue<float,sizeof(float)>()), 42.42, 0.001);
+    BOOST_CHECK_CLOSE((double(f.getFloatingPointValue<float,sizeof(float)>())), 42.42, 0.001);
+    BOOST_CHECK_CLOSE((double(f.getFloatingPointValue<float,sizeof(float)>())), 42.42, 0.001);
     BOOST_CHECK_CLOSE((df.getFloatingPointValue<double,sizeof(double)>()), 123.123, 0.001);
     // getFloatingPointValue should *not* convert float/double, require exact type.
     BOOST_CHECK_THROW((f.getFloatingPointValue<double,sizeof(double)>()), InvalidConversionException);
-    BOOST_CHECK_THROW((df.getFloatingPointValue<float,sizeof(float)>()), InvalidConversionException);
+    BOOST_CHECK_THROW((double(df.getFloatingPointValue<float,sizeof(float)>())), InvalidConversionException);
 }
 
 QPID_AUTO_TEST_SUITE_END()
