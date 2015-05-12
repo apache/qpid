@@ -53,13 +53,14 @@ template <class T> class Handle {
 
     void swap(Handle<T>& h) { T* t = h.impl; h.impl = impl; impl = t; }
 
+  private:
+    // Not implemented,subclasses must implement.
+    Handle(const Handle&);
+    Handle& operator=(const Handle&);
+
   protected:
     typedef T Impl;
     QPID_CLIENT_INLINE_EXTERN Handle() :impl() {}
-
-    // Not implemented,subclasses must implement.
-    QPID_CLIENT_EXTERN Handle(const Handle&);
-    QPID_CLIENT_EXTERN Handle& operator=(const Handle&);
 
     Impl* impl;
 
