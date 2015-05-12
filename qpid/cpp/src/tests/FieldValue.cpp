@@ -30,7 +30,7 @@ using namespace qpid::framing;
 
 Str16Value s("abc");
 IntegerValue i(42);
-FloatValue f(42.42);
+FloatValue f((float)42.42);
 DoubleValue df(123.123);
 
 QPID_AUTO_TEST_CASE(testStr16ValueEquals)
@@ -62,10 +62,10 @@ QPID_AUTO_TEST_CASE(testIntegerValueEquals)
 QPID_AUTO_TEST_CASE(testFloatValueEquals)
 {
     BOOST_CHECK(f.convertsTo<float>() == true);
-    BOOST_CHECK(FloatValue(42.42) == f);
+    BOOST_CHECK(FloatValue((float)42.42) == f);
     BOOST_CHECK_CLOSE(double(f.get<float>()), 42.42, 0.001);
     // Check twice, regression test for QPID-6470 where the value was corrupted during get.
-    BOOST_CHECK(FloatValue(42.42) == f);
+    BOOST_CHECK(FloatValue((float)42.42) == f);
     BOOST_CHECK_CLOSE(f.get<double>(), 42.42, 0.001);
 
     // Float to double conversion
