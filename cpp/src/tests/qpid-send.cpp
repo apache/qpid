@@ -234,14 +234,23 @@ class ContentGenerator {
   public:
     virtual ~ContentGenerator() {}
     virtual bool setContent(Message& msg) = 0;
+    void setContentObject(Message& msg, const std::string& content, const std::string& encoding=std::string("utf8"))
+    {
+        Variant& obj = msg.getContentObject();
+        obj = content;
+        obj.setEncoding(encoding);
+    }
 };
+
 
 class GetlineContentGenerator : public ContentGenerator {
   public:
     virtual bool setContent(Message& msg) {
         string content;
         bool got = !!getline(std::cin, content);
-        if (got) msg.setContentObject(content);
+        if (got) {
+            setContentObject(msg, content);
+        }
         return got;
     }
 };
@@ -250,7 +259,7 @@ class FixedContentGenerator   : public ContentGenerator {
   public:
     FixedContentGenerator(const string& s) : content(s) {}
     virtual bool setContent(Message& msg) {
-        msg.setContentObject(content);
+        setContentObject(msg, content);
         return true;
     }
   private:
