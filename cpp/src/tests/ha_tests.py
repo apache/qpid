@@ -674,6 +674,7 @@ acl deny all all
             s.acknowledge(msg, qm.Disposition(qm.REJECTED)) # Reject the message
             self.assertEqual("bar", altq.fetch(timeout=0).content)
             s.acknowledge()
+            s.sync()            # Make sure backups are caught-up.
             c.close()
 
         # Sanity check: alternate exchanges on original broker
@@ -885,6 +886,7 @@ acl deny all all
         qs = ["q%s"%i for i in xrange(10)]
         a = cluster[0].agent
         a.addQueue("q")
+        cluster[1].wait_backup("q")
         cluster.kill(0)
         cluster[1].promote()
         cluster[1].wait_status("active")

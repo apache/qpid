@@ -195,7 +195,7 @@ if __name__ == "__main__":
     if not BrokerTest.amqp_tx_supported:
         BrokerTest.amqp_tx_warning()
         print "Skipping interop_tests"
-        exit(0)
+        sys.exit(0)
     outdir = "interop_tests.tmp"
     shutil.rmtree(outdir, True)
     cmd = ["qpid-python-test", "-m", "interop_tests", "-DOUTDIR=%s"%outdir] + sys.argv[1:]
