@@ -100,16 +100,13 @@ lock() {
 start() {
     lock
     echo -n $"Starting Qpid AMQP daemon: "
-    daemon --pidfile $pidfile --check $prog --user qpidd $QPID_BIN --config $QPID_CONFIG --daemon $QPIDD_OPTIONS --close-fd $FLOCK_FD
+    touch $pidfile
+    chown qpidd.qpidd $pidfile
+    [ -x /sbin/restorecon ] && /sbin/restorecon $pidfile
+    daemon --pidfile $pidfile --check $prog --user qpidd $QPID_BIN --config $QPID_CONFIG --daemon $QPIDD_OPTIONS --close-fd $FLOCK_FD --pidfile $pidfile
     RETVAL=$?
     echo
     [ $RETVAL = 0 ] && touch $lockfile
-    if [ $RETVAL = 0 ]; then
-	touch $pidfile
-	chown qpidd.qpidd $pidfile
-        [ -x /sbin/restorecon ] && /sbin/restorecon $pidfile
-	runuser - -s /bin/sh qpidd -c "$QPID_BIN --config $QPID_CONFIG --check > $pidfile"
-    fi
     return $RETVAL
 }
 
