@@ -79,13 +79,13 @@ class AmqpIdleTimeoutTest(BrokerTest):
 
         # now 'hang' the client, the broker should disconnect
         start = time.time()
-        receiver.send_signal(signal.SIGSTOP)
+        os.kill(receiver.pid, signal.SIGSTOP)
         deadline = time.time() + 10
         while time.time() < deadline:
             if count == len(self._broker.agent.getAllConnections()):
                 break;
         self.assertEqual(count, len(self._broker.agent.getAllConnections()))
-        receiver.send_signal(signal.SIGCONT)
+        os.kill(receiver.pid, signal.SIGCONT)
         receiver.teardown()
 
 
