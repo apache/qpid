@@ -307,7 +307,7 @@ wmgr::dequeue(data_tok* dtokp,
                 for (tdl_const_itr_t i=tdl.begin(); i!=tdl.end() && !found; ++i) {
                     if (i->rid_ == dtokp->dequeue_rid()) {
                         found = true;
-                        dtokp->set_fid(i->pfid_);
+                        dtokp->set_fid(i->fid_);
                         break;
                     }
                 }
@@ -451,7 +451,7 @@ wmgr::abort(data_tok* dtokp,
 				if (!itr->enq_flag_)
 				    _emap.unlock(itr->drid_); // ignore rid not found error
                 if (itr->enq_flag_) {
-                    fidl.push_back(itr->pfid_);
+                    fidl.push_back(itr->fid_);
                 }
             }
             std::pair<pending_txn_map_itr_t, bool> res = _txn_pending_map.insert(std::pair<std::string, fidl_t>(xid, fidl));
@@ -551,11 +551,11 @@ wmgr::commit(data_tok* dtokp,
             {
                 if (itr->enq_flag_) // txn enqueue
                 {
-                    if (_emap.insert_pfid(itr->rid_, itr->pfid_, 0) < enq_map::EMAP_OK) // fail
+                    if (_emap.insert_pfid(itr->rid_, itr->fid_, 0) < enq_map::EMAP_OK) // fail
                     {
                         // The only error code emap::insert_pfid() returns is enq_map::EMAP_DUP_RID.
                         std::ostringstream oss;
-                        oss << std::hex << "rid=0x" << itr->rid_ << " _pfid=0x" << itr->pfid_;
+                        oss << std::hex << "rid=0x" << itr->rid_ << " _pfid=0x" << itr->fid_;
                         throw jexception(jerrno::JERR_MAP_DUPLICATE, oss.str(), "wmgr", "commit");
                     }
                 }

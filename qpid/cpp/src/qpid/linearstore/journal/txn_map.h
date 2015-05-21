@@ -39,7 +39,7 @@ namespace journal {
     {
         uint64_t rid_;      ///< Record id for this operation
         uint64_t drid_;     ///< Dequeue record id for this operation
-        uint16_t pfid_;     ///< Physical file id, to be used when transferring to emap on commit
+        uint64_t fid_;      ///< File seq number, to be used when transferring to emap on commit
         uint64_t foffs_;    ///< Offset in file for this record
         bool enq_flag_;     ///< If true, enq op, otherwise deq op
         bool tpc_flag_;     ///< 2PC transaction if true
@@ -47,7 +47,7 @@ namespace journal {
         bool aio_compl_;    ///< Initially false, set to true when record AIO returns
         txn_data_t(const uint64_t rid,
                    const uint64_t drid,
-                   const uint16_t pfid,
+                   const uint64_t fid,
                    const uint64_t foffs,
                    const bool enq_flag,
                    const bool tpc_flag,

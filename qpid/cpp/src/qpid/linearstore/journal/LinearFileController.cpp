@@ -114,15 +114,15 @@ void LinearFileController::purgeEmptyFilesToEfp() {
     }
 }
 
-uint32_t LinearFileController::getEnqueuedRecordCount(const efpFileCount_t fileSeqNumber) {
+uint32_t LinearFileController::getEnqueuedRecordCount(const uint64_t fileSeqNumber) {
     return find(fileSeqNumber)->getEnqueuedRecordCount();
 }
 
-uint32_t LinearFileController::incrEnqueuedRecordCount(const efpFileCount_t fileSeqNumber) {
+uint32_t LinearFileController::incrEnqueuedRecordCount(const uint64_t fileSeqNumber) {
     return find(fileSeqNumber)->incrEnqueuedRecordCount();
 }
 
-uint32_t LinearFileController::decrEnqueuedRecordCount(const efpFileCount_t fileSeqNumber) {
+uint32_t LinearFileController::decrEnqueuedRecordCount(const uint64_t fileSeqNumber) {
     uint32_t r = find(fileSeqNumber)->decrEnqueuedRecordCount();
 
     // TODO: Re-evaluate after testing and profiling
@@ -136,11 +136,11 @@ uint32_t LinearFileController::decrEnqueuedRecordCount(const efpFileCount_t file
     return r;
 }
 
-uint32_t LinearFileController::addWriteCompletedDblkCount(const efpFileCount_t fileSeqNumber, const uint32_t a) {
+uint32_t LinearFileController::addWriteCompletedDblkCount(const uint64_t fileSeqNumber, const uint32_t a) {
     return find(fileSeqNumber)->addCompletedDblkCount(a);
 }
 
-uint16_t LinearFileController::decrOutstandingAioOperationCount(const efpFileCount_t fileSeqNumber) {
+uint16_t LinearFileController::decrOutstandingAioOperationCount(const uint64_t fileSeqNumber) {
     return find(fileSeqNumber)->decrOutstandingAioOperationCount();
 }
 
@@ -199,9 +199,9 @@ const std::string LinearFileController::status(const uint8_t indentDepth) const 
 
 void LinearFileController::addJournalFile(const std::string& fileName,
                                           const efpIdentity_t& efpIdentity,
-                                          const uint64_t fileNumber,
+                                          const uint64_t fileSeqNumber,
                                           const uint32_t completedDblkCount) {
-    JournalFile* jfp = new JournalFile(fileName, efpIdentity, fileNumber, jcntlRef_.id());
+    JournalFile* jfp = new JournalFile(fileName, efpIdentity, fileSeqNumber, jcntlRef_.id());
     addJournalFile(jfp, completedDblkCount, true);
 }
 
@@ -215,7 +215,7 @@ bool LinearFileController::checkCurrentJournalFileValid() const {
     return currentJournalFilePtr_ != 0;
 }
 
-JournalFile* LinearFileController::find(const efpFileCount_t fileSeqNumber) {
+JournalFile* LinearFileController::find(const uint64_t fileSeqNumber) {
     if (currentJournalFilePtr_ && currentJournalFilePtr_->getFileSeqNum() == fileSeqNumber)
         return currentJournalFilePtr_;
 
