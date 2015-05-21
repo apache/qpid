@@ -148,7 +148,7 @@ void RecoveryManager::analyzeJournals(const std::vector<std::string>* preparedTr
                     // Unlock any affected enqueues in emap
                     for (tdl_itr_t i=tdl.begin(); i<tdl.end(); i++) {
                         if (i->enq_flag_) { // enq op - decrement enqueue count
-                            fileNumberMap_[i->pfid_]->journalFilePtr_->decrEnqueuedRecordCount();
+                            fileNumberMap_[i->fid_]->journalFilePtr_->decrEnqueuedRecordCount();
                         } else if (enqueueMapRef_.is_enqueued(i->drid_, true)) { // deq op - unlock enq record
                             if (enqueueMapRef_.unlock(i->drid_) < enq_map::EMAP_OK) { // fail
                                 // enq_map::unlock()'s only error is enq_map::EMAP_RID_NOT_FOUND
@@ -738,7 +738,7 @@ bool RecoveryManager::getNextRecordHeader()
                 txn_data_list_t tdl = transactionMapRef_.get_remove_tdata_list(xid); // tdl will be empty if xid not found
                 for (tdl_itr_t itr = tdl.begin(); itr != tdl.end(); itr++) {
                     if (itr->enq_flag_) {
-                        fileNumberMap_[itr->pfid_]->journalFilePtr_->decrEnqueuedRecordCount();
+                        fileNumberMap_[itr->fid_]->journalFilePtr_->decrEnqueuedRecordCount();
                     } else {
                         enqueueMapRef_.unlock(itr->drid_); // ignore not found error
                     }
@@ -765,11 +765,11 @@ bool RecoveryManager::getNextRecordHeader()
                 txn_data_list_t tdl = transactionMapRef_.get_remove_tdata_list(xid); // tdl will be empty if xid not found
                 for (tdl_itr_t itr = tdl.begin(); itr != tdl.end(); itr++) {
                     if (itr->enq_flag_) { // txn enqueue
-//std::cout << "[rid=0x" << std::hex << itr->rid_ << std::dec << " fid=" << itr->pfid_ << " fpos=0x" << std::hex << itr->foffs_ << "]" << std::dec << std::flush; // DEBUG
-                        if (enqueueMapRef_.insert_pfid(itr->rid_, itr->pfid_, itr->foffs_) < enq_map::EMAP_OK) { // fail
+//std::cout << "[rid=0x" << std::hex << itr->rid_ << std::dec << " fid=" << itr->fid_ << " fpos=0x" << std::hex << itr->foffs_ << "]" << std::dec << std::flush; // DEBUG
+                        if (enqueueMapRef_.insert_pfid(itr->rid_, itr->fid_, itr->foffs_) < enq_map::EMAP_OK) { // fail
                             // The only error code emap::insert_pfid() returns is enq_map::EMAP_DUP_RID.
                             std::ostringstream oss;
-                            oss << std::hex << "rid=0x" << itr->rid_ << " _pfid=0x" << itr->pfid_;
+                            oss << std::hex << "rid=0x" << itr->rid_ << " _pfid=0x" << itr->fid_;
                             throw jexception(jerrno::JERR_MAP_DUPLICATE, oss.str(), "RecoveryManager", "getNextRecordHeader");
                         }
                     } else { // txn dequeue
@@ -854,7 +854,7 @@ void RecoveryManager::prepareRecordList() {
         qpid::linearstore::journal::txn_data_list_t tdsl = transactionMapRef_.get_tdata_list(*j);
         for (qpid::linearstore::journal::tdl_itr_t k=tdsl.begin(); k!=tdsl.end(); ++k) {
             if (k->enq_flag_) {
-                recordIdList_.push_back(RecoveredRecordData_t(k->rid_, k->pfid_, k->foffs_, true));
+                recordIdList_.push_back(RecoveredRecordData_t(k->rid_, k->fid_, k->foffs_, true));
             }
         }
     }

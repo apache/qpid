@@ -74,12 +74,12 @@ public:
     void purgeEmptyFilesToEfp();
 
     // Functions for manipulating counts of non-current JournalFile instances in journalFileList_
-    uint32_t getEnqueuedRecordCount(const efpFileCount_t fileSeqNumber);
-    uint32_t incrEnqueuedRecordCount(const efpFileCount_t fileSeqNumber);
-    uint32_t decrEnqueuedRecordCount(const efpFileCount_t fileSeqNumber);
-    uint32_t addWriteCompletedDblkCount(const efpFileCount_t fileSeqNumber,
+    uint32_t getEnqueuedRecordCount(const uint64_t fileSeqNumber);
+    uint32_t incrEnqueuedRecordCount(const uint64_t fileSeqNumber);
+    uint32_t decrEnqueuedRecordCount(const uint64_t fileSeqNumber);
+    uint32_t addWriteCompletedDblkCount(const uint64_t fileSeqNumber,
                                         const uint32_t a);
-    uint16_t decrOutstandingAioOperationCount(const efpFileCount_t fileSeqNumber);
+    uint16_t decrOutstandingAioOperationCount(const uint64_t fileSeqNumber);
 
     // Pass-through functions for current JournalFile class
     void asyncFileHeaderWrite(io_context_t ioContextPtr,
@@ -101,11 +101,11 @@ public:
 protected:
     void addJournalFile(const std::string& fileName,
                         const efpIdentity_t& efpIdentity,
-                        const uint64_t fileNumber,
+                        const uint64_t fileSeqNumber,
                         const uint32_t completedDblkCount);
     void assertCurrentJournalFileValid(const char* const functionName) const;
     bool checkCurrentJournalFileValid() const;
-    JournalFile* find(const efpFileCount_t fileSeqNumber);
+    JournalFile* find(const uint64_t fileSeqNumber);
     uint64_t getNextFileSeqNum();
     void pullEmptyFileFromEfp();
 };

@@ -36,14 +36,14 @@ int16_t txn_map::TMAP_SYNCED = 1;
 
 txn_data_t::txn_data_t(const uint64_t rid,
                        const uint64_t drid,
-                       const uint16_t pfid,
+                       const uint64_t fid,
                        const uint64_t foffs,
                        const bool enq_flag,
                        const bool tpc_flag,
                        const bool commit_flag):
         rid_(rid),
         drid_(drid),
-        pfid_(pfid),
+        fid_(fid),
         foffs_(foffs),
         enq_flag_(enq_flag),
         tpc_flag_(tpc_flag),
