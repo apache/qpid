@@ -234,7 +234,7 @@ void ConnectionHandler::Handler::tuneOk(uint16_t /*channelmax*/,
 void ConnectionHandler::Handler::open(const string& /*virtualHost*/,
                                       const framing::Array& /*capabilities*/, bool /*insist*/)
 {
-    if (connection.getUserId().empty()) {
+    if (connection.getUserId().empty() && connection.getBroker().isAuthenticating()) {
         throw ConnectionForcedException("Not authenticated!");
     }
 
