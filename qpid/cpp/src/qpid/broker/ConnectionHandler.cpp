@@ -51,8 +51,6 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 namespace
 {
-const std::string ANONYMOUS = "ANONYMOUS";
-const std::string PLAIN     = "PLAIN";
 const std::string en_US     = "en_US";
 const std::string QPID_FED_LINK = "qpid.fed_link";
 const std::string QPID_FED_TAG  = "qpid.federation_tag";
