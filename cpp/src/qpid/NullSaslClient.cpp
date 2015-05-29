@@ -25,15 +25,25 @@
 namespace qpid {
 namespace {
 const std::string ANONYMOUS("ANONYMOUS");
+const std::string PLAIN("PLAIN");
 }
 
-bool NullSaslClient::start(const std::string& mechanisms, std::string&,
-           const qpid::sys::SecuritySettings*)
+NullSaslClient::NullSaslClient(const std::string& u, const std::string& p) : username(u), password(p) {}
+
+bool NullSaslClient::start(const std::string& mechanisms, std::string& response,
+                           const qpid::sys::SecuritySettings*)
 {
-    if (mechanisms.find(ANONYMOUS) == std::string::npos) {
+    if (!username.empty() && !password.empty() && mechanisms.find(PLAIN) != std::string::npos) {
+        mechanism = PLAIN;
+        response = ((char)0) + username + ((char)0) + password;
+    } else if (mechanisms.find(ANONYMOUS) != std::string::npos) {
+        mechanism = ANONYMOUS;
+        const char* u = username.empty() ? ANONYMOUS.c_str() : username.c_str();
+        response = ((char)0) + u;
+    } else {
         throw qpid::Exception("No suitable mechanism!");
     }
-    return false;
+    return true;
 }
 std::string NullSaslClient::step(const std::string&)
 {
@@ -41,11 +51,11 @@ std::string NullSaslClient::step(const std::string&)
 }
 std::string NullSaslClient::getMechanism()
 {
-    return ANONYMOUS;
+    return mechanism;
 }
 std::string NullSaslClient::getUserId()
 {
-    return ANONYMOUS;
+    return username.empty() ? ANONYMOUS : username;
 }
 std::auto_ptr<qpid::sys::SecurityLayer> NullSaslClient::getSecurityLayer(uint16_t)
 {

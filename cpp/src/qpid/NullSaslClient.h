@@ -28,6 +28,7 @@ namespace qpid {
 class NullSaslClient : public Sasl
 {
   public:
+    NullSaslClient(const std::string& username, const std::string& password);
     bool start(const std::string& mechanisms, std::string& response,
                        const qpid::sys::SecuritySettings* externalSecuritySettings = 0);
     std::string step(const std::string& challenge);
@@ -35,6 +36,9 @@ class NullSaslClient : public Sasl
     std::string getUserId();
     std::auto_ptr<qpid::sys::SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
   private:
+    const std::string username;
+    const std::string password;
+    std::string mechanism;
 };
 } // namespace qpid
 
