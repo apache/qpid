@@ -47,9 +47,9 @@ SaslFactory& SaslFactory::getInstance()
     return *instance;
 }
 
-std::auto_ptr<Sasl> SaslFactory::create( const std::string &, const std::string &, const std::string &, const std::string &, int, int, bool )
+std::auto_ptr<Sasl> SaslFactory::create(const std::string& username, const std::string& password, const std::string&, const std::string&, int, int, bool)
 {
-    std::auto_ptr<Sasl> client(new NullSaslClient);
+    std::auto_ptr<Sasl> client(new NullSaslClient(username, password));
     return client;
 }
 
