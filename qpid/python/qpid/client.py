@@ -83,7 +83,8 @@ class Client:
 
   def start(self, response=None, mechanism=None, locale="en_US", tune_params=None,
             username=None, password=None,
-            client_properties=None, connection_options=None, sasl_options = None):
+            client_properties=None, connection_options=None, sasl_options = None,
+            channel_options=None):
     self.mechanism = mechanism
     self.response = response
     self.username = username
@@ -94,7 +95,7 @@ class Client:
     self.sasl_options = sasl_options
     self.socket = connect(self.host, self.port, connection_options)
     self.conn = Connection(self.socket, self.spec)
-    self.peer = Peer(self.conn, ClientDelegate(self), Session)
+    self.peer = Peer(self.conn, ClientDelegate(self), Session, channel_options)
 
     self.conn.init()
     self.peer.start()
@@ -205,6 +206,9 @@ class ClientDelegate(Delegate):
 
   def channel_close(self, ch, msg):
     ch.closed(msg)
+
+  def channel_flow(self, ch, msg):
+    ch.set_flow_control(not msg.active)
 
   def session_ack(self, ch, msg):
     pass

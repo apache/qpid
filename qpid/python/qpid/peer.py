@@ -31,7 +31,7 @@ from queue import Queue, Closed as QueueClosed
 from content import Content
 from cStringIO import StringIO
 from time import time
-from exceptions import Closed
+from exceptions import Closed, Timeout
 from logging import getLogger
 
 log = getLogger("qpid.peer")
@@ -55,7 +55,7 @@ class Sequence:
 
 class Peer:
 
-  def __init__(self, conn, delegate, channel_factory=None):
+  def __init__(self, conn, delegate, channel_factory=None, channel_options=None):
     self.conn = conn
     self.delegate = delegate
     self.outgoing = Queue(0)
@@ -66,6 +66,9 @@ class Peer:
       self.channel_factory = channel_factory
     else:
       self.channel_factory = Channel
+    if channel_options is None:
+      channel_options = {}
+    self.channel_options = channel_options
 
   def channel(self, id):
     self.lock.acquire()
@@ -73,7 +76,7 @@ class Peer:
       try:
         ch = self.channels[id]
       except KeyError:
-        ch = self.channel_factory(id, self.outgoing, self.conn.spec)
+        ch = self.channel_factory(id, self.outgoing, self.conn.spec, self.channel_options)
         self.channels[id] = ch
     finally:
       self.lock.release()
@@ -205,7 +208,7 @@ class Responder:
 
 class Channel:
 
-  def __init__(self, id, outgoing, spec):
+  def __init__(self, id, outgoing, spec, options):
     self.id = id
     self.outgoing = outgoing
     self.spec = spec
@@ -227,6 +230,10 @@ class Channel:
     self.invoker = self.invoke_method
     self.use_execution_layer = (spec.major == 0 and spec.minor == 10) or (spec.major == 99 and spec.minor == 0)
     self.synchronous = True
+
+    self._flow_control_wait_failure = options.get("qpid.flow_control_wait_failure", 60)
+    self._flow_control_wc = threading.Condition()
+    self._flow_control = False
 
   def closed(self, reason):
     if self._closed:
@@ -339,6 +346,8 @@ class Channel:
       future = Future()
       self.futures[cmd_id] = future
 
+    if frame.method.klass.name == "basic" and frame.method.name == "publish":
+      self.check_flow_control()
     self.write(frame, content)
 
     try:
@@ -380,6 +389,24 @@ class Channel:
         raise Closed(self.reason)
       else:
         raise e
+
+  # part of flow control for AMQP 0-8, 0-9, and 0-9-1
+  def set_flow_control(self, value):
+    self._flow_control_wc.acquire()
+    self._flow_control = value
+    if value == False:
+      self._flow_control_wc.notify()
+    self._flow_control_wc.release()
+
+  # part of flow control for AMQP 0-8, 0-9, and 0-9-1
+  def check_flow_control(self):
+    self._flow_control_wc.acquire()
+    if self._flow_control:
+      self._flow_control_wc.wait(self._flow_control_wait_failure)
+    if self._flow_control:
+      self._flow_control_wc.release()
+      raise Timeout("Unable to send message for " + str(self._flow_control_wait_failure) + " seconds due to broker enforced flow control")
+    self._flow_control_wc.release()
 
   def __getattr__(self, name):
     type = self.spec.method(name)

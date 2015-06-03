@@ -16,10 +16,12 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+import time
 from qpid.client import Client, Closed
 from qpid.queue import Empty
 from qpid.content import Content
 from qpid.testlib import TestBase
+from qpid.exceptions import Timeout
 
 class QueueTests(TestBase):
     """Tests for 'methods' on the amqp queue 'class'"""
@@ -109,3 +111,38 @@ class QueueTests(TestBase):
             self.fail("Expected queue to have been deleted")
         except Closed, e:
             self.assertChannelException(404, e.args[0])
+
+    def test_flow_control(self):
+        queue_name="flow-controled-queue"
+
+        connection = self.connect(channel_options={"qpid.flow_control_wait_failure" : 1})
+        channel = connection.channel(1)
+        channel.channel_open()
+        channel.queue_declare(queue=queue_name, arguments={"x-qpid-capacity" : 25, "x-qpid-flow-resume-capacity" : 15})
+
+        try:
+            for i in xrange(100):
+                channel.basic_publish(exchange="", routing_key=queue_name,
+                                      content=Content("This is a message with more than 25 bytes. This should trigger flow control."))
+                time.sleep(.1)
+            self.fail("Flow Control did not work")
+        except Timeout:
+            # this is expected
+            pass
+
+        consumer_reply = channel.basic_consume(queue=queue_name, consumer_tag="consumer", no_ack=True)
+        queue = self.client.queue(consumer_reply.consumer_tag)
+        while True:
+            try:
+                msg = queue.get(timeout=1)
+            except Empty:
+                break
+        channel.basic_cancel(consumer_tag=consumer_reply.consumer_tag)
+
+        try:
+            channel.basic_publish(exchange="", routing_key=queue_name,
+                                  content=Content("This should not block because we have just cleared the queue."))
+        except Timeout:
+            self.fail("Unexpected Timeout. Flow Control should not be in effect.")
+
+        connection.close()
