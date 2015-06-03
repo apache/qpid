@@ -73,7 +73,7 @@ class TestBase(unittest.TestCase):
 
         self.client.close()
 
-    def connect(self, host=None, port=None, user=None, password=None, tune_params=None, client_properties=None):
+    def connect(self, host=None, port=None, user=None, password=None, tune_params=None, client_properties=None, channel_options=None):
         """Create a new connction, return the Client object"""
         host = host or self.config.broker.host
         port = port or self.config.broker.port or 5672
@@ -81,7 +81,7 @@ class TestBase(unittest.TestCase):
         password = password or self.config.broker.password or "guest"
         client = qpid.client.Client(host, port)
         try:
-          client.start(username = user, password=password, tune_params=tune_params, client_properties=client_properties)
+          client.start(username = user, password=password, tune_params=tune_params, client_properties=client_properties, channel_options=channel_options)
         except qpid.client.Closed, e:
             if isinstance(e.args[0], VersionError):
                 raise Skipped(e.args[0])
