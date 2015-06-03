@@ -442,10 +442,14 @@ void Connection::process()
 
     processDeliveries();
 
-    for (pn_link_t* l = pn_link_head(connection, REQUIRES_CLOSE); l; l = pn_link_next(l, REQUIRES_CLOSE)) {
+    for (pn_link_t* l = pn_link_head(connection, REQUIRES_CLOSE), *next = 0;
+         l; l = next) {
+        next = pn_link_next(l, REQUIRES_CLOSE);
         doLinkRemoteClose(l);
     }
-    for (pn_session_t* s = pn_session_head(connection, REQUIRES_CLOSE); s; s = pn_session_next(s, REQUIRES_CLOSE)) {
+    for (pn_session_t* s = pn_session_head(connection, REQUIRES_CLOSE), *next = 0;
+         s; s = next) {
+        next = pn_session_next(s, REQUIRES_CLOSE);
         doSessionRemoteClose(s);
     }
     if ((pn_connection_state(connection) & REQUIRES_CLOSE) == REQUIRES_CLOSE) {
@@ -537,6 +541,7 @@ void Connection::doSessionRemoteClose(pn_session_t *session)
             QPID_LOG(error, id << " peer attempted to close unrecognised session");
         }
     }
+    pn_session_free(session);
 }
 
 // the peer has issued an Attach performative
@@ -587,6 +592,7 @@ void Connection::doLinkRemoteClose(pn_link_t *link)
             QPID_LOG_CAT(debug, model, id << " link detached");
         }
     }
+    pn_link_free(link);
 }
 
 // the status of the delivery has changed
