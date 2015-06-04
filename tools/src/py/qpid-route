@@ -21,7 +21,6 @@
 
 from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
 import sys
-import socket
 import os
 import locale
 from qmf.console import Session, BrokerURL
@@ -521,11 +520,7 @@ def main(argv=None):
         return(-1)
 
     if nargs == 2:
-        try:
-            socket.gethostbyname(socket.gethostname())
-            localBroker = socket.gethostname()
-        except socket.gaierror:
-            localBroker = "localhost"
+        localBroker = "localhost"
     else:
         if config._srclocal:
             localBroker = args[3]
