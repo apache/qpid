@@ -208,7 +208,15 @@ class ClientDelegate(Delegate):
     ch.closed(msg)
 
   def channel_flow(self, ch, msg):
+    # On resuming we want to minimize the possibility of sending a message before flow-ok has been sent.
+    # Therefore, we send flow-ok before we set the flow_control flag.
+    if msg.active:
+        msg.flow_ok()
     ch.set_flow_control(not msg.active)
+    # On pausing we want to minimize the possibility of sending a message after flow-ok has been sent.
+    # Therefore, we send flow-ok after we set the flow_control flag.
+    if not msg.active:
+        msg.flow_ok()
 
   def session_ack(self, ch, msg):
     pass
