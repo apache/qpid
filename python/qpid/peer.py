@@ -232,7 +232,7 @@ class Channel:
     self.synchronous = True
 
     self._flow_control_wait_failure = options.get("qpid.flow_control_wait_failure", 60)
-    self._flow_control_wc = threading.Condition()
+    self._flow_control_wait_condition = threading.Condition()
     self._flow_control = False
 
   def closed(self, reason):
@@ -347,8 +347,12 @@ class Channel:
       self.futures[cmd_id] = future
 
     if frame.method.klass.name == "basic" and frame.method.name == "publish":
+      self._flow_control_wait_condition.acquire()
       self.check_flow_control()
-    self.write(frame, content)
+      self.write(frame, content)
+      self._flow_control_wait_condition.release()
+    else:
+      self.write(frame, content)
 
     try:
       # here we depend on all nowait fields being named nowait
@@ -392,21 +396,19 @@ class Channel:
 
   # part of flow control for AMQP 0-8, 0-9, and 0-9-1
   def set_flow_control(self, value):
-    self._flow_control_wc.acquire()
+    self._flow_control_wait_condition.acquire()
     self._flow_control = value
     if value == False:
-      self._flow_control_wc.notify()
-    self._flow_control_wc.release()
+      self._flow_control_wait_condition.notify()
+    self._flow_control_wait_condition.release()
 
   # part of flow control for AMQP 0-8, 0-9, and 0-9-1
   def check_flow_control(self):
-    self._flow_control_wc.acquire()
     if self._flow_control:
-      self._flow_control_wc.wait(self._flow_control_wait_failure)
+      self._flow_control_wait_condition.wait(self._flow_control_wait_failure)
     if self._flow_control:
-      self._flow_control_wc.release()
+      self._flow_control_wait_condition.release()
       raise Timeout("Unable to send message for " + str(self._flow_control_wait_failure) + " seconds due to broker enforced flow control")
-    self._flow_control_wc.release()
 
   def __getattr__(self, name):
     type = self.spec.method(name)
