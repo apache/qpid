@@ -589,6 +589,37 @@ ha-brokers-url=20.0.20.1,20.0.20.2,20.0.20.3
       does not start a new broker process, it promotes the existing broker to
       become the primary.
     </para>
+
+    <section id="ha-rm-shutdown-node">
+      <title>Shutting down qpidd on a HA node</title>
+      <para>
+        As explained above both the per-node <literal>qpidd</literal> service
+        and the re-locatable <literal>qpidd-primary</literal> service are
+        implemented by the same <literal>qpidd</literal> daemon.
+      </para>
+      <para>
+        As a result, stopping the <literal>qpidd</literal> service will not stop
+        a <literal>qpidd</literal> daemon that is acting as primary, and
+        stopping the <literal>qpidd-primary</literal> service will not stop a
+        <literal>qpidd</literal> process that is acting as backup.
+      </para>
+      <para>
+        To shut down a node that is acting as primary you need to shut down the
+        <literal>qpidd</literal> service <emphasis>and</emphasis> relocate the
+        primary:
+      </para>
+      <para>
+	<programlisting>
+clusvcadm -d somenode-qpidd-service
+clusvcadm -r qpidd-primary-service
+        </programlisting>
+      </para>
+      <para>
+        This will shut down the <literal>qpidd</literal> daemon on that node and
+        prevent the primary service service from relocating back to the node
+        because the qpidd service is no longer running there.
+      </para>
+    </section>
   </section>
 
   <section id="ha-broker-admin">
