@@ -348,9 +348,11 @@ class Channel:
 
     if frame.method.klass.name == "basic" and frame.method.name == "publish":
       self._flow_control_wait_condition.acquire()
-      self.check_flow_control()
-      self.write(frame, content)
-      self._flow_control_wait_condition.release()
+      try:
+        self.check_flow_control()
+        self.write(frame, content)
+      finally:
+        self._flow_control_wait_condition.release()
     else:
       self.write(frame, content)
 
@@ -407,7 +409,6 @@ class Channel:
     if self._flow_control:
       self._flow_control_wait_condition.wait(self._flow_control_wait_failure)
     if self._flow_control:
-      self._flow_control_wait_condition.release()
       raise Timeout("Unable to send message for " + str(self._flow_control_wait_failure) + " seconds due to broker enforced flow control")
 
   def __getattr__(self, name):
