@@ -47,11 +47,11 @@ SessionManager::~SessionManager() {
     detached.clear();           // Must clear before destructor as session dtor will call forget()
 }
 
-std::auto_ptr<SessionState>  SessionManager::attach(SessionHandler& h, const SessionId& id, bool/*force*/) {
+std::auto_ptr<SessionState>  SessionManager::attach(SessionHandler& h, const SessionId& id, bool force) {
     Mutex::ScopedLock l(lock);
     eraseExpired();             // Clean up expired table
     std::pair<Attached::iterator, bool> insert = attached.insert(id);
-    if (!insert.second)
+    if (!insert.second && !force)
         throw SessionBusyException(QPID_MSG("Session already attached: " << id));
     Detached::iterator i = std::find(detached.begin(), detached.end(), id);
     std::auto_ptr<SessionState> state;
@@ -62,7 +62,6 @@ std::auto_ptr<SessionState>  SessionManager::attach(SessionHandler& h, const Ses
         state->attach(h);
     }
     return state;
-    // FIXME aconway 2008-04-29: implement force 
 }
 
 void  SessionManager::detach(std::auto_ptr<SessionState> session) {
