@@ -591,6 +591,7 @@ class Engine:
     self.log_id = "%x" % id(self.connection)
     self._closing = False
     self._connected = False
+    self._reconnecting = bool(connection.sessions)
     self._attachments = {}
 
     self._in = LinkIn()
@@ -874,8 +875,9 @@ class Engine:
       else:
         raise RuntimeError("all channels used")
       sst = SessionState(self, ssn, ssn.name, ch)
-      sst.write_op(SessionAttach(name=ssn.name))
+      sst.write_op(SessionAttach(name=ssn.name, force=self._reconnecting))
       sst.write_op(SessionCommandPoint(sst.sent, 0))
+      self._reconnecting = False
       sst.outgoing_idx = 0
       sst.acked = []
       sst.acked_idx = 0
