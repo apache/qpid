@@ -411,6 +411,9 @@ void Connection::process()
         case PN_LINK_REMOTE_OPEN:
             doLinkRemoteOpen(pn_event_link(event));
             break;
+        case PN_LINK_REMOTE_DETACH:
+             doLinkRemoteDetach(pn_event_link(event), false);
+             break;
         case PN_LINK_REMOTE_CLOSE:
             doLinkRemoteClose(pn_event_link(event));
             break;
@@ -579,16 +582,22 @@ void Connection::doLinkRemoteOpen(pn_link_t *link)
     }
 }
 
-// the peer has issued a Detach performative
+// the peer has issued a Detach performative with closed=true
 void Connection::doLinkRemoteClose(pn_link_t *link)
 {
+    doLinkRemoteDetach(link, true);
+}
+// the peer has issued a Detach performative
+void Connection::doLinkRemoteDetach(pn_link_t *link, bool closed)
+{
     if ((pn_link_state(link) & PN_LOCAL_CLOSED) == 0) {
-        pn_link_close(link);
+        if (closed) pn_link_close(link);
+        else pn_link_detach(link);
         Sessions::iterator session = sessions.find(pn_link_session(link));
         if (session == sessions.end()) {
             QPID_LOG(error, id << " peer attempted to detach link on unknown session!");
         } else {
-            session->second->detach(link);
+            session->second->detach(link, closed);
             QPID_LOG_CAT(debug, model, id << " link detached");
         }
     }

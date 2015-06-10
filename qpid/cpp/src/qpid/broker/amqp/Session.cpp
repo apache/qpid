@@ -591,12 +591,12 @@ void Session::attach(pn_link_t* link, const std::string& src, const std::string&
     }
 }
 
-void Session::detach(pn_link_t* link)
+void Session::detach(pn_link_t* link, bool closed)
 {
     if (pn_link_is_sender(link)) {
         OutgoingLinks::iterator i = outgoing.find(link);
         if (i != outgoing.end()) {
-            i->second->detached(true/*TODO: checked whether actually closed; see PROTON-773*/);
+            i->second->detached(closed);
             boost::shared_ptr<Queue> q = OutgoingFromQueue::getExclusiveSubscriptionQueue(i->second.get());
             if (q && !q->isAutoDelete() && !q->isDeleted()) {
                 connection.getBroker().deleteQueue(q->getName(), connection.getUserId(), connection.getMgmtId());
@@ -607,7 +607,7 @@ void Session::detach(pn_link_t* link)
     } else {
         IncomingLinks::iterator i = incoming.find(link);
         if (i != incoming.end()) {
-            i->second->detached(true/*TODO: checked whether actually closed; see PROTON-773*/);
+            i->second->detached(closed);
             incoming.erase(i);
             QPID_LOG(debug, "Incoming link detached");
         }

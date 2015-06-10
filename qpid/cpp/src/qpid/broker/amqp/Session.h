@@ -65,7 +65,7 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
      * called for links initiated by the peer
      */
     void attach(pn_link_t*);
-    void detach(pn_link_t*);
+    void detach(pn_link_t*, bool closed);
     void readable(pn_link_t*, pn_delivery_t*);
     void writable(pn_link_t*, pn_delivery_t*);
     bool dispatch();

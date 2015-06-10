@@ -103,6 +103,7 @@ class Connection : public BrokerContext, public sys::ConnectionCodec, public Man
     void doSessionRemoteClose(pn_session_t *session);
     void doLinkRemoteOpen(pn_link_t *link);
     void doLinkRemoteClose(pn_link_t *link);
+    void doLinkRemoteDetach(pn_link_t *link, bool closed);
     void doDeliveryUpdated(pn_delivery_t *delivery);
 };
 }}} // namespace qpid::broker::amqp
