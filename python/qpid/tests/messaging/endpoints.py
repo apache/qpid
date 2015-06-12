@@ -1230,6 +1230,8 @@ test-link-bindings-queue; {
       assert 0, "assertion failed to trigger"
     except AssertionFailed, e:
       pass
+    except NotFound, e:  # queue named amp.topic not found
+      pass
 
   def testAssert2(self):
     snd = self.ssn.sender("amq.topic; {assert: always}")
