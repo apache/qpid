@@ -59,8 +59,7 @@ namespace amqp {
 using types::Variant;
 
 namespace {
-//remove conditional when 0.5 is no longer supported
-#ifdef HAVE_PROTON_TRACER
+
 void do_trace(pn_transport_t* transport, const char* message)
 {
     ConnectionContext* c = reinterpret_cast<ConnectionContext*>(pn_transport_get_context(transport));
@@ -72,11 +71,6 @@ void set_tracer(pn_transport_t* transport, void* context)
     pn_transport_set_context(transport, context);
     pn_transport_set_tracer(transport, &do_trace);
 }
-#else
-void set_tracer(pn_transport_t*, void*)
-{
-}
-#endif
 
 #ifdef USE_PROTON_TRANSPORT_CONDITION
 std::string get_error(pn_connection_t* connection, pn_transport_t* transport)
