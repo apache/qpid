@@ -19,7 +19,7 @@
 
 # Optional AMQP1.0 support. Requires proton toolkit.
 
-find_package(Proton 0.5)
+find_package(Proton 0.7)
 
 set (amqp_default ${amqp_force})
 set (maximum_version 0.9)
@@ -29,10 +29,6 @@ if (Proton_FOUND)
     endif (Proton_VERSION VERSION_GREATER ${maximum_version})
     message(STATUS "Qpid proton found, amqp 1.0 support enabled")
     set (amqp_default ON)
-    #remove when 0.5 no longer supported
-    if (NOT Proton_VERSION EQUAL 0.5)
-        set (HAVE_PROTON_TRACER 1)
-    endif (NOT Proton_VERSION EQUAL 0.5)
     if (Proton_VERSION VERSION_GREATER 0.7)
         set (USE_PROTON_TRANSPORT_CONDITION 1)
         set (HAVE_PROTON_EVENTS 1)
