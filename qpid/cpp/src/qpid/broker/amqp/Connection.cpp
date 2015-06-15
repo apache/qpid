@@ -586,7 +586,10 @@ void Connection::doLinkRemoteDetach(pn_link_t *link, bool closed)
 {
     if ((pn_link_state(link) & PN_LOCAL_CLOSED) == 0) {
         if (closed) pn_link_close(link);
+        //pn_link_detach was only introduced after 0.7, as was the event interface:
+#ifdef HAVE_PROTON_EVENTS
         else pn_link_detach(link);
+#endif
         Sessions::iterator session = sessions.find(pn_link_session(link));
         if (session == sessions.end()) {
             QPID_LOG(error, id << " peer attempted to detach link on unknown session!");
