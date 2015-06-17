@@ -36,6 +36,8 @@
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/Exception.h"
 #include "qpid/sys/SecurityLayer.h"
+#include "qpid/broker/System.h"
+
 
 
 namespace qpid {

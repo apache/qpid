@@ -32,6 +32,7 @@
 #include "qpid/sys/Time.h"
 #include "qpid/sys/Timer.h"
 #include "qpid/sys/OutputControl.h"
+#include "qpid/Version.h"
 #include "config.h"
 #include <sstream>
 extern "C" {
@@ -343,6 +344,31 @@ void Connection::open()
         QPID_LOG_CAT(debug, network, id << " AMQP 1.0 idle-timeout set:"
                      << " local=" << pn_transport_get_idle_timeout(transport)
                      << " remote=" << pn_transport_get_remote_idle_timeout(transport));
+    }
+
+    // QPID-6592: put self-identifying information into the connection
+    // properties.  Use keys defined by the 0-10 spec, as AMQP 1.0 has yet to
+    // define any.
+    //
+    pn_data_t *props = pn_connection_properties(connection);
+    if (props) {
+        boost::shared_ptr<const System> sysInfo = getBroker().getSystem();
+        std::string osName(sysInfo->getOsName());
+        std::string nodeName(sysInfo->getNodeName());
+
+        pn_data_clear(props);
+        pn_data_put_map(props);
+        pn_data_enter(props);
+        pn_data_put_symbol(props, pn_bytes(7, "product"));
+        pn_data_put_string(props, pn_bytes(qpid::product.size(), qpid::product.c_str()));
+        pn_data_put_symbol(props, pn_bytes(7, "version"));
+        pn_data_put_string(props, pn_bytes(qpid::version.size(), qpid::version.c_str()));
+        pn_data_put_symbol(props, pn_bytes(8, "platform"));
+        pn_data_put_string(props, pn_bytes(osName.size(), osName.c_str()));
+        pn_data_put_symbol(props, pn_bytes(4, "host"));
+        pn_data_put_string(props, pn_bytes(nodeName.size(), nodeName.c_str()));
+        pn_data_exit(props);
+        pn_data_rewind(props);
     }
 
     pn_connection_open(connection);
