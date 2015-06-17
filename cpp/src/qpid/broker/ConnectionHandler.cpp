@@ -39,6 +39,7 @@
 #include "qpid/broker/AclModule.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qmf/org/apache/qpid/broker/EventClientConnectFail.h"
+#include "qpid/Version.h"
 
 using namespace qpid;
 using namespace qpid::broker;
@@ -118,7 +119,12 @@ ConnectionHandler::Handler::Handler(qpid::broker::amqp_0_10::Connection& c, bool
     if (serverMode) {
         FieldTable properties;
         Array mechanisms(0x95);
+        boost::shared_ptr<const System> sysInfo = connection.getBroker().getSystem();
 
+        properties.setString("product", qpid::product);
+        properties.setString("version", qpid::version);
+        properties.setString("platform", sysInfo->getOsName());
+        properties.setString("host", sysInfo->getNodeName());
         properties.setString(QPID_FED_TAG, connection.getBroker().getFederationTag());
 
         authenticator = SaslAuthenticator::createAuthenticator(c);
