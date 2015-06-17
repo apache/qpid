@@ -57,6 +57,7 @@ TransactionUnknown::TransactionUnknown(const std::string& msg) : TransactionErro
 UnauthorizedAccess::UnauthorizedAccess(const std::string& msg) : SessionError(msg) {}
 
 ConnectionError::ConnectionError(const std::string& msg) : MessagingException(msg) {}
+ProtocolVersionError::ProtocolVersionError(const std::string& msg) : ConnectionError(msg) {}
 AuthenticationFailure::AuthenticationFailure(const std::string& msg) : ConnectionError(msg) {}
 
 TransportFailure::TransportFailure(const std::string& msg) : MessagingException(msg) {}

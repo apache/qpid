@@ -23,8 +23,8 @@
  */
 
 #include "qpid/messaging/ImportExport.h"
-
 #include "qpid/types/Variant.h"
+#include <vector>
 
 namespace qpid {
 namespace messaging {
@@ -37,8 +37,10 @@ class ProtocolRegistry
   public:
     typedef ConnectionImpl* Factory(const std::string& url, const qpid::types::Variant::Map& options);
     static ConnectionImpl* create(const std::string& url, const qpid::types::Variant::Map& options);
+    static ConnectionImpl* next(ConnectionImpl*);
     QPID_MESSAGING_EXTERN static void add(const std::string& name, Factory* factory);
   private:
+    static ConnectionImpl* createInternal(const std::vector<std::string>& versions, const std::string& url, const qpid::types::Variant::Map& options, const std::string& error);
 };
 }} // namespace qpid::messaging
 

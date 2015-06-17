@@ -220,6 +220,11 @@ struct QPID_MESSAGING_CLASS_EXTERN ConnectionError : public MessagingException
     QPID_MESSAGING_EXTERN ConnectionError(const std::string&);
 };
 
+struct QPID_MESSAGING_CLASS_EXTERN ProtocolVersionError : public ConnectionError
+{
+    QPID_MESSAGING_EXTERN ProtocolVersionError(const std::string&);
+};
+
 struct QPID_MESSAGING_CLASS_EXTERN AuthenticationFailure : public ConnectionError
 {
     QPID_MESSAGING_EXTERN AuthenticationFailure(const std::string&);

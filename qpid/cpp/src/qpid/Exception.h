@@ -86,6 +86,10 @@ struct TransportFailure : public Exception {
     TransportFailure(const std::string& msg=std::string()) : Exception(msg) {}
 };
 
+struct ProtocolVersionError : public TransportFailure {
+    ProtocolVersionError(const std::string& msg=std::string()) : TransportFailure(msg) {}
+};
+
 } // namespace qpid
 
 #endif  /*!_Exception_*/

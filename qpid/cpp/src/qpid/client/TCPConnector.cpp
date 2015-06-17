@@ -281,23 +281,17 @@ void TCPConnector::readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff)
 size_t TCPConnector::decode(const char* buffer, size_t size)
 {
     framing::Buffer in(const_cast<char*>(buffer), size);
-    if (!initiated) {
-        framing::ProtocolInitiation protocolInit;
-        if (protocolInit.decode(in)) {
-            QPID_LOG(debug, "RECV [" << identifier << "]: INIT(" << protocolInit << ")");
-            if(!(protocolInit==version)){
-                throw Exception(QPID_MSG("Unsupported version: " << protocolInit
-                                         << " supported version " << version));
+    try {
+        if (checkProtocolHeader(in, version)) {
+            AMQFrame frame;
+            while(frame.decode(in)){
+                QPID_LOG(trace, "RECV [" << identifier << "]: " << frame);
+                input->received(frame);
             }
-            initiated = true;
-        } else {
-            return size - in.available();
         }
-    }
-    AMQFrame frame;
-    while(frame.decode(in)){
-        QPID_LOG(trace, "RECV [" << identifier << "]: " << frame);
-        input->received(frame);
+    } catch (const ProtocolVersionError& e) {
+        QPID_LOG(info, "Closing connection due to " << e.what());
+        close();
     }
     return size - in.available();
 }

@@ -45,7 +45,7 @@ using namespace qpid::sys;
 namespace qpid {
 namespace client {
 
-Connection::Connection() : version(framing::highestProtocolVersion)
+Connection::Connection() : version(framing::ProtocolVersion(0, 10))
 {
     ConnectionImpl::init();
 }
