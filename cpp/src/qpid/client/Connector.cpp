@@ -24,6 +24,7 @@
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/SecurityLayer.h"
+#include "qpid/framing/ProtocolInitiation.h"
 
 #include <map>
 
@@ -66,6 +67,27 @@ void Connector::registerFactory(const std::string& proto, Factory* connectorFact
 
 void Connector::activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>)
 {
+}
+
+bool Connector::checkProtocolHeader(framing::Buffer& in, const framing::ProtocolVersion& version)
+{
+    if (!header) {
+        boost::shared_ptr<framing::ProtocolInitiation> protocolInit(new framing::ProtocolInitiation);
+        if (protocolInit->decode(in)) {
+            header = protocolInit;
+            QPID_LOG(debug, "RECV [" << getIdentifier() << "]: INIT(" << *protocolInit << ")");
+            checkVersion(version);
+        }
+    }
+    return header;
+}
+
+void Connector::checkVersion(const framing::ProtocolVersion& version)
+{
+    if (header && !header->matches(version)){
+        throw ProtocolVersionError(QPID_MSG("Incorrect version: " << *header
+                                            << "; expected " << version));
+    }
 }
 
 

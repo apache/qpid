@@ -22,6 +22,7 @@
  *
  */
 #include <string>
+#include <boost/function.hpp>
 #include "qpid/RefCounted.h"
 
 namespace qpid {
@@ -32,6 +33,7 @@ class Variant;
 
 namespace messaging {
 
+class ProtocolRegistry;
 class Session;
 
 class ConnectionImpl : public virtual qpid::RefCounted
@@ -49,7 +51,10 @@ class ConnectionImpl : public virtual qpid::RefCounted
     virtual void reconnect() = 0;
     virtual std::string getUrl() const = 0;
   private:
+  friend class ProtocolRegistry;
+    boost::function<ConnectionImpl*()> next;
 };
+
 }} // namespace qpid::messaging
 
 #endif  /*!QPID_MESSAGING_CONNECTIONIMPL_H*/

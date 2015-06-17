@@ -41,6 +41,8 @@ struct SecuritySettings;
 namespace framing {
 class InputHandler;
 class AMQFrame;
+class Buffer;
+class ProtocolInitiation;
 }
 
 namespace client {
@@ -74,6 +76,11 @@ class Connector : public framing::FrameHandler
     virtual void activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>);
 
     virtual const qpid::sys::SecuritySettings* getSecuritySettings() = 0;
+    void checkVersion(const framing::ProtocolVersion& version);
+  protected:
+    boost::shared_ptr<framing::ProtocolInitiation> header;
+
+    bool checkProtocolHeader(framing::Buffer&, const framing::ProtocolVersion& version);
 };
 
 }}

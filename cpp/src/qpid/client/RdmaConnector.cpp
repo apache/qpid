@@ -388,18 +388,17 @@ void RdmaConnector::readbuff(Rdma::AsynchIO&, Rdma::Buffer* buff) {
 size_t RdmaConnector::decode(const char* buffer, size_t size) 
 {
     framing::Buffer in(const_cast<char*>(buffer), size);
-    if (!initiated) {
-        framing::ProtocolInitiation protocolInit;
-        if (protocolInit.decode(in)) {
-            //TODO: check the version is correct
-            QPID_LOG(debug, "RECV [" << identifier << "]: INIT(" << protocolInit << ")");
+    try {
+        if (checkProtocolHeader(in, version)) {
+            AMQFrame frame;
+            while(frame.decode(in)){
+                QPID_LOG(trace, "RECV [" << identifier << "]: " << frame);
+                input->received(frame);
+            }
         }
-        initiated = true;
-    }
-    AMQFrame frame;
-    while(frame.decode(in)){
-        QPID_LOG(trace, "RECV [" << identifier << "]: " << frame);
-        input->received(frame);
+    } catch (const ProtocolVersionError& e) {
+        QPID_LOG(info, "Closing connection due to " << e.what());
+        close();
     }
     return size - in.available();
 }
