@@ -328,4 +328,22 @@ class MiscellaneousErrorsTests(TestBase):
         c2 = other.channel(1)
         c2.channel_open()
         c2.exchange_delete(exchange="test_different_declared_type_exchange")
-    
+
+    def testReservedExchangeRedeclaredSameNameAndType(self):
+        self.channel.exchange_declare(exchange="amq.direct", type="direct", passive=True)
+        self.channel.exchange_declare(exchange="amq.direct", type="direct", passive=False)
+
+    def testReservedExchangeNameRedeclaredDifferentType(self):
+        try:
+            self.channel.exchange_declare(exchange="amq.direct", type="topic", passive=False)
+            self.fail("Expected 530 for redeclaration of exchange with different type.")
+        except Closed, e:
+            self.assertConnectionException(530, e.args[0])
+
+    def testReservedExchangeNameDisallowed(self):
+        try:
+            self.channel.exchange_declare(exchange="amq.myexch", type="direct", passive=False)
+            self.fail("Expected 530 for redeclaration of exchange with different type.")
+        except Closed, e:
+            self.assertConnectionException(530, e.args[0])
+
