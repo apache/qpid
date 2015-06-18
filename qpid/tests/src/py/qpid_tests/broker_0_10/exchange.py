@@ -96,8 +96,9 @@ class TestHelper(TestBase010):
                          auto_delete=False,
                          arguments={}):
         session = session or self.session
-        reply = session.exchange_declare(exchange=exchange, type=type, passive=passive,durable=durable, auto_delete=auto_delete, arguments=arguments)
-        self.exchanges.append((session,exchange))
+        reply = session.exchange_declare(exchange=exchange, type=type, passive=passive, durable=durable, auto_delete=auto_delete, arguments=arguments)
+        if exchange and not exchange.startswith("amq."):
+          self.exchanges.append((session,exchange))
         return reply
 
     def uniqueString(self):
@@ -479,6 +480,17 @@ class MiscellaneousErrorsTests(TestHelper):
         try:
             session = self.conn.session("alternate", 2)
             session.exchange_declare(exchange="test_different_declared_type_exchange", type="topic")
+            self.fail("Expected 530 for redeclaration of exchange with different type.")
+        except SessionException, e:
+            self.assertEquals(530, e.args[0].error_code)
+
+    def testReservedExchangeRedeclaredSameType(self):
+        self.exchange_declare(exchange="amq.direct", type="direct", passive=False)
+        self.exchange_declare(exchange="amq.direct", type="direct", passive=True)
+
+    def testReservedExchangeRedeclaredDifferentType(self):
+        try:
+            self.exchange_declare(exchange="amq.direct", type="topic")
             self.fail("Expected 530 for redeclaration of exchange with different type.")
         except SessionException, e:
             self.assertEquals(530, e.args[0].error_code)
