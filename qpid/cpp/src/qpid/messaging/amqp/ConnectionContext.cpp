@@ -259,11 +259,6 @@ bool ConnectionContext::fetch(boost::shared_ptr<SessionContext> ssn, boost::shar
             }
         }
         if (get(ssn, lnk, message, qpid::messaging::Duration::IMMEDIATE)) {
-            sys::Monitor::ScopedLock l(lock);
-            if (lnk->capacity) {
-                pn_link_flow(lnk->receiver, 1);
-                wakeupDriver();
-            }
             return true;
         } else {
             return false;
