@@ -485,7 +485,6 @@ class MiscellaneousErrorsTests(TestHelper):
             self.assertEquals(530, e.args[0].error_code)
 
     def testReservedExchangeRedeclaredSameType(self):
-        self.exchange_declare(exchange="amq.direct", type="direct", passive=False)
         self.exchange_declare(exchange="amq.direct", type="direct", passive=True)
 
     def testReservedExchangeRedeclaredDifferentType(self):
