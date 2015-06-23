@@ -79,7 +79,7 @@ bool Connector::checkProtocolHeader(framing::Buffer& in, const framing::Protocol
             checkVersion(version);
         }
     }
-    return header;
+    return header.get();
 }
 
 void Connector::checkVersion(const framing::ProtocolVersion& version)
