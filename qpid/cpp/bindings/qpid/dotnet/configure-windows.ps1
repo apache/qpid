@@ -331,10 +331,14 @@ REM     >
 REM
 REM The solution was generated with cmake command line:
 REM $cmakeLine
+SET se_buildconfig=%1
 ECHO %PATH% | FINDSTR /I boost > NUL
 IF %ERRORLEVEL% EQU 0 ECHO WARNING: Boost is defined in your path multiple times!
 SET PATH=$boostRoot\lib;%PATH%
 SET QPID_BUILD_ROOT=$buildRoot
+IF NOT DEFINED se_buildconfig (GOTO :CONT)
+SET PATH=%QPID_BUILD_ROOT%\src\%se_buildconfig%;%PATH%
+:CONT
 ECHO Environment set for $slnName $studioVersion $vsPlatform $nBits-bit development.
 ")
     Write-Host "        $buildRoot\$outfileName"
@@ -385,15 +389,18 @@ function WriteMakeInstallBat
         [string] $vsEnvironment,
         [string] $vsBuildTarget
     )
-
+    $newTarget = $vsBuildTarget -replace "Debug", "%mi_buildconfig%"
     $out = @("@ECHO OFF
 REM
 REM Call this command procedure from a command prompt to run 'make install'
+REM   %1 selects build configuration. Defaults to Debug
 REM
 setlocal
-call $varfileName
+SET mi_buildconfig=%1
+IF NOT DEFINED mi_buildconfig (SET mi_buildconfig=Debug)
+call $varfileName %mi_buildconfig%
 call $vsEnvironment
-devenv qpid-cpp.sln /build $vsBuildTarget /project INSTALL
+devenv qpid-cpp.sln /build $newTarget /project INSTALL
 endlocal
 ")
     Write-Host "        $buildRoot\$outfileName"
