@@ -173,8 +173,13 @@ function BuildAPlatform
                 $msvcVer = "msvc11"
                 $msvcVerX = "msvcx"
             } else {
-                Write-Host "illegal vsName parameter: $vsName Choose VS2008, VS2010, or VS2012"
-                exit
+                if ($vsName -eq "VS2013") {
+                    $msvcVer = "msvc12"
+                    $msvcVerX = "msvcx"
+                } else {
+                    Write-Host "illegal vsName parameter: $vsName Choose VS2008, VS2010, VS2012, or VS2013"
+                    exit
+                }
             }
         }
     }
@@ -413,8 +418,12 @@ if ( !($global:vsVersion -eq $null) ) {
             if ($global:vsVersion -eq "VS2012") {
                 $generator = "Visual Studio 11"
             } else {
-                Write-Host "Visual Studio Version must be VS2008, VS2010, or VS2012"
-                exit
+                if ($global:vsVersion -eq "VS2013") {
+                    $generator = "Visual Studio 12"
+                } else {
+                    Write-Host "Visual Studio Version must be VS2008, VS2010, VS2012, or VS2013"
+                    exit
+                }
             }
         }
     }

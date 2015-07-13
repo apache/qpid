@@ -115,6 +115,8 @@ $global:txtWH   = 'Write-Host'
 # Visual Studio version selection dialog items and choice
 #
 [array]$global:VsVersionCmakeChoiceList = `
+    "Visual Studio 2013 - x86", `
+    "Visual Studio 2013 - x64", `
     "Visual Studio 2012 - x86", `
     "Visual Studio 2012 - x64", `
     "Visual Studio 2010 - x86", `
@@ -188,7 +190,7 @@ function SanityCheckBoostPath ($path=0)
     if ($path -ne $null) {
         $displayPath = $path
 
-        $toTest = ('include', 'lib')
+        $toTest = ('lib')
         foreach ($pattern in $toTest) {
             $target = Join-Path $path $pattern
             if (!(Test-Path -path $target)) {
@@ -418,7 +420,15 @@ function ParseStudioSelection
         [string] $vsSelection
     )
     Write-Host "Checking studio version: $vsSelection"
-    if ($vsSelection.Contains("2012")) {
+    if ($vsSelection.Contains("2013")) {
+        $global:vsVersion = "Visual Studio 2013"
+        $global:cmakeGenerator = "Visual Studio 12 2013"
+        $global:vsSubdir = "msvc12"
+        $global:vsSubdirX = "msvcx"
+        $global:cmakeCompiler = "-vc120"
+        $global:vsShortName = "2013"
+        $global:vsEnvironment = """%VS120COMNTOOLS%..\..\VC\vcvarsall.bat"""
+    } elseif ($vsSelection.Contains("2012")) {
         $global:vsVersion = "Visual Studio 2012"
         $global:cmakeGenerator = "Visual Studio 11"
         $global:vsSubdir = "msvc11"
@@ -443,7 +453,7 @@ function ParseStudioSelection
         $global:vsShortName = "2008"
         $global:vsEnvironment = """%VS90COMNTOOLS%..\..\VC\vcvarsall.bat"""
     } else {
-        Write-Host "Visual Studio must be 2008, 2010, or 2012"
+        Write-Host "Visual Studio must be 2008, 2010, 2012, or 2013"
         exit
     }
     $global:vsSelectedOption = $vsSelection
