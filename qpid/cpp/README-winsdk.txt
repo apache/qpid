@@ -49,6 +49,12 @@ This kit is distributed as four zip files:
     qpid-cpp-x64-VS2010-<version>.zip - projects and libraries for 64-bit
                                         x64 development using
                                         Visual Studio 2010.
+    qpid-cpp-x86-VS2012-<version>.zip - projects and libraries for 32-bit
+                                        x86 and Win32 development using
+                                        Visual Studio 2012.
+    qpid-cpp-x64-VS2012-<version>.zip - projects and libraries for 64-bit
+                                        x64 development using
+                                        Visual Studio 2012.
 
 For additional software or information on the Qpid project go to:
 http://cwiki.apache.org/qpid/
@@ -56,17 +62,17 @@ http://cwiki.apache.org/qpid/
 
 2. Prerequisites
 ================
-A. Visual Studio 2008 or Visual Studio 2010. The kits were produced 
-   using Visual Studio 2008 or Visual Studio 2010 and provide a matched
+A. Visual Studio 2008, 2010, or 2012. The kits were produced with the
+   corresponding version of Visual Studio and provide a matched
    set of link libraries for each tool chain.
    
 B. MSVC runtime libraries. Copies of the MSVC redistributable runtime
    libraries and manifest are included in the \bin\release directories.
    
-C. Boost version 1_47. The Boost libraries required by this SDK are
+C. Boost version 1_55. The Boost libraries required by this SDK are
    included in the \bin\debug and \bin\release directories.
    
-D. CMake version 2.8.6 or later, available for free from http://cmake.org/ 
+D. CMake version 2.8.11 or later, available for free from http://cmake.org/ 
    CMake generates custom Visual Studio solutions and projects for
    the unmanaged C++ examples.
 
@@ -148,7 +154,7 @@ unmanaged              | org.apache.qpid.messaging.dll |
 
 
 4. Building unmanaged C++ examples
-===========================
+==================================
 
 This version of Qpid-Cpp-Win-Sdk ships with no pre-built Visual Studio
 solution or project files for the C++ examples. Instead this kit has
@@ -157,7 +163,7 @@ support for using CMake to generate the solution and project files.
 A. Make sure that the CMake bin directory is defined in your path.
    You may check this from a command prompt by typing:
      > cmake --version
-     cmake version 2.8.6
+     cmake version 2.8.11
    
    If CMake is installed correctly it will respond with a version number.
    
@@ -186,6 +192,6 @@ Debug or Release configuration.
 * Only the Release variant of Qpid code uses the redistributable 
   MSVC libraries in the /bin/release directory. Users who wish to link to 
   the Debug variant of Qpid code may do so under their own copy of 
-  Visual Studio where the debug versions of MSVC90 or MSVC100 runtime 
-  libraries are available.
+  Visual Studio where the debug versions of MSVC90, MSVC100, or MSVC110
+  runtime libraries are available.
   
