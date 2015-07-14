@@ -44,7 +44,7 @@ Sasl::~Sasl() {}
 
 size_t Sasl::decode(const char* buffer, size_t size)
 {
-    if (state == AUTHENTICATED) {
+    if (state == AUTHENTICATED || state == SUCCESS_PENDING) {
         if (securityLayer.get()) return securityLayer->decode(buffer, size);
         else return connection.decode(buffer, size);
     } else if (state == INCOMPLETE && size) {
