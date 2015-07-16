@@ -50,54 +50,54 @@ class QPID_MESSAGING_CLASS_EXTERN Receiver : public qpid::messaging::Handle<Rece
     QPID_MESSAGING_EXTERN ~Receiver();
     QPID_MESSAGING_EXTERN Receiver& operator=(const Receiver&);
     /**
-     * Retrieves a message from this receivers local queue, or waits
-     * for upto the specified timeout for a message to become
+     * Retrieves a message from this Receiver's local queue or waits
+     * for up to the specified timeout for a message to become
      * available.
      */
     QPID_MESSAGING_EXTERN bool get(Message& message, Duration timeout=Duration::FOREVER);
     /**
-     * Retrieves a message from this receivers local queue, or waits
+     * Retrieves a message from this Receiver's local queue or waits
      * for up to the specified timeout for a message to become
      * available.
      *
      * @exception NoMessageAvailable if there is no message to give
      * after waiting for the specified timeout, or if the Receiver is
-     * closed, in which case isClose() will be true.
+     * closed, in which case isClosed() will be true.
      */
     QPID_MESSAGING_EXTERN Message get(Duration timeout=Duration::FOREVER);
     /**
-     * Retrieves a message for this receivers subscription or waits
+     * Retrieves a message from this Receiver's subscription or waits
      * for up to the specified timeout for one to become
-     * available. Unlike get() this method will check with the server
+     * available. Unlike get(), this method will check with the server
      * that there is no message for the subscription this receiver is
      * serving before returning false.
      *
-     * @return false if there is no message to give after
-     * waiting for the specified timeout, or if the Receiver is
-     * closed, in which case isClose() will be true.
+     * @return false if there is no message available after
+     * waiting for the specified time period, or if the receiver is
+     * closed, in which case isClosed() will be true.
      */
     QPID_MESSAGING_EXTERN bool fetch(Message& message, Duration timeout=Duration::FOREVER);
     /**
-     * Retrieves a message for this receivers subscription or waits
+     * Retrieves a message for this Receiver's subscription or waits
      * for up to the specified timeout for one to become
-     * available. Unlike get() this method will check with the server
+     * available. Unlike get(), this method will check with the server
      * that there is no message for the subscription this receiver is
      * serving before throwing an exception.
      *
-     * @exception NoMessageAvailable if there is no message to give
+     * @exception NoMessageAvailable if there is no message available
      * after waiting for the specified timeout, or if the Receiver is
      * closed, in which case isClose() will be true.
      */
     QPID_MESSAGING_EXTERN Message fetch(Duration timeout=Duration::FOREVER);
     /**
-     * Sets the capacity for the receiver. The capacity determines how
-     * many incoming messages can be held in the receiver before being
+     * Sets the capacity for the Receiver. The capacity determines how
+     * many incoming messages can be held in the Receiver before being
      * requested by a client via fetch() (or pushed to a listener).
      */
     QPID_MESSAGING_EXTERN void setCapacity(uint32_t);
     /**
-     * @return the capacity of the receiver. The capacity determines
-     * how many incoming messages can be held in the receiver before
+     * @return the capacity of the Receiver. The capacity determines
+     * how many incoming messages can be held in the Receiver before
      * being requested by a client via fetch() (or pushed to a
      * listener).
      */
@@ -108,35 +108,35 @@ class QPID_MESSAGING_CLASS_EXTERN Receiver : public qpid::messaging::Handle<Rece
      */
     QPID_MESSAGING_EXTERN uint32_t getAvailable();
     /**
-     * @return a count of the number of messages received on this
-     * receiver that have been acknowledged, but for which that
+     * @return the number of messages received on this
+     * Receiver that have been acknowledged, but for which that
      * acknowledgement has not yet been confirmed as processed by the
      * server.
      */
     QPID_MESSAGING_EXTERN uint32_t getUnsettled();
 
     /**
-     * Cancels this receiver.
+     * Cancels this Receiver.
      */
     QPID_MESSAGING_EXTERN void close();
 
     /**
-     * Return true if the receiver was closed by a call to close()
+     * Return true if the Receiver was closed by a call to close().
      */
     QPID_MESSAGING_EXTERN bool isClosed() const;
 
     /**
-     * Returns the name of this receiver.
+     * Returns the name of this Receiver.
      */
     QPID_MESSAGING_EXTERN const std::string& getName() const;
 
     /**
-     * Returns a handle to the session associated with this receiver.
+     * Returns a handle to the session associated with this Receiver.
      */
     QPID_MESSAGING_EXTERN Session getSession() const;
 
     /**
-     * Returns an address for this receiver.
+     * Returns an address for this Receiver.
      */
     QPID_MESSAGING_EXTERN Address getAddress() const;
 
