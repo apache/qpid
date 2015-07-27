@@ -633,6 +633,8 @@ void Connection::doLinkRemoteDetach(pn_link_t *link, bool closed)
 void Connection::doDeliveryUpdated(pn_delivery_t *delivery)
 {
     pn_link_t* link = pn_delivery_link(delivery);
+    if (pn_link_state(link) & PN_LOCAL_CLOSED) return;
+
     try {
         if (pn_link_is_receiver(link)) {
             Sessions::iterator i = sessions.find(pn_link_session(link));
