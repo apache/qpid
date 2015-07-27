@@ -285,7 +285,7 @@ bool ConnectionContext::get(boost::shared_ptr<SessionContext> ssn, boost::shared
         checkClosed(ssn, lnk);
         pn_delivery_t* current = pn_link_current((pn_link_t*) lnk->receiver);
         QPID_LOG(debug, "In ConnectionContext::get(), current=" << current);
-        if (current) {
+        if (current && !pn_delivery_partial(current)) {
             qpid::messaging::MessageImpl& impl = MessageImplAccess::get(message);
             boost::shared_ptr<EncodedMessage> encoded(new EncodedMessage(pn_delivery_pending(current)));
             encoded->setNestAnnotationsOption(nestAnnotations);
