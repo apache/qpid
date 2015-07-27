@@ -252,6 +252,8 @@ Broker::Broker(const BrokerOptions& conf) :
     if (!dataDir.isEnabled()) {
         QPID_LOG (info, "No data directory - Disabling persistent configuration");
     }
+    System* system = new System (dataDir.isEnabled() ? dataDir.getPath() : string(), this);
+    systemObject = System::shared_ptr(system);
     try {
     if (conf.enableMgmt) {
         QPID_LOG(info, "Management enabled");
@@ -259,9 +261,6 @@ Broker::Broker(const BrokerOptions& conf) :
                                    conf.mgmtPubInterval/sys::TIME_SEC, this, conf.workerThreads + 3);
         managementAgent->setName("apache.org", "qpidd");
         _qmf::Package packageInitializer(managementAgent.get());
-
-        System* system = new System (dataDir.isEnabled() ? dataDir.getPath() : string(), this);
-        systemObject = System::shared_ptr(system);
 
         mgmtObject = _qmf::Broker::shared_ptr(new _qmf::Broker(managementAgent.get(), this, system, "amqp-broker"));
         mgmtObject->set_systemRef(system->GetManagementObject()->getObjectId());

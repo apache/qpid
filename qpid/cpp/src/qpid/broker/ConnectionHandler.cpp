@@ -123,8 +123,10 @@ ConnectionHandler::Handler::Handler(qpid::broker::amqp_0_10::Connection& c, bool
 
         properties.setString("product", qpid::product);
         properties.setString("version", qpid::version);
-        properties.setString("platform", sysInfo->getOsName());
-        properties.setString("host", sysInfo->getNodeName());
+        if (sysInfo) {
+            properties.setString("platform", sysInfo->getOsName());
+            properties.setString("host", sysInfo->getNodeName());
+        }
         properties.setString(QPID_FED_TAG, connection.getBroker().getFederationTag());
 
         authenticator = SaslAuthenticator::createAuthenticator(c);
