@@ -37,9 +37,10 @@ namespace Org.Apache.Qpid.Messaging {
                 Receiver receiver = session.CreateReceiver(address);
                 Sender sender = session.CreateSender(address);
 
-                sender.Send(new Message("Hello world!"));
-
                 Message message = new Message();
+                message.SetContentObject("Hello world!"); // all strings are utf-8 encoded
+                sender.Send(message);
+ 
                 message = receiver.Fetch(DurationConstants.SECOND * 1);
                 Console.WriteLine("{0}", message.GetContent());
                 session.Acknowledge();
