@@ -42,9 +42,12 @@ int main(int argc, char** argv) {
         Receiver receiver = session.createReceiver(address);
         Sender sender = session.createSender(address);
 
-        sender.send(Message("Hello world!"));
+        Message message;
+        message.setContentObject("Hello world!");
+        message.getContentObject().setEncoding("utf8");
+        sender.send(message);
 
-        Message message = receiver.fetch(Duration::SECOND * 1);
+        message = receiver.fetch(Duration::SECOND * 1);
         std::cout << message.getContent() << std::endl;
         session.acknowledge();
 
