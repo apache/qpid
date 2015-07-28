@@ -234,6 +234,7 @@ size_t Connection::encode(char* buffer, size_t size)
     if (n > 0) {
         QPID_LOG_CAT(debug, network, id << " encoded " << n << " bytes from " << size)
         haveOutput = true;
+        if (ticker) ticker->restart();
         return n;
     } else if (n == PN_EOS) {
         haveOutput = false;

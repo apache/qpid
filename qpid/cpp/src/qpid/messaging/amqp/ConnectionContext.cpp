@@ -852,6 +852,7 @@ std::size_t ConnectionContext::encodePlain(char* buffer, std::size_t size)
         QPID_LOG_CAT(debug, network, id << " encoded " << n << " bytes from " << size)
         haveOutput = true;
         if (notifyOnWrite) lock.notifyAll();
+        if (ticker) ticker->restart();
         return n;
     } else if (n == PN_ERR) {
         std::string error;
@@ -877,7 +878,7 @@ bool ConnectionContext::canEncodePlain()
 {
     sys::Monitor::ScopedLock l(lock);
     pn_transport_tick(engine, qpid::sys::Duration::FromEpoch() / qpid::sys::TIME_MSEC);
-    return haveOutput && state == CONNECTED;
+    return (haveOutput || pn_transport_pending(engine)) && state == CONNECTED;
 }
 void ConnectionContext::closed()
 {
