@@ -20,6 +20,7 @@
 #Python
 *.pyc
 *.out
+
 #CPP
 *.o
 *.la
