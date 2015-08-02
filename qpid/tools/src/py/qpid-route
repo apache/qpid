@@ -241,16 +241,16 @@ class RouteManager:
         print "Finding Linked Brokers:"
 
         self.brokerList[self.local.name()] = self.broker
-        print "    %s... Ok" % self.local
+        print "    %s:%s... Ok" % (self.local.host, self.local.port)
 
         added = True
         while added:
             added = False
             links = self.qmf.getObjects(_class="link")
             for link in links:
-                url = BrokerURL(host=link.host, port=link.port, user=self.broker.saslUser, password=self.broker.authUser)
+                url = BrokerURL(host=link.host, port=link.port, user=self.broker.authUser, password=self.broker.authPass)
                 if url.name() not in self.brokerList:
-                    print "    %s..." % url.name(),
+                    print "    %s:%s..." % (link.host, link.port)
                     try:
                         url.authName = self.local.authName
                         url.authPass = self.local.authPass
