@@ -147,6 +147,9 @@ class SessionState : public qpid::SessionState,
     /** Send result and completion for a given command to the client. */
     void completeCommand(SequenceNumber id, bool requiresAccept, bool requiresSync,
                          const std::string& result);
+
+    MessageBuilder& getMessageBuilder() { return msgBuilder; }
+
   private:
     void handleCommand(framing::AMQMethodBody* method);
     void handleContent(framing::AMQFrame& frame);

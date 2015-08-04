@@ -35,6 +35,7 @@
 #include "qpid/broker/QueueObserver.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/SessionHandler.h"
+#include "qpid/broker/SessionState.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/log/Statement.h"
@@ -248,6 +249,10 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     Mutex::ScopedLock l(lock);
     if (!queue) return;         // Already destroyed
     sessionHandler = &sessionHandler_;
+    if (sessionHandler->getSession()) {
+        // Don't overwrite the exchange property set on the primary.
+        sessionHandler->getSession()->getMessageBuilder().setCopyExchange(false);
+    }
     AMQP_ServerProxy peer(sessionHandler->out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
     FieldTable arguments;

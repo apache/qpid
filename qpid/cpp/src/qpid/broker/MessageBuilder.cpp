@@ -37,7 +37,7 @@ namespace
     const std::string QPID_MANAGEMENT("qpid.management");
 }
 
-MessageBuilder::MessageBuilder() : state(DORMANT) {}
+MessageBuilder::MessageBuilder() : state(DORMANT), copyExchange(true) {}
 
 void MessageBuilder::handle(AMQFrame& frame)
 {
@@ -60,7 +60,10 @@ void MessageBuilder::handle(AMQFrame& frame)
             header.setEof(false);
             message->getFrames().append(header);
         } else if (type == HEADER_BODY) {
-            frame.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true)->setExchange(exchange);
+            if (copyExchange) {
+                frame.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true)->
+                    setExchange(exchange);
+            }
         } else {
             throw CommandInvalidException(
                 QPID_MSG("Invalid frame sequence for message, expected header or content got "

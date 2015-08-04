@@ -43,11 +43,14 @@ namespace qpid {
             boost::intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> getMessage();
             QPID_BROKER_EXTERN void start(const framing::SequenceNumber& id);
             void end();
+            void setCopyExchange(bool value) { copyExchange = value; }
+
         private:
             enum State {DORMANT, METHOD, HEADER, CONTENT};
             State state;
             boost::intrusive_ptr<qpid::broker::amqp_0_10::MessageTransfer> message;
             std::string exchange;
+            bool copyExchange;
 
             void checkType(uint8_t expected, uint8_t actual);
         };
