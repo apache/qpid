@@ -280,7 +280,7 @@ namespace Messaging {
         //  create a .NET object and add it to the dictionary.
         for (::qpid::types::Variant::Map::const_iterator i = qpidMap.begin(); i != qpidMap.end(); ++i)
         {
-            System::String ^ elementName = gcnew String(i->first.c_str());
+            System::String ^ elementName = QpidMarshal::ToManaged(i->first.c_str());
             ::qpid::types::Variant variant = i->second;
             dict[elementName] = NativeToManagedObject(variant);
         }
@@ -394,7 +394,7 @@ namespace Messaging {
 
         case ::qpid::types::VAR_STRING:
             {
-                System::String ^ elementValue = gcnew System::String(nativeObject.asString().c_str());
+                System::String ^ elementValue = QpidMarshal::ToManaged(nativeObject.asString().c_str());
                 managedObject = elementValue;
                 break;
             }

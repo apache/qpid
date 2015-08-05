@@ -60,6 +60,23 @@ public:
         std::string native((char *) pinnedBuf, mbytes->Length);
         return native;
     }
+
+
+    static System::String^ ToManaged( std::string native )
+    {
+        if( native.length() == 0 )
+        {
+            return gcnew System::String( "" );
+        }
+
+        pin_ptr<unsigned char> pinnedBuf = (unsigned char *)native.c_str();
+        array<unsigned char>^ mbytes = gcnew array<unsigned char>( (int)native.length() );
+
+        for( unsigned int idx = 0; idx < native.length(); idx++ )
+            mbytes[ idx ] = pinnedBuf[ idx ];
+
+        return Encoding::UTF8->GetString( mbytes );
+    }
 };
 
 }}}}

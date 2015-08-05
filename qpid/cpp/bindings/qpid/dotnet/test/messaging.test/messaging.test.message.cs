@@ -58,6 +58,15 @@ namespace Org.Apache.Qpid.Messaging.UnitTest
         }
 
         [Test]
+        public void Utf8MessageStringContent()
+        {
+            Message m2 = new Message("€");
+            string mString = m2.GetContent();
+
+            StringAssert.IsMatch("€", mString);
+        }
+
+        [Test]
         public void MessageReceiveContentAsByteArray()
         {
             Message m2 = new Message("while");
