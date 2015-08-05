@@ -441,7 +441,7 @@ namespace Messaging {
 
         try
         {
-            result = gcnew String(nativeObjPtr->getContent().c_str());
+            result = QpidMarshal::ToManaged(nativeObjPtr->getContent().c_str());
         }
         catch (const ::qpid::types::Exception & error)
         {
