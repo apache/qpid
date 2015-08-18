@@ -821,7 +821,9 @@ std::size_t ConnectionContext::decodePlain(const char* buffer, std::size_t size)
             }
         }
         QPID_LOG_CAT(debug, network, id << " decoded " << n << " bytes from " << size)
-        pn_transport_tick(engine, qpid::sys::Duration::FromEpoch() / qpid::sys::TIME_MSEC);
+        // QPID-6698: don't use wallclock here, use monotonic clock
+        int64_t now = qpid::sys::Duration(qpid::sys::ZERO, qpid::sys::AbsTime::now());
+        pn_transport_tick(engine, now / int64_t(qpid::sys::TIME_MSEC));
         lock.notifyAll();
         return n;
     } else if (n == PN_ERR) {
@@ -877,7 +879,10 @@ std::size_t ConnectionContext::encodePlain(char* buffer, std::size_t size)
 bool ConnectionContext::canEncodePlain()
 {
     sys::Monitor::ScopedLock l(lock);
-    pn_transport_tick(engine, qpid::sys::Duration::FromEpoch() / qpid::sys::TIME_MSEC);
+
+    // QPID-6698: don't use wallclock here, use monotonic clock
+    int64_t now = qpid::sys::Duration(qpid::sys::ZERO, qpid::sys::AbsTime::now());
+    pn_transport_tick(engine, now / int64_t(qpid::sys::TIME_MSEC));
     return (haveOutput || pn_transport_pending(engine)) && state == CONNECTED;
 }
 void ConnectionContext::closed()

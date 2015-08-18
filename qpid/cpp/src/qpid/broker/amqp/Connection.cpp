@@ -209,7 +209,9 @@ size_t Connection::decode(const char* buffer, size_t size)
             pn_condition_set_description(error, e.what());
             close();
         }
-        pn_transport_tick(transport, qpid::sys::Duration::FromEpoch() / qpid::sys::TIME_MSEC);
+        // QPID-6698: don't use wallclock here, use monotonic clock
+        int64_t now = qpid::sys::Duration(qpid::sys::ZERO, qpid::sys::AbsTime::now());
+        pn_transport_tick(transport, now / int64_t(qpid::sys::TIME_MSEC));
         if (!haveOutput) {
             haveOutput = true;
             out.activateOutput();
@@ -317,7 +319,9 @@ bool Connection::canEncode()
         QPID_LOG(info, "Connection " << id << " has been closed locally");
     }
     if (ioRequested.valueCompareAndSwap(true, false)) haveOutput = true;
-    pn_transport_tick(transport, qpid::sys::Duration::FromEpoch() / qpid::sys::TIME_MSEC);
+    // QPID-6698: don't use wallclock here, use monotonic clock
+    int64_t now = qpid::sys::Duration(qpid::sys::ZERO, qpid::sys::AbsTime::now());
+    pn_transport_tick(transport, (now / int64_t(qpid::sys::TIME_MSEC)));
     QPID_LOG_CAT(trace, network, id << " canEncode(): " << haveOutput)
     return haveOutput;
 }
