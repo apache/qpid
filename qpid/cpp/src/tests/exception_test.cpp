@@ -63,7 +63,7 @@ struct Catcher : public Runnable {
         }
         catch(const Ex& e) {
             caught=true;
-            BOOST_MESSAGE(string("Caught expected exception: ")+e.what()+"["+typeid(e).name()+"]");
+            BOOST_TEST_MESSAGE(string("Caught expected exception: ")+e.what()+"["+typeid(e).name()+"]");
         }
         catch(const std::exception& e) {
             BOOST_ERROR(string("Bad exception: ")+e.what()+"["+typeid(e).name()+"] expected: "+typeid(Ex).name());
