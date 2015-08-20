@@ -62,6 +62,7 @@ public:
      * socket
      */
     virtual std::string getPeerAddress() const = 0;
+
     /**
      * Returns an address (host and port) for the local end of the
      * socket
@@ -79,12 +80,31 @@ public:
      */
     virtual int getError() const = 0;
 
-    /** Accept a connection from a socket that is already listening
+    /**
+     * Returns error text for last read/write error code
+     */
+    virtual std::string lastErrorCodeText() const = 0;
+
+    /**
+     * Accept a connection from a socket that is already listening
      * and has an incoming connection
      */
     virtual Socket* accept() const = 0;
 
+    /** Read up to count bytes into buffer
+     * If return is positive read that number of bytes;
+     * if 0 then end of input stream (or disconnected)
+     * if <0 then error, in this case an error text can be fetched
+     *    using lastErrorCodeText().
+     */
     virtual int read(void *buf, size_t count) const = 0;
+
+    /** Write up to count bytes into buffer
+     * If return is positive wrote that number of bytes;
+     * if 0 then stream closed (or disconnected)
+     * if <0 then error, in this case an error text can be fetched
+     *    using lastErrorCodeText().
+     */
     virtual int write(const void *buf, size_t count) const = 0;
 
     /* Transport security related: */

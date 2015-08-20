@@ -87,6 +87,8 @@ public:
      */
     QPID_COMMON_EXTERN int getError() const;
 
+    QPID_COMMON_EXTERN std::string lastErrorCodeText() const;
+
     /** Accept a connection from a socket that is already listening
      * and has an incoming connection
      */

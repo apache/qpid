@@ -34,6 +34,7 @@
 #include <netinet/tcp.h>
 #include <netdb.h>
 #include <cstdlib>
+#include <sstream>
 #include <string.h>
 
 namespace qpid {
@@ -68,8 +69,9 @@ uint16_t getLocalPort(int fd)
 }
 
 BSDSocket::BSDSocket() :
-    fd(-1),
     handle(new IOHandle),
+    fd(-1),
+    lastErrorCode(0),
     nonblocking(false),
     nodelay(false)
 {}
@@ -80,8 +82,9 @@ Socket* createSocket()
 }
 
 BSDSocket::BSDSocket(int fd0) :
+    handle(new IOHandle(fd0)),
     fd(fd0),
-    handle(new IOHandle(fd)),
+    lastErrorCode(0),
     nonblocking(false),
     nodelay(false)
 {}
@@ -214,14 +217,26 @@ Socket* BSDSocket::accept() const
     else throw QPID_POSIX_ERROR(errno);
 }
 
+std::string BSDSocket::lastErrorCodeText() const
+{
+    std::stringstream s;
+    s << strError(lastErrorCode);
+    s << "(" << lastErrorCode << ")";
+    return s.str();
+}
+
 int BSDSocket::read(void *buf, size_t count) const
 {
-    return ::read(fd, buf, count);
+    int rc = ::read(fd, buf, count);
+    lastErrorCode = errno;
+    return rc;
 }
 
 int BSDSocket::write(const void *buf, size_t count) const
 {
-    return ::write(fd, buf, count);
+    int rc = ::write(fd, buf, count);
+    lastErrorCode = errno;
+    return rc;
 }
 
 std::string BSDSocket::getPeerAddress() const

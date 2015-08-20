@@ -481,7 +481,7 @@ void AsynchIO::readable(DispatchHandle& h) {
                     break;
                 } else {
                     // Report error then just treat as a socket disconnect
-                    QPID_LOG(error, "Error reading socket: " << qpid::sys::strError(errno) << "(" << errno << ")" );
+                    QPID_LOG(error, "Error reading socket: " << socket.lastErrorCodeText() );
                     eofCallback(*this);
                     h.unwatchRead();
                     break;
@@ -561,7 +561,7 @@ void AsynchIO::writeable(DispatchHandle& h) {
                     break;
                 } else {
                     // Report error then just treat as a socket disconnect
-                    QPID_LOG(error, "Error writing socket: " << qpid::sys::strError(errno) << "(" << errno << ")" );
+                    QPID_LOG(error, "Error writing socket: " << socket.lastErrorCodeText() );
                     h.unwatchWrite();
                     break;
                 }

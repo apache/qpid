@@ -47,8 +47,6 @@
 #include <key.h>
 #include <sslerr.h>
 
-#include <boost/format.hpp>
-
 namespace qpid {
 namespace sys {
 namespace ssl {
@@ -317,14 +315,23 @@ Socket* SslMuxSocket::accept() const
     }
 }
 
+std::string SslSocket::lastErrorCodeText() const
+{
+  return getErrorString(lastErrorCode);
+}
+
 int SslSocket::read(void *buf, size_t count) const
 {
-    return PR_Read(nssSocket, buf, count);
+    PRInt32 r = PR_Read(nssSocket, buf, count);
+    lastErrorCode = PR_GetError();
+    return r;
 }
 
 int SslSocket::write(const void *buf, size_t count) const
 {
-    return PR_Write(nssSocket, buf, count);
+    PRInt32 r = PR_Write(nssSocket, buf, count);
+    lastErrorCode = PR_GetError();
+    return r;
 }
 
 void SslSocket::setCertName(const std::string& name)

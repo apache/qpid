@@ -248,6 +248,11 @@ int WinSocket::getError() const
     return result;
 }
 
+// TODO: I don't think this can ever be called!
+std::string WinSocket::lastErrorCodeText() const
+{
+    return strError(::WSAGetLastError());
+}
 void WinSocket::setTcpNoDelay() const
 {
     SOCKET& socket = handle->fd;

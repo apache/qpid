@@ -53,46 +53,22 @@ public:
 
     QPID_COMMON_EXTERN operator const IOHandle&() const;
 
-    /** Set socket non blocking */
     QPID_COMMON_EXTERN virtual void setNonblocking() const;
-
     QPID_COMMON_EXTERN virtual void setTcpNoDelay() const;
+
+    QPID_COMMON_EXTERN std::string getPeerAddress() const;
+    QPID_COMMON_EXTERN std::string getLocalAddress() const;
+
+    QPID_COMMON_EXTERN int getError() const;
+    QPID_COMMON_EXTERN virtual std::string lastErrorCodeText() const;
 
     QPID_COMMON_EXTERN virtual void connect(const SocketAddress&) const;
     QPID_COMMON_EXTERN virtual void finishConnect(const SocketAddress&) const;
-
-    QPID_COMMON_EXTERN virtual void close() const;
-
-    /** Bind to a port and start listening.
-     *@return The bound port number
-     */
     QPID_COMMON_EXTERN virtual int listen(const SocketAddress&, int backlog = 10) const;
-
-    /**
-     * Returns an address (host and port) for the remote end of the
-     * socket
-     */
-    QPID_COMMON_EXTERN std::string getPeerAddress() const;
-    /**
-     * Returns an address (host and port) for the local end of the
-     * socket
-     */
-    QPID_COMMON_EXTERN std::string getLocalAddress() const;
-
-    /**
-     * Returns the error code stored in the socket.  This may be used
-     * to determine the result of a non-blocking connect.
-     */
-    QPID_COMMON_EXTERN int getError() const;
-
-    /** Accept a connection from a socket that is already listening
-     * and has an incoming connection
-     */
     QPID_COMMON_EXTERN virtual Socket* accept() const;
-
-    // TODO The following are raw operations, maybe they need better wrapping?
     QPID_COMMON_EXTERN virtual int read(void *buf, size_t count) const;
     QPID_COMMON_EXTERN virtual int write(const void *buf, size_t count) const;
+    QPID_COMMON_EXTERN virtual void close() const;
 
     QPID_COMMON_EXTERN int getKeyLen() const;
     QPID_COMMON_EXTERN std::string getClientAuthId() const;
@@ -101,10 +77,11 @@ protected:
     /** Create socket */
     void createSocket(const SocketAddress&) const;
 
-    mutable int fd;
     mutable boost::scoped_ptr<IOHandle> handle;
     mutable std::string localname;
     mutable std::string peername;
+    mutable int fd;
+    mutable int lastErrorCode;
     mutable bool nonblocking;
     mutable bool nodelay;
 };

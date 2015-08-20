@@ -48,38 +48,23 @@ public:
     /** Proceed with connect inspite of hostname verifcation failures*/
     void ignoreHostnameVerificationFailure();
 
-    /** Set socket non blocking */
-    void setNonblocking() const;
-
-    /** Set tcp-nodelay */
-    void setTcpNoDelay() const;
-
     /** Set SSL cert-name. Allows the cert-name to be set per
      * connection, overriding global cert-name settings from
      * NSSInit().*/
     void setCertName(const std::string& certName);
 
+    void setNonblocking() const;
+    void setTcpNoDelay() const;
+
+    std::string lastErrorCodeText() const;
+
     void connect(const SocketAddress&) const;
     void finishConnect(const SocketAddress&) const;
-
-    void close() const;
-
-    /** Bind to a port and start listening.
-     *@param port 0 means choose an available port.
-     *@param backlog maximum number of pending connections.
-     *@return The bound port.
-     */
     int listen(const SocketAddress&, int backlog = 10) const;
-
-    /**
-     * Accept a connection from a socket that is already listening
-     * and has an incoming connection
-     */
     virtual Socket* accept() const;
-
-    // TODO The following are raw operations, maybe they need better wrapping?
     int read(void *buf, size_t count) const;
     int write(const void *buf, size_t count) const;
+    void close() const;
 
     int getKeyLen() const;
     std::string getClientAuthId() const;
