@@ -128,7 +128,7 @@ if (UNIX)
     endif()
   endif()
 
-  # In rpm builds the build sets some variables:
+  # In rpm builds the build sets some variables with absolute paths:
   #  CMAKE_INSTALL_PREFIX - this is a standard cmake variable
   #  INCLUDE_INSTALL_DIR
   #  LIB_INSTALL_DIR
@@ -181,8 +181,9 @@ if (UNIX)
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
   # The RPATH to be used when installing, but only if it's not a system directory
-  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/${LIB_INSTALL_DIR}" isSystemDir)
+  set_absolute_install_path (QPID_LIB_DIR ${QPID_INSTALL_LIBDIR})
+  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${QPID_LIB_DIR}" isSystemDir)
   if("${isSystemDir}" STREQUAL "-1")
-    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${LIB_INSTALL_DIR}")
+    set(CMAKE_INSTALL_RPATH "${QPID_LIB_DIR}")
   endif("${isSystemDir}" STREQUAL "-1")
 endif (UNIX)
