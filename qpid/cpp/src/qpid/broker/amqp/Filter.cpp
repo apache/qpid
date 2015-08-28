@@ -46,7 +46,7 @@ const std::string DEFAULT_XQUERY_FILTER("default-xquery-filter");
 const std::string DEFAULT_XQUERY_VALUE("true()");
 const std::string WILDCARD("#");
 }
-Filter::Filter() : inHeadersMap(false) {}
+Filter::Filter() : inHeadersMap(false), nolocal(false) {}
 
 void Filter::read(pn_data_t* data)
 {
@@ -88,6 +88,9 @@ void Filter::onStringValue(const qpid::amqp::CharSequence& key, const qpid::amqp
                 setFilter(selectorFilter, filter);
             } else if (descriptor->match(qpid::amqp::filters::XQUERY_FILTER_SYMBOL, qpid::amqp::filters::XQUERY_FILTER_CODE)) {
                 setFilter(xqueryFilter, filter);
+            } else if (descriptor && descriptor->match(qpid::amqp::filters::NO_LOCAL_FILTER_SYMBOL, qpid::amqp::filters::NO_LOCAL_FILTER_CODE)) {
+                //though the no-local-filter is define to be a list, the JMS client sends it as a string
+                nolocal = true;
             } else {
                 QPID_LOG(notice, "Skipping unrecognised string filter with key " << filter.key << " and descriptor " << filter.descriptor);
             }
@@ -153,6 +156,14 @@ void Filter::onFloatValue(const qpid::amqp::CharSequence& key, float value, cons
 void Filter::onDoubleValue(const qpid::amqp::CharSequence& key, double value, const qpid::amqp::Descriptor*)
 {
     headersFilter.value[std::string(key.data, key.size)] = value;
+}
+
+bool Filter::onStartListValue(const qpid::amqp::CharSequence& /*key*/, uint32_t /*count*/, const qpid::amqp::Descriptor* descriptor)
+{
+    if (descriptor && descriptor->match(qpid::amqp::filters::NO_LOCAL_FILTER_SYMBOL, qpid::amqp::filters::NO_LOCAL_FILTER_CODE)) {
+        nolocal = true;
+    }
+    return false;
 }
 
 bool Filter::onStartMapValue(const qpid::amqp::CharSequence& key, uint32_t /*count*/, const qpid::amqp::Descriptor* descriptor)
@@ -233,6 +244,10 @@ void Filter::configure(QueueSettings& settings)
     if (hasSelectorFilter()) {
         settings.filter = getSelectorFilter();
         active.push_back(&selectorFilter);
+    }
+    if (nolocal) {
+        settings.noLocal = true;
+        QPID_LOG(notice, "No local filter set");
     }
 }
 

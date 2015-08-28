@@ -101,6 +101,7 @@ class Filter : private qpid::amqp::MapReader
     void onLongValue(const qpid::amqp::CharSequence&, int64_t, const qpid::amqp::Descriptor*);
     void onFloatValue(const qpid::amqp::CharSequence&, float, const qpid::amqp::Descriptor*);
     void onDoubleValue(const qpid::amqp::CharSequence&, double, const qpid::amqp::Descriptor*);
+    bool onStartListValue(const qpid::amqp::CharSequence& key, uint32_t count, const qpid::amqp::Descriptor* descriptor);
     bool onStartMapValue(const qpid::amqp::CharSequence& key, uint32_t count, const qpid::amqp::Descriptor* descriptor);
     void onEndMapValue(const qpid::amqp::CharSequence& key, uint32_t count, const qpid::amqp::Descriptor* descriptor);
     void setFilter(StringFilter&, const StringFilter&);
@@ -120,6 +121,7 @@ class Filter : private qpid::amqp::MapReader
     MapFilter headersFilter;
     std::vector<FilterBase*> active;
     bool inHeadersMap;
+    bool nolocal;
 };
 }}} // namespace qpid::broker::amqp
 
