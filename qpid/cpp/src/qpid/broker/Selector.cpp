@@ -30,6 +30,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/types/Variant.h"
 
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <sstream>
@@ -54,6 +55,7 @@ using qpid::amqp::MessageId;
  * priority             | Priority     | priority             header section
  * delivery_count       |              | delivery-count       header section
  * redelivered          |[Redelivered] | (delivery_count>0)  (computed value)
+ * subject              | Type         | subject              properties section
  * correlation_id       | CorrelationID| correlation-id       properties section
  * to                   |[Destination] | to                   properties section
  * absolute_expiry_time |[Expiration]  | absolute-expiry-time properties section
@@ -65,6 +67,26 @@ using qpid::amqp::MessageId;
 const string EMPTY;
 const string PERSISTENT("PERSISTENT");
 const string NON_PERSISTENT("NON_PERSISTENT");
+
+namespace {
+   typedef std::map<std::string, std::string> Aliases;
+   Aliases define_aliases()
+   {
+       Aliases aliases;
+       aliases["JMSType"] = "subject";
+       aliases["JMSCorrelationID"] = "correlation_id";
+       aliases["JMSMessageID"] = "message_id";
+       aliases["JMSDeliveryMode"] = "delivery_mode";
+       aliases["JMSRedelivered"] = "redelivered";
+       aliases["JMSPriority"] = "priority";
+       aliases["JMSDestination"] = "to";
+       aliases["JMSReplyTo"] = "reply_to";
+       aliases["JMSTimestamp"] = "creation_time";
+       aliases["JMSExpiration"] = "absolute_expiry_time";
+       return aliases;
+   }
+   const Aliases aliases = define_aliases();
+}
 
 class MessageSelectorEnv : public SelectorEnv {
     const Message& msg;
@@ -82,8 +104,7 @@ public:
 MessageSelectorEnv::MessageSelectorEnv(const Message& m) :
     msg(m),
     valuesLookedup(false)
-{
-}
+{}
 
 const Value MessageSelectorEnv::specialValue(const string& id) const
 {
@@ -91,6 +112,12 @@ const Value MessageSelectorEnv::specialValue(const string& id) const
     // TODO: Just use a simple if chain for now - improve this later
     if ( id=="delivery_mode" ) {
         v = msg.getEncoding().isPersistent() ? PERSISTENT : NON_PERSISTENT;
+    } else if ( id=="subject" ) {
+        std::string s = msg.getSubject();
+        if (!s.empty()) {
+            returnedStrings.push_back(new string(s));
+            v = returnedStrings[returnedStrings.size()-1];
+        }
     } else if ( id=="redelivered" ) {
         // Although redelivered is defined to be true delivery-count>0 if it is 0 now
         // it will be 1 by the time the message is delivered
@@ -110,9 +137,17 @@ const Value MessageSelectorEnv::specialValue(const string& id) const
             v = returnedStrings[returnedStrings.size()-1];
         }
     } else if ( id=="to" ) {
-        v = EMPTY; // Hard to get this correct for both 1.0 and 0-10
+        std::string s = msg.getTo();
+        if (!s.empty()) {
+            returnedStrings.push_back(new string(s));
+            v = returnedStrings[returnedStrings.size()-1];
+        }
     } else if ( id=="reply_to" ) {
-        v = EMPTY; // Hard to get this correct for both 1.0 and 0-10
+        std::string s = msg.getReplyTo();
+        if (!s.empty()) {
+            returnedStrings.push_back(new string(s));
+            v = returnedStrings[returnedStrings.size()-1];
+        }
     } else if ( id=="absolute_expiry_time" ) {
         qpid::sys::AbsTime expiry = msg.getExpiration();
         // Java property has value of 0 for no expiry
@@ -182,6 +217,14 @@ const Value& MessageSelectorEnv::value(const string& identifier) const
         if ( returnedValues.count(identifier)==0 ) {
             QPID_LOG(debug, "Selector lookup special identifier: " << identifier);
             returnedValues[identifier] = specialValue(identifier.substr(5));
+        }
+    } else if (identifier.substr(0, 3) == "JMS") {
+        Aliases::const_iterator equivalent = aliases.find(identifier);
+        if (equivalent != aliases.end()) {
+            QPID_LOG(debug, "Selector lookup JMS identifier: " << identifier << " treated as alias for " << equivalent->second);
+            returnedValues[identifier] = specialValue(equivalent->second);
+        } else {
+            QPID_LOG(info, "Unrecognised JMS identifier in selector: " << identifier);
         }
     } else if (!valuesLookedup) {
         QPID_LOG(debug, "Selector lookup triggered by: " << identifier);

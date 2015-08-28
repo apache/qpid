@@ -57,6 +57,10 @@ class MessageTransfer : public qpid::broker::Message::SharedStateImpl, public qp
     std::string getUserId() const;
     void setTimestamp();
     uint64_t getTimestamp() const;
+    std::string getTo() const;
+    std::string getSubject() const;
+    std::string getReplyTo() const;
+
 
     bool requiresAccept() const;
     const qpid::framing::SequenceNumber& getCommandId() const;

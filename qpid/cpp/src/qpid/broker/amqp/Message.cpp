@@ -62,9 +62,8 @@ std::string Message::getUserId() const
 
 uint64_t Message::getTimestamp() const
 {
-    //AMQP 1.0 message doesn't have the equivalent of the 0-10 timestamp field
-    //TODO: define an annotation for that
-    return 0;
+    //creation time is in milliseconds, timestamp (from the 0-10 spec) is in seconds
+    return !creationTime ? 0 : creationTime.get()/1000;
 }
 
 bool Message::isPersistent() const
@@ -85,6 +84,25 @@ uint8_t Message::getPriority() const
 {
     if (!priority) return 4;
     else return priority.get();
+}
+
+std::string Message::getTo() const
+{
+    std::string v;
+    if (to.data) v.assign(to.data, to.size);
+    return v;
+}
+std::string Message::getSubject() const
+{
+    std::string v;
+    if (subject.data) v.assign(subject.data, subject.size);
+    return v;
+}
+std::string Message::getReplyTo() const
+{
+    std::string v;
+    if (replyTo.data) v.assign(replyTo.data, replyTo.size);
+    return v;
 }
 
 namespace {
@@ -242,7 +260,7 @@ qpid::amqp::MessageId Message::getMessageId() const
 {
     return messageId;
 }
-qpid::amqp::CharSequence Message::getReplyTo() const
+qpid::amqp::CharSequence Message::getReplyToAsCharSequence() const
 {
     return replyTo;
 }
@@ -318,7 +336,7 @@ void Message::onCorrelationId(const qpid::amqp::CharSequence& v, qpid::types::Va
 void Message::onContentType(const qpid::amqp::CharSequence& v) { contentType = v; }
 void Message::onContentEncoding(const qpid::amqp::CharSequence& v) { contentEncoding = v; }
 void Message::onAbsoluteExpiryTime(int64_t) {}
-void Message::onCreationTime(int64_t) {}
+void Message::onCreationTime(int64_t v) { creationTime = v; }
 void Message::onGroupId(const qpid::amqp::CharSequence&) {}
 void Message::onGroupSequence(uint32_t) {}
 void Message::onReplyToGroupId(const qpid::amqp::CharSequence&) {}

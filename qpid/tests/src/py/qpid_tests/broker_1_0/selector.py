@@ -71,3 +71,25 @@ class SelectorTests (VersionTest):
         msg = rcv_4.fetch(0)
         assert msg.content == 'd'
         self.ssn.acknowledge(msg)
+
+    def check_selected(self,node, selector, expected_content):
+        rcv = self.ssn.receiver("%s; {mode:browse, link:{selector:\"%s\"}}" % (node, selector))
+        msg = rcv.fetch(0)
+        assert msg.content == expected_content, msg
+        rcv.close()
+
+    def test_jms_header_names(self):
+        """
+        The new AMQP 1.0 based JMS client uses these rather than the special names above
+        """
+        msgs = [Message(content=i, id=i, correlation_id=i, subject=i, priority=p+1, reply_to=i, properties={'x-amqp-to':i}) for p, i in enumerate(['a', 'b', 'c', 'd'])]
+
+        snd = self.ssn.sender("#")
+        for m in msgs: snd.send(m)
+
+        self.check_selected(snd.target, "JMSMessageID = 'a'", 'a')
+        self.check_selected(snd.target, "JMSCorrelationID = 'b'", 'b')
+        self.check_selected(snd.target, "JMSPriority = 3", 'c')
+        self.check_selected(snd.target, "JMSDestination = 'a'", 'a')
+        self.check_selected(snd.target, "JMSReplyTo = 'b'", 'b')
+        self.check_selected(snd.target, "JMSType = 'c'", 'c')

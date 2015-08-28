@@ -64,6 +64,19 @@ std::string Message::getRoutingKey() const
     return getEncoding().getRoutingKey();
 }
 
+std::string Message::getTo() const
+{
+    return getEncoding().getTo();
+}
+std::string Message::getSubject() const
+{
+    return getEncoding().getSubject();
+}
+std::string Message::getReplyTo() const
+{
+    return getEncoding().getReplyTo();
+}
+
 bool Message::isPersistent() const
 {
     return getEncoding().isPersistent();

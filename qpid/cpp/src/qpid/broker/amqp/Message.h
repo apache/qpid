@@ -53,10 +53,13 @@ class Message : public qpid::broker::Message::SharedStateImpl, private qpid::amq
     void processProperties(qpid::amqp::MapHandler&) const;
     std::string getUserId() const;
     uint64_t getTimestamp() const;
+    std::string getTo() const;
+    std::string getSubject() const;
+    std::string getReplyTo() const;
     qpid::amqp::MessageId getMessageId() const;
     qpid::amqp::MessageId getCorrelationId() const;
 
-    qpid::amqp::CharSequence getReplyTo() const;
+    qpid::amqp::CharSequence getReplyToAsCharSequence() const;
     qpid::amqp::CharSequence getContentType() const;
     qpid::amqp::CharSequence getContentEncoding() const;
 
@@ -108,6 +111,7 @@ class Message : public qpid::broker::Message::SharedStateImpl, private qpid::amq
     qpid::amqp::MessageId correlationId;
     qpid::amqp::CharSequence contentType;
     qpid::amqp::CharSequence contentEncoding;
+    boost::optional<int64_t> creationTime;
 
     //application-properties:
     qpid::amqp::CharSequence applicationProperties;

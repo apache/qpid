@@ -245,7 +245,7 @@ boost::intrusive_ptr<const qpid::broker::amqp_0_10::MessageTransfer> Translation
                 props->setCorrelationId(boost::lexical_cast<std::string>(cid.value.ulong));
                 break;
             }
-            if (message->getReplyTo()) props->setReplyTo(translate(message->getReplyTo(), broker));
+            if (message->getReplyToAsCharSequence()) props->setReplyTo(translate(message->getReplyTo(), broker));
             if (message->getContentType()) props->setContentType(translate(message->getContentType()));
             if (message->getContentEncoding()) props->setContentEncoding(translate(message->getContentEncoding()));
             props->setUserId(message->getUserId());

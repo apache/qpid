@@ -78,6 +78,9 @@ public:
         virtual void processProperties(qpid::amqp::MapHandler&) const = 0;
         virtual std::string getUserId() const = 0;
         virtual uint64_t getTimestamp() const = 0;
+        virtual std::string getTo() const = 0;
+        virtual std::string getSubject() const = 0;
+        virtual std::string getReplyTo() const = 0;
     };
 
     class SharedState : public Encoding
@@ -136,6 +139,11 @@ public:
     QPID_BROKER_EXTERN bool getTtl(uint64_t&) const;
 
     QPID_BROKER_EXTERN uint64_t getTimestamp() const;
+
+    //required for selectors:
+    QPID_BROKER_EXTERN std::string getTo() const;
+    QPID_BROKER_EXTERN std::string getSubject() const;
+    QPID_BROKER_EXTERN std::string getReplyTo() const;
 
     QPID_BROKER_EXTERN void addAnnotation(const std::string& key, const qpid::types::Variant& value);
     QPID_BROKER_EXTERN bool isExcluded(const std::vector<std::string>& excludes) const;

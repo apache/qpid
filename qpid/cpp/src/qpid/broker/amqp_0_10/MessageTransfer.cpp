@@ -41,8 +41,11 @@ namespace qpid {
 namespace broker {
 namespace amqp_0_10 {
 namespace {
+const std::string DELIMITER("/");
+const std::string EMPTY;
 const std::string QMF2("qmf2");
 const std::string PARTIAL("partial");
+const std::string SUBJECT_KEY("qpid.subject");
 }
 MessageTransfer::MessageTransfer() : frames(framing::SequenceNumber()), requiredCredit(0), cachedRequiredCredit(false) {}
 MessageTransfer::MessageTransfer(const framing::SequenceNumber& id) : frames(id), requiredCredit(0), cachedRequiredCredit(false) {}
@@ -141,6 +144,41 @@ uint64_t MessageTransfer::getTimestamp() const
 {
     const DeliveryProperties* props = getProperties<DeliveryProperties>();
     return props ? props->getTimestamp() : 0;
+}
+
+std::string MessageTransfer::getTo() const
+{
+    const DeliveryProperties* props = getProperties<DeliveryProperties>();
+    if (props) {
+        //if message was sent to 'nameless exchange' then the routing key is the queue
+        return props->getExchange().empty() ? props->getRoutingKey() : props->getExchange();
+    } else {
+        return EMPTY;
+    }
+}
+std::string MessageTransfer::getSubject() const
+{
+    const DeliveryProperties* props = getProperties<DeliveryProperties>();
+    if (props) {
+        //if message was sent to 'nameless exchange' then the routing key is the queue name, not the subject
+        return props->getExchange().empty() ? getPropertyAsString(SUBJECT_KEY) : props->getRoutingKey();
+    } else {
+        return EMPTY;
+    }
+}
+std::string MessageTransfer::getReplyTo() const
+{
+    const MessageProperties* props = getProperties<MessageProperties>();
+    if (props && props->hasReplyTo()) {
+        const qpid::framing::ReplyTo& replyto = props->getReplyTo();
+        if (replyto.hasExchange() && replyto.hasRoutingKey())
+            return replyto.getExchange() + DELIMITER + replyto.getRoutingKey();
+        else if (replyto.hasExchange()) return replyto.getExchange();
+        else if (replyto.hasRoutingKey()) return replyto.getRoutingKey();
+        else return EMPTY;
+    } else {
+        return EMPTY;
+    }
 }
 
 bool MessageTransfer::requiresAccept() const
