@@ -44,16 +44,20 @@ Sasl::~Sasl() {}
 
 size_t Sasl::decode(const char* buffer, size_t size)
 {
-    if (state == AUTHENTICATED || state == SUCCESS_PENDING) {
-        if (securityLayer.get()) return securityLayer->decode(buffer, size);
-        else return connection.decode(buffer, size);
-    } else if (state == INCOMPLETE && size) {
-        size_t decoded = read(buffer, size);
-        QPID_LOG(trace, id << " Sasl::decode(" << size << "): " << decoded);
-        return decoded;
-    } else {
-        return 0;
+    size_t total = 0;
+    while (total < size) {
+        size_t decoded = 0;
+        if (state == AUTHENTICATED || state == SUCCESS_PENDING) {
+            if (securityLayer.get()) decoded = securityLayer->decode(buffer+total, size-total);
+            else decoded = connection.decode(buffer+total, size-total);
+        } else if (state == INCOMPLETE && size) {
+            decoded = read(buffer+total, size-total);
+            QPID_LOG(trace, id << " Sasl::decode(" << size << "): " << decoded << " (" << total << ")");
+        }
+        if (decoded) total += decoded;
+        else break;
     }
+    return total;
 }
 
 size_t Sasl::encode(char* buffer, size_t size)
