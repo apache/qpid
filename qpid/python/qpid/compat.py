@@ -105,6 +105,7 @@ if hasattr(_select_mod, "poll") and not _is_patched:
     return (rfds, wfds, xfds)
 else:
   if tuple(sys.version_info[0:2]) < (2, 4):
+    from select import error as SelectError
     from select import select as old_select
     def select(rlist, wlist, xlist, timeout=None):
       return old_select(list(rlist), list(wlist), list(xlist), timeout)

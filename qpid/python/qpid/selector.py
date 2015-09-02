@@ -17,7 +17,7 @@
 # under the License.
 #
 import atexit, time, errno, os
-from compat import select, set, selectable_waiter
+from compat import select, SelectError, set, selectable_waiter
 from threading import Thread, Lock
 
 class Acceptor:
@@ -125,9 +125,9 @@ class Selector:
             timeout = max(0, wakeup - time.time())
           rd, wr, ex = select(self.reading, self.writing, (), timeout)
           break
-        except Exception, (err, strerror):
+        except SelectError, e:
           # Repeat the select call if we were interrupted.
-          if err == errno.EINTR:
+          if e[0] == errno.EINTR:
             continue
           else:
             raise
