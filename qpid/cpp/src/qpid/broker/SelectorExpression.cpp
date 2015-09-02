@@ -27,6 +27,8 @@
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/sys/regex.h"
 
+#include <cstdlib>
+#include <cerrno>
 #include <string>
 #include <memory>
 #include <ostream>
@@ -45,6 +47,10 @@
  *
  * Alpha ::= [a-zA-Z]
  * Digit ::= [0-9]
+ * HexDigit ::= [0-9a-fA-F]
+ * OctDigit ::= [0-7]
+ * BinDigit ::= [0-1]
+ *
  * IdentifierInitial ::= Alpha | "_" | "$"
  * IdentifierPart ::= IdentifierInitial | Digit | "."
  * Identifier ::= IdentifierInitial IdentifierPart*
@@ -52,7 +58,10 @@
  *
  * LiteralString ::= ("'" [^']* "'")+ // Repeats to cope with embedded single quote
  *
- * LiteralExactNumeric ::= Digit+
+ * // LiteralExactNumeric is a little simplified as it also allows underscores ("_") as internal seperators and suffix "l" or "L"
+ * LiteralExactNumeric ::= "0x" HexDigit+ | "0X" HexDigit+ | "0b" BinDigit+ | "0B" BinDigit+ | "0" OctDigit* | Digit+
+ *
+ * // LiteralApproxNumeric is a little simplified as it also allows suffix "d", "D", "f", "F"
  * Exponent ::= ('+'|'-')? LiteralExactNumeric
  * LiteralApproxNumeric ::= ( Digit "." Digit* ( "E" Exponent )? ) |
  *                          ( "." Digit+ ( "E" Exponent )? ) |
@@ -86,7 +95,8 @@
  *
  * MultiplyExpression :: = UnaryArithExpression ( MultiplyOps UnaryArithExpression )*
  *
- * UnaryArithExpression ::= AddOps AddExpression |
+ * UnaryArithExpression ::= "-" LiteralExactNumeric |  // This is a special case to simplify negative ints
+ *                          AddOps AddExpression |
  *                          "(" OrExpression ")" |
  *                          PrimaryExpression
  *
@@ -957,9 +967,17 @@ Expression* unaryArithExpression(Tokeniser& tokeniser)
     case T_PLUS:
         break; // Unary + is no op
     case T_MINUS: {
-        std::auto_ptr<Expression> e(unaryArithExpression(tokeniser));
-        if (!e.get()) return 0;
-        return new UnaryArithExpression(&negate, e.release());
+        const Token t = tokeniser.nextToken();
+        // Special case for negative numerics
+        if (t.type==T_NUMERIC_EXACT) {
+            std::auto_ptr<Expression> e(parseExactNumeric(t, true));
+            return e.release();
+        } else {
+            tokeniser.returnTokens();
+            std::auto_ptr<Expression> e(unaryArithExpression(tokeniser));
+            if (!e.get()) return 0;
+            return new UnaryArithExpression(&negate, e.release());
+        }
     }
     default:
         tokeniser.returnTokens();
@@ -970,7 +988,44 @@ Expression* unaryArithExpression(Tokeniser& tokeniser)
     return e.release();
 }
 
-Expression* primaryExpression(Tokeniser& tokeniser)
+Expression* parseExactNumeric(const Token& token, bool negate)
+{
+    int base = 0;
+    string s;
+    std::remove_copy(token.val.begin(), token.val.end(), std::back_inserter(s), '_');
+    if (s[1]=='b' || s[1]=='B') {
+        base = 2;
+        s = s.substr(2);
+    } else if (s[1]=='x' || s[1]=='X') {
+        base = 16;
+        s = s.substr(2);
+    } if (s[0]=='0') {
+        base = 8;
+    }
+    errno = 0;
+    uint64_t value = std::strtoull(s.c_str(), 0, base);
+    if (!errno && (base || value<=INT64_MAX)) {
+        return new Literal(static_cast<int64_t>(negate ? -value : value));
+    }
+    if (negate && value==INT64_MAX+1ull) return new Literal(INT64_MIN);
+    error = "integer literal too big";
+    return 0;
+}
+
+Expression* parseApproxNumeric(const Token& token)
+{
+    errno = 0;
+    string s;
+    std::remove_copy(token.val.begin(), token.val.end(), std::back_inserter(s), '_');
+    double value = std::strtod(s.c_str(), 0);
+    if (!errno) return new Literal(value);
+    error = "floating literal overflow/underflow";
+    return 0;
+}
+
+Expression* primaryExpression(Tokeniser& tokeniser
+  
+)
 {
     const Token& t = tokeniser.nextToken();
     switch (t.type) {
@@ -983,9 +1038,9 @@ Expression* primaryExpression(Tokeniser& tokeniser)
         case T_TRUE:
             return new Literal(true);
         case T_NUMERIC_EXACT:
-            return new Literal(boost::lexical_cast<int64_t>(t.val));
+            return parseExactNumeric(t, false);
         case T_NUMERIC_APPROX:
-            return new Literal(boost::lexical_cast<double>(t.val));
+            return parseApproxNumeric(t);
         default:
             error = "expected literal or identifier";
             return 0;

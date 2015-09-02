@@ -30,7 +30,7 @@
 namespace qpid {
 namespace broker {
 
-// Tokeniserss always take string const_iterators to mark the beginning and end of the string being tokenised
+// Tokenisers always take string const_iterators to mark the beginning and end of the string being tokenised
 // if the tokenise is successful then the start iterator is advanced, if the tokenise fails then the start
 // iterator is unchanged.
 
@@ -149,7 +149,13 @@ bool tokenise(std::string::const_iterator& s, std::string::const_iterator& e, To
         START,
         REJECT,
         IDENTIFIER,
+        ZERO,
         DIGIT,
+        HEXDIGIT_START,
+        HEXDIGIT,
+        OCTDIGIT,
+        BINDIGIT_START,
+        BINDIGIT,
         DECIMAL_START,
         DECIMAL,
         EXPONENT_SIGN,
@@ -193,6 +199,7 @@ bool tokenise(std::string::const_iterator& s, std::string::const_iterator& e, To
         if (isIdentifierStart(*t)) {++t; state = IDENTIFIER;}
         else if (*t=='\'') {return processString(s, e, '\'', T_STRING, tok);}
         else if (*t=='\"') {return processString(s, e, '\"', T_IDENTIFIER, tok);}
+        else if (*t=='0') {++t; state = ZERO;}
         else if (std::isdigit(*t)) {++t; state = DIGIT;}
         else if (*t=='.') {++t; state = DECIMAL_START;}
         else state = REJECT;
@@ -218,22 +225,62 @@ bool tokenise(std::string::const_iterator& s, std::string::const_iterator& e, To
         else if (std::isdigit(*t)) {++t; state = EXPONENT;}
         else state = REJECT;
         continue;
+    case ZERO:
+        if (t==e) {tokType = T_NUMERIC_EXACT; state = ACCEPT_NOINC;}
+        else if (*t=='.') {++t; state = DECIMAL;}
+        else if (*t=='x' || *t=='X') {++t; state = HEXDIGIT_START;}
+        else if (*t=='b' || *t=='B') {++t; state = BINDIGIT_START;}
+        else state = OCTDIGIT;
+        continue;
+    case HEXDIGIT_START:
+        if (t==e) {state = REJECT;}
+        else if (std::isxdigit(*t)) {++t; state = HEXDIGIT;}
+        else state = REJECT;
+        continue;
+    case HEXDIGIT:
+        if (t==e) {tokType = T_NUMERIC_EXACT; state = ACCEPT_NOINC;}
+        else if (*t=='l' || *t=='L') {tokType = T_NUMERIC_EXACT; state = ACCEPT_INC;}
+        else if (std::isxdigit(*t) || *t=='_') {++t; state = HEXDIGIT;}
+        else if (*t=='p' || *t=='P') {++t; state = EXPONENT_SIGN;}
+        else {tokType = T_NUMERIC_EXACT; state = ACCEPT_NOINC;}
+        continue;
+    case BINDIGIT_START:
+        if (t==e) {state = REJECT;}
+        else if (*t=='0' || *t=='1') {++t; state = BINDIGIT;}
+        else state = REJECT;
+        continue;
+    case BINDIGIT:
+        if (t==e) {tokType = T_NUMERIC_EXACT; state = ACCEPT_NOINC;}
+        else if (*t=='l' || *t=='L') {tokType = T_NUMERIC_EXACT; state = ACCEPT_INC;}
+        else if (*t=='0' || *t=='1' || *t=='_') {++t; state = BINDIGIT;}
+        else {tokType = T_NUMERIC_EXACT; state = ACCEPT_NOINC;}
+        continue;
+    case OCTDIGIT:
+        if (t==e) {tokType = T_NUMERIC_EXACT; state = ACCEPT_NOINC;}
+        else if (*t=='l' || *t=='L') {tokType = T_NUMERIC_EXACT; state = ACCEPT_INC;}
+        else if ((std::isdigit(*t) && *t<'8') || *t=='_') {++t; state = OCTDIGIT;}
+        else {tokType = T_NUMERIC_EXACT; state = ACCEPT_NOINC;}
+        continue;
     case DIGIT:
         if (t==e) {tokType = T_NUMERIC_EXACT; state = ACCEPT_NOINC;}
-        else if (std::isdigit(*t)) {++t; state = DIGIT;}
+        else if (*t=='l' || *t=='L') {tokType = T_NUMERIC_EXACT; state = ACCEPT_INC;}
+        else if (*t=='f' || *t=='F' || *t=='d' || *t=='D') {tokType = T_NUMERIC_APPROX; state = ACCEPT_INC;}
+        else if (std::isdigit(*t) || *t=='_') {++t; state = DIGIT;}
         else if (*t=='.') {++t; state = DECIMAL;}
         else if (*t=='e' || *t=='E') {++t; state = EXPONENT_SIGN;}
         else {tokType = T_NUMERIC_EXACT; state = ACCEPT_NOINC;}
         continue;
     case DECIMAL:
         if (t==e) {tokType = T_NUMERIC_APPROX; state = ACCEPT_NOINC;}
-        else if (std::isdigit(*t)) {++t; state = DECIMAL;}
+        else if (std::isdigit(*t) || *t=='_') {++t; state = DECIMAL;}
         else if (*t=='e' || *t=='E') {++t; state = EXPONENT_SIGN;}
+        else if (*t=='f' || *t=='F' || *t=='d' || *t=='D') {tokType = T_NUMERIC_APPROX; state = ACCEPT_INC;}
         else {tokType = T_NUMERIC_APPROX; state = ACCEPT_NOINC;}
         continue;
     case EXPONENT:
         if (t==e) {tokType = T_NUMERIC_APPROX; state = ACCEPT_NOINC;}
         else if (std::isdigit(*t)) {++t; state = EXPONENT;}
+        else if (*t=='f' || *t=='F' || *t=='d' || *t=='D') {tokType = T_NUMERIC_APPROX; state = ACCEPT_INC;}
         else {tokType = T_NUMERIC_APPROX; state = ACCEPT_NOINC;}
         continue;
     case ACCEPT_INC:

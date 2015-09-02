@@ -166,7 +166,8 @@ QPID_AUTO_TEST_CASE(tokeniseSuccess)
     verifyTokeniserSuccess(&tokenise, "<> Identifier", qb::T_NEQ, "<>", " Identifier");
     verifyTokeniserSuccess(&tokenise, "(a and b) not c", qb::T_LPAREN, "(", "a and b) not c");
     verifyTokeniserSuccess(&tokenise, ") not c", qb::T_RPAREN, ")", " not c");
-    verifyTokeniserSuccess(&tokenise, "019kill", qb::T_NUMERIC_EXACT, "019", "kill");
+    verifyTokeniserSuccess(&tokenise, "017kill", qb::T_NUMERIC_EXACT, "017", "kill");
+    verifyTokeniserSuccess(&tokenise, "019kill", qb::T_NUMERIC_EXACT, "01", "9kill");
     verifyTokeniserSuccess(&tokenise, "0kill", qb::T_NUMERIC_EXACT, "0", "kill");
     verifyTokeniserSuccess(&tokenise, "0.kill", qb::T_NUMERIC_APPROX, "0.", "kill");
     verifyTokeniserSuccess(&tokenise, "3.1415=pi", qb::T_NUMERIC_APPROX, "3.1415", "=pi");
@@ -174,7 +175,15 @@ QPID_AUTO_TEST_CASE(tokeniseSuccess)
     verifyTokeniserSuccess(&tokenise, "2e5.kill", qb::T_NUMERIC_APPROX, "2e5", ".kill");
     verifyTokeniserSuccess(&tokenise, "3.e50easy to kill", qb::T_NUMERIC_APPROX, "3.e50", "easy to kill");
     verifyTokeniserSuccess(&tokenise, "34.25e+50easy to kill", qb::T_NUMERIC_APPROX, "34.25e+50", "easy to kill");
-    verifyTokeniserSuccess(&tokenise, "34.e-50easy to kill", qb::T_NUMERIC_APPROX, "34.e-50", "easy to kill");
+    verifyTokeniserSuccess(&tokenise, "34de", qb::T_NUMERIC_APPROX, "34d", "e");
+    verifyTokeniserSuccess(&tokenise, "34fuller", qb::T_NUMERIC_APPROX, "34f", "uller");
+    verifyTokeniserSuccess(&tokenise, "34Longer", qb::T_NUMERIC_EXACT, "34L", "onger");
+    verifyTokeniserSuccess(&tokenise, "34littler", qb::T_NUMERIC_EXACT, "34l", "ittler");
+    verifyTokeniserSuccess(&tokenise, "034Longer", qb::T_NUMERIC_EXACT, "034L", "onger");
+    verifyTokeniserSuccess(&tokenise, "034littler", qb::T_NUMERIC_EXACT, "034l", "ittler");
+    verifyTokeniserSuccess(&tokenise, "0X34littler", qb::T_NUMERIC_EXACT, "0X34l", "ittler");
+    verifyTokeniserSuccess(&tokenise, "0X3456_fffflittler", qb::T_NUMERIC_EXACT, "0X3456_ffffl", "ittler");
+    verifyTokeniserSuccess(&tokenise, "0xdead_beafittler", qb::T_NUMERIC_EXACT, "0xdead_beaf", "ittler");
 }
 
 QPID_AUTO_TEST_CASE(tokeniseFailure)
@@ -201,6 +210,8 @@ QPID_AUTO_TEST_CASE(tokeniseFailure)
     verifyTokeniserFail(&tokeniseNumeric, "34e");
     verifyTokeniserFail(&tokeniseNumeric, ".3e+");
     verifyTokeniserFail(&tokeniseNumeric, ".3e-.");
+    verifyTokeniserFail(&tokenise, "0b34Longer");
+    verifyTokeniserFail(&tokenise, "0X_34Longer");
 }
 
 QPID_AUTO_TEST_CASE(tokenString)
@@ -402,6 +413,29 @@ QPID_AUTO_TEST_CASE(numericEval)
     BOOST_CHECK(!qb::Selector("A/0=0").eval(env));
     BOOST_CHECK(qb::Selector("A*B+19<A*(B+19)").eval(env));
     BOOST_CHECK(qb::Selector("-A=0-A").eval(env));
+}
+
+QPID_AUTO_TEST_CASE(numericLiterals)
+{
+    TestSelectorEnv env;
+
+    BOOST_CHECK(qb::Selector(" 9223372036854775807>0").eval(env));
+    BOOST_CHECK(qb::Selector("-9223372036854775807<0").eval(env));
+    BOOST_CHECK_THROW(qb::Selector(" 9223372036854775808>0").eval(env), std::range_error);
+    BOOST_CHECK(qb::Selector("0x8000_0000_0000_0001=-9223372036854775807").eval(env));
+    BOOST_CHECK_THROW(qb::Selector("-9223372036854775809<0").eval(env), std::range_error);
+    BOOST_CHECK(qb::Selector(" 9223372036854775807L<>0").eval(env));
+    BOOST_CHECK(qb::Selector("-9223372036854775807L<>0").eval(env));
+    BOOST_CHECK(qb::Selector("-9223372036854775808<>0").eval(env));
+    BOOST_CHECK(qb::Selector("-9223372036854775808=0x8000_0000_0000_0000").eval(env));
+    BOOST_CHECK(qb::Selector("0x8000_0000_0000_0000<9223372036854775807").eval(env));
+    BOOST_CHECK(qb::Selector(" 0.4f>0.3d").eval(env));
+    BOOST_CHECK(qb::Selector(" 1000_020.4f>0.3d").eval(env));
+    BOOST_CHECK(qb::Selector(" 1000_020.4f>0x800p-3").eval(env));
+    BOOST_CHECK(qb::Selector(" 0x1000_0000=0x1000_0000p0").eval(env));
+    BOOST_CHECK(qb::Selector(" 0xFF=255L").eval(env));
+    BOOST_CHECK(qb::Selector(" 077L=0b111_111").eval(env));
+    BOOST_CHECK(qb::Selector(" 077L=63").eval(env));
 }
 
 QPID_AUTO_TEST_CASE(comparisonEval)
