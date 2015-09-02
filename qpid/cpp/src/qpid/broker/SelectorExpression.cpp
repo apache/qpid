@@ -369,13 +369,10 @@ public:
 
     BoolOrNone eval_bool(const SelectorEnv& env) const {
         Value ve(e->eval(env));
-        if (unknown(ve)) return BN_UNKNOWN;
         Value vl(l->eval(env));
-        if (!unknown(vl) && ve<vl) return BN_FALSE;
         Value vu(u->eval(env));
-        if (!unknown(vu) && ve>vu) return BN_FALSE;
-        if (unknown(vl) || unknown(vu)) return BN_UNKNOWN;
-        return BN_TRUE;
+        if (unknown(ve) || unknown(vl) || unknown(vu)) return BN_UNKNOWN;
+        return BoolOrNone(ve>=vl && ve<=vu);
     }
 };
 
