@@ -419,8 +419,25 @@ QPID_AUTO_TEST_CASE(comparisonEval)
     BOOST_CHECK(qb::Selector("'hello' IN ('hello', 'there', 1 , true, (1-17))").eval(env));
     BOOST_CHECK(qb::Selector("TRUE IN ('hello', 'there', 1 , true, (1-17))").eval(env));
     BOOST_CHECK(qb::Selector("-16 IN ('hello', 'there', 1 , true, (1-17))").eval(env));
+    BOOST_CHECK(!qb::Selector("1 IN ('hello', 'there', 'polly')").eval(env));
+    BOOST_CHECK(qb::Selector("1 NOT IN ('hello', 'there', 'polly')").eval(env));
     BOOST_CHECK(!qb::Selector("'hell' IN ('hello', 'there', 1 , true, (1-17))").eval(env));
     BOOST_CHECK(qb::Selector("('hell' IN ('hello', 'there', 1 , true, (1-17), A)) IS NULL").eval(env));
+    BOOST_CHECK(qb::Selector("('hell' NOT IN ('hello', 'there', 1 , true, (1-17), A)) IS NULL").eval(env));
+    BOOST_CHECK(!qb::Selector("'hello kitty' BETWEEN 30 and 40").eval(env));
+    BOOST_CHECK(qb::Selector("'hello kitty' NOT BETWEEN 30 and 40").eval(env));
+    BOOST_CHECK(!qb::Selector("14 BETWEEN 'aardvark' and 'zebra'").eval(env));
+    BOOST_CHECK(qb::Selector("14 NOT BETWEEN 'aardvark' and 'zebra'").eval(env));
+    BOOST_CHECK(!qb::Selector("TRUE BETWEEN 'aardvark' and 'zebra'").eval(env));
+    BOOST_CHECK(qb::Selector("TRUE NOT BETWEEN 'aardvark' and 'zebra'").eval(env));
+    BOOST_CHECK(qb::Selector("(A BETWEEN 'aardvark' and 14) IS NULL").eval(env));
+    BOOST_CHECK(qb::Selector("(A NOT BETWEEN 'aardvark' and 14) IS NULL").eval(env));
+    BOOST_CHECK(qb::Selector("(14 BETWEEN A and 17) IS NULL").eval(env));
+    BOOST_CHECK(qb::Selector("(14 NOT BETWEEN A and 17) IS NULL").eval(env));
+    BOOST_CHECK(qb::Selector("(14 BETWEEN 11 and A) IS NULL").eval(env));
+    BOOST_CHECK(qb::Selector("(14 NOT BETWEEN 11 and A) IS NULL").eval(env));
+    BOOST_CHECK(qb::Selector("14 NOT BETWEEN 11 and 9").eval(env));
+    BOOST_CHECK(qb::Selector("14 BETWEEN -11 and 54367").eval(env));
 }
 
 QPID_AUTO_TEST_CASE(NullEval)
