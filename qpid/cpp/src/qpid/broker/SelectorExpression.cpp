@@ -375,7 +375,6 @@ public:
         Value vu(u->eval(env));
         if (!unknown(vu) && ve>vu) return BN_FALSE;
         if (unknown(vl) || unknown(vu)) return BN_UNKNOWN;
-        else if (numeric(ve) != numeric(vu) || numeric(ve) != numeric(vl)) return BN_FALSE;
         return BN_TRUE;
     }
 };
@@ -404,7 +403,7 @@ public:
         BoolOrNone r = BN_FALSE;
         for (std::size_t i = 0; i<l.size(); ++i){
             Value li(l[i].eval(env));
-            if (unknown(li) || numeric(li) != numeric(ve)) {
+            if (unknown(li)) {
                 r = BN_UNKNOWN;
                 continue;
             }
