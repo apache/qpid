@@ -1003,9 +1003,10 @@ Expression* parseExactNumeric(const Token& token, bool negate)
         base = 8;
     }
     errno = 0;
-    uint64_t value = std::strtoull(s.c_str(), 0, base);
+    uint64_t value = strtoull(s.c_str(), 0, base);
     if (!errno && (base || value<=INT64_MAX)) {
-        return new Literal(static_cast<int64_t>(negate ? -value : value));
+        int64_t r = value;
+        return new Literal((negate ? -r : r));
     }
     if (negate && value==INT64_MAX+1ull) return new Literal(INT64_MIN);
     error = "integer literal too big";

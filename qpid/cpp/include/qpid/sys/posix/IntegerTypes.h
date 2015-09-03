@@ -21,6 +21,9 @@
  *
  */
 
+// Tell stdint we do want its macros!
+#define __STDC_LIMIT_MACROS
+#define __STDC_CONSTANT_MACROS
 #include <stdint.h>
 
 #endif  /*!QPID_SYS_INTEGERTYPES_H*/
