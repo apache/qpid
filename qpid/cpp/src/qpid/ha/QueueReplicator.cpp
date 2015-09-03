@@ -82,28 +82,27 @@ void QueueReplicator::copy(ExchangeRegistry& registry, Vector& result) {
 class QueueReplicator::ErrorListener : public SessionHandler::ErrorListener {
   public:
     ErrorListener(const boost::shared_ptr<QueueReplicator>& qr)
-        : queueReplicator(qr), logPrefix(qr->logPrefix) {}
+        : queueReplicator(qr), logPrefix(qr->logPrefix.prePrefix, qr->logPrefix.get()) {}
 
     void connectionException(framing::connection::CloseCode code, const std::string& msg) {
-        QPID_LOG(debug, logPrefix << framing::createConnectionException(code, msg).what());
+        QPID_LOG(error, logPrefix << "Outgoing " << framing::createConnectionException(code, msg).what());
     }
     void channelException(framing::session::DetachCode code, const std::string& msg) {
-        QPID_LOG(debug, logPrefix << framing::createChannelException(code, msg).what());
+        QPID_LOG(error, logPrefix << "Outgoing " << framing::createChannelException(code, msg).what());
     }
     void executionException(framing::execution::ErrorCode code, const std::string& msg) {
-        QPID_LOG(debug, logPrefix << framing::createSessionException(code, msg).what());
+        QPID_LOG(error, logPrefix  << "Outgoing " << framing::createSessionException(code, msg).what());
     }
     void incomingExecutionException(ErrorCode code, const std::string& msg) {
         boost::shared_ptr<QueueReplicator> qr = queueReplicator.lock();
-        if (qr && !qr->deletedOnPrimary(code, msg))
-            QPID_LOG(error, logPrefix << "Incoming "
-                     << framing::createSessionException(code, msg).what());
+        if (!(qr && qr->deletedOnPrimary(code, msg)))
+            QPID_LOG(error, logPrefix << "Incoming " << framing::createSessionException(code, msg).what());
     }
     void detach() {}
 
   private:
     boost::weak_ptr<QueueReplicator> queueReplicator;
-    const LogPrefix& logPrefix;
+    LogPrefix2 logPrefix;
 };
 
 class QueueReplicator::QueueObserver : public broker::QueueObserver {

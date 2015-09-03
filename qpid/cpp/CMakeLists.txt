@@ -60,7 +60,7 @@ enable_testing()
 include (CTest)
 
 if (MSVC)
-  # Change warning C4996 from level 1 to level 4. These are real and shouldn't
+  # Chaxnge warning C4996 from level 1 to level 4. These are real and shouldn't
   # be completely ignored, but they're pretty well checked out and will throw
   # a run-time error if violated.
   # "warning C4996: 'std::equal': Function call with parameters that may

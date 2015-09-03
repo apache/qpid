@@ -263,8 +263,7 @@ void SslProtocolFactory::establishedCommon(sys::Poller::shared_ptr poller,
                                            const qpid::sys::Socket& s) {
     if (tcpNoDelay) {
         s.setTcpNoDelay();
-        QPID_LOG(info,
-                 "Set TCP_NODELAY on connection to " << s.getPeerAddress());
+        QPID_LOG(debug, "Set TCP_NODELAY on connection to " << s.getPeerAddress());
     }
 
     async->init(aio, brokerTimer, maxNegotiateTime);

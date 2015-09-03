@@ -20,7 +20,6 @@
  */
 #include "RemoteBackup.h"
 #include "QueueGuard.h"
-#include "TxReplicator.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/Queue.h"

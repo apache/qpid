@@ -44,8 +44,6 @@ class Connection;
 class ConnectionObserver;
 class BrokerObserver;
 class SessionHandlerObserver;
-class TxBuffer;
-class DtxBuffer;
 }
 
 namespace sys {
@@ -58,7 +56,6 @@ class ReplicatingSubscription;
 class RemoteBackup;
 class QueueGuard;
 class Membership;
-class PrimaryTxObserver;
 
 /**
  * State associated with a primary broker:
@@ -87,25 +84,12 @@ class Primary : public Role
 
     void readyReplica(const ReplicatingSubscription&);
     void addReplica(ReplicatingSubscription&);
-    void removeReplica(const ReplicatingSubscription&);
-
-    /** Skip replication of ids to queue on backup. */
-    void skipEnqueues(const types::Uuid& backup,
-                      const boost::shared_ptr<broker::Queue>& queue,
-                      const ReplicationIdSet& ids);
-
-    /** Skip replication of dequeue of ids to queue on backup. */
-    void skipDequeues(const types::Uuid& backup,
-                      const boost::shared_ptr<broker::Queue>& queue,
-                      const ReplicationIdSet& ids);
 
     // Called via BrokerObserver
     void queueCreate(const QueuePtr&);
     void queueDestroy(const QueuePtr&);
     void exchangeCreate(const ExchangePtr&);
     void exchangeDestroy(const ExchangePtr&);
-    void startTx(const boost::intrusive_ptr<broker::TxBuffer>&);
-    void startDtx(const boost::intrusive_ptr<broker::DtxBuffer>&);
 
     // Called via ConnectionObserver
     void opened(broker::Connection& connection);
@@ -126,9 +110,6 @@ class Primary : public Role
     typedef sys::unordered_map<UuidQueue, ReplicatingSubscription*,
                                Hasher<UuidQueue> > ReplicaMap;
 
-    // Map of PrimaryTxObservers by tx-queue name
-    typedef sys::unordered_map<std::string, boost::weak_ptr<PrimaryTxObserver> > TxMap;
-
     RemoteBackupPtr backupConnect(const BrokerInfo&, broker::Connection&, sys::Mutex::ScopedLock&);
     void backupDisconnect(RemoteBackupPtr, sys::Mutex::ScopedLock&);
 
@@ -136,8 +117,6 @@ class Primary : public Role
     void checkReady(RemoteBackupPtr);
     void setCatchupQueues(const RemoteBackupPtr&, bool createGuards);
     void deduplicate();
-    boost::shared_ptr<PrimaryTxObserver> makeTxObserver(
-        const boost::intrusive_ptr<broker::TxBuffer>&);
 
     mutable sys::Mutex lock;
     HaBroker& haBroker;
@@ -161,7 +140,6 @@ class Primary : public Role
     boost::shared_ptr<broker::SessionHandlerObserver> sessionHandlerObserver;
     boost::intrusive_ptr<sys::TimerTask> timerTask;
     ReplicaMap replicas;
-    TxMap txMap;
     PrimaryQueueLimits queueLimits;
 };
 }} // namespace qpid::ha

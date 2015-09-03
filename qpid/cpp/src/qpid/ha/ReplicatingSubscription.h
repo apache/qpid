@@ -97,7 +97,6 @@ class ReplicatingSubscription :
     static const std::string QPID_ID_SET;
     // Replicator types: argument values for QPID_REPLICATING_SUBSCRIPTION argument.
     static const std::string QPID_QUEUE_REPLICATOR;
-    static const std::string QPID_TX_REPLICATOR;
 
     ReplicatingSubscription(HaBroker& haBroker,
                             broker::SemanticState* parent,
@@ -138,9 +137,6 @@ class ReplicatingSubscription :
 
     BrokerInfo getBrokerInfo() const { return info; }
 
-    void skipEnqueues(const ReplicationIdSet& ids);
-    void skipDequeues(const ReplicationIdSet& ids);
-
   protected:
     bool doDispatch();
 
@@ -148,8 +144,7 @@ class ReplicatingSubscription :
     LogPrefix2 logPrefix;
     QueuePosition position;
     ReplicationIdSet dequeues;  // Dequeues to be sent in next dequeue event.
-    ReplicationIdSet skipEnqueue; // Enqueues to skip: messages already on backup and tx enqueues.
-    ReplicationIdSet skipDequeue; // Dequeues to skip: tx dequeues.
+    ReplicationIdSet skipEnqueue; // Enqueues to skip: messages already on backup.
     ReplicationIdSet unready;   // Unguarded, replicated and un-acknowledged.
     bool wasStopped;
     bool ready;

@@ -44,14 +44,6 @@ bool isEventKey(const std::string& key) {
 
 const string DequeueEvent::KEY(QPID_HA+"de");
 const string IdEvent::KEY(QPID_HA+"id");
-const string TxEnqueueEvent::KEY(QPID_HA+"txenq");
-const string TxDequeueEvent::KEY(QPID_HA+"txdeq");
-const string TxPrepareEvent::KEY(QPID_HA+"txpre");
-const string TxCommitEvent::KEY(QPID_HA+"txcom");
-const string TxRollbackEvent::KEY(QPID_HA+"txrb");
-const string TxPrepareOkEvent::KEY(QPID_HA+"txok");
-const string TxPrepareFailEvent::KEY(QPID_HA+"txno");
-const string TxBackupsEvent::KEY(QPID_HA+"txmem");
 
 broker::Message makeMessage(
     const string& data, const string& destination, const string& routingKey)

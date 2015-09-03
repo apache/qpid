@@ -21,7 +21,6 @@
 #include "BrokerReplicator.h"
 #include "HaBroker.h"
 #include "QueueReplicator.h"
-#include "TxReplicator.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/Queue.h"
@@ -772,10 +771,7 @@ boost::shared_ptr<QueueReplicator> BrokerReplicator::startQueueReplicator(
     const boost::shared_ptr<Queue>& queue)
 {
     if (replicationTest.getLevel(*queue) == ALL) {
-        if (TxReplicator::isTxQueue(queue->getName())) 
-            return TxReplicator::create(haBroker, queue, link);
-        else
-            return QueueReplicator::create(haBroker, queue, link);
+        return QueueReplicator::create(haBroker, queue, link);
     }
     return boost::shared_ptr<QueueReplicator>();
 }
@@ -886,10 +882,6 @@ void BrokerReplicator::disconnectedQueueReplicator(
     const boost::shared_ptr<QueueReplicator>& qr)
 {
     qr->disconnect();
-    if (TxReplicator::isTxQueue(qr->getQueue()->getName())) {
-        // Transactions are aborted on failover so clean up tx-queues
-        deleteQueue(qr->getQueue()->getName());
-    }
 }
 
 // Called by ConnectionObserver::disconnected, disconnected from the network side.

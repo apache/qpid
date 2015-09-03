@@ -27,11 +27,11 @@
 #include "RemoteBackup.h"
 #include "ConnectionObserver.h"
 #include "QueueReplicator.h"
-#include "PrimaryTxObserver.h"
 #include "qpid/assert.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/BrokerObserver.h"
 #include "qpid/broker/Connection.h"
+#include "qpid/broker/amqp_0_10/Connection.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/SessionHandlerObserver.h"
 #include "qpid/framing/FieldTable.h"
@@ -77,8 +77,6 @@ class PrimaryBrokerObserver : public broker::BrokerObserver
     void queueDestroy(const Primary::QueuePtr& q) { primary.queueDestroy(q); }
     void exchangeCreate(const Primary::ExchangePtr& q) { primary.exchangeCreate(q); }
     void exchangeDestroy(const Primary::ExchangePtr& q) { primary.exchangeDestroy(q); }
-    void startTx(const intrusive_ptr<broker::TxBuffer>& tx) { primary.startTx(tx); }
-    void startDtx(const intrusive_ptr<broker::DtxBuffer>& dtx) { primary.startDtx(dtx); }
 
  private:
     Primary& primary;
@@ -268,38 +266,6 @@ void Primary::addReplica(ReplicatingSubscription& rs) {
     replicas[make_pair(rs.getBrokerInfo().getSystemId(), rs.getQueue())] = &rs;
 }
 
-void Primary::skipEnqueues(
-    const types::Uuid& backup,
-    const boost::shared_ptr<broker::Queue>& queue,
-    const ReplicationIdSet& ids)
-{
-    sys::Mutex::ScopedLock l(lock);
-    ReplicaMap::const_iterator i = replicas.find(make_pair(backup, queue));
-    if (i != replicas.end()) i->second->skipEnqueues(ids);
-}
-
-void Primary::skipDequeues(
-    const types::Uuid& backup,
-    const boost::shared_ptr<broker::Queue>& queue,
-    const ReplicationIdSet& ids)
-{
-    sys::Mutex::ScopedLock l(lock);
-    ReplicaMap::const_iterator i = replicas.find(make_pair(backup, queue));
-    if (i != replicas.end()) i->second->skipDequeues(ids);
-}
-
-// Called from ReplicatingSubscription::cancel
-void Primary::removeReplica(const ReplicatingSubscription& rs) {
-    boost::shared_ptr<PrimaryTxObserver> tx;
-    {
-        sys::Mutex::ScopedLock l(lock);
-        replicas.erase(make_pair(rs.getBrokerInfo().getSystemId(), rs.getQueue()));
-        TxMap::const_iterator i = txMap.find(rs.getQueue()->getName());
-        if (i != txMap.end()) tx = i->second.lock();
-    }
-    if (tx) tx->cancel(rs);     // Outside of lock.
-}
-
 // NOTE: Called with queue registry lock held.
 void Primary::queueCreate(const QueuePtr& q) {
     // Set replication argument.
@@ -475,24 +441,6 @@ void Primary::setCatchupQueues(const RemoteBackupPtr& backup, bool createGuards)
     haBroker.getBroker().getQueues().eachQueue(
         boost::bind(&RemoteBackup::catchupQueue, backup, _1, createGuards));
     backup->startCatchup();
-}
-
-shared_ptr<PrimaryTxObserver> Primary::makeTxObserver(
-    const boost::intrusive_ptr<broker::TxBuffer>& txBuffer)
-{
-    shared_ptr<PrimaryTxObserver> observer =
-        PrimaryTxObserver::create(*this, haBroker, txBuffer);
-    sys::Mutex::ScopedLock l(lock);
-    txMap[observer->getTxQueue()->getName()] = observer;
-    return observer;
-}
-
-void Primary::startTx(const boost::intrusive_ptr<broker::TxBuffer>& txBuffer) {
-    txBuffer->setObserver(makeTxObserver(txBuffer));
-}
-
-void Primary::startDtx(const boost::intrusive_ptr<broker::DtxBuffer>& ) {
-    QPID_LOG(warning, "DTX transactions in a HA cluster are not yet atomic");
 }
 
 }} // namespace qpid::ha

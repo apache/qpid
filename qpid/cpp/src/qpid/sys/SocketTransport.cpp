@@ -48,7 +48,7 @@ namespace {
     {
         if (opts.tcpNoDelay) {
             s.setTcpNoDelay();
-            QPID_LOG(info, "Set TCP_NODELAY on connection to " << s.getPeerAddress());
+            QPID_LOG(debug, "Set TCP_NODELAY on connection to " << s.getPeerAddress());
         }
 
         AsynchIO* aio = AsynchIO::create

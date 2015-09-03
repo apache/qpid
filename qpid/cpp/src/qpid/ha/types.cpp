@@ -39,7 +39,6 @@ const string QPID_HA_UUID("qpid.ha-uuid");
 
 const char* QPID_HA_PREFIX = "qpid.ha-";
 const char* QUEUE_REPLICATOR_PREFIX = "qpid.ha-q:";
-const char* TRANSACTION_REPLICATOR_PREFIX = "qpid.ha-tx:";
 
 bool startsWith(const string& name, const string& prefix) {
     return name.compare(0, prefix.size(), prefix) == 0;

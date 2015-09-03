@@ -267,6 +267,8 @@ acl allow all all
         c = self.connect_admin()
         try:
             wait_address(c, queue)
+            if not "msg" in kwargs:
+                kwargs["msg"]=str(self)
             assert_browse_retry(c.session(), queue, expected, **kwargs)
         finally: c.close()
 

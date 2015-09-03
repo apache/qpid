@@ -552,8 +552,6 @@ if (BUILD_HA)
         qpid/ha/Primary.cpp
         qpid/ha/Primary.h
         qpid/ha/PrimaryQueueLimits.h
-        qpid/ha/PrimaryTxObserver.cpp
-        qpid/ha/PrimaryTxObserver.h
         qpid/ha/QueueGuard.cpp
         qpid/ha/QueueGuard.h
         qpid/ha/QueueReplicator.cpp
@@ -571,10 +569,6 @@ if (BUILD_HA)
         qpid/ha/StandAlone.h
         qpid/ha/StatusCheck.cpp
         qpid/ha/StatusCheck.h
-        qpid/ha/TxReplicatingSubscription.cpp
-        qpid/ha/TxReplicatingSubscription.h
-        qpid/ha/TxReplicator.cpp
-        qpid/ha/TxReplicator.h
         qpid/ha/types.cpp
         qpid/ha/types.h
     )

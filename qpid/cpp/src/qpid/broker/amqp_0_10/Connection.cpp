@@ -411,7 +411,7 @@ bool Connection::doOutput() {
 }
 
 void Connection::sendHeartbeat() {
-	adapter.heartbeat();
+    requestIOProcessing(boost::bind(&ConnectionHandler::heartbeat, &adapter));
 }
 
 void Connection::closeChannel(uint16_t id) {
