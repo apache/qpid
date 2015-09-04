@@ -101,6 +101,10 @@ inline bool numeric(const Value& v) {
     return v.type == Value::T_EXACT || v.type == Value::T_INEXACT;
 }
 
+inline bool sameType(const Value& v1, const Value& v2) {
+    return v1.type == v2.type;
+}
+
 std::ostream& operator<<(std::ostream& os, const Value& v);
 
 bool operator==(const Value&, const Value&);

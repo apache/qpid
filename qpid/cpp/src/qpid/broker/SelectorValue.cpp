@@ -85,7 +85,7 @@ NumericPairBase* promoteNumeric(const Value& v1, const Value& v2)
 {
     if (!numeric(v1) || !numeric(v2)) return 0;
 
-    if (v1.type != v2.type) {
+    if (!sameType(v1,v2)) {
         switch (v1.type) {
         case Value::T_INEXACT: return new NumericPair<double>(v1.x, v2.i);
         case Value::T_EXACT: return new NumericPair<double>(v1.i, v2.x);
@@ -109,7 +109,7 @@ bool operator==(const Value& v1, const Value& v2)
     boost::scoped_ptr<NumericPairBase> nbp(promoteNumeric(v1, v2));
     if (nbp) return nbp->eq();
 
-    if (v1.type != v2.type) return false;
+    if (!sameType(v1,v2)) return false;
     switch (v1.type) {
     case Value::T_BOOL: return v1.b == v2.b;
     case Value::T_STRING: return *v1.s == *v2.s;
@@ -123,7 +123,7 @@ bool operator!=(const Value& v1, const Value& v2)
     boost::scoped_ptr<NumericPairBase> nbp(promoteNumeric(v1, v2));
     if (nbp) return nbp->ne();
 
-    if (v1.type != v2.type) return false;
+    if (!sameType(v1,v2)) return false;
     switch (v1.type) {
     case Value::T_BOOL: return v1.b != v2.b;
     case Value::T_STRING: return *v1.s != *v2.s;

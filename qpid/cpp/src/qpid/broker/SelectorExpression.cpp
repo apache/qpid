@@ -420,6 +420,49 @@ public:
     }
 };
 
+class NotInExpression : public BoolExpression {
+    boost::scoped_ptr<Expression> e;
+    boost::ptr_vector<Expression> l;
+
+public:
+    NotInExpression(Expression* e_, boost::ptr_vector<Expression>& l_) :
+        e(e_)
+    {
+        l.swap(l_);
+    }
+
+    void repr(ostream& os) const {
+        os << *e << " NOT IN (";
+        for (std::size_t i = 0; i<l.size(); ++i){
+            os << l[i] << (i<l.size()-1 ? ", " : ")");
+        }
+    }
+
+    BoolOrNone eval_bool(const SelectorEnv& env) const {
+        Value ve(e->eval(env));
+        if (unknown(ve)) return BN_UNKNOWN;
+        BoolOrNone r = BN_TRUE;
+        for (std::size_t i = 0; i<l.size(); ++i){
+            Value li(l[i].eval(env));
+            if (unknown(li)) {
+                r = BN_UNKNOWN;
+                continue;
+            }
+            // Check if types are incompatible. If nothing further in the list
+            // matches or is unknown and we had a type incompatibility then
+            // result still false.
+            if (r!=BN_UNKNOWN &&
+                !sameType(ve,li) && !(numeric(ve) && numeric(li))) {
+                r = BN_FALSE;
+                continue;
+            }
+
+            if (ve==li) return BN_FALSE;
+        }
+        return r;
+    }
+};
+
 // Arithmetic Expression types
 
 class ArithmeticExpression : public Expression {
@@ -775,7 +818,7 @@ Expression* andExpression(Tokeniser& tokeniser)
     return e.release();
 }
 
-BoolExpression* specialComparisons(Tokeniser& tokeniser, std::auto_ptr<Expression> e1) {
+BoolExpression* specialComparisons(Tokeniser& tokeniser, std::auto_ptr<Expression> e1, bool negated = false) {
     switch (tokeniser.nextToken().type) {
     case T_LIKE: {
         const Token t = tokeniser.nextToken();
@@ -784,6 +827,7 @@ BoolExpression* specialComparisons(Tokeniser& tokeniser, std::auto_ptr<Expressio
             return 0;
         }
         // Check for "ESCAPE"
+        std::auto_ptr<BoolExpression> l;
         if ( tokeniser.nextToken().type==T_ESCAPE ) {
             const Token e = tokeniser.nextToken();
             if ( e.type!=T_STRING ) {
@@ -796,11 +840,12 @@ BoolExpression* specialComparisons(Tokeniser& tokeniser, std::auto_ptr<Expressio
             if (e.val=="%" || e.val=="_") {
                 throwParseError(tokeniser, "'%' and '_' are not allowed as ESCAPE characters");
             }
-            return new LikeExpression(e1.release(), t.val, e.val);
+            l.reset(new LikeExpression(e1.release(), t.val, e.val));
         } else {
             tokeniser.returnTokens();
-            return new LikeExpression(e1.release(), t.val);
+            l.reset(new LikeExpression(e1.release(), t.val));
         }
+        return negated ? new UnaryBooleanExpression(&notOp, l.release()) : l.release();
     }
     case T_BETWEEN: {
         std::auto_ptr<Expression> lower(addExpression(tokeniser));
@@ -811,7 +856,8 @@ BoolExpression* specialComparisons(Tokeniser& tokeniser, std::auto_ptr<Expressio
         }
         std::auto_ptr<Expression> upper(addExpression(tokeniser));
         if ( !upper.get() ) return 0;
-        return new BetweenExpression(e1.release(), lower.release(), upper.release());
+        std::auto_ptr<BoolExpression> b(new BetweenExpression(e1.release(), lower.release(), upper.release()));
+        return negated ? new UnaryBooleanExpression(&notOp, b.release()) : b.release();
     }
     case T_IN: {
         if ( tokeniser.nextToken().type!=T_LPAREN ) {
@@ -829,7 +875,8 @@ BoolExpression* specialComparisons(Tokeniser& tokeniser, std::auto_ptr<Expressio
             error = "missing ',' or ')' after IN";
             return 0;
         }
-        return new InExpression(e1.release(), list);
+        if (negated) return new NotInExpression(e1.release(), list);
+        else return new InExpression(e1.release(), list);
     }
     default:
         error = "expected LIKE, IN or BETWEEN";
@@ -865,9 +912,7 @@ Expression* comparisonExpression(Tokeniser& tokeniser)
                 return 0;
         }
     case T_NOT: {
-        std::auto_ptr<BoolExpression> e(specialComparisons(tokeniser, e1));
-        if (!e.get()) return 0;
-        return new UnaryBooleanExpression(&notOp, e.release());
+        return specialComparisons(tokeniser, e1, true);
     }
     case T_BETWEEN:
     case T_LIKE:
