@@ -25,13 +25,12 @@ INCLUDE (CheckCXXSourceCompiles)
 FUNCTION (check_size_t_distinct VARIABLE)
   # No need to check if we already did. If you want to re-run, clear it
   # from the cache.
-  if ("${VARIABLE}" MATCHES "^${VARIABLE}$")
-    message (STATUS "Checking to see if size_t is a distinct type")
+  if (NOT DEFINED ${VARIABLE})
+    message (STATUS "Check for size_t")
     set (CMAKE_REQUIRED_QUIET ON)
     set (CMAKE_REQUIRED_INCLUDES "${CMAKE_SOURCE_DIR}/include")
     CHECK_CXX_SOURCE_COMPILES (
 "
-#include <iostream>
 #include \"qpid/sys/IntegerTypes.h\"
 // Define functions that will fail to compile if size_t is the same as
 // one of the int types defined in IntegerTypes.h
@@ -48,9 +47,9 @@ int main (int, char *[]) {
 "
     ${VARIABLE})
     if (${VARIABLE})
-      message (STATUS "Checking to see if size_t is a distinct type - yes")
+      message (STATUS "Check for size_t -- NOT a distinct type")
     else (${VARIABLE})
-      message (STATUS "Checking to see if size_t is a distinct type - no")
+      message (STATUS "Check for size_t -- distinct type")
     endif (${VARIABLE})
-  endif ("${VARIABLE}" MATCHES "^${VARIABLE}$")
+  endif ()
 ENDFUNCTION (check_size_t_distinct VARIABLE)
