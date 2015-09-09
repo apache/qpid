@@ -30,6 +30,7 @@
 #include "qpid/linearstore/journal/jcfg.h"
 #include "qpid/linearstore/journal/EmptyFilePoolTypes.h"
 #include "qpid/linearstore/PreparedTransaction.h"
+#include "qpid/sys/Time.h"
 
 #include "qmf/org/apache/qpid/linearstore/Store.h"
 
@@ -83,9 +84,10 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
         uint16_t efpPartition;
         uint64_t efpFileSizeKib;
         bool overwriteBeforeReturnFlag;
+        qpid::sys::Duration journalFlushTimeout;
     };
 
-  protected:
+  private:
     typedef std::map<uint64_t, qpid::broker::RecoverableQueue::shared_ptr> queue_index;
     typedef std::map<uint64_t, qpid::broker::RecoverableExchange::shared_ptr> exchange_index;
     typedef std::map<uint64_t, qpid::broker::RecoverableMessage::shared_ptr> message_index;
@@ -105,8 +107,9 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     static const bool defOverwriteBeforeReturnFlag = false;
     static const std::string storeTopLevelDir;
 
-    static qpid::sys::Duration defJournalGetEventsTimeout;
-    static qpid::sys::Duration defJournalFlushTimeout;
+    // FIXME aconway 2010-03-09: was 10ms
+    static const uint64_t defJournalGetEventsTimeoutNs =   1 * 1000000; // 1ms
+    static const uint64_t defJournalFlushTimeoutNs     = 500 * 1000000; // 500ms
 
     std::list<db_ptr> dbs;
     dbEnv_ptr dbenv;
@@ -137,6 +140,7 @@ class MessageStoreImpl : public qpid::broker::MessageStore, public qpid::managem
     uint32_t tplWCachePgSizeSblks;
     uint16_t tplWCacheNumPages;
     uint64_t highestRid;
+    qpid::sys::Duration journalFlushTimeout;
     bool isInit;
     const char* envPath;
     qpid::broker::Broker* broker;
