@@ -87,7 +87,8 @@ public:
                                                      const efpPartitionNumber_t partitionNumber);
 
 protected:
-    void checkIosState(std::ofstream& ofs,
+    void checkIosState(const int io_errno,
+                       std::ofstream& ofs,
                        const uint32_t jerrno,
                        const std::string& fqFileName,
                        const std::string& operation,

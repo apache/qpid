@@ -83,7 +83,7 @@ void EmptyFilePool::initialize() {
     }
 
     // Create 'in_use' and 'returned' subdirs if they don't already exist
-    // Retern files to EFP in 'in_use' and 'returned' subdirs if they do exist
+    // Return files to EFP in 'in_use' and 'returned' subdirs if they do exist
     initializeSubDirectory(efpDirectory_ + "/" + s_inuseFileDirectory_);
     initializeSubDirectory(efpDirectory_ + "/" + s_returnedFileDirectory_);
 }
@@ -195,7 +195,8 @@ efpDataSize_kib_t EmptyFilePool::dataSizeFromDirName_kib(const std::string& dirN
 }
 
 // --- protected functions ---
-void EmptyFilePool::checkIosState(std::ofstream& ofs,
+void EmptyFilePool::checkIosState(const int io_errno,
+                                  std::ofstream& ofs,
                                   const uint32_t jerrno,
                                   const std::string& fqFileName,
                                   const std::string& operation,
@@ -208,7 +209,8 @@ void EmptyFilePool::checkIosState(std::ofstream& ofs,
         }
         std::ostringstream oss;
         oss << "IO failure: eofbit=" << (ofs.eof()?"T":"F") << " failbit=" << (ofs.fail()?"T":"F") << " badbit="
-            << (ofs.bad()?"T":"F") << " file=" << fqFileName << " operation=" << operation << ": " << errorMessage;
+            << (ofs.bad()?"T":"F") << " file=" << fqFileName << FORMAT_SYSERR(io_errno) << ") operation="
+            << operation << ": " << errorMessage;
         throw jexception(jerrno, oss.str(), className, fnName);
     }
 }
@@ -251,13 +253,13 @@ void EmptyFilePool::overwriteFileContents(const std::string& fqFileName) {
     ::file_hdr_t fh;
     ::file_hdr_create(&fh, QLS_FILE_MAGIC, QLS_JRNL_VERSION, QLS_JRNL_FHDR_RES_SIZE_SBLKS, partitionPtr_->getPartitionNumber(), efpDataSize_kib_);
     std::ofstream ofs(fqFileName.c_str(), std::ofstream::out | std::ofstream::binary);
-    checkIosState(ofs, jerrno::JERR_EFP_FOPEN, fqFileName, "constructor", "Failed to create file", "EmptyFilePool", "overwriteFileContents");
+    checkIosState(errno, ofs, jerrno::JERR_EFP_FOPEN, fqFileName, "constructor", "Failed to create file", "EmptyFilePool", "overwriteFileContents");
     ofs.write((char*)&fh, sizeof(::file_hdr_t));
-    checkIosState(ofs, jerrno::JERR_EFP_FWRITE, fqFileName, "write()", "Failed to write header", "EmptyFilePool", "overwriteFileContents");
+    checkIosState(errno, ofs, jerrno::JERR_EFP_FWRITE, fqFileName, "write()", "Failed to write header", "EmptyFilePool", "overwriteFileContents");
     uint64_t rem = ((efpDataSize_kib_ + (QLS_JRNL_FHDR_RES_SIZE_SBLKS * QLS_SBLK_SIZE_KIB)) * 1024) - sizeof(::file_hdr_t);
     while (rem--) {
         ofs.put('\0');
-        checkIosState(ofs, jerrno::JERR_EFP_FWRITE, fqFileName, "put()", "Failed to put \0", "EmptyFilePool", "overwriteFileContents");
+        checkIosState(errno, ofs, jerrno::JERR_EFP_FWRITE, fqFileName, "put()", "Failed to put \0", "EmptyFilePool", "overwriteFileContents");
     }
     ofs.close();
 //std::cout << "*** WARNING: EFP " << efpDirectory_ << " is empty - created new journal file " << fqFileName.substr(fqFileName.rfind('/') + 1) << " on the fly" << std::endl; // DEBUG
