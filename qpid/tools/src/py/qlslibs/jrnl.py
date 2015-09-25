@@ -78,9 +78,6 @@ class RecordHeader(object):
         for warn in self.warnings:
             warn_str += '<%s>' % warn
         return warn_str
-    def __str__(self):
-        """Return string representation of this header"""
-        return self.to_rh_string()
 
 class RecordTail(object):
     FORMAT = '<4sL2Q'
@@ -119,9 +116,6 @@ class RecordTail(object):
         magic = qlslibs.utils.inv_str(self.xmagic)
         magic_char = magic[-1].upper() if magic[-1] in string.printable else '?'
         return '[%c cs=0x%08x rid=0x%x]' % (magic_char, self.checksum, self.record_id)
-    def __str__(self):
-        """Return a string representation of the this RecordTail instance"""
-        return self.to_string()
 
 class FileHeader(RecordHeader):
     FORMAT = '<2H4x5QH'
@@ -185,9 +179,6 @@ class FileHeader(RecordHeader):
                                                              self.first_record_offset, self.partition_num,
                                                              self.efp_data_size_kb, self.timestamp_str(),
                                                              self._get_warnings())
-    def __str__(self):
-        """Return a string representation of the this FileHeader instance"""
-        return self.to_string()
 
 class EnqueueRecord(RecordHeader):
     FORMAT = '<2Q'
@@ -249,7 +240,7 @@ class EnqueueRecord(RecordHeader):
             else:
                 return True
         return False
-    def to_string(self, show_xid_flag, show_data_flag):
+    def to_string(self, show_xid_flag, show_data_flag, txtest_flag):
         """Return a string representation of the this EnqueueRecord instance"""
         if self.truncated_flag:
             return '%s xid(%d) data(%d) [Truncated, no more files in journal]' % (RecordHeader.__str__(self),
@@ -260,7 +251,7 @@ class EnqueueRecord(RecordHeader):
             record_tail_str = self.record_tail.to_string()
         return '%s %s %s %s %s %s' % (self.to_rh_string(),
                                       qlslibs.utils.format_xid(self.xid, self.xid_size, show_xid_flag),
-                                      qlslibs.utils.format_data(self.data, self.data_size, show_data_flag),
+                                      qlslibs.utils.format_data(self.data, self.data_size, show_data_flag, txtest_flag),
                                       record_tail_str, self._print_flags(), self._get_warnings())
     def _print_flags(self):
         """Utility function to decode the flags field in the header and print a string representation"""
@@ -275,9 +266,6 @@ class EnqueueRecord(RecordHeader):
         if len(fstr) > 0:
             fstr += ']'
         return fstr
-    def __str__(self):
-        """Return a string representation of the this EnqueueRecord instance"""
-        return self.to_string(False, False)
 
 class DequeueRecord(RecordHeader):
     FORMAT = '<2Q'
@@ -323,7 +311,7 @@ class DequeueRecord(RecordHeader):
             else:
                 return True
         return False
-    def to_string(self, show_xid_flag):
+    def to_string(self, show_xid_flag, _u1, _u2):
         """Return a string representation of the this DequeueRecord instance"""
         if self.truncated_flag:
             return '%s xid(%d) drid=0x%x [Truncated, no more files in journal]' % (RecordHeader.__str__(self),
@@ -344,9 +332,6 @@ class DequeueRecord(RecordHeader):
             else:
                 return '[ABORT]'
         return ''
-    def __str__(self):
-        """Return a string representation of the this DequeueRecord instance"""
-        return self.to_string(False)
 
 class TransactionRecord(RecordHeader):
     FORMAT = '<Q'
@@ -384,7 +369,7 @@ class TransactionRecord(RecordHeader):
             else:
                 return True
         return False
-    def to_string(self, show_xid_flag):
+    def to_string(self, show_xid_flag, _u1, _u2):
         """Return a string representation of the this TransactionRecord instance"""
         if self.truncated_flag:
             return '%s xid(%d) [Truncated, no more files in journal]' % (RecordHeader.__str__(self), self.xid_size)
@@ -395,9 +380,6 @@ class TransactionRecord(RecordHeader):
         return '%s %s %s %s' % (self.to_rh_string(),
                                 qlslibs.utils.format_xid(self.xid, self.xid_size, show_xid_flag),
                                 record_tail_str, self._get_warnings())
-    def __str__(self):
-        """Return a string representation of the this TransactionRecord instance"""
-        return self.to_string(False)
 
 # =============================================================================
 

@@ -73,13 +73,13 @@ def efp_directory_size(directory_name):
         pass
     return 0
 
-def format_data(data, data_size=None, show_data_flag=True):
+def format_data(data, data_size=None, show_data_flag=True, txtest_flag=False):
     """Format binary data for printing"""
-    return _format_binary(data, data_size, show_data_flag, 'data', qlslibs.err.DataSizeError, False)
+    return _format_binary(data, data_size, show_data_flag, 'data', qlslibs.err.DataSizeError, False, txtest_flag)
 
 def format_xid(xid, xid_size=None, show_xid_flag=True):
     """Format binary XID for printing"""
-    return _format_binary(xid, xid_size, show_xid_flag, 'xid', qlslibs.err.XidSizeError, True)
+    return _format_binary(xid, xid_size, show_xid_flag, 'xid', qlslibs.err.XidSizeError, True, False)
 
 def get_avail_disk_space(path):
     df_proc = subprocess.Popen(["df", path], stdout=subprocess.PIPE)
@@ -133,7 +133,7 @@ def skip(file_handle, boundary):
 
 #--- protected functions ---
 
-def _format_binary(bin_str, bin_size, show_bin_flag, prefix, err_class, hex_num_flag):
+def _format_binary(bin_str, bin_size, show_bin_flag, prefix, err_class, hex_num_flag, txtest_flag):
     """Format binary XID for printing"""
     if bin_str is None and bin_size is not None:
         if bin_size > 0:
@@ -144,14 +144,16 @@ def _format_binary(bin_str, bin_size, show_bin_flag, prefix, err_class, hex_num_
     elif bin_size != len(bin_str):
         raise err_class(bin_size, len(bin_str), bin_str)
     out_str = '%s(%d)' % (prefix, bin_size)
-    if show_bin_flag:
+    if txtest_flag:
+        out_str += '=\'%s\'' % _txtest_msg_str(bin_str)
+    elif show_bin_flag:
         if _is_printable(bin_str):
             binstr = '"%s"' % _split_str(bin_str)
         elif hex_num_flag:
             binstr = '0x%s' % _str_to_hex_num(bin_str)
         else:
-            binstr = _hex_split_str(bin_str)
-        out_str += '=%s' % binstr
+            binstr = _hex_split_str(bin_str, 50, 10, 10)
+        out_str += '=\'%s\'' % binstr
     return out_str
 
 def _hex_str(in_str, begin, end):
@@ -164,12 +166,20 @@ def _hex_str(in_str, begin, end):
             hstr += '\\%02x' % ord(in_str[index])
     return hstr
 
-def _hex_split_str(in_str, split_size = 50):
+def _hex_split_str(in_str, split_size, head_size, tail_size):
     """Split a hex string into two parts separated by an ellipsis"""
     if len(in_str) <= split_size:
         return _hex_str(in_str, 0, len(in_str))
-    return _hex_str(in_str, 0, 10) + ' ... ' + _hex_str(in_str, len(in_str)-10, len(in_str))
-    #return ''.join(x.encode('hex') for x in reversed(in_str))
+    return _hex_str(in_str, 0, head_size) + ' ... ' + _hex_str(in_str, len(in_str)-tail_size, len(in_str))
+
+def _txtest_msg_str(bin_str):
+    """Extract the message number used in qpid-txtest"""
+    msg_index = bin_str.find('msg')
+    if msg_index >= 0:
+        end_index = bin_str.find('\x00', msg_index)
+        assert end_index >= 0
+        return bin_str[msg_index:end_index]
+    return None
 
 def _is_printable(in_str):
     """Return True if in_str in printable; False otherwise."""

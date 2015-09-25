@@ -52,12 +52,12 @@ class JournalRecoveryManager(object):
         self.journals = {}
         self.high_rid_counter = HighCounter()
         self.prepared_list = None
-    def report(self, print_stats_flag):
+    def report(self):
         self._reconcile_transactions(self.prepared_list, self.args.txn)
         if self.tpl is not None:
-            self.tpl.report(print_stats_flag, self.args.show_recovered_recs)
+            self.tpl.report(self.args)
         for queue_name in sorted(self.journals.keys()):
-            self.journals[queue_name].report(print_stats_flag, self.args.show_recovered_recs)
+            self.journals[queue_name].report(self.args)
     def run(self):
         tpl_dir = os.path.join(self.directory, JournalRecoveryManager.TPL_DIR_NAME)
         if os.path.exists(tpl_dir):
@@ -78,7 +78,7 @@ class JournalRecoveryManager(object):
     def _reconcile_transactions(self, prepared_list, txn_flag):
         print 'Transaction reconciliation report:'
         print '=================================='
-        print len(prepared_list), 'open transaction(s) found in prepared transaction list:'
+        print 'Transaction Prepared List (TPL) contains %d open transaction(s):' % len(prepared_list)
         for xid in prepared_list.keys():
             commit_flag = prepared_list[xid]
             if commit_flag is None:
@@ -97,18 +97,22 @@ class JournalRecoveryManager(object):
                                                              enqueue_record.record_id, xid, None)
                 if txn_flag:
                     self.tpl.add_record(dequeue_record)
+        print
+        print 'Open transactions found in queues:'
+        print '----------------------------------'
         for queue_name in sorted(self.journals.keys()):
             self.journals[queue_name].reconcile_transactions(prepared_list, txn_flag)
-        if len(prepared_list) > 0:
-            print 'Completing prepared transactions in prepared transaction list:'
-        for xid in prepared_list.keys():
-            print ' ', qlslibs.utils.format_xid(xid)
-            transaction_record = qlslibs.utils.create_record(qlslibs.jrnl.TransactionRecord.MAGIC_COMMIT, 0, \
-                                                             self.tpl.current_journal_file, \
-                                                             self.high_rid_counter.get_next(), None, xid, None)
-            if txn_flag:
-                self.tpl.add_record(transaction_record)
         print
+        if len(prepared_list) > 0:
+            print 'Creating commit records for the following prepared transactions in TPL:'
+            for xid in prepared_list.keys():
+                print ' ', qlslibs.utils.format_xid(xid)
+                transaction_record = qlslibs.utils.create_record(qlslibs.jrnl.TransactionRecord.MAGIC_COMMIT, 0, \
+                                                                 self.tpl.current_journal_file, \
+                                                                 self.high_rid_counter.get_next(), None, xid, None)
+                if txn_flag:
+                    self.tpl.add_record(transaction_record)
+            print
 
 class EnqueueMap(object):
     """
@@ -139,22 +143,21 @@ class EnqueueMap(object):
         if dequeue_record.dequeue_record_id not in self.enq_map:
             raise qlslibs.err.RecordIdNotFoundError(journal_file.file_header, dequeue_record)
         self.enq_map[dequeue_record.dequeue_record_id][2] = True
-    def report_str(self, _, show_records):
+    def report_str(self, args):
         """Return a string containing a text report for all records in the map"""
         if len(self.enq_map) == 0:
             return 'No enqueued records found.'
         rstr = '%d enqueued records found' % len(self.enq_map)
-        if show_records:
+        if args.show_recovered_recs:
             rstr += ":"
             rid_list = self.enq_map.keys()
             rid_list.sort()
             for rid in rid_list:
                 journal_file, record, locked_flag = self.enq_map[rid]
+                rstr += '\n  0x%x:' % journal_file.file_header.file_num
+                rstr += record.to_string(args.show_xids, args.show_data, args.txtest)
                 if locked_flag:
-                    lock_str = '[LOCKED]'
-                else:
-                    lock_str = ''
-                rstr += '\n  0x%x:%s %s' % (journal_file.file_header.file_num, record, lock_str)
+                    rstr += ' [LOCKED]'
         else:
             rstr += '.'
         return rstr
@@ -248,17 +251,18 @@ class TransactionMap(object):
         return prepared_list
     def get_xid_list(self):
         return self.txn_map.keys()
-    def report_str(self, _, show_records):
+    def report_str(self, args):
         """Return a string containing a text report for all records in the map"""
         if len(self.txn_map) == 0:
             return 'No outstanding transactions found.'
         rstr = '%d outstanding transaction(s)' % len(self.txn_map)
-        if show_records:
+        if args.show_recovered_recs:
             rstr += ':'
             for xid, op_list in self.txn_map.iteritems():
                 rstr += '\n  %s containing %d operations:' % (qlslibs.utils.format_xid(xid), len(op_list))
                 for journal_file, record, _ in op_list:
-                    rstr += '\n    0x%x:%s' % (journal_file.file_header.file_num, record)
+                    rstr += '\n    0x%x:' % journal_file.file_header.file_num
+                    rstr += record.to_string(args.show_xids, args.show_data, args.txtest)
         else:
             rstr += '.'
         return rstr
@@ -334,6 +338,7 @@ class Journal(object):
         self.num_filler_records_required = None # TODO: Move into JournalFile
         self.fill_to_offset = None
     def add_record(self, record):
+        """Used for reconciling transactions only - called from JournalRecoveryManager._reconcile_transactions()"""
         if isinstance(record, qlslibs.jrnl.EnqueueRecord) or isinstance(record, qlslibs.jrnl.DequeueRecord):
             if record.xid_size > 0:
                 self.txn_map.add(self.current_journal_file, record)
@@ -385,16 +390,16 @@ class Journal(object):
                     if txn_flag:
                         self.txn_map.abort(xid)
             else:
-                print '  ', qlslibs.utils.format_xid(xid), '- Ignoring, not in prepared transaction list'
+                print ' ', qlslibs.utils.format_xid(xid), '- Ignoring, not in prepared transaction list'
                 if txn_flag:
                     self.txn_map.abort(xid)
-    def report(self, print_stats_flag, show_recovered_records):
+    def report(self, args):
         print 'Journal "%s":' % self.queue_name
         print '=' * (11 + len(self.queue_name))
-        if print_stats_flag:
+        if args.stats:
             print str(self.statistics)
-        print self.enq_map.report_str(True, show_recovered_records)
-        print self.txn_map.report_str(True, show_recovered_records)
+        print self.enq_map.report_str(args)
+        print self.txn_map.report_str(args)
         JournalFile.report_header()
         for file_num in sorted(self.files.keys()):
             self.files[file_num].report()
@@ -485,17 +490,17 @@ class Journal(object):
             high_rid_counter.check(this_record.record_id)
             if self.args.show_recovery_recs or self.args.show_all_recs:
                 print '0x%x:%s' % (start_journal_file.file_header.file_num, \
-                                   this_record.to_string(self.args.show_xids, self.args.show_data))
+                                   this_record.to_string(self.args.show_xids, self.args.show_data, self.args.txtest))
         elif isinstance(this_record, qlslibs.jrnl.DequeueRecord):
             ok_flag = self._handle_dequeue_record(this_record, start_journal_file)
             high_rid_counter.check(this_record.record_id)
             if self.args.show_recovery_recs or self.args.show_all_recs:
-                print '0x%x:%s' % (start_journal_file.file_header.file_num, this_record.to_string(self.args.show_xids))
+                print '0x%x:%s' % (start_journal_file.file_header.file_num, this_record.to_string(self.args.show_xids, None, None))
         elif isinstance(this_record, qlslibs.jrnl.TransactionRecord):
             ok_flag = self._handle_transaction_record(this_record, start_journal_file)
             high_rid_counter.check(this_record.record_id)
             if self.args.show_recovery_recs or self.args.show_all_recs:
-                print '0x%x:%s' % (start_journal_file.file_header.file_num, this_record.to_string(self.args.show_xids))
+                print '0x%x:%s' % (start_journal_file.file_header.file_num, this_record.to_string(self.args.show_xids, None, None))
         else:
             self.statistics.filler_record_count += 1
             ok_flag = True
@@ -555,10 +560,12 @@ class Journal(object):
                 return False
         if not transaction_record.is_valid(start_journal_file):
             return False
-        if transaction_record.magic[-1] == 'a':
+        if transaction_record.magic[-1] == 'a': # Abort
             self.statistics.transaction_abort_count += 1
-        else:
+        elif transaction_record.magic[-1] == 'c': # Commit
             self.statistics.transaction_commit_count += 1
+        else:
+            raise InvalidRecordTypeError('Unknown transaction record magic \'%s\'' % transaction_record.magic)
         if self.txn_map.contains(transaction_record.xid):
             self.txn_map.delete(self.current_journal_file, transaction_record)
         else:

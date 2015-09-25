@@ -52,11 +52,17 @@ class QlsAnalyzerArgParser(argparse.ArgumentParser):
         self.add_argument('--show-all-recs', action='store_true',
                           help='Show all records (including fillers) found during recovery')
         self.add_argument('--show-xids', action='store_true',
-                          help='Show xid as hex number, otherwise show only xid length')
+                          help='Show xid as hex number, otherwise show only xid length. Only has effect when records are shown')
+# TODO: Add ability to show xid as an index rather than a value, helps analysis when xid is a long value with 
+# small differences which cannot easily be seen when looking at an output. Also prints a table of indeces vs xid values.
+#        self.add_argument('--show-xid-index', action='store_true',
+#                          help='Show xids by index rather than by their value. Useful for long xids. Prints xid index table')
         self.add_argument('--show-data', action='store_true',
-                          help='Show data, otherwise show only data length')
+                          help='Show data, otherwise show only data length. Only has effect when records are shown')
         self.add_argument('--stats', action='store_true',
                           help='Print journal record stats')
+        self.add_argument('--txtest', action='store_true',
+                          help='Show qpid-txtest message number as the message content when viewing records. Only has effect when records are shown')
         self.add_argument('--txn', action='store_true',
                           help='Reconcile incomplete transactions')
         self.add_argument('--version', action='version',
@@ -91,7 +97,7 @@ class QqpdLinearStoreAnalyzer(object):
         """ Create a report on the linear store previously analyzed using analyze() """
         if self.args.efp:
             self.efp_manager.report()
-        self.jrnl_recovery_mgr.report(self.args.stats)
+        self.jrnl_recovery_mgr.report()
     def run(self):
         """ Run the analyzer, which reads and analyzes the linear store """
         if self.args.efp:
