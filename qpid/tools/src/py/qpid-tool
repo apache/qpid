@@ -717,6 +717,7 @@ def parse_options( argv ):
     parser = optparse.OptionParser(usage=_usage)
     parser.add_option("-b", "--broker", action="store", type="string", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]")
     parser.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD5, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
+    parser.add_option("--sasl-service-name", action="store", type="string", help="SASL service name to use")
     parser.add_option("--ssl-certificate",
                       action="store", type="string", metavar="<path>",
                       help="SSL certificate for client authentication")
@@ -743,6 +744,8 @@ def parse_options( argv ):
         conn_options['ssl_keyfile'] = opts.ssl_key
     if opts.sasl_mechanism:
         conn_options['mechanisms'] = opts.sasl_mechanism
+    if opts.sasl_service_name:
+        conn_options['service'] = opts.sasl_service_name
     return broker_option, conn_options, args[1:]
 
 #=========================================================

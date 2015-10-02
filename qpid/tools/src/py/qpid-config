@@ -206,6 +206,7 @@ def OptionsAndArguments(argv):
     group1.add_option("-b", "--broker", action="store", type="string", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]")
     group1.add_option("-a", "--broker-addr", action="store", type="string", metavar="<address>")
     group1.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD5, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
+    group1.add_option("--sasl-service-name", action="store", type="string", help="SASL service name to use")
     group1.add_option("--ssl-certificate", action="store", type="string", metavar="<cert>", help="Client SSL certificate (PEM Format)")
     group1.add_option("--ssl-key", action="store", type="string", metavar="<key>", help="Client SSL private key (PEM Format)")
     group1.add_option("--ha-admin", action="store_true", help="Allow connection to a HA backup broker.")
@@ -350,6 +351,8 @@ def OptionsAndArguments(argv):
 
     if opts.sasl_mechanism:
         conn_options['sasl_mechanisms'] = opts.sasl_mechanism
+    if opts.sasl_service_name:
+        conn_options['sasl_service'] = opts.sasl_service_name
     if opts.ssl_certificate:
         conn_options['ssl_certfile'] = opts.ssl_certificate
     if opts.ssl_key:
