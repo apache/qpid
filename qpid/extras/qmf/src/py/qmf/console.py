@@ -2408,8 +2408,10 @@ class Broker(Thread):
         connSock = ssl(sock, certfile=certfile, keyfile=keyfile)
       else:
         connSock = sock
+      if not 'service' in self.connectArgs:
+          self.connectArgs['service'] = 'qpidd'
       self.conn = Connection(connSock, username=self.authUser, password=self.authPass,
-                             mechanism = self.mechanisms, host=self.host, service="qpidd",
+                             mechanism = self.mechanisms, host=self.host,
                              **self.connectArgs)
       def aborted():
         raise Timeout("Waiting for connection to be established with broker")
