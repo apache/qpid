@@ -295,8 +295,7 @@ CyrusAuthenticator::CyrusAuthenticator(amqp_0_10::Connection& c, bool _encrypt) 
 
 void CyrusAuthenticator::init()
 {
-        /* Next to the service name, which specifies the
-          * /etc/sasl2/<service name>.conf file to read, the realm is
+        /*  The realm is
           * currently the most important argument below. When
           * performing authentication the user that is authenticating
           * will be looked up in a specific realm. If none is given
@@ -311,7 +310,7 @@ void CyrusAuthenticator::init()
 
     std::string realm = connection.getBroker().getRealm();
     std::string service = connection.getBroker().getSaslServiceName();
-    code = sasl_server_new(service.c_str(), /* Service name */
+    code = sasl_server_new(service.empty() ? BROKER_SASL_NAME : service.c_str(), /* Service name */
                            NULL, /* Server FQDN, gethostname() */
                            realm.c_str(), /* Authentication realm */
                            NULL, /* Local IP, needed for some mechanism */

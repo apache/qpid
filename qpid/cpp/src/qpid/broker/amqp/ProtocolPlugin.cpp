@@ -46,6 +46,8 @@ namespace qpid {
 namespace broker {
 namespace amqp {
 
+const std::string AMQP_SASL_SERVICENAME("amqp");
+
 struct Options : public qpid::Options {
     std::string domain;
     std::vector<std::string> queuePatterns;
@@ -118,8 +120,9 @@ qpid::sys::ConnectionCodec* ProtocolImpl::create(const qpid::framing::ProtocolVe
         if (v.getProtocol() == qpid::framing::ProtocolVersion::SASL) {
             if (getBroker().isAuthenticating()) {
                 QPID_LOG(info, "Using AMQP 1.0 (with SASL layer)");
+                std::string serviceName = getBroker().getSaslServiceName().empty() ? AMQP_SASL_SERVICENAME : getBroker().getSaslServiceName();
                 return new qpid::broker::amqp::Sasl(out, id, *this,
-                                                    qpid::SaslFactory::getInstance().createServer(getBroker().getRealm(),getBroker().getSaslServiceName(),getBroker().requireEncrypted(), external));
+                                                    qpid::SaslFactory::getInstance().createServer(getBroker().getRealm(),serviceName,getBroker().requireEncrypted(), external));
             } else {
                 std::auto_ptr<SaslServer> authenticator(new qpid::NullSaslServer(getBroker().getRealm()));
                 QPID_LOG(info, "Using AMQP 1.0 (with dummy SASL layer)");

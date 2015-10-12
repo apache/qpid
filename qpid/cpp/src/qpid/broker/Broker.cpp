@@ -133,7 +133,6 @@ BrokerOptions::BrokerOptions(const std::string& name) :
     queueCleanInterval(60*sys::TIME_SEC*10),//10 minutes
     auth(SaslAuthenticator::available()),
     realm("QPID"),
-    saslServiceName(BROKER_SASL_NAME),
     replayFlushLimit(0),
     replayHardLimit(0),
     queueLimit(100*1048576/*100M default limit*/),

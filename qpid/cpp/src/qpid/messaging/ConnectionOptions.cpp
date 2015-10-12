@@ -54,6 +54,10 @@ ConnectionOptions::ConnectionOptions(const std::map<std::string, qpid::types::Va
     : replaceUrls(false), reconnect(false), timeout(FOREVER), limit(-1), minReconnectInterval(0.001), maxReconnectInterval(2),
       retries(0), reconnectOnLimitExceeded(true), nestAnnotations(false), setToOnSend(false)
 {
+    // By default we want the sasl service name to be "amqp" for 1.0
+    // this will be overridden by a parsed "sasl-service" option
+    service = "amqp";
+
     for (qpid::types::Variant::Map::const_iterator i = options.begin(); i != options.end(); ++i) {
         set(i->first, i->second);
     }

@@ -51,6 +51,8 @@ const std::string SASL_SERVICE("sasl_service");
 const std::string MIN_SSF("min_ssf");
 const std::string MAX_SSF("max_ssf");
 const std::string DURABLE("durable");
+const std::string AMQP_SASL_SERVICENAME("amqp");
+
 class Wrapper : public qpid::sys::ConnectionCodec
 {
   public:
@@ -219,7 +221,9 @@ void InterconnectFactory::failed(int, std::string text)
 }
 
 Domain::Domain(const std::string& n, const qpid::types::Variant::Map& properties, Broker& b)
-    : PersistableObject(n, "domain", properties), name(n), durable(get(DURABLE, properties)), broker(b), mechanisms("ANONYMOUS"), service(qpid::saslName), minSsf(0), maxSsf(0), agent(b.getManagementAgent())
+    : PersistableObject(n, "domain", properties), name(n), durable(get(DURABLE, properties)),
+      broker(b), mechanisms("ANONYMOUS"), service(AMQP_SASL_SERVICENAME), minSsf(0), maxSsf(0),
+      agent(b.getManagementAgent())
 {
     if (!get(url, URL, properties)) {
         QPID_LOG(error, "No URL specified for domain " << name << "!");
