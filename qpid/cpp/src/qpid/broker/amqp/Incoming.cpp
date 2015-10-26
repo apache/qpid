@@ -150,6 +150,7 @@ void DecodingIncoming::deliver(boost::intrusive_ptr<qpid::broker::amqp::Message>
     received->begin();
     handle(message, session.getTransaction(delivery));
     Transfer t(delivery, sessionPtr);
+    sessionPtr->pending_accept(delivery);
     received->end(t);
 }
 }}} // namespace qpid::broker::amqp

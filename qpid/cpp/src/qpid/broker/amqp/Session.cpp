@@ -607,6 +607,7 @@ void Session::detach(pn_link_t* link, bool closed)
     } else {
         IncomingLinks::iterator i = incoming.find(link);
         if (i != incoming.end()) {
+            abort_pending(link);
             i->second->detached(closed);
             incoming.erase(i);
             QPID_LOG(debug, "Incoming link detached");
@@ -614,17 +615,51 @@ void Session::detach(pn_link_t* link, bool closed)
     }
 }
 
+void Session::pending_accept(pn_delivery_t* delivery)
+{
+    qpid::sys::Mutex::ScopedLock l(lock);
+    pending.insert(delivery);
+}
+
+bool Session::clear_pending(pn_delivery_t* delivery)
+{
+    qpid::sys::Mutex::ScopedLock l(lock);
+    std::set<pn_delivery_t*>::iterator i = pending.find(delivery);
+    if (i != pending.end()) {
+        pending.erase(i);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void Session::abort_pending(pn_link_t* link)
+{
+    qpid::sys::Mutex::ScopedLock l(lock);
+    for (std::set<pn_delivery_t*>::iterator i = pending.begin(); i != pending.end();) {
+        if (pn_delivery_link(*i) == link) {
+            pn_delivery_settle(*i);
+            pending.erase(i++);
+        } else {
+            ++i;
+        }
+    }
+}
+
 void Session::accepted(pn_delivery_t* delivery, bool sync)
 {
     if (sync) {
-        //this is on IO thread
-        pn_delivery_update(delivery, PN_ACCEPTED);
-        pn_delivery_settle(delivery);//do we need to check settlement modes/orders?
-        incomingMessageAccepted();
+        if (clear_pending(delivery))
+        {
+            //this is on IO thread
+            pn_delivery_update(delivery, PN_ACCEPTED);
+            pn_delivery_settle(delivery);//do we need to check settlement modes/orders?
+            incomingMessageAccepted();
+        }
     } else {
         //this is not on IO thread, need to delay processing until on IO thread
         qpid::sys::Mutex::ScopedLock l(lock);
-        if (!deleted) {
+        if (!deleted && pending.find(delivery) != pending.end()) {
             completed.push_back(delivery);
             out.activateOutput();
         }
@@ -926,6 +961,7 @@ void IncomingToCoordinator::deliver(boost::intrusive_ptr<qpid::broker::amqp::Mes
                 if (i != args.end()) {
                     std::string id = *i;
                     bool failed = ++i != args.end() ? i->asBool() : false;
+                    session.pending_accept(delivery);
                     session.discharge(id, failed, delivery);
                 }
 

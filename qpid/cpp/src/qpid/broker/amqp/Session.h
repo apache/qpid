@@ -77,8 +77,10 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
      */
     void attach(pn_link_t* link, const std::string& src, const std::string& tgt, boost::shared_ptr<Relay>);
 
-    //called when a transfer is completly processed (e.g.including stored on disk)
+    //called when a transfer is completely processed (e.g.including stored on disk)
     void accepted(pn_delivery_t*, bool sync);
+    //called to indicate that the delivery will be accepted asynchronously
+    void pending_accept(pn_delivery_t*);
     //called when async transaction completes
     void committed(bool sync);
 
@@ -104,6 +106,7 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     IncomingLinks incoming;
     OutgoingLinks outgoing;
     std::deque<pn_delivery_t*> completed;
+    std::set<pn_delivery_t*> pending;
     bool deleted;
     qpid::sys::Mutex lock;
     std::set< boost::shared_ptr<Queue> > exclusiveQueues;
@@ -138,6 +141,8 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
     void setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::string& name);
     std::string generateName(pn_link_t*);
     std::string qualifyName(const std::string&);
+    bool clear_pending(pn_delivery_t*);//tests and clears pending status for delivery
+    void abort_pending(pn_link_t*);//removes pending status for all deliveries associated with link
 };
 }}} // namespace qpid::broker::amqp
 
