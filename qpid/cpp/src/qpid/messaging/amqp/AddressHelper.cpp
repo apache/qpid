@@ -102,6 +102,8 @@ const std::string X_SUBSCRIBE("x-subscribe");
 const std::string ARGUMENTS("arguments");
 const std::string EXCHANGE_TYPE("exchange-type");
 
+const std::string NULL_ADDRESS("<null>");
+
 const std::vector<std::string> RECEIVER_MODES = boost::assign::list_of<std::string>(ALWAYS) (RECEIVER);
 const std::vector<std::string> SENDER_MODES = boost::assign::list_of<std::string>(ALWAYS) (SENDER);
 
@@ -562,6 +564,11 @@ bool AddressHelper::enabled(const std::string& policy, CheckMode mode) const
     return result;
 }
 
+bool AddressHelper::isNameNull() const
+{
+    return name == NULL_ADDRESS;
+}
+
 bool AddressHelper::isUnreliable() const
 {
     return reliability == AT_MOST_ONCE || reliability == UNRELIABLE ||
@@ -605,6 +612,8 @@ void AddressHelper::configure(pn_link_t* link, pn_terminus_t* terminus, CheckMod
         //application expects a name to be generated
         pn_terminus_set_dynamic(terminus, true);
         setNodeProperties(terminus);
+    } else if (name == NULL_ADDRESS) {
+        pn_terminus_set_type(terminus, PN_UNSPECIFIED);
     } else {
         pn_terminus_set_address(terminus, name.c_str());
         if (createEnabled(mode)) {

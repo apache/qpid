@@ -40,6 +40,7 @@ class Authorise
 {
   public:
     Authorise(const std::string& user, AclModule*);
+    void access(const std::string& name);
     void access(boost::shared_ptr<Exchange>);
     void access(boost::shared_ptr<Queue>);
     void incoming(boost::shared_ptr<Exchange>);

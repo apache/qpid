@@ -580,7 +580,7 @@ void SenderContext::Delivery::settle()
 void SenderContext::verify()
 {
     pn_terminus_t* target = pn_link_remote_target(sender);
-    if (!pn_terminus_get_address(target)) {
+    if (!helper.isNameNull() && !pn_terminus_get_address(target)) {
         std::string msg("No such target : ");
         msg += getTarget();
         QPID_LOG(debug, msg);

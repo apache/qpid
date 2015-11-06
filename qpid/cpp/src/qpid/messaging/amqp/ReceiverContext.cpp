@@ -85,7 +85,7 @@ const std::string& ReceiverContext::getSource() const
 void ReceiverContext::verify()
 {
     pn_terminus_t* source = pn_link_remote_source(receiver);
-    if (!pn_terminus_get_address(source)) {
+    if (!helper.isNameNull() && !pn_terminus_get_address(source)) {
         std::string msg("No such source : ");
         msg += getSource();
         QPID_LOG(debug, msg);

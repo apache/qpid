@@ -40,6 +40,14 @@ const std::string POLICY_TYPE("qpid.policy_type");
 }
 
 Authorise::Authorise(const std::string& u, AclModule* a) : user(u), acl(a) {}
+void Authorise::access(const std::string& name)
+{
+    if (acl) {
+        std::map<acl::Property, std::string> params;
+        if (!acl->authorise(user, acl::ACT_ACCESS, acl::OBJ_EXCHANGE, name, &params))
+            throw Exception(qpid::amqp::error_conditions::UNAUTHORIZED_ACCESS, QPID_MSG("ACL denied exchange access request from " << user));
+    }
+}
 void Authorise::access(boost::shared_ptr<Exchange> exchange)
 {
     if (acl) {

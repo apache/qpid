@@ -40,6 +40,7 @@ class AddressHelper
     void configure(pn_link_t* link, pn_terminus_t* terminus, CheckMode mode);
     void checkAssertion(pn_terminus_t* terminus, CheckMode mode);
 
+    bool isNameNull() const;
     bool isUnreliable() const;
     const qpid::types::Variant::Map& getNodeProperties() const;
     bool getLinkSource(std::string& out) const;

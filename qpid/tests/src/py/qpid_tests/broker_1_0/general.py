@@ -69,3 +69,13 @@ class GeneralTests (VersionTest):
             assert msg.content == expected.content
             self.ssn.acknowledge(msg)
 
+    def test_anonymous_relay(self):
+        snd = self.ssn.sender("<null>")
+        rcv = self.ssn.receiver("#")
+
+        snd.send(Message(id="a1", content="my-message", properties={'x-amqp-to':rcv.source}))
+
+        request = rcv.fetch(5)
+        assert request.content == "my-message" and request.id == "a1", request
+
+        self.ssn.acknowledge()
