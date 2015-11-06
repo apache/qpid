@@ -231,6 +231,11 @@ class IncomingToCoordinator : public DecodingIncoming
   private:
 };
 
+bool Session::ResolvedNode::trackControllingLink() const
+{
+    return created && (properties.trackControllingLink() || (queue && queue->getSettings().lifetime == QueueSettings::DELETE_ON_CLOSE));
+}
+
 Session::Session(pn_session_t* s, Connection& c, qpid::sys::OutputControl& o)
     : ManagedSession(c.getBroker(), c, (boost::format("%1%") % s).str()), session(s), connection(c), out(o), deleted(false),
       authorise(connection.getUserId(), connection.getBroker().getAcl()),
@@ -306,6 +311,7 @@ Session::ResolvedNode Session::resolve(const std::string name, pn_terminus_t* te
                 std::pair<boost::shared_ptr<Queue>, boost::shared_ptr<Topic> > result = nodePolicy->create(name, connection);
                 node.queue = result.first;
                 node.topic = result.second;
+                node.created = node.queue || node.topic;
                 if (node.topic) node.exchange = node.topic->getExchange();
 
                 if (node.queue) {
@@ -478,10 +484,10 @@ void Session::setupIncoming(pn_link_t* link, pn_terminus_t* target, const std::s
         source = sourceAddress;
     }
     if (node.queue) {
-        boost::shared_ptr<Incoming> q(new IncomingToQueue(connection.getBroker(), *this, node.queue, link, source, node.created && node.properties.trackControllingLink()));
+        boost::shared_ptr<Incoming> q(new IncomingToQueue(connection.getBroker(), *this, node.queue, link, source, node.trackControllingLink()));
         incoming[link] = q;
     } else if (node.exchange) {
-        boost::shared_ptr<Incoming> e(new IncomingToExchange(connection.getBroker(), *this, node.exchange, link, source, node.created && node.properties.trackControllingLink()));
+        boost::shared_ptr<Incoming> e(new IncomingToExchange(connection.getBroker(), *this, node.exchange, link, source, node.trackControllingLink()));
         incoming[link] = e;
     } else if (node.relay) {
         boost::shared_ptr<Incoming> in(new IncomingToRelay(link, connection.getBroker(), *this, source, name, pn_link_name(link), node.relay));
@@ -523,7 +529,7 @@ void Session::setupOutgoing(pn_link_t* link, pn_terminus_t* source, const std::s
         if (type == CONSUMER && node.queue->hasExclusiveOwner() && !node.queue->isExclusiveOwner(this)) {
             throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, std::string("Cannot consume from exclusive queue ") + node.queue->getName());
         }
-        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, node.queue, link, *this, out, type, false, node.created && node.properties.trackControllingLink()));
+        boost::shared_ptr<Outgoing> q(new OutgoingFromQueue(connection.getBroker(), name, target, node.queue, link, *this, out, type, false, node.trackControllingLink()));
         q->init();
         filter.apply(q);
         outgoing[link] = q;

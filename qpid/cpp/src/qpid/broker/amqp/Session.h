@@ -134,6 +134,7 @@ class Session : public ManagedSession, public boost::enable_shared_from_this<Ses
         NodeProperties properties;
         bool created;
         ResolvedNode(bool isDynamic) : properties(isDynamic), created(false) {}
+        bool trackControllingLink() const;
     };
 
     ResolvedNode resolve(const std::string name, pn_terminus_t* terminus, bool incoming);

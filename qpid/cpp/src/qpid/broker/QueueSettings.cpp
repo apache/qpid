@@ -60,6 +60,7 @@ const std::string MAX_PAGES("qpid.max_pages_loaded");
 const std::string PAGE_FACTOR("qpid.page_factor");
 const std::string FILTER("qpid.filter");
 const std::string LIFETIME_POLICY("qpid.lifetime-policy");
+const std::string DELETE_ON_CLOSE_KEY("delete-on-close");
 const std::string DELETE_IF_UNUSED_KEY("delete-if-unused");
 const std::string DELETE_IF_UNUSED_AND_EMPTY_KEY("delete-if-unused-and-empty");
 const std::string MANUAL("manual");
@@ -234,6 +235,9 @@ bool QueueSettings::handle(const std::string& key, const qpid::types::Variant& v
             autodelete = true;
         } else if (value.asString() == MANUAL) {
             autodelete = false;
+        } else if (value.asString() == DELETE_ON_CLOSE_KEY) {
+            lifetime = DELETE_ON_CLOSE;
+            autodelete = true;
         } else {
             QPID_LOG(warning, "Invalid value for " << LIFETIME_POLICY << ": " << value);
         }
