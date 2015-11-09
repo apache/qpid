@@ -430,13 +430,7 @@ void Session::attach(pn_link_t* link)
         std::string name;
         if (pn_terminus_get_type(target) == PN_UNSPECIFIED) {
             pn_terminus_set_type(pn_link_target(link), PN_UNSPECIFIED);
-            authorise.access("ANONYMOUS-RELAY");
-            boost::shared_ptr<Incoming> r(new AnonymousRelay(connection.getBroker(), connection, *this, link));
-            incoming[link] = r;
-            if (connection.getBroker().isAuthenticating() && !connection.isLink())
-                r->verify(connection.getUserId(), connection.getBroker().getRealm());
-            QPID_LOG(debug, "Incoming link attached for ANONYMOUS-RELAY");
-            return;
+            throw Exception(qpid::amqp::error_conditions::PRECONDITION_FAILED, "No target specified!");
         } else if (pn_terminus_get_type(target) == PN_COORDINATOR) {
             QPID_LOG(debug, "Received attach request for incoming link to transaction coordinator on " << this);
             boost::shared_ptr<Incoming> i(new IncomingToCoordinator(link, connection.getBroker(), *this));
@@ -446,6 +440,14 @@ void Session::attach(pn_link_t* link)
             name = generateName(link);
             QPID_LOG(debug, "Received attach request for incoming link to " << name);
             pn_terminus_set_address(pn_link_target(link), qualifyName(name).c_str());
+        } else if (pn_terminus_get_type(target) == PN_TARGET && !pn_terminus_get_address(target)) {
+            authorise.access("ANONYMOUS-RELAY");
+            boost::shared_ptr<Incoming> r(new AnonymousRelay(connection.getBroker(), connection, *this, link));
+            incoming[link] = r;
+            if (connection.getBroker().isAuthenticating() && !connection.isLink())
+                r->verify(connection.getUserId(), connection.getBroker().getRealm());
+            QPID_LOG(debug, "Incoming link attached for ANONYMOUS-RELAY");
+            return;
         } else {
             name  = pn_terminus_get_address(target);
             QPID_LOG(debug, "Received attach request for incoming link to " << name);

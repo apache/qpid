@@ -109,6 +109,7 @@ struct ConnectionTickerTask : public qpid::sys::TimerTask
         connection.requestIO();
     }
 };
+const std::string ANONYMOUS_RELAY("ANONYMOUS-RELAY");
 }
 
 Connection::Connection(qpid::sys::OutputControl& o, const std::string& i, BrokerContext& b, bool saslInUse, bool brokerInitiated)
@@ -349,6 +350,15 @@ void Connection::open()
         QPID_LOG_CAT(debug, network, id << " AMQP 1.0 idle-timeout set:"
                      << " local=" << pn_transport_get_idle_timeout(transport)
                      << " remote=" << pn_transport_get_remote_idle_timeout(transport));
+    }
+
+    pn_data_t* offered_capabilities = pn_connection_offered_capabilities(connection);
+    if (offered_capabilities) {
+        pn_data_put_array(offered_capabilities, false, PN_SYMBOL);
+        pn_data_enter(offered_capabilities);
+        pn_data_put_symbol(offered_capabilities, pn_bytes(ANONYMOUS_RELAY.size(), ANONYMOUS_RELAY.c_str()));
+        pn_data_exit(offered_capabilities);
+        pn_data_rewind(offered_capabilities);
     }
 
     // QPID-6592: put self-identifying information into the connection

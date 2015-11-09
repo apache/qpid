@@ -51,6 +51,9 @@ The name specified in the address supplied when creating a sender or
 receiver is used to set the 'address' field of the target or source
 respectively.
 
+The special address name '<null>' can be used to indicate that the
+address hould be left null.
+
 If the subject is specified for a sender it is used the default
 subject for messages sent without an explicit subject set.
 
@@ -176,6 +179,20 @@ travel out from broker) will cause a temporary, link-scoped queue to
 be created on the broker and bound to the exchange. [See section on
 'Topics' below]. The name of the queue will be of the form
 <container-id>_<link-name>.
+
+If the target address of an attaching sender link is null, and the
+dynamic flag is not set, then the broker will route all messages
+received over this sender link using the 'to' field from the
+properties. If that matches the name of a queue, the message will be
+enqueued to that queue. If it doesn't match a queue but matches an
+exchange the message will be routed through that exchange. If it
+doesn't match either a queue or an exchange then it will be
+dropped. This behaviour is known as 'ANONYMOUS-RELAY', a capability
+which the broker advertises in the open frames it sends over every
+connection. To use it the sending process needs to have permission to
+access the ANONYMOUS-RELAY 'pseudo-exchange' (note: there isn't
+actually an exchange of that name, but this is how the capability is
+represented in the ACL permissions model).
 
 Outgoing links may have a filter set on their source. The filters
 currently supported by the broker are 'legacy-amqp-direct-binding',

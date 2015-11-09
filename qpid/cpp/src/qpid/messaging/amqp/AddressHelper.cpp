@@ -612,9 +612,7 @@ void AddressHelper::configure(pn_link_t* link, pn_terminus_t* terminus, CheckMod
         //application expects a name to be generated
         pn_terminus_set_dynamic(terminus, true);
         setNodeProperties(terminus);
-    } else if (name == NULL_ADDRESS) {
-        pn_terminus_set_type(terminus, PN_UNSPECIFIED);
-    } else {
+    } else if (name != NULL_ADDRESS) {
         pn_terminus_set_address(terminus, name.c_str());
         if (createEnabled(mode)) {
             //application expects name of node to be as specified
