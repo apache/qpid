@@ -390,17 +390,36 @@ class Driver:
 
   @synchronized
   def reading(self):
+    """Called by the Selector I/O thread to determine if the driver needs to
+    wait on the arrival of network data (call self.readable() callback)
+    """
     return self._transport is not None and \
         self._transport.reading(True)
 
   @synchronized
   def writing(self):
+    """Called by the Selector I/O thread to determine if it should block
+    waiting for output bandwidth (call the self.writeable() callback)
+    """
     return self._transport is not None and \
         self._transport.writing(self.engine.pending())
 
   @synchronized
   def timing(self):
+    """Called by the Selector I/O thread to determine if it should wake up the
+    driver (call the timeout() callback
+    """
     return self._timeout
+
+  @synchronized
+  def abort(self, exc, info):
+    """Called if the Selector I/O thread hits an unrecoverable error and fails.
+    """
+    try:
+      self.connection.error = exc
+      log.error("I/O Thread Fatal error: %s\n%s" % (str(exc), info))
+    except:
+      pass
 
   def _check_retry_ok(self):
     """We consider a reconnect to have suceeded only when we have received

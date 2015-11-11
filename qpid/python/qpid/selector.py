@@ -17,8 +17,11 @@
 # under the License.
 #
 import atexit, time, errno, os
-from compat import select, SelectError, set, selectable_waiter
+from compat import select, SelectError, set, selectable_waiter, format_exc
 from threading import Thread, Lock
+from logging import getLogger
+
+log = getLogger("qpid.messaging")
 
 class Acceptor:
 
@@ -67,6 +70,7 @@ class Selector:
     self.reading.add(self.waiter)
     self.stopped = False
     self.thread = None
+    self.exception = None
 
   def wakeup(self):
     self.waiter.wakeup()
@@ -103,48 +107,58 @@ class Selector:
     self.thread.start();
 
   def run(self):
-    while not self.stopped:
-      wakeup = None
+    try:
+      while not self.stopped:
+        wakeup = None
+        for sel in self.selectables.copy():
+          t = self._update(sel)
+          if t is not None:
+            if wakeup is None:
+              wakeup = t
+            else:
+              wakeup = min(wakeup, t)
+
+        rd = []
+        wr = []
+        ex = []
+
+        while True:
+          try:
+            if wakeup is None:
+              timeout = None
+            else:
+              timeout = max(0, wakeup - time.time())
+            rd, wr, ex = select(self.reading, self.writing, (), timeout)
+            break
+          except SelectError, e:
+            # Repeat the select call if we were interrupted.
+            if e[0] == errno.EINTR:
+              continue
+            else:
+              # unrecoverable: promote to outer try block
+              raise
+
+        for sel in wr:
+          if sel.writing():
+            sel.writeable()
+
+        for sel in rd:
+          if sel.reading():
+            sel.readable()
+
+        now = time.time()
+        for sel in self.selectables.copy():
+          w = sel.timing()
+          if w is not None and now > w:
+            sel.timeout()
+    except Exception, e:
+      self.exception = e
+      info = format_exc()
+      log.error("qpid.messaging I/O thread has died: %s" % str(e))
       for sel in self.selectables.copy():
-        t = self._update(sel)
-        if t is not None:
-          if wakeup is None:
-            wakeup = t
-          else:
-            wakeup = min(wakeup, t)
-
-      rd = []
-      wr = []
-      ex = []
-
-      while True:
-        try:
-          if wakeup is None:
-            timeout = None
-          else:
-            timeout = max(0, wakeup - time.time())
-          rd, wr, ex = select(self.reading, self.writing, (), timeout)
-          break
-        except SelectError, e:
-          # Repeat the select call if we were interrupted.
-          if e[0] == errno.EINTR:
-            continue
-          else:
-            raise
-
-      for sel in wr:
-        if sel.writing():
-          sel.writeable()
-
-      for sel in rd:
-        if sel.reading():
-          sel.readable()
-
-      now = time.time()
-      for sel in self.selectables.copy():
-        w = sel.timing()
-        if w is not None and now > w:
-          sel.timeout()
+        if hasattr(sel, "abort"):
+          sel.abort(e, info)
+      raise
 
   def stop(self, timeout=None):
     self.stopped = True
