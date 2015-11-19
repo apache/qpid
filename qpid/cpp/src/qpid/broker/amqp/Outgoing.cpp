@@ -139,8 +139,15 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
                 outgoingMessageRejected();//TODO: not quite true...
                 break;
               case PN_MODIFIED:
-                if (preAcquires()) queue->release(r.cursor, pn_disposition_is_failed(pn_delivery_remote(delivery)));
-                //TODO: handle undeliverable-here and message-annotations
+                if (preAcquires()) {
+                    //TODO: handle message-annotations
+                    if (pn_disposition_is_undeliverable(pn_delivery_remote(delivery))) {
+                        //treat undeliverable here as rejection
+                        queue->reject(r.cursor);
+                    } else {
+                        queue->release(r.cursor, pn_disposition_is_failed(pn_delivery_remote(delivery)));
+                    }
+                }
                 outgoingMessageRejected();//TODO: not quite true...
                 break;
               default:
