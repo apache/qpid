@@ -40,11 +40,13 @@ skip() {
 
 start_broker() {
     rm -f swig_python_tests.log
-    QPID_PORT=$($QPIDD_EXEC --daemon --port 0 --interface 127.0.0.1 --no-data-dir $MODULES --auth no --log-to-file swig_python_tests.log) || fail "Could not start broker"
+    cp $srcdir/policy.acl $builddir/policy.acl
+    QPID_PORT=$($QPIDD_EXEC --daemon --port 0 --interface 127.0.0.1 --no-data-dir $MODULES --auth no --acl-file $builddir/policy.acl --log-to-file swig_python_tests.log) || fail "Could not start broker"
 }
 
 stop_broker() {
     $QPIDD_EXEC -q --port $QPID_PORT
+    rm $builddir/policy.acl
 }
 
 test -f $PYTHONSWIGMODULE || skip "no swigged python client"
@@ -57,7 +59,7 @@ export PYTHONPATH=$PYTHONPATH:$PYTHONPATH_SWIG
 export QPID_USE_SWIG_CLIENT=1
 $QPID_PYTHON_TEST -m qpid.tests.messaging.message -m qpid_tests.broker_0_10.priority -m qpid_tests.broker_0_10.lvq -m qpid_tests.broker_0_10.new_api -b localhost:$QPID_PORT -I $srcdir/failing-amqp0-10-python-tests $* || FAILED=1
 if [[ -a $AMQP_LIB ]] ; then
-    $QPID_PYTHON_TEST --define="protocol_version=amqp1.0" -m qpid_tests.broker_1_0 -m qpid_tests.broker_0_10.new_api -m assertions -m reject_release -m misc -m policies -b localhost:$QPID_PORT -I $srcdir/failing-amqp1.0-python-tests $* || FAILED=1
+    $QPID_PYTHON_TEST --define="protocol_version=amqp1.0" --define="policy_file=$builddir/policy.acl" -m qpid_tests.broker_1_0 -m qpid_tests.broker_0_10.new_api -m assertions -m reject_release -m misc -m policies -m acl_1 -b localhost:$QPID_PORT -I $srcdir/failing-amqp1.0-python-tests $* || FAILED=1
 fi
 stop_broker
 if [[ $FAILED -eq 1 ]]; then
