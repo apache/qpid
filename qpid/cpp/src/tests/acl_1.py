@@ -270,22 +270,40 @@ class Acl_AMQP1_Tests (VersionTest):
     def test_publish_to_anonymous_relay(self):
         self.acl.allow('bob', 'access', 'exchange', 'name=ANONYMOUS-RELAY')
         self.acl.allow('bob', 'access', 'queue', 'name=acl_test_queue')
+        self.acl.allow('bob', 'access', 'exchange', 'name=acl_test_queue')
         self.acl.allow('bob', 'publish', 'exchange', 'routingkey=acl_test_queue')
         self.acl.allow('bob', 'access', 'exchange', 'name=amq.topic')
+        self.acl.allow('bob', 'access', 'queue', 'name=amq.topic')
         self.acl.allow('bob', 'publish', 'exchange', 'name=amq.topic', 'routingkey=abc')
+        self.acl.allow('bob', 'access', 'exchange', 'name=amq.direct')
+        self.acl.allow('bob', 'access', 'queue', 'name=amq.direct')
         self.acl.allow('alice').deny().apply()
 
         sender = self.bob.sender("<null>")
         sender.send(Message("a message", properties={'x-amqp-to':'acl_test_queue'}), sync=True)
         sender.send(Message("another", subject='abc', properties={'x-amqp-to':'amq.topic'}), sync=True)
         try:
+            # have access permission, but publish not allowed for given key
             sender.send(Message("a third", subject='def', properties={'x-amqp-to':'amq.topic'}), sync=True)
             assert False, "bob should not be allowed to send message to amq.topic with key 'def'"
         except UnauthorizedAccess: pass
         sender = self.bob.sender("<null>")
         try:
+            # have access permission, but no publish
             sender.send(Message("a fourth", subject='abc', properties={'x-amqp-to':'amq.direct'}), sync=True)
             assert False, "bob should not be allowed to send message to amq.direct"
+        except UnauthorizedAccess: pass
+        sender = self.bob.sender("<null>")
+        try:
+            # have no access permission
+            sender.send(Message("a fiftth", subject='abc', properties={'x-amqp-to':'amq.fanout'}), sync=True)
+            assert False, "bob should not be allowed to send message to amq.fanout"
+        except UnauthorizedAccess: pass
+        sender = self.bob.sender("<null>")
+        try:
+            # have no access permission
+            sender.send(Message("a sixth", properties={'x-amqp-to':'somewhereelse'}), sync=True)
+            assert False, "bob should not be allowed to send message to somewhere else"
         except UnauthorizedAccess: pass
         sender = self.alice.sender("<null>")
         sender.send(Message("alice's message", properties={'x-amqp-to':'abc'}), sync=True)

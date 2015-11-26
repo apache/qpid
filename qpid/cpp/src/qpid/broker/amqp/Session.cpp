@@ -968,6 +968,7 @@ void AnonymousRelay::handle(qpid::broker::Message& message, qpid::broker::TxBuff
 {
     // need to retrieve AMQP 1.0 'to' field and resolve it to a queue or exchange
     std::string dest = message.getTo();
+    authorise.access(dest, false, false);
     QPID_LOG(debug, "AnonymousRelay received message for " << dest);
     boost::shared_ptr<qpid::broker::Exchange> exchange;
     boost::shared_ptr<qpid::broker::Queue> queue;
