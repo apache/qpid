@@ -24,9 +24,7 @@
 #include "qpid/amqp/MapBuilder.h"
 #include "qpid/log/Statement.h"
 #include <string>
-extern "C" {
 #include <proton/engine.h>
-}
 
 namespace qpid {
 namespace broker {
@@ -147,6 +145,8 @@ void DataReader::readOne(pn_data_t* data)
         break;
       case PN_MAP:
         readMap(data, described ? &descriptor : 0);
+        break;
+      case PN_INVALID:
         break;
     }
     if (described) pn_data_exit(data);
