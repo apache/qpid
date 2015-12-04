@@ -146,7 +146,7 @@ void DataReader::readOne(pn_data_t* data)
       case PN_MAP:
         readMap(data, described ? &descriptor : 0);
         break;
-      case PN_INVALID:
+      default:
         break;
     }
     if (described) pn_data_exit(data);
