@@ -110,12 +110,17 @@ void initNSS(const SslOptions& options, bool server)
 
     // disable SSLv2 and SSLv3 versions of the protocol - they are
     // no longer considered secure
-    SSLVersionRange vrange;
+    SSLVersionRange drange, srange; // default and supported ranges
     const uint16_t tlsv1 = 0x0301;  // Protocol version for TLSv1.0
-    NSS_CHECK(SSL_VersionRangeGetDefault(ssl_variant_stream, &vrange));
-    if (vrange.min < tlsv1) {
-        vrange.min = tlsv1;
-        NSS_CHECK(SSL_VersionRangeSetDefault(ssl_variant_stream, &vrange));
+    NSS_CHECK(SSL_VersionRangeGetDefault(ssl_variant_stream, &drange));
+    NSS_CHECK(SSL_VersionRangeGetSupported(ssl_variant_stream, &srange));
+    if (drange.min < tlsv1) {
+        drange.min = tlsv1;
+        NSS_CHECK(SSL_VersionRangeSetDefault(ssl_variant_stream, &drange));
+    }
+    if (srange.max > drange.max) {
+        drange.max = srange.max;
+        NSS_CHECK(SSL_VersionRangeSetDefault(ssl_variant_stream, &drange));
     }
 }
 
