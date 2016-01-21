@@ -111,7 +111,7 @@ void OutgoingFromQueue::handle(pn_delivery_t* delivery)
 {
     size_t i = Record::getIndex(pn_delivery_tag(delivery));
     Record& r = deliveries[i];
-    if (pn_delivery_updated(delivery)) {
+    if (r.delivery && pn_delivery_updated(delivery)) {
         assert(r.delivery == delivery);
         r.disposition = pn_delivery_remote_state(delivery);
 
