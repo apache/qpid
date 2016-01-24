@@ -413,7 +413,7 @@ void MessageTransfer::processProperties(qpid::amqp::MapHandler& handler) const
             case qpid::types::VAR_UINT8:
                 handler.handleUint8(key, v); break;
             case qpid::types::VAR_UINT16:
-                handler.handleUint8(key, v); break;
+                handler.handleUint16(key, v); break;
             case qpid::types::VAR_UINT32:
                 handler.handleUint32(key, v); break;
             case qpid::types::VAR_UINT64:
