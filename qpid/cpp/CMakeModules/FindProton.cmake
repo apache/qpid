@@ -64,6 +64,18 @@ if (PKG_CONFIG_FOUND)
     endif ()
 endif()
 
+# Allow ccmake or command-line to set checked out but not installed Proton location
+# Defaule location is ${HOME}/qpid-proton
+set(Proton_CHECKOUT_DIR "$ENV{HOME}/qpid-proton" CACHE PATH "Proton checkout directory")
+set(Proton_BUILD_DIR_NAME "build" CACHE STRING "Proton build directory name within Proton_CHECKOUT_DIR")
+if (EXISTS ${Proton_CHECKOUT_DIR}/${Proton_BUILD_DIR_NAME}/proton-c/libqpid-proton.so)
+    include("${Proton_CHECKOUT_DIR}/${Proton_BUILD_DIR_NAME}/proton-c/ProtonConfig.cmake")
+    set (Proton_INCLUDE_DIRS "${Proton_CHECKOUT_DIR}/proton-c/include" "${Proton_CHECKOUT_DIR}/${Proton_BUILD_DIR_NAME}/proton-c/include")
+    set (Proton_LIBRARIES "${Proton_CHECKOUT_DIR}/${Proton_BUILD_DIR_NAME}/proton-c/libqpid-proton.so")
+    find_package_message(Proton "Found uninstalled Proton: ${Proton_LIBRARIES} (found version \"${Proton_VERSION}\")" "$ProtonX_DIR ${Proton_LIBRARIES} $Proton_VERSION")
+    return()
+endif ()
+
 # Proton not found print a standard error message
 if (NOT ${CMAKE_VERSION} VERSION_LESS "2.8.3")
     find_package_handle_standard_args(Proton CONFIG_MODE)
