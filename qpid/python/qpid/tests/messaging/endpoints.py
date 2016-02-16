@@ -667,10 +667,11 @@ class SessionTests(Base):
     class CallbackHandler:
         def __init__(self):
             self.handler_called = False
-        def __call__(self):
+        def __call__(self, ssn):
             self.handler_called = True
+            self.ssn = ssn
     cb = CallbackHandler()
-    self.ssn.set_message_received_handler(cb)
+    self.ssn.set_message_received_notify_handler(cb)
     rcv = self.ssn.receiver(ADDR)
     rcv.capacity = UNLIMITED
     snd = self.ssn.sender(ADDR)
@@ -681,6 +682,7 @@ class SessionTests(Base):
         if cb.handler_called:
             break;
     assert cb.handler_called
+    assert cb.ssn == self.ssn
     snd.close()
     rcv.close()
 
@@ -1385,3 +1387,90 @@ class SenderTests(Base):
     except:
       pass
     self.snd.send(m2, timeout=self.timeout())
+
+
+class ErrorCallbackTests(Base):
+
+  class Callback:
+    def __init__(self, name):
+      self.name = name
+      self.obj = None
+      self.exc = None
+
+    def __call__(self, obj, exc):
+      self.obj = obj
+      self.exc = exc
+
+  def testConnectErrorCallback(self):
+    cb = ErrorCallbackTests.Callback("connection")
+    self.conn = Connection("localhost:4")
+    self.conn.set_async_exception_notify_handler(cb)
+    try:
+      self.conn.open()
+      assert False, "connect succeeded"
+    except Exception:
+      assert self.conn == cb.obj, cb.obj
+      assert cb.name == "connection"
+      assert cb.exc is not None
+
+  def testSessionErrorCallback(self):
+    ccb = ErrorCallbackTests.Callback("connection")
+    self.conn = Connection.establish(self.broker, **self.connection_options())
+    self.conn.set_async_exception_notify_handler(ccb)
+    scb = ErrorCallbackTests.Callback("session")
+    self.ssn = self.conn.session(transactional=True)
+    self.ssn.set_async_exception_notify_handler(scb)
+    self.conn.detach()
+    try:
+      self.ping(self.ssn)
+      assert False, "session succeeded"
+    except Exception:
+      assert self.ssn == scb.obj, scb.obj
+      assert scb.name == "session"
+      assert scb.exc is not None
+      # connection callback should be empty
+      assert ccb.obj == None, ccb.obj
+
+  def testSenderErrorCallback(self):
+    ccb = ErrorCallbackTests.Callback("connection")
+    conn = Connection(self.broker, **self.connection_options())
+    conn.set_async_exception_notify_handler(ccb)
+    scb = ErrorCallbackTests.Callback("session")
+    ssn = conn.session()
+    ssn.set_async_exception_notify_handler(scb)
+    snd = ssn.sender(NOSUCH_Q)
+    sndcb = ErrorCallbackTests.Callback("sender")
+    snd.set_async_exception_notify_handler(sndcb)
+    conn.open()
+    try:
+        snd.send(self.message("HI"))
+        assert False, "send worked"
+    except Exception:
+        assert snd == sndcb.obj, sndcb.obj
+        assert sndcb.name == "sender"
+        assert sndcb.exc is not None
+        # connection and session callbacks are empty
+        assert ccb.obj == None, ccb.obj
+        assert scb.obj == None, scb.obj
+
+  def testReceiverErrorCallback(self):
+    ccb = ErrorCallbackTests.Callback("connection")
+    self.conn = Connection(self.broker, **self.connection_options())
+    self.conn.set_async_exception_notify_handler(ccb)
+    scb = ErrorCallbackTests.Callback("session")
+    self.ssn = self.conn.session()
+    self.ssn.set_async_exception_notify_handler(scb)
+    self.recv = self.ssn.receiver(NOSUCH_Q)
+    rcb = ErrorCallbackTests.Callback("receiver")
+    self.recv.set_async_exception_notify_handler(rcb)
+    self.conn.open()
+    try:
+        self.recv.fetch()
+        assert False, "fetch worked"
+    except Exception:
+        assert self.recv == rcb.obj, rcb.obj
+        assert rcb.name == "receiver"
+        assert rcb.exc is not None
+        # connection and session callbacks are empty
+        assert ccb.obj == None, ccb.obj
+        assert scb.obj == None, scb.obj

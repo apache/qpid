@@ -18,7 +18,7 @@
 #
 
 """
-A candidate high level messaging API for python.
+A high level messaging API for python.
 
 Areas that still need work:
 
@@ -44,12 +44,56 @@ log = getLogger("qpid.messaging")
 
 static = staticmethod
 
-class Endpoint:
+class Endpoint(object):
+  """
+  Base class for all endpoint objects types.
+  @undocumented: __init__, __setattr__
+  """
+  def __init__(self):
+    self._async_exception_notify_handler = None
+    self.error = None
 
   def _ecwait(self, predicate, timeout=None):
     result = self._ewait(lambda: self.closed or predicate(), timeout)
     self.check_closed()
     return result
+
+  @synchronized
+  def set_async_exception_notify_handler(self, handler):
+    """
+    Register a callable that will be invoked when the driver thread detects an
+    error on the Endpoint. The callable is invoked with the instance of the
+    Endpoint object passed as the first argument. The second argument is an
+    Exception instance describing the failure.
+
+    @param handler: invoked by the driver thread when an error occurs.
+    @type handler: callable object taking an Endpoint and an Exception as
+    arguments.
+    @return: None
+    @note: The exception will also be raised the next time the application
+    invokes one of the blocking messaging APIs.
+    @warning: B{Use with caution} This callback is invoked in the context of
+    the driver thread. It is B{NOT} safe to call B{ANY} of the messaging APIs
+    from within this callback. This includes any of the Endpoint's methods. The
+    intent of the handler is to provide an efficient way to notify the
+    application that an exception has occurred in the driver thread. This can
+    be useful for those applications that periodically poll the messaging layer
+    for events. In this case the callback can be used to schedule a task that
+    retrieves the error using the Endpoint's get_error() or check_error()
+    methods.
+    """
+    self._async_exception_notify_handler = handler
+
+  def __setattr__(self, name, value):
+    """
+    Intercept any attempt to set the endpoint error flag and invoke the
+    callback if registered.
+    """
+    super(Endpoint, self).__setattr__(name, value)
+    if name == 'error' and value is not None:
+        if self._async_exception_notify_handler:
+            self._async_exception_notify_handler(self, value)
+
 
 class Connection(Endpoint):
 
@@ -129,6 +173,7 @@ class Connection(Endpoint):
     @rtype: Connection
     @return: a disconnected Connection
     """
+    super(Connection, self).__init__()
     # List of all attributes
     opt_keys = ['host', 'transport', 'port', 'heartbeat', 'username', 'password', 'sasl_mechanisms', 'sasl_service', 'sasl_min_ssf', 'sasl_max_ssf', 'reconnect', 'reconnect_timeout', 'reconnect_interval', 'reconnect_interval_min', 'reconnect_interval_max', 'reconnect_limit', 'reconnect_urls', 'reconnect_log', 'address_ttl', 'tcp_nodelay', 'ssl_keyfile', 'ssl_certfile', 'ssl_trustfile', 'ssl_skip_hostname_check', 'client_properties', 'protocol' ]
     # Create all attributes on self and set to None.
@@ -200,7 +245,6 @@ class Connection(Endpoint):
     self._condition = Condition(self._lock)
     self._waiter = Waiter(self._condition)
     self._modcount = Serial(0)
-    self.error = None
     from driver import Driver
     self._driver = Driver(self)
 
@@ -342,6 +386,7 @@ class Connection(Endpoint):
     finally:
       self.detach(timeout=timeout)
       self._open = False
+
 
 class Session(Endpoint):
 
@@ -538,6 +583,7 @@ class Session(Endpoint):
  """
 
   def __init__(self, connection, name, transactional):
+    super(Session, self).__init__()
     self.connection = connection
     self.name = name
     self.log_id = "%x" % id(self)
@@ -560,12 +606,11 @@ class Session(Endpoint):
     # XXX: I hate this name.
     self.ack_capacity = UNLIMITED
 
-    self.error = None
     self.closing = False
     self.closed = False
 
     self._lock = connection._lock
-    self._msg_received = None
+    self._msg_received_notify_handler = None
 
   def __repr__(self):
     return "<Session %s>" % self.name
@@ -597,10 +642,15 @@ class Session(Endpoint):
     if self.closed:
       raise SessionClosed()
 
-  def message_received(self, msg):
+  def _notify_message_received(self, msg):
       self.incoming.append(msg)
-      if self._msg_received:
-          self._msg_received()
+      if self._msg_received_notify_handler:
+          try:
+              # new callback parameter: the Session
+              self._msg_received_notify_handler(self)
+          except TypeError:
+              # backward compatibility with old API, no Session
+              self._msg_received_notify_handler()
 
   @synchronized
   def sender(self, target, **options):
@@ -687,16 +737,40 @@ class Session(Endpoint):
     return None
 
   @synchronized
-  def set_message_received_handler(self, handler):
-      """Register a callback that will be invoked when a message arrives on the
-      session.  Use with caution: since this callback is invoked in the context
-      of the driver thread, it is not safe to call any of the public messaging
-      APIs from within this callback.  The intent of the handler is to provide
-      an efficient way to notify the application that a message has arrived.
-      This can be useful for those applications that need to schedule a task
-      to poll for received messages without blocking in the messaging API.
+  def set_message_received_notify_handler(self, handler):
       """
-      self._msg_received = handler
+      Register a callable that will be invoked when a Message arrives on the
+      Session.
+
+      @param handler: invoked by the driver thread when an error occurs.
+      @type handler: a callable object taking a Session instance as its only
+      argument
+      @return: None
+
+      @note: When using this method it is recommended to also register
+      asynchronous error callbacks on all endpoint objects. Doing so will cause
+      the application to be notified if an error is raised by the driver
+      thread. This is necessary as after a driver error occurs the message received
+      callback may never be invoked again. See
+      L{Endpoint.set_async_exception_notify_handler}
+
+      @warning: B{Use with caution} This callback is invoked in the context of
+      the driver thread. It is B{NOT} safe to call B{ANY} of the public
+      messaging APIs from within this callback, including any of the passed
+      Session's methods. The intent of the handler is to provide an efficient
+      way to notify the application that a message has arrived.  This can be
+      useful for those applications that need to schedule a task to poll for
+      received messages without blocking in the messaging API.  The scheduled
+      task may then retrieve the message using L{next_receiver} and
+      L{Receiver.fetch}
+      """
+      self._msg_received_notify_handler = handler
+
+  @synchronized
+  def set_message_received_handler(self, handler):
+      """@deprecated: Use L{set_message_received_notify_handler} instead.
+      """
+      self._msg_received_notify_handler = handler
 
   @synchronized
   def next_receiver(self, timeout=None):
@@ -803,6 +877,7 @@ class Session(Endpoint):
     finally:
       self.connection._remove_session(self)
 
+
 class MangledString(str): pass
 
 def _mangle(addr):
@@ -818,6 +893,7 @@ class Sender(Endpoint):
   """
 
   def __init__(self, session, id, target, options):
+    super(Sender, self).__init__()
     self.session = session
     self.id = id
     self.target = target
@@ -828,7 +904,6 @@ class Sender(Endpoint):
     self.queued = Serial(0)
     self.synced = Serial(0)
     self.acked = Serial(0)
-    self.error = None
     self.linked = False
     self.closing = False
     self.closed = False
@@ -968,7 +1043,8 @@ class Sender(Endpoint):
       except ValueError:
         pass
 
-class Receiver(Endpoint, object):
+
+class Receiver(Endpoint):
 
   """
   Receives incoming messages from a remote source. Messages may be
@@ -976,6 +1052,7 @@ class Receiver(Endpoint, object):
   """
 
   def __init__(self, session, id, source, options):
+    super(Receiver, self).__init__()
     self.session = session
     self.id = id
     self.source = source
@@ -987,7 +1064,6 @@ class Receiver(Endpoint, object):
     self.received = Serial(0)
     self.returned = Serial(0)
 
-    self.error = None
     self.linked = False
     self.closing = False
     self.closed = False
@@ -1115,4 +1191,5 @@ class Receiver(Endpoint, object):
       except ValueError:
         pass
 
-__all__ = ["Connection", "Session", "Sender", "Receiver"]
+
+__all__ = ["Connection", "Endpoint", "Session", "Sender", "Receiver"]

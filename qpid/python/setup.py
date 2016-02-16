@@ -135,7 +135,7 @@ class build_doc(Command):
 
     names = ["qpid.messaging"]
     doc_index = build_doc_index(names, True, True)
-    html_writer = HTMLWriter(doc_index)
+    html_writer = HTMLWriter(doc_index, show_private=False)
     self.mkpath(self.build_doc)
     log.info('epydoc %s to %s' % (", ".join(names), self.build_doc))
     html_writer.write(self.build_doc)
