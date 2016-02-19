@@ -340,16 +340,19 @@ def main():
                 # First fill the queues, then drain them
                 start = time.time()
                 senders = start_senders()
-                for p in senders: p.wait()
+                for p in senders:
+                    if p: p.wait()
                 receivers = start_receivers()
-                for p in receivers: p.wait()
+                for p in receivers:
+                    if p: p.wait()
             else:
                 # Run senders and receivers in parallel
                 receivers = start_receivers()
                 ready_receiver.wait(filter(None, receivers)) # Wait for receivers ready
                 start = time.time()
                 senders = start_senders()
-                for p in senders + receivers: p.wait()
+                for p in senders + receivers:
+                    if p: p.wait()
 
             total_sent = opts.queues * opts.senders * opts.messages
             total_tp = total_sent / (time.time()-start)
