@@ -171,14 +171,14 @@ struct Opts : public TestOptions {
         TestOptions::parse(argc, argv);
         switch (mode) {
           case SHARED:
-            if (count % subs) {
+            if (subs != 0 && count % subs) {
                 count += subs - (count % subs);
                 cout << "WARNING: Adjusted --count to " << count
                      << " the next multiple of --nsubs" << endl;
             }
             totalPubs = pubs*qt;
             totalSubs = subs*qt;
-            subQuota = (pubs*count)/subs;
+            subQuota = subs == 0 ? subs:(pubs*count)/subs;
             break;
           case FANOUT:
             if (qt != 1) cerr << "WARNING: Fanout mode, ignoring --qt="
