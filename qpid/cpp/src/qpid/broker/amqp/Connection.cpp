@@ -335,7 +335,7 @@ void Connection::open()
     uint32_t timeout = pn_transport_get_remote_idle_timeout(transport);
     if (timeout) {
         // if idle generate empty frames at 1/2 the timeout interval as keepalives:
-        ticker = boost::intrusive_ptr<qpid::sys::TimerTask>(new ConnectionTickerTask((timeout+1)/2,
+        ticker = boost::intrusive_ptr<qpid::sys::TimerTask>(new ConnectionTickerTask((timeout/2)+1,
                                                                                      getBroker().getTimer(),
                                                                                      *this));
         getBroker().getTimer().add(ticker);
