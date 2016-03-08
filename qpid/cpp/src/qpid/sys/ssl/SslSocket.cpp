@@ -396,11 +396,6 @@ int SslSocket::getKeyLen() const
     return 0;
 }
 
-std::string SslSocket::getClientAuthId() const
-{
-    return getAuthId(PeerCertificateGetter(nssSocket));
-}
-
 std::string SslSocket::getPeerAuthId() const
 {
     return getAuthId(PeerCertificateGetter(nssSocket));

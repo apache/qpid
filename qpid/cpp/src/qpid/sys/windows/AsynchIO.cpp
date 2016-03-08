@@ -527,7 +527,7 @@ void AsynchIO::close(void) {
 SecuritySettings AsynchIO::getSecuritySettings() {
     SecuritySettings settings;
     settings.ssf = socket.getKeyLen();
-    settings.authid = socket.getClientAuthId();
+    settings.authid = socket.getPeerAuthId();
     return settings;
 }
 

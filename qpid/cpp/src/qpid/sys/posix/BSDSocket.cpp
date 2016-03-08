@@ -271,11 +271,6 @@ int BSDSocket::getKeyLen() const
     return 0;
 }
 
-std::string BSDSocket::getClientAuthId() const
-{
-    return std::string();
-}
-
 std::string BSDSocket::getPeerAuthId() const
 {
     return std::string();

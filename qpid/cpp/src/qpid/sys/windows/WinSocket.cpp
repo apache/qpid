@@ -273,11 +273,6 @@ int WinSocket::getKeyLen() const
     return 0;
 }
 
-std::string WinSocket::getClientAuthId() const
-{
-    return std::string();
-}
-
 std::string WinSocket::getPeerAuthId() const
 {
     return std::string();

@@ -620,7 +620,7 @@ void AsynchIO::close(DispatchHandle& h) {
 SecuritySettings AsynchIO::getSecuritySettings() {
     SecuritySettings settings;
     settings.ssf = socket.getKeyLen();
-    settings.authid = socket.getClientAuthId();
+    settings.authid = socket.getPeerAuthId();
     return settings;
 }
 
