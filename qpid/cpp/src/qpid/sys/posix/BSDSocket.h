@@ -49,7 +49,7 @@ public:
     /** Construct socket with existing fd (posix specific and not in Socket interface) */
     QPID_COMMON_EXTERN BSDSocket(int fd);
 
-    QPID_COMMON_EXTERN ~BSDSocket();
+    QPID_COMMON_EXTERN virtual ~BSDSocket();
 
     QPID_COMMON_EXTERN operator const IOHandle&() const;
 
@@ -70,8 +70,8 @@ public:
     QPID_COMMON_EXTERN virtual int write(const void *buf, size_t count) const;
     QPID_COMMON_EXTERN virtual void close() const;
 
-    QPID_COMMON_EXTERN int getKeyLen() const;
-    QPID_COMMON_EXTERN std::string getClientAuthId() const;
+    QPID_COMMON_EXTERN virtual int getKeyLen() const;
+    QPID_COMMON_EXTERN virtual std::string getClientAuthId() const;
     QPID_COMMON_EXTERN virtual std::string getLocalAuthId() const;
 
 protected:
