@@ -70,6 +70,7 @@ struct Options : public qpid::Options
     uint ttl;
     uint priority;
     std::string userid;
+    bool autouserid;
     std::string correlationid;
     string_vector properties;
     string_vector entries;
@@ -102,6 +103,7 @@ struct Options : public qpid::Options
           durable(false),
           ttl(0),
           priority(0),
+          autouserid(false),
           contentString(),
           contentSize(0),
           contentStdin(false),
@@ -135,6 +137,7 @@ struct Options : public qpid::Options
             ("property,P", qpid::optValue(properties, "NAME=VALUE"), "specify message property")
             ("correlation-id", qpid::optValue(correlationid, "ID"), "correlation-id for message")
             ("user-id", qpid::optValue(userid, "USERID"), "userid for message")
+            ("auto-user-id", qpid::optValue(autouserid, "yes| no"), "set userid for message based on authenticated identity")
             ("content-string", qpid::optValue(contentString, "CONTENT"), "use CONTENT as message content")
             ("content-size", qpid::optValue(contentSize, "N"), "create an N-byte message content")
             ("content-map,M", qpid::optValue(entries, "NAME=VALUE"), "specify entry for map content")
@@ -378,6 +381,7 @@ int main(int argc, char ** argv)
                 msg.setReplyTo(Address(opts.replyto));
             }
             if (!opts.userid.empty()) msg.setUserId(opts.userid);
+            else if (opts.autouserid) msg.setUserId(connection.getAuthenticatedUsername());
             if (!opts.id.empty()) msg.setMessageId(opts.id);
             if (!opts.correlationid.empty()) msg.setCorrelationId(opts.correlationid);
             opts.setProperties(msg);

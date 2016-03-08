@@ -222,10 +222,16 @@ URL=amqp:ssl:$TEST_HOSTNAME:$PORT2
 MSG2=`./qpid-receive -b $URL  --connection-options "{ssl-cert-name: $TEST_CLIENT_CERT }" -a "bar;{create:always}" --messages 1`
 test "$MSG2" = "hello" || { echo "receive failed '$MSG2' != 'hello'"; exit 1; }
 
+
 ## Make sure that connect fails with an invalid SSL cert-name
 ./qpid-send -b $URL --connection-options "{ssl-cert-name: pignose }" --content-string=hello -a "baz;{create:always}" 2>/dev/null 1>/dev/null
 MSG3=`./qpid-receive -b $URL  --connection-options "{ssl-cert-name: pignose }" -a "baz;{create:always}" --messages 1 2>/dev/null`
 test "$MSG3" = "" || { echo "receive succeeded without valid ssl cert '$MSG3' != ''"; exit 1; }
+
+## Set the userid in the message to the authenticated username
+./qpid-send -b $URL --connection-options "{ssl-cert-name: $TEST_CLIENT_CERT }" --auto-user-id true --content-string=hello -a "bar;{create:always}"
+RECEIVED_USER=`./qpid-receive -b $URL  --connection-options "{ssl-cert-name: $TEST_CLIENT_CERT }" -a "bar;{create:always}" --messages 1 --print-headers true | awk '/UserId/{print $2}'`
+test "$RECEIVED_USER" = $TEST_CLIENT_CERT || { echo "user id not as expected: $RECEIVED_USER"; exit 1; }
 
 stop_brokers
 
