@@ -68,6 +68,7 @@ public:
 
     int getKeyLen() const;
     std::string getClientAuthId() const;
+    std::string getLocalAuthId() const;
 
 protected:
     mutable PRFileDesc* nssSocket;

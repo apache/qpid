@@ -421,7 +421,7 @@ void SslConnector::disconnected(AsynchIO&) {
 const SecuritySettings* SslConnector::getSecuritySettings()
 {
     securitySettings.ssf = socket.getKeyLen();
-    securitySettings.authid = "dummy";//set to non-empty string to enable external authentication
+    securitySettings.authid = socket.getLocalAuthId();
     return &securitySettings;
 }
 

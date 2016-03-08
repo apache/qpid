@@ -79,6 +79,43 @@ std::string getDomainFromSubject(std::string subject)
     }
     return domain;
 }
+
+struct LocalCertificateGetter
+{
+    LocalCertificateGetter(PRFileDesc* nssSocket) : socket(nssSocket) {}
+    CERTCertificate* operator()() const {return SSL_LocalCertificate(socket);}
+    PRFileDesc* socket;
+};
+struct PeerCertificateGetter
+{
+    PeerCertificateGetter(PRFileDesc* nssSocket) : socket(nssSocket) {}
+    CERTCertificate* operator()() const {return SSL_PeerCertificate(socket);}
+    PRFileDesc* socket;
+};
+template<typename CertificateGetter>
+std::string getAuthId(CertificateGetter certificateGetter)
+{
+    std::string authId;
+    CERTCertificate* cert = certificateGetter();
+    if (cert) {
+        char *cn = CERT_GetCommonName(&(cert->subject));
+        if (cn) {
+            authId = std::string(cn);
+            /*
+             * The NSS function CERT_GetDomainComponentName only returns
+             * the last component of the domain name, so we have to parse
+             * the subject manually to extract the full domain.
+             */
+            std::string domain = getDomainFromSubject(cert->subjectName);
+            if (!domain.empty()) {
+                authId += DOMAIN_SEPARATOR;
+                authId += domain;
+            }
+        }
+        CERT_DestroyCertificate(cert);
+    }
+    return authId;
+}
 }
 
 SslSocket::SslSocket(const std::string& certName, bool clientAuth) :
@@ -361,26 +398,12 @@ int SslSocket::getKeyLen() const
 
 std::string SslSocket::getClientAuthId() const
 {
-    std::string authId;
-    CERTCertificate* cert = SSL_PeerCertificate(nssSocket);
-    if (cert) {
-        char *cn = CERT_GetCommonName(&(cert->subject));
-        if (cn) {
-            authId = std::string(cn);
-            /*
-             * The NSS function CERT_GetDomainComponentName only returns
-             * the last component of the domain name, so we have to parse
-             * the subject manually to extract the full domain.
-             */
-            std::string domain = getDomainFromSubject(cert->subjectName);
-            if (!domain.empty()) {
-                authId += DOMAIN_SEPARATOR;
-                authId += domain;
-            }
-        }
-        CERT_DestroyCertificate(cert);
-    }
-    return authId;
+    return getAuthId(PeerCertificateGetter(nssSocket));
+}
+
+std::string SslSocket::getLocalAuthId() const
+{
+    return getAuthId(LocalCertificateGetter(nssSocket));
 }
 
 }}} // namespace qpid::sys::ssl
