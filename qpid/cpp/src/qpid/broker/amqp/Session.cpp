@@ -404,6 +404,7 @@ void Session::attach(pn_link_t* link)
 {
     if (pn_link_is_sender(link)) {
         pn_terminus_t* source = pn_link_remote_source(link);
+        pn_link_set_snd_settle_mode(link, pn_link_remote_snd_settle_mode(link));
         //i.e a subscription
         std::string name;
         if (pn_terminus_get_type(source) == PN_UNSPECIFIED) {
