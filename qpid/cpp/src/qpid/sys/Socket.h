@@ -110,6 +110,7 @@ public:
     /* Transport security related: */
     virtual int getKeyLen() const = 0;
     virtual std::string getClientAuthId() const = 0;
+    virtual std::string getLocalAuthId() const = 0;
 };
 
 /** Make the default socket for whatever platform we are executing on

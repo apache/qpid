@@ -100,6 +100,7 @@ public:
 
     QPID_COMMON_EXTERN int getKeyLen() const;
     QPID_COMMON_EXTERN std::string getClientAuthId() const;
+    QPID_COMMON_EXTERN std::string getLocalAuthId() const;
 
 protected:
     /** Create socket */

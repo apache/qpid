@@ -278,4 +278,9 @@ std::string WinSocket::getClientAuthId() const
     return std::string();
 }
 
+std::string WinSocket::getLocalAuthId() const
+{
+    return "dummy";
+}
+
 }} // namespace qpid::sys
