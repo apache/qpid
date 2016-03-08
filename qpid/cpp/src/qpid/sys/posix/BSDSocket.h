@@ -72,6 +72,7 @@ public:
 
     QPID_COMMON_EXTERN virtual int getKeyLen() const;
     QPID_COMMON_EXTERN virtual std::string getClientAuthId() const;
+    QPID_COMMON_EXTERN virtual std::string getPeerAuthId() const;
     QPID_COMMON_EXTERN virtual std::string getLocalAuthId() const;
 
 protected:

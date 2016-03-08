@@ -401,6 +401,11 @@ std::string SslSocket::getClientAuthId() const
     return getAuthId(PeerCertificateGetter(nssSocket));
 }
 
+std::string SslSocket::getPeerAuthId() const
+{
+    return getAuthId(PeerCertificateGetter(nssSocket));
+}
+
 std::string SslSocket::getLocalAuthId() const
 {
     return getAuthId(LocalCertificateGetter(nssSocket));

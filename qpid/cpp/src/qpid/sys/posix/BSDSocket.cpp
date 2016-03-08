@@ -276,6 +276,11 @@ std::string BSDSocket::getClientAuthId() const
     return std::string();
 }
 
+std::string BSDSocket::getPeerAuthId() const
+{
+    return std::string();
+}
+
 std::string BSDSocket::getLocalAuthId() const
 {
     return "dummy";

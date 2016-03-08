@@ -110,6 +110,7 @@ public:
     /* Transport security related: */
     virtual int getKeyLen() const = 0;
     virtual std::string getClientAuthId() const = 0;
+    virtual std::string getPeerAuthId() const = 0;
     virtual std::string getLocalAuthId() const = 0;
 };
 
