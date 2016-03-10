@@ -26,16 +26,6 @@ foreach (r ${REQUIRE})
   message(STATUS "Forcing ${r} to ${${r}_force}")
 endforeach(r)
 
-# Capture specified C++ compiler (if any)
-if (NOT ENV_CXX)
-  if (NOT "$ENV{CXX}" STREQUAL "")
-    set(CXX $ENV{CXX})
-  else(NOT "$ENV{CXX}" STREQUAL "")
-    set(CXX ${CMAKE_CXX_COMPILER})
-  endif(NOT "$ENV{CXX}" STREQUAL "")
-  set(ENV_CXX ${CXX} CACHE INTERNAL "C++ compiler specified in cmake environment")
-endif (NOT ENV_CXX)
-
 include(CheckFunctionExists)
 include(CheckIncludeFileCXX)
 include(CheckIncludeFiles)
@@ -64,12 +54,20 @@ find_package_handle_standard_args(SASL DEFAULT_MSG FOUND_SASL_LIB FOUND_SASL_H)
 
 #set (CMAKE_VERBOSE_MAKEFILE ON)  # for debugging
 
-# Add a test to check the exported library API against expected API symbols
-MACRO (add_api_test libname)
-  if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows AND BUILD_TESTING)
-    add_test(api_check_${libname} ${CMAKE_CURRENT_SOURCE_DIR}/check-abi "${ENV_CXX}" ${CMAKE_CURRENT_BINARY_DIR}/lib${libname}.so ${CMAKE_CURRENT_SOURCE_DIR}/lib${libname}-api-symbols.txt)
-  endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows AND BUILD_TESTING)
-ENDMACRO (add_api_test libname)
+if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows AND BUILD_TESTING)
+  # Executables used in testing the library ABIs
+  add_executable(cppabi cppabi.cpp)
+  add_executable(expand_types expand_types.cpp)
+
+  # Add a test to check the exported library API against expected API symbols
+  MACRO (add_api_test libname)
+    add_test(api_check_${libname} ${CMAKE_CURRENT_SOURCE_DIR}/check-abi ${CMAKE_CURRENT_BINARY_DIR}/lib${libname}.so ${CMAKE_CURRENT_SOURCE_DIR}/lib${libname}-api-symbols.txt)
+  ENDMACRO (add_api_test libname)
+else (NOT CMAKE_SYSTEM_NAME STREQUAL Windows AND BUILD_TESTING)
+  # If the test isn't applicable use a dummy macro
+  MACRO (add_api_test libname)
+  ENDMACRO (add_api_test libname)
+endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows AND BUILD_TESTING)
 
 
 # check if we generate source as part of the build
@@ -157,7 +155,15 @@ if (NOT ENABLE_WARNINGS)
   set (WARNING_FLAGS "")
 endif (NOT ENABLE_WARNINGS)
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS} ${WARNING_FLAGS}")
+if (GCC_VERSION AND NOT GCC_VERSION VERSION_LESS 5.1)
+  option(ENABLE_GLIBCXX_OLD_ABI "Enable old (pre GCC 5.1) C++ ABI" OFF)
+endif ()
+
+if (ENABLE_GLIBCXX_OLD_ABI)
+  set (ABI_DEF "-D_GLIBCXX_USE_CXX11_ABI=0")
+endif (ENABLE_GLIBCXX_OLD_ABI)
+
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ABI_DEF} ${COMPILER_FLAGS} ${WARNING_FLAGS}")
 
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
 # Boost.system is sometimes needed; it's handled separately, below.
