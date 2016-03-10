@@ -1490,6 +1490,24 @@ QPID_AUTO_TEST_CASE(testImmediateNextReceiverNoMessage)
     }
 }
 
+QPID_AUTO_TEST_CASE(testResendEmpty)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender(fix.queue);
+    Message out("test-message");
+    sender.send(out);
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    Message in = receiver.fetch(Duration::SECOND * 5);
+    fix.session.acknowledge();
+    BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
+    //set content on received message to empty string and resend
+    in.setContent("");
+    sender.send(in);
+    in = receiver.fetch(Duration::SECOND * 5);
+    fix.session.acknowledge();
+    BOOST_CHECK_EQUAL(in.getContent(), std::string());
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

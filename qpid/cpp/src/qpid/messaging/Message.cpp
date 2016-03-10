@@ -76,12 +76,18 @@ Variant::Map& Message::getProperties() { return impl->getHeaders(); }
 void Message::setProperties(const Variant::Map& p) { getProperties() = p; }
 void Message::setProperty(const std::string& k, const qpid::types::Variant& v) { impl->setHeader(k,v); }
 
-void Message::setContent(const std::string& c) { impl->setBytes(c); }
-void Message::setContent(const char* chars, size_t count) { impl->setBytes(chars, count); }
+void Message::setContent(const std::string& c) { this->setContentBytes(c); }
+void Message::setContent(const char* chars, size_t count) {
+    if (count == 0) impl->getContent().reset();
+    impl->setBytes(chars, count);
+}
 std::string Message::getContent() const { return impl->getBytes(); }
 
-void Message::setContentBytes(const std::string& c) { impl->setBytes(c); }
-std::string Message::getContentBytes() const { return impl->getBytes(); }
+void Message::setContentBytes(const std::string& c) {
+    if (c.empty()) impl->getContent().reset();
+    impl->setBytes(c);
+}
+std::string Message::getContentBytes() const {return impl->getBytes(); }
 
 qpid::types::Variant& Message::getContentObject() { return impl->getContent(); }
 void Message::setContentObject(const qpid::types::Variant& c) { impl->getContent() = c; }
