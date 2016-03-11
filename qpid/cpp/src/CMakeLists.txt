@@ -317,16 +317,19 @@ endif (UUID_GENERATE_IN_LIBC)
 
 # These dependencies aren't found on windows
 if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
-  # Ensure we have clock_gettime
-  CHECK_FUNCTION_EXISTS (clock_gettime CLOCK_GETTIME_IN_LIBC)
-  if (NOT CLOCK_GETTIME_IN_LIBC)
-  CHECK_LIBRARY_EXISTS (rt clock_gettime "" CLOCK_GETTIME_IN_RT)
-  if (CLOCK_GETTIME_IN_RT)
-    set(clock_gettime_LIB "rt")
-  else ()
-    message(FATAL_ERROR "Cannot find clock_gettime()")
-  endif (CLOCK_GETTIME_IN_RT)
-  endif (NOT CLOCK_GETTIME_IN_LIBC)
+  # Clocks on OSX are different
+  if (NOT CMAKE_SYSTEM_NAME STREQUAL Darwin)
+    # Ensure we have clock_gettime
+    CHECK_FUNCTION_EXISTS (clock_gettime CLOCK_GETTIME_IN_LIBC)
+    if (NOT CLOCK_GETTIME_IN_LIBC)
+    CHECK_LIBRARY_EXISTS (rt clock_gettime "" CLOCK_GETTIME_IN_RT)
+    if (CLOCK_GETTIME_IN_RT)
+      set(clock_gettime_LIB "rt")
+    else ()
+      message(FATAL_ERROR "Cannot find clock_gettime()")
+    endif (CLOCK_GETTIME_IN_RT)
+    endif (NOT CLOCK_GETTIME_IN_LIBC)
+  endif (NOT CMAKE_SYSTEM_NAME STREQUAL OSX)
 
   # Check for header file for dtrace static probes
   check_include_files(sys/sdt.h HAVE_SDT)

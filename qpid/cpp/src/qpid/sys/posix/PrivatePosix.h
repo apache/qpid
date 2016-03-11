@@ -24,6 +24,10 @@
 
 #include "qpid/sys/Time.h"
 
+#ifdef __MACH__
+#include <mach/clock.h>
+#endif
+
 struct timespec;
 struct timeval;
 struct addrinfo;
@@ -34,7 +38,6 @@ namespace sys {
 // Private Time related implementation details
 struct timespec& toTimespec(struct timespec& ts, const AbsTime& t);
 struct timeval& toTimeval(struct timeval& tv, const Duration& t);
-Duration toTime(const struct timespec& ts);
 
 // Private SocketAddress details
 class SocketAddress;

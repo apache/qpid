@@ -158,6 +158,17 @@ the shared libraries built as part of Qpid.
 The mktemp package must be installed separately in order to execute the
 Qpid test suite.
 
+2.5 Building on OSX
+===================
+Qpid has been tested on OSX 10.10 with Clang 6.0 and Boost 1.57. Boost 1.57 requires
+C++11 support. SASL support has not been tested. The cmake command line should be:
+
+ # cmake -DBUILD_SASL=no -DBUILD_PROBES=no -DCMAKE_CXX_FLAGS="-std=c++11 -Wno-error=deprecated-declarations" ..
+
+Dependencies can be installed from homebrew (http://brew.sh/) using:
+
+ # brew install cmake boost ossp-uuid pkgconfig help2man doxygen grpahviz swig boost sleepycat berkeley-db
+
 3. Building a Repository Working Copy
 =====================================
 To get the source code from the subversion repository (trunk) do:

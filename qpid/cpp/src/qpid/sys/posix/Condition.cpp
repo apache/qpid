@@ -31,7 +31,13 @@ struct ClockMonotonicAttr {
 
     ClockMonotonicAttr() {
         QPID_POSIX_ASSERT_THROW_IF(pthread_condattr_init(&attr));
+#ifdef __MACH__
+        // OSX doesn't let you set the clock, and absolute pthread
+        // waits are always based on gettimeofday. Not sure what to
+        // do.
+#else
         QPID_POSIX_ASSERT_THROW_IF(pthread_condattr_setclock(&attr, CLOCK_MONOTONIC));
+#endif
     }
 };
 

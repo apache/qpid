@@ -19,7 +19,7 @@
  *
  */
 
-#if defined(_POSIX_SOURCE) || defined(__unix__)
+#if defined(_POSIX_SOURCE) || defined(__unix__) || defined(__MACH__)
 # include <stdexcept>
 # include <string>
 # include <regex.h>
@@ -38,7 +38,7 @@
 namespace qpid {
 namespace sys {
 
-#if defined(_POSIX_SOURCE) || defined(__unix__)
+#if defined(_POSIX_SOURCE) || defined(__unix__) || defined(__MACH__)
 
 class regex {
     ::regex_t re;
