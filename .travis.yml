@@ -1,0 +1,30 @@
+os:
+- linux
+sudo: false
+language:
+- c
+- cpp
+cache: ccache
+addons:
+  apt:
+    packages:
+    - cmake
+    - libboost-dev
+    - libboost-program-options-dev
+    - libboost-system-dev
+    - libboost-test-dev
+    - uuid-dev
+    - libnss3-dev
+    - libsasl2-dev
+    - sasl2-bin
+    - swig
+    - python-dev
+    - valgrind
+    - ruby
+before_script:
+- mkdir Build
+- cd Build
+- cmake ../qpid/cpp -DCMAKE_INSTALL_PREFIX=$PWD/install
+script:
+- cmake --build . --target install && ctest -V
+
