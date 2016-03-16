@@ -38,6 +38,7 @@ using qpid::ptr_map_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
+#if DEFINE_UNUSED
 namespace {
     typedef boost::function0<void> FireFunction;
     struct DtxCleanup : public qpid::sys::TimerTask
@@ -61,6 +62,7 @@ namespace {
     }
 
 }
+#endif
 
 DtxManager::DtxManager(qpid::sys::Timer& t, uint32_t _dtxDefaultTimeout) :
     store(0),
