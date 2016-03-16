@@ -20,7 +20,7 @@ option(INSTALL_QMFGEN "Install QMF-GEN and QMF Python site-packages" ON)
 
 if (INSTALL_QMFGEN)
     project(qpidc-qmfgen)
-    cmake_minimum_required(VERSION 2.4.0 FATAL_ERROR)
+    cmake_minimum_required(VERSION 2.8.7 FATAL_ERROR)
 
     find_package(PythonInterp REQUIRED)
 

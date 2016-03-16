@@ -48,8 +48,7 @@ project(examples)
 
 set (CMAKE_VERBOSE_MAKEFILE ON)
 
-cmake_minimum_required(VERSION 2.8.6 FATAL_ERROR)
-cmake_policy (SET CMP0015 NEW)
+cmake_minimum_required(VERSION 2.8.7 FATAL_ERROR)
 
 set (CMAKE_SUPPRESS_REGENERATION TRUE)
 

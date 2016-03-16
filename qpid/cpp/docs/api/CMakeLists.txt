@@ -36,7 +36,7 @@ if (BUILD_DOCS)
     install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/
              DESTINATION ${QPID_INSTALL_DOCDIR}/api/html
              COMPONENT ${QPID_COMPONENT_CLIENT_INCLUDE}
-             ${OPTIONAL_ARG})
+             OPTIONAL)
     if (CPACK_GENERATOR STREQUAL "NSIS")
         set (CPACK_NSIS_MENU_LINKS
              "${QPID_INSTALL_HTMLDIR}/index.html" "Qpid C++ API Documentation"

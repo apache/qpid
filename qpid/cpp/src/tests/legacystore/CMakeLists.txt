@@ -53,8 +53,7 @@ target_link_libraries (${testname}
 if ("${ARGV1}" STREQUAL "LONG")
   set_target_properties(${testname} PROPERTIES COMPILE_DEFINITIONS LONG_TEST)
 endif ()
-remember_location(${testname})
-add_test (${testname} ${test_wrap} -boostTest -- ${${testname}_LOCATION})
+add_test (NAME ${testname} COMMAND ${test_wrap} -boostTest -- $<TARGET_FILE:${testname}>)
 unset (testname)
 ENDMACRO (define_journal_test)
 

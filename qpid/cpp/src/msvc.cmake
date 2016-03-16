@@ -28,25 +28,14 @@
 #
 MACRO (install_pdb theLibrary theComponent)
     if (MSVC)
-        get_target_property(library_dll ${theLibrary} LOCATION)
-        string(REPLACE .dll .pdb library_pdb ${library_dll})
-        string(REPLACE $(OutDir)        \${CMAKE_INSTALL_CONFIG_NAME} library_pdb ${library_pdb})
-        string(REPLACE $(Configuration) \${CMAKE_INSTALL_CONFIG_NAME} library_pdb ${library_pdb})
-        string(REPLACE .pdb d.pdb libraryd_pdb ${library_pdb})
-        #message(STATUS "_pdb: ${library_pdb}, ${libraryd_pdb}")
-        install (PROGRAMS
-                ${library_pdb}
+        install (FILES
+                $<TARGET_PDB_FILE:${theLibrary}>
                 DESTINATION ${QPID_INSTALL_LIBDIR}/ReleasePDB
                 COMPONENT ${theComponent}
                 OPTIONAL
-                CONFIGURATIONS Release|MinSizeRel)
-        install (PROGRAMS
-                ${library_pdb}
-                DESTINATION ${QPID_INSTALL_LIBDIR}/ReleasePDB
-                COMPONENT ${theComponent}
-                CONFIGURATIONS RelWithDebInfo)
-        install (PROGRAMS
-                ${libraryd_pdb}
+                CONFIGURATIONS Release MinSizeRel RelWithDebInfo)
+        install (FILES
+                $<TARGET_PDB_FILE:${theLibrary}>
                 DESTINATION ${QPID_INSTALL_LIBDIR}/DebugPDB
                 COMPONENT ${theComponent}
                 CONFIGURATIONS Debug)

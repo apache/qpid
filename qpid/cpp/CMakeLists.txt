@@ -17,25 +17,26 @@
 # under the License.
 #
 
-# Set default build type. Must come before project() which sets default to ""
-set (CMAKE_BUILD_TYPE RelWithDebInfo CACHE string
-  "Build type: Debug, Release, RelWithDebInfo or MinSizeRel (default RelWithDebInfo)")
-if (CMAKE_BUILD_TYPE MATCHES "Deb")
-  set (has_debug_symbols " (has debug symbols)")
-endif (CMAKE_BUILD_TYPE MATCHES "Deb")
-
 project(qpid-cpp)
 
-cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
-if(COMMAND cmake_policy)
-  cmake_policy(VERSION 2.6)
-endif(COMMAND cmake_policy)
+cmake_minimum_required(VERSION 2.8.7 FATAL_ERROR)
 
-if (${CMAKE_VERSION} VERSION_LESS "2.8.0")
-    set (OPTIONAL_ARG "")
-else()
-    set (OPTIONAL_ARG OPTIONAL)
-endif()
+if (CMAKE_CONFIGURATION_TYPES)
+  # There is no single "build type"...
+  message(STATUS "Build types are ${CMAKE_CONFIGURATION_TYPES}")
+else (CMAKE_CONFIGURATION_TYPES)
+  # There is a single build configuration
+  # If the build type is not set then set the default
+  if (NOT CMAKE_BUILD_TYPE)
+  set (CMAKE_BUILD_TYPE RelWithDebInfo CACHE string
+       "Build type: Debug, Release, RelWithDebInfo or MinSizeRel (default RelWithDebInfo)" FORCE)
+  endif ()
+
+  if (CMAKE_BUILD_TYPE MATCHES "Deb")
+    set (has_debug_symbols " (has debug symbols)")
+  endif (CMAKE_BUILD_TYPE MATCHES "Deb")
+  message(STATUS "Build type is \"${CMAKE_BUILD_TYPE}\"${has_debug_symbols}")
+endif (CMAKE_CONFIGURATION_TYPES)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
 
@@ -107,13 +108,7 @@ set(CPACK_PACKAGE_VERSION_PATCH "0")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "qpidc-${qpidc_version}")
 
 # Add custom target for docs since we don't include a cmake file there directly.
-# If we can't use OPTIONAL in the install command then we have to make the docs
-# every time so that the install target succeeds
-if (OPTIONAL_ARG)
-  add_custom_target(docs)
-else (OPTIONAL_ARG)
-  add_custom_target(docs ALL)
-endif (OPTIONAL_ARG)
+add_custom_target(docs)
 
 # uninstall target
 configure_file(
@@ -239,7 +234,3 @@ add_subdirectory(docs/man)
 add_subdirectory(examples)
 
 include (CPack)
-
-# Build type message again, last so it is visible at end of output.
-message(STATUS "Build type is \"${CMAKE_BUILD_TYPE}\"${has_debug_symbols}")
-
