@@ -119,7 +119,7 @@ void drained(Rdma::AsynchIO&) {
     cout << "Drained:\n";
 }
 
-void disconnected(Rdma::Connection::intrusive_ptr& ci) {
+void disconnected(const Rdma::Connection::intrusive_ptr& ci) {
     ConRec* cr = ci->getContext<ConRec>();
     cr->connection->disconnect();
     cr->data->drainWriteQueue(drained);
@@ -127,7 +127,7 @@ void disconnected(Rdma::Connection::intrusive_ptr& ci) {
     cout << "Disconnected: " << cr << "\n";
 }
 
-void connectionError(Rdma::Connection::intrusive_ptr& ci, Rdma::ErrorType) {
+void connectionError(const Rdma::Connection::intrusive_ptr& ci, Rdma::ErrorType) {
     ConRec* cr = ci->getContext<ConRec>();
     cr->connection->disconnect();
     if (cr) {
@@ -137,7 +137,7 @@ void connectionError(Rdma::Connection::intrusive_ptr& ci, Rdma::ErrorType) {
     cout << "Connection error: " << cr << "\n";
 }
 
-bool connectionRequest(Rdma::Connection::intrusive_ptr& ci,  const Rdma::ConnectionParams& cp) {
+bool connectionRequest(const Rdma::Connection::intrusive_ptr& ci,  const Rdma::ConnectionParams& cp) {
     cout << "Incoming connection: ";
 
     // For fun reject alternate connection attempts
@@ -165,7 +165,7 @@ bool connectionRequest(Rdma::Connection::intrusive_ptr& ci,  const Rdma::Connect
     return x;
 }
 
-void connected(Poller::shared_ptr poller, Rdma::Connection::intrusive_ptr& ci) {
+void connected(Poller::shared_ptr poller, const Rdma::Connection::intrusive_ptr& ci) {
     static int cnt = 0;
     ConRec* cr = ci->getContext<ConRec>();
     cout << "Connected: " << cr << "(" << ++cnt << ")\n";

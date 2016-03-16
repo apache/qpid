@@ -160,7 +160,7 @@ void drained(Rdma::AsynchIO&) {
     cout << "Drained:\n";
 }
 
-void connected(Poller::shared_ptr poller, Rdma::Connection::intrusive_ptr& ci, const Rdma::ConnectionParams& cp) {
+void connected(Poller::shared_ptr poller, const Rdma::Connection::intrusive_ptr& ci, const Rdma::ConnectionParams& cp) {
     cout << "Connected\n";
     Rdma::QueuePair::intrusive_ptr q = ci->getQueuePair();
 
@@ -178,17 +178,17 @@ void connected(Poller::shared_ptr poller, Rdma::Connection::intrusive_ptr& ci, c
     aio->start(poller);
 }
 
-void disconnected(boost::shared_ptr<Poller> p, Rdma::Connection::intrusive_ptr&) {
+void disconnected(boost::shared_ptr<Poller> p, const Rdma::Connection::intrusive_ptr&) {
     cout << "Disconnected\n";
     p->shutdown();
 }
 
-void connectionError(boost::shared_ptr<Poller> p, Rdma::Connection::intrusive_ptr&, const Rdma::ErrorType) {
+void connectionError(boost::shared_ptr<Poller> p, const Rdma::Connection::intrusive_ptr&, const Rdma::ErrorType) {
     cout << "Connection error\n";
     p->shutdown();
 }
 
-void rejected(boost::shared_ptr<Poller> p, Rdma::Connection::intrusive_ptr&, const Rdma::ConnectionParams&) {
+void rejected(boost::shared_ptr<Poller> p, const Rdma::Connection::intrusive_ptr&, const Rdma::ConnectionParams&) {
     cout << "Connection rejected\n";
     p->shutdown();
 }
