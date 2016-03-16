@@ -161,7 +161,7 @@ template <typename T> T get(const Variant::Map& options, const std::string& name
     }
 }
 
-bool bind(const Variant::Map& options, const std::string& name, std::string& variable)
+bool getOption(const Variant::Map& options, const std::string& name, std::string& variable)
 {
     Variant::Map::const_iterator j = options.find(name);
     if (j == options.end()) {
@@ -172,7 +172,7 @@ bool bind(const Variant::Map& options, const std::string& name, std::string& var
     }
 }
 
-bool bind(const Variant::Map& options, const std::string& name, Variant::Map& variable)
+bool getOption(const Variant::Map& options, const std::string& name, Variant::Map& variable)
 {
     Variant::Map::const_iterator j = options.find(name);
     if (j == options.end()) {
@@ -183,7 +183,7 @@ bool bind(const Variant::Map& options, const std::string& name, Variant::Map& va
     }
 }
 
-bool bind(const Variant::Map& options, const std::string& name, Variant::List& variable)
+bool getOption(const Variant::Map& options, const std::string& name, Variant::List& variable)
 {
     Variant::Map::const_iterator j = options.find(name);
     if (j == options.end()) {
@@ -194,14 +194,14 @@ bool bind(const Variant::Map& options, const std::string& name, Variant::List& v
     }
 }
 
-bool bind(const Address& address, const std::string& name, std::string& variable)
+bool getAddressOption(const Address& address, const std::string& name, std::string& variable)
 {
-    return bind(address.getOptions(), name, variable);
+    return getOption(address.getOptions(), name, variable);
 }
 
-bool bind(const Address& address, const std::string& name, Variant::Map& variable)
+bool getAddressOption(const Address& address, const std::string& name, Variant::Map& variable)
 {
-    return bind(address.getOptions(), name, variable);
+    return getOption(address.getOptions(), name, variable);
 }
 
 bool in(const std::string& value, const std::vector<std::string>& choices)
@@ -251,20 +251,20 @@ AddressHelper::AddressHelper(const Address& address) :
     browse(false)
 {
     verifier.verify(address);
-    bind(address, CREATE, createPolicy);
-    bind(address, DELETE, deletePolicy);
-    bind(address, ASSERT, assertPolicy);
+    getAddressOption(address, CREATE, createPolicy);
+    getAddressOption(address, DELETE, deletePolicy);
+    getAddressOption(address, ASSERT, assertPolicy);
 
-    bind(address, NODE, node);
-    bind(address, LINK, link);
-    bind(node, PROPERTIES, properties);
-    bind(node, CAPABILITIES, capabilities);
-    bind(link, RELIABILITY, reliability);
+    getAddressOption(address, NODE, node);
+    getAddressOption(address, LINK, link);
+    getOption(node, PROPERTIES, properties);
+    getOption(node, CAPABILITIES, capabilities);
+    getOption(link, RELIABILITY, reliability);
     durableNode = test(node, DURABLE);
     durableLink = test(link, DURABLE);
     timeout = get(link, TIMEOUT, durableLink && reliability != AT_LEAST_ONCE ? DEFAULT_DURABLE_TIMEOUT : DEFAULT_TIMEOUT);
     std::string mode;
-    if (bind(address, MODE, mode)) {
+    if (getAddressOption(address, MODE, mode)) {
         if (mode == BROWSE) {
             browse = true;
         } else if (mode != CONSUME) {
