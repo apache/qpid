@@ -270,10 +270,11 @@ void ReplicatingSubscription::acknowledged(const broker::DeliveryRecord& r) {
 // Called with lock held. Called in subscription's connection thread.
 void ReplicatingSubscription::sendDequeueEvent(Mutex::ScopedLock& l)
 {
-    ReplicationIdSet oldDequeues = dequeues;
     if (dequeues.empty()) return;
     QPID_LOG(trace, logPrefix << "Sending dequeues " << dequeues);
-    sendEvent(DequeueEvent(dequeues), l);
+    DequeueEvent d(dequeues);
+    dequeues.clear();
+    sendEvent(d, l);
 }
 
 // Called after the message has been removed
