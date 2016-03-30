@@ -25,9 +25,11 @@
 #include "qpid/messaging/PrivateImplRef.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
+#include "qpid/Options.h"
 #include "qpid/Url.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include <boost/intrusive_ptr.hpp>
+#include "config.h"
 #include <vector>
 #include <sstream>
 #include <limits>
@@ -41,6 +43,32 @@ using qpid::types::VAR_LIST;
 using qpid::framing::Uuid;
 
 namespace {
+struct DefaultConnectionOptions : qpid::Options
+{
+    bool disableAutoDecode;
+
+    DefaultConnectionOptions() : qpid::Options("Connection Option Defaults")
+    {
+        addOptions()
+            ("disable-auto-decode", optValue(disableAutoDecode, "TRUE|FALSE"), "Whether to decode amqp 0-10 maps and lists automatically by default");
+
+        CommonOptions common("", "", QPIDC_CONF_FILE);
+        try {
+            common.parse(0, 0, common.clientConfig, true);
+            this->parse(0, 0, common.clientConfig, true);
+        } catch (const std::exception& e) {
+            throw qpid::types::Exception(QPID_MSG("Failed to parse default connection options: " << e.what()));
+        }
+    }
+};
+
+const DefaultConnectionOptions& getDefaultOptions()
+{
+    static DefaultConnectionOptions defaultOptions;
+    return defaultOptions;
+}
+
+
 
 const std::string TCP("tcp");
 const std::string COLON(":");
@@ -89,7 +117,7 @@ bool expired(const sys::AbsTime& start, double timeout)
 ConnectionImpl::ConnectionImpl(const std::string& url, const Variant::Map& options) :
     replaceUrls(false), autoReconnect(false), timeout(FOREVER), limit(-1),
     minReconnectInterval(0.001), maxReconnectInterval(2),
-    retries(0), reconnectOnLimitExceeded(true), disableAutoDecode(false)
+    retries(0), reconnectOnLimitExceeded(true), disableAutoDecode(getDefaultOptions().disableAutoDecode)
 {
     setOptions(options);
     urls.insert(urls.begin(), url);
