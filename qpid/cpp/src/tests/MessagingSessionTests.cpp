@@ -1508,6 +1508,30 @@ QPID_AUTO_TEST_CASE(testResendEmpty)
     BOOST_CHECK_EQUAL(in.getContent(), std::string());
 }
 
+QPID_AUTO_TEST_CASE(testResendMapAsString)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender(fix.queue);
+    Message out;
+    qpid::types::Variant::Map content;
+    content["foo"] = "bar";
+    encode(content, out);
+    sender.send(out);
+
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    Message in = receiver.fetch(Duration::SECOND * 5);
+    fix.session.acknowledge();
+    BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
+    //change content and resend
+    std::string newContent("something random");
+    in.setContent(newContent);
+    in.setContentType(std::string());//it is no longer a map
+    sender.send(in);
+    in = receiver.fetch(Duration::SECOND * 5);
+    fix.session.acknowledge();
+    BOOST_CHECK_EQUAL(in.getContent(), newContent);
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
