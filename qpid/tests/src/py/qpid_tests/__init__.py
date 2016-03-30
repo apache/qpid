@@ -19,4 +19,4 @@
 # under the License.
 #
 
-import broker_0_10, broker_0_9, broker_0_8
+import broker_1_0, broker_0_10, broker_0_9, broker_0_8
