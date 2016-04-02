@@ -22,6 +22,7 @@ from math import ceil
 from qpid.harness import Skipped
 from qpid.tests.messaging.implementation import *
 from qpid.tests import Test
+from qpid.util import URL
 
 class Base(Test):
 
@@ -39,7 +40,11 @@ class Base(Test):
 
   def setup(self):
     self.test_id = uuid4()
-    self.broker = self.config.broker
+    if self.is_swigged_qpid_messaging():
+      self.broker = CompatURL(self.config.broker)
+    else:
+      self.broker = self.config.broker
+
     try:
       self.conn = self.setup_connection()
     except ConnectError, e:
@@ -188,6 +193,9 @@ class Base(Test):
       return {"reconnect": self.reconnect(),
               "transport": self.transport()}
 
+  def is_swigged_qpid_messaging(self):
+    return Connection.__module__ == 'qpid_messaging'
+
 class VersionTest (Base):
   def create_connection(self, version="amqp1.0", force=False):
     opts = self.connection_options()
@@ -200,5 +208,29 @@ class VersionTest (Base):
 
   def setup_session(self):
     return self.conn.session()
+
+class CompatURL(URL):
+  """The formation of the URL for the C++ client is different to that of the pure Python client in that
+     the C++ client expects <scheme>:<user>/<pass>.. whereas the pure Python's URL class expects
+     <scheme>://<user>:<pass>.."""
+  def __init__(self, *args, **kwargs):
+    URL.__init__(self, *args, **kwargs)
+
+  def __str__(self):
+    s = ""
+    if self.scheme:
+      s += "%s:" % self.scheme
+    if self.user:
+      s += self.user
+      if self.password:
+        s += "/%s" % self.password
+      s += "@"
+    if ':' not in self.host:
+      s += self.host
+    else:
+      s += "[%s]" % self.host
+    if self.port:
+      s += ":%s" % self.port
+    return s
 
 import address, endpoints, message
