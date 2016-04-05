@@ -21,6 +21,7 @@
 #include "ConnectionHandle.h"
 #include "ConnectionContext.h"
 #include "SessionHandle.h"
+#include "DriverImpl.h"
 #include "qpid/messaging/Session.h"
 #include "qpid/messaging/ProtocolRegistry.h"
 
@@ -40,11 +41,15 @@ ConnectionImpl* create(const std::string& u, const qpid::types::Variant::Map& o)
     }
 }
 
+void shutdown() {
+    DriverImpl::getDefault()->stop();
+}
+
 struct StaticInit
 {
     StaticInit()
     {
-        ProtocolRegistry::add("amqp1.0", &create);
+        ProtocolRegistry::add("amqp1.0", &create, &shutdown);
     };
 } init;
 }

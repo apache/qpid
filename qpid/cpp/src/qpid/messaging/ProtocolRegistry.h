@@ -36,9 +36,12 @@ class ProtocolRegistry
 {
   public:
     typedef ConnectionImpl* Factory(const std::string& url, const qpid::types::Variant::Map& options);
+    typedef void Shutdown();
+
     static ConnectionImpl* create(const std::string& url, const qpid::types::Variant::Map& options);
     static ConnectionImpl* next(ConnectionImpl*);
-    QPID_MESSAGING_EXTERN static void add(const std::string& name, Factory* factory);
+    QPID_MESSAGING_EXTERN static void add(const std::string& name, Factory*, Shutdown*);
+    QPID_MESSAGING_EXTERN static void shutdown();
   private:
     static ConnectionImpl* createInternal(const std::vector<std::string>& versions, const std::string& url, const qpid::types::Variant::Map& options, const std::string& error);
 };

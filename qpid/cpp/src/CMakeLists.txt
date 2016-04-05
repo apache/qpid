@@ -964,7 +964,6 @@ set (qpidmessaging_SOURCES
      qpid/messaging/ReceiverImpl.h
      qpid/messaging/SessionImpl.h
      qpid/messaging/SenderImpl.h
-     qpid/messaging/shutdown.cpp
      qpid/client/amqp0_10/AcceptTracker.h
      qpid/client/amqp0_10/AcceptTracker.cpp
      qpid/client/amqp0_10/AddressResolution.h

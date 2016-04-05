@@ -23,13 +23,13 @@
 #include "HaBroker.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/log/Statement.h"
-#include "qpid/messaging/shutdown.h"
 #include "qpid/messaging/Address.h"
 #include "qpid/messaging/Connection.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/Receiver.h"
 #include "qpid/messaging/Sender.h"
 #include "qpid/messaging/Session.h"
+#include "qpid/messaging/ProtocolRegistry.h"
 #include "qpid/types/Variant.h"
 
 namespace qpid {
@@ -136,7 +136,7 @@ void StatusCheck::endThread() {
     // Shut down the client poller ASAP to avoid conflict with the broker's poller.
     // See https://issues.apache.org/jira/browse/QPID-7149
     if (--threadCount == 0) {
-        messaging::shutdown();
+        messaging::ProtocolRegistry::shutdown();
     }
 }
 

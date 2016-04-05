@@ -99,7 +99,7 @@ class ConnectionImpl : public Bounds,
 };
 
 // Shut down the poller early. Internal use only.
-void shutdown();
+QPID_CLIENT_EXTERN void shutdown();
 
 }}
 

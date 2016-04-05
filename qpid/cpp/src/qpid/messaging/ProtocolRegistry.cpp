@@ -20,9 +20,11 @@
  */
 #include "ProtocolRegistry.h"
 #include "qpid/messaging/exceptions.h"
+#include "qpid/client/ConnectionImpl.h"
 #include "qpid/client/amqp0_10/ConnectionImpl.h"
 #include "qpid/client/LoadPlugins.h"
 #include "qpid/log/Statement.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/Options.h"
 #include "qpid/StringUtils.h"
 #include "config.h"
@@ -59,6 +61,7 @@ std::string join(const std::vector<std::string>& in, const std::string& base=EMP
 }
 
 typedef std::map<std::string, ProtocolRegistry::Factory*> Factories;
+typedef std::vector<ProtocolRegistry::Shutdown*> Shutdowns;
 
 ConnectionImpl* create_0_10(const std::string& url, const qpid::types::Variant::Map& options)
 {
@@ -71,6 +74,7 @@ class Registry
     Registry()
     {
         factories["amqp0-10"] = &create_0_10;
+        shutdowns.push_back(&qpid::client::shutdown);
         CommonOptions common("", "", QPIDC_CONF_FILE);
         ProtocolOptions options;
         try {
@@ -96,9 +100,10 @@ class Registry
             return i->second;
         }
     }
-    void add(const std::string& name, ProtocolRegistry::Factory* factory)
+    void add(const std::string& name, ProtocolRegistry::Factory* factory, ProtocolRegistry::Shutdown* shutdown)
     {
         factories[name] = factory;
+        shutdowns.push_back(shutdown);
     }
     std::string getNames() const
     {
@@ -128,8 +133,17 @@ class Registry
             }
         }
     }
+    void shutdown() {
+        sys::Mutex::ScopedLock l(shutdownLock);
+        while (!shutdowns.empty()) {
+            shutdowns.back()();
+            shutdowns.pop_back();
+        }
+    }
   private:
     Factories factories;
+    Shutdowns shutdowns;
+    sys::Mutex shutdownLock;
     std::vector<std::string> versions;
 };
 
@@ -192,9 +206,14 @@ ConnectionImpl* ProtocolRegistry::next(ConnectionImpl* last)
     throw MessagingException("No suitable protocol version supported by peer");
 }
 
-void ProtocolRegistry::add(const std::string& name, Factory* factory)
+void ProtocolRegistry::add(const std::string& name, Factory* factory, Shutdown* shutdown)
 {
-    theRegistry().add(name, factory);
+    theRegistry().add(name, factory, shutdown);
 }
+
+void ProtocolRegistry::shutdown() {
+    theRegistry().shutdown();
+}
+
 
 }} // namespace qpid::messaging
