@@ -98,6 +98,9 @@ class ConnectionImpl : public Bounds,
   friend std::ostream& operator<<(std::ostream&, const ConnectionImpl&);
 };
 
+// Shut down the poller early. Internal use only.
+void shutdown();
+
 }}
 
 

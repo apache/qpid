@@ -448,5 +448,8 @@ std::ostream& operator<<(std::ostream& o, const ConnectionImpl& c) {
         return o << "Connection <not connected>";
 }
 
+void shutdown() {
+    theIO().poller()->shutdown();
+}
 
 }} // namespace qpid::client

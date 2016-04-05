@@ -47,9 +47,11 @@ void DriverImpl::start()
 void DriverImpl::stop()
 {
     QPID_LOG(debug, "Driver stopped");
-    poller->shutdown();
-    thread.join();
-    timer->stop();
+    if (!poller->hasShutdown()) {
+        poller->shutdown();
+        thread.join();
+        timer->stop();
+    }
 }
 
 boost::shared_ptr<Transport> DriverImpl::getTransport(const std::string& protocol, TransportContext& connection)

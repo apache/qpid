@@ -25,6 +25,7 @@
 #include "BrokerInfo.h"
 #include "Settings.h"
 #include "qpid/Url.h"
+#include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Runnable.h"
@@ -60,10 +61,12 @@ class StatusCheck
     bool canPromote();
 
   private:
-    void setPromote(bool p);
+    void noPromote();
+    void endThread();
 
     sys::Mutex lock;
     std::vector<sys::Thread> threads;
+    sys::AtomicValue<int> threadCount;
     bool promote;
     const Settings settings;
     const sys::Duration heartbeat;
