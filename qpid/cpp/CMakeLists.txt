@@ -40,15 +40,7 @@ endif (CMAKE_CONFIGURATION_TYPES)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules)
 
-# Parse the version from QPID_VERSION.txt.
-# Use the top level qpid/ file if we're in an SVN checkout, source dir otherwise.
-find_file(QPID_VERSION_FILE NAMES QPID_VERSION.txt PATHS ${PROJECT_SOURCE_DIR}/.. ${PROJECT_SOURCE_DIR} NO_DEFAULT_PATH)
-mark_as_advanced(QPID_VERSION_FILE)
-if(NOT QPID_VERSION_FILE)
-  message(FATAL_ERROR "Cannot find QPID_VERSION.txt")
-endif(NOT QPID_VERSION_FILE)
-
-file(READ ${QPID_VERSION_FILE} QPID_VERSION)
+file(READ VERSION.txt QPID_VERSION)
 string(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\n" "\\1" QPID_VERSION_MAJOR "${QPID_VERSION}")
 string(REGEX REPLACE "^([0-9]+)\\.([0-9]+)\n" "\\2" QPID_VERSION_MINOR "${QPID_VERSION}")
 set (QPID_VERSION_FULL "${QPID_VERSION_MAJOR}.${QPID_VERSION_MINOR}")
@@ -71,7 +63,7 @@ endif (MSVC)
 
 # Overall packaging/install options.
 # This section also has all the setup for various packaging-specific options.
-set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.txt")
 if (WIN32)
   # Include installing the MSVCRT library
   set (CMAKE_INSTALL_DEBUG_LIBRARIES ON)
@@ -88,7 +80,7 @@ endif (WIN32)
 set_absolute_install_path (QPIDC_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidc.conf)
 set_absolute_install_path (QPIDD_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidd.conf)
 
-install(FILES  LICENSE NOTICE  DESTINATION ${QPID_INSTALL_DOCDIR})
+install(FILES  LICENSE.txt NOTICE.txt  DESTINATION ${QPID_INSTALL_DOCDIR})
 install(FILES  include/qmf/qmf2.i
         DESTINATION ${QPID_INSTALL_INCLUDEDIR}/qmf)
 
