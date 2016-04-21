@@ -25,9 +25,10 @@ import atexit as _atexit
 import os as _os
 import platform as _platform
 import re as _re
+import shlex as _shlex
+import shutil as _shutil
 import signal as _signal
 import subprocess as _subprocess
-import shutil as _shutil
 import time as _time
 import uuid as _uuid
 
@@ -115,22 +116,22 @@ class _Broker(object):
 
         command = [
             "qpidd",
-            "--port 0",
-            "--interface localhost",
+            "--port", "0",
+            "--interface", "localhost",
             "--no-module-dir",
-            "--log-enable info+",
-            "--log-source yes",
-            "--log-to-stderr no",
-            "--log-to-file {0}".format(self.log_file),
-            "--config {0}".format(_broker_config_file),
-            "--data-dir {0}".format(self.data_dir),
+            "--log-enable", "info+",
+            "--log-source", "yes",
+            "--log-to-stderr", "no",
+            "--log-to-file", self.log_file,
+            "--config", _broker_config_file,
+            "--data-dir", self.data_dir,
         ]
 
         if WINDOWS:
             command += [
-                "--ssl-cert-store-location LocalMachine",
-                "--ssl-cert-name localhost",
-                "--ssl-port 0",
+                "--ssl-cert-store-location", "LocalMachine",
+                "--ssl-cert-name", "localhost",
+                "--ssl-port", "0",
             ]
         
         command += [x for x in args if x is not None]
@@ -143,8 +144,10 @@ class _Broker(object):
         notice("Calling '{0}'", self.command)
         write(self.command_file, self.command)
 
-        self.proc = _subprocess.Popen(self.command, shell=True,
-                                      stdout=_subprocess.PIPE)
+        # XXX Workaround for problem terminating subprocesses that use shell=True
+        command_args = _shlex.split(self.command)
+        
+        self.proc = _subprocess.Popen(command_args, stdout=_subprocess.PIPE)
         self.port = self._wait_for_port()
 
         assert self.command is not None
