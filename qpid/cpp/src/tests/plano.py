@@ -77,13 +77,13 @@ def _format_message(category, message, args):
             message = message.__class__.__name__
 
     if category:
-        message = "{}: {}".format(category, message)
+        message = "{0}: {1}".format(category, message)
 
     if args:
         message = message.format(*args)
 
     script = split(_sys.argv[0])[1]
-    message = "{}: {}".format(script, message)
+    message = "{0}: {1}".format(script, message)
 
     return message
 
@@ -112,7 +112,7 @@ ARGS = _sys.argv
 current_dir = _os.getcwd
 
 def home_dir(user=""):
-    return _os.path.expanduser("~{}".format(user))
+    return _os.path.expanduser("~{0}".format(user))
 
 def parent_dir(path):
     path = normalize_path(path)
@@ -221,7 +221,7 @@ _temp_dir = _tempfile.mkdtemp(prefix="plano.")
 def _get_temp_file(key):
     assert not key.startswith("_")
 
-    return join(_temp_dir, "_file_{}".format(key))
+    return join(_temp_dir, "_file_{0}".format(key))
 
 def _remove_temp_dir():
     _shutil.rmtree(_temp_dir, ignore_errors=True)
@@ -264,7 +264,7 @@ def make_user_temp_dir():
     return make_dir(user_temp_dir)
 
 def copy(from_path, to_path):
-    notice("Copying '{}' to '{}'", from_path, to_path)
+    notice("Copying '{0}' to '{1}'", from_path, to_path)
 
     to_dir = parent_dir(to_path)
 
@@ -279,7 +279,7 @@ def copy(from_path, to_path):
     return to_path
 
 def move(from_path, to_path):
-    notice("Moving '{}' to '{}'", from_path, to_path)
+    notice("Moving '{0}' to '{1}'", from_path, to_path)
 
     _shutil.move(from_path, to_path)
 
@@ -291,14 +291,14 @@ def rename(path, expr, replacement):
     to_name = string_replace(name, expr, replacement)
     to_path = join(parent_dir, to_name)
 
-    notice("Renaming '{}' to '{}'", path, to_path)
+    notice("Renaming '{0}' to '{1}'", path, to_path)
 
     move(path, to_path)
 
     return to_path
 
 def remove(path):
-    notice("Removing '{}'", path)
+    notice("Removing '{0}'", path)
 
     if not exists(path):
         return
@@ -369,7 +369,7 @@ def make_dir(dir):
 
 # Returns the current working directory so you can change it back
 def change_dir(dir):
-    notice("Changing directory to '{}'", dir)
+    notice("Changing directory to '{0}'", dir)
 
     cwd = current_dir()
     _os.chdir(dir)
@@ -409,7 +409,7 @@ def _init_call(command, args, kwargs):
     if "shell" not in kwargs:
         kwargs["shell"] = True
 
-    notice("Calling '{}'", command)
+    notice("Calling '{0}'", command)
 
     return command, kwargs
 
@@ -428,11 +428,11 @@ def make_archive(input_dir, output_dir, archive_stem):
     copy(input_dir, temp_input_dir)
     make_dir(output_dir)
 
-    output_file = "{}.tar.gz".format(join(output_dir, archive_stem))
+    output_file = "{0}.tar.gz".format(join(output_dir, archive_stem))
     output_file = absolute_path(output_file)
 
     with working_dir(temp_dir):
-        call("tar -czf {} {}", output_file, archive_stem)
+        call("tar -czf {0} {1}", output_file, archive_stem)
 
     return output_file
 
@@ -445,7 +445,7 @@ def extract_archive(archive_file, output_dir):
     archive_file = absolute_path(archive_file)
 
     with working_dir(output_dir):
-        call("tar -xf {}", archive_file)
+        call("tar -xf {0}", archive_file)
 
     return output_dir
 

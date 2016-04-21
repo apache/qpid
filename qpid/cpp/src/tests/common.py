@@ -38,26 +38,26 @@ def _unique_id():
 
 def make_work_dir():
     prog = file_name(ARGS[0])
-    name = "{}_{}".format(prog, _unique_id())
+    name = "{0}_{1}".format(prog, _unique_id())
     
     return make_dir(join(BUILD_DIR, name))
 
 WORK_DIR = make_work_dir()
 
-notice("Created work dir '{}'", WORK_DIR)
+notice("Created work dir '{0}'", WORK_DIR)
 
 def _init_valgrind_command(command):
     if VALGRIND is None:
         return command, None
 
-    log_file = join(WORK_DIR, "valgrind_{}.log".format(_unique_id()))
+    log_file = join(WORK_DIR, "valgrind_{0}.log".format(_unique_id()))
     suppressions_file = join(BUILD_DIR, "src", "tests", ".valgrind.supp")
     
     valgrind_command = [
         VALGRIND,
         "--leak-check=full --num-callers=25 --error-exitcode=100",
-        "--log-file={}".format(log_file),
-        "--suppressions={}".format(suppressions_file),
+        "--log-file={0}".format(log_file),
+        "--suppressions={0}".format(suppressions_file),
         "--",
         command,
     ]
@@ -108,7 +108,7 @@ class _Broker(object):
 
     def __repr__(self):
         args = self.port, self.proc.pid, self.proc.returncode
-        return "Broker(port={}, pid={}, exit={})".format(*args)
+        return "Broker(port={0}, pid={1}, exit={2})".format(*args)
 
     def start(self, args):
         make_dir(self.dir)
@@ -121,9 +121,9 @@ class _Broker(object):
             "--log-enable info+",
             "--log-source yes",
             "--log-to-stderr no",
-            "--log-to-file {}".format(self.log_file),
-            "--config {}".format(_broker_config_file),
-            "--data-dir {}".format(self.data_dir),
+            "--log-to-file {0}".format(self.log_file),
+            "--config {0}".format(_broker_config_file),
+            "--data-dir {0}".format(self.data_dir),
         ]
 
         if WINDOWS:
@@ -140,7 +140,7 @@ class _Broker(object):
         self.command = command
         self.valgrind_log_file = valgrind_log_file
         
-        notice("Calling '{}'", self.command)
+        notice("Calling '{0}'", self.command)
         write(self.command_file, self.command)
 
         self.proc = _subprocess.Popen(self.command, shell=True,
@@ -155,7 +155,7 @@ class _Broker(object):
         _brokers.append(self)
         _brokers_by_port[self.port] = self
 
-        notice("Started {}", self)
+        notice("Started {0}", self)
         
     def _wait_for_port(self):
         port = None
@@ -179,10 +179,10 @@ class _Broker(object):
         if self.proc.poll() is not None:
             return
             
-        notice("Stopping {}", self)
+        notice("Stopping {0}", self)
 
         if WINDOWS:
-            call("taskkill /f /t /pid {}", self.proc.pid)
+            call("taskkill /f /t /pid {0}", self.proc.pid)
         else:
             self.proc.terminate()
 
@@ -194,12 +194,12 @@ class _Broker(object):
             # codes don't mean anything there
             return 0
     
-        notice("Checking {}", self)
+        notice("Checking {0}", self)
         
         if self.proc.returncode == 0:
             return 0
 
-        error("{} exited with code {}", self, self.proc.returncode)
+        error("{0} exited with code {1}", self, self.proc.returncode)
         
         if self.proc.returncode == 100:
             print("Valgrind reported errors:")
@@ -210,7 +210,7 @@ class _Broker(object):
 
         flush()
 
-        error("{} exited with code {}", self, self.proc.returncode)
+        error("{0} exited with code {1}", self, self.proc.returncode)
         
         return self.proc.returncode
 
@@ -262,7 +262,7 @@ def check_results():
 
 def _exit_handler():
     if exists(WORK_DIR):
-        notice("Output saved in work dir '{}'", WORK_DIR)
+        notice("Output saved in work dir '{0}'", WORK_DIR)
     
     for broker in _brokers:
         broker.stop()
@@ -272,7 +272,7 @@ _atexit.register(_exit_handler)
 def configure_broker(broker_port, *args):
     command = [
         "qpid-config",
-        "--broker localhost:{}".format(broker_port),
+        "--broker localhost:{0}".format(broker_port),
     ]
 
     command += [x for x in args if x is not None]
@@ -282,7 +282,7 @@ def configure_broker(broker_port, *args):
 def run_broker_tests(broker_port, *args):
     command = [
         "qpid-python-test",
-        "--broker localhost:{}".format(broker_port),
+        "--broker localhost:{0}".format(broker_port),
         "--time",
     ]
 

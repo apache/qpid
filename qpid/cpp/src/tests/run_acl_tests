@@ -22,7 +22,7 @@
 from common import *
 
 policy_file = join(BUILD_DIR, "src", "tests", "policy.acl")
-broker_args = "--acl-file {}".format(policy_file)
+broker_args = "--acl-file {0}".format(policy_file)
 
 broker_port = start_broker("broker", broker_args, "--log-enable debug+:acl")
 broker_i_port = start_broker("broker_i", broker_args, "--connection-limit-per-ip 2")
@@ -30,10 +30,10 @@ broker_u_port = start_broker("broker_u", broker_args, "--connection-limit-per-us
 broker_q_port = start_broker("broker_q", broker_args, "--max-queues-per-user 2")
 
 run_broker_tests(broker_port, "-m acl",
-                 "-Dport-i={}".format(broker_i_port),
-                 "-Dport-u={}".format(broker_u_port),
-                 "-Dport-q={}".format(broker_q_port),
-                 "-Dpolicy-file={}".format(policy_file))
+                 "-Dport-i={0}".format(broker_i_port),
+                 "-Dport-u={0}".format(broker_u_port),
+                 "-Dport-q={0}".format(broker_q_port),
+                 "-Dpolicy-file={0}".format(policy_file))
 
 # Test interaction of authentication and link creation
 
@@ -44,12 +44,12 @@ configure_broker(broker_1_port, "add exchange topic fed.topic")
 configure_broker(broker_2_port, "add exchange topic fed.topic")
 
 connect_brokers("dynamic add",
-                "localhost:{}".format(broker_1_port),
-                "localhost:{}".format(broker_2_port),
+                "localhost:{0}".format(broker_1_port),
+                "localhost:{0}".format(broker_2_port),
                 "fed.topic")
 
 sasl_config_dir = join(BUILD_DIR, "src", "tests", "sasl_config")
-broker_args = "--auth yes --sasl-config {}".format(sasl_config_dir)
+broker_args = "--auth yes --sasl-config {0}".format(sasl_config_dir)
 
 broker_3_port = start_broker("broker_3", broker_args, auth_disabled=False)
 broker_4_port = start_broker("broker_4", broker_args, auth_disabled=False)
@@ -59,8 +59,8 @@ configure_broker(broker_4_port, "add exchange topic fed.topic")
 
 try:
     connect_brokers("dynamic add",
-                    "localhost:{}".format(broker_3_port),
-                    "localhost:{}".format(broker_4_port),
+                    "localhost:{0}".format(broker_3_port),
+                    "localhost:{0}".format(broker_4_port),
                     "fed.topic")
 
     fail("Broker with no ACLs but auth enabled did not deny link creation")

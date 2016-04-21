@@ -21,6 +21,6 @@
 
 from common import *
 
-call("qpid-python-test -m qpidd_qmfv2_tests -DOUTDIR={}", WORK_DIR)
+call("qpid-python-test -m qpidd_qmfv2_tests -DOUTDIR={0}", WORK_DIR)
 
 check_results()

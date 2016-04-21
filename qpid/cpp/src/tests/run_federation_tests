@@ -37,7 +37,7 @@ sys_test_args = [
 ]
 
 if XML_LIB is not None:
-    module_args = "--load-module {}".format(XML_LIB)
+    module_args = "--load-module {0}".format(XML_LIB)
     test_args = None
 
 local_port = start_broker("local", common_args, module_args, "--federation-tag LOCAL")
@@ -46,15 +46,15 @@ remote_b1 = start_broker("remote_b1", common_args, module_args, "--federation-ta
 remote_b2 = start_broker("remote_b2", common_args, module_args, "--federation-tag REMOTE_B2")
 
 run_broker_tests(local_port, "-m federation",
-                 "-Dremote-port={}".format(remote_port),
-                 "-Dextra-brokers='{} {}'".format(remote_b1, remote_b2),
+                 "-Dremote-port={0}".format(remote_port),
+                 "-Dextra-brokers='{0} {1}'".format(remote_b1, remote_b2),
                  test_args)
 
-run_broker_tests(local_port, "-m headers_federation", "-Dremote-port={}".format(remote_port))
+run_broker_tests(local_port, "-m headers_federation", "-Dremote-port={0}".format(remote_port))
 
 run_broker_tests(remote_port, "-m federation_sys",
-                 "-Dlocal-port={}".format(local_port),
-                 "-Dremote-port={}".format(remote_port),
+                 "-Dlocal-port={0}".format(local_port),
+                 "-Dremote-port={0}".format(remote_port),
                  *sys_test_args)
 
 check_results()

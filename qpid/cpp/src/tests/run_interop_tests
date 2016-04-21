@@ -21,10 +21,10 @@
 
 from common import *
 
-port = start_broker("broker", "--load-module {}".format(AMQP_LIB))
+port = start_broker("broker", "--load-module {0}".format(AMQP_LIB))
 
-ENV["QPID_INTEROP_URL"] = "localhost:{}".format(port)
+ENV["QPID_INTEROP_URL"] = "localhost:{0}".format(port)
 
-call("qpid-python-test -m interop_tests -DOUTDIR={}", WORK_DIR)
+call("qpid-python-test -m interop_tests -DOUTDIR={0}", WORK_DIR)
 
 check_results()

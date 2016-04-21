@@ -23,8 +23,8 @@ from common import *
 
 policy_file = join(BUILD_DIR, "src", "tests", "policy.acl")
 
-port = start_broker("broker", "--acl-file {}".format(policy_file), "--log-enable debug+:Model")
+port = start_broker("broker", "--acl-file {0}".format(policy_file), "--log-enable debug+:Model")
 
-run_broker_tests(port, "-m queue_redirect", "-Dpolicy-file={}".format(policy_file))
+run_broker_tests(port, "-m queue_redirect", "-Dpolicy-file={0}".format(policy_file))
 
 check_results()

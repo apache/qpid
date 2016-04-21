@@ -32,6 +32,6 @@ from common import *
 # ENV["QPID_PORT"] = ""
 # ENV["QPID_LOG_TO_FILE"] = join(BUILD_DIR, "src", "tests", "gah.log")
 
-call("qpid-python-test -m ha_tests -DOUTDIR={}", WORK_DIR)
+call("qpid-python-test -m ha_tests -DOUTDIR={0}", WORK_DIR)
 
 check_results()

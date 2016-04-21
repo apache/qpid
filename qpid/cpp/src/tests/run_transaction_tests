@@ -24,7 +24,7 @@ from common import *
 port1 = start_broker("broker1")
 port2 = start_broker("broker2")
 
-call_with_valgrind("qpid-txtest --queues 4 --tx-count 10 --quiet --port {}", port1)
-call_with_valgrind("qpid-txtest2 --queues 4 --tx-count 10 --quiet --port {}", port2)
+call_with_valgrind("qpid-txtest --queues 4 --tx-count 10 --quiet --port {0}", port1)
+call_with_valgrind("qpid-txtest2 --queues 4 --tx-count 10 --quiet --port {0}", port2)
 
 check_results()

@@ -24,10 +24,10 @@ from common import *
 load_module_arg = None
 
 if AMQP_LIB is not None:
-    load_module_arg = "--load-module {}".format(AMQP_LIB)
+    load_module_arg = "--load-module {0}".format(AMQP_LIB)
 
 acl_file = join(BUILD_DIR, "src", "tests", "policy.acl")
-acl_file_arg = "--acl-file {}".format(acl_file)
+acl_file_arg = "--acl-file {0}".format(acl_file)
 
 port = start_broker("broker", load_module_arg, acl_file_arg)
 
@@ -46,17 +46,17 @@ run_broker_tests(port,
                  "-m qpid_tests.broker_0_10.priority",
                  "-m qpid_tests.broker_0_10.lvq",
                  "-m qpid_tests.broker_0_10.new_api",
-                 "-I {}".format(failing_tests))
+                 "-I {0}".format(failing_tests))
 
 if AMQP_LIB is not None:
     failing_tests = join(BUILD_DIR, "src", "tests", "failing-amqp1.0-python-tests")
 
     run_broker_tests(port,
                      "--define=\"protocol_version=amqp1.0\"",
-                     "--define=\"policy_file={}\"".format(acl_file),
+                     "--define=\"policy_file={0}\"".format(acl_file),
                      "-m qpid_tests.broker_1_0",
                      "-m qpid_tests.broker_0_10.new_api",
                      "-m assertions -m reject_release -m misc -m policies -m acl_1",
-                     "-I {}".format(failing_tests))
+                     "-I {0}".format(failing_tests))
 
 check_results()

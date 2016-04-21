@@ -23,6 +23,6 @@ from common import *
 
 port = start_broker("broker")
 
-call_with_valgrind("qpid-perftest --summary --count 100 --port {}", port)
+call_with_valgrind("qpid-perftest --summary --count 100 --port {0}", port)
 
 check_results()

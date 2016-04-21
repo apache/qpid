@@ -42,7 +42,7 @@ xquery_file = write(join(WORK_DIR, "xquery_file"), xquery)
 # similar here.
 
 if XML_LIB is not None:
-    broker_args = "--load-module {}".format(XML_LIB)
+    broker_args = "--load-module {0}".format(XML_LIB)
     test_args = ""
 else:
     notice("Ignoring XML tests")
@@ -55,9 +55,9 @@ remote_port = start_broker("remote", broker_args)
 
 run_broker_tests(local_port,
                  "-m cli_tests",
-                 "-Dremote-port={}".format(remote_port),
-                 "-Dcli-dir={}".format(cli_dir),
-                 "-Dxquery-file={}".format(xquery_file),
+                 "-Dremote-port={0}".format(remote_port),
+                 "-Dcli-dir={0}".format(cli_dir),
+                 "-Dxquery-file={0}".format(xquery_file),
                  test_args)
 
 check_results()
