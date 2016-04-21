@@ -19,16 +19,18 @@ Documentation can be found here:
 
 ## Getting started
 
-1. Make sure the Qpid Python client libraries are on your
-   PYTHONPATH. If you have extracted the archive to the directory
-   INSTALLPATH, the following export will work:
+1. Make sure the Qpid Python client libraries are on your PYTHONPATH.
+   Extract the archive and add the local directory to your PYTHONPATH:
 
-        $ export PYTHONPATH=${PYTHONPATH}:${INSTALLPATH}/qpid-0.8/python
+        $ tar -xf qpid-python-VERSION.tar.gz
+        $ cd qpid-python-VERSION
+        $ export PYTHONPATH=$PWD:$PYTHONPATH
 
 2. Make sure a broker is running.
 
 3. Run the 'hello' example from qpid-0.8/python/examples/api:
 
+        $ cd examples/api
         $ ./hello
         Hello world!
 
@@ -69,12 +71,14 @@ selected as follows:
 
 See the qpid-python-test usage for for additional options:
 
-       ./qpid-python-test -h
+    $ ./qpid-python-test -h
 
 ## Installation
 
 Other Qpid components depend on Qpid Python for testing.  You can use
 setup.py to install Qpid Python to a standard location:
+
+    # User-local install
 
     $ python setup.py install --user
     $ export PYTHONPATH=$HOME/.local/lib/python2.7/site-packages
@@ -82,4 +86,6 @@ setup.py to install Qpid Python to a standard location:
 
     [or]
 
-    $ python setup.py install     # Uses established system paths
+    # System-wide install
+
+    $ sudo python setup.py install
