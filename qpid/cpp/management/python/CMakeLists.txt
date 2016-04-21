@@ -23,6 +23,7 @@ add_custom_target(management_python_build ALL
                   COMMAND
                       ${PYTHON_EXECUTABLE} setup.py build
                       --build-base=${CMAKE_CURRENT_BINARY_DIR}
+                      --build-lib=${CMAKE_CURRENT_BINARY_DIR}/lib
                       --build-scripts=${CMAKE_CURRENT_BINARY_DIR}/bin
                   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
