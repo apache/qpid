@@ -21,4 +21,4 @@
 
 # Run the federation system tests (long version).
 
-./run_federation_sys_tests LONG_TEST $@
+USE_LONG_TEST=1 ./run_federation_sys_tests $@

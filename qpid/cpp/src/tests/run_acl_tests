@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,148 +19,52 @@
 # under the License.
 #
 
-# Run the acl tests. $srcdir is set by the Makefile.
-source ./test_env.sh
-DATA_DIR=`pwd`/data_dir
-DATA_DIRI=`pwd`/data_diri
-DATA_DIRU=`pwd`/data_diru
-DATA_DIRQ=`pwd`/data_dirq
+from common import *
 
-trap stop_brokers INT TERM QUIT
+policy_file = join(BUILD_DIR, "src", "tests", "policy.acl")
+broker_args = "--acl-file {}".format(policy_file)
 
-start_brokers() {
-    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIR --acl-file policy.acl --auth no --log-enable trace+:acl  --log-to-file local.log > qpidd.port
-    LOCAL_PORT=`cat qpidd.port`
-    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIRI --acl-file policy.acl --auth no --connection-limit-per-ip 2   --log-to-file locali.log > qpiddi.port
-    LOCAL_PORTI=`cat qpiddi.port`
-    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIRU --acl-file policy.acl --auth no --connection-limit-per-user 2 --log-to-file localu.log > qpiddu.port
-    LOCAL_PORTU=`cat qpiddu.port`
-    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIRQ --acl-file policy.acl --auth no --max-queues-per-user 2      --log-to-file localq.log > qpiddq.port
-    LOCAL_PORTQ=`cat qpiddq.port`
-}
+broker_port = start_broker("broker", broker_args, "--log-enable debug+:acl")
+broker_i_port = start_broker("broker_i", broker_args, "--connection-limit-per-ip 2")
+broker_u_port = start_broker("broker_u", broker_args, "--connection-limit-per-user 2")
+broker_q_port = start_broker("broker_q", broker_args, "--max-queues-per-user 2")
 
-start_noacl_noauth_brokers() {
-    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIR --auth no --log-to-file local.log > qpidd.port
-    LOCAL_PORT=`cat qpidd.port`
-    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIRI --auth no --log-to-file locali.log > qpiddi.port
-    LOCAL_PORTI=`cat qpiddi.port`
-    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIRU --auth no --log-to-file localu.log > qpiddu.port
-    LOCAL_PORTU=`cat qpiddu.port`
-    ../qpidd --daemon --port 0 --no-module-dir --data-dir $DATA_DIRQ --auth no --log-to-file localq.log > qpiddq.port
-    LOCAL_PORTQ=`cat qpiddq.port`
-}
+run_broker_tests(broker_port, "-m acl",
+                 "-Dport-i={}".format(broker_i_port),
+                 "-Dport-u={}".format(broker_u_port),
+                 "-Dport-q={}".format(broker_q_port),
+                 "-Dpolicy-file={}".format(policy_file))
 
-start_noacl_auth_brokers() {
-    sasl_config_file=$builddir/sasl_config
-    if [ ! -f $sasl_config_file ] ; then
-	echo Creating sasl database
-	. $srcdir/sasl_test_setup.sh
-    fi
-    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIR --auth yes --sasl-config=$sasl_config_file --log-to-file local.log > qpidd.port
-    LOCAL_PORT=`cat qpidd.port`
-    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIRI --auth yes --sasl-config=$sasl_config_file --log-to-file locali.log > qpiddi.port
-    LOCAL_PORTI=`cat qpiddi.port`
-    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIRU --auth yes --sasl-config=$sasl_config_file --log-to-file localu.log > qpiddu.port
-    LOCAL_PORTU=`cat qpiddu.port`
-    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --data-dir $DATA_DIRQ --auth yes --sasl-config=$sasl_config_file --log-to-file localq.log > qpiddq.port
-    LOCAL_PORTQ=`cat qpiddq.port`
-}
+# Test interaction of authentication and link creation
 
-stop_brokers() {
-        $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORT
-        $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORTI
-        $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORTU
-        $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORTQ
-}
+broker_1_port = start_broker("broker_1")
+broker_2_port = start_broker("broker_2")
 
-delete_directories() {
-    rm -rf $DATA_DIR
-    rm -rf $DATA_DIRI
-    rm -rf $DATA_DIRU
-    rm -rf $DATA_DIRQ
-}
+configure_broker(broker_1_port, "add exchange topic fed.topic")
+configure_broker(broker_2_port, "add exchange topic fed.topic")
 
-delete_logfiles() {
-    rm -rf local.log
-    rm -rf locali.log
-    rm -rf localu.log
-    rm -rf localq.log
-}
+connect_brokers("dynamic add",
+                "localhost:{}".format(broker_1_port),
+                "localhost:{}".format(broker_2_port),
+                "fed.topic")
 
-create_directories() {
-    mkdir -p $DATA_DIR
-    mkdir -p $DATA_DIRI
-    mkdir -p $DATA_DIRU
-    mkdir -p $DATA_DIRQ
-}
+sasl_config_dir = join(BUILD_DIR, "src", "tests", "sasl_config")
+broker_args = "--auth yes --sasl-config {}".format(sasl_config_dir)
 
-populate_directories() {
-    cp $srcdir/policy.acl $DATA_DIR
-    cp $srcdir/policy.acl $DATA_DIRI
-    cp $srcdir/policy.acl $DATA_DIRU
-    cp $srcdir/policy.acl $DATA_DIRQ
-}
+broker_3_port = start_broker("broker_3", broker_args, auth_disabled=False)
+broker_4_port = start_broker("broker_4", broker_args, auth_disabled=False)
 
-test_loading_acl_from_absolute_path(){
-    POLICY_FILE=$srcdir/policy.acl
-    rm -f temp.log
-    PORT=`../qpidd --daemon --port 0 --interface 127.0.0.1 --no-module-dir --no-data-dir --auth no --acl-file $POLICY_FILE -t --log-to-file temp.log  2>/dev/null`
-    ACL_FILE=`grep "notice ACL: Read file" temp.log | sed 's/^.*Read file //'`
-   $QPIDD_EXEC --no-module-dir -q --port $PORT
-   if test "$ACL_FILE" != "\"$POLICY_FILE\""; then
-     echo "unable to load policy file from an absolute path";
-     return 1;
-   fi
-   rm temp.log
-}
+configure_broker(broker_3_port, "add exchange topic fed.topic")
+configure_broker(broker_4_port, "add exchange topic fed.topic")
 
-test_noacl_deny_create_link() {
-    delete_logfiles
-    start_noacl_noauth_brokers
-    echo "Running no-acl, no-auth tests using brokers on ports $LOCAL_PORT, $LOCAL_PORTI, $LOCAL_PORTU, and $LOCAL_PORTQ"
-    $QPID_CONFIG_EXEC -a localhost:$LOCAL_PORT  add exchange topic fed.topic
-    $QPID_CONFIG_EXEC -a localhost:$LOCAL_PORTI add exchange topic fed.topic
-    $QPID_ROUTE_EXEC dynamic add localhost:$LOCAL_PORT localhost:$LOCAL_PORTI fed.topic 2>/dev/null
-    sleep 2
-    stop_brokers
-    grep -q "must specify ACL create link rules" local.log
-    if [ $? -eq 0 ]
-    then
-	echo "Test fail - Broker with auth=no should have allowed link creation";
-	return 1;
-    fi
+try:
+    connect_brokers("dynamic add",
+                    "localhost:{}".format(broker_3_port),
+                    "localhost:{}".format(broker_4_port),
+                    "fed.topic")
 
-    delete_logfiles
-    start_noacl_auth_brokers
-    echo "Running no-acl, auth tests using brokers on ports $LOCAL_PORT, $LOCAL_PORTI, $LOCAL_PORTU, and $LOCAL_PORTQ"
-    $QPID_CONFIG_EXEC -a localhost:$LOCAL_PORT  add exchange topic fed.topic
-    $QPID_CONFIG_EXEC -a localhost:$LOCAL_PORTI add exchange topic fed.topic
-    $QPID_ROUTE_EXEC dynamic add localhost:$LOCAL_PORT localhost:$LOCAL_PORTI fed.topic 2>/dev/null
-    sleep 2
-    stop_brokers
-    grep -q "must specify ACL create link rules" local.log
-    if [ $? -ne 0 ]
-    then
-	echo "Test fail - Broker with no ACL and --auth=yes file did not deny link creation";
-	return 1;
-    fi
-}
+    fail("Broker with no ACLs but auth enabled did not deny link creation")
+except:
+    pass
 
-if test -d ${PYTHON_DIR} ;  then
-    # run acl.py test file
-    delete_directories
-    create_directories
-    populate_directories
-    delete_logfiles
-    start_brokers
-    echo "Running acl tests using brokers on ports $LOCAL_PORT, $LOCAL_PORTI, $LOCAL_PORTU, and $LOCAL_PORTQ"
-    $QPID_PYTHON_TEST -b localhost:$LOCAL_PORT -m acl -Dport-i=$LOCAL_PORTI -Dport-u=$LOCAL_PORTU -Dport-q=$LOCAL_PORTQ || EXITCODE=1
-    stop_brokers || EXITCODE=1
-    #
-    test_loading_acl_from_absolute_path || EXITCODE=1
-    #
-    test_noacl_deny_create_link || EXITCODE=1
-    delete_directories
-    exit $EXITCODE
-fi
-
+check_results()

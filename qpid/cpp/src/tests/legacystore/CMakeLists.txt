@@ -28,8 +28,6 @@ endif (QPID_LINK_BOOST_DYNAMIC)
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR} )
 
-set(test_wrap ${shell} ${CMAKE_SOURCE_DIR}/src/tests/run_test${test_script_suffix} -buildDir=${CMAKE_BINARY_DIR})
-
 if (BUILD_TESTING_UNITTESTS)
 
 # Like this to work with cmake 2.4 on Unix
@@ -53,7 +51,7 @@ target_link_libraries (${testname}
 if ("${ARGV1}" STREQUAL "LONG")
   set_target_properties(${testname} PROPERTIES COMPILE_DEFINITIONS LONG_TEST)
 endif ()
-add_test (NAME ${testname} COMMAND ${test_wrap} -boostTest -- $<TARGET_FILE:${testname}>)
+add_test (NAME ${testname} COMMAND ${CMAKE_BINARY_DIR}/src/tests/run.sh $<TARGET_FILE:${testname}>)
 unset (testname)
 ENDMACRO (define_journal_test)
 
@@ -100,7 +98,7 @@ target_link_libraries (jtt__ut
                        ${Boost_PROGRAM_OPTIONS_LIBRARY}
                        ${clock_gettime_LIB} legacystore_shared)
 
-add_test(journal_jtt_ut ${test_wrap} -boostTest -workingDir=${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt -- ${CMAKE_CURRENT_BINARY_DIR}/jtt__ut)
+add_test(journal_jtt_ut ${CMAKE_BINARY_DIR}/src/tests/run.sh ${CMAKE_CURRENT_BINARY_DIR}/jtt__ut)
 
 endif (BUILD_TESTING_UNITTESTS)
 
@@ -127,6 +125,6 @@ target_link_libraries (jtt
 
 add_test(journal_jtt ${CMAKE_CURRENT_BINARY_DIR}/jtt -c ${CMAKE_CURRENT_SOURCE_DIR}/jrnl/jtt/jtt.csv)
 
-add_test (legacystore_python_tests ${test_wrap} -- ${CMAKE_CURRENT_SOURCE_DIR}/run_python_tests${test_script_suffix})
+add_test(legacystore_python_tests ${PYTHON_EXECUTABLE} run_python_tests)
 
 endif (BUILD_LEGACYSTORE AND BUILD_TESTING)

@@ -46,11 +46,11 @@ done
 subscribe() {
     echo Start subscriber $1
     LOG="subscriber_$1.log"
-    ./qpid-topic-listener $TRANSACTIONAL > $LOG 2>&1 && rm -f $LOG 
+    qpid-topic-listener $TRANSACTIONAL > $LOG 2>&1 && rm -f $LOG 
 }
 
 publish() {
-    ./qpid-topic-publisher --messages $MESSAGES --batches $BATCHES --subscribers $SUBSCRIBERS $HOST $TRANSACTIONAL
+    qpid-topic-publisher --messages $MESSAGES --batches $BATCHES --subscribers $SUBSCRIBERS $HOST $TRANSACTIONAL
 }
 
 for ((i=$SUBSCRIBERS ; i--; )); do

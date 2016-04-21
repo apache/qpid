@@ -19,69 +19,54 @@
 # under the License.
 #
 
-# This minimum value corresponds to sasl version 2.1.22
-minimum_sasl_version=131350
+set -eu
 
-sasl_version=`$QPID_TEST_EXEC_DIR/sasl_version`
+WORK_DIR=$WORK_DIR/sasl_fed
+mkdir $WORK_DIR
 
-# This test is necessary becasue this sasl version is the first one that permits 
-# redirection of the sasl config file path.
-if [ "$sasl_version" -lt  "$minimum_sasl_version" ]; then
-  echo "sasl_fed: must have sasl version 2.1.22 or greater.  ( Integer value: $minimum_sasl_version )  Version is: $sasl_version"
-  exit 0
-fi
+sasl_config_dir=$BUILD_DIR/src/tests/sasl_config
 
-# In a distribution, the python tools will be absent.
-if [ ! -f $QPID_CONFIG_EXEC ] || [ ! -f $QPID_ROUTE_EXEC ] ; then
-    echo "python tools absent - skipping sasl_fed."
-    exit 0
-fi
+# Create ACL file to allow links
+echo acl allow all all > $WORK_DIR/sasl_fed.acl
 
+echo "Starting broker 1"
 
-sasl_config_file=$QPID_TEST_EXEC_DIR/sasl_config
-
-my_random_number=$RANDOM
-tmp_root=/tmp/sasl_fed_$my_random_number
-mkdir -p $tmp_root
-
-# create ACL file to allow links
-echo acl allow all all > $tmp_root/sasl_fed.acl
-
-
-#--------------------------------------------------
-#echo " Starting broker 1"
-#--------------------------------------------------
-$QPIDD_EXEC                                  \
+qpidd                                        \
   -p 0  --interface 127.0.0.1                \
-  --data-dir $tmp_root/data_1                \
+  --data-dir $WORK_DIR/data_1                \
   --auth=yes                                 \
   --mgmt-enable=yes                          \
   --log-enable info+                         \
   --log-source yes                           \
-  --log-to-file $tmp_root/qpidd_1.log        \
-  --sasl-config=$sasl_config_file            \
-  --acl-file $tmp_root/sasl_fed.acl          \
-  -d > $tmp_root/broker_1_port
+  --log-to-file $WORK_DIR/qpidd_1.log        \
+  --sasl-config=$sasl_config_dir             \
+  --acl-file $WORK_DIR/sasl_fed.acl          \
+  -d > $WORK_DIR/broker_1_port
 
-broker_1_port=`cat $tmp_root/broker_1_port`
+broker_1_port=$(cat $WORK_DIR/broker_1_port)
 
+echo "Starting broker 2"
 
-#--------------------------------------------------
-#echo " Starting broker 2"
-#--------------------------------------------------
-$QPIDD_EXEC                                  \
+qpidd                                        \
   -p 0 --interface 127.0.0.1                 \
-  --data-dir $tmp_root/data_2                \
+  --data-dir $WORK_DIR/data_2                \
   --auth=yes                                 \
   --mgmt-enable=yes                          \
   --log-enable info+                         \
   --log-source yes                           \
-  --log-to-file $tmp_root/qpidd_2.log        \
-  --sasl-config=$sasl_config_file            \
-  --acl-file $tmp_root/sasl_fed.acl          \
-  -d > $tmp_root/broker_2_port
+  --log-to-file $WORK_DIR/qpidd_2.log        \
+  --sasl-config=$sasl_config_dir             \
+  --acl-file $WORK_DIR/sasl_fed.acl          \
+  -d > $WORK_DIR/broker_2_port
 
-broker_2_port=`cat $tmp_root/broker_2_port`
+broker_2_port=$(cat $WORK_DIR/broker_2_port)
+
+function stop_brokers {
+    qpidd --port $broker_1_port --quit
+    qpidd --port $broker_2_port --quit
+}
+
+trap stop_brokers EXIT
 
 sleep 2
 
@@ -90,80 +75,48 @@ QUEUE_NAME=sasl_fed_queue
 ROUTING_KEY=sasl_fed_queue
 EXCHANGE_NAME=sasl_fedex
 
-#--------------------------------------------------
-#echo "  add exchanges"
-#--------------------------------------------------
-$QPID_CONFIG_EXEC -b localhost:$broker_1_port add exchange direct $EXCHANGE_NAME
-$QPID_CONFIG_EXEC -b localhost:$broker_2_port add exchange direct $EXCHANGE_NAME
+echo "Adding exchanges"
 
+qpid-config -b localhost:$broker_1_port add exchange direct $EXCHANGE_NAME
+qpid-config -b localhost:$broker_2_port add exchange direct $EXCHANGE_NAME
 
-#--------------------------------------------------
-#echo "  add queues"
-#--------------------------------------------------
-$QPID_CONFIG_EXEC -b localhost:$broker_1_port add queue $QUEUE_NAME
-$QPID_CONFIG_EXEC -b localhost:$broker_2_port add queue $QUEUE_NAME
+echo "Adding queues"
+
+qpid-config -b localhost:$broker_1_port add queue $QUEUE_NAME
+qpid-config -b localhost:$broker_2_port add queue $QUEUE_NAME
 
 sleep 5
 
-#--------------------------------------------------
-#echo " create bindings"
-#--------------------------------------------------
-$QPID_CONFIG_EXEC -b localhost:$broker_1_port bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
-$QPID_CONFIG_EXEC -b localhost:$broker_2_port bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
+echo "Creating bindings"
+
+qpid-config -b localhost:$broker_1_port bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
+qpid-config -b localhost:$broker_2_port bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
 
 sleep 5
 
+echo "Adding routes"
 
-#--------------------------------------------------
-#echo "  qpid-route route add"
-#--------------------------------------------------
-$QPID_ROUTE_EXEC route add zag/zag@localhost:$broker_2_port zag/zag@localhost:$broker_1_port $EXCHANGE_NAME $ROUTING_KEY "" "" DIGEST-MD5
+qpid-route route add zag/zag@localhost:$broker_2_port zag/zag@localhost:$broker_1_port $EXCHANGE_NAME $ROUTING_KEY "" "" DIGEST-MD5
 
 sleep 5
-
 
 n_messages=100
-#--------------------------------------------------
-#echo "  Sending 100 messages to $broker_1_port "
-#--------------------------------------------------
-$QPID_TEST_EXEC_DIR/datagen --count $n_messages | $SENDER_EXEC --mechanism DIGEST-MD5 --username zag --password zag --exchange $EXCHANGE_NAME --routing-key $ROUTING_KEY --port $broker_1_port
+
+echo "Sending 100 messages to $broker_1_port "
+
+datagen --count $n_messages | sender --mechanism DIGEST-MD5 --username zag --password zag --exchange $EXCHANGE_NAME --routing-key $ROUTING_KEY --port $broker_1_port
 
 sleep 5
 
-#--------------------------------------------------
-#echo "  Examine Broker $broker_1_port"
-#--------------------------------------------------
-broker_1_message_count=`$PYTHON_COMMANDS/qpid-stat -q -b localhost:$broker_1_port | grep sasl_fed_queue | awk '{print $2}'`
-#echo " "
+echo "Examining Broker $broker_1_port"
 
-#--------------------------------------------------
-#echo "  Examine Broker $broker_2_port"
-#--------------------------------------------------
-broker_2_message_count=`$PYTHON_COMMANDS/qpid-stat -q -b localhost:$broker_2_port | grep sasl_fed_queue | awk '{print $2}'`
-#echo " "
+broker_1_message_count=$(qpid-stat -q -b localhost:$broker_1_port | grep sasl_fed_queue | awk '{print $2}')
 
-#--------------------------------------------------
-#echo "  Asking brokers to quit."
-#--------------------------------------------------
-$QPIDD_EXEC --port $broker_1_port --quit
-$QPIDD_EXEC --port $broker_2_port --quit
+echo "Examining Broker $broker_2_port"
 
+broker_2_message_count=$(qpid-stat -q -b localhost:$broker_2_port | grep sasl_fed_queue | awk '{print $2}')
 
-#--------------------------------------------------
-#echo   "Removing temporary directory $tmp_root"
-#--------------------------------------------------
-rm -rf $tmp_root
-
-if [ "$broker_2_message_count" -eq  "$n_messages" ]; then
-  # echo "good: |$broker_2_message_count| == |$n_messages|"
-  exit 0
-else
-  # echo "not ideal: |$broker_1_message_count| != |$n_messages|"
-  exit 1
+if (( $broker_2_message_count != $n_messages )); then
+    echo "Expected ${n_messages} and received ${broker_2_message_count}"
+    exit 1
 fi
-
-
-
-
-
-

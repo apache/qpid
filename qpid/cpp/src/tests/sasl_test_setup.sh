@@ -18,9 +18,10 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-source ./test_env.sh
 
-test -x $SASL_PW || { echo Skipping SASL test, saslpasswd2 not found; exit 0; }
+source env.sh
+
+test -x $SASLPASSWD2 || { echo Skipping SASL test, saslpasswd2 not found; exit 0; }
 
 mkdir -p sasl_config
 
@@ -36,7 +37,7 @@ EOF
 # Populate temporary sasl db.
 SASLTEST_DB=./sasl_config/qpidd.sasldb
 rm -f $SASLTEST_DB
-echo guest | $SASL_PW -c -p -f $SASLTEST_DB -u QPID guest
-echo zig | $SASL_PW -c -p -f $SASLTEST_DB -u QPID zig
-echo zag | $SASL_PW -c -p -f $SASLTEST_DB -u QPID zag
+echo guest | $SASLPASSWD2 -c -p -f $SASLTEST_DB -u QPID guest
+echo zig | $SASLPASSWD2 -c -p -f $SASLTEST_DB -u QPID zig
+echo zag | $SASLPASSWD2 -c -p -f $SASLTEST_DB -u QPID zag
 

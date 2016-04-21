@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,63 +19,45 @@
 # under the License.
 #
 
-# Run the cli-utility tests.
+# Run the cli-utility tests
 
-source ./test_env.sh
-CLI_DIR=$PYTHON_COMMANDS
+from common import *
 
-trap stop_brokers INT TERM QUIT
+cli_dir = join(SOURCE_DIR, "management", "python", "bin")
 
-# helper function to create test.xquery in the current directory, so
-# that the python test program can find it.  yes, it leaves a turd.
-create_test_xquery() {
-     cat <<EOF > ./test.xquery
-    let \$w := ./weather
-    return \$w/station = 'Raleigh-Durham International Airport (KRDU)'
-       and \$w/temperature_f > 50
-       and \$w/temperature_f - \$w/dewpoint > 5
-       and \$w/wind_speed_mph > 7
-       and \$w/wind_speed_mph < 20
-EOF
-}
+xquery = """
+let $w := ./weather
+return $w/station = 'Raleigh-Durham International Airport (KRDU)'
+   and $w/temperature_f > 50
+   and $w/temperature_f - $w/dewpoint > 5
+   and $w/wind_speed_mph > 7
+   and $w/wind_speed_mph < 20
+"""
+xquery_file = write(join(WORK_DIR, "xquery_file"), xquery)
 
-start_brokers() {
-    # if the xml lib is present, use it.  if not, disable any tests which
-    # look like they're xml related.
-    # if we start supporting xml on windows, it will need something similar 
-    # here
-    if [ -f ../xml.so ] ; then
-	xargs="--load-module ../xml.so"
-	if [ ! -f test.xquery ] ; then 
-	    create_test_xquery
-	fi
-	targs=""
-    else
-	echo "Ignoring XML tests"
-	xargs=""
-	targs="--ignore=*xml*"
-    fi
+# If the xml lib is present, use it.  if not, disable any tests which
+# look like they're xml related.
+#
+# If we start supporting xml on windows, it will need something
+# similar here.
 
-    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-data-dir --no-module-dir --mgmt-publish no --auth no $xargs > qpidd.port
-    LOCAL_PORT=`cat qpidd.port`
-    ../qpidd --daemon --port 0 --interface 127.0.0.1 --no-data-dir --no-module-dir --mgmt-publish no --auth no $xargs > qpidd.port
-    REMOTE_PORT=`cat qpidd.port`
-}
+if XML_LIB is not None:
+    broker_args = "--load-module {}".format(XML_LIB)
+    test_args = ""
+else:
+    notice("Ignoring XML tests")
 
-stop_brokers() {
-        $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORT
-        $QPIDD_EXEC --no-module-dir -q --port $REMOTE_PORT
-}
+    broker_args = ""
+    test_args = "--ignore=*xml*"
 
-if test -d ${PYTHON_DIR} ;  then
-    start_brokers
-    echo "Running CLI tests using brokers on ports $LOCAL_PORT $REMOTE_PORT"
-    PYTHON_TESTS=${PYTHON_TESTS:-$*}
-    $QPID_PYTHON_TEST -m cli_tests -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT -Dcli-dir=$CLI_DIR $targs $PYTHON_TESTS $@
-    RETCODE=$?
-    stop_brokers
-    if test x$RETCODE != x0; then 
-        echo "FAIL CLI tests"; exit 1;
-    fi
-fi
+local_port = start_broker("local", broker_args)
+remote_port = start_broker("remote", broker_args)
 
+run_broker_tests(local_port,
+                 "-m cli_tests",
+                 "-Dremote-port={}".format(remote_port),
+                 "-Dcli-dir={}".format(cli_dir),
+                 "-Dxquery-file={}".format(xquery_file),
+                 test_args)
+
+check_results()

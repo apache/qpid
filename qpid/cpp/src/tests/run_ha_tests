@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,11 +19,19 @@
 # under the License.
 #
 
+from common import *
 
-# Make sure the python tools are available. They will be if we are building in
-# a checkoug, they may not be in a distribution.
-test -d $PYTHON_COMMANDS -a -x $PYTHON_COMMANDS/qpid-ha -a -x $PYTHON_COMMANDS/qpid-config || { echo "Skipping HA tests, qpid-ha or qpid-config not available."; exit 0; }
+# ENV["QPID_USE_SWIG_CLIENT"] = "1" # XXX is this necessary?
 
-srcdir=`dirname $0`
-$srcdir/ha_tests.py
+# XXX These tests hang, and I can't figure out why
+# -i *tx_block_threads 
 
+# ENV["QPID_NO_MODULE_DIR"] = "1" # Don't accidentally load installed modules
+# ENV["QPID_DATA_DIR"] = ""
+# ENV["QPID_CONFIG"] = join(BUILD_DIR, "src", "tests", "qpidd-empty.conf")
+# ENV["QPID_PORT"] = ""
+# ENV["QPID_LOG_TO_FILE"] = join(BUILD_DIR, "src", "tests", "gah.log")
+
+call("qpid-python-test -m ha_tests -DOUTDIR={}", WORK_DIR)
+
+check_results()

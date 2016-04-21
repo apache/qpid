@@ -72,12 +72,7 @@ class AmqpBrokerTest(BrokerTest):
         return self.popen(cmd, stdout=PIPE)
 
     def ready_receiver(self, config):
-        # NOTE: some tests core dump when run with SWIG binding over proton
-        # version<=0.6. This is fixed on proton 0.7.
-        def use_native():
-            pv=os.environ.get("QPID_PROTON_VERSION")
-            return pv and [int(n) for n in pv.split(".")] <= [0,6]
-        s = self.broker.connect(native=use_native()).session()
+        s = self.broker.connect().session()
         r = s.receiver("readyq; {create:always}")
         cmd = ["qpid-receive",
                "--broker", config.url,

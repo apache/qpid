@@ -194,7 +194,7 @@ a source distribution:
 
 (*) Boost 1.33 will also work.
 
-Optional support for AMQP 1.0 requires (see AMQP_1.0 for details):
+Optional support for AMQP 1.0 requires (see docs/amqp-1.0.txt for details):
 * Qpid proton-c <http://qpid.apache.org/proton>         (0.5)
 Note: If Proton is installed in a non-standard location, there are two ways to locate it:
 1. Recommended: use proton 0.7 or later and use the same install prefix
@@ -206,7 +206,7 @@ Optional XML exchange requires:
  * xqilla  <http://xqilla.sourceforge.net/HomePage>     (2.0.0)
  * xerces-c <http://xerces.apache.org/xerces-c/>        (2.7.0)
 
-Optional SSL support requires:
+Optional SSL support requires (see docs/ssl.txt for details):
 * nss <http://www.mozilla.org/projects/security/pki/nss/>
 * nspr <http://www.mozilla.org/projects/nspr/>
 

@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -18,26 +19,29 @@
 # under the License.
 #
 
-source $QPID_TEST_COMMON
+import os
+import sys
 
-ensure_python_tests
+# Put the python test library on the path so we can get our
+# environment
 
-#Add our directory to the python path
-export PYTHONPATH=$srcdir/legacystore:$PYTHONPATH
+file_path = os.path.abspath(__file__)
+store_tests_dir = os.path.split(file_path)[0]
+tests_dir = os.path.split(store_tests_dir)[0]
 
-MODULENAME=python_tests
+sys.path.insert(0, tests_dir)
 
-echo "Running Python tests in module ${MODULENAME}..."
+from common import *
 
-QPID_PORT=${QPID_PORT:-5672}
-FAILING=${FAILING:-/dev/null}
-PYTHON_TESTS=${PYTHON_TESTS:-$*}
+# Add our directory to the python path
 
-OUTDIR=${MODULENAME}.tmp
-rm -rf $OUTDIR
+ENV["PYTHONPATH"] = "{}:{}".format(store_tests_dir, ENV["PYTHONPATH"])
 
 # To debug a test, add the following options to the end of the following line:
 # -v DEBUG -c qpid.messaging.io.ops [*.testName]
-${QPID_PYTHON_TEST} -m ${MODULENAME} -I $FAILING -DOUTDIR=$OUTDIR \
-  $PYTHON_TEST || exit 1
 
+port = start_broker("broker", "--load-module {}".format(STORE_LIB))
+
+run_broker_tests(port, "-m python_tests", "-DOUTDIR={}".format(WORK_DIR))
+
+check_results()

@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,32 +19,27 @@
 # under the License.
 #
 
-#setup path to find qpid-config and sender/receiver test progs
-source ./test_env.sh
-trap stop_broker INT TERM QUIT
+from common import *
 
-export PATH=$PWD:$srcdir:$PYTHON_COMMANDS:$PATH
+port = start_broker("broker", "--paging-dir={}".format(join(WORK_DIR, "pqtest_data")))
 
-start_broker() {
-    QPID_PORT=$($QPIDD_EXEC --daemon --port 0 --interface 127.0.0.1 --no-data-dir --paging-dir=$PWD/pqtest_data $MODULES --auth no) || { echo "Could not start broker"; exit 1; }
-}
+messages = 1000
+address = "onepage; {create: always, node:{x-declare:{arguments:{'qpid.paging':True,'qpid.max_pages_loaded':1}}}}"
 
-stop_broker() {
-    $QPIDD_EXEC -q --port $QPID_PORT
-}
+call_with_valgrind("qpid-send --messages {} --content-size 1024 --broker localhost:{} --address \"{}\"",
+                   messages, port, address)
 
-test_single_page() {
-    msgcount=1000
-    qpid-send --messages $msgcount --content-size 1024 --broker "localhost:$QPID_PORT" --address "onepage; {create: always, node:{x-declare:{arguments:{'qpid.paging':True,'qpid.max_pages_loaded':1}}}}"
-    received=$(qpid-receive --address onepage --broker "localhost:$QPID_PORT" --messages $msgcount | wc -l)
-    if [[ $received -ne $msgcount ]]; then
-        echo "single page test failed: received $received messages, expected $msgcount"
-        exit 1
-    fi
-}
+output = call_for_output_with_valgrind("qpid-receive --address onepage --messages {} --broker localhost:{}",
+                                       messages, port)
 
-start_broker
-test_single_page
-qpid-cpp-benchmark --broker "localhost:$QPID_PORT" --create-option "node:{x-declare:{arguments:{'qpid.paging':True,'qpid.max_size':0,'qpid.max_count':0,'qpid.flow_stop_size':0,'qpid.flow_resume_size':0,'qpid.flow_stop_count':0,'qpid.flow_resume_count':0}}}"
-qpid-cpp-benchmark --broker "localhost:$QPID_PORT" --create-option "node:{x-declare:{arguments:{'qpid.paging':True,'qpid.max_size':0,'qpid.max_count':0,'qpid.flow_stop_size':0,'qpid.flow_resume_size':0,'qpid.flow_stop_count':0,'qpid.flow_resume_count':0}}}" --fill-drain
-stop_broker
+received = len(output.splitlines())
+
+if received != messages:
+    fail("Single page test failed: received {} messages, expected {}", received, messages)
+
+option = "node:{x-declare:{arguments:{'qpid.paging':True,'qpid.max_size':0,'qpid.max_count':0,'qpid.flow_stop_size':0,'qpid.flow_resume_size':0,'qpid.flow_stop_count':0,'qpid.flow_resume_count':0}}}"
+    
+call("qpid-cpp-benchmark --broker localhost:{} --create-option \"{}\"", port, option)
+call("qpid-cpp-benchmark --broker localhost:{} --create-option \"{}\" --fill-drain", port, option)
+
+check_results()

@@ -17,7 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-import os, re, sys, string
+import os, re, sys, string, platform
 from distutils.core import setup, Command
 from distutils.command.build import build as _build
 from distutils.command.build_py import build_py as _build_py
@@ -297,17 +297,24 @@ class install_lib(_install_lib):
         extra.append(tgt)
     return outfiles + extra
 
+scripts = ["qpid-python-test"]
+
+if platform.system() == "Windows":
+  scripts.append("qpid-python-test.bat")
+  
 setup(name="qpid-python",
       version="0.35",
       author="Apache Qpid",
-      author_email="dev@qpid.apache.org",
+      author_email="users@qpid.apache.org",
       packages=["mllib", "qpid", "qpid.messaging", "qpid.tests",
-                "qpid.tests.messaging", "qpid.saslmech", "qpid.tests.saslmech"],
+                "qpid.tests.messaging", "qpid.saslmech", "qpid.tests.saslmech",
+                "qpid_tests", "qpid_tests.broker_1_0", "qpid_tests.broker_0_10",
+                "qpid_tests.broker_0_9", "qpid_tests.broker_0_8"],
       package_data={"qpid": ["specs/*.dtd", "specs/*.xml"]},
-      scripts=["qpid-python-test"],
+      scripts=scripts,
       url="http://qpid.apache.org/",
       license="Apache Software License",
-      description="Python client implementation for Apache Qpid",
+      description="Python client implementation and AMQP conformance tests for Apache Qpid",
       cmdclass={"build": build,
                 "build_py": build_py,
                 "build_doc": build_doc,

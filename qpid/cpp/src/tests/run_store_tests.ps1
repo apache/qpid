@@ -31,7 +31,7 @@ if ($test_store -ne "MSSQL" -and $test_store -ne "MSSQL-CLFS") {
 
 $srcdir = Split-Path $myInvocation.InvocationName
 
-. .\test_env.ps1
+. .\env.ps1
 
 if (!(Test-Path $PYTHON_DIR -pathType Container)) {
     "Skipping store tests as python libs not found"

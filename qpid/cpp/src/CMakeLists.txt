@@ -502,30 +502,23 @@ if (BUILD_XML)
 
 endif (BUILD_XML)
 
-# Build the ACL plugin
-set (acl_default ON)
-
-option(BUILD_ACL "Build ACL enforcement broker plugin" ${acl_default})
-
-if (BUILD_ACL)
-  set (acl_SOURCES
-       qpid/acl/Acl.cpp
-       qpid/acl/Acl.h
-       qpid/acl/AclConnectionCounter.cpp
-       qpid/acl/AclConnectionCounter.h
-       qpid/acl/AclData.cpp
-       qpid/acl/AclData.h
-       qpid/acl/AclLexer.cpp
-       qpid/acl/AclLexer.h
-       qpid/acl/AclPlugin.cpp
-       qpid/acl/AclReader.cpp
-       qpid/acl/AclReader.h
-       qpid/acl/AclResourceCounter.cpp
-       qpid/acl/AclResourceCounter.h
-       qpid/acl/AclValidator.cpp
-       qpid/acl/AclValidator.h
-      )
-endif (BUILD_ACL)
+set (acl_SOURCES
+     qpid/acl/Acl.cpp
+     qpid/acl/Acl.h
+     qpid/acl/AclConnectionCounter.cpp
+     qpid/acl/AclConnectionCounter.h
+     qpid/acl/AclData.cpp
+     qpid/acl/AclData.h
+     qpid/acl/AclLexer.cpp
+     qpid/acl/AclLexer.h
+     qpid/acl/AclPlugin.cpp
+     qpid/acl/AclReader.cpp
+     qpid/acl/AclReader.h
+     qpid/acl/AclResourceCounter.cpp
+     qpid/acl/AclResourceCounter.h
+     qpid/acl/AclValidator.cpp
+     qpid/acl/AclValidator.h
+    )
 
 set (ha_default ON)
 

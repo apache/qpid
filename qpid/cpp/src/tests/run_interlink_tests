@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,8 +19,8 @@
 # under the License.
 #
 
-test -e "$AMQP_LIB" || { echo "Skipping AMQP 1.0 based tests; AMQP 1.0 support not available."; exit 0; }
+from common import *
 
-srcdir=`dirname $0`
-$srcdir/interlink_tests.py
+call("qpid-python-test -m interlink_tests -DOUTDIR={}", WORK_DIR)
 
+check_results()

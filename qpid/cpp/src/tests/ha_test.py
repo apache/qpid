@@ -160,9 +160,8 @@ acl allow all all
     @property
     def qpid_ha_script(self):
         if not hasattr(self, "_qpid_ha_script"):
-            qpid_ha_exec = os.getenv("QPID_HA_EXEC")
-            if not qpid_ha_exec or not os.path.isfile(qpid_ha_exec):
-                raise Skipped("qpid-ha not available")
+            qpid_ha_exec = os.path.join(os.getenv("SOURCE_DIR"), "management",
+                                        "python", "bin", "qpid-ha")
             self._qpid_ha_script = import_script(qpid_ha_exec)
         return self._qpid_ha_script
 
@@ -225,11 +224,8 @@ acl allow all all
         assert retry(lambda: agent.getQueue(queue) is None, timeout=timeout), "%s: queue %s still present"%(msg,queue)
 
     def qpid_config(self, args):
-        qpid_config_exec = os.getenv("QPID_CONFIG_EXEC")
-        if not qpid_config_exec or not os.path.isfile(qpid_config_exec):
-            raise Skipped("qpid-config not available")
         assert subprocess.call(
-            [qpid_config_exec, "--broker", self.host_port()]+args, stdout=1, stderr=subprocess.STDOUT
+            ["qpid-config", "--broker", self.host_port()]+args, stdout=1, stderr=subprocess.STDOUT
         ) == 0, "qpid-config failed"
 
     def config_replicate(self, from_broker, queue):

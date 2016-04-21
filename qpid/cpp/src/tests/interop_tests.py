@@ -192,10 +192,7 @@ class CppTxTest(InteropTest):
 
 
 if __name__ == "__main__":
-    if not BrokerTest.amqp_tx_supported:
-        BrokerTest.amqp_tx_warning()
-        print "Skipping interop_tests"
-        sys.exit(0)
+    from env import *
     outdir = "interop_tests.tmp"
     shutil.rmtree(outdir, True)
     cmd = ["qpid-python-test", "-m", "interop_tests", "-DOUTDIR=%s"%outdir] + sys.argv[1:]

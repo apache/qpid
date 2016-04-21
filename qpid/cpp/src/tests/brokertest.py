@@ -354,7 +354,7 @@ class Broker(Popen):
           if (self.test.protocol and qm == qpid_messaging):
             kwargs.setdefault("protocol", self.test.protocol)
         return connection_class.establish(self.host_port(), timeout=timeout, **kwargs)
-
+    
     @property
     def agent(self, **kwargs):
         """Return a BrokerAgent for this broker"""
@@ -477,14 +477,14 @@ class BrokerTest(TestCase):
         TestCase.__init__(self, *args, **kwargs)
 
     # Environment settings.
-    qpidd_exec = os.path.abspath(checkenv("QPIDD_EXEC"))
+    qpidd_exec = "qpidd"
     ha_lib = os.getenv("HA_LIB")
     xml_lib = os.getenv("XML_LIB")
     amqp_lib = os.getenv("AMQP_LIB")
-    qpid_config_exec = os.getenv("QPID_CONFIG_EXEC")
-    qpid_route_exec = os.getenv("QPID_ROUTE_EXEC")
-    receiver_exec = os.getenv("RECEIVER_EXEC")
-    sender_exec = os.getenv("SENDER_EXEC")
+    qpid_config_exec = "qpid-config"
+    qpid_route_exec = "qpid-route"
+    receiver_exec = "receiver"
+    sender_exec = "sender"
     sql_store_lib = os.getenv("STORE_SQL_LIB")
     sql_clfs_store_lib = os.getenv("STORE_SQL_CLFS_LIB")
     sql_catalog = os.getenv("STORE_CATALOG")
@@ -505,19 +505,7 @@ class BrokerTest(TestCase):
     PN_TX_VERSION = (0, 9)
 
     amqp_tx_supported = PN_VERSION >= PN_TX_VERSION
-
-    @classmethod
-    def amqp_tx_warning(cls):
-        if not cls.amqp_tx_supported:
-            if cls.PN_VERSION == (0, 0):
-                print "WARNING: Cannot test transactions over AMQP 1.0, proton not on path so version could not be determined"
-            elif cls.PN_VERSION == (0, 7):
-                print "WARNING: Cannot test transactions over AMQP 1.0, proton version is 0.7 or less, %s.%s required" % cls.PN_TX_VERSION
-            else:
-                print "WARNING: Cannot test transactions over AMQP 1.0, proton version %s.%s < %s.%s" % (cls.PN_VERSION + cls.PN_TX_VERSION)
-            return False
-        return True
-
+    
     def configure(self, config): self.config=config
 
     def setUp(self):

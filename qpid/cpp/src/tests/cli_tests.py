@@ -295,7 +295,8 @@ class CliTests(TestBase010):
         self.helper_create_queue(qname)
 
         # now bind the queue to the xchg
-        foo = self.qpid_config_command("-f test.xquery bind " + xchgname + " " + qname)
+        xquery_file = self.defines["xquery-file"]
+        foo = self.qpid_config_command("-f " + xquery_file + " bind " + xchgname + " " + qname)
         # print foo
         ret = os.system(foo)
         self.assertEqual(ret, 0)
@@ -468,10 +469,14 @@ class CliTests(TestBase010):
         return self.cli_dir() + "/qpid-config -b localhost:%d" % self.broker.port + " " + arg
 
     def qpid_config_api(self, arg = ""):
-        script = import_script(checkenv("QPID_CONFIG_EXEC"))
+        path = os.path.join(os.getenv("SOURCE_DIR"), "management", "python",
+                            "bin", "qpid-config")
+        script = import_script(path)
         broker = ["-b", "localhost:"+str(self.broker.port)]
         return script.main(broker + arg.split())
 
     def qpid_route_api(self, arg = ""):
-        script = import_script(checkenv("QPID_ROUTE_EXEC"))
+        path = os.path.join(os.getenv("SOURCE_DIR"), "management", "python",
+                            "bin", "qpid-route")
+        script = import_script(path)
         return script.main(arg.split())

@@ -25,86 +25,47 @@
 # transport-layer security.
 #===============================================================================
 
-source $QPID_TEST_COMMON
+set -eu
 
-ensure_python_tests
-
-script_name=`basename $0`
-
-if [ $# -lt 1 ] || [ $# -gt 2 ]
-then
-  echo
-  # These are the four different ways of creating links ( or routes+links ) 
-  # that the qpid-route command provides.
-  echo "Usage: ${script_name} dynamic|link|queue|route"
-  echo
-  exit 1
+if (( $# != 1 )); then
+    # These are the four different ways of creating links ( or routes+links ) 
+    # that the qpid-route command provides.
+    echo "Usage: $(basename $0) dynamic|link|queue|route"
+    exit 1
 fi
 
 qpid_route_method=$1
 
-# Debugging print. --------------------------
-debug=
-function print {
-  if [ "$debug" ]; then
-    echo "${script_name}: $1"
-  fi
-}
+WORK_DIR="${WORK_DIR}/sasl_fed_ex_${qpid_route_method}"
+mkdir $WORK_DIR
 
-print "=========== start sasl_fed_ex $* ============"
-
-
-
-# This minimum value corresponds to sasl version 2.1.22
-minimum_sasl_version=131350
-
-sasl_version=`$QPID_TEST_EXEC_DIR/sasl_version`
-
-# This test is necessary because this sasl version is the first one that permits 
-# redirection of the sasl config file path.
-if [ "$sasl_version" -lt  "$minimum_sasl_version" ]; then
-  echo "sasl_fed: must have sasl version 2.1.22 or greater.  ( Integer value: $minimum_sasl_version )  Version is: $sasl_version"
-  exit 0
-fi
-
-CERT_DIR=`pwd`/test_cert_db
-CERT_PW_FILE=`pwd`/cert.password
+CERT_DIR=$WORK_DIR/test_cert_db
+CERT_PW_FILE=$WORK_DIR/cert.password
 TEST_HOSTNAME=127.0.0.1
 
 create_certs() {
-    #create certificate and key databases with single, simple, self-signed certificate in it
+    # Create certificate and key databases with single, simple,
+    # self-signed certificate in it
     mkdir ${CERT_DIR}
     certutil -N -d ${CERT_DIR} -f ${CERT_PW_FILE}
     certutil -S -d ${CERT_DIR} -n ${TEST_HOSTNAME} -s "CN=${TEST_HOSTNAME}" -t "CT,," -x -f ${CERT_PW_FILE} -z /bin/sh 2> /dev/null
 }
 
-delete_certs() {
-    if [[ -e ${CERT_DIR} ]] ;  then
-        print "removing cert dir ${CERT_DIR}"
-        rm -rf ${CERT_DIR}
-    fi
-}
-
-
 CERTUTIL=$(type -p certutil)
-if [[ !(-x $CERTUTIL) ]] ; then
-    echo "No certutil, skipping ssl test";
-    exit 0;
+
+if [[ ! -x $CERTUTIL ]]; then
+    echo "No certutil, skipping ssl test"
+    exit 0
 fi
 
-delete_certs
 create_certs 2> /dev/null
-if [ ! $? ]; then
-  error "Could not create test certificate"
-  exit 1
+
+if (( $? != 0 )); then
+    echo "Could not create test certificate"
+    exit 1
 fi
 
-sasl_config_dir=$QPID_TEST_EXEC_DIR/sasl_config
-
-tmp_root=$QPID_TEST_EXEC_DIR/sasl_fed_ex_temp
-print "results dir is ${tmp_root}"
-rm -rf ${tmp_root}
-mkdir -p $tmp_root
+sasl_config_dir=$BUILD_DIR/src/tests/sasl_config
 
 SRC_SSL_PORT=6667
 DST_SSL_PORT=6666
@@ -125,8 +86,6 @@ export QPID_SSL_CERT_DB=${CERT_DIR}
 export QPID_SSL_CERT_PASSWORD_FILE=${CERT_PW_FILE}
 export QPID_SSL_CERT_NAME=${TEST_HOSTNAME}
 
-
-
 #######################################
 # Understanding this Plumbing
 #######################################
@@ -146,7 +105,7 @@ export QPID_SSL_CERT_NAME=${TEST_HOSTNAME}
 
 COMMON_BROKER_OPTIONS="                          \
       --ssl-sasl-no-dict                         \
-      --sasl-config=$sasl_config_dir             \
+      --sasl-config $sasl_config_dir             \
       --ssl-require-client-authentication        \
       --auth yes                                 \
       --ssl-cert-db $CERT_DIR                    \
@@ -154,130 +113,111 @@ COMMON_BROKER_OPTIONS="                          \
       --ssl-cert-name $TEST_HOSTNAME             \
       --no-data-dir                              \
       --no-module-dir                            \
-      --mgmt-enable=yes                          \
+      --mgmt-enable yes                          \
       --log-enable info+                         \
       --log-source yes                           \
-      --daemon "                                 
+      --daemon"                                 
                       
-
 function start_brokers {
     # vanilla brokers --------------------------------
-    print "Starting SRC broker"
-    $QPIDD_EXEC                                  \
+    echo "Starting SRC broker"
+    qpidd                                          \
 	--port=${SRC_TCP_PORT}                     \
 	--ssl-port ${SRC_SSL_PORT}                 \
 	${COMMON_BROKER_OPTIONS}                   \
-	--log-to-file $tmp_root/qpidd_src.log 2> /dev/null
+	--log-to-file $WORK_DIR/qpidd_src.log 2> /dev/null
 
     broker_ports[0]=${SRC_TCP_PORT}
 
-    print "Starting DST broker"
-    $QPIDD_EXEC                                  \
+    echo "Starting DST broker"
+    qpidd                                          \
 	--port=${DST_TCP_PORT}                     \
 	--ssl-port ${DST_SSL_PORT}                 \
 	${COMMON_BROKER_OPTIONS}                   \
-	--log-to-file $tmp_root/qpidd_dst.log 2> /dev/null
+	--log-to-file $WORK_DIR/qpidd_dst.log 2> /dev/null
 
     broker_ports[1]=${DST_TCP_PORT}
 }
 
 function halt_brokers {
-  n_brokers=${#broker_ports[@]}
-  print "Halting ${n_brokers} brokers."
-  for i in $(seq 0 $((${n_brokers} - 1)))
-  do
-    halt_port=${broker_ports[$i]}
-    print "Halting broker $i on port ${halt_port}"
-    $QPIDD_EXEC --port ${halt_port} --quit
-  done
-
+    n_brokers=${#broker_ports[@]}
+    echo "Halting ${n_brokers} brokers"
+    for i in $(seq 0 $((${n_brokers} - 1))); do
+        halt_port=${broker_ports[$i]}
+        echo "Halting broker $i on port ${halt_port}"
+        qpidd --port ${halt_port} --quit
+    done
 }
 
-
 start_brokers
-
+trap halt_brokers EXIT
 
 # I am not randomizing these names, because this test creates its own brokers.
 QUEUE_NAME=sasl_fed_queue
 ROUTING_KEY=sasl_fed_queue
 EXCHANGE_NAME=sasl_fedex
 
+echo "Add exchanges"
+qpid-config -b localhost:${SRC_TCP_PORT} add exchange direct $EXCHANGE_NAME
+qpid-config -b localhost:${DST_TCP_PORT} add exchange direct $EXCHANGE_NAME
 
-print "add exchanges"
-$QPID_CONFIG_EXEC -b localhost:${SRC_TCP_PORT} add exchange direct $EXCHANGE_NAME
-$QPID_CONFIG_EXEC -b localhost:${DST_TCP_PORT} add exchange direct $EXCHANGE_NAME
+echo "Add queues"
+qpid-config -b localhost:${SRC_TCP_PORT} add queue $QUEUE_NAME
+qpid-config -b localhost:${DST_TCP_PORT} add queue $QUEUE_NAME
 
-
-print "add queues"
-$QPID_CONFIG_EXEC -b localhost:${SRC_TCP_PORT} add queue $QUEUE_NAME
-$QPID_CONFIG_EXEC -b localhost:${DST_TCP_PORT} add queue $QUEUE_NAME
-
-
-print "create bindings"
-$QPID_CONFIG_EXEC -b localhost:${SRC_TCP_PORT} bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
-$QPID_CONFIG_EXEC -b localhost:${DST_TCP_PORT} bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
-
+echo "Create bindings"
+qpid-config -b localhost:${SRC_TCP_PORT} bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
+qpid-config -b localhost:${DST_TCP_PORT} bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
 
 #
 # NOTE: The SRC broker *must* be referred to as $TEST_HOSTNAME, and not as "localhost".
 #       It must be referred to by the exact string given as the Common Name (CN) in the cert,
 #       which was created in the function create_certs, above.
 
-
-
 #----------------------------------------------------------------
 # Use qpid-route to create the link, or the link+route, depending
 # on which of its several methods was requested.
 #----------------------------------------------------------------
-if   [ ${qpid_route_method} == "dynamic" ]; then
-  print "dynamic add"
-  $QPID_ROUTE_EXEC -t ssl dynamic add localhost:${DST_TCP_PORT} $TEST_HOSTNAME:${SRC_SSL_PORT} $EXCHANGE_NAME "" "" EXTERNAL
-elif [ ${qpid_route_method} == "link"   ];  then
-  print "link add"
-  $QPID_ROUTE_EXEC -t ssl link add localhost:${DST_TCP_PORT} $TEST_HOSTNAME:${SRC_SSL_PORT}  EXTERNAL
-elif [ ${qpid_route_method} == "queue" ];   then
-  print "queue add"
-  $QPID_ROUTE_EXEC -t ssl queue add localhost:${DST_TCP_PORT}   $TEST_HOSTNAME:${SRC_SSL_PORT} $EXCHANGE_NAME $ROUTING_KEY EXTERNAL
-elif [ ${qpid_route_method} == "route" ];   then
-  print "route add"
-  $QPID_ROUTE_EXEC -t ssl route add localhost:${DST_TCP_PORT}   $TEST_HOSTNAME:${SRC_SSL_PORT} $EXCHANGE_NAME $ROUTING_KEY "" "" EXTERNAL
+if   [[ $qpid_route_method == "dynamic" ]]; then
+    echo "Dynamic add"
+    qpid-route -t ssl dynamic add localhost:${DST_TCP_PORT} $TEST_HOSTNAME:${SRC_SSL_PORT} $EXCHANGE_NAME "" "" EXTERNAL || :
+elif [[ $qpid_route_method == "link"    ]];  then
+    echo "Link add"
+    qpid-route -t ssl link add localhost:${DST_TCP_PORT}    $TEST_HOSTNAME:${SRC_SSL_PORT} EXTERNAL || :
+elif [[ $qpid_route_method == "queue"   ]];   then
+    echo "Queue add"
+    qpid-route -t ssl queue add localhost:${DST_TCP_PORT}   $TEST_HOSTNAME:${SRC_SSL_PORT} $EXCHANGE_NAME $ROUTING_KEY EXTERNAL || :
+elif [[ $qpid_route_method == "route"   ]];   then
+    echo "Route add"
+    qpid-route -t ssl route add localhost:${DST_TCP_PORT}   $TEST_HOSTNAME:${SRC_SSL_PORT} $EXCHANGE_NAME $ROUTING_KEY "" "" EXTERNAL || :
 else
-  echo "unknown method: |${qpid_route_method}|"
-  echo " choices are: dynamic|link|queue|route "
-  halt_brokers
-  exit 1
+    echo "Unknown method: |${qpid_route_method}|"
+    echo "Choices are: dynamic|link|queue|route "
+    halt_brokers
+    exit 1
 fi
-
 
 # I don't know how to avoid this sleep yet.  It has to come after route-creation 
 # to avoid false negatives.
 sleep 5
 
 # Look only at the transport field, which should be "ssl".
-print "check the link"
-link_status=$($QPID_ROUTE_EXEC link list localhost:${DST_TCP_PORT} | tail -1 | awk '{print $3}')
-
-halt_brokers
+echo "Check the link"
+link_status=$(qpid-route link list localhost:${DST_TCP_PORT} | tail -1 | awk '{print $3}')
 
 sleep 1
 
-if [ ! ${link_status} ]; then
-  print "link_status is empty"
-  print "result: fail"
-  exit 2
+if [[ ! $link_status ]]; then
+    echo "Link status is empty"
+    echo "Result: fail"
+    exit 2
 fi
 
-if [ ${link_status} == "ssl" ]; then
-  print "result: good"
-  # Only remove the tmp_root on success, to permit debugging.
-  print "Removing temporary directory $tmp_root"
-  rm -rf $tmp_root
-  exit 0
+if [[ $link_status == "ssl" ]]; then
+    echo "Result: good"
+    exit 0
 fi
 
-print "link_status has a bad value: ${link_status}"
-print "result: fail"
+echo "Link status has a bad value: ${link_status}"
+echo "Result: fail"
 exit 3
-
-
-

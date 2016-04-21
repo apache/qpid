@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,43 +19,42 @@
 # under the License.
 #
 
-# Run the federation tests.
+from common import *
 
-source ./test_env.sh
-#set -x
-trap stop_brokers INT TERM QUIT
+common_args = "--log-enable=debug+:Bridge"
+module_args = None
+test_args = "-i *_xml"
 
-if [ -f ../xml.so ] ; then
-    MODULES="--load-module xml" # Load the XML exchange and run XML exchange federation tests
-    SKIPTESTS=
-else
-    MODULES="--no-module-dir"
-    SKIPTESTS='-i *_xml'    # note: single quotes prevent expansion of *
-fi
+sys_test_args = [
+    "-i federation_sys.A_Long*",
+    "-i federation_sys.B_Long*",
+    "-i federation_sys.C_*",
+    "-i federation_sys.D_*",
+    "-i federation_sys.E_*",
+    "-i federation_sys.F_*",
+    "-i federation_sys.G_*",
+    "-i federation_sys.H_*",
+]
 
-QPIDD_CMD="../qpidd --daemon --port 0 --interface 127.0.0.1 --no-data-dir $MODULES --auth no --log-enable=info+ --log-enable=debug+:Bridge --log-to-file"
-start_brokers() {
-    rm -f fed_local.log fed_remote.log fed_b1.log fed_b2.log
-    LOCAL_PORT=$($QPIDD_CMD fed_local.log --federation-tag LOCAL)
-    REMOTE_PORT=$($QPIDD_CMD fed_remote.log --federation-tag REMOTE)
-    REMOTE_B1=$($QPIDD_CMD fed_b1.log --federation-tag B1)
-    REMOTE_B2=$($QPIDD_CMD fed_b2.log --federation-tag B2)
-}
+if XML_LIB is not None:
+    module_args = "--load-module {}".format(XML_LIB)
+    test_args = None
 
-stop_brokers() {
-        $QPIDD_EXEC $MODULES -q --port $LOCAL_PORT
-        $QPIDD_EXEC $MODULES -q --port $REMOTE_PORT
-        $QPIDD_EXEC $MODULES -q --port $REMOTE_B1
-        $QPIDD_EXEC $MODULES -q --port $REMOTE_B2
-}
+local_port = start_broker("local", common_args, module_args, "--federation-tag LOCAL")
+remote_port = start_broker("remote", common_args, module_args, "--federation-tag REMOTE")
+remote_b1 = start_broker("remote_b1", common_args, module_args, "--federation-tag REMOTE_B1")
+remote_b2 = start_broker("remote_b2", common_args, module_args, "--federation-tag REMOTE_B2")
 
-if test -d ${PYTHON_DIR} ;  then
-    start_brokers
-    echo "Running federation tests using brokers on ports $LOCAL_PORT $REMOTE_PORT $REMOTE_B1 $REMOTE_B2"
-    $QPID_PYTHON_TEST -m federation ${SKIPTESTS} -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT -Dextra-brokers="$REMOTE_B1 $REMOTE_B2" $@
-    RETCODE=$?
-    stop_brokers
-    if test x$RETCODE != x0; then
-        echo "FAIL federation tests"; exit 1;
-    fi
-fi
+run_broker_tests(local_port, "-m federation",
+                 "-Dremote-port={}".format(remote_port),
+                 "-Dextra-brokers='{} {}'".format(remote_b1, remote_b2),
+                 test_args)
+
+run_broker_tests(local_port, "-m headers_federation", "-Dremote-port={}".format(remote_port))
+
+run_broker_tests(remote_port, "-m federation_sys",
+                 "-Dlocal-port={}".format(local_port),
+                 "-Dremote-port={}".format(remote_port),
+                 *sys_test_args)
+
+check_results()

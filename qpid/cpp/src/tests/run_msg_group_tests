@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env python
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -18,45 +18,30 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#script to run a sequence of message group queue tests via make
 
-source $QPID_TEST_COMMON
+from common import *
 
-ensure_python_tests
+port = start_broker("broker")
 
-QUEUE_NAME="group-queue"
-GROUP_KEY="My-Group-Id"
+commands = [
+    "qpid-config -b {} add queue group-queue --group-header=My-Group-Id --shared-groups",
+    "msg_group_test -b {} -a group-queue --group-key My-Group-Id --messages 103 --group-size 13 --receivers 2 --senders 3 --capacity 3 --ack-frequency 7 --randomize-group-size --interleave 3",
+    "msg_group_test -b {} -a group-queue --group-key My-Group-Id --messages 103 --group-size 13 --receivers 2 --senders 3 --capacity 7 --ack-frequency 7 --randomize-group-size",
+    "qpid-config -b {} add queue group-queue-two --group-header=My-Group-Id --shared-groups",
+    "msg_group_test -b {} -a group-queue --group-key My-Group-Id --messages 103 --group-size 13 --receivers 2 --senders 3 --capacity 7 --ack-frequency 3 --randomize-group-size",
+    "msg_group_test -b {} -a group-queue-two --group-key My-Group-Id --messages 103 --group-size 13 --receivers 2 --senders 3 --capacity 3 --ack-frequency 7 --randomize-group-size --interleave 5",
+    "msg_group_test -b {} -a group-queue --group-key My-Group-Id --messages 59  --group-size 5  --receivers 2 --senders 3 --capacity 1 --ack-frequency 3 --randomize-group-size",
+    "qpid-config -b {} del queue group-queue-two --force",
+    "msg_group_test -b {} -a group-queue --group-key My-Group-Id --messages 59  --group-size 3  --receivers 2 --senders 3 --capacity 1 --ack-frequency 1 --randomize-group-size",
+    "msg_group_test -b {} -a group-queue --group-key My-Group-Id --messages 211 --group-size 13 --receivers 2 --senders 3 --capacity 47 --ack-frequency 79 --interleave 53",
+    "msg_group_test -b {} -a group-queue --group-key My-Group-Id --messages 10000  --group-size 1 --receivers 0 --senders 1",
+    "msg_group_test -b {} -a group-queue --group-key My-Group-Id --messages 10000  --receivers 5 --senders 0",
+    "qpid-config -b {} del queue group-queue --force",
+]
 
-BROKER_URL="${QPID_BROKER:-localhost}:${QPID_PORT:-5672}"
+address = "localhost:{}".format(port)
 
-run_test() {
-    "$@"
-}
+for command in commands:
+    call(command, address)
 
-##set -x
-
-declare -i i=0
-declare -a tests
-tests=("qpid-config -b $BROKER_URL add queue $QUEUE_NAME --group-header=${GROUP_KEY} --shared-groups"
-    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 103 --group-size 13 --receivers 2 --senders 3 --capacity 3 --ack-frequency 7 --randomize-group-size --interleave 3"
-    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 103 --group-size 13 --receivers 2 --senders 3 --capacity 7 --ack-frequency 7 --randomize-group-size"
-    "qpid-config -b $BROKER_URL add queue ${QUEUE_NAME}-two --group-header=${GROUP_KEY} --shared-groups"
-    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 103 --group-size 13 --receivers 2 --senders 3 --capacity 7 --ack-frequency 3 --randomize-group-size"
-    "msg_group_test -b $BROKER_URL -a ${QUEUE_NAME}-two --group-key $GROUP_KEY --messages 103 --group-size 13 --receivers 2 --senders 3 --capacity 3 --ack-frequency 7 --randomize-group-size --interleave 5"
-    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 59  --group-size 5  --receivers 2 --senders 3 --capacity 1 --ack-frequency 3 --randomize-group-size"
-    "qpid-config -b $BROKER_URL del queue ${QUEUE_NAME}-two --force"
-    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 59  --group-size 3  --receivers 2 --senders 3 --capacity 1 --ack-frequency 1 --randomize-group-size"
-    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 211 --group-size 13 --receivers 2 --senders 3 --capacity 47 --ack-frequency 79 --interleave 53"
-    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 10000  --group-size 1 --receivers 0 --senders 1"
-    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 10000  --receivers 5 --senders 0"
-    "qpid-config -b $BROKER_URL del queue $QUEUE_NAME --force")
-
-while [ -n "${tests[i]}" ]; do
-    run_test ${tests[i]}
-    RETCODE=$?
-    if test x$RETCODE != x0; then
-        echo "FAILED message group test.  Failed command: \"${tests[i]}\"";
-        exit 1;
-    fi
-    i+=1
-done
+check_results()

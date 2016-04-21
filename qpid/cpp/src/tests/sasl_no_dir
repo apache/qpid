@@ -19,88 +19,40 @@
 # under the License.
 #
 
-script_name=`basename $0`
+set -eu
 
-# This minimum value corresponds to sasl version 2.1.22
-minimum_sasl_version=131350
+sasl_config_dir=$BUILD_DIR/not_there_at_all
 
-sasl_version=$($QPID_TEST_EXEC_DIR/sasl_version)
+WORK_DIR=$WORK_DIR/sasl_no_dir
+mkdir $WORK_DIR
 
-# This test is necessary because this sasl version is the first one that permits 
-# redirection of the sasl config file path.
-if [ "$sasl_version" -lt  "$minimum_sasl_version" ]; then
-  echo "sasl_fed: must have sasl version 2.1.22 or greater.  ( Integer value: $minimum_sasl_version )  Version is: $sasl_version"
-  exit 0
-fi
+LOG_FILE=$WORK_DIR/qpidd.log
 
-
-sasl_config_dir=$QPID_TEST_EXEC_DIR/sasl_config
-
-
-# Debugging print. --------------------------
-debug=
-function print {
-  if [ "$debug" ]; then
-    echo "${script_name}: $1"
-  fi
-}
-
-
-my_random_number=$RANDOM
-tmp_root=/tmp/sasl_fed_$my_random_number
-mkdir -p $tmp_root
-
-
-LOG_FILE=$tmp_root/qpidd.log
-
-# If you want to see this test fail, just comment out this 'mv' command.
-print "Moving sasl configuration dir."
-mv ${sasl_config_dir} ${sasl_config_dir}-
-
-
-#--------------------------------------------------
-print " Starting broker"
-#--------------------------------------------------
-$QPIDD_EXEC                                  \
-  -p 0  --interface 127.0.0.1                \
-  --no-data-dir                              \
-  --auth=yes                                 \
-  --mgmt-enable=yes                          \
-  --log-enable info+                         \
-  --log-source yes                           \
-  --log-to-file ${LOG_FILE}                  \
-  --sasl-config=$sasl_config_dir             \
-  -d 2> /dev/null  1> $tmp_root/broker_port
-
-
+echo "Starting broker"
+qpidd                                          \
+    -p 0  --interface 127.0.0.1                \
+    --no-data-dir                              \
+    --auth=yes                                 \
+    --mgmt-enable=yes                          \
+    --log-enable info+                         \
+    --log-source yes                           \
+    --log-to-file ${LOG_FILE}                  \
+    --sasl-config=$sasl_config_dir             \
+    -d 2> /dev/null 1> $WORK_DIR/broker_port || :
 
 # If it works right, the output will look something like this:  ( two lines long )
 # Daemon startup failed: SASL: sasl_set_path failed: no such directory: /home/mick/trunk/qpid/cpp/src/tests/sasl_config (qpid/broker/SaslAuthenticator.cpp:112)
 # 2011-10-13 14:07:00 critical qpidd.cpp:83: Unexpected error: Daemon startup failed: SASL: sasl_set_path failed: no such directory: /home/mick/trunk/qpid/cpp/src/tests/sasl_config (qpid/broker/SaslAuthenticator.cpp:112)
 
-result=`cat ${LOG_FILE} | grep "sasl_set_path failed: no such directory" | wc -l `
+result=$(cat ${LOG_FILE} | grep "sasl_set_path failed: no such directory" | wc -l)
 
-#--------------------------------------------------
-print "Restore the Sasl config dir to its original place."
-#--------------------------------------------------
-mv ${sasl_config_dir}- ${sasl_config_dir}
-
-if [ "2" -eq ${result} ]; then
-  print "result: success"
-  rm -rf $tmp_root
-  exit 0
+if (( $result == 2 )); then
+    echo "Result: success"
+    exit 0
 fi
 
+broker_port=$(cat $WORK_DIR/broker_port)
+qpidd --port ${broker_port} --quit
 
-# If this test fails, the broker is still alive.
-# Kill it.
-broker_port=`cat $tmp_root/broker_port`
-#--------------------------------------------------
-print "Asking broker to quit."
-#--------------------------------------------------
-$QPIDD_EXEC --port $broker_port --quit
-
-rm -rf $tmp_root
-
-print "result: fail"
+echo "Result: fail"
 exit 1

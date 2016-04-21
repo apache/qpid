@@ -142,7 +142,7 @@ func_set_env ()
 	    if test -z ${QPID_BLD}; then
 		    QPID_BLD="${QPID_DIR}/cpp"
 	    fi
-	    source $QPID_BLD/src/tests/test_env.sh
+	    source $QPID_BLD/src/tests/env.sh
 #	    CPP_CLUSTER_EXEC="${QPID_BLD}/src/tests/cluster_test"
 #	    PYTHON_CLUSTER_EXEC="${QPID_DIR}/cpp/src/tests/$PYTHON_TESTNAME"
 	    FEDERATION_SYS_TESTS_FAIL="${QPID_DIR}/cpp/src/tests/federation_sys_tests.fail"

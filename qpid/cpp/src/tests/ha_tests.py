@@ -1450,15 +1450,9 @@ class TransactionTests(HaBrokerTest):
                     "*.tx.*"], stdout=None, stderr=None).assert_exit_ok()
 
 if __name__ == "__main__":
-    qpid_ha_exec = os.getenv("QPID_HA_EXEC")
-    if qpid_ha_exec and os.path.isfile(qpid_ha_exec):
-        BrokerTest.amqp_tx_warning()
-        outdir = "ha_tests.tmp"
-        shutil.rmtree(outdir, True)
-        os.execvp("qpid-python-test",
-                ["qpid-python-test", "-m", "ha_tests", "-DOUTDIR=%s"%outdir]
-                  + sys.argv[1:])
-    else:
-        print "Skipping ha_tests, qpid-ha not available"
-
+    outdir = "ha_tests.tmp"
+    shutil.rmtree(outdir, True)
+    os.execvp("qpid-python-test",
+            ["qpid-python-test", "-m", "ha_tests", "-DOUTDIR=%s"%outdir]
+              + sys.argv[1:])
 

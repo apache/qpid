@@ -51,6 +51,7 @@ include(BuildInstallSettings.cmake)
 
 enable_testing()
 include (CTest)
+configure_file(${CMAKE_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_BINARY_DIR}/CTestCustom.cmake)
 
 if (MSVC)
   # Chaxnge warning C4996 from level 1 to level 4. These are real and shouldn't
@@ -80,7 +81,7 @@ endif (WIN32)
 set_absolute_install_path (QPIDC_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidc.conf)
 set_absolute_install_path (QPIDD_CONF_FILE ${QPID_INSTALL_CONFDIR}/qpidd.conf)
 
-install(FILES  LICENSE.txt NOTICE.txt  DESTINATION ${QPID_INSTALL_DOCDIR})
+install(FILES  LICENSE.txt NOTICE.txt DESTINATION ${QPID_INSTALL_DOCDIR})
 install(FILES  include/qmf/qmf2.i
         DESTINATION ${QPID_INSTALL_INCLUDEDIR}/qmf)
 
@@ -217,6 +218,7 @@ if (MSVC)
 endif (MSVC)
 
 # Subdirectories
+add_subdirectory(management/python)
 add_subdirectory(managementgen)
 add_subdirectory(src)
 add_subdirectory(etc)
