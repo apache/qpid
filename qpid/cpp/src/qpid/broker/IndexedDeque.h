@@ -112,7 +112,7 @@ template <typename T> class IndexedDeque
     T* release(const QueueCursor& cursor)
     {
         size_t i;
-        if (cursor.valid && index(cursor.position, i)) {
+        if (cursor.valid && index(cursor.position, i) && messages[i].getState() == ACQUIRED) {
             messages[i].setState(AVAILABLE);
             ++version;
             QPID_LOG(debug, "Released message at position " << cursor.position << ", index " << i);
