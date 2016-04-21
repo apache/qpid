@@ -1023,9 +1023,15 @@ class MessageTests(TestBase010):
         session.message_flow(unit = session.credit_unit.byte, value = 0xFFFFFFFFL, destination = "a")
         session.message_flow(unit = session.credit_unit.message, value = 10, destination = "a")
 
+        # receive all messages into list
+        messages = [];
         for i in range(1, 11):
             msg = a.get(timeout = 1)
             self.assertEquals("message-%d" % (i), msg.body)
+            messages.append(msg)
+
+        # accept/release received messages
+        for i, msg in enumerate(messages, start=1):
             if (i % 2):
                 #accept all odd messages
                 session.message_accept(RangedSet(msg.id))
