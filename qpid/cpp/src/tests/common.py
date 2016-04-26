@@ -58,6 +58,7 @@ def _init_valgrind_command(command):
         VALGRIND,
         "--leak-check=full --num-callers=25 --error-exitcode=100",
         "--log-file={0}".format(log_file),
+        "--gen-suppressions=all",
         "--suppressions={0}".format(suppressions_file),
         "--",
         command,
