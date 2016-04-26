@@ -25,7 +25,7 @@ import sys
 def _message(error):
     return """
 ===============================================================================
-Error! {}
+Error! {0}
 
 The tests require Qpid Python, version 1.33 or greater.  Make sure
 Qpid Python is installed and available on the Python path:
