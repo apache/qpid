@@ -21,10 +21,15 @@
 
 from common import *
 
-port = start_broker("broker", "--load-module {0}".format(AMQP_LIB))
+python_swig_module = join(BUILD_DIR, "bindings", "qpid", "python", "qpid_messaging.py")
 
-ENV["QPID_INTEROP_URL"] = "localhost:{0}".format(port)
+if exists(python_swig_module):
+    port = start_broker("broker", "--load-module {0}".format(AMQP_LIB))
 
-call("qpid-python-test -m interop_tests -DOUTDIR={0}", WORK_DIR)
+    ENV["QPID_INTEROP_URL"] = "localhost:{0}".format(port)
+
+    call("qpid-python-test -m interop_tests -DOUTDIR={0}", WORK_DIR)
+else:
+    warn("Skipping tests: 1.0 messaging client not found")
 
 check_results()
