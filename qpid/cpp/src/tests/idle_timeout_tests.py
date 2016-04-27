@@ -24,6 +24,7 @@ import signal
 import sys
 
 from brokertest import *
+from qpid.harness import Skipped
 
 class AmqpIdleTimeoutTest(BrokerTest):
     """
