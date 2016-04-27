@@ -210,8 +210,6 @@
    ...
    fun:accept
    ...
-   fun:start_thread
-   fun:clone
 }
 
 {
@@ -221,8 +219,6 @@
    fun:_Znwm
    fun:_ZN4qpid6broker5Queue18scheduleAutoDeleteEb
    ...
-   fun:start_thread
-   fun:clone
 }
 
 {
@@ -236,8 +232,6 @@
    ...
    fun:accept
    ...
-   fun:start_thread
-   fun:clone
 }
 
 {
@@ -248,5 +242,4 @@
    fun:_ZN4qpid11linearstore7journal20EmptyFilePoolManager15insertPartitionEtRKNSt7*basic_stringIcSt11char_traitsIcESaIcEEE
    fun:_ZN4qpid11linearstore7journal20EmptyFilePoolManager17findEfpPartitionsEv
    ...
-   fun:(below main)
 }
