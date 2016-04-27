@@ -180,9 +180,9 @@
 {
    Leak reported in acl_tests
    Memcheck:Cond
-   fun:_ZN4qpid3acl9AclReader16loadDecisionDataEN5boost10shared_ptrINS0_7AclDataEEE
-   fun:_ZN4qpid3acl9AclReader4readERKNSt7*basic_stringIcSt11char_traitsIcESaIcEEEN5boost10shared_ptrINS0_7AclDataEEE
-   fun:_ZN4qpid3acl3Acl11readAclFileERNSt7*basic_stringIcSt11char_traitsIcESaIcEEES8_
+   fun:_ZN4qpid3acl9AclReader16loadDecisionData*
+   fun:_ZN4qpid3acl9AclReader4read*
+   fun:_ZN4qpid3acl3Acl11readAclFile*
    ...
 }
 
@@ -192,7 +192,7 @@
    match-leak-kinds: definite
    fun:_Znwm
    ...
-   fun:_ZN4qpid6broker14QueueFlowLimit11createLimitERKNSt7*basic_stringIcSt11char_traitsIcESaIcEEERKNS0_13QueueSettingsE
+   fun:_ZN4qpid6broker14QueueFlowLimit11createLimit*
    ...
    fun:accept
    ...
@@ -226,9 +226,9 @@
    Memcheck:Leak
    match-leak-kinds: definite
    fun:_Znwm
-   fun:_ZN4qpid6broker12QueueFactory6createERKNSt7*basic_stringIcSt11char_traitsIcESaIcEEERKNS0_13QueueSettingsE
-   fun:_ZN4qpid6broker13QueueRegistry7declareERKNSt7*basic_stringIcSt11char_traitsIcESaIcEEERKNS0_13QueueSettingsEN5boost10shared_ptrINS0_8ExchangeEEEbPKNS0_14OwnershipTokenES7_S7_
-   fun:_ZN4qpid6broker6Broker11createQueueERKNSt7*basic_stringIcSt11char_traitsIcESaIcEEERKNS0_13QueueSettingsEPKNS0_14OwnershipTokenES9_S9_S9_
+   fun:_ZN4qpid6broker12QueueFactory6create*
+   fun:_ZN4qpid6broker13QueueRegistry7declare*
+   fun:_ZN4qpid6broker6Broker11createQueue*
    ...
    fun:accept
    ...
@@ -239,7 +239,7 @@
    Memcheck:Leak
    match-leak-kinds: definite
    fun:_Znwm
-   fun:_ZN4qpid11linearstore7journal20EmptyFilePoolManager15insertPartitionEtRKNSt7*basic_stringIcSt11char_traitsIcESaIcEEE
+   fun:_ZN4qpid11linearstore7journal20EmptyFilePoolManager15insertPartition*
    fun:_ZN4qpid11linearstore7journal20EmptyFilePoolManager17findEfpPartitionsEv
    ...
 }
