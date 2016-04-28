@@ -197,7 +197,7 @@ int main(int argc, char ** argv)
             std::auto_ptr<FailoverUpdates> updates(opts.failoverUpdates ? new FailoverUpdates(connection) : 0);
             Session session = opts.tx ? connection.createTransactionalSession() : connection.createSession();
             Receiver receiver = session.createReceiver(opts.address);
-            receiver.setCapacity(std::min(opts.capacity, opts.messages));
+            receiver.setCapacity(opts.messages == 0 ? opts.capacity : std::min(opts.capacity, opts.messages));
             Message msg;
             uint count = 0;
             uint txCount = 0;
