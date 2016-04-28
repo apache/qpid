@@ -330,6 +330,16 @@ struct IncomingMessageHandler : IncomingMessages::Handler
         return callback(transfer);
     }
 
+    bool expire(IncomingMessages::MessageTransfer& transfer)
+    {
+        if (receiver && receiver->getName() == transfer.getDestination()) {
+            receiver->received();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     bool isClosed()
     {
         return receiver && receiver->isClosed();
@@ -358,7 +368,7 @@ bool SessionImpl::accept(ReceiverImpl* receiver,
 {
     if (receiver->getName() == transfer.getDestination()) {
         transfer.retrieve(message);
-        receiver->received(*message);
+        receiver->received();
         return true;
     } else {
         return false;

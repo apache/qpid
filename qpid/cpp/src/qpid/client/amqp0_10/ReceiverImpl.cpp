@@ -36,7 +36,7 @@ using qpid::messaging::NoMessageAvailable;
 using qpid::messaging::Receiver;
 using qpid::messaging::Duration;
 
-void ReceiverImpl::received(qpid::messaging::Message&)
+void ReceiverImpl::received()
 {
     //TODO: should this be configurable
     sys::Mutex::ScopedLock l(lock);

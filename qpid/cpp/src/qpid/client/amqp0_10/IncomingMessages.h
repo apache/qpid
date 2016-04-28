@@ -67,6 +67,7 @@ class IncomingMessages
     {
         virtual ~Handler() {}
         virtual bool accept(MessageTransfer& transfer) = 0;
+        virtual bool expire(MessageTransfer& transfer) = 0;
         virtual bool isClosed() { return false; }
     };
 

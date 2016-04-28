@@ -55,15 +55,17 @@ const std::string EMPTY_STRING;
 struct GetNone : IncomingMessages::Handler
 {
     bool accept(IncomingMessages::MessageTransfer&) { return false; }
+    bool expire(IncomingMessages::MessageTransfer&) { return false; }
 };
 
 struct GetAny : IncomingMessages::Handler
 {
     bool accept(IncomingMessages::MessageTransfer& transfer)
-    { 
+    {
         transfer.retrieve(0);
         return true;
     }
+    bool expire(IncomingMessages::MessageTransfer&) { return false; }
 };
 
 struct MatchAndTrack
@@ -147,7 +149,7 @@ bool IncomingMessages::get(Handler& handler, qpid::sys::Duration timeout)
         for (FrameSetQueue::iterator i = received.begin(); i != received.end();)
         {
             MessageTransfer transfer(*i, *this);
-            if (transfer.checkExpired()) {
+            if (transfer.checkExpired() && handler.expire(transfer)) {
                 i = received.erase(i);
             } else if (handler.accept(transfer)) {
                 received.erase(i);
@@ -282,7 +284,7 @@ IncomingMessages::ProcessState IncomingMessages::process(Handler* handler, qpid:
         for (Duration timeout = duration; pop(content, timeout); timeout = Duration(AbsTime::now(), deadline)) {
             if (content->isA<MessageTransferBody>()) {
                 MessageTransfer transfer(content, *this);
-                if (transfer.checkExpired()) {
+                if (transfer.checkExpired() && handler->expire(transfer)) {
                     QPID_LOG(debug, "Expired received transfer: " << *content->getMethod());
                 } else if (handler && handler->accept(transfer)) {
                     QPID_LOG(debug, "Delivered " << *content->getMethod() << " "

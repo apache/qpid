@@ -63,7 +63,7 @@ class ReceiverImpl : public qpid::messaging::ReceiverImpl
     uint32_t getCapacity();
     uint32_t getAvailable();
     uint32_t getUnsettled();
-    void received(qpid::messaging::Message& message);
+    void received();
     qpid::messaging::Session getSession() const;
     bool isClosed() const;
     qpid::messaging::Address getAddress() const;
