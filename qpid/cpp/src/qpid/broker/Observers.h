@@ -66,6 +66,7 @@ class Observers
         return i == observers.end() ?
             boost::shared_ptr<T>() : boost::dynamic_pointer_cast<T>(*i);
     }
+    virtual ~Observers() {}
 
   protected:
     typedef std::set<ObserverPtr> Set;
