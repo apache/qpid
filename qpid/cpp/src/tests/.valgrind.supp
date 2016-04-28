@@ -238,3 +238,30 @@
    fun:_ZN4qpid11linearstore7journal20EmptyFilePoolManager17findEfpPartitionsEv
    ...
 }
+
+{
+   Leak reported in acl_tests
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZN4qpid6broker5Queue*
+   fun:_ZN4qpid6broker12QueueFactory6create*
+   fun:_ZN4qpid6broker13QueueRegistry7declare*
+   fun:_ZN4qpid6broker6Broker11createQueue*
+   ...
+   fun:accept
+   ...
+}
+
+{
+   Leak reported in acl_tests
+   Memcheck:Leak
+   fun:_Znwm
+   fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
+   fun:_ZNSs12_S_constructIPKcEEPcT_S3_RKSaIcESt20forward_iterator_tag
+   fun:_ZNSsC1EPKcRKSaIcE
+   fun:__static_initialization_and_destruction_0
+   fun:_GLOBAL__sub_I_Broker.cpp
+   fun:_dl_init
+   obj:/usr/lib64/ld*.so
+   ...
+}
