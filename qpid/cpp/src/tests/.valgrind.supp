@@ -189,7 +189,6 @@
 {
    Leak reported in acl_tests and queue_redirect_tests
    Memcheck:Leak
-   match-leak-kinds: definite
    fun:_Znwm
    ...
    fun:_ZN4qpid6broker14QueueFlowLimit11createLimit*
@@ -201,7 +200,6 @@
 {
    Leak reported in python_tests
    Memcheck:Leak
-   match-leak-kinds: definite
    fun:_Znwm
    fun:allocate
    fun:allocate
@@ -215,7 +213,6 @@
 {
    Leak reported in python_tests
    Memcheck:Leak
-   match-leak-kinds: definite
    fun:_Znwm
    fun:_ZN4qpid6broker5Queue18scheduleAutoDeleteEb
    ...
@@ -224,7 +221,6 @@
 {
    Leak reported in python_tests
    Memcheck:Leak
-   match-leak-kinds: definite
    fun:_Znwm
    fun:_ZN4qpid6broker12QueueFactory6create*
    fun:_ZN4qpid6broker13QueueRegistry7declare*
@@ -237,7 +233,6 @@
 {
    Leak reported in linearstore_python_tests
    Memcheck:Leak
-   match-leak-kinds: definite
    fun:_Znwm
    fun:_ZN4qpid11linearstore7journal20EmptyFilePoolManager15insertPartition*
    fun:_ZN4qpid11linearstore7journal20EmptyFilePoolManager17findEfpPartitionsEv
