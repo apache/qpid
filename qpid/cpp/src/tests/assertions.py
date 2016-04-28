@@ -182,13 +182,13 @@ class AssertionTests (VersionTest):
         name = str(uuid4())
         # create subscription queue with 0-10 to be sure of name
         ssn_0_10 = self.create_connection("amqp0-10", True).session()
-        ssn_0_10.receiver("amq.direct; {link:{name:%s,timeout:30}}" % name)
-        self.ssn.sender("%s; {assert:always, node:{x-declare:{arguments: {qpid.auto_delete_timeout: 30}}}}" % name)
+        ssn_0_10.receiver("amq.direct; {link:{name:%s,timeout:120}}" % name)
+        self.ssn.sender("%s; {assert:always, node:{x-declare:{arguments: {qpid.auto_delete_timeout: 120}}}}" % name)
         ssn_0_10_other = self.create_connection("amqp0-10", True).session()
-        ssn_0_10_other.sender("%s; {assert:always, node:{x-declare:{arguments: {qpid.auto_delete_timeout: 30}}}}" % name)
+        ssn_0_10_other.sender("%s; {assert:always, node:{x-declare:{arguments: {qpid.auto_delete_timeout: 120}}}}" % name)
         try:
-            self.ssn.sender("%s; {assert:always, node:{x-declare:{arguments: {qpid.auto_delete_timeout: 60}}}}" % name)
-            ssn_0_10_other.sender("%s; {assert:always, node:{x-declare:{arguments: {qpid.auto_delete_timeout: 60}}}}" % name)
+            self.ssn.sender("%s; {assert:always, node:{x-declare:{arguments: {qpid.auto_delete_timeout: 180}}}}" % name)
+            ssn_0_10_other.sender("%s; {assert:always, node:{x-declare:{arguments: {qpid.auto_delete_timeout: 180}}}}" % name)
             assert False, "Expected assertion to fail for auto_delete_timeout"
         except AssertionFailed: None
         except MessagingError: None
