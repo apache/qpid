@@ -36,7 +36,7 @@
 namespace qpid {
 namespace acl {
 
-    AclReader::aclRule::aclRule(const AclResult r, const std::string n, const groupMap& groups) : res(r), actionAll(true), objStatus(NONE) {
+    AclReader::aclRule::aclRule(const AclResult r, const std::string n, const groupMap& groups) : res(r), actionAll(true), action(ACT_ACCESS), objStatus(NONE), object(OBJ_BROKER) {
         processName(n, groups);
     }
     AclReader::aclRule::aclRule(const AclResult r, const std::string n, const groupMap& groups, const Action a) : res(r), actionAll(false), action(a), objStatus(NONE) {
