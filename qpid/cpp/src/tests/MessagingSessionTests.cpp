@@ -1532,6 +1532,36 @@ QPID_AUTO_TEST_CASE(testResendMapAsString)
     BOOST_CHECK_EQUAL(in.getContent(), newContent);
 }
 
+QPID_AUTO_TEST_CASE(testClientExpiration)
+{
+    QueueFixture fix;
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    receiver.setCapacity(5);
+    Sender sender = fix.session.createSender(fix.queue);
+    for (uint i = 0; i < 5000; ++i) {
+        Message msg((boost::format("a_%1%") % (i+1)).str());
+	msg.setSubject("a");
+	msg.setTtl(Duration(10));
+        sender.send(msg);
+    }
+    for (uint i = 0; i < 50; ++i) {
+        Message msg((boost::format("b_%1%") % (i+1)).str());
+	msg.setSubject("b");
+        sender.send(msg);
+    }
+    Message received;
+    bool done = false;
+    uint b_count = 0;
+    while (!done && receiver.fetch(received, Duration::IMMEDIATE)) {
+        if (received.getSubject() == "b") {
+            b_count++;
+        }
+        done = received.getContent() == "b_50";
+        fix.session.acknowledge();
+    }
+    BOOST_CHECK_EQUAL(b_count, 50);
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
