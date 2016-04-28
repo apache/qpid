@@ -51,7 +51,7 @@ create_certs() {
     certutil -S -d ${CERT_DIR} -n ${TEST_HOSTNAME} -s "CN=${TEST_HOSTNAME}" -t "CT,," -x -f ${CERT_PW_FILE} -z /bin/sh 2> /dev/null
 }
 
-CERTUTIL=$(type -p certutil)
+CERTUTIL=$(type -p certutil) || :
 
 if [[ ! -x $CERTUTIL ]]; then
     echo "No certutil, skipping ssl test"
