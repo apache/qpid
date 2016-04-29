@@ -1562,6 +1562,46 @@ QPID_AUTO_TEST_CASE(testClientExpiration)
     BOOST_CHECK_EQUAL(b_count, 50);
 }
 
+QPID_AUTO_TEST_CASE(testPriorityRingEviction)
+{
+    MessagingFixture fix;
+    std::string queue("queue; {create:always, node:{x-declare:{auto-delete:True, arguments:{qpid.priorities:10, qpid.max_count:5, qpid.policy_type:ring}}}}");
+    Sender sender = fix.session.createSender(queue);
+    Receiver receiver = fix.session.createReceiver(queue);
+    std::vector<Message> acquired;
+    for (uint i = 0; i < 5; ++i) {
+        Message msg((boost::format("msg_%1%") % (i+1)).str());
+        sender.send(msg);
+    }
+    //fetch but don't acknowledge messages, leaving them in acquired state
+    for (uint i = 0; i < 5; ++i) {
+        Message msg;
+        BOOST_CHECK(receiver.fetch(msg, Duration::IMMEDIATE));
+        BOOST_CHECK_EQUAL(msg.getContent(), (boost::format("msg_%1%") % (i+1)).str());
+        acquired.push_back(msg);
+    }
+    //send 5 more messages to the queue, which should cause all the
+    //acquired messages to be dropped
+    for (uint i = 5; i < 10; ++i) {
+        Message msg((boost::format("msg_%1%") % (i+1)).str());
+        sender.send(msg);
+    }
+    //now release the acquired messages, which should have been evicted...
+    for (std::vector<Message>::iterator i = acquired.begin(); i != acquired.end(); ++i) {
+        fix.session.release(*i);
+    }
+    acquired.clear();
+    //and check that the newest five are received
+    for (uint i = 5; i < 10; ++i) {
+        Message msg;
+        BOOST_CHECK(receiver.fetch(msg, Duration::IMMEDIATE));
+        BOOST_CHECK_EQUAL(msg.getContent(), (boost::format("msg_%1%") % (i+1)).str());
+        acquired.push_back(msg);
+    }
+    Message msg;
+    BOOST_CHECK(!receiver.fetch(msg, Duration::IMMEDIATE));
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

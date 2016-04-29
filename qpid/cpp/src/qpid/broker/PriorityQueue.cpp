@@ -77,7 +77,7 @@ Message* PriorityQueue::next(QueueCursor& cursor)
 {
     boost::shared_ptr<PriorityContext> ctxt = boost::dynamic_pointer_cast<PriorityContext>(cursor.context);
     if (!ctxt) {
-        ctxt = boost::shared_ptr<PriorityContext>(new PriorityContext(levels, CONSUMER));
+        ctxt = boost::shared_ptr<PriorityContext>(new PriorityContext(levels, cursor.type));
         cursor.context = ctxt;
     }
     if (cursor.type == REPLICATOR) {
