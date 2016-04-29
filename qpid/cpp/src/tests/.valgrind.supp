@@ -193,20 +193,15 @@
    ...
    fun:_ZN4qpid6broker14QueueFlowLimit11createLimit*
    ...
-   fun:accept
-   ...
 }
 
 {
    Leak reported in python_tests
    Memcheck:Leak
    fun:_Znwm
-   fun:allocate
-   fun:allocate
+   ...
    fun:_M_get_node
    fun:_M_create_node
-   ...
-   fun:accept
    ...
 }
 
@@ -225,8 +220,6 @@
    fun:_ZN4qpid6broker12QueueFactory6create*
    fun:_ZN4qpid6broker13QueueRegistry7declare*
    fun:_ZN4qpid6broker6Broker11createQueue*
-   ...
-   fun:accept
    ...
 }
 
@@ -248,8 +241,6 @@
    fun:_ZN4qpid6broker13QueueRegistry7declare*
    fun:_ZN4qpid6broker6Broker11createQueue*
    ...
-   fun:accept
-   ...
 }
 
 {
@@ -261,7 +252,5 @@
    fun:_ZNSsC1EPKcRKSaIcE
    fun:__static_initialization_and_destruction_0
    fun:_GLOBAL__sub_I_Broker.cpp
-   fun:_dl_init
-   obj:/usr/lib64/ld*.so
    ...
 }
