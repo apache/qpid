@@ -227,7 +227,6 @@
    Memcheck:Leak
    fun:_Znwm
    ...
-   fun:_ZN4qpid6broker5Queue*
    fun:_ZN4qpid6broker12QueueFactory6create*
    fun:_ZN4qpid6broker13QueueRegistry7declare*
    fun:_ZN4qpid6broker6Broker11createQueue*
