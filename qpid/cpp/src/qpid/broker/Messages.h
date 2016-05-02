@@ -94,7 +94,14 @@ class Messages
      * Apply, the functor to each message held
      */
     virtual void foreach(Functor) = 0;
-  private:
+
+    /**
+     * Allows implementation to perform optional checks before message
+     * is stored.
+     */
+    virtual void check(const Message&) {};
+
+ private:
 };
 }} // namespace qpid::broker
 

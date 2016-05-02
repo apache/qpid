@@ -130,12 +130,17 @@ bool PagedQueue::deleted(const QueueCursor& cursor)
     }
 }
 
-void PagedQueue::publish(const Message& added)
+void PagedQueue::check(const Message& added)
 {
     if (encodedSize(added) > pageSize) {
         QPID_LOG(error, "Message is larger than page size for queue " << name);
         throw qpid::framing::PreconditionFailedException(QPID_MSG("Message is larger than page size for queue " << name));
     }
+}
+
+void PagedQueue::publish(const Message& added)
+{
+    check(added);
     Used::reverse_iterator i = used.rbegin();
     if (i != used.rend()) {
         if (!i->second.isLoaded()) load(i->second);

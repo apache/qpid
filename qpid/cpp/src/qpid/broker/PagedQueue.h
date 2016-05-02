@@ -32,6 +32,8 @@
 namespace qpid {
 namespace broker {
 class ProtocolRegistry;
+
+
 /**
  *
  */
@@ -47,6 +49,7 @@ class PagedQueue : public Messages {
     Message* find(const framing::SequenceNumber&, QueueCursor*);
     Message* find(const QueueCursor&);
     void foreach(Functor);
+    void check(const Message& added);
   private:
     class Page {
       public:

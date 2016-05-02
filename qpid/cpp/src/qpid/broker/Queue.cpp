@@ -274,10 +274,13 @@ bool Queue::accept(const Message& msg)
         //drop message
         QPID_LOG(info, "Dropping excluded message from " << getName());
         return false;
-    } else if (selector) {
-        return selector->filter(msg);
     } else {
-        return true;
+        messages->check(msg);
+        if (selector) {
+            return selector->filter(msg);
+        } else {
+            return true;
+        }
     }
 }
 
