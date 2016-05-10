@@ -85,10 +85,15 @@ class Client:
             username=None, password=None,
             client_properties=None, connection_options=None, sasl_options = None,
             channel_options=None):
+    if response is not None and (username is not None or password is not None):
+      raise RuntimeError("client must not specify both response and (username, password).")
+    if response is not None:
+      self.response = response
+      authzid, self.username, self.password = response.split("\0")
+    else:
+      self.username = username
+      self.password = password
     self.mechanism = mechanism
-    self.response = response
-    self.username = username
-    self.password = password
     self.locale = locale
     self.tune_params = tune_params
     self.client_properties=get_client_properties_with_defaults(provided_client_properties=client_properties, version_property_key="version")
@@ -148,20 +153,24 @@ class ClientDelegate(Delegate):
     self.client = client
 
   def connection_start(self, ch, msg):
+    if self.client.mechanism is None and self.client.response is not None:
+        # Supports users passing the response argument
+        self.client.mechanism = "PLAIN"
 
+    serverSupportedMechs = msg.frame.args[3].split()
     if self.client.mechanism is None:
-      if self.client.response is not None:
-        # Supports users passing the response argument alon
-        self.client.mechanism = "AMQPLAIN"
-      else:
-        supportedMechs = msg.frame.args[3].split()
-
-        self.client.sasl = get_sasl_mechanism(supportedMechs, self.client.username, self.client.password, sasl_options=self.client.sasl_options)
-
-        if self.client.sasl == None:
-          raise SaslException("sasl negotiation failed: no mechanism agreed.  Server supports: %s " % supportedMechs)
-
-        self.client.mechanism = self.client.sasl.mechanismName()
+      self.client.sasl = get_sasl_mechanism(serverSupportedMechs, self.client.username, self.client.password,
+                                            sasl_options=self.client.sasl_options)
+    else:
+      if self.client.mechanism not in serverSupportedMechs:
+        raise SaslException("sasl negotiation failed: no mechanism agreed. Client requested: '%s' Server supports: %s"
+                            % (self.client.mechanism, serverSupportedMechs))
+      self.client.sasl = get_sasl_mechanism([self.client.mechanism], self.client.username, self.client.password,
+                                            sasl_options=self.client.sasl_options)
+    if self.client.sasl is None:
+      raise SaslException("sasl negotiation failed: no mechanism agreed. Client requested: '%s' Server supports: %s"
+                          % (self.client.mechanism, serverSupportedMechs))
+    self.client.mechanism = self.client.sasl.mechanismName()
 
     if self.client.response is None:
       self.client.response = self.client.sasl.initialResponse()
