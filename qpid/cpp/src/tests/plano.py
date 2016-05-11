@@ -414,12 +414,12 @@ def _init_call(command, args, kwargs):
     return command, kwargs
 
 def call(command, *args, **kwargs):
-    command, args = _init_call(command, args, kwargs)
+    command, kwargs = _init_call(command, args, kwargs)
     _subprocess.check_call(command, **kwargs)
 
 def call_for_output(command, *args, **kwargs):
-    command, args = _init_call(command, args, kwargs)
-    return _subprocess.check_output(command, **kwargs)
+    command, kwargs = _init_call(command, args, kwargs)
+    return _subprocess_check_output(command, **kwargs)
 
 def make_archive(input_dir, output_dir, archive_stem):
     temp_dir = make_temp_dir()
@@ -541,3 +541,19 @@ def _copytree(src, dst, symlinks=False, ignore=None):
             errors.append((src, dst, str(why)))
     if errors:
         raise _shutil.Error(errors)
+
+# For Python 2.6 compatibility
+def _subprocess_check_output(command, **kwargs):
+    kwargs["stdout"] = _subprocess.PIPE
+    
+    proc = _subprocess.Popen(command, **kwargs)
+    output = proc.communicate()[0]
+    exit_code = proc.poll()
+
+    if exit_code not in (None, 0):
+        error = _subprocess.CalledProcessError(exit_code, command)
+        error.output = output
+
+        raise error
+
+    return output
