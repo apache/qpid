@@ -120,27 +120,7 @@ else:
                              cert_reqs=validate)
 
       if validate == CERT_REQUIRED and not conn.ssl_skip_hostname_check:
-        match_found = False
-        peer_cert = self.tls.getpeercert()
-        if peer_cert:
-          peer_names = []
-          if 'subjectAltName' in peer_cert:
-            for san in peer_cert['subjectAltName']:
-              if san[0] == 'DNS':
-                peer_names.append(san[1].lower())
-          if 'subject' in peer_cert:
-            for sub in peer_cert['subject']:
-              while isinstance(sub, tuple) and isinstance(sub[0],tuple):
-                sub = sub[0]   # why the extra level of indirection???
-              if sub[0] == 'commonName':
-                peer_names.append(sub[1].lower())
-          for pattern in peer_names:
-            if _match_dns_pattern( host.lower(), pattern ):
-              #print "Match found %s" % pattern
-              match_found = True
-              break
-        if not match_found:
-          raise SSLError("Connection hostname '%s' does not match names from peer certificate: %s" % (host, peer_names))
+        verify_hostname(self.tls.getpeercert(), host)
 
       self.socket.setblocking(0)
       self.state = None
@@ -204,6 +184,27 @@ else:
       self.socket.setblocking(1)
       # this closes the underlying socket
       self.tls.close()
+
+  def verify_hostname(peer_certificate, hostname):
+    match_found = False
+    peer_names = []
+    if peer_certificate:
+      if 'subjectAltName' in peer_certificate:
+        for san in peer_certificate['subjectAltName']:
+          if san[0] == 'DNS':
+            peer_names.append(san[1].lower())
+      if 'subject' in peer_certificate:
+        for sub in peer_certificate['subject']:
+          while isinstance(sub, tuple) and isinstance(sub[0], tuple):
+            sub = sub[0]  # why the extra level of indirection???
+          if sub[0] == 'commonName':
+            peer_names.append(sub[1].lower())
+      for pattern in peer_names:
+        if _match_dns_pattern(hostname.lower(), pattern):
+          match_found = True
+          break
+    if not match_found:
+      raise SSLError("Connection hostname '%s' does not match names from peer certificate: %s" % (hostname, peer_names))
 
   def _match_dns_pattern( hostname, pattern ):
     """ For checking the hostnames provided by the peer's certificate

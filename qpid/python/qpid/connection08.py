@@ -71,31 +71,76 @@ class SockIO:
     finally:
       self.sock.close()
 
+class _OldSSLSock:
+  """This is a wrapper around old (<=2.5) Python SSLObjects"""
+
+  def __init__(self, sock, keyFile, certFile):
+    self._sock = sock
+    self._sslObj = socket.ssl(self._sock, self._keyFile, self._certFile)
+    self._keyFile = keyFile
+    self._certFile = certFile
+
+  def sendall(self, buf):
+    while buf:
+      bytesWritten = self._sslObj.write(buf)
+      buf = buf[bytesWritten:]
+
+  def recv(self, n):
+    return self._sslObj.read(n)
+
+  def shutdown(self, how):
+    self._sock.shutdown(how)
+
+  def close(self):
+    self._sock.close()
+    self._sslObj = None
+
+  def getpeercert(self):
+    raise socket.error("This version of Python does not support SSL hostname verification. Please upgrade.")
+
+
 def connect(host, port, options = None):
   sock = socket.socket()
+  sock.connect((host, port))
+  sock.setblocking(1)
 
   if options and options.get("ssl", False):
     log.debug("Wrapping socket for SSL")
-    from ssl import wrap_socket, CERT_REQUIRED, CERT_NONE
-
     ssl_certfile = options.get("ssl_certfile", None)
     ssl_keyfile = options.get("ssl_keyfile", ssl_certfile)
     ssl_trustfile = options.get("ssl_trustfile", None)
     ssl_require_trust = options.get("ssl_require_trust", True)
+    ssl_verify_hostname = not options.get("ssl_skip_hostname_check", False)
 
-    if ssl_require_trust:
-      validate = CERT_REQUIRED
-    else:
-      validate = CERT_NONE
+    try:
+      # Python 2.6 and 2.7
+      from ssl import wrap_socket, CERT_REQUIRED, CERT_OPTIONAL, CERT_NONE
+      try:
+        # Python 2.7.9 and newer
+        from ssl import match_hostname as verify_hostname
+      except ImportError:
+        # Before Python 2.7.9 we roll our own
+        from qpid.messaging.transports import verify_hostname
 
-    sock = wrap_socket(sock,
-                       keyfile = ssl_keyfile,
-                       certfile = ssl_certfile,
-                       ca_certs = ssl_trustfile,
-                       cert_reqs = validate)
+      if ssl_require_trust or ssl_verify_hostname:
+        validate = CERT_REQUIRED
+      else:
+        validate = CERT_NONE
+      sock = wrap_socket(sock,
+                         keyfile=ssl_keyfile,
+                         certfile=ssl_certfile,
+                         ca_certs=ssl_trustfile,
+                         cert_reqs=validate)
+    except ImportError, e:
+      # Python 2.5 and older
+      if ssl_verify_hostname:
+        log.error("Your version of Python does not support ssl hostname verification. Please upgrade your version of Python.")
+        raise e
+      sock = _OldSSLSock(sock, ssl_keyfile, ssl_certfile)
 
-  sock.connect((host, port))
-  sock.setblocking(1)
+    if ssl_verify_hostname:
+      verify_hostname(sock.getpeercert(), host)
+
   return SockIO(sock)
 
 def listen(host, port, predicate = lambda: True):
