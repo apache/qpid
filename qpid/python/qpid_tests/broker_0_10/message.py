@@ -481,14 +481,17 @@ class MessageTests(TestBase010):
         session.message_flow(unit = session.credit_unit.byte, value = 0xFFFFFFFFL, destination = "c")
         #check that expected number were received
         q = session.incoming("c")
+        ids = []
         for i in range(1, 6):            
             msg = q.get(timeout = 1)
-            session.receiver._completed.add(msg.id)#TODO: this may be done automatically
+            ids.append(msg.id)
             self.assertDataEquals(session, msg, "Message %d" % i)
         self.assertEmpty(q)
 
         #acknowledge messages and check more are received
         #TODO: there may be a nicer way of doing this
+        for i in ids:
+           session.receiver._completed.add(i)
         session.channel.session_completed(session.receiver._completed)
 
         for i in range(6, 11):
