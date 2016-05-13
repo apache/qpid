@@ -114,7 +114,7 @@ def connect(host, port, options = None):
 
     try:
       # Python 2.6 and 2.7
-      from ssl import wrap_socket, CERT_REQUIRED, CERT_OPTIONAL, CERT_NONE
+      from ssl import wrap_socket, CERT_REQUIRED, CERT_NONE
       try:
         # Python 2.7.9 and newer
         from ssl import match_hostname as verify_hostname
