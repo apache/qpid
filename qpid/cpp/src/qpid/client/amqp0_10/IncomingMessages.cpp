@@ -284,7 +284,7 @@ IncomingMessages::ProcessState IncomingMessages::process(Handler* handler, qpid:
         for (Duration timeout = duration; pop(content, timeout); timeout = Duration(AbsTime::now(), deadline)) {
             if (content->isA<MessageTransferBody>()) {
                 MessageTransfer transfer(content, *this);
-                if (transfer.checkExpired() && handler->expire(transfer)) {
+                if (handler && transfer.checkExpired() && handler->expire(transfer)) {
                     QPID_LOG(debug, "Expired received transfer: " << *content->getMethod());
                 } else if (handler && handler->accept(transfer)) {
                     QPID_LOG(debug, "Delivered " << *content->getMethod() << " "

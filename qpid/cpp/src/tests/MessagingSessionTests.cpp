@@ -1562,6 +1562,27 @@ QPID_AUTO_TEST_CASE(testClientExpiration)
     BOOST_CHECK_EQUAL(b_count, 50);
 }
 
+QPID_AUTO_TEST_CASE(testExpiredPrefetchOnClose)
+{
+    QueueFixture fix;
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    Session other = fix.connection.createSession();
+    Receiver receiver2 = other.createReceiver("amq.fanout");
+    receiver.setCapacity(500);
+    Sender sender = fix.session.createSender(fix.queue);
+    for (uint i = 0; i < 500; ++i) {
+        Message msg((boost::format("a_%1%") % (i+1)).str());
+	msg.setSubject("a");
+	msg.setTtl(Duration(5));
+        sender.send(msg);
+    }
+    Sender sender2 = other.createSender("amq.fanout");
+    sender2.send(Message("done"));
+    BOOST_CHECK_EQUAL(receiver2.fetch().getContent(), "done");
+    qpid::sys::usleep(qpid::sys::TIME_MSEC*5);//sorry Alan, I can't see any way to avoid a sleep; need to ensure messages in prefetch have expired 
+    receiver.close();
+}
+
 QPID_AUTO_TEST_CASE(testPriorityRingEviction)
 {
     MessagingFixture fix;
