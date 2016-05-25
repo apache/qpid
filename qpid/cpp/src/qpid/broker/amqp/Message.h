@@ -51,6 +51,7 @@ class Message : public qpid::broker::Message::SharedStateImpl, private qpid::amq
     bool getTtl(uint64_t&) const;
     std::string getContent() const;
     void processProperties(qpid::amqp::MapHandler&) const;
+    std::string printProperties() const;
     std::string getUserId() const;
     uint64_t getTimestamp() const;
     std::string getTo() const;

@@ -530,6 +530,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     //utility function
     static bool reroute(boost::shared_ptr<Exchange> e, const Message& m);
+    static bool isExpired(const std::string& queueName, const Message&, qpid::sys::AbsTime);
 
   friend class QueueFactory;
 };

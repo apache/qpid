@@ -395,6 +395,15 @@ bool MessageTransfer::isLastQMFResponse(const qpid::broker::Message& message, co
     return transfer && transfer->isLastQMFResponse(correlation);
 }
 
+std::string MessageTransfer::printProperties() const
+{
+    std::stringstream out;
+    const qpid::framing::MessageProperties* mp = getProperties<qpid::framing::MessageProperties>();
+    if (mp) {
+        out << *mp;
+    }
+    return out.str();
+}
 
 void MessageTransfer::processProperties(qpid::amqp::MapHandler& handler) const
 {

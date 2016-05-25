@@ -301,6 +301,11 @@ qpid::types::Variant Message::getProperty(const std::string& key) const
     return r.getResult();
 }
 
+std::string Message::printProperties() const
+{
+    return sharedState->printProperties();
+}
+
 boost::intrusive_ptr<PersistableMessage> Message::getPersistentContext() const
 {
     return persistentContext;

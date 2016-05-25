@@ -81,6 +81,7 @@ public:
         virtual std::string getTo() const = 0;
         virtual std::string getSubject() const = 0;
         virtual std::string getReplyTo() const = 0;
+        virtual std::string printProperties() const = 0;
     };
 
     class SharedState : public Encoding
@@ -153,6 +154,7 @@ public:
     QPID_BROKER_EXTERN std::string getPropertyAsString(const std::string& key) const;
     QPID_BROKER_EXTERN qpid::types::Variant getProperty(const std::string& key) const;
     void processProperties(qpid::amqp::MapHandler&) const;
+    std::string printProperties() const;
 
     QPID_BROKER_EXTERN uint64_t getMessageSize() const;
 

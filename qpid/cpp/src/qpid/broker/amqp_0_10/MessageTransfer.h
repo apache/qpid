@@ -54,6 +54,7 @@ class MessageTransfer : public qpid::broker::Message::SharedStateImpl, public qp
     bool hasExpiration() const;
     std::string getExchangeName() const;
     void processProperties(qpid::amqp::MapHandler&) const;
+    std::string printProperties() const;
     std::string getUserId() const;
     void setTimestamp();
     uint64_t getTimestamp() const;
