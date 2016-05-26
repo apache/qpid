@@ -36,7 +36,6 @@ include(CheckSizetDistinct)
 
 find_package(PkgConfig)
 find_package(Ruby)
-find_package(PythonInterp REQUIRED)
 
 find_package(Doxygen)
 

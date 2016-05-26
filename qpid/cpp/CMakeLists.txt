@@ -49,6 +49,8 @@ set (qpidc_version ${QPID_VERSION_FULL})
 
 include(BuildInstallSettings.cmake)
 
+find_package(PythonInterp REQUIRED)
+
 enable_testing()
 include (CTest)
 configure_file(${CMAKE_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_BINARY_DIR}/CTestCustom.cmake)
