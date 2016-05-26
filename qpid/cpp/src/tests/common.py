@@ -146,7 +146,7 @@ class _Broker(object):
         write(self.command_file, self.command)
 
         # XXX Workaround for problem terminating subprocesses that use shell=True
-        command_args = _shlex.split(self.command)
+        command_args = _shlex.split(self.command, posix=False)
         
         self.proc = _subprocess.Popen(command_args, stdout=_subprocess.PIPE)
         self.port = self._wait_for_port()
