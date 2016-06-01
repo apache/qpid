@@ -23,7 +23,6 @@ from env import *
 
 import atexit as _atexit
 import os as _os
-import platform as _platform
 import re as _re
 import shlex as _shlex
 import shutil as _shutil
@@ -31,8 +30,6 @@ import signal as _signal
 import subprocess as _subprocess
 import time as _time
 import uuid as _uuid
-
-WINDOWS = _platform.system() == "Windows"
 
 def _unique_id():
     return str(_uuid.uuid4())[:4]

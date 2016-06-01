@@ -157,7 +157,6 @@ class Popen(subprocess.Popen):
         """
         self._clean = False
         self._clean_lock = Lock()
-        assert find_exe(cmd[0]), "executable not found: "+cmd[0]
         if type(cmd) is type(""): cmd = [cmd] # Make it a list.
         self.cmd  = [ str(x) for x in cmd ]
         self.expect = expect

@@ -285,7 +285,6 @@ add_test(NAME cli_tests COMMAND ${PYTHON_EXECUTABLE} run_cli_tests)
 add_test(NAME client_tests COMMAND ${PYTHON_EXECUTABLE} run_client_tests)
 add_test(NAME federation_tests COMMAND ${PYTHON_EXECUTABLE} run_federation_tests)
 add_test(NAME flow_control_tests COMMAND ${PYTHON_EXECUTABLE} run_flow_control_tests)
-add_test(NAME ha_tests COMMAND ${PYTHON_EXECUTABLE} run_ha_tests)
 add_test(NAME msg_group_tests COMMAND ${PYTHON_EXECUTABLE} run_msg_group_tests)
 add_test(NAME performance_tests COMMAND ${PYTHON_EXECUTABLE} run_performance_tests)
 add_test(NAME python_tests COMMAND ${PYTHON_EXECUTABLE} run_python_tests)
@@ -302,18 +301,14 @@ endif (BUILD_AMQP)
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     # Windows-only tests
 
-    if (BUILD_MSSQL)
-        add_test(NAME store_tests COMMAND powershell run_store_tests.ps1 MSSQL)
-    endif (BUILD_MSSQL)
-
-    if (BUILD_MSCLFS)
-        add_test(NAME store_tests_clfs COMMAND powershell run_store_tests.ps1 MSSQL-CLFS)
-    endif (BUILD_MSCLFS)
+    add_test(NAME windows_store_tests COMMAND ${PYTHON_EXECUTABLE} run_windows_store_tests)
 else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     # Posix-only tests
 
-    add_test(NAME logging_tests COMMAND run_logging_tests) # Pretty simple to convert
+    add_test(NAME ha_tests COMMAND ${PYTHON_EXECUTABLE} run_ha_tests)
+    
     add_test(NAME ipv6_tests COMMAND run_ipv6_tests) # Also pretty simple to convert
+    add_test(NAME logging_tests COMMAND run_logging_tests) # Pretty simple to convert
     add_test(NAME paged_queue_tests COMMAND run_paged_queue_tests)
     add_test(NAME ring_queue_tests COMMAND run_ring_queue_tests)
     add_test(NAME topic_tests COMMAND run_topic_tests)

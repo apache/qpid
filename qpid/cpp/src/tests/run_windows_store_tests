@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+from common import *
+
+store_lib = join(BUILD_DIR, "src", "qpid", "store", "RelWithDebInfo", "store.dll")
+store_sql_lib = join(BUILD_DIR, "src", "qpid", "store", "RelWithDebInfo", "mssql_store.dll")
+store_clfs_lib = join(BUILD_DIR, "src", "qpid", "store", "RelWithDebInfo", "msclfs_store.dll")
+
+if exists(store_sql_lib):
+    port = start_broker("broker_sql",
+                        "--load-module {0}".format(store_lib),
+                        "--load-module {0}".format(store_sql_lib))
+
+    run_broker_tests(port,
+                     "-m qpid_tests.broker_0_10.dtx",
+                     "-m qpid_tests.broker_0_10.persistence")
+
+    stop_broker(port)
+
+if exists(store_clfs_lib):
+    port = start_broker("broker_clfs",
+                        "--load-module {0}".format(store_lib),
+                        "--load-module {0}".format(store_clfs_lib))
+
+    run_broker_tests(port,
+                     "-m qpid_tests.broker_0_10.dtx",
+                     "-m qpid_tests.broker_0_10.persistence")
+
+    stop_broker(port)
+
+ENV["STORE_SQL_LIB"] = store_sql_lib
+ENV["STORE_SQL_CLFS_LIB"] = store_clfs_lib
+
+if exists(store_sql_lib):
+    ENV["STORE_CATALOG"] = join(WORK_DIR, "store_recovery_sql_test")
+    call("qpid-python-test -m store -DOUTDIR={0}", WORK_DIR)
+
+if exists(store_clfs_lib):
+    ENV["STORE_CATALOG"] = join(WORK_DIR, "store_recovery_clfs_test")
+    call("qpid-python-test -m store -DOUTDIR={0}", WORK_DIR)
+
+check_results()
