@@ -74,6 +74,7 @@ QueueRegistry::declare(const string& name, const QueueSettings& settings,
             result = std::pair<Queue::shared_ptr, bool>(queue, true);
         } else {
             result = std::pair<Queue::shared_ptr, bool>(i->second, false);
+            ++(i->second->version);
         }
         if (getBroker() && getBroker()->getManagementAgent()) {
             getBroker()->getManagementAgent()->raiseEvent(
@@ -97,17 +98,41 @@ void QueueRegistry::destroy(
         QueueMap::iterator i = queues.find(name);
         if (i != queues.end()) {
             q = i->second;
-            queues.erase(i);
-            if (getBroker()) {
-                // NOTE: queueDestroy and raiseEvent must be called with the
-                // lock held in order to ensure events are generated
-                // in the correct order.
-                getBroker()->getBrokerObservers().queueDestroy(q);
-                if (getBroker()->getManagementAgent())
-                    getBroker()->getManagementAgent()->raiseEvent(
-                        _qmf::EventQueueDelete(connectionId, userId, name));
+            eraseLH(i, q, name, connectionId, userId);
+        }
+    }
+}
+
+void QueueRegistry::eraseLH(QueueMap::iterator i, Queue::shared_ptr q, const string& name, const string& connectionId, const string& userId)
+{
+    queues.erase(i);
+    if (getBroker()) {
+        // NOTE: queueDestroy and raiseEvent must be called with the
+        // lock held in order to ensure events are generated
+        // in the correct order.
+        getBroker()->getBrokerObservers().queueDestroy(q);
+        if (getBroker()->getManagementAgent())
+            getBroker()->getManagementAgent()->raiseEvent(
+                _qmf::EventQueueDelete(connectionId, userId, name));
+    }
+}
+
+
+bool QueueRegistry::destroyIfUntouched(const string& name, long version,
+                                       const string& connectionId, const string& userId)
+{
+    Queue::shared_ptr q;
+    {
+        qpid::sys::RWlock::ScopedWlock locker(lock);
+        QueueMap::iterator i = queues.find(name);
+        if (i != queues.end()) {
+            q = i->second;
+            if (q->version == version) {
+                eraseLH(i, q, name, connectionId, userId);
+                return true;
             }
         }
+        return false;
     }
 }
 

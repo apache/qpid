@@ -1297,9 +1297,10 @@ boost::shared_ptr<Exchange> Queue::getAlternateExchange()
 struct AutoDeleteTask : qpid::sys::TimerTask
 {
     Queue::shared_ptr queue;
+    long expectedVersion;
 
     AutoDeleteTask(Queue::shared_ptr q, AbsTime fireTime)
-        : qpid::sys::TimerTask(fireTime, "DelayedAutoDeletion:"+q->getName()), queue(q) {}
+        : qpid::sys::TimerTask(fireTime, "DelayedAutoDeletion:"+q->getName()), queue(q), expectedVersion(q->version) {}
 
     void fire()
     {
@@ -1307,7 +1308,7 @@ struct AutoDeleteTask : qpid::sys::TimerTask
         //created, but then became unused again before the task fired;
         //in this case ignore this request as there will have already
         //been a later task added
-        queue->tryAutoDelete();
+        queue->tryAutoDelete(expectedVersion);
     }
 };
 
@@ -1320,29 +1321,37 @@ void Queue::scheduleAutoDelete(bool immediate)
             broker->getTimer().add(autoDeleteTask);
             QPID_LOG(debug, "Timed auto-delete for " << getName() << " initiated");
         } else {
-            tryAutoDelete();
+            tryAutoDelete(version);
         }
     }
 }
 
-void Queue::tryAutoDelete()
+void Queue::tryAutoDelete(long expectedVersion)
 {
     bool proceed(false);
     {
         Mutex::ScopedLock locker(messageLock);
         if (!deleted && checkAutoDelete(locker)) {
             proceed = true;
-            deleted = true;
         }
     }
 
     if (proceed) {
-        broker->getQueues().destroy(name);
-        if (broker->getAcl())
-            broker->getAcl()->recordDestroyQueue(name);
+        if (broker->getQueues().destroyIfUntouched(name, expectedVersion)) {
+            {
+                Mutex::ScopedLock locker(messageLock);
+                deleted = true;
+            }
+            if (broker->getAcl())
+                broker->getAcl()->recordDestroyQueue(name);
 
-        QPID_LOG_CAT(debug, model, "Auto-delete queue deleted: " << name << " (" << deleted << ")");
-        destroyed();
+            QPID_LOG_CAT(debug, model, "Auto-delete queue deleted: " << name << " (" << deleted << ")");
+            destroyed();
+        } else {
+            //queue was accessed since the delayed auto-delete was scheduled, so try again
+            QPID_LOG_CAT(debug, model, "Auto-delete interrupted for queue: " << name);
+            scheduleAutoDelete();
+        }
     } else {
         QPID_LOG_CAT(debug, model, "Auto-delete queue could not be deleted: " << name);
     }

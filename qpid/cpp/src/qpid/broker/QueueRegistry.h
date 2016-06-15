@@ -80,15 +80,9 @@ class QueueRegistry : private QueueFactory {
         const std::string& connectionId=std::string(),
         const std::string& userId=std::string());
 
-    template <class Test> bool destroyIf(const std::string& name, Test test)
-    {
-        if (test()) {
-            destroy(name);
-            return true;
-        } else {
-            return false;
-        }
-    }
+    QPID_BROKER_EXTERN bool destroyIfUntouched(const std::string& name, long version,
+                                               const std::string& connectionId=std::string(),
+                                               const std::string& userId=std::string());
 
     /**
      * Find the named queue. Return 0 if not found.
@@ -126,6 +120,8 @@ private:
     typedef std::map<std::string, boost::shared_ptr<Queue> > QueueMap;
     QueueMap queues;
     mutable qpid::sys::RWlock lock;
+
+    void eraseLH(QueueMap::iterator, boost::shared_ptr<Queue>, const std::string& name, const std::string& connectionId, const std::string& userId);
 };
 
 

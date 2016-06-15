@@ -37,6 +37,7 @@
 
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/SequenceNumber.h"
+#include "qpid/sys/AtomicCount.h"
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/management/Manageable.h"
@@ -219,6 +220,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     boost::intrusive_ptr<qpid::sys::TimerTask> autoDeleteTask;
     boost::shared_ptr<MessageDistributor> allocator;
     boost::scoped_ptr<Selector> selector;
+    qpid::sys::AtomicCount version;
 
     // Redirect source and target refer to each other. Only one is source.
     Queue::shared_ptr redirectPeer;
@@ -271,7 +273,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
                     uint32_t maxTests=0);
 
     virtual bool checkDepth(const QueueDepth& increment, const Message&);
-    void tryAutoDelete();
+    void tryAutoDelete(long expectedVersion);
   public:
 
     typedef std::vector<shared_ptr> vector;
@@ -533,6 +535,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     static bool isExpired(const std::string& queueName, const Message&, qpid::sys::AbsTime);
 
   friend class QueueFactory;
+  friend class QueueRegistry;
 };
 }
 }
