@@ -381,8 +381,11 @@ void Bridge::propagateBinding(const string& key, const string& tagList,
          else
              bindArgs.setString(qpidFedOrigin, origin);
 
-         conn->requestIOProcessing(boost::bind(&Bridge::ioThreadPropagateBinding, this,
-                                               queueName, args.i_src, key, bindArgs));
+         conn->requestIOProcessing(
+             weakCallback<Bridge>(
+                 boost::bind(&Bridge::ioThreadPropagateBinding, _1,
+                             queueName, args.i_src, key, bindArgs),
+                 this));
     }
 }
 
@@ -393,9 +396,13 @@ void Bridge::sendReorigin()
     bindArgs.setString(qpidFedOp, fedOpReorigin);
     bindArgs.setString(qpidFedTags, link->getBroker()->getFederationTag());
 
-    conn->requestIOProcessing(boost::bind(&Bridge::ioThreadPropagateBinding, this,
-                                          queueName, args.i_src, args.i_key, bindArgs));
+    conn->requestIOProcessing(
+        weakCallback<Bridge>(
+            boost::bind(&Bridge::ioThreadPropagateBinding, _1,
+                        queueName, args.i_src, args.i_key, bindArgs),
+            this));
 }
+
 bool Bridge::resetProxy()
 {
     SessionHandler& sessionHandler = conn->getChannel(channel);

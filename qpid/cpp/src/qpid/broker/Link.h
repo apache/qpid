@@ -23,6 +23,7 @@
  */
 
 #include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #include "qpid/Url.h"
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/PersistableConfig.h"
@@ -50,7 +51,9 @@ namespace amqp_0_10 {
 class Connection;
 }
 
-class Link : public PersistableConfig, public management::Manageable {
+class Link : public PersistableConfig, public management::Manageable,
+             public boost::enable_shared_from_this<Link>
+{
   private:
     mutable sys::Mutex  lock;
     const std::string   name;

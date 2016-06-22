@@ -226,7 +226,25 @@ friend class OutboundFrameTracker;
 
     qmf::org::apache::qpid::broker::Connection::shared_ptr getMgmtObject() { return mgmtObject; }
 };
+}
 
-}}}
+// See weakCallback below.
+template <class T> void callIfValid(boost::function1<void, T*> f, boost::weak_ptr<T> wp) {
+    boost::shared_ptr<T> sp = wp.lock();
+    if (sp) f(sp.get());
+}
+
+// Memory safety helper for requestIOProcessing with boost::shared_ptr.
+//
+// Makes a function that calls f(p) only if p is still valid. The returned
+// function is bound to a weak_ptr, and only calls f(p) if the weak pointer is
+// still valid. Note this does not prevent the object being deleted before the
+// IO callback, instead it skips the callback if the object is already deleted.
+template <class T>
+boost::function0<void> weakCallback(boost::function1<void, T*> f, T* p) {
+    return boost::bind(&callIfValid<T>, f, p->shared_from_this());
+}
+
+}}
 
 #endif  /*!QPID_BROKER_AMQP_0_10_CONNECTION_H*/

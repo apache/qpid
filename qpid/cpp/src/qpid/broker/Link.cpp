@@ -250,7 +250,8 @@ void Link::established(qpid::broker::amqp_0_10::Connection* c)
             currentInterval = 1;
             visitCount      = 0;
             connection = c;
-            c->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
+            c->requestIOProcessing (
+                weakCallback<Link>(boost::bind(&Link::ioThreadProcessing, _1), this));
         }
     }
     if (isClosing)
@@ -416,7 +417,8 @@ void Link::add(Bridge::shared_ptr bridge)
     Mutex::ScopedLock mutex(lock);
     created.push_back (bridge);
     if (connection)
-        connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
+            connection->requestIOProcessing (
+                weakCallback<Link>(boost::bind(&Link::ioThreadProcessing, _1), this));
 
 }
 
@@ -443,7 +445,8 @@ void Link::cancel(Bridge::shared_ptr bridge)
         needIOProcessing = !cancellations.empty();
     }
     if (needIOProcessing && connection)
-        connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
+        connection->requestIOProcessing (
+            weakCallback<Link>(boost::bind(&Link::ioThreadProcessing, _1), this));
 }
 
 void Link::ioThreadProcessing()
@@ -507,7 +510,8 @@ void Link::maintenanceVisit ()
     case STATE_OPERATIONAL:
         if ((!active.empty() || !created.empty() || !cancellations.empty()) &&
             connection && connection->isOpen())
-            connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
+        connection->requestIOProcessing (
+            weakCallback<Link>(boost::bind(&Link::ioThreadProcessing, _1), this));
         break;
 
     default:    // no-op for all other states
@@ -691,7 +695,7 @@ void Link::close() {
             setStateLH(STATE_CLOSING);
             if (connection) {
                 //connection can only be closed on the connections own IO processing thread
-                connection->requestIOProcessing(boost::bind(&Link::destroy, this));
+                connection->requestIOProcessing(boost::bind(&Link::destroy, shared_from_this()));
             } else if (old_state == STATE_CONNECTING) {
                 // cannot destroy Link now since a connection request is outstanding.
                 // destroy the link after we get a response (see Link::established,
