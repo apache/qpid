@@ -106,8 +106,7 @@ if (BUILD_AMQP)
     add_library (amqp MODULE ${amqp_SOURCES})
     target_link_libraries (amqp qpidtypes qpidbroker qpidcommon ${Proton_LIBRARIES})
     set_target_properties (amqp PROPERTIES
-                           PREFIX ""
-                           COMPILE_DEFINITIONS _IN_QPID_BROKER)
+                           PREFIX "")
 
     install (TARGETS amqp
              DESTINATION ${QPIDD_MODULE_DIR}

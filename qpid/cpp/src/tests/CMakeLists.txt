@@ -214,7 +214,6 @@ add_executable (unit_test unit_test
 target_link_libraries (unit_test
                        ${qpid_test_boost_libs}
                        qpidmessaging qpidtypes qpidbroker qpidclient qpidcommon)
-set_target_properties (unit_test PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 
 endif (BUILD_TESTING_UNITTESTS)
 
@@ -306,7 +305,6 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     # Posix-only tests
 
     add_test(NAME ha_tests COMMAND ${PYTHON_EXECUTABLE} run_ha_tests)
-    
     add_test(NAME ipv6_tests COMMAND run_ipv6_tests) # Also pretty simple to convert
     add_test(NAME logging_tests COMMAND run_logging_tests) # Pretty simple to convert
     add_test(NAME paged_queue_tests COMMAND run_paged_queue_tests)

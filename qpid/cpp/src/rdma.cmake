@@ -79,7 +79,6 @@ if (BUILD_RDMA)
   add_library (rdma MODULE qpid/sys/RdmaIOPlugin.cpp)
   target_link_libraries (rdma qpidbroker qpidcommon rdmawrap)
   set_target_properties (rdma PROPERTIES
-                         COMPILE_DEFINITIONS _IN_QPID_BROKER
                          PREFIX "")
 
   if (CMAKE_COMPILER_IS_GNUCXX)

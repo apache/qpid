@@ -150,7 +150,6 @@ if (BUILD_LINEARSTORE)
 
     set_target_properties (linearstore PROPERTIES
         PREFIX ""
-        COMPILE_DEFINITIONS _IN_QPID_BROKER
         OUTPUT_NAME linearstore
         INCLUDE_DIRECTORIES "${linear_include_DIRECTORIES}"
     )

@@ -115,7 +115,7 @@ if (BUILD_LEGACYSTORE)
         qpid/legacystore/TxnCtxt.cpp
     )
 
-    set (legacystore_defines _IN_QPID_BROKER RHM_CLEAN)
+    set (legacystore_defines RHM_CLEAN)
 
     if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/db-inc.h)
       message(STATUS "Including BDB from ${DB_CXX_INCLUDE_DIR}/db_cxx.h")

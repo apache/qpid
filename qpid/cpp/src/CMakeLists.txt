@@ -491,8 +491,7 @@ if (BUILD_XML)
                qpid/xml/XmlExchangePlugin.cpp)
   target_link_libraries (xml xerces-c xqilla qpidbroker qpidcommon)
   set_target_properties (xml PROPERTIES
-                         PREFIX ""
-                         COMPILE_DEFINITIONS _IN_QPID_BROKER)
+                         PREFIX "")
   install (TARGETS xml
            DESTINATION ${QPIDD_MODULE_DIR}
            COMPONENT ${QPID_COMPONENT_BROKER})
@@ -576,8 +575,7 @@ if (BUILD_HA)
                            qpidtypes qpidcommon qpidbroker qpidmessaging
                            ${Boost_PROGRAM_OPTIONS_LIBRARY})
     set_target_properties (ha PROPERTIES
-                           PREFIX ""
-                           COMPILE_DEFINITIONS _IN_QPID_BROKER)
+                           PREFIX "")
     install (TARGETS ha
              DESTINATION ${QPIDD_MODULE_DIR}
              COMPONENT ${QPID_COMPONENT_BROKER})
@@ -1139,8 +1137,8 @@ target_link_libraries (qpidbroker qpidcommon qpidtypes
 
 set_target_properties (qpidbroker PROPERTIES
                        VERSION ${qpidbroker_version}
-                       SOVERSION ${qpidbroker_version_major}
-                       COMPILE_DEFINITIONS _IN_QPID_BROKER)
+                       SOVERSION ${qpidbroker_version_major})
+
 if (CMAKE_CXX_COMPILER_ID MATCHES XL)
   set_target_properties (qpidbroker PROPERTIES LINK_FLAGS -Wl,-bbigtoc)
 endif (CMAKE_CXX_COMPILER_ID MATCHES XL)
@@ -1163,7 +1161,6 @@ set (qpidd_SOURCES
 add_msvc_version (qpidd application exe)
 add_executable (qpidd ${qpidd_SOURCES})
 target_link_libraries (qpidd qpidbroker qpidcommon)
-set_target_properties (qpidd PROPERTIES COMPILE_DEFINITIONS _IN_QPID_BROKER)
 install (TARGETS qpidd
          RUNTIME DESTINATION ${QPID_INSTALL_SBINDIR} COMPONENT ${QPID_COMPONENT_BROKER}
          LIBRARY DESTINATION ${QPID_INSTALL_LIBDIR} COMPONENT ${QPID_COMPONENT_BROKER}
