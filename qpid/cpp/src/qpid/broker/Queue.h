@@ -299,7 +299,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      */
     QPID_BROKER_EXTERN void create();
 
-    void destroyed();
     QPID_BROKER_EXTERN void bound(const std::string& exchange,
                                   const std::string& key,
                                   const qpid::framing::FieldTable& args);
@@ -534,6 +533,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     static bool reroute(boost::shared_ptr<Exchange> e, const Message& m);
     static bool isExpired(const std::string& queueName, const Message&, qpid::sys::AbsTime);
 
+  private:
+    void destroyed();           // Only called by QueueRegistry::destroy()
+  friend class QueueRegistry;
   friend class QueueFactory;
   friend class QueueRegistry;
 };

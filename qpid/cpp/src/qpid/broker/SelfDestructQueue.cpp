@@ -37,7 +37,6 @@ bool SelfDestructQueue::checkDepth(const QueueDepth& increment, const Message&)
         if (broker->getAcl())
             broker->getAcl()->recordDestroyQueue(name);
         QPID_LOG_CAT(debug, model, "Queue " << name << " deleted itself due to reaching limit: " << current << " (policy is " << settings.maxDepth << ")");
-        destroyed();
     }
     current += increment;
     return true;

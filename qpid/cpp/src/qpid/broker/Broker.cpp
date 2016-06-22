@@ -1496,7 +1496,6 @@ void Broker::deleteQueue(const std::string& name, const std::string& userId,
                                  queue->isRedirectSource() ? peerQ : queue,
                                  false);
         queues.destroy(name, connectionId, userId);
-        queue->destroyed();
     } else {
         throw framing::NotFoundException(QPID_MSG("Delete failed. No such queue: " << name));
     }

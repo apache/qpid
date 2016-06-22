@@ -237,8 +237,10 @@ Queue::Queue(const string& _name, const QueueSettings& _settings,
 
 Queue::~Queue()
 {
-    if (mgmtObject != 0)
+    if (mgmtObject != 0) {
         mgmtObject->debugStats("destroying");
+        mgmtObject->resourceDestroy();
+    }
 }
 
 bool Queue::isLocal(const Message& msg)
@@ -1346,7 +1348,6 @@ void Queue::tryAutoDelete(long expectedVersion)
                 broker->getAcl()->recordDestroyQueue(name);
 
             QPID_LOG_CAT(debug, model, "Auto-delete queue deleted: " << name << " (" << deleted << ")");
-            destroyed();
         } else {
             //queue was accessed since the delayed auto-delete was scheduled, so try again
             QPID_LOG_CAT(debug, model, "Auto-delete interrupted for queue: " << name);

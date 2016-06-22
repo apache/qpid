@@ -20,10 +20,12 @@
 // under the License.
 //
 
-#include "qpid/management/ManagementObject.h"
-#include "qpid/management/Args.h"
-#include <string>
 #include "qpid/CommonImportExport.h"
+#include "qpid/management/Args.h"
+#include "qpid/management/ManagementObject.h"
+#include "qpid/sys/IntegerTypes.h"
+
+#include <string>
 
 namespace qpid {
 namespace management {

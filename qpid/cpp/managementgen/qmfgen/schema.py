@@ -1371,10 +1371,10 @@ class SchemaClass:
                                                    arg.dir.lower () + "_" +\
                                                    arg.name, "inBuf") + ";\n")
 
-      stream.write ("        bool allow = coreObject->AuthorizeMethod(METHOD_" +\
+      stream.write ("        bool allow = manageable.AuthorizeMethod(METHOD_" +\
                     method.getName().upper() + ", ioArgs, userId);\n")
       stream.write ("        if (allow)\n")
-      stream.write ("            status = coreObject->ManagementMethod (METHOD_" +\
+      stream.write ("            status = manageable.ManagementMethod (METHOD_" +\
                     method.getName().upper() + ", ioArgs, text);\n")
       stream.write ("        else\n")
       stream.write ("            status = Manageable::STATUS_FORBIDDEN;\n")
@@ -1413,10 +1413,10 @@ class SchemaClass:
                                  False,
                                  arg.default)
 
-      stream.write ("        bool allow = coreObject->AuthorizeMethod(METHOD_" +\
+      stream.write ("        bool allow = manageable.AuthorizeMethod(METHOD_" +\
                     method.getName().upper() + ", ioArgs, userId);\n")
       stream.write ("        if (allow)\n")
-      stream.write ("            status = coreObject->ManagementMethod (METHOD_" +\
+      stream.write ("            status = manageable.ManagementMethod (METHOD_" +\
                     method.getName().upper() + ", ioArgs, text);\n")
       stream.write ("        else\n")
       stream.write ("            status = Manageable::STATUS_FORBIDDEN;\n")

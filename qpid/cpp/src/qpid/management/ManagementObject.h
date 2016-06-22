@@ -23,6 +23,7 @@
  */
 #include "qpid/CommonImportExport.h"
 
+#include "qpid/management/Args.h"
 #include "qpid/management/Mutex.h"
 #include "qpid/types/Variant.h"
 #include <map>
@@ -33,9 +34,9 @@
 namespace qpid {
 namespace management {
 
-class Manageable;
 class ObjectId;
 class ManagementObject;
+class Manageable;
 
 
 class AgentAttachment {
@@ -135,6 +136,21 @@ public:
 class QPID_COMMON_CLASS_EXTERN ManagementObject : public ManagementItem
 {
 protected:
+    // Thread safe wrapper for Manageable* with atomic calls and destroy().
+    class ManageablePtr {
+        Manageable* ptr;
+        mutable Mutex lock;
+        Manageable* get() const;
+        ManageablePtr(const ManageablePtr&); // not copyable
+        ManageablePtr& operator=(const ManageablePtr&); // not copyable
+
+      public:
+        ManageablePtr(Manageable* m) : ptr(m) {}
+
+        uint32_t ManagementMethod(uint32_t methodId, Args& args, std::string& text);
+        bool AuthorizeMethod(uint32_t methodId, Args& args, const std::string& userId);
+        void reset();
+    };
 
     uint64_t         createTime;
     uint64_t         destroyTime;
@@ -143,7 +159,7 @@ protected:
     mutable bool     configChanged;
     mutable bool     instChanged;
     bool             deleted;
-    Manageable*      coreObject;
+    ManageablePtr    manageable;
     mutable Mutex    accessLock;
     uint32_t         flags;
 

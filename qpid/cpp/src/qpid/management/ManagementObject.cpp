@@ -23,6 +23,7 @@
 #include "qpid/management/ManagementObject.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/framing/reply_exceptions.h"
 #include "qpid/sys/Time.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/log/Statement.h"
@@ -245,11 +246,37 @@ ostream& operator<<(ostream& out, const ObjectId& i)
 
 }}
 
+// Called with lock held
+Manageable* ManagementObject::ManageablePtr::get() const {
+    if (ptr == 0)
+        throw framing::ResourceDeletedException("managed object deleted");
+    return ptr;
+}
+
+void ManagementObject::ManageablePtr::reset() {
+    Mutex::ScopedLock l(lock);
+    ptr = 0;
+}
+
+uint32_t ManagementObject::ManageablePtr::ManagementMethod(
+    uint32_t methodId, Args& args, std::string& text)
+{
+    Mutex::ScopedLock l(lock);
+    return get()->ManagementMethod(methodId, args, text);
+}
+
+bool ManagementObject::ManageablePtr:: AuthorizeMethod(
+    uint32_t methodId, Args& args, const std::string& userId)
+{
+    Mutex::ScopedLock l(lock);
+    return get()->AuthorizeMethod(methodId, args, userId);
+}
+
 ManagementObject::ManagementObject(Manageable* _core) :
     createTime(qpid::sys::Duration::FromEpoch()),
     destroyTime(0), updateTime(createTime), configChanged(true),
     instChanged(true), deleted(false),
-    coreObject(_core), flags(0), forcePublish(false) {}
+    manageable(_core), flags(0), forcePublish(false) {}
 
 void ManagementObject::setUpdateTime()
 {
@@ -261,6 +288,7 @@ void ManagementObject::resourceDestroy()
     QPID_LOG(trace, "Management object marked deleted: " << getObjectId().getV2Key());
     destroyTime = sys::Duration::FromEpoch();
     deleted     = true;
+    manageable.reset();
 }
 
 int ManagementObject::maxThreads = 1;
