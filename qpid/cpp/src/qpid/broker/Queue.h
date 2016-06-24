@@ -535,7 +535,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
   private:
     void destroyed();           // Only called by QueueRegistry::destroy()
-  friend class QueueRegistry;
   friend class QueueFactory;
   friend class QueueRegistry;
 };
