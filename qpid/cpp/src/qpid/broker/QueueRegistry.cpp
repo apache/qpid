@@ -133,8 +133,8 @@ bool QueueRegistry::destroyIfUntouched(const string& name, long version,
         qpid::sys::RWlock::ScopedWlock locker(lock);
         QueueMap::iterator i = queues.find(name);
         if (i != queues.end()) {
-            q = i->second;
-            if (q->version == version) {
+            if (i->second->version == version) {
+                q = i->second;
                 eraseLH(i, q, name, connectionId, userId);
             }
         }
