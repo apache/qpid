@@ -157,8 +157,6 @@ void ReplicatingSubscription::initialize() {
                      << ", backup (keep " << skipEnqueue << ", drop " << initDequeues << ")");
             checkReady(l);
         }
-
-        if (primary) primary->addReplica(*this);
         Mutex::ScopedLock l(lock); // Note dequeued() can be called concurrently.
         // Send initial dequeues to the backup.
         // There must be a shared_ptr(this) when sending.

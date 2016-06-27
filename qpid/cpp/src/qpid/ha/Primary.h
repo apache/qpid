@@ -83,7 +83,6 @@ class Primary : public Role
     void setBrokerUrl(const Url&) {}
 
     void readyReplica(const ReplicatingSubscription&);
-    void addReplica(ReplicatingSubscription&);
 
     // Called via BrokerObserver
     void queueCreate(const QueuePtr&);
@@ -107,8 +106,6 @@ class Primary : public Role
     typedef std::set<RemoteBackupPtr > BackupSet;
 
     typedef std::pair<types::Uuid, boost::shared_ptr<broker::Queue> > UuidQueue;
-    typedef sys::unordered_map<UuidQueue, ReplicatingSubscription*,
-                               Hasher<UuidQueue> > ReplicaMap;
 
     RemoteBackupPtr backupConnect(const BrokerInfo&, broker::Connection&, sys::Mutex::ScopedLock&);
     void backupDisconnect(RemoteBackupPtr, sys::Mutex::ScopedLock&);
@@ -139,7 +136,6 @@ class Primary : public Role
     boost::shared_ptr<broker::BrokerObserver> brokerObserver;
     boost::shared_ptr<broker::SessionHandlerObserver> sessionHandlerObserver;
     boost::intrusive_ptr<sys::TimerTask> timerTask;
-    ReplicaMap replicas;
     PrimaryQueueLimits queueLimits;
 };
 }} // namespace qpid::ha

@@ -259,13 +259,6 @@ void Primary::readyReplica(const ReplicatingSubscription& rs) {
     if (backup) checkReady(backup);
 }
 
-void Primary::addReplica(ReplicatingSubscription& rs) {
-    // Note this is called before the ReplicatingSubscription has been activated
-    // on the queue.
-    sys::Mutex::ScopedLock l(lock);
-    replicas[make_pair(rs.getBrokerInfo().getSystemId(), rs.getQueue())] = &rs;
-}
-
 // NOTE: Called with queue registry lock held.
 void Primary::queueCreate(const QueuePtr& q) {
     // Set replication argument.
