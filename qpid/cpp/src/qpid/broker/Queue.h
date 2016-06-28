@@ -332,6 +332,13 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QPID_BROKER_EXTERN void deliverTo(Message, TxBuffer* = 0);
   public:
     /**
+     * Merges message annotations for an in-memory message as a result of
+     * a modified disposition outcome
+     */
+    QPID_BROKER_EXTERN void mergeMessageAnnotations(const QueueCursor& msg,
+                                                    const qpid::types::Variant::Map& annotations);
+
+    /**
      * Returns a message to the in-memory queue (due to lack
      * of acknowledegement from a receiver). If a consumer is
      * available it will be dispatched immediately, else it
