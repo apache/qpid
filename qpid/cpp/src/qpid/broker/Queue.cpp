@@ -345,6 +345,19 @@ void Queue::process(Message& msg)
     }
 }
 
+void Queue::mergeMessageAnnotations(const QueueCursor& position,
+                                    const qpid::types::Variant::Map& messageAnnotations)
+{
+  Mutex::ScopedLock locker(messageLock);
+  Message *message = messages->find(position);
+  if (!message) return;
+
+  qpid::types::Variant::Map::const_iterator it;
+  for (it = messageAnnotations.begin(); it != messageAnnotations.end(); ++it) {
+    message->addAnnotation(it->first, it->second);
+  }
+}
+
 void Queue::release(const QueueCursor& position, bool markRedelivered)
 {
     QueueListeners::NotificationSet copy;

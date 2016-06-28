@@ -152,6 +152,8 @@ class OutgoingFromQueue : public Outgoing, public qpid::broker::Consumer,
         static size_t getIndex(pn_delivery_tag_t);
     };
 
+    void mergeMessageAnnotationsIfRequired(const Record &r);
+
     const bool exclusive;
     const bool isControllingUser;
     boost::shared_ptr<Queue> queue;
