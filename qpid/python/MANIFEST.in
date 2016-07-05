@@ -1,4 +1,0 @@
-recursive-include examples *
-recursive-exclude examples verify verify.in
-include *.txt
-include *.md

@@ -1,6 +1,0 @@
-Version 0.22:
-	* QPID-4466: qpid::messaging::Duration now supports multiplication
-	* QPID-4416: Messages with embedded nulls won't break on getContentPtr
-	* QPID-4505: Provides unit tests for Address, Duration and Message
-	* QPID-4504: Broke up the Per classes into separate source modules
-	* QPID-4580: Added perldoc markup to each source module
