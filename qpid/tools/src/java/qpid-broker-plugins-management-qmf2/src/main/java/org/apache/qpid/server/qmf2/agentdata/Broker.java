@@ -352,7 +352,7 @@ public class Broker extends QmfAgentData
         super(getSchema());
 
         _broker = broker;
-        _defaultVirtualHost = broker.getDefaultVirtualHost();
+        _defaultVirtualHost = broker.findDefautVirtualHostNode().getVirtualHost().getName();
         int amqpPort = 5672; // Default AMQP Port.
 
         // Search through the available Ports on this Broker looking for the AMQP Port using the TCP Transport
@@ -419,7 +419,7 @@ public class Broker extends QmfAgentData
         setValue("mgmtPublish", true);
         setValue("mgmtPubInterval", 10);
 
-        setValue("version", org.apache.qpid.common.QpidProperties.getReleaseVersion());
+        setValue("version", broker.getProductVersion());
         setValue("dataDir", System.getProperty("QPID_WORK"));
 
         // ObjectId needs to be set here in Broker because the QMF2 version of qpid-config uses a hardcoded

@@ -124,7 +124,7 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
     public QmfManagementAgent(final String url, final Broker broker)
     {
         _broker = broker;
-        _defaultVirtualHost = broker.getDefaultVirtualHost();
+        _defaultVirtualHost = broker.findDefautVirtualHostNode().getVirtualHost().getName();
 
         try
         {
@@ -643,5 +643,17 @@ public class QmfManagementAgent implements ConfigurationChangeListener, QmfEvent
                 }
             }
         }
+    }
+
+    @Override
+    public void bulkChangeStart(final ConfiguredObject<?> object)
+    {
+
+    }
+
+    @Override
+    public void bulkChangeEnd(final ConfiguredObject<?> object)
+    {
+
     }
 }

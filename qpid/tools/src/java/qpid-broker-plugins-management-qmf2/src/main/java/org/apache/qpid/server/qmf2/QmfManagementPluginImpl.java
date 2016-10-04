@@ -120,7 +120,7 @@ public class QmfManagementPluginImpl extends AbstractPluginAdapter<QmfManagement
     protected void onOpen()
     {
         super.onOpen();
-        _defaultVirtualHost = _broker.getDefaultVirtualHost();
+        _defaultVirtualHost = _broker.findDefautVirtualHostNode().getVirtualHost().getName();
     }
 
 
