@@ -133,6 +133,8 @@ class RangeSet
     explicit RangeSet(const Range<T>& r) { *this += r; }
     RangeSet(const T& a, const T& b) { *this += Range<T>(a,b); }
 
+    void swap(RangeSet& x) { ranges.swap(x.ranges); }
+
     bool contiguous() const { return ranges.size() <= 1; }
 
     bool contains(const T& t) const;

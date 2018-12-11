@@ -34,10 +34,10 @@ namespace qpid {
 
 namespace framing {
 class AMQBody;
+class AMQFrame;
 }
 
 namespace cluster {
-class Core;
 class HandlerBase;
 
 /**
@@ -48,7 +48,8 @@ class HandlerBase;
 class EventHandler : public Cpg::Handler
 {
   public:
-    EventHandler(Core&);
+    EventHandler(boost::shared_ptr<sys::Poller> poller,
+                 boost::function<void()> onError);
     ~EventHandler();
 
     /** Add a handler */
@@ -75,13 +76,19 @@ class EventHandler : public Cpg::Handler
 
     MemberId getSender() { return sender; }
     MemberId getSelf() { return self; }
-    Core& getCore() { return core; }
     Cpg& getCpg() { return cpg; }
 
-  private:
-    void invoke(const framing::AMQBody& body);
+    template <class HandlerT> boost::intrusive_ptr<HandlerT> getHandler() {
+        for (size_t i = 0; i < handlers.size(); ++i) {
+            boost::intrusive_ptr<HandlerT> p(dynamic_cast<HandlerT*>(handlers[i].get()));
+            if (p) return p;
+        }
+        return 0;
+    }
 
-    Core& core;
+  private:
+    void handle(const framing::AMQFrame&);
+
     Cpg cpg;
     PollerDispatch dispatcher;
     MemberId sender;              // sender of current event.

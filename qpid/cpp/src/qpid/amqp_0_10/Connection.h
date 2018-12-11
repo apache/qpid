@@ -56,9 +56,11 @@ class Connection  : public sys::ConnectionCodec,
     bool isClient;
     size_t buffered;
     framing::ProtocolVersion version;
-
+    size_t prefetch;
+    
   public:
-    QPID_BROKER_EXTERN Connection(sys::OutputControl&, const std::string& id, bool isClient);
+    QPID_BROKER_EXTERN Connection(
+        sys::OutputControl&, const std::string& id, bool isClient, size_t prefetch);
     QPID_BROKER_EXTERN void setInputHandler(std::auto_ptr<sys::ConnectionInputHandler> c);
     size_t decode(const char* buffer, size_t size);
     size_t encode(const char* buffer, size_t size);
@@ -74,7 +76,6 @@ class Connection  : public sys::ConnectionCodec,
     size_t getBuffered() const;
 
     /** Used by cluster code to set a special version on "update" connections. */
-    // FIXME aconway 2009-07-30: find a cleaner mechanism for this.
     void setVersion(const framing::ProtocolVersion&);
 };
 

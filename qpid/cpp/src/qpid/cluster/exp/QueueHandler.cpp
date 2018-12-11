@@ -19,54 +19,62 @@
  *
  */
 
-#include "QueueHandler.h"
 #include "EventHandler.h"
-#include "QueueReplica.h"
+#include "Group.h"
 #include "QueueContext.h"
+#include "QueueHandler.h"
+#include "QueueReplica.h"
+#include "Settings.h"
+#include "qpid/Exception.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueuedMessage.h"
 #include "qpid/framing/AllInvoker.h"
-#include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace cluster {
 
-// FIXME aconway 2011-05-11: make Multicaster+EventHandler available as Group, clean this up?
-QueueHandler::QueueHandler(EventHandler& eh, Multicaster& m)
-    : HandlerBase(eh), multicaster(m) {}
+QueueHandler::QueueHandler(Group& g, Settings& s)
+    : HandlerBase(g.getEventHandler()), group(g), consumeTicks(s.consumeTicks)
+{}
 
-bool QueueHandler::invoke(const framing::AMQBody& body) {
-    return framing::invoke(*this, body).wasHandled();
+bool QueueHandler::handle(const framing::AMQFrame& frame) {
+    return framing::invoke(*this, *frame.getBody()).wasHandled();
 }
 
 void QueueHandler::subscribe(const std::string& queue) {
     find(queue)->subscribe(sender());
 }
-void QueueHandler::unsubscribe(const std::string& queue) {
-    find(queue)->unsubscribe(sender());
+
+void QueueHandler::unsubscribe(const std::string& queue,
+                               bool resubscribe) {
+    find(queue)->unsubscribe(sender(), resubscribe);
 }
-void QueueHandler::resubscribe(const std::string& queue) {
-    find(queue)->resubscribe(sender());
+
+void QueueHandler::consumed(const std::string& queue,
+                            const framing::SequenceSet& acquired,
+                            const framing::SequenceSet& dequeued)
+{
+    find(queue)->consumed(sender(), acquired, dequeued);
 }
 
 void QueueHandler::left(const MemberId& member) {
     // Unsubscribe for members that leave.
-    // FIXME aconway 2011-06-28: also need to re-queue acquired messages.
     for (QueueMap::iterator i = queues.begin(); i != queues.end(); ++i)
-        i->second->unsubscribe(member);
+        i->second->unsubscribe(member, false);
 }
 
-// FIXME aconway 2011-06-08: do we need to hold on to the shared pointer for lifecycle?
-void QueueHandler::add(boost::shared_ptr<broker::Queue> q) {
-    // FIXME aconway 2011-06-08: move create operation from Wiring to Queue handler.
-    // FIXME aconway 2011-05-10: assert not already in map.
-
+void QueueHandler::add(broker::Queue& q) {
     // Local queues already have a context, remote queues need one.
-    if (!QueueContext::get(*q))
-        new QueueContext(*q, multicaster); // Context attaches itself to the Queue
-    queues[q->getName()] = boost::intrusive_ptr<QueueReplica>(
-        new QueueReplica(q, self()));
+    if (!QueueContext::get(q))
+        new QueueContext(q, group, consumeTicks); // Context attaches to the Queue
+    assert(QueueContext::get(q));
+    queues[q.getName()] = boost::intrusive_ptr<QueueReplica>(
+        new QueueReplica(*QueueContext::get(q), self()));
+}
+
+void QueueHandler::remove(broker::Queue& q) {
+    queues.erase(q.getName());
 }
 
 boost::intrusive_ptr<QueueReplica> QueueHandler::find(const std::string& queue) {

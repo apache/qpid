@@ -1,5 +1,5 @@
-#ifndef QPID_SYS_STOPPABLE_H
-#define QPID_SYS_STOPPABLE_H
+#ifndef QPID_SYS_ACTIVITY_H
+#define QPID_SYS_ACTIVITY_H
 
 /*
  *
@@ -27,35 +27,35 @@
 namespace qpid {
 namespace sys {
 
-// FIXME aconway 2011-05-25: needs better name
-
 /**
- * An activity that may be executed by multiple threads, and can be stopped.
- *
- * Stopping prevents new threads from entering and calls a callback
- * when all busy threads leave.
+ * An activity that may be executed by multiple threads concurrently.
+ * An activity has 3 states:
+ * - active: may have active threads, new threads may enter.
+ * - stopping: may have active threads but  no new threads may enter.
+ * - stopped: no active threads and no new threads may enter.
  */
-class Stoppable {
+class Activity {
   public:
     /**
+     * Initially active.
      *@param stoppedCallback: called when all threads have stopped.
      */
-    Stoppable(boost::function<void()> stoppedCallback)
+    Activity(boost::function<void()> stoppedCallback)
         : busy(0), stopped(false), notify(stoppedCallback) {}
 
-    /** Mark the scope of a busy thread like this:
+    /** Mark the scope of an activity thread like this:
      * <pre>
      * {
-     *   Stoppable::Scope working(stoppable);
-     *   if (working) { do stuff }
+     *   Activity::Scope working(activity);
+     *   if (working) { do stuff } // Only if activity is active.
      * }
      * </pre>
      */
     class Scope {
-        Stoppable& state;
+        Activity& state;
         bool entered;
       public:
-        Scope(Stoppable& s) : state(s) { entered = s.enter(); }
+        Scope(Activity& s) : state(s) { entered = state.enter(); }
         ~Scope() { if (entered) state.exit(); }
         operator bool() const { return entered; }
     };
@@ -70,7 +70,7 @@ class Stoppable {
     void stop() {
         sys::Monitor::ScopedLock l(lock);
         stopped = true;
-        check();
+        check(l);
     }
 
     /** Set the state to "started", allow threads to enter.
@@ -81,6 +81,13 @@ class Stoppable {
         stopped = false;
     }
 
+    /** True if Activity is stopped with no */
+    bool isStopped() {
+        sys::Monitor::ScopedLock l(lock);
+        return stopped && busy == 0;
+    }
+
+  private:
     // Busy thread enters scope
     bool enter() {
         sys::Monitor::ScopedLock l(lock);
@@ -93,11 +100,11 @@ class Stoppable {
         sys::Monitor::ScopedLock l(lock);
         assert(busy > 0);
         --busy;
-        check();
+        check(l);
     }
 
-  private:
-    void check() {
+    void check(const sys::Monitor::ScopedLock&) {
+        // Called with lock held.
         if (stopped && busy == 0 && notify) notify();
     }
 
@@ -109,4 +116,4 @@ class Stoppable {
 
 }} // namespace qpid::sys
 
-#endif  /*!QPID_SYS_STOPPABLE_H*/
+#endif  /*!QPID_SYS_ACTIVITY_H*/

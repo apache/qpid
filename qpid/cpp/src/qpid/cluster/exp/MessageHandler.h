@@ -25,6 +25,8 @@
 // TODO aconway 2010-10-19: experimental cluster code.
 
 #include "HandlerBase.h"
+#include "MessageBuilders.h"
+#include "MessageHolder.h"
 #include "qpid/framing/AMQP_AllOperations.h"
 #include <boost/intrusive_ptr.hpp>
 #include <map>
@@ -40,6 +42,9 @@ class Queue;
 namespace cluster {
 class EventHandler;
 class BrokerContext;
+class Core;
+class Group;
+class MessageHolder;
 
 // FIXME aconway 2011-06-28: doesn't follow the same Handler/Replica/Context pattern as for queue.
 // Make this consistent.
@@ -51,29 +56,24 @@ class MessageHandler : public framing::AMQP_AllOperations::ClusterMessageHandler
                        public HandlerBase
 {
   public:
-    MessageHandler(EventHandler&);
+    MessageHandler(Group&, Core&);
 
-    bool invoke(const framing::AMQBody& body);
+    bool handle(const framing::AMQFrame&);
 
-    void routing(uint32_t routingId, const std::string& message);
-    void enqueue(uint32_t routingId, const std::string& queue);
-    void routed(uint32_t routingId);
+    void enqueue(const std::string& queue, uint16_t channel);
     void acquire(const std::string& queue, uint32_t position);
     void dequeue(const std::string& queue, uint32_t position);
-    void release(const std::string& queue, uint32_t position);
+    void requeue(const std::string& queue, uint32_t position, bool redelivered);
 
   private:
-    struct Member {
-        typedef std::map<uint32_t, boost::intrusive_ptr<broker::Message> > RoutingMap;
-        RoutingMap routingMap;
-    };
-    typedef std::map<MemberId, Member> MemberMap;
-
     boost::shared_ptr<broker::Queue> findQueue(const std::string& q, const char* msg);
 
     broker::Broker& broker;
-    MemberMap memberMap;
+    Core& core;
+    MessageBuilders& messageBuilders;
+    MessageHolder& messageHolder;
 };
+
 }} // namespace qpid::cluster
 
 #endif  /*!QPID_CLUSTER_MESSAGEHANDLER_H*/

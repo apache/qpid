@@ -67,7 +67,6 @@ while ($i -gt 0) {
   $i--
 }
 
-# FIXME aconway 2007-03-27: Hack around startup race. Fix topic test.
 Start-Sleep 2
 publish $sub
 exit $LastExitCode

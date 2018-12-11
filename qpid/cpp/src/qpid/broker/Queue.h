@@ -21,11 +21,10 @@
  * under the License.
  *
  */
-#include "qpid/log/Statement.h" // FIXME  XXX aconway 2011-06-08: remove
-
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/OwnershipToken.h"
 #include "qpid/broker/Consumer.h"
+#include "qpid/broker/Context.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Messages.h"
 #include "qpid/broker/PersistableQueue.h"
@@ -33,11 +32,10 @@
 #include "qpid/broker/QueueBindings.h"
 #include "qpid/broker/QueueListeners.h"
 #include "qpid/broker/QueueObserver.h"
-
 #include "qpid/framing/FieldTable.h"
+#include "qpid/sys/Activity.h"
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Monitor.h"
-#include "qpid/sys/Stoppable.h"
 #include "qpid/sys/Timer.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Queue.h"
@@ -132,9 +130,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     UsageBarrier barrier;
     int autoDeleteTimeout;
     boost::intrusive_ptr<qpid::sys::TimerTask> autoDeleteTask;
-    // Allow dispatching consumer threads to be stopped. Used by cluster
-    sys::Stoppable dispatching; // FIXME aconway 2011-06-07: name: acquiring?
-    boost::intrusive_ptr<RefCounted> clusterContext;
+    sys::Activity consuming; // Allow consumer threads to be stopped, used by cluster
+    std::auto_ptr<Context> clusterContext; // Clustering state.
 
     void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
     void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -182,7 +179,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     void checkNotDeleted();
     void notifyDeleted();
-    void acquireStopped();
+    void consumingStopped();
 
   public:
 
@@ -396,14 +393,17 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     /** Stop consumers. Return when all consumer threads are stopped.
      *@pre Queue is active and not already stopping.
      */
-    void stop();
+    void stopConsumers();
 
     /** Start consumers. */
-    void start();
+    void startConsumers();
+
+    /** Return true if consumers are stopped */
+    bool isConsumingStopped();
 
     /** Context information used in a cluster. */
-    boost::intrusive_ptr<RefCounted> getClusterContext() { return clusterContext; }
-    void setClusterContext(boost::intrusive_ptr<RefCounted> context) { clusterContext = context; }
+    Context* getClusterContext() { return clusterContext.get(); }
+    void setClusterContext(std::auto_ptr<Context> context) { clusterContext = context; }
 
 };
 }} // qpid::broker

@@ -113,7 +113,7 @@ Queue::Queue(const string& _name, bool _autodelete,
     deleted(false),
     barrier(*this),
     autoDeleteTimeout(0),
-    dispatching(boost::bind(&Queue::acquireStopped,this))
+    consuming(boost::bind(&Queue::consumingStopped,this))
 {
     if (parent != 0 && broker != 0) {
         ManagementAgent* agent = broker->getManagementAgent();
@@ -154,7 +154,7 @@ void Queue::deliver(boost::intrusive_ptr<Message> msg){
     // Check for deferred delivery in a cluster.
     if (broker && broker->deferDelivery(name, msg))
         return;
-    // Same thing but for the new cluster interface.
+    // Check for deferred delivery with new cluster interface.
     if (broker && !broker->getCluster().enqueue(*this, msg))
         return;
 
@@ -227,42 +227,33 @@ void Queue::requeue(const QueuedMessage& msg){
             }
         }
     }
-
-    if (broker) broker->getCluster().release(msg);
+    if (broker) broker->getCluster().requeue(msg);
     copy.notify();
 }
 
 /** Mark a scope that acquires a message.
  *
- * ClusterAcquireScope is declared before are taken.  The calling
- * function sets qmsg with the lock held, but the call to
- * Cluster::acquire() will happen after the lock is released.
- *
- * Also marks a Stoppable as busy for the duration of the scope.
+ * ClusterAcquireScope is declared before locks are taken.  The
+ * calling function sets qmsg with the lock held, but the call to
+ * Cluster::acquire() will happen after the lock is released in
+ * ~ClusterAcquireScope().
  **/
 struct ClusterAcquireScope {
-    Broker* broker;
-    Queue& queue;
     QueuedMessage qmsg;
 
-    ClusterAcquireScope(Queue& q) : broker(q.getBroker()), queue(q) {}
+    ClusterAcquireScope() {}
 
     ~ClusterAcquireScope() {
-        if (broker) {
-            // FIXME aconway 2011-06-27:  Move to QueueContext.
-            // Avoid the indirection via queuename.
-            if (qmsg.queue) broker->getCluster().acquire(qmsg);
-            else broker->getCluster().empty(queue);
-        }
+        if (qmsg.queue && qmsg.queue->getBroker())
+            qmsg.queue->getBroker()->getCluster().acquire(qmsg);
     }
 };
 
 bool Queue::acquireMessageAt(const SequenceNumber& position, QueuedMessage& message)
 {
-    ClusterAcquireScope acquireScope(*this); // Outside lock
+    ClusterAcquireScope acquireScope; // Outside lock
     Mutex::ScopedLock locker(messageLock);
     assertClusterSafe();
-    QPID_LOG(debug, "Attempting to acquire message at " << position);
     if (messages->remove(position, message)) {
         QPID_LOG(debug, "Acquired message at " << position << " from " << name);
         acquireScope.qmsg = message;
@@ -312,15 +303,15 @@ bool Queue::getNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
 Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
 {
     while (true) {
-        Stoppable::Scope stopper(dispatching); // FIXME aconway 2011-06-28: rename consuming
-        if (!stopper) {
-            QPID_LOG(trace, "Queue is stopped: " << name);
+        Activity::Scope consumeScope(consuming);
+        ClusterAcquireScope acquireScope;
+        Mutex::ScopedLock locker(messageLock);
+        if (!consumeScope) {
+            QPID_LOG(trace, "Queue stopped, can't  consume: " << name);
             listeners.addListener(c);
             return NO_MESSAGES;
         }
-        ClusterAcquireScope acquireScope(*this); // Outside the lock
-        Mutex::ScopedLock locker(messageLock);
-        if (messages->empty()) { // FIXME aconway 2011-06-07: ugly
+        if (messages->empty()) {
             QPID_LOG(debug, "No messages to dispatch on queue '" << name << "'");
             listeners.addListener(c);
             return NO_MESSAGES;
@@ -461,7 +452,7 @@ void Queue::cancel(Consumer::shared_ptr c){
 }
 
 QueuedMessage Queue::get(){
-    ClusterAcquireScope acquireScope(*this); // Outside lock
+    ClusterAcquireScope acquireScope; // Outside lock
     Mutex::ScopedLock locker(messageLock);
     QueuedMessage msg(this);
     if (messages->pop(msg)) acquireScope.qmsg = msg;
@@ -718,8 +709,7 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
             dequeued(msg);
         }
     }
-
-    if (!ctxt && broker) broker->getCluster().dequeue(msg); // Outside lock
+    if (!ctxt && broker) broker->getCluster().dequeue(msg); // call outside the lock.
 
     // This check prevents messages which have been forced persistent on one queue from dequeuing
     // from another on which no forcing has taken place and thus causing a store error.
@@ -737,7 +727,7 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
 
 void Queue::dequeueCommitted(const QueuedMessage& msg)
 {
-    if (broker) broker->getCluster().dequeue(msg); // Outside lock
+    // FIXME aconway 2011-09-13: new cluster needs TX support.
     Mutex::ScopedLock locker(messageLock);
     dequeued(msg);
     if (mgmtObject != 0) {
@@ -917,10 +907,6 @@ void Queue::notifyDeleted()
         deleted = true;
     }
     set.notifyAll();
-}
-
-void Queue::acquireStopped() {
-    if (broker) broker->getCluster().stopped(*this);
 }
 
 void Queue::bound(const string& exchange, const string& key,
@@ -1291,15 +1277,22 @@ void Queue::UsageBarrier::destroy()
     while (count) parent.messageLock.wait();
 }
 
-// FIXME aconway 2011-05-06: naming - only affects consumers. stopDispatch()?
-void Queue::stop() {
-    QPID_LOG(trace, "Queue stopped: " << getName());
-    // FIXME aconway 2011-05-25: rename dispatching - acquiring?
-    dispatching.stop();
+void Queue::stopConsumers() {
+    QPID_LOG(trace, "Stopping consumers on " << getName());
+    consuming.stop();
 }
 
-void Queue::start() {
-    QPID_LOG(trace, "Queue started: " << getName());
-    dispatching.start();
+void Queue::startConsumers() {
+    QPID_LOG(trace, "Starting consumers on " << getName());
+    consuming.start();
     notifyListener();
 }
+
+bool Queue::isConsumingStopped() { return consuming.isStopped(); }
+
+// Called when all busy threads exited after stopConsumers()
+void Queue::consumingStopped() {
+    QPID_LOG(trace, "Stopped consumers on " << getName());
+    if (broker) broker->getCluster().stopped(*this);
+}
+

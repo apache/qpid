@@ -1,3 +1,4 @@
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,113 +20,196 @@
  *
  */
 
-#include "QueueContext.h"
+#include "BrokerContext.h"
+#include "EventHandler.h"
+#include "Group.h"
 #include "Multicaster.h"
-#include "qpid/framing/ProtocolVersion.h"
-#include "qpid/framing/ClusterQueueResubscribeBody.h"
-#include "qpid/framing/ClusterQueueSubscribeBody.h"
-#include "qpid/framing/ClusterQueueUnsubscribeBody.h"
+#include "QueueContext.h"
+#include "QueueHandler.h"
+#include "hash.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/QueuedMessage.h"
+#include "qpid/framing/ClusterMessageAcquireBody.h"
+#include "qpid/framing/ClusterMessageDequeueBody.h"
+#include "qpid/framing/ClusterQueueConsumedBody.h"
+#include "qpid/framing/ClusterQueueSubscribeBody.h"
+#include "qpid/framing/ClusterQueueUnsubscribeBody.h"
+#include "qpid/framing/ProtocolVersion.h"
 #include "qpid/log/Statement.h"
-#include "qpid/sys/Timer.h"
 
 namespace qpid {
 namespace cluster {
 
+using framing::SequenceSet;
+const framing::ProtocolVersion pv;     // shorthand
 
-class OwnershipTimeout : public sys::TimerTask {
-    QueueContext& queueContext;
-
-  public:
-    OwnershipTimeout(QueueContext& qc, const sys::Duration& interval) :
-        TimerTask(interval, "QueueContext::OwnershipTimeout"), queueContext(qc) {}
-
-    // FIXME aconway 2011-07-27: thread safety on deletion?
-    void fire() { queueContext.timeout(); }
-};
-
-QueueContext::QueueContext(broker::Queue& q, Multicaster& m)
-    : timer(q.getBroker()->getTimer()), queue(q), mcast(m), consumers(0)
+QueueContext::QueueContext(broker::Queue& q, Group& g, size_t maxTicks_)
+    : ownership(UNSUBSCRIBED), consumers(0), consuming(false), ticks(0),
+      queue(q), mcast(g.getMulticaster()), hash(hashof(q.getName())),
+      maxTicks(maxTicks_), group(g)
 {
-    q.setClusterContext(boost::intrusive_ptr<QueueContext>(this));
-    q.stop();  // Initially stopped.
+    q.setClusterContext(std::auto_ptr<broker::Context>(this));
+    q.stopConsumers();          // Stop queue initially.
+    group.getTicker().add(this);
 }
 
 QueueContext::~QueueContext() {
-    // FIXME aconway 2011-07-27: revisit shutdown logic.
-    // timeout() could be called concurrently with destructor.
-    sys::Mutex::ScopedLock l(lock);
-    if (timerTask) timerTask->cancel();
+    // Lifecycle: must remove all references to this context  before it is deleted.
+    // Must be sure that there can be no use of this context later.
+    group.getTicker().remove(this);
+    group.getEventHandler().getHandler<QueueHandler>()->remove(queue);
 }
 
-void QueueContext::replicaState(QueueOwnership state) {
+namespace {
+bool isOwner(QueueOwnership o) { return o == SOLE_OWNER || o == SHARED_OWNER; }
+}
+
+// Called by QueueReplica in CPG deliver thread when state changes.
+void QueueContext::replicaState(QueueOwnership before, QueueOwnership after)
+{
     sys::Mutex::ScopedLock l(lock);
-    switch (state) {
-      case UNSUBSCRIBED:
-      case SUBSCRIBED:
-        break;
-      case SOLE_OWNER:
-        queue.start();
-        if (timerTask) {        // no need for timeout.
-            timerTask->cancel();
-            timerTask = 0;
-        }
-        break;
-      case SHARED_OWNER:
-        queue.start();
-        if (timerTask) timerTask->cancel();
-        // FIXME aconway 2011-07-28: configurable interval.
-        timerTask = new OwnershipTimeout(*this, 100*sys::TIME_MSEC);
-        timer.add(timerTask);
-        break;
+    // Interested in state changes which lead to ownership.
+    // We voluntarily give up ownership before multicasting
+    // the state change so we don't need to handle transitions
+    // that lead to non-ownership.
+
+    if (before != after && isOwner(after)) {
+        assert(before == ownership);
+        if (!consuming) queue.startConsumers();
+        consuming = true;
+        ticks = 0;
     }
+    ownership = after;
 }
 
-// FIXME aconway 2011-07-27: Dont spin token on an empty queue. Cancel timer.
+// FIXME aconway 2011-07-27: Dont spin the token on an empty queue.
 
-// Called in connection threads when a consumer is added
+// Called in broker threads when a consumer is added
 void QueueContext::consume(size_t n) {
     sys::Mutex::ScopedLock l(lock);
+    if (consumers == 0 && n > 0 && ownership == UNSUBSCRIBED)
+        mcast.mcast(
+            framing::ClusterQueueSubscribeBody(pv, queue.getName()));
     consumers = n;
-    if (n == 1) mcast.mcast(
-        framing::ClusterQueueSubscribeBody(framing::ProtocolVersion(), queue.getName()));
 }
 
-// Called in connection threads when a consumer is cancelled
+// Called in broker threads when a consumer is cancelled
 void QueueContext::cancel(size_t n) {
     sys::Mutex::ScopedLock l(lock);
     consumers = n;
-    if (n == 0) queue.stop(); // FIXME aconway 2011-07-28: Ok inside lock?
+    if (n == 0 && consuming) queue.stopConsumers();
 }
 
-void QueueContext::timeout() {
-    QPID_LOG(critical, "FIXME Ownership timeout on queue " << queue.getName());
-    queue.stop();
-    // When all threads have stopped, queue will call stopped()
+// FIXME aconway 2011-11-03: review scope of locking around sendConsumed
+
+// Called in Ticker thread.
+void QueueContext::tick() {
+    sys::Mutex::ScopedLock l(lock);
+    if (!consuming) return;     // Nothing to do if we don't have the lock.
+    if (ownership == SHARED_OWNER && ++ticks >= maxTicks) queue.stopConsumers();
+    else if (ownership == SOLE_OWNER) sendConsumed(l); // Status report on consumption
 }
 
-
-// Callback set up by queue.stop(), called when no threads are dispatching from the queue.
-// Release the queue.
+// Callback set up by queue.stopConsumers() called in connection or timer thread.
+// Called when no threads are dispatching from the queue.
 void QueueContext::stopped() {
     sys::Mutex::ScopedLock l(lock);
-    // FIXME aconway 2011-07-28: review thread safety of state.
-    // Deffered call to stopped doesn't sit well.
-    // queueActive is invalid while stop is in progress?
-    if (consumers == 0)
-        mcast.mcast(framing::ClusterQueueUnsubscribeBody(
-                        framing::ProtocolVersion(), queue.getName()));
-    else
-        mcast.mcast(framing::ClusterQueueResubscribeBody(
-                        framing::ProtocolVersion(), queue.getName()));
+    if (!consuming) return; // !consuming => initial stopConsumers in ctor.
+    sendConsumed(l);
+    mcast.mcast(
+        framing::ClusterQueueUnsubscribeBody(pv, queue.getName(), consumers));
+    consuming = false;
 }
 
-boost::intrusive_ptr<QueueContext> QueueContext::get(broker::Queue& q) {
-    return boost::intrusive_ptr<QueueContext>(
-        static_cast<QueueContext*>(q.getClusterContext().get()));
+void QueueContext::sendConsumed(const sys::Mutex::ScopedLock&) {
+    if (acquired.empty() && dequeued.empty()) return; // Nothing to send
+    mcast.mcast(
+        framing::ClusterQueueConsumedBody(pv, queue.getName(), acquired,dequeued));
+    acquired.clear();
+    dequeued.clear();
 }
 
+void QueueContext::requeue(uint32_t position, bool redelivered) {
+    // No lock, unacked has its own lock.
+    broker::QueuedMessage qm = unacked.pop(position);
+    if (qm.queue) {
+        if (redelivered) qm.payload->redeliver();
+        BrokerContext::ScopedSuppressReplication ssr;
+        queue.requeue(qm);
+    }
+}
 
+void QueueContext::localAcquire(uint32_t position) {
+    QPID_LOG(trace, "cluster queue " << queue.getName() << " acquired " << position);
+    sys::Mutex::ScopedLock l(lock);
+    assert(consuming);
+    acquired.add(position);
+}
+
+void QueueContext::localDequeue(uint32_t position) {
+    QPID_LOG(trace, "cluster queue " << queue.getName() << " dequeued " << position);
+    // FIXME aconway 2010-10-28: for local dequeues, we should
+    // complete the ack that initiated the dequeue at this point.
+    sys::Mutex::ScopedLock l(lock);
+
+    // FIXME aconway 2011-11-03: this assertion fails for explicit accept
+    // because it doesn't respect the consume lock.
+    // assert(consuming);
+
+    dequeued.add(position);
+}
+
+void QueueContext::consumed(
+    const MemberId& sender,
+    const SequenceSet& acquired,
+    const SequenceSet& dequeued)
+{
+    // No lock, doesn't touch any members.
+
+    // FIXME aconway 2011-09-15: systematic logging across cluster module.
+    // FIXME aconway 2011-09-23: pretty printing for identifier.
+    QPID_LOG(trace, "cluster: " << sender << " acquired: " << acquired
+             << " dequeued: " << dequeued << " on queue: " << queue.getName());
+
+    // Note acquires from other members. My own acquires were executed in
+    // the connection thread
+    if (sender != group.getSelf()) {
+        // FIXME aconway 2011-09-23: avoid individual finds, scan queue once.
+        for (SequenceSet::iterator i =  acquired.begin(); i != acquired.end(); ++i)
+            acquire(*i);
+    }
+    // Process deques from the queue owner.
+    // FIXME aconway 2011-09-23: avoid individual finds, scan queue once.
+    for (SequenceSet::iterator i =  dequeued.begin(); i != dequeued.end(); ++i)
+        dequeue(*i);
+}
+
+// Remote acquire
+void QueueContext::acquire(uint32_t position) {
+    // No lock, doesn't touch any members.
+    broker::QueuedMessage qm;
+    BrokerContext::ScopedSuppressReplication ssr;
+    if (!queue.acquireMessageAt(position, qm))
+        // FIXME aconway 2011-10-31: error handling
+        throw Exception(QPID_MSG("cluster: acquire: message not found: "
+                                 << queue.getName() << "[" << position << "]"));
+    assert(qm.position.getValue() == position);
+    assert(qm.payload);
+    unacked.put(qm.position, qm); // unacked has its own lock.
+}
+
+void QueueContext::dequeue(uint32_t position) {
+    // No lock, doesn't touch any members. unacked has its own lock.
+    broker::QueuedMessage qm = unacked.pop(position);
+    BrokerContext::ScopedSuppressReplication ssr;
+    if (qm.queue) queue.dequeue(0, qm);
+}
+
+QueueContext* QueueContext::get(broker::Queue& q) {
+    return static_cast<QueueContext*>(q.getClusterContext());
+}
+
+// FIXME aconway 2011-09-23: make unacked a plain map, use lock.
 
 }} // namespace qpid::cluster

@@ -48,7 +48,8 @@ SecureConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, cons
     }
     if (v == ProtocolVersion(0, 10)) {
         SecureConnectionPtr sc(new SecureConnection());
-        CodecPtr c(new amqp_0_10::Connection(out, id, false));
+        CodecPtr c(new amqp_0_10::Connection(
+                       out, id, false, broker.getOptions().outputPrefetch));
         ConnectionPtr i(new broker::Connection(c.get(), broker, id, external, false));
         i->setSecureConnection(sc.get());
         c->setInputHandler(InputPtr(i.release()));
@@ -63,7 +64,8 @@ SecureConnectionFactory::create(sys::OutputControl& out, const std::string& id,
                                 const SecuritySettings& external) {
     // used to create connections from one broker to another
     SecureConnectionPtr sc(new SecureConnection());
-    CodecPtr c(new amqp_0_10::Connection(out, id, true));
+    CodecPtr c(
+        new amqp_0_10::Connection(out, id, true, broker.getOptions().outputPrefetch));
     ConnectionPtr i(new broker::Connection(c.get(), broker, id, external, true ));
     i->setSecureConnection(sc.get());
     c->setInputHandler(InputPtr(i.release()));

@@ -22,6 +22,7 @@
 #include "Core.h"
 #include "EventHandler.h"
 #include "HandlerBase.h"
+#include "PrettyId.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/cluster/types.h"
 #include "qpid/framing/AMQFrame.h"
@@ -32,10 +33,10 @@
 namespace qpid {
 namespace cluster {
 
-EventHandler::EventHandler(Core& c) :
-    core(c),
-    cpg(*this),                 // FIXME aconway 2010-10-20: belongs on Core.
-    dispatcher(cpg, core.getBroker().getPoller(), boost::bind(&Core::fatal, &core)),
+EventHandler::EventHandler(boost::shared_ptr<sys::Poller> poller,
+                           boost::function<void()> onError) :
+    cpg(*this),
+    dispatcher(cpg, poller, onError),
     self(cpg.self())
 {}
 
@@ -47,17 +48,6 @@ void EventHandler::add(const boost::intrusive_ptr<HandlerBase>& handler) {
 
 void EventHandler::start() {
     dispatcher.start();
-}
-
-// Print member ID or "self" if member is self
-struct PrettyId {
-    MemberId id, self;
-    PrettyId(const MemberId& id_, const MemberId& self_) : id(id_), self(self_) {}
-};
-
-std::ostream& operator<<(std::ostream& o, const PrettyId& id) {
-    if (id.id == id.self) return o << "self";
-    else return o << id.id;
 }
 
 // Deliver CPG message.
@@ -72,26 +62,29 @@ void EventHandler::deliver(
     sender = MemberId(nodeid, pid);
     framing::Buffer buf(static_cast<char*>(msg), msg_len);
     framing::AMQFrame frame;
+    // FIXME aconway 2011-09-29: don't decode own frame bodies. Ignore based on channel.
     while (buf.available()) {
+        // FIXME aconway 2011-10-19: multi-version, skip unrecognized frames.
         frame.decode(buf);
-        assert(frame.getBody());
-        QPID_LOG(trace, "cluster deliver: " << PrettyId(sender, self) << " "
-                 << *frame.getBody());
+        QPID_LOG(trace, "cluster: deliver on " << cpg.getName()
+                 << " from "<< PrettyId(sender, self) << ": " << frame);
         try {
-            invoke(*frame.getBody());
+            handle(frame);
         } catch (const std::exception& e) {
-            // Note: exceptions are assumed to be survivable,
-            // fatal errors should log a message and call Core::fatal.
-            QPID_LOG(error, e.what());
+            // FIXME aconway 2011-10-19: error handling.
+            QPID_LOG(error, "cluster event: " << e.what()
+                     << " (sender=" << PrettyId(sender, self) << " group=" << cpg.getName()
+                     << " " << frame << ")");
+
         }
     }
 }
 
-void EventHandler::invoke(const framing::AMQBody& body) {
+void EventHandler::handle(const framing::AMQFrame& frame) {
     for (Handlers::iterator i = handlers.begin(); i != handlers.end(); ++i)
-        if ((*i)->invoke(body)) return;
-    QPID_LOG(error, "Cluster received unknown control: " << body );
-    assert(0);                  // Error handling
+        if ((*i)->handle(frame)) return;
+    QPID_LOG(error, "Cluster received unknown frame: " << frame );
+    assert(0);             // FIXME aconway 2011-09-29: Error handling
 }
 
 struct PrintAddrs {
@@ -114,10 +107,9 @@ void EventHandler::configChange (
     const cpg_address *left, int nLeft,
     const cpg_address *joined, int nJoined)
 {
-    // FIXME aconway 2010-10-20: TODO
     QPID_LOG(notice, "cluster: new membership: " << PrintAddrs(members, nMembers));
-    QPID_LOG_IF(notice, nLeft, "cluster:   members left: " << PrintAddrs(left, nLeft));
-    QPID_LOG_IF(notice, nJoined, "cluster:   members joined: " << PrintAddrs(joined, nJoined));
+    QPID_LOG_IF(notice, nLeft, "cluster:    left: " << PrintAddrs(left, nLeft));
+    QPID_LOG_IF(notice, nJoined, "cluster:    joined: " << PrintAddrs(joined, nJoined));
     for (Handlers::iterator i = handlers.begin(); i != handlers.end(); ++i) {
         for (int l = 0; l < nLeft; ++l) (*i)->left(left[l]);
         for (int j = 0; j < nJoined; ++j) (*i)->joined(joined[j]);

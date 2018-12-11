@@ -36,6 +36,7 @@ class Queue;
 
 namespace cluster {
 class QueueContext;
+struct PrintSubscribers;
 
 /**
  * Queue state that is replicated among all cluster members.
@@ -49,28 +50,31 @@ class QueueContext;
 class QueueReplica : public RefCounted
 {
   public:
-    QueueReplica(boost::shared_ptr<broker::Queue> , const MemberId& );
+    QueueReplica(QueueContext&, const MemberId& );
     void subscribe(const MemberId&);
-    void unsubscribe(const MemberId&);
-    void resubscribe(const MemberId&);
+    void unsubscribe(const MemberId&, bool resubscribe);
+    void consumed(const MemberId&,
+                  const framing::SequenceSet& acquired,
+                  const framing::SequenceSet& dequeued);
+
+    MemberId getSelf() const { return self; }
 
   private:
-
-  friend class PrintSubscribers;
-  friend std::ostream& operator<<(std::ostream&, QueueOwnership);
-  friend std::ostream& operator<<(std::ostream&, const QueueReplica&);
-
     typedef std::deque<MemberId> MemberQueue;
 
-    boost::shared_ptr<broker::Queue> queue;
+    std::string name;
     MemberQueue subscribers;
     MemberId self;
-    boost::intrusive_ptr<QueueContext> context;
+    QueueContext& context;
 
     QueueOwnership getState() const;
     bool isOwner() const;
     bool isSubscriber(const MemberId&) const;
     void update(QueueOwnership before);
+
+  friend struct PrintSubscribers;
+  friend std::ostream& operator<<(std::ostream&, QueueOwnership);
+  friend std::ostream& operator<<(std::ostream& o, const PrintSubscribers& ps);
 };
 
 }} // namespace qpid::cluster

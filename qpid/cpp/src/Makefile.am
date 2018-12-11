@@ -530,6 +530,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/ConnectionHandler.h \
   qpid/broker/ConnectionState.h \
   qpid/broker/ConnectionToken.h \
+  qpid/broker/Context .h \
   qpid/broker/Consumer.h \
   qpid/broker/Daemon.cpp \
   qpid/broker/Daemon.h \

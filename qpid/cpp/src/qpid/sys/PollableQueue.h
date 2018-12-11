@@ -29,7 +29,6 @@
 #include <boost/bind.hpp>
 #include <algorithm>
 #include <deque>
-#include "qpid/log/Statement.h" // FIXME aconway 2011-08-05:
 
 namespace qpid {
 namespace sys {

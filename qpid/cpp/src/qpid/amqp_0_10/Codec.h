@@ -115,7 +115,7 @@ struct Codec {
 
         using DecoderBase<Decoder<InIter> >::operator();
         
-        // FIXME aconway 2008-03-10:  wrong encoding, need packing support
+        // Wrong encoding, need packing support
         Decoder& operator()(bool& x) { raw((char&)x); return *this; }
 
         Decoder& operator()(char& x) { raw((char&)x); return *this; }
@@ -165,7 +165,7 @@ struct Codec {
 
         using EncoderBase<Size>::operator();
 
-        // FIXME aconway 2008-03-10:  wrong encoding, need packing support
+        // Wrong encoding, need packing support
         Size& operator()(bool x)  { size += sizeof(x); return *this; }
         
         Size& operator()(char x)  { size += sizeof(x); return *this; }
@@ -183,10 +183,6 @@ struct Codec {
         Size& operator()(float x)  { size += sizeof(x); return *this; }
         Size& operator()(double x)  { size += sizeof(x); return *this; }
 
-        // FIXME aconway 2008-04-03: optimize op()(Iter,Iter)
-        // for Iter with fixed-size value_type:
-        // distance(begin,end)*sizeof(value_type)
-
         void raw(const void*, size_t n){ size += n; }
 
         template <class T> Size& littleEnd(T) { size+= sizeof(T); return *this; }
@@ -195,7 +191,6 @@ struct Codec {
         size_t size;
     };
 
-    // FIXME aconway 2008-03-11: rename to encoder(), decoder()
     template <class InIter> static Decoder<InIter> decode(const InIter &i) {
         return Decoder<InIter>(i);
     }

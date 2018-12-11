@@ -30,7 +30,7 @@
 namespace qpid {
 
 namespace framing {
-class AMQDataBlock;
+class AMQFrame;
 class AMQBody;
 }
 
@@ -54,7 +54,7 @@ class Multicaster
     );
 
     /** Multicast an event */
-    void mcast(const framing::AMQDataBlock&);
+    void mcast(const framing::AMQFrame&);
     void mcast(const framing::AMQBody&);
 
   private:

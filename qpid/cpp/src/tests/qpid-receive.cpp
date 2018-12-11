@@ -34,6 +34,7 @@
 #include "Statistics.h"
 
 #include <iostream>
+#include <fstream>
 #include <memory>
 
 using namespace qpid::messaging;
@@ -60,6 +61,7 @@ struct Options : public qpid::Options
     uint rollbackFrequency;
     bool printContent;
     bool printHeaders;
+    std::string saveContent;
     bool failoverUpdates;
     qpid::log::Options log;
     bool reportTotal;
@@ -105,6 +107,7 @@ struct Options : public qpid::Options
             ("rollback-frequency", qpid::optValue(rollbackFrequency, "N"), "rollback frequency (0 implies no transaction will be rolledback)")
             ("print-content", qpid::optValue(printContent, "yes|no"), "print out message content")
             ("print-headers", qpid::optValue(printHeaders, "yes|no"), "print out message headers")
+            ("save-content", qpid::optValue(saveContent, "FILE"), "save message content to FILE")
             ("failover-updates", qpid::optValue(failoverUpdates), "Listen for membership updates distributed via amq.failover")
             ("report-total", qpid::optValue(reportTotal), "Report total throughput and latency statistics")
             ("report-every", qpid::optValue(reportEvery,"N"), "Report throughput and latency statistics every N messages.")
@@ -190,20 +193,17 @@ int main(int argc, char ** argv)
                 session.createSender(opts.readyAddress).send(msg);
 
             // For receive rate calculation
-            qpid::sys::AbsTime start; // Will be set on first itertion.
-            bool started=false;
+            qpid::sys::AbsTime start(qpid::sys::now());
             int64_t interval = 0;
             if (opts.receiveRate) interval = qpid::sys::TIME_SEC/opts.receiveRate;
 
             std::map<std::string,Sender> replyTo;
 
+            std::ofstream saveContent;
+            if (opts.saveContent.size()) 
+                saveContent.open(opts.saveContent.c_str());
+
             while (!done && receiver.fetch(msg, timeout)) {
-                if (!started) {
-                    // Start the time on receipt of the first message to avoid counting
-                    // idle time at process startup.
-                    start = qpid::sys::AbsTime::now();
-                    started = true;
-                }
                 reporter.message(msg);
                 if (!opts.ignoreDuplicates || !sequenceTracker.isDuplicate(msg)) {
                     if (msg.getContent() == EOS) {
@@ -224,6 +224,8 @@ int main(int argc, char ** argv)
                         }
                         if (opts.printContent)
                             std::cout << msg.getContent() << std::endl;//TODO: handle map or list messages
+                        if (opts.saveContent.size())
+                            saveContent << msg.getContent() << std::endl;
                         if (opts.messages && count >= opts.messages) done = true;
                     }
                 } else if (opts.checkRedelivered && !msg.getRedelivered()) {

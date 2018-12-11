@@ -31,15 +31,19 @@ using broker::Broker;
  */
 struct Cluster2Plugin : public Plugin {
     struct Opts : public Options {
-        Core::Settings& settings;
-        Opts(Core::Settings& s) : Options("Cluster Options"), settings(s) {
+        Settings& settings;
+        Opts(Settings& s) : Options("Cluster Options"), settings(s) {
             addOptions()
-                ("cluster2-name", optValue(settings.name, "NAME"), "Name of cluster to join");
-            // TODO aconway 2010-10-19: copy across other options from ClusterPlugin.h
+                ("cluster2-name", optValue(settings.name, "NAME"), "Name of cluster to join")
+                ("cluster2-concurrency", optValue(settings.concurrency, "N"), "Number concurrent streams of processing for multicast/deliver.")
+                ("cluster2-tick", optValue(settings.tick, "uS"), "Length of 'tick' used for timing events in microseconds.")
+                ("cluster2-consume-ticks", optValue(settings.consumeTicks, "N"), "Maximum number of ticks a broker can hold the consume lock on a shared queue.");
+                // FIXME aconway 2011-10-05: add all relevant options from ClusterPlugin.h.
+                // FIXME aconway 2011-10-05: rename to final option names.
         }
     };
 
-    Core::Settings settings;
+    Settings settings;
     Opts options;
     Core* core;                 // Core deletes itself on shutdown.
 

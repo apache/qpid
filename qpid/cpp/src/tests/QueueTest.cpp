@@ -1132,13 +1132,13 @@ QPID_AUTO_TEST_CASE(testStopStart) {
     BOOST_CHECK(c->received);
     c->reset();
     // Stop q, should not receive message
-    q->stop();
+    q->stopConsumers();
     q->deliver(m);
     BOOST_CHECK(!q->dispatch(c));
     BOOST_CHECK(!c->received);
     BOOST_CHECK(!c->notified);
     // Start q, should be notified and delivered
-    q->start();
+    q->startConsumers();
     q->deliver(m);
     BOOST_CHECK(c->notified);
     BOOST_CHECK(q->dispatch(c));

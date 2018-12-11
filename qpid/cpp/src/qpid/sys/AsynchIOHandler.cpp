@@ -112,9 +112,8 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
     // Check here for read credit
     if (readCredit.get() != InfiniteCredit) {
         if (readCredit.get() == 0) {
-            // FIXME aconway 2009-10-01:  Workaround to avoid "false wakeups".
-            // readbuff is sometimes called with no credit.
-            // This should be fixed somewhere else to avoid such calls.
+            // Avoid "false wakeups" if readbuff is called with no
+            // credit.
             aio->unread(buff);
             return;
         }

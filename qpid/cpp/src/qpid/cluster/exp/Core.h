@@ -22,13 +22,16 @@
  *
  */
 
-#include <string>
-#include <memory>
 #include "LockedMap.h"
-#include "Multicaster.h"
+#include "Group.h"
+#include "Settings.h"
 #include "qpid/cluster/types.h"
 #include "qpid/cluster/Cpg.h"
 #include "qpid/broker/QueuedMessage.h"
+#include "qpid/sys/Time.h"
+#include <boost/intrusive_ptr.hpp>
+#include <string>
+#include <memory>
 
 // TODO aconway 2010-10-19: experimental cluster code.
 
@@ -47,21 +50,17 @@ class EventHandler;
 class BrokerContext;
 
 /**
- * Cluster core state machine.
+ * Cluster core.
+ * 
  * Holds together the various objects that implement cluster behavior,
  * and holds state that is shared by multiple components.
  *
- * Thread safe: called from broker connection threads and CPG dispatch threads.
+ * Thread safe: called from broker broker threads and CPG dispatch threads.
  */
 class Core
 {
   public:
-    /** Configuration settings */
-    struct Settings {
-        std::string name;
-    };
-
-    typedef LockedMap<RoutingId, boost::intrusive_ptr<broker::Message> > RoutingMap;
+    typedef std::vector<boost::intrusive_ptr<Group> > Groups;
 
     /** Constructed during Plugin::earlyInitialize() */
     Core(const Settings&, broker::Broker&);
@@ -72,24 +71,19 @@ class Core
     /** Shut down broker due to fatal error. Caller should log a critical message */
     void fatal();
 
-    /** Multicast an event */
-    void mcast(const framing::AMQBody&);
-
     broker::Broker& getBroker() { return broker; }
-    EventHandler& getEventHandler() { return *eventHandler; }
     BrokerContext& getBrokerContext() { return *brokerHandler; }
-    Multicaster& getMulticaster() { return multicaster; }
 
-    /** Map of messages that are currently being routed.
-     * Used to pass messages being routed from BrokerContext to MessageHandler
-     */
-    RoutingMap& getRoutingMap() { return routingMap; }
+    const Settings& getSettings() const { return settings; }
+
+    Group& getGroup(size_t hashValue);
+    Group& getGroup(const std::string& queueName);
+
   private:
     broker::Broker& broker;
-    std::auto_ptr<EventHandler> eventHandler; // Handles CPG events.
     BrokerContext* brokerHandler; // Handles broker events.
-    RoutingMap routingMap;
-    Multicaster multicaster;
+    Settings settings;
+    Groups groups;
 };
 }} // namespace qpid::cluster
 

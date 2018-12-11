@@ -50,7 +50,7 @@ ConnectionCodec::Factory::create(ProtocolVersion v, sys::OutputControl& out,
     if (v == ProtocolVersion(0, 10))
         return new ConnectionCodec(v, out, id, cluster, false, false, external);
     else if (v == ProtocolVersion(0x80 + 0, 0x80 + 10)) // Catch-up connection
-        return new ConnectionCodec(v, out, id, cluster, true, false, external); 
+        return new ConnectionCodec(v, out, id, cluster, true, false, external);
     return 0;
 }
 
@@ -63,8 +63,9 @@ ConnectionCodec::Factory::create(sys::OutputControl& out, const std::string& log
 
 ConnectionCodec::ConnectionCodec(
     const ProtocolVersion& v, sys::OutputControl& out,
-    const std::string& logId, Cluster& cluster, bool catchUp, bool isLink, const qpid::sys::SecuritySettings& external
-) : codec(out, logId, isLink),
+    const std::string& logId, Cluster& cluster, bool catchUp,
+    bool isLink, const qpid::sys::SecuritySettings& external
+) : codec(out, logId, isLink, cluster.getBroker().getOptions().outputPrefetch),
     interceptor(new Connection(cluster, codec, logId, cluster.getId(), catchUp, isLink, external))
 {
     cluster.addLocalConnection(interceptor);

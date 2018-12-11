@@ -31,7 +31,7 @@ MapValue::MapValue() : code(codeFor(uint8_t(0))), blob(in_place<uint8_t>(0)) {}
 MapValue::MapValue(const MapValue& x) : code(x.code), blob(x.blob) {}
 
 bool  MapValue::operator==(const MapValue& x) const {
-    return code == x.code;      // FIXME aconway 2008-04-01: incomplete
+    return code == x.code;
 }
 
 struct OstreamVisitor : public MapValue::Visitor<std::ostream&> {
@@ -59,7 +59,6 @@ std::ostream& operator<<(std::ostream& o, const Map& map) {
 }
 
 uint32_t Map::contentSize() const {
-    // FIXME aconway 2008-04-03: preview to 0-10 mapping: +4 for count.
     return /*4 +*/ Codec::Size()(begin(), end()); 
 }
 

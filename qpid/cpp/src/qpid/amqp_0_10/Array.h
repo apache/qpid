@@ -108,9 +108,9 @@ template<> class ArrayDomain<UnknownType> : public std::vector<UnknownType> {
 
 std::ostream& operator<<(std::ostream& o, const Array& a);
 
-// FIXME aconway 2008-04-08: hack to supress encoding of
-// command-fragments and in-doubt as there is a problem with the spec
-// (command-fragments does not have a one byte type code.)
+// Hack to supress encoding of command-fragments and in-doubt as there
+// is a problem with the spec (command-fragments does not have a one
+// byte type code.)
 namespace session { class CommandFragment; }
 namespace dtx { class Xid; }
 

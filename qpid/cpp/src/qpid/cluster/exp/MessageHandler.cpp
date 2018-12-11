@@ -22,38 +22,58 @@
 #include "Core.h"
 #include "MessageHandler.h"
 #include "BrokerContext.h"
+#include "QueueContext.h"
 #include "EventHandler.h"
+#include "PrettyId.h"
+#include "Group.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/framing/AllInvoker.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/framing/MessageTransferBody.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/log/Statement.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace cluster {
-using namespace broker;
 
-MessageHandler::MessageHandler(EventHandler& e) :
-    HandlerBase(e),
-    broker(e.getCore().getBroker())
+using namespace broker;
+using namespace framing;
+
+MessageHandler::MessageHandler(Group& g, Core& c) :
+    HandlerBase(g.getEventHandler()),
+    broker(c.getBroker()),
+    core(c),
+    messageBuilders(g.getMessageBuilders()),
+    messageHolder(g.getMessageHolder())
 {}
 
-bool MessageHandler::invoke(const framing::AMQBody& body) {
-    return framing::invoke(*this, body).wasHandled();
-}
-
-void MessageHandler::routing(RoutingId routingId, const std::string& message) {
-    if (sender() == self()) return; // Already in getCore().getRoutingMap()
-    boost::intrusive_ptr<Message> msg = new Message;
-    // FIXME aconway 2010-10-28: decode message in bounded-size buffers.
-    framing::Buffer buf(const_cast<char*>(&message[0]), message.size());
-    msg->decodeHeader(buf);
-    msg->decodeContent(buf);
-    memberMap[sender()].routingMap[routingId] = msg;
+bool MessageHandler::handle(const framing::AMQFrame& frame) {
+    assert(frame.getBody());
+    const AMQBody& body = *frame.getBody();
+    if (framing::invoke(*this, body).wasHandled()) return true;
+    // Test for message frame
+    if (body.type() == HEADER_BODY || body.type() == CONTENT_BODY ||
+        (body.getMethod() && body.getMethod()->isA<MessageTransferBody>()))
+    {
+        boost::shared_ptr<broker::Queue> queue;
+        boost::intrusive_ptr<broker::Message> message;
+        if (sender() == self())
+            messageHolder.check(frame, queue, message);
+        else
+            messageBuilders.handle(sender(), frame, queue, message);
+        if (message) {
+            BrokerContext::ScopedSuppressReplication ssr;
+            queue->deliver(message);
+            if (sender() == self()) // Async completion
+                message->getIngressCompletion().finishCompleter(); 
+        }
+        return true;
+    }
+    return false;
 }
 
 boost::shared_ptr<broker::Queue> MessageHandler::findQueue(
@@ -64,60 +84,48 @@ boost::shared_ptr<broker::Queue> MessageHandler::findQueue(
     return queue;
 }
 
-void MessageHandler::enqueue(RoutingId routingId, const std::string& q) {
-    boost::shared_ptr<Queue> queue = findQueue(q, "Cluster enqueue failed");
-    boost::intrusive_ptr<Message> msg;
-    if (sender() == self())
-        msg = eventHandler.getCore().getRoutingMap().get(routingId);
-    else
-        msg = memberMap[sender()].routingMap[routingId];
-    if (!msg) throw Exception(QPID_MSG("Cluster enqueue on " << q
-                                       << " failed:  unknown message"));
-    BrokerContext::ScopedSuppressReplication ssr;
-    queue->deliver(msg);
-}
-
-void MessageHandler::routed(RoutingId routingId) {
-    if (sender() == self())
-        eventHandler.getCore().getRoutingMap().erase(routingId);
-    else
-        memberMap[sender()].routingMap.erase(routingId);
+void MessageHandler::enqueue(const std::string& q, uint16_t channel) {
+    // We only need to build message from other brokers, our own messages
+    // are held by the MessageHolder.
+    if (sender() != self()) {
+        boost::shared_ptr<Queue> queue = findQueue(q, "cluster enqueue");
+        messageBuilders.announce(sender(), channel, queue);
+    }
 }
 
 void MessageHandler::acquire(const std::string& q, uint32_t position) {
+    // FIXME aconway 2011-09-15: systematic logging across cluster module.
+    QPID_LOG(trace, "cluster message " << q << "[" << position
+             << "] acquired by " << PrettyId(sender(), self()));
     // Note acquires from other members. My own acquires were executed in
-    // the connection thread
+    // the broker thread
     if (sender() != self()) {
-        // FIXME aconway 2010-10-28: need to store acquired messages on QueueContext
-        // by broker for possible re-queuing if a broker leaves.
-        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster dequeue failed");
-        QueuedMessage qm;
-        BrokerContext::ScopedSuppressReplication ssr;
-        bool ok = queue->acquireMessageAt(position, qm);
-        (void)ok;                   // Avoid unused variable warnings.
-        assert(ok);             // FIXME aconway 2011-08-04: failing this assertion.
-        assert(qm.position.getValue() == position);
-        assert(qm.payload);
+        boost::shared_ptr<Queue> queue = findQueue(q, "cluster acquire");
+        QueueContext::get(*queue)->acquire(position);
     }
 }
 
-void MessageHandler::dequeue(const std::string& q, uint32_t /*position*/) {
-    if (sender() == self()) {
-        // FIXME aconway 2010-10-28: we should complete the ack that initiated
-        // the dequeue at this point, see BrokerContext::dequeue
-        return;
+void MessageHandler::dequeue(const std::string& q, uint32_t position) {
+    // FIXME aconway 2011-09-15: systematic logging across cluster module.
+    QPID_LOG(trace, "cluster message " << q << "[" << position
+             << "] dequeued by " << PrettyId(sender(), self()));
+
+    // FIXME aconway 2010-10-28: for local dequeues, we should
+    // complete the ack that initiated the dequeue at this point, see
+    // BrokerContext::dequeue
+
+    // My own dequeues were processed in the broker thread before multicasting.
+    if (sender() != self()) {
+        boost::shared_ptr<Queue> queue = findQueue(q, "cluster dequeue");
+        QueueContext::get(*queue)->dequeue(position);
     }
-    boost::shared_ptr<Queue> queue = findQueue(q, "Cluster dequeue failed");
-    BrokerContext::ScopedSuppressReplication ssr;
-    // FIXME aconway 2011-05-12: Remove the acquired message from QueueContext.
-    // Do we need to call this? Review with gsim.
-    // QueuedMessage qm;
-    // Get qm from QueueContext?
-    // queue->dequeue(0, qm);
 }
 
-void MessageHandler::release(const std::string& /*queue*/ , uint32_t /*position*/) {
-    // FIXME aconway 2011-05-24:
+void MessageHandler::requeue(const std::string& q, uint32_t position, bool redelivered) {
+    if (sender() != self()) {
+        boost::shared_ptr<Queue> queue = findQueue(q, "cluster requeue");
+        QueueContext::get(*queue)->requeue(position, redelivered);
+    }
 }
 
 }} // namespace qpid::cluster

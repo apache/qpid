@@ -187,7 +187,7 @@ EOS
       include "<assert.h>"
       namespace("qpid::framing") {
         create_exception("execution", "error-code", "SessionException", "InvalidArgumentException")
-        # FIXME aconway 2008-10-07: there are no good exception codes in 0-10 for an invalid code.
+        # There are no good exception codes in 0-10 for an invalid code.
         # The following choices are arbitrary.
         create_exception("connection", "close-code", "ConnectionException", "FramingErrorException")
         create_exception("session", "detach-code", "ChannelException", "NotAttachedException")

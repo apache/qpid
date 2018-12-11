@@ -48,7 +48,6 @@ namespace tests {
 
 QPID_AUTO_TEST_SUITE(ReplicationTestSuite)
 
-// FIXME aconway 2009-11-26: clean this up.
 // The CMake-based build passes in the module suffix; if it's not there, this
 // is a Linux/UNIX libtool-based build.
 #if defined (QPID_MODULE_PREFIX) && defined (QPID_MODULE_SUFFIX)

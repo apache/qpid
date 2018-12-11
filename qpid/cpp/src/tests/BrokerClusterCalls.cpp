@@ -91,8 +91,8 @@ class DummyCluster : public broker::Cluster
     virtual void acquire(const broker::QueuedMessage& qm) {
         if (!isRouting) recordQm("acquire", qm);
     }
-    virtual void release(const broker::QueuedMessage& qm) {
-        if (!isRouting) recordQm("release", qm);
+    virtual void requeue(const broker::QueuedMessage& qm) {
+        if (!isRouting) recordQm("requeue", qm);
     }
     virtual void dequeue(const broker::QueuedMessage& qm) {
         if (!isRouting) recordQm("dequeue", qm);
@@ -108,8 +108,6 @@ class DummyCluster : public broker::Cluster
     }
 
     // Queues
-    // FIXME aconway 2011-05-18: update test to exercise empty()
-    virtual void empty(broker::Queue& q) { recordStr("empty", q.getName()); }
     virtual void stopped(broker::Queue& q) { recordStr("stopped", q.getName()); }
 
     // Wiring
@@ -192,7 +190,7 @@ QPID_AUTO_TEST_CASE(testSimplePubSub) {
     BOOST_CHECK_EQUAL(h.size(), i);
 }
 
-QPID_AUTO_TEST_CASE(testReleaseReject) {
+QPID_AUTO_TEST_CASE(testRequeueReject) {
     DummyClusterFixture f;
     vector<string>& h = f.dc->history;
 
@@ -203,14 +201,14 @@ QPID_AUTO_TEST_CASE(testReleaseReject) {
     Message m = receiver.fetch(Duration::SECOND);
     h.clear();
 
-    // Explicit release
+    // Explicit requeue
     f.s.release(m);
     f.s.sync();
     size_t i = 0;
-    BOOST_CHECK_EQUAL(h.at(i++), "release(q, 1, a)");
+    BOOST_CHECK_EQUAL(h.at(i++), "requeue(q, 1, a)");
     BOOST_CHECK_EQUAL(h.size(), i);
 
-    // Implicit release on closing connection.
+    // Implicit requeue on closing connection.
     Connection c("localhost:"+lexical_cast<string>(f.getPort()));
     c.open();
     Session s = c.createSession();
@@ -220,7 +218,7 @@ QPID_AUTO_TEST_CASE(testReleaseReject) {
     i = 0;
     c.close();
     BOOST_CHECK_EQUAL(h.at(i++), "cancel(q, 1)");
-    BOOST_CHECK_EQUAL(h.at(i++), "release(q, 1, a)");
+    BOOST_CHECK_EQUAL(h.at(i++), "requeue(q, 1, a)");
     BOOST_CHECK_EQUAL(h.size(), i);
 
     // Reject message, goes to alternate exchange.
@@ -249,9 +247,6 @@ QPID_AUTO_TEST_CASE(testReleaseReject) {
     BOOST_CHECK_EQUAL(h.at(i++), "enqueue(q, t)");
     BOOST_CHECK_EQUAL(h.at(i++), "routed(t)");
     BOOST_CHECK_EQUAL(h.at(i++), "dequeue(q, 2, t)");
-    // FIXME aconway 2011-07-25: empty called once per receiver?
-    BOOST_CHECK_EQUAL(h.at(i++), "empty(q)");
-    BOOST_CHECK_EQUAL(h.at(i++), "empty(q)");
     BOOST_CHECK_EQUAL(h.size(), i);
 
     // Message replaced on LVQ
@@ -381,6 +376,7 @@ QPID_AUTO_TEST_CASE(testRingQueue) {
 }
 
 QPID_AUTO_TEST_CASE(testTransactions) {
+    return;                      // Test disabled till transactions are supported.
     DummyClusterFixture f;
     vector<string>& h = f.dc->history;
     Session ts = f.c.createTransactionalSession();

@@ -28,8 +28,8 @@
 namespace qpid {
 namespace cluster {
 class Core;
-class QueueHandler;
 class QueueContext;
+class Multicaster;
 
 // TODO aconway 2010-10-19: experimental cluster code.
 
@@ -47,9 +47,8 @@ class BrokerContext : public broker::Cluster
         ~ScopedSuppressReplication();
     };
 
-    BrokerContext(Core&, boost::intrusive_ptr<QueueHandler>);
-
-    // FIXME aconway 2010-10-20: implement all points.
+    BrokerContext(Core&);
+    ~BrokerContext();
 
     // Messages
 
@@ -58,7 +57,7 @@ class BrokerContext : public broker::Cluster
     void routed(const boost::intrusive_ptr<broker::Message>&);
     void acquire(const broker::QueuedMessage&);
     void dequeue(const broker::QueuedMessage&);
-    void release(const broker::QueuedMessage&);
+    void requeue(const broker::QueuedMessage&);
 
     // Consumers
 
@@ -66,7 +65,6 @@ class BrokerContext : public broker::Cluster
     void cancel(broker::Queue&, size_t);
 
     // Queues
-    void empty(broker::Queue&);
     void stopped(broker::Queue&);
 
     // Wiring
@@ -82,11 +80,13 @@ class BrokerContext : public broker::Cluster
 
 
   private:
-    uint32_t nextRoutingId();
+    // Get multicaster associated with a queue
+    Multicaster& mcaster(const broker::QueuedMessage& qm);
+    Multicaster& mcaster(const broker::Queue& q);
+    Multicaster& mcaster(const std::string&);
+    Multicaster& mcaster(const uint32_t);
 
     Core& core;
-    boost::intrusive_ptr<QueueHandler> queueHandler;
-    sys::AtomicValue<uint32_t> routingId;
 };
 }} // namespace qpid::cluster
 

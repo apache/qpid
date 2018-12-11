@@ -23,7 +23,6 @@
  */
 
 #include "HandlerBase.h"
-#include "LockedMap.h"
 #include "qpid/framing/AMQP_AllOperations.h"
 #include "boost/shared_ptr.hpp"
 #include "boost/intrusive_ptr.hpp"
@@ -41,6 +40,8 @@ namespace cluster {
 class EventHandler;
 class QueueReplica;
 class Multicaster;
+class Group;
+class Settings;
 
 /**
  * Handler for queue subscription events.
@@ -53,21 +54,23 @@ class QueueHandler : public framing::AMQP_AllOperations::ClusterQueueHandler,
                      public HandlerBase
 {
   public:
-    QueueHandler(EventHandler&, Multicaster&);
+    QueueHandler(Group&, Settings&);
 
-    bool invoke(const framing::AMQBody& body);
+    bool handle(const framing::AMQFrame& body);
 
     // Events
     void subscribe(const std::string& queue);
-    void unsubscribe(const std::string& queue);
-    void resubscribe(const std::string& queue);
+
+    void unsubscribe(const std::string& queue, bool resubscribe);
+
+    void consumed(const std::string& queue,
+                  const framing::SequenceSet& acquired,
+                  const framing::SequenceSet& dequeued);
+
     void left(const MemberId&);
 
-    void add(boost::shared_ptr<broker::Queue>);
-
-    // NB: These functions ar called in connection threads, not deliver threads.
-    void acquired(const broker::QueuedMessage& qm);
-    void empty(const broker::Queue& q);
+    void add(broker::Queue&);
+    void remove(broker::Queue&);
 
   private:
     typedef std::map<std::string, boost::intrusive_ptr<QueueReplica> > QueueMap;
@@ -75,7 +78,8 @@ class QueueHandler : public framing::AMQP_AllOperations::ClusterQueueHandler,
     boost::intrusive_ptr<QueueReplica> find(const std::string& queue);
 
     QueueMap queues;
-    Multicaster& multicaster;
+    Group& group;
+    size_t consumeTicks;
 };
 }} // namespace qpid::cluster
 

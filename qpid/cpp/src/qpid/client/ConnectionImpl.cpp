@@ -405,13 +405,10 @@ void ConnectionImpl::failedConnection() {
 
     std::ostringstream msg;
     msg << *this << " closed";
-
-    // FIXME aconway 2008-06-06: exception use, amqp0-10 does not seem to have
-    // an appropriate close-code. connection-forced is not right.
-    handler.fail(msg.str());//ensure connection is marked as failed before notifying sessions
-
-    // At this point if the object isn't open and isn't closing it must have failed to open
-    // so we can't do the rest of the cleanup
+    // Ensure connection is marked as failed before notifying sessions
+    handler.fail(msg.str());
+    // At this point if the object isn't open and isn't closing it
+    // must have failed to open so we can't do the rest of the cleanup
     if (!isClosing && !isOpen) return;
 
     Mutex::ScopedLock l(lock);

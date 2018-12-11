@@ -99,9 +99,9 @@ class PackedDecoder {
             decode(t);
         else
             t = T();
-        // FIXME aconway 2008-04-10: When we have all optionals
-        // represented by boost::optional the line above should be:
-        // throw CommandInvalidException("A required value was omitted.");
+        // When we have all optionals represented by boost::optional
+        // the line above should be: throw CommandInvalidException("A
+        // required value was omitted.");
         bits >>= 1;
         return *this;
     }
